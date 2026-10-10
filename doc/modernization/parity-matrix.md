@@ -68,10 +68,18 @@ commentary, lexicon, tree books, images, encrypted and sparse content. Track
 semantic output separately from visual layout and keyboard interaction.
 A passing fixture or compilation does not change a row to validated.
 
-Extracted command labels/IDs in [ui-command-inventory.tsv](ui-command-inventory.tsv)
-provide a source-derived checklist for dialogs and context menus. They include
-non-command labels too; use widget class and ID to distinguish. Every manual
-page section is listed in [manual-section-inventory.tsv](manual-section-inventory.tsv).
-Regenerate with `python3 doc/modernization/generate_inventory.py`.
-These discovery appendices do not replace runtime validation and should be
-regenerated when rebasing to a new baseline.
+Generate detailed discovery checklists on demand:
+
+```sh
+python3 doc/modernization/generate_inventory.py
+```
+
+The command writes `ui-command-inventory.tsv` and
+`manual-section-inventory.tsv` to ignored `build/modernization/`. The first
+lists widget classes, IDs and labels (including non-command labels); the second
+lists manual page/section titles. Keep the generator in version control rather
+than committing reproducible output. Regenerate after rebasing the baseline.
+These appendices support discovery and do not replace runtime validation.
+
+[Current milestone status and cleanup gates](status.md) distinguish verified
+implementation from accepted platform parity.

@@ -129,3 +129,9 @@ The GTK app remains the supported complete implementation during migration.
 No release switch until every matrix row is independently validated on each
 platform, user data is proven compatible and regression checks pass. Build
 success alone never establishes functional, visual or workflow parity.
+
+## Status and retirement
+
+The [status page](status.md) records evidence, acceptance and remaining work.
+Follow its file-retirement gates after each accepted milestone. Generated
+inventories belong under ignored `build/modernization/`; retain their generator.

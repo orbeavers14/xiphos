@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""Regenerate source evidence appendices from the repository root."""
+"""Generate disposable source evidence appendices under ignored build/."""
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
 root = Path(__file__).resolve().parents[2]
-out = root / 'doc/modernization'
+out = root / 'build/modernization'
+out.mkdir(parents=True, exist_ok=True)
 lines = ['source\twidget_class\twidget_id\tlabel']
 for file in sorted((root / 'ui').glob('*.gtkbuilder')):
     for obj in ET.parse(file).iter('object'):
