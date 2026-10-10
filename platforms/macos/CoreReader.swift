@@ -16,12 +16,9 @@ struct RenderedChapter {
     let reference: String
     let title: String
     let verses: [RenderedEntry]
-    // Presentation only; verse order/count/references are supplied by C++.
-    var html: String {
-        verses.enumerated().map { index, verse in
-            "<section id=\"verse-\(index + 1)\"><sup>\(index + 1)</sup> \(verse.html)</section>"
-        }.joined(separator: "\n")
-    }
+    let selectedVerse: Int
+    let selectedAnchor: String
+    let html: String
 }
 struct CoreError: LocalizedError {
     let status: xc_status
@@ -53,10 +50,12 @@ final class CoreReader {
         }
     }
     deinit { xc_close(handle) }
-    func readChapter(module: String, reference: String) throws -> RenderedChapter {
+    func readChapter(module: String, reference: String, verseNumbers: Bool = true, highlightSelected: Bool = true) throws -> RenderedChapter {
         var result: OpaquePointer?
+        let flags = (verseNumbers ? UInt32(XC_CHAPTER_VERSE_NUMBERS) : 0) |
+                    (highlightSelected ? UInt32(XC_CHAPTER_HIGHLIGHT_SELECTED) : 0)
         let status = module.withCString { id in
-            reference.withCString { ref in xc_read_chapter(handle, id, ref, &result) }
+            reference.withCString { ref in xc_read_chapter_with_options(handle, id, ref, flags, &result) }
         }
         guard status == XC_OK, let result else { throw CoreError(status: status) }
         defer { xc_chapter_release(result) }
@@ -65,7 +64,9 @@ final class CoreReader {
             verses: (0..<xc_chapter_count(result)).map { index in
                 RenderedEntry(reference: String(cString: xc_chapter_verse_reference(result, index)!),
                               html: String(cString: xc_chapter_verse_html(result, index)!))
-            })
+            }, selectedVerse: xc_chapter_selected_verse(result),
+            selectedAnchor: String(cString: xc_chapter_selected_anchor(result)!),
+            html: String(cString: xc_chapter_html(result)!))
     }
     func read(module: String, reference: String) throws -> RenderedEntry {
         var result: OpaquePointer?

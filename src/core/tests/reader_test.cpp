@@ -100,6 +100,16 @@ int main(int argc, char **argv) {
     auto *legacy_key = dynamic_cast<sword::VerseKey *>(module->getKey());
     check(legacy_key && xc_chapter_count(chapter) == static_cast<size_t>(legacy_key->getVerseMax()), "engine chapter length");
     check(std::string(xc_chapter_title(chapter)) == "John 3", "chapter title");
+    check(xc_chapter_selected_verse(chapter) == 16 &&
+          std::string(xc_chapter_selected_anchor(chapter)) == "verse-16", "engine-resolved selection");
+    check(std::string(xc_chapter_html(chapter)).find("id=\"verse-16\" class=\"xc-verse xc-current\"") != std::string::npos, "shared selected fragment");
+    xc_chapter *unadorned = nullptr;
+    check(xc_read_chapter_with_options(r, "ParityTest", "John 3:17", 0, &unadorned) == XC_OK, "chapter options");
+    check(std::string(xc_chapter_html(unadorned)).find("<sup>") == std::string::npos &&
+          std::string(xc_chapter_html(unadorned)).find("xc-current") == std::string::npos, "unadorned fragment");
+    check(xc_chapter_selected_verse(unadorned) == 17, "options preserve selection");
+    xc_chapter_release(unadorned);
+    check(xc_read_chapter_with_options(r, "ParityTest", "John 3:16", 8, &unadorned) == XC_INVALID_ARGUMENT && !unadorned, "unknown options rejected");
     for (size_t i = 0; i < xc_chapter_count(chapter); ++i) {
       legacy_key->setVerse(static_cast<int>(i + 1));
       check(std::string(xc_chapter_verse_reference(chapter, i)) == module->getKeyText(), "chapter ordered references");

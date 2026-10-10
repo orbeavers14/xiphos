@@ -78,12 +78,24 @@ const char *xc_session_module(const xc_session *s) {
 }
 void xc_session_clear_history(xc_session *s) { if (s) s->value.clear_history(); }
 xc_status xc_read_chapter(xc_reader *r, const char *id, const char *ref, xc_chapter **out) {
+  return xc_read_chapter_with_options(r, id, ref,
+          XC_CHAPTER_VERSE_NUMBERS | XC_CHAPTER_HIGHLIGHT_SELECTED, out);
+}
+xc_status xc_read_chapter_with_options(xc_reader *r, const char *id, const char *ref,
+                                      unsigned flags, xc_chapter **out) {
   if (!out) return XC_INVALID_ARGUMENT;
   *out = nullptr;
   if (!r || !id || !*id || !ref || !*ref) return XC_INVALID_ARGUMENT;
-  try { *out = new xc_chapter{r->value->read_chapter(id, ref)}; return XC_OK; }
+  if (flags & ~(XC_CHAPTER_VERSE_NUMBERS | XC_CHAPTER_HIGHLIGHT_SELECTED)) return XC_INVALID_ARGUMENT;
+  const xiphos::core::DisplayOptions options{
+    (flags & XC_CHAPTER_VERSE_NUMBERS) != 0,
+    (flags & XC_CHAPTER_HIGHLIGHT_SELECTED) != 0};
+  try { *out = new xc_chapter{r->value->read_chapter(id, ref, options)}; return XC_OK; }
   catch (...) { return failure(); }
 }
+size_t xc_chapter_selected_verse(const xc_chapter *c) { return c ? c->value.selected_verse : 0; }
+const char *xc_chapter_selected_anchor(const xc_chapter *c) { return c ? c->value.selected_anchor.c_str() : nullptr; }
+const char *xc_chapter_html(const xc_chapter *c) { return c ? c->value.html.c_str() : nullptr; }
 const char *xc_chapter_reference(const xc_chapter *c) { return c ? c->value.reference.c_str() : nullptr; }
 const char *xc_chapter_title(const xc_chapter *c) { return c ? c->value.title.c_str() : nullptr; }
 size_t xc_chapter_count(const xc_chapter *c) { return c ? c->value.verses.size() : 0; }

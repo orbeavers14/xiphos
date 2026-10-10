@@ -12,10 +12,15 @@ final class ReaderModel: ObservableObject {
     @Published var html = ""
     @Published var message = ""
     @Published var showChapter = false
+    @Published var verseNumbers = true
+    @Published var highlightSelected = true
+    @Published var renderedAnchor: String?
     @Published var canBack = false
     @Published var canForward = false
     private var reader: CoreReader?
     private var session: CoreSession?
+    private var displayedEntry: RenderedEntry?
+    private var displayedModule: String?
     init() {
         do {
             reader = try CoreReader(root: ProcessInfo.processInfo.environment["XIPHOS_MODULE_ROOT"])
@@ -36,6 +41,9 @@ final class ReaderModel: ObservableObject {
         } catch {
             html = ""
             renderedReference = ""
+            renderedAnchor = nil
+            displayedEntry = nil
+            displayedModule = nil
             message = error.localizedDescription
         }
     }
@@ -55,19 +63,24 @@ final class ReaderModel: ObservableObject {
     }
     private func display(_ entry: RenderedEntry, module: String) throws {
         if showChapter, let reader {
-            let chapter = try reader.readChapter(module: module, reference: entry.reference)
+            let chapter = try reader.readChapter(module: module, reference: entry.reference,
+                                                 verseNumbers: verseNumbers, highlightSelected: highlightSelected)
             html = chapter.html
+            renderedAnchor = chapter.selectedAnchor
             renderedReference = chapter.title
             message = chapter.verses.allSatisfy { $0.html.isEmpty } ? "This module has no text in this chapter." : ""
         } else {
             html = entry.html
+            renderedAnchor = nil
             renderedReference = entry.reference
             message = entry.html.isEmpty ? "This module has no text at this reference." : ""
         }
+        displayedEntry = entry
+        displayedModule = module
     }
     func refreshDisplay() {
-        guard let reader, let selection else { return }
-        do { try display(reader.read(module: selection, reference: reference), module: selection) }
+        guard let entry = displayedEntry, let module = displayedModule else { return }
+        do { try display(entry, module: module) }
         catch { message = error.localizedDescription }
     }
     func navigateChapter(_ direction: Int32) {
@@ -84,8 +97,28 @@ final class ReaderModel: ObservableObject {
 
 struct PassageView: NSViewRepresentable {
     let html: String
+    let anchor: String?
+    var onScrollFailure: (String) -> Void
     final class Coordinator: NSObject, WKNavigationDelegate {
         var loaded: String?
+        var anchor: String?
+        var navigation: WKNavigation?
+        var onScrollFailure: ((String) -> Void)?
+        func scrollToAnchor(_ webView: WKWebView) {
+            guard let anchor,
+                  let data = try? JSONSerialization.data(withJSONObject: anchor, options: [.fragmentsAllowed]),
+                  let literal = String(data: data, encoding: .utf8) else { return }
+            // Trusted host code runs in an isolated world. Module scripts stay
+            // disabled and are never interpolated into this expression.
+            webView.evaluateJavaScript("document.getElementById(\(literal))?.scrollIntoView({block: 'start'});",
+                in: nil, in: .defaultClient) { [weak self] result in
+                    if case .failure = result { self?.onScrollFailure?("Unable to scroll to the selected verse.") }
+                }
+        }
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            guard navigation === self.navigation else { return }
+            scrollToAnchor(webView)
+        }
         func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
                      decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
             // Semantic link dispatch is a later parity slice. Keep this preview
@@ -103,12 +136,22 @@ struct PassageView: NSViewRepresentable {
         return view
     }
     func updateNSView(_ view: WKWebView, context: Context) {
-        guard context.coordinator.loaded != html else { return }
+        context.coordinator.onScrollFailure = onScrollFailure
+        let changedAnchor = context.coordinator.anchor != anchor
+        context.coordinator.anchor = anchor
+        guard context.coordinator.loaded != html else {
+            if changedAnchor { context.coordinator.scrollToAnchor(view) }
+            return
+        }
         context.coordinator.loaded = html
-        view.loadHTMLString("""
+        context.coordinator.navigation = view.loadHTMLString("""
             <!doctype html><html><head><meta charset="utf-8">
             <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
-            <style>:root { color-scheme: light dark; } body { font: 18px Georgia, serif; line-height: 1.55; margin: 24px; }</style>
+            <style>:root { color-scheme: light dark; } body { font: 18px Georgia, serif; line-height: 1.55; margin: 24px; }
+            .xc-verse { scroll-margin-top: 12px; }
+            .xc-verse.xc-current { background: Highlight; color: HighlightText; }
+            .xc-verse sup { font-size: 0.7em; padding-right: 4px; }
+            </style>
             </head><body>\(html)</body></html>
             """, baseURL: nil)
     }
@@ -145,6 +188,10 @@ struct ReaderWindow: View {
                 HStack {
                     Toggle("Whole chapter", isOn: $model.showChapter)
                         .onChange(of: model.showChapter) { _ in model.refreshDisplay() }
+                    Menu("Display") {
+                        Toggle("Verse numbers", isOn: $model.verseNumbers)
+                        Toggle("Highlight selected verse", isOn: $model.highlightSelected)
+                    }.disabled(!model.showChapter)
                     Button("Previous chapter") { model.navigateChapter(-1) }.disabled(model.selection == nil)
                     Button("Next chapter") { model.navigateChapter(1) }.disabled(model.selection == nil)
                 }.padding(.horizontal, 12).padding(.bottom, 8)
@@ -152,7 +199,7 @@ struct ReaderWindow: View {
                 if !model.renderedReference.isEmpty {
                     Text(model.renderedReference).font(.headline).padding(12)
                 }
-                PassageView(html: model.html)
+                PassageView(html: model.html, anchor: model.renderedAnchor, onScrollFailure: { model.message = $0 })
                 if !model.message.isEmpty {
                     Text(model.message).foregroundStyle(.secondary).padding(12)
                         .accessibilityLabel(model.message)
@@ -162,6 +209,8 @@ struct ReaderWindow: View {
             }.frame(minWidth: 450)
         }.frame(minWidth: 700, minHeight: 450)
             .onChange(of: model.selection) { _ in model.read() }
+            .onChange(of: model.verseNumbers) { _ in model.refreshDisplay() }
+            .onChange(of: model.highlightSelected) { _ in model.refreshDisplay() }
     }
 }
 

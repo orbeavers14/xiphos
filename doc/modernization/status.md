@@ -135,13 +135,45 @@ and both original fixture texts; Next chapter selected John 4:1 and displayed
 John 4 with a missing-text message; Back restored John 3:16 and both fixture
 texts. This is a scoped reading check, not screenshot/design parity.
 
-Full Xiphos chapter decorations/options, introductions/headings, selected-verse
-highlight/scroll, semantic study links, synchronized panes and RTL/layout
+Full Xiphos chapter decorations/options, introductions/headings, representative selected-verse
+highlight/scroll acceptance, semantic study links, synchronized panes and RTL/layout
 acceptance remain pending. The preview uses simple numbered sections and still
 runs synchronous reading on the main thread; a shared engine executor is later
 work. GTK chapter code is retained unchanged; shared render_entry remains its
 common engine seam. Full GTK runtime, alternate representative content,
 Windows/Linux integration and older macOS runtimes are still unvalidated.
+
+## Chapter presentation slice: local validation, pending acceptance
+
+Implemented 2026-10-10: the shared content service produces chapter fragments
+with stable verse anchors, escaped reference labels, selected-verse semantics
+and optional verse numbers/highlight classes. Raw SWORD verse markup remains
+available unchanged. The additive C ABI owns all strings; Swift copies the
+fragment instead of maintaining a separate chapter formatter. Theme colors and
+scrolling belong to the native renderer. Options do not alter global SWORD state.
+
+Local macOS CTest **4/4** and sanitizer CTest **3/3** passed. Checks cover
+selected positions, escaped attributes, missing entries, preserved engine
+markup, option combinations, unknown flags, lifetime and Swift copied values.
+Fresh preview verification showed John 3:16 at the top of the chapter pane
+with a visible highlight; hiding numbers retained both fixture texts and
+turning off highlighting removed the background. Display changes refresh the
+committed passage rather than unsubmitted edits in the reference field.
+Module scripts remain disabled; trusted scrolling runs in an isolated host world.
+
+Initial GUI inspection timed out; a process sample captured SWORD manager/locale
+initialization. Fresh launches against the verified fixture were responsive.
+A subsequent timeout was a stale automation connection after process replacement:
+selecting the app by its current path worked, and its sample showed an idle event
+loop. The initial slow initialization remains uncharacterized; these checks do
+not establish startup-performance acceptance. This is separate from the earlier
+sandbox abort documented below.
+
+GTK chapter formatting is unchanged. Full chapter decorations, introductions,
+headings, whole-book mode, rendering options, RTL, synchronized panes and visual
+comparison against legacy remain pending. These scoped checks do not accept F03
+or justify retiring legacy display files. Overall estimate remains approximately
+**5% (3–7%)** pending broader platform and workflow validation.
 
 ## Verified implementation, pending acceptance
 

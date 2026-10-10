@@ -71,15 +71,17 @@ native integration. Introduce these services incrementally with legacy tests.
   The legacy call retains its strdup ownership and module-key side effect.
 * Display seam: split `src/main/display.cc`, modulecache/global_ops and URL
   handling into content + semantic actions, then native web renderers. Raw
-  SWORD XHTML is only a foundation; it lacks Xiphos chapter decoration,
-  annotation coloring, link dispatch and preview semantics.
+  The shared content service now produces chapter fragments with verse anchors,
+  optional numbers/highlights and escaped reference labels. Hosts supply theme
+  CSS and scrolling. Full legacy decorations, annotation coloring, semantic link
+  dispatch and preview behavior remain pending.
 * Navigation seam: navbar_versekey/navbar_book/tab_history becomes a per-tab
   study session; no frontend-maintained Bible canon or history algorithms.
-  The local next slice adds shared reference lookup/history and native session
-  navigation. GTK keeps its existing callbacks/storage, calling the shared
-  lookup rule. The next slice adds chapter snapshots and adjacent-chapter navigation using
-  cloned module VerseKeys. Full chapter decorations/options, broader reference
-  controls and session persistence remain pending. See status for the characterized rules and limits.
+  Shared reference lookup/history and native session navigation are implemented.
+  GTK keeps its existing callbacks/storage, calling the shared lookup rule.
+  Chapter snapshots and adjacent-chapter navigation use cloned module VerseKeys.
+  Full chapter decorations/options, broader reference controls and persistence
+  remain pending. See status for characterized rules and validation limits.
 * Search seam: backend search plus main/search_* becomes an asynchronous
   service with cancellation/progress/result sets; GUI callbacks become events.
 * Storage seam: settings.c/configs.cc/xml.c and bookmark GTK data structures

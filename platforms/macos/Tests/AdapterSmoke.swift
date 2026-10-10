@@ -26,7 +26,9 @@ struct AdapterSmoke {
         let chapter = try reader.readChapter(module: "ParityTest", reference: "John 3:16")
         guard chapter.title == "John 3", chapter.verses.count == 36,
               chapter.verses[15].html.contains("café"), chapter.verses[16].html.contains("Second fixture"),
-              chapter.html.contains("id=\"verse-16\"") else { fatalError("chapter snapshot") }
+              chapter.html.contains("id=\"verse-16\""), chapter.selectedVerse == 16, chapter.selectedAnchor == "verse-16" else { fatalError("chapter snapshot") }
+        let plain = try reader.readChapter(module: "ParityTest", reference: "John 3:17", verseNumbers: false, highlightSelected: false)
+        guard !plain.html.contains("<sup>"), !plain.html.contains("xc-current"), plain.selectedAnchor == "verse-17" else { fatalError("display options") }
         let nextBook = try session.navigateChapter(module: "ParityTest", reference: "John 21:25", direction: 1)
         guard nextBook.reference == "Acts 1:1" else { fatalError("chapter navigation") }
         session.clearHistory()

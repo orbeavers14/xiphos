@@ -50,7 +50,8 @@ Entry Reader::read(const std::string &id, const std::string &reference) {
   result.reference = module->getKeyText();
   return result;
 }
-Chapter Reader::read_chapter(const std::string &id, const std::string &reference) {
+Chapter Reader::read_chapter(const std::string &id, const std::string &reference,
+                             const DisplayOptions &options) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto &module = impl_->verse_module(id, reference);
   // Clone the module key so its own locale/versification drives enumeration.
@@ -62,9 +63,12 @@ Chapter Reader::read_chapter(const std::string &id, const std::string &reference
     throw std::invalid_argument("SWORD could not resolve a chapter");
   Chapter result;
   result.reference = key.getText();
+  result.selected_verse = key.getVerse();
+  result.selected_anchor = "verse-" + std::to_string(result.selected_verse);
   result.title = std::string(key.getBookName()) + " " + std::to_string(key.getChapter());
   key.setSuffix(0);
   const auto count = key.getVerseMax();
+  if (count <= 0) throw std::invalid_argument("Chapter has no verse positions");
   result.verses.reserve(count);
   for (int verse = 1; verse <= count; ++verse) {
     key.setVerse(verse);
@@ -73,6 +77,7 @@ Chapter Reader::read_chapter(const std::string &id, const std::string &reference
   }
   // Keep the module at the requested anchor, as with a single-entry read.
   module.setKey(result.reference.c_str());
+  result.html = display_chapter(result, options);
   return result;
 }
 std::string Reader::adjacent_chapter(const std::string &id, const std::string &reference,

@@ -54,6 +54,17 @@ void xc_session_clear_history(xc_session *session);
  * These are raw rendered entries, not full Xiphos chapter-decoration parity. */
 xc_status xc_read_chapter(xc_reader *reader, const char *module, const char *reference,
                           xc_chapter **out);
+/* These display flags affect only the copied chapter fragment, not global
+ * SWORD options. Unknown bits are invalid. Original xc_read_chapter defaults
+ * to both flags. Theme colors are supplied by the native host. */
+#define XC_CHAPTER_VERSE_NUMBERS 1u
+#define XC_CHAPTER_HIGHLIGHT_SELECTED 2u
+xc_status xc_read_chapter_with_options(xc_reader *reader, const char *module,
+                                      const char *reference, unsigned flags,
+                                      xc_chapter **out);
+size_t xc_chapter_selected_verse(const xc_chapter *chapter);
+const char *xc_chapter_selected_anchor(const xc_chapter *chapter);
+const char *xc_chapter_html(const xc_chapter *chapter);
 const char *xc_chapter_reference(const xc_chapter *chapter);
 const char *xc_chapter_title(const xc_chapter *chapter);
 size_t xc_chapter_count(const xc_chapter *chapter);

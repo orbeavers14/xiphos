@@ -50,8 +50,10 @@ SWORD normalizes references; this is not strict input validation.
 
 Select Whole chapter to display all verse positions in the module's chapter.
 Previous/Next chapter use shared C++ navigation and participate in history.
-Only SWORD entry XHTML with simple verse numbers is shown. Xiphos chapter
-decorations/options, selected-verse scrolling, synchronized commentary,
+The shared core supplies chapter fragments, selected-verse anchors and optional
+verse numbers/highlights. Display controls refresh the committed passage; the
+native web view scrolls to the selected verse with module scripts disabled.
+Full Xiphos decorations/options, synchronized commentary,
 parallel views, semantic links, images, search, persistence, editors,
 installation and BibleSync are pending. JavaScript and network content are
 disabled in this development pane. The app is unsigned, unnotarized and linked
