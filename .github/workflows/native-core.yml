@@ -1,12 +1,28 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 name: native-core
-on:
+# Develop and test locally; reserve runners for review, integration and releases.
+"on":
+  workflow_dispatch:
   push:
+    branches: [master]
+    tags: ['*']
+    paths-ignore:
+      - 'doc/modernization/**'
+      - '**/*.md'
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore:
+      - 'doc/modernization/**'
+      - '**/*.md'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
   linux-core:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -23,6 +39,7 @@ jobs:
           cmake --build build/sanitized --parallel
           ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/sanitized --output-on-failure
   macos-reader:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v7

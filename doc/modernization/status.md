@@ -100,6 +100,27 @@ and [legacy application PR run](https://github.com/orbeavers14/xiphos/actions/ru
 Build success checks compatibility at build time; it does not establish runtime
 or design parity. No parity row is accepted on all native platforms.
 
+## Development and CI budget policy
+
+Develop, build and run focused regression checks locally. Batch implementation
+and documentation into reviewable milestones before publishing; do not push
+individual work notes or minor edits to obtain repeated hosted builds.
+
+Both build workflows skip runner jobs for draft PRs and do not build feature
+branch pushes. A ready-for-review PR runs CI on opening, reopening, readiness
+and subsequent updates. Master integration and tag pushes remain checked;
+tag release packaging is retained. Documentation-only events that touch only
+Markdown or `doc/modernization/` are filtered. PR path filters evaluate the
+whole PR diff, so a documentation update to a ready code PR may still run CI.
+Concurrency cancels superseded runs of the same workflow/PR or ref.
+
+Manual workflow dispatch supports deliberate milestone/platform checks once
+the workflow is available on the default branch. Use it only when local
+checks cannot cover a relevant platform or at a review/release gate. Do not
+run the entire matrix for each intermediate fix. Skipped draft jobs are not
+validation evidence; relevant checks must pass on the final reviewed revision
+before acceptance. Local macOS testing cannot establish Linux/Windows parity.
+
 ## Latest CI snapshot
 
 At documentation parent `0bc38acf579e36b5adf9b1d53bc156ce2ecfc964`,
