@@ -393,6 +393,42 @@ bridge, with the asynchronous macOS work from PR #2. Preserve Xiphos module
 preferences and broader decorations rather than inventing frontend defaults.
 No feature group is accepted by this checkpoint; estimate remains about **5%**.
 
+## Module option eligibility: copied catalog metadata, native menus pending
+
+Implemented 2026-10-10 on `modernization/module-option-metadata`, stacked on the
+shared-engine-options branch for separate review. Core module snapshots carry
+eligibility from the existing exact `GlobalOptionFilter` checks: OSIS/ThML/GBF
+aliases, accent/vowel/cantillation filters, variants, Ruby/glosses and segmented
+morphemes. Headings are separate metadata; italic-heading eligibility also
+requires display headings enabled. Global transliteration availability comes
+from the installed manager's advertised options, separately from declarations.
+Legacy menu code retains its general transliteration item even without SDK
+support; this metadata does not silently reinterpret that menu behavior.
+
+The nonblocking catalog exposes the copied engine eligibility mask, headings
+and transliteration availability. Getters do not call the engine and results
+survive request/worker shutdown. Missing catalog/index returns zero. Declared
+features do not prove actual SDK filter support, markup content, enabled saved
+preferences or a working semantic action handler. Unknown filter declarations
+remain unrecognized, as with the existing specific menu gates.
+
+Local macOS build and CTest **9/9 passed**. A new characterization test exercises
+**30 declaration cases** against the legacy menu alias oracle: all recognized
+aliases, unknown/case/whitespace names, duplicate, combined, missing and
+non-global declarations. Probes preserve passage/key state. C API checks the
+OSIS fixture mask, missing headings, invalid bounds, SDK transliteration
+agreement and copied metadata lifetime. Focused address/undefined-behavior
+checks passed **3/3** (module metadata, scoped options and reader fixture);
+ThreadSanitizer scoped-option/catalog/worker check passed **1/1**. External
+SWORD remains uninstrumented. C++11 policy/C++17 reader/bridge warnings-as-errors
+and the default legacy seam build passed. No GitHub build was requested.
+
+Next: consume catalog eligibility in the asynchronous Swift adapter and native
+menus; preserve display-heading gating and module preference behavior. Full
+menu composition, translated labels, effective filter support across SDKs,
+images/fonts and broader Xiphos decorations remain pending. No legacy files
+are retired and full feature acceptance remains **0/38**.
+
 ## Verified implementation, pending acceptance
 
 Evidence below applies to implementation commit

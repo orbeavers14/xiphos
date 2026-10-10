@@ -5,7 +5,9 @@ int c_header_test(void) {
   const char *references[] = {"A", "B"};
   xc_session *session = NULL;
   xc_request *request = NULL;
-  return xc_worker_set_engine_options(NULL, 0, XC_ENGINE_STRONGS, &request) == XC_INVALID_ARGUMENT && request == NULL &&
+  return xc_catalog_declared_engine_flags(NULL, 0) == 0 &&
+         xc_catalog_has_headings(NULL, 0) == 0 && xc_catalog_transliteration_available(NULL, 0) == 0 &&
+         xc_worker_set_engine_options(NULL, 0, XC_ENGINE_STRONGS, &request) == XC_INVALID_ARGUMENT && request == NULL &&
          xc_worker_clear_engine_options(NULL, 0, &request) == XC_INVALID_ARGUMENT && request == NULL &&
          xc_worker_read_tab_entry(NULL, 0, "M", "John 3:16", &request) == XC_INVALID_ARGUMENT && request == NULL &&
          xc_worker_read_tab_chapter(NULL, 0, "M", "John 3:16", 0, &request) == XC_INVALID_ARGUMENT && request == NULL &&

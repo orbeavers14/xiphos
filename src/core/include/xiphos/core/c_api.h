@@ -88,6 +88,13 @@ const char *xc_catalog_id(const xc_catalog *catalog, size_t index);
 const char *xc_catalog_description(const xc_catalog *catalog, size_t index);
 const char *xc_catalog_type(const xc_catalog *catalog, size_t index);
 const char *xc_catalog_language(const xc_catalog *catalog, size_t index);
+/* Declared module features using the legacy GlobalOptionFilter checks, not
+ * effective SDK/markup support or saved settings. Italic headings also require
+ * display headings enabled. Transliteration is a global SDK capability and
+ * retains its separate general menu role. Invalid catalog/index -> zero. */
+unsigned xc_catalog_declared_engine_flags(const xc_catalog *catalog, size_t index);
+int xc_catalog_has_headings(const xc_catalog *catalog, size_t index);
+int xc_catalog_transliteration_available(const xc_catalog *catalog, size_t index);
 void xc_catalog_release(xc_catalog *catalog);
 int xc_history_can_back(const xc_history *history);
 int xc_history_can_forward(const xc_history *history);

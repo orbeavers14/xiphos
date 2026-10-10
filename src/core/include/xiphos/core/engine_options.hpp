@@ -3,7 +3,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-namespace sword { class SWMgr; class SWOptionFilter; }
+namespace sword { class SWMgr; class SWOptionFilter; class SWModule; }
 namespace xiphos { namespace core {
 class EngineManager;
 // Only SWORD filter options. Display headings, spacing, note numbering and
@@ -29,6 +29,15 @@ struct EngineOptions {
   bool variants_secondary = false;
   bool variants_all = false;
 };
+struct ModuleOptions {
+  EngineOptions declared;
+  bool headings = false;
+};
+// Eligibility from Xiphos's exact GlobalOptionFilter declarations, not proof
+// that the installed SDK implements a filter or the module contains markup.
+// Italic headings require this eligibility AND display headings enabled.
+// Global transliteration availability is separate from module declarations.
+ModuleOptions module_options(const sword::SWModule &module);
 // Mutates the manager's filter state. Call on the serialized engine owner
 // before rendering; does not save preferences or promise concurrent managers.
 // Retains legacy headings-on and textual-variant precedence/no-selection rules.
