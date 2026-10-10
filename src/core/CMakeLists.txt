@@ -54,6 +54,10 @@ target_link_libraries(xiphos_core PUBLIC Xiphos::CoreRender Xiphos::CoreHistory 
 set_target_properties(xiphos_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 if(BUILD_TESTING)
+  add_executable(core_async_test tests/async_test.cpp)
+  target_link_libraries(core_async_test PRIVATE Xiphos::Core)
+  add_test(NAME core_async COMMAND core_async_test "${CMAKE_CURRENT_BINARY_DIR}/fixture")
+  set_tests_properties(core_async PROPERTIES FIXTURES_REQUIRED sword_fixture)
   add_executable(core_worker_test tests/worker_test.cpp)
   target_link_libraries(core_worker_test PRIVATE Xiphos::Core)
   add_test(NAME core_worker COMMAND core_worker_test "${CMAKE_CURRENT_BINARY_DIR}/fixture")

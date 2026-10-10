@@ -2,6 +2,7 @@
 #ifndef XIPHOS_CORE_C_API_H
 #define XIPHOS_CORE_C_API_H
 #include <stddef.h>
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -11,8 +12,55 @@ typedef struct xc_session xc_session;
 typedef struct xc_chapter xc_chapter;
 typedef struct xc_link xc_link;
 typedef struct xc_choices xc_choices;
+typedef struct xc_worker xc_worker;
+typedef struct xc_request xc_request;
+typedef struct xc_catalog xc_catalog;
+typedef struct xc_history xc_history;
 typedef enum xc_status { XC_OK = 0, XC_INVALID_ARGUMENT = 1,
-  XC_MODULE_NOT_FOUND = 2, XC_ENGINE_ERROR = 3 } xc_status;
+  XC_MODULE_NOT_FOUND = 2, XC_ENGINE_ERROR = 3, XC_PENDING = 4 } xc_status;
+/* Async native API: share ONE worker per process. Open starts initialization on
+ * its engine thread; accepted requests return XC_OK with a non-NULL request.
+ * Initialization/operation errors arrive through poll. Poll never waits; it
+ * caches the terminal status. Each request handle must be used serially.
+ * Release drops observation, NOT the queued operation (including history).
+ * Close drains and joins: run close OFF the UI thread, after submissions stop.
+ * No active engine-call cancellation or unrelated SWORD concurrency promise. */
+xc_status xc_worker_open(const char *root, xc_worker **out);
+void xc_worker_close(xc_worker *worker);
+xc_status xc_worker_modules(xc_worker *worker, xc_request **out);
+xc_status xc_worker_create_tab(xc_worker *worker, xc_request **out);
+xc_status xc_worker_close_tab(xc_worker *worker, uint64_t tab, xc_request **out);
+xc_status xc_worker_visit(xc_worker *worker, uint64_t tab, const char *module, const char *reference, xc_request **out);
+xc_status xc_worker_navigate(xc_worker *worker, uint64_t tab, int direction, xc_request **out);
+xc_status xc_worker_navigate_chapter(xc_worker *worker, uint64_t tab, const char *module, const char *reference, int direction, xc_request **out);
+xc_status xc_worker_history(xc_worker *worker, uint64_t tab, xc_request **out);
+xc_status xc_worker_clear_history(xc_worker *worker, uint64_t tab, xc_request **out);
+xc_status xc_worker_read_chapter(xc_worker *worker, const char *module, const char *reference, unsigned flags, xc_request **out);
+xc_status xc_worker_reference_choices(xc_worker *worker, const char *module, const char *reference, xc_request **out);
+xc_status xc_worker_resolve_link(xc_worker *worker, const char *current_module, const char *uri, xc_request **out);
+xc_status xc_request_poll(xc_request *request);
+void xc_request_release(xc_request *request);
+/* Take exactly once after XC_OK; wrong type/not ready/already taken -> NULL.
+ * Caller owns the transferred handle and uses its normal release function.
+ * Copies survive worker/request close. Tab ID is zero unless ready/tab result. */
+uint64_t xc_request_tab(const xc_request *request);
+xc_entry *xc_request_take_entry(xc_request *request);
+xc_chapter *xc_request_take_chapter(xc_request *request);
+xc_choices *xc_request_take_choices(xc_request *request);
+xc_link *xc_request_take_link(xc_request *request);
+xc_catalog *xc_request_take_catalog(xc_request *request);
+xc_history *xc_request_take_history(xc_request *request);
+size_t xc_catalog_count(const xc_catalog *catalog);
+const char *xc_catalog_id(const xc_catalog *catalog, size_t index);
+const char *xc_catalog_description(const xc_catalog *catalog, size_t index);
+const char *xc_catalog_type(const xc_catalog *catalog, size_t index);
+const char *xc_catalog_language(const xc_catalog *catalog, size_t index);
+void xc_catalog_release(xc_catalog *catalog);
+int xc_history_can_back(const xc_history *history);
+int xc_history_can_forward(const xc_history *history);
+size_t xc_history_count(const xc_history *history);
+const char *xc_history_module(const xc_history *history);
+void xc_history_release(xc_history *history);
 /* Version of this experimental ABI, not a parity or stability guarantee. */
 unsigned xc_api_version(void);
 /* NULL/empty root uses normal SWORD discovery. No downloads or data writes.

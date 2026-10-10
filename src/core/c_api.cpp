@@ -2,6 +2,9 @@
 #include "xiphos/core/c_api.h"
 #include "xiphos/core/reader.hpp"
 #include <stdexcept>
+#include <chrono>
+#include <type_traits>
+#include "xiphos/core/worker.hpp"
 #include "xiphos/core/session.hpp"
 struct xc_reader { std::shared_ptr<xiphos::core::Reader> value; explicit xc_reader(const char *p) : value(std::make_shared<xiphos::core::Reader>(p ? p : "")) {} };
 struct xc_session {
@@ -13,12 +16,62 @@ struct xc_chapter { xiphos::core::Chapter value; };
 struct xc_choices { xiphos::core::ReferenceChoices value; };
 struct xc_link { xiphos::core::PassageLink value; };
 struct xc_entry { xiphos::core::Entry value; };
+struct xc_worker { xiphos::core::StudyWorker value; explicit xc_worker(const char *root) : value(root ? root : "") {} };
+struct xc_catalog { std::vector<xiphos::core::Module> value; };
+struct xc_history { xiphos::core::HistorySnapshot value; };
+struct xc_request {
+  xc_status status = XC_PENDING;
+  uint64_t tab = 0;
+  std::unique_ptr<xc_entry> entry;
+  std::unique_ptr<xc_chapter> chapter;
+  std::unique_ptr<xc_choices> choices;
+  std::unique_ptr<xc_link> link;
+  std::unique_ptr<xc_catalog> catalog;
+  std::unique_ptr<xc_history> history;
+  virtual ~xc_request() = default;
+  virtual void update() = 0;
+  void store(uint64_t v) { tab = v; }
+  void store(xiphos::core::Entry v) { entry = std::make_unique<xc_entry>(xc_entry{std::move(v)}); }
+  void store(xiphos::core::Chapter v) { chapter = std::make_unique<xc_chapter>(xc_chapter{std::move(v)}); }
+  void store(xiphos::core::ReferenceChoices v) { choices = std::make_unique<xc_choices>(xc_choices{std::move(v)}); }
+  void store(xiphos::core::PassageLink v) { link = std::make_unique<xc_link>(xc_link{std::move(v)}); }
+  void store(std::vector<xiphos::core::Module> v) { catalog = std::make_unique<xc_catalog>(xc_catalog{std::move(v)}); }
+  void store(xiphos::core::HistorySnapshot v) { history = std::make_unique<xc_history>(xc_history{std::move(v)}); }
+};
 namespace {
 xc_status failure() noexcept {
   try { throw; }
   catch (const std::out_of_range &) { return XC_MODULE_NOT_FOUND; }
   catch (const std::invalid_argument &) { return XC_INVALID_ARGUMENT; }
   catch (...) { return XC_ENGINE_ERROR; }
+}
+template<class T> struct Request final : xc_request {
+  std::future<T> future;
+  void update() override {
+    if (status != XC_PENDING || future.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return;
+    try {
+      if constexpr (std::is_void_v<T>) future.get();
+      else store(future.get());
+      status = XC_OK;
+    } catch (...) { status = failure(); }
+  }
+};
+template<class F> struct FutureValue;
+template<class T> struct FutureValue<std::future<T>> { using Type = T; };
+template<class F> xc_status queue_request(xc_worker *w, xc_request **out, F operation) {
+  if (!out) return XC_INVALID_ARGUMENT;
+  *out = nullptr;
+  if (!w) return XC_INVALID_ARGUMENT;
+  try {
+    using T = typename FutureValue<decltype(operation(w->value))>::Type;
+    // Allocate the observer BEFORE accepting an operation that may mutate state.
+    auto request = std::make_unique<Request<T>>();
+    request->future = operation(w->value);
+    *out = request.release(); return XC_OK;
+  } catch (...) { return failure(); }
+}
+const xiphos::core::Module *catalog_at(const xc_catalog *c, size_t i) {
+  return c && i < c->value.size() ? &c->value[i] : nullptr;
 }
 const std::vector<xiphos::core::ReferenceChoice> *choices_at(const xc_choices *c, xc_choice_kind kind) {
   if (!c) return nullptr;
@@ -34,6 +87,79 @@ const xiphos::core::Module *module_at(const xc_reader *r, size_t i) {
 }
 }
 extern "C" {
+xc_status xc_worker_open(const char *root, xc_worker **out) {
+  if (!out) return XC_INVALID_ARGUMENT;
+  *out = nullptr;
+  try { *out = new xc_worker(root); return XC_OK; } catch (...) { return failure(); }
+}
+void xc_worker_close(xc_worker *w) { delete w; }
+xc_status xc_worker_modules(xc_worker *w, xc_request **out) {
+  return queue_request(w, out, [](auto &worker) { return worker.modules(); });
+}
+xc_status xc_worker_create_tab(xc_worker *w, xc_request **out) {
+  return queue_request(w, out, [](auto &worker) { return worker.create_tab(); });
+}
+xc_status xc_worker_close_tab(xc_worker *w, uint64_t tab, xc_request **out) {
+  return queue_request(w, out, [tab](auto &worker) { return worker.close_tab(tab); });
+}
+xc_status xc_worker_visit(xc_worker *w, uint64_t tab, const char *id, const char *ref, xc_request **out) {
+  if (!id || !*id || !ref || !*ref) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.visit(tab, id, ref); });
+}
+xc_status xc_worker_navigate(xc_worker *w, uint64_t tab, int direction, xc_request **out) {
+  return queue_request(w, out, [=](auto &worker) { return worker.navigate(tab, direction); });
+}
+xc_status xc_worker_navigate_chapter(xc_worker *w, uint64_t tab, const char *id, const char *ref, int direction, xc_request **out) {
+  if (!id || !*id || !ref || !*ref) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.navigate_chapter(tab, id, ref, direction); });
+}
+xc_status xc_worker_history(xc_worker *w, uint64_t tab, xc_request **out) {
+  return queue_request(w, out, [=](auto &worker) { return worker.history(tab); });
+}
+xc_status xc_worker_clear_history(xc_worker *w, uint64_t tab, xc_request **out) {
+  return queue_request(w, out, [=](auto &worker) { return worker.clear_history(tab); });
+}
+xc_status xc_worker_read_chapter(xc_worker *w, const char *id, const char *ref, unsigned flags, xc_request **out) {
+  if (!id || !*id || !ref || !*ref || (flags & ~(XC_CHAPTER_VERSE_NUMBERS | XC_CHAPTER_HIGHLIGHT_SELECTED))) {
+    if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
+  }
+  const xiphos::core::DisplayOptions options{(flags & XC_CHAPTER_VERSE_NUMBERS) != 0, (flags & XC_CHAPTER_HIGHLIGHT_SELECTED) != 0};
+  return queue_request(w, out, [=](auto &worker) { return worker.read_chapter(id, ref, options); });
+}
+xc_status xc_worker_reference_choices(xc_worker *w, const char *id, const char *ref, xc_request **out) {
+  if (!id || !*id || !ref || !*ref) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.reference_choices(id, ref); });
+}
+xc_status xc_worker_resolve_link(xc_worker *w, const char *id, const char *uri, xc_request **out) {
+  if (!uri || !*uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.resolve_link(id ? id : "", uri); });
+}
+xc_status xc_request_poll(xc_request *r) {
+  if (!r) return XC_INVALID_ARGUMENT;
+  try { r->update(); } catch (...) { r->status = failure(); }
+  return r->status;
+}
+void xc_request_release(xc_request *r) { delete r; }
+uint64_t xc_request_tab(const xc_request *r) { return r && r->status == XC_OK ? r->tab : 0; }
+xc_entry *xc_request_take_entry(xc_request *r) { return r && r->status == XC_OK ? r->entry.release() : nullptr; }
+xc_chapter *xc_request_take_chapter(xc_request *r) { return r && r->status == XC_OK ? r->chapter.release() : nullptr; }
+xc_choices *xc_request_take_choices(xc_request *r) { return r && r->status == XC_OK ? r->choices.release() : nullptr; }
+xc_link *xc_request_take_link(xc_request *r) { return r && r->status == XC_OK ? r->link.release() : nullptr; }
+xc_catalog *xc_request_take_catalog(xc_request *r) { return r && r->status == XC_OK ? r->catalog.release() : nullptr; }
+xc_history *xc_request_take_history(xc_request *r) { return r && r->status == XC_OK ? r->history.release() : nullptr; }
+size_t xc_catalog_count(const xc_catalog *c) { return c ? c->value.size() : 0; }
+const char *xc_catalog_id(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m ? m->id.c_str() : nullptr; }
+const char *xc_catalog_description(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m ? m->description.c_str() : nullptr; }
+const char *xc_catalog_type(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m ? m->type.c_str() : nullptr; }
+const char *xc_catalog_language(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m ? m->language.c_str() : nullptr; }
+void xc_catalog_release(xc_catalog *c) { delete c; }
+int xc_history_can_back(const xc_history *h) { return h && h->value.can_back; }
+int xc_history_can_forward(const xc_history *h) { return h && h->value.can_forward; }
+size_t xc_history_count(const xc_history *h) { return h ? h->value.entries.size() : 0; }
+const char *xc_history_module(const xc_history *h) {
+  return h && h->value.cursor < h->value.entries.size() ? h->value.entries[h->value.cursor].module.c_str() : nullptr;
+}
+void xc_history_release(xc_history *h) { delete h; }
 unsigned xc_api_version(void) { return 1; }
 xc_status xc_open(const char *root, xc_reader **out) {
   if (!out) return XC_INVALID_ARGUMENT;

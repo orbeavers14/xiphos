@@ -4,7 +4,9 @@
 int c_header_test(void) {
   const char *references[] = {"A", "B"};
   xc_session *session = NULL;
-  return xc_api_version() == 1 && xh_find_reference(references, 2, "B") == 1 &&
+  xc_request *request = NULL;
+  return xc_worker_modules(NULL, &request) == XC_INVALID_ARGUMENT && request == NULL &&
+         xc_request_poll(NULL) == XC_INVALID_ARGUMENT && xc_api_version() == 1 && xh_find_reference(references, 2, "B") == 1 &&
          xh_find_reference(references, 2, "Missing") == 2 &&
          xc_session_open(NULL, &session) == XC_INVALID_ARGUMENT && session == NULL;
 }

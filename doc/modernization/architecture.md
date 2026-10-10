@@ -105,8 +105,9 @@ runtime locale switching. StudyWorker now constructs/uses/destroys the reader
 and tab sessions on one engine thread, serializing copied requests and results
 through futures. Native hosts share one worker per process. Initialization/job
 errors propagate without stopping the queue; shutdown drains accepted work.
-The C ABI and macOS preview still call the synchronous reader/session path.
-Next is a nonblocking request bridge and async UI integration; callers must not
+The C ABI now exposes nonblocking worker requests, copied module/history
+snapshots and one-time result transfer. The macOS preview still uses the
+synchronous reader/session path. Next is async UI integration; callers must not
 wait on worker futures or join its shutdown on a UI thread. Cancellation and
 interruption of an active SWORD operation remain separate work.
 

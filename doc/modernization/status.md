@@ -254,14 +254,39 @@ FIFO visits/Back/history, tab isolation, copied input/results, failed operations
 closed tabs, chapter/options/link/selector results, initialization failures and
 queued work surviving worker destruction.
 
-The macOS preview is not connected to this worker yet. Next: additive
-nonblocking C request handles, async Swift consumption with stale-result
-protection and background shutdown; then verify a responsive reading window.
+The macOS preview is not connected to this worker yet. Nonblocking C request handles are implemented in the following slice; next is
+async Swift consumption with stale-result protection and background shutdown,
+then verification of a responsive reading window.
 No cancellation/interruption of an active SWORD call is provided by this first
 worker API. Native hosts must share one worker per process; unrelated SWORD
 instances, global locale switching and legacy global calls cannot run alongside
 it concurrently. Do not wait on futures or destroy a worker on the UI thread.
 The legacy rendering/history path and synchronous C API remain available.
+
+## Nonblocking C worker bridge: local validation, UI integration pending
+
+Implemented 2026-10-10: opaque worker/request handles for discovery, tab
+lifetime, visits, navigation, history, chapters, reference choices and links.
+Opening a worker starts engine initialization on its thread; failures appear
+in requests. `xc_request_poll` never waits and caches the terminal status.
+Result handles transfer once to the caller, retaining their existing ownership
+contracts. Modules and history are copied snapshots. Observer allocation occurs
+before accepting potentially mutating work. Releasing an observer does not cancel
+its queued operation. Closing a worker drains/joins and must run off the UI thread.
+
+Local macOS CTest **6/6** and address/undefined-behavior sanitizer CTest **5/5**
+passed. ThreadSanitizer passed async/worker plus required fixture tests (**3/3**).
+The worker and C bridge also passed C++17 warnings-as-errors syntax checks.
+Tests exercise all operation families, FIFO history, input ownership, cached
+errors/status, wrong-type and repeated takes, dropped observation, closed tabs,
+initialization failure and requests/transferred results surviving worker close.
+C-header compilation checks the additive declarations and symbols. External
+SWORD remains uninstrumented; unrelated engine/global concurrency is unproven.
+
+The macOS preview still uses the synchronous adapter. Next is async Swift
+consumption, serialized window actions, stale-result guards, background
+shutdown and responsive GUI verification. Active-call cancellation, search
+progress and comprehensive startup/shutdown acceptance remain pending.
 
 ## Verified implementation, pending acceptance
 
