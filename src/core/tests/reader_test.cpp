@@ -12,9 +12,62 @@
 #include <iostream>
 #include <stdexcept>
 #include <cstring>
+#include <memory>
 extern "C" int c_header_test(void);
 void check(bool condition, const char *message) {
   if (!condition) throw std::runtime_error(message);
+}
+void check_navigation(sword::SWModule &module, const char *reference) {
+  const std::string before = module.getKeyText();
+  const bool skip = module.isSkipConsecutiveLinks();
+  const auto *before_key = module.getKey();
+  const auto choices = xiphos::core::reference_choices(module, reference);
+  check(before_key == module.getKey() && before == module.getKeyText() && skip == module.isSkipConsecutiveLinks(), "selector probe preserves module state");
+  auto make_key = [&]() {
+    std::unique_ptr<sword::SWKey> owned(module.createKey());
+    auto *key = dynamic_cast<sword::VerseKey *>(owned.get());
+    check(key != nullptr, "legacy selector key");
+    key->setAutoNormalize(true); key->setText(reference);
+    return owned;
+  };
+  auto current_owner = make_key();
+  auto &current = *static_cast<sword::VerseKey *>(current_owner.get());
+  check(choices.book_label == current.getBookName(), "selector current book label");
+  check(choices.chapters.size() == static_cast<size_t>(current.getChapterMax()) &&
+        choices.verses.size() == static_cast<size_t>(current.getVerseMax()), "selector engine counts");
+  for (size_t i = 0; i < choices.chapters.size(); ++i) {
+    auto owner = make_key(); auto &key = *static_cast<sword::VerseKey *>(owner.get());
+    key.setChapter(static_cast<int>(i + 1));
+    check(choices.chapters[i].reference == key.getText(), "legacy chapter selection target");
+  }
+  for (size_t i = 0; i < choices.verses.size(); ++i) {
+    auto owner = make_key(); auto &key = *static_cast<sword::VerseKey *>(owner.get());
+    key.setVerse(static_cast<int>(i + 1));
+    check(choices.verses[i].reference == key.getText(), "legacy verse selection target");
+  }
+  // The legacy book menu includes only first/last-entry testaments.
+  module.setSkipConsecutiveLinks(true); module = sword::TOP;
+  sword::VerseKey edge(current); edge.setText(module.getKeyText());
+  const bool ot = edge.getTestament() == 1;
+  module = sword::BOTTOM; edge.setText(module.getKeyText());
+  const bool nt = edge.getTestament() == 2;
+  size_t index = 0;
+  for (int testament = 1; testament <= current.getTestamentMax(); ++testament) {
+    if ((testament == 1 && !ot) || (testament == 2 && !nt)) continue;
+    auto names_owner = make_key(); auto &names = *static_cast<sword::VerseKey *>(names_owner.get());
+    names.setChapter(1); names.setVerse(1); names.setTestament(testament); names.setBook(1);
+    const auto count = names.getBookMax();
+    for (int book = 1; book <= count; ++book) {
+      names.setBook(book);
+      auto owner = make_key(); auto &key = *static_cast<sword::VerseKey *>(owner.get());
+      key.setTestament(testament); key.setBook(book);
+      check(index < choices.books.size() && choices.books[index].label == names.getBookName() &&
+            choices.books[index].reference == key.getText(), "legacy book label and target");
+      ++index;
+    }
+  }
+  check(index == choices.books.size(), "selector testament filtering");
+  module.setSkipConsecutiveLinks(skip); module.getKey()->setText(before.c_str());
 }
 int main(int argc, char **argv) {
   try {
@@ -58,9 +111,35 @@ int main(int argc, char **argv) {
       auto *key = dynamic_cast<sword::VerseKey *>(alt_module->getKey());
       check(key && std::string(key->getVersificationSystem()) == "Vulg", "alternate versification loaded");
       check(snapshot.verses.size() == static_cast<size_t>(key->getVerseMax()), "alternate chapter length");
+      check_navigation(*alt_module, "Psalms 9:17");
       sword::VerseKey kjv;
       kjv.setText("Psalms 9:1");
       check(key->getVerseMax() != kjv.getVerseMax(), "fixture exercises different verse counts");
+    }
+    // Additional original-prose corpora exercise OT-only and mixed testament
+    // book menus, independently of the two-verse NT GUI fixture.
+    const auto menuroot = root / "selector-corpus";
+    std::filesystem::create_directories(menuroot / "mods.d");
+    const auto menudata = (menuroot / "data").string();
+    std::filesystem::create_directories(menudata);
+    check(sword::RawText::createModule(menudata.c_str()) == 0, "create selector corpus");
+    {
+      std::ofstream config(menuroot / "mods.d/corpus.conf");
+      config << "[SelectorCorpus]\nDataPath=./data/\nModDrv=RawText\nEncoding=UTF-8\nVersification=KJV\n";
+      sword::RawText writer(menudata.c_str());
+      writer.setKey("Genesis 1:1"); writer.setEntry("Original OT selector fixture.");
+    }
+    {
+      xiphos::core::Reader corpus(menuroot.string());
+      check(corpus.reference_choices("SelectorCorpus", "Genesis 1:1").books.size() == 39, "OT-only hides NT books");
+    }
+    {
+      sword::RawText writer(menudata.c_str());
+      writer.setKey("John 3:16"); writer.setEntry("Original NT selector fixture.");
+    }
+    {
+      xiphos::core::Reader corpus(menuroot.string());
+      check(corpus.reference_choices("SelectorCorpus", "John 3:16").books.size() == 66, "mixed corpus includes both testaments");
     }
     check(c_header_test(), "C header and symbols");
     xc_reader *r = nullptr;
@@ -94,6 +173,26 @@ int main(int argc, char **argv) {
     check(actual == module->renderText().c_str(), "legacy rendering equivalence");
     check(xiphos::core::render_entry(*module, "John 3:17").find("Second fixture") != std::string::npos, "shared legacy seam");
     check(std::string(module->getKeyText()).find("3:17") != std::string::npos, "legacy key mutation preserved");
+    module->setSkipConsecutiveLinks(true);
+    check_navigation(*module, "John 3:16");
+    module->setSkipConsecutiveLinks(false);
+    check_navigation(*module, "John 3:16");
+    xc_choices *choices = nullptr;
+    check(xc_reference_choices(r, "ParityTest", "John 3:16", &choices) == XC_OK, "selector snapshot");
+    check(xc_choices_count(choices, XC_BOOK) == 27, "NT-only fixture hides OT books");
+    check(xc_choices_count(choices, XC_CHAPTER) == 21 && xc_choices_count(choices, XC_VERSE) == 36, "selector C counts");
+    check(std::string(xc_choices_current_label(choices, XC_BOOK)) == "John" &&
+          std::string(xc_choices_current_label(choices, XC_CHAPTER)) == "3" &&
+          std::string(xc_choices_current_label(choices, XC_VERSE)) == "16", "current selector labels");
+    check(std::string(xc_choices_reference(choices, XC_CHAPTER, 0)) == "John 1:1", "chapter selection follows engine reset");
+    check(std::string(xc_choices_reference(choices, XC_VERSE, 16)) == "John 3:17", "verse choice target");
+    check(xc_choices_reference(choices, XC_VERSE, 1000) == nullptr &&
+          xc_choices_count(choices, static_cast<xc_choice_kind>(99)) == 0, "selector bounds");
+    xc_choices *badchoices = nullptr;
+    check(xc_reference_choices(r, "Missing", "John 3:16", &badchoices) == XC_MODULE_NOT_FOUND && !badchoices, "missing selector module");
+    check(xc_reference_choices(r, "ParityTest", "", &badchoices) == XC_INVALID_ARGUMENT && !badchoices, "empty selector context");
+    check(xc_reference_choices(nullptr, "ParityTest", "John 3:16", &badchoices) == XC_INVALID_ARGUMENT, "null selector reader");
+    check(xc_reference_choices(r, "ParityTest", "John 3:16", nullptr) == XC_INVALID_ARGUMENT, "null selector output");
     xc_entry *second = nullptr;
     check(xc_read(r, "ParityTest", "John 3:17", &second) == XC_OK, "second read");
     check(std::string(xc_entry_html(entry)) == actual, "result survives later read");
@@ -169,6 +268,9 @@ int main(int argc, char **argv) {
     xc_entry_release(second);
     check(xc_session_history_count(tab) == 2 && xc_session_can_forward(tab), "duplicate keeps forward");
     xc_close(r);
+    check(std::string(xc_choices_reference(choices, XC_VERSE, 16)) == "John 3:17", "choices survive reader close");
+    xc_choices_release(choices); xc_choices_release(nullptr);
+    check(xc_choices_label(nullptr, XC_BOOK, 0) == nullptr, "null choices accessor");
     check(std::string(xc_link_reference(link)) == "John 3:17", "link survives reader close");
     xc_link_release(link);
     xc_link_release(nullptr);
@@ -201,6 +303,7 @@ int main(int argc, char **argv) {
     check(xc_read(r, "DictionaryTest", "peace", &second) == XC_INVALID_ARGUMENT && !second,
           "unsupported key type returns error");
     check(xc_read_chapter(r, "DictionaryTest", "peace", &failed) == XC_INVALID_ARGUMENT && !failed, "dictionary chapter rejected");
+    check(xc_reference_choices(r, "DictionaryTest", "peace", &badchoices) == XC_INVALID_ARGUMENT && !badchoices, "dictionary selectors rejected");
     xc_close(r);
     check(std::string(xc_entry_html(entry)) == actual, "result survives reader close");
     xc_entry_release(entry);

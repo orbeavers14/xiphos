@@ -20,6 +20,11 @@ struct RenderedChapter {
     let selectedAnchor: String
     let html: String
 }
+struct ReferenceChoice { let label: String; let reference: String }
+struct ReferenceChoices {
+    let books: [ReferenceChoice]; let chapters: [ReferenceChoice]; let verses: [ReferenceChoice]
+    let bookLabel: String; let chapterLabel: String; let verseLabel: String
+}
 struct PassageTarget { let module: String; let reference: String }
 struct CoreError: LocalizedError {
     let status: xc_status
@@ -51,6 +56,24 @@ final class CoreReader {
         }
     }
     deinit { xc_close(handle) }
+    func referenceChoices(module: String, reference: String) throws -> ReferenceChoices {
+        var result: OpaquePointer?
+        let status = module.withCString { id in
+            reference.withCString { xc_reference_choices(handle, id, $0, &result) }
+        }
+        guard status == XC_OK, let result else { throw CoreError(status: status) }
+        defer { xc_choices_release(result) }
+        func choices(_ kind: xc_choice_kind) -> [ReferenceChoice] {
+            (0..<xc_choices_count(result, kind)).map { index in
+                ReferenceChoice(label: String(cString: xc_choices_label(result, kind, index)!),
+                                reference: String(cString: xc_choices_reference(result, kind, index)!))
+            }
+        }
+        return ReferenceChoices(books: choices(XC_BOOK), chapters: choices(XC_CHAPTER), verses: choices(XC_VERSE),
+            bookLabel: String(cString: xc_choices_current_label(result, XC_BOOK)!),
+            chapterLabel: String(cString: xc_choices_current_label(result, XC_CHAPTER)!),
+            verseLabel: String(cString: xc_choices_current_label(result, XC_VERSE)!))
+    }
     func resolveLink(_ uri: String, currentModule: String) throws -> PassageTarget {
         var result: OpaquePointer?
         let status = currentModule.withCString { module in

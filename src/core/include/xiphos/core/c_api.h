@@ -10,6 +10,7 @@ typedef struct xc_entry xc_entry;
 typedef struct xc_session xc_session;
 typedef struct xc_chapter xc_chapter;
 typedef struct xc_link xc_link;
+typedef struct xc_choices xc_choices;
 typedef enum xc_status { XC_OK = 0, XC_INVALID_ARGUMENT = 1,
   XC_MODULE_NOT_FOUND = 2, XC_ENGINE_ERROR = 3 } xc_status;
 /* Version of this experimental ABI, not a parity or stability guarantee. */
@@ -50,6 +51,17 @@ size_t xc_session_history_count(const xc_session *session);
  * visit's module, matching legacy retention of the first visit's metadata. */
 const char *xc_session_module(const xc_session *session);
 void xc_session_clear_history(xc_session *session);
+/* Owned navigation snapshot. Book choices honor legacy first/last-testament
+ * discovery; labels/reference targets use the module's SWORD key. No history
+ * changes. Invalid kind/index returns 0/NULL. Strings survive reader close. */
+typedef enum xc_choice_kind { XC_BOOK = 0, XC_CHAPTER = 1, XC_VERSE = 2 } xc_choice_kind;
+xc_status xc_reference_choices(xc_reader *reader, const char *module,
+                               const char *reference, xc_choices **out);
+size_t xc_choices_count(const xc_choices *choices, xc_choice_kind kind);
+const char *xc_choices_label(const xc_choices *choices, xc_choice_kind kind, size_t index);
+const char *xc_choices_reference(const xc_choices *choices, xc_choice_kind kind, size_t index);
+const char *xc_choices_current_label(const xc_choices *choices, xc_choice_kind kind);
+void xc_choices_release(xc_choices *choices);
 /* Resolve single-reference sword:// or bible:// links. Empty URI module uses
  * current_module. Exact installed IDs only; no abbreviations/fallback, ranges,
  * fragments or passagestudy actions yet. No history/key mutation or I/O dispatch.

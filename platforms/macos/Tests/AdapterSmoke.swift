@@ -23,6 +23,10 @@ struct AdapterSmoke {
         guard back.html.contains("café"), session.canForward, session.historyModule == "ParityTest" else { fatalError("back") }
         let forward = try session.navigate(1)
         guard forward.html.contains("Second fixture") else { fatalError("forward") }
+        let choices = try reader.referenceChoices(module: "ParityTest", reference: "John 3:16")
+        guard choices.bookLabel == "John", choices.chapterLabel == "3", choices.verseLabel == "16",
+              choices.chapters.count == 21, choices.verses.count == 36,
+              choices.chapters[0].reference == "John 1:1", choices.verses[16].reference == "John 3:17" else { fatalError("selector snapshot") }
         let target = try reader.resolveLink("sword:///John+3%3A17", currentModule: "ParityTest")
         precondition(target.module == "ParityTest" && target.reference == "John 3:17")
         let chapter = try reader.readChapter(module: "ParityTest", reference: "John 3:16")

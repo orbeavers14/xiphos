@@ -83,8 +83,10 @@ native integration. Introduce these services incrementally with legacy tests.
   Shared reference lookup/history and native session navigation are implemented.
   GTK keeps its existing callbacks/storage, calling the shared lookup rule.
   Chapter snapshots and adjacent-chapter navigation use cloned module VerseKeys.
-  Full chapter decorations/options, broader reference controls and persistence
-  remain pending. See status for characterized rules and validation limits.
+  Owned book/chapter/verse choices now reproduce the legacy selector targets
+  and testament filtering. The core preserves module position during discovery;
+  native menus consume copied labels/targets. Full chapter decorations/options,
+  number localization, selector composition and persistence remain pending. See status for characterized rules and validation limits.
 * Search seam: backend search plus main/search_* becomes an asynchronous
   service with cancellation/progress/result sets; GUI callbacks become events.
 * Storage seam: settings.c/configs.cc/xml.c and bookmark GTK data structures

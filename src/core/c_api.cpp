@@ -10,6 +10,7 @@ struct xc_session {
   explicit xc_session(xc_reader &r) : owner(r.value), value(*owner) {}
 };
 struct xc_chapter { xiphos::core::Chapter value; };
+struct xc_choices { xiphos::core::ReferenceChoices value; };
 struct xc_link { xiphos::core::PassageLink value; };
 struct xc_entry { xiphos::core::Entry value; };
 namespace {
@@ -18,6 +19,15 @@ xc_status failure() noexcept {
   catch (const std::out_of_range &) { return XC_MODULE_NOT_FOUND; }
   catch (const std::invalid_argument &) { return XC_INVALID_ARGUMENT; }
   catch (...) { return XC_ENGINE_ERROR; }
+}
+const std::vector<xiphos::core::ReferenceChoice> *choices_at(const xc_choices *c, xc_choice_kind kind) {
+  if (!c) return nullptr;
+  switch (kind) {
+  case XC_BOOK: return &c->value.books;
+  case XC_CHAPTER: return &c->value.chapters;
+  case XC_VERSE: return &c->value.verses;
+  default: return nullptr;
+  }
 }
 const xiphos::core::Module *module_at(const xc_reader *r, size_t i) {
   return r && i < r->value->modules().size() ? &r->value->modules()[i] : nullptr;
@@ -78,6 +88,30 @@ const char *xc_session_module(const xc_session *s) {
   const auto &h = s->value.history(); return h.entries()[h.cursor()].module.c_str();
 }
 void xc_session_clear_history(xc_session *s) { if (s) s->value.clear_history(); }
+xc_status xc_reference_choices(xc_reader *r, const char *id, const char *ref, xc_choices **out) {
+  if (!out) return XC_INVALID_ARGUMENT;
+  *out = nullptr;
+  if (!r || !id || !*id || !ref || !*ref) return XC_INVALID_ARGUMENT;
+  try { *out = new xc_choices{r->value->reference_choices(id, ref)}; return XC_OK; }
+  catch (...) { return failure(); }
+}
+size_t xc_choices_count(const xc_choices *c, xc_choice_kind kind) { auto v = choices_at(c, kind); return v ? v->size() : 0; }
+const char *xc_choices_label(const xc_choices *c, xc_choice_kind kind, size_t i) {
+  auto v = choices_at(c, kind); return v && i < v->size() ? (*v)[i].label.c_str() : nullptr;
+}
+const char *xc_choices_reference(const xc_choices *c, xc_choice_kind kind, size_t i) {
+  auto v = choices_at(c, kind); return v && i < v->size() ? (*v)[i].reference.c_str() : nullptr;
+}
+const char *xc_choices_current_label(const xc_choices *c, xc_choice_kind kind) {
+  if (!c) return nullptr;
+  switch (kind) {
+  case XC_BOOK: return c->value.book_label.c_str();
+  case XC_CHAPTER: return c->value.chapter_label.c_str();
+  case XC_VERSE: return c->value.verse_label.c_str();
+  default: return nullptr;
+  }
+}
+void xc_choices_release(xc_choices *c) { delete c; }
 xc_status xc_resolve_link(xc_reader *r, const char *current, const char *uri, xc_link **out) {
   if (!out) return XC_INVALID_ARGUMENT;
   *out = nullptr;

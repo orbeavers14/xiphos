@@ -63,6 +63,12 @@ No modules is a supported startup state. A nonexistent explicit root reports
 an error. A non-verse-key module reports that this slice does not support it.
 SWORD normalizes references; this is not strict input validation.
 
+Book/Chapter/Verse menus use shared-core choices for the committed passage.
+The module supplies its canon, labels and normalized targets. Successful choices
+participate in history; the book menu hides absent testaments using legacy
+first/last-entry detection. Numeric localization and legacy menu composition
+are still pending.
+
 Select Whole chapter to display all verse positions in the module's chapter.
 Previous/Next chapter use shared C++ navigation and participate in history.
 Clicking a verse number visits it through the shared session. Exact-ID single

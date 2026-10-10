@@ -205,6 +205,36 @@ external-link policy remain pending. Unsupported commands preserve the pane;
 no legacy URL handler is removed or changed. This implements only a portion
 of the link workflow and does not accept its parity row.
 
+## Reference-selector slice: local validation, pending acceptance
+
+Implemented 2026-10-10: the shared navigation service supplies owned book,
+chapter and verse choices plus current labels through the C ABI. It clones the
+module's VerseKey and follows the existing book/chapter/verse menu selection
+sequence in `src/main/navbar_versekey.cc`. SWORD supplies book names, counts,
+normalization and targets; the Swift UI has no canon tables or reference parser.
+Book choices honor the legacy first/last-entry testament probe. The probe restores
+the original module-key object/position and consecutive-link flag. Menu choices
+use the committed passage, and successful selections participate in history.
+
+Local macOS CTest **4/4** and sanitizer CTest **3/3** passed. Generated OT-only,
+NT-only and mixed fixtures verify 39, 27 and 66 book choices; alternate Vulg
+context and KJV checks compare every available menu label/target with the legacy
+createKey/setTestament/setBook/setChapter/setVerse sequence. Additional checks
+cover module-state preservation, bounds, unsupported dictionaries, errors,
+owned snapshot lifetime and Swift copied values. Chapter selection resets to
+verse 1 according to SWORD behavior; it is not independently reset in Swift.
+
+Temporary-copy GUI check: verse 17 showed the second fixture text; chapter 4
+selected John 4:1; the book menu contained only NT books for the NT fixture;
+Luke selected Luke 1:1, and Back restored John 4:1. No repeated Documents access
+was needed by this isolated fixture launch.
+
+Legacy GTK selectors remain intact. Localized number formatting, GTK's numeric
+menu grid/OT-NT column composition, keyboard comparisons, editor/parallel/dialog
+selectors, synchronized commentary and platform-wide visual parity remain
+pending. The new menus are native preview controls, not accepted design parity.
+Overall planning estimate remains approximately **5% (3–7%)**.
+
 ## Verified implementation, pending acceptance
 
 Evidence below applies to implementation commit

@@ -15,6 +15,7 @@ final class ReaderModel: ObservableObject {
     @Published var verseNumbers = true
     @Published var highlightSelected = true
     @Published var renderedAnchor: String?
+    @Published var choices: ReferenceChoices?
     @Published var canBack = false
     @Published var canForward = false
     private var reader: CoreReader?
@@ -42,6 +43,7 @@ final class ReaderModel: ObservableObject {
             html = ""
             renderedReference = ""
             renderedAnchor = nil
+            choices = nil
             displayedEntry = nil
             displayedModule = nil
             message = error.localizedDescription
@@ -75,6 +77,7 @@ final class ReaderModel: ObservableObject {
             renderedReference = entry.reference
             message = entry.html.isEmpty ? "This module has no text at this reference." : ""
         }
+        if let reader { choices = try reader.referenceChoices(module: module, reference: entry.reference) }
         displayedEntry = entry
         displayedModule = module
     }
@@ -91,6 +94,15 @@ final class ReaderModel: ObservableObject {
             try display(entry, module: selection)
             updateHistoryButtons()
         } catch { message = "The adjacent chapter is unavailable. Check the reference and module." }
+    }
+    func chooseReference(_ target: String) {
+        guard let session, let module = displayedModule else { return }
+        do {
+            let entry = try session.visit(module: module, reference: target)
+            reference = entry.reference
+            try display(entry, module: module)
+            updateHistoryButtons()
+        } catch { message = error.localizedDescription }
     }
     func followLink(_ uri: String) {
         guard let reader, let session, let current = displayedModule else { return }
@@ -176,6 +188,20 @@ struct PassageView: NSViewRepresentable {
     }
 }
 
+struct ReferenceMenu: View {
+    let title: String
+    let label: String
+    let choices: [ReferenceChoice]
+    let select: (String) -> Void
+    var body: some View {
+        Menu("\(title): \(label)") {
+            ForEach(Array(choices.enumerated()), id: \.offset) { _, choice in
+                Button(choice.label) { select(choice.reference) }
+            }
+        }.accessibilityLabel("\(title) selector")
+    }
+}
+
 struct ReaderWindow: View {
     @StateObject private var model = ReaderModel()
     var body: some View {
@@ -204,6 +230,13 @@ struct ReaderWindow: View {
                         .accessibilityLabel("Passage reference")
                     Button("Read") { model.read() }.disabled(model.selection == nil)
                 }.padding(12)
+                if let choices = model.choices {
+                    HStack {
+                        ReferenceMenu(title: "Book", label: choices.bookLabel, choices: choices.books, select: model.chooseReference)
+                        ReferenceMenu(title: "Chapter", label: choices.chapterLabel, choices: choices.chapters, select: model.chooseReference)
+                        ReferenceMenu(title: "Verse", label: choices.verseLabel, choices: choices.verses, select: model.chooseReference)
+                    }.padding(.horizontal, 12).padding(.bottom, 8)
+                }
                 HStack {
                     Toggle("Whole chapter", isOn: $model.showChapter)
                         .onChange(of: model.showChapter) { _ in model.refreshDisplay() }
