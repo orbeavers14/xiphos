@@ -26,12 +26,20 @@ cmake -S platforms/macos -B build/macos \
 ```
 
 The app uses standard SWORD module discovery. For an isolated preview with the
-test module, run the executable directly after tests (environment inherited):
+test module, launch a fresh app instance through macOS Launch Services after tests:
 
 ```sh
-XIPHOS_MODULE_ROOT="$PWD/build/macos/core/fixture" \
-  build/macos/XiphosNativePreview.app/Contents/MacOS/XiphosNativePreview
+/usr/bin/open -n --env "XIPHOS_MODULE_ROOT=$PWD/build/macos/core/fixture" \
+  build/macos/XiphosNativePreview.app
 ```
+
+Run GUI launches from a normal user Terminal or Finder. In a restricted agent
+command environment, request an approved launch outside that environment.
+A sandboxed direct executable launch can abort during AppKit's
+`_RegisterApplication` before the reader starts; this signature alone does not
+identify an engine defect. Do not change system security settings to work
+around it. `open` returning success is not a GUI smoke test: verify the window
+and rendered content. Core/adapter tests remain separate from GUI checks.
 
 Select `ParityTest`, enter `John 3:16`, then `John 3:17`: the displayed original
 fixture text should change. No test text comes from a copyrighted Bible.

@@ -154,6 +154,28 @@ GTK3/WebKitGTK are absent locally, so the legacy desktop app has not been
 launched on this Mac. Full native workflows, MSVC/WinUI builds, older macOS
 runtime compatibility, storage and distribution packaging remain unvalidated.
 
+## macOS startup report follow-up
+
+On 2026-10-10, a supplied preview crash report showed SIGABRT in HIServices
+`_RegisterApplication` during `NSApplication`/SwiftUI startup. There were no
+reader/core frames on the faulting stack. The report's binary UUID matched the
+locally tested preview. The stack alone does not establish the exact cause.
+
+Relaunched the unchanged binary through `/usr/bin/open -n --env` using the
+original generated fixture, with an approved launch outside the restricted
+command environment. Confirmed the fresh process remained running, closed the
+older test instance, and inspected the fresh window: John 3:16 displayed
+“Original fixture: café & peace.” and changing to John 3:17 displayed
+“Second fixture verse.” This supports a launch-environment explanation for
+this report; it does not prove all startup environments are compatible.
+
+Updated the [preview launch instructions](../../platforms/macos/README.md) to
+use Launch Services and document restricted-launch diagnostics. No engine or
+application behavior change was needed. If a normal Finder/Terminal launch
+also aborts, collect its new stack and launch diagnostics before assigning the
+failure to this same cause. A successful build or `open` exit code is not
+runtime validation.
+
 ## Official sign-off and file retirement
 
 A scoped milestone is accepted when its specified implementation, regression
