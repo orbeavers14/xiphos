@@ -156,3 +156,15 @@ success alone never establishes functional, visual or workflow parity.
 The [status page](status.md) records evidence, acceptance and remaining work.
 Follow its file-retirement gates after each accepted milestone. Generated
 inventories belong under ignored `build/modernization/`; retain their generator.
+
+## Shared engine filter policy
+
+`CoreOptions` is a C++11 seam used by the existing GTK application's
+`main_set_global_options`. It owns the legacy SWORD option names, value mapping,
+ordering, always-on engine headings and textual-variant precedence. It accepts
+copied booleans and applies them to a caller-owned SWMgr; it does not own a
+second engine, persistence, GUI controls or display heading visibility.
+The default legacy route builds this seam alongside rendering and history.
+Native use must apply settings on the shared worker before rendering, with
+explicit request/tab isolation; that integration is pending. Native frontends
+must not reproduce this policy or mutate engine filter state themselves.

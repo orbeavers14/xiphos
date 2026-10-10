@@ -288,6 +288,43 @@ consumption, serialized window actions, stale-result guards, background
 shutdown and responsive GUI verification. Active-call cancellation, search
 progress and comprehensive startup/shutdown acceptance remain pending.
 
+## Shared engine option policy: locally characterized, pending review
+
+Implemented 2026-10-10 on `modernization/shared-engine-options`, based on the
+core foundation branch for a focused review. `EngineOptions` and the C++11
+`CoreOptions` library now own the existing `main_set_global_options` filter
+policy. The legacy entry point converts its gboolean fields to core values and
+calls that shared policy. The replaced private helper was removed after its
+only caller migrated; exported textual setters, menus and preference storage
+are retained.
+
+The exact legacy order, On/Off values, Latin transliteration, unconditional
+engine headings and Primary/Secondary/All variant precedence are preserved.
+With no variant selected, the engine's existing variant value remains untouched.
+Display headings are still a separate decision; this extraction does not add
+new defaults or reinterpret stored preferences.
+
+Local macOS build and CTest **7/7 passed on this branch**. The new test compiles
+the actual legacy adapter body and compares its SWORD setter calls with a frozen
+pre-extraction baseline across **2,400 states**, including every individual
+boolean filter, mixed states, noncanonical true values, all variant combinations
+and both display-heading flags. The targeted address/undefined-behavior
+sanitizer test passed **1/1**. New policy source passed C++11 warnings-as-errors
+with external SWORD headers treated as system headers. The default legacy seam
+build passed and still does not build the experimental reader/worker.
+
+These checks prove option mapping/call equivalence, not full GTK operation or
+rendered-option parity. Full GTK/WebKit dependencies are unavailable locally;
+that build remains an integration gate. Native request-scoped rendering options,
+module capability discovery, real OSIS/ThML/GBF output comparisons and all native
+controls remain next work. No GitHub build was dispatched. Full acceptance
+remains **0/38**, release-ready platforms **0/3**, estimate approximately **5%**.
+
+The separate [draft PR #2](https://github.com/orbeavers14/xiphos/pull/2) contains
+the asynchronous macOS worker integration, with its own **8/8** local checks and
+fixture GUI evidence. The 7/7 count above belongs to this core-focused branch;
+it does not supersede those tests.
+
 ## Verified implementation, pending acceptance
 
 Evidence below applies to implementation commit

@@ -27,6 +27,7 @@
 #include <string.h>
 #include <swmgr.h>
 #include <swmodule.h>
+#include "xiphos/core/engine_options.hpp"
 
 #include "gui/parallel_view.h"
 #include "gui/utilities.h"
@@ -41,16 +42,6 @@
 #include "backend/sword_main.hh"
 
 #include "gui/debug_glib_null.h"
-
-static void _set_global_option(const char *option,
-			       gboolean choice)
-{
-	SWMgr *mgr = backend->get_mgr();
-	char *on_off;
-
-	on_off = gui_tf2of(choice);
-	mgr->setGlobalOption(option, on_off);
-}
 
 void _set_global_textual(const char *option,
 			 const char *choice)
@@ -138,36 +129,26 @@ main_get_one_option(const char *mod_name, const char *op)
 
 void main_set_global_options(GLOBAL_OPS *ops)
 {
-	_set_global_option("Strong's Numbers", ops->strongs);
-	_set_global_option("Morphological Tags", ops->morphs);
-	_set_global_option("Footnotes", ops->footnotes);
-	_set_global_option("Greek Accents", ops->greekaccents);
-	_set_global_option("Lemmas", ops->lemmas);
-	_set_global_option("Cross-references", ops->scripturerefs);
-	_set_global_option("Hebrew Vowel Points", ops->hebrewpoints);
-	_set_global_option("Hebrew Cantillation", ops->hebrewcant);
-
-	// always turn on headings in the engine (and later cache them).
-	// whether we display them or not is another matter (display.cc).
-	_set_global_option("Headings", 1);
-	_set_global_option("Italic Headings", ops->italic_headings);
-
-	_set_global_option("Words of Christ in Red", ops->words_in_red);
-	_set_global_option("Transliterated Forms", ops->xlit);
-	_set_global_option("Enumerations", ops->enumerated);
-	_set_global_option("Glosses", ops->glosses);
-	_set_global_option("Morpheme Segmentation", ops->morphseg);
-
-	_set_global_textual("Transliteration", (ops->transliteration
-						    ? "Latin"
-						    : "Off"));
-
-	if (ops->variants_primary)
-		_set_global_textual("Textual Variants", "Primary Reading");
-	else if (ops->variants_secondary)
-		_set_global_textual("Textual Variants", "Secondary Reading");
-	else if (ops->variants_all)
-		_set_global_textual("Textual Variants", "All Readings");
+	xiphos::core::EngineOptions values;
+	values.strongs = ops->strongs != 0;
+	values.morphs = ops->morphs != 0;
+	values.footnotes = ops->footnotes != 0;
+	values.greekaccents = ops->greekaccents != 0;
+	values.lemmas = ops->lemmas != 0;
+	values.scripturerefs = ops->scripturerefs != 0;
+	values.hebrewpoints = ops->hebrewpoints != 0;
+	values.hebrewcant = ops->hebrewcant != 0;
+	values.italic_headings = ops->italic_headings != 0;
+	values.words_in_red = ops->words_in_red != 0;
+	values.xlit = ops->xlit != 0;
+	values.enumerated = ops->enumerated != 0;
+	values.glosses = ops->glosses != 0;
+	values.morphseg = ops->morphseg != 0;
+	values.transliteration = ops->transliteration != 0;
+	values.variants_primary = ops->variants_primary != 0;
+	values.variants_secondary = ops->variants_secondary != 0;
+	values.variants_all = ops->variants_all != 0;
+	xiphos::core::apply_engine_options(*backend->get_mgr(), values);
 }
 
 /******************************************************************************
