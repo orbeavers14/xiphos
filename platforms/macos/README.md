@@ -40,6 +40,10 @@ A sandboxed direct executable launch can abort during AppKit's
 identify an engine defect. Do not change system security settings to work
 around it. `open` returning success is not a GUI smoke test: verify the window
 and rendered content. Core/adapter tests remain separate from GUI checks.
+If a Documents-hosted preview blocks while opening module configuration files,
+copy the generated app and fixture to an isolated temporary directory and set
+XIPHOS_MODULE_ROOT to that fixture copy for the GUI check. This avoided observed
+startup blocking without changing system permissions; its cause is unconfirmed.
 
 Select `ParityTest`, enter `John 3:16`, then `John 3:17`: the displayed original
 fixture text should change. Back should restore John 3:16, Forward John 3:17,
@@ -50,6 +54,9 @@ SWORD normalizes references; this is not strict input validation.
 
 Select Whole chapter to display all verse positions in the module's chapter.
 Previous/Next chapter use shared C++ navigation and participate in history.
+Clicking a verse number visits it through the shared session. Exact-ID single
+reference sword/bible links are supported; ranges, notes and other actions are
+pending and leave the pane unchanged.
 The shared core supplies chapter fragments, selected-verse anchors and optional
 verse numbers/highlights. Display controls refresh the committed passage; the
 native web view scrolls to the selected verse with module scripts disabled.

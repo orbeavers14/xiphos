@@ -74,7 +74,10 @@ native integration. Introduce these services incrementally with legacy tests.
   The shared content service now produces chapter fragments with verse anchors,
   optional numbers/highlights and escaped reference labels. Hosts supply theme
   CSS and scrolling. Full legacy decorations, annotation coloring, semantic link
-  dispatch and preview behavior remain pending.
+  dispatch and preview behavior remain pending. Single-reference sword/bible
+  URI decoding now lives in a core link service; the preview routes clicks to
+  the shared session and never loads the target URI in its web view. Legacy
+  URL parsing and GTK dispatch remain intact until broader characterization.
 * Navigation seam: navbar_versekey/navbar_book/tab_history becomes a per-tab
   study session; no frontend-maintained Bible canon or history algorithms.
   Shared reference lookup/history and native session navigation are implemented.

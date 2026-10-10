@@ -38,6 +38,12 @@ Reader::Reader(const std::string &root) : impl_(std::make_unique<Impl>()) {
 }
 Reader::~Reader() = default;
 const std::vector<Module> &Reader::modules() const { return impl_->modules; }
+PassageLink Reader::resolve_link(const std::string &current_module, const std::string &url) {
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto target = passage_link(url, current_module);
+  impl_->verse_module(target.module, target.reference);
+  return target;
+}
 Entry Reader::read(const std::string &id, const std::string &reference) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto *module = &impl_->verse_module(id, reference);

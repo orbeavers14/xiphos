@@ -23,6 +23,8 @@ struct AdapterSmoke {
         guard back.html.contains("café"), session.canForward, session.historyModule == "ParityTest" else { fatalError("back") }
         let forward = try session.navigate(1)
         guard forward.html.contains("Second fixture") else { fatalError("forward") }
+        let target = try reader.resolveLink("sword:///John+3%3A17", currentModule: "ParityTest")
+        precondition(target.module == "ParityTest" && target.reference == "John 3:17")
         let chapter = try reader.readChapter(module: "ParityTest", reference: "John 3:16")
         guard chapter.title == "John 3", chapter.verses.count == 36,
               chapter.verses[15].html.contains("café"), chapter.verses[16].html.contains("Second fixture"),

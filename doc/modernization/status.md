@@ -175,6 +175,36 @@ comparison against legacy remain pending. These scoped checks do not accept F03
 or justify retiring legacy display files. Overall estimate remains approximately
 **5% (3–7%)** pending broader platform and workflow validation.
 
+## Passage-link slice: local validation, pending acceptance
+
+Implemented 2026-10-10: shared parsing/encoding of single-reference `sword://`
+and `bible://` commands. This scoped subset follows `main/url.cc`'s percent and
+plus decoding and current-module default. Exact installed verse-key module IDs
+are checked in C++; SWORD resolves the reference on a subsequent session visit.
+The owned C ABI target survives reader close. Core-generated verse numbers are
+links; macOS cancels web navigation and sends the URI through the core resolver
+and shared history session. External links are not opened by this preview.
+
+Local macOS CTest **4/4** and sanitizer CTest **3/3** passed. Checks include
+explicit/default modules, Unicode round trips, unsupported commands/ranges,
+control characters, missing modules, null inputs and result lifetime. Fresh GUI
+check: clicking verse 17 changed the reference to John 3:17 and moved the scroll
+position; Back restored John 3:16 and its earlier scroll position.
+
+GUI inspection of a Documents-hosted build again timed out. The process sample
+showed startup blocked in an engine configuration `open`, rather than an idle
+loop. Copying this build and generated fixture to temporary storage produced a
+responsive app without changing system permissions. Protected-folder access is
+a possible cause, not a confirmed diagnosis. Future GUI fixture tests should use
+an isolated temporary copy; normal user-library access/startup remains an open
+acceptance check. The earlier stale automation connection was a separate case.
+
+Abbreviation lookup, unknown-module fallback, anchors, passage lists/ranges,
+notes, Strong's/morphology actions, hover previews, synchronized panes and
+external-link policy remain pending. Unsupported commands preserve the pane;
+no legacy URL handler is removed or changed. This implements only a portion
+of the link workflow and does not accept its parity row.
+
 ## Verified implementation, pending acceptance
 
 Evidence below applies to implementation commit

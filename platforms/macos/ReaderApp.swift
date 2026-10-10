@@ -92,6 +92,18 @@ final class ReaderModel: ObservableObject {
             updateHistoryButtons()
         } catch { message = "The adjacent chapter is unavailable. Check the reference and module." }
     }
+    func followLink(_ uri: String) {
+        guard let reader, let session, let current = displayedModule else { return }
+        do {
+            let target = try reader.resolveLink(uri, currentModule: current)
+            let entry = try session.visit(module: target.module, reference: target.reference)
+            // Unsupported links/errors keep the committed passage and history.
+            reference = entry.reference
+            try display(entry, module: target.module)
+            selection = target.module
+            updateHistoryButtons()
+        } catch { message = "This link is unavailable in this preview. Passage ranges, notes and other study actions are still pending." }
+    }
     func clearHistory() { session?.clearHistory(); updateHistoryButtons() }
 }
 
@@ -99,11 +111,13 @@ struct PassageView: NSViewRepresentable {
     let html: String
     let anchor: String?
     var onScrollFailure: (String) -> Void
+    var onLink: (String) -> Void
     final class Coordinator: NSObject, WKNavigationDelegate {
         var loaded: String?
         var anchor: String?
         var navigation: WKNavigation?
         var onScrollFailure: ((String) -> Void)?
+        var onLink: ((String) -> Void)?
         func scrollToAnchor(_ webView: WKWebView) {
             guard let anchor,
                   let data = try? JSONSerialization.data(withJSONObject: anchor, options: [.fragmentsAllowed]),
@@ -121,9 +135,13 @@ struct PassageView: NSViewRepresentable {
         }
         func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
                      decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-            // Semantic link dispatch is a later parity slice. Keep this preview
-            // offline and do not accidentally navigate away from the study pane.
-            decisionHandler(action.navigationType == .other && action.request.url?.scheme == "about" ? .allow : .cancel)
+            if action.navigationType == .linkActivated, let url = action.request.url {
+                decisionHandler(.cancel)
+                // Cancel browser navigation first; only the core interprets commands.
+                onLink?(url.absoluteString)
+            } else {
+                decisionHandler(action.navigationType == .other && action.request.url?.scheme == "about" ? .allow : .cancel)
+            }
         }
     }
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -137,6 +155,7 @@ struct PassageView: NSViewRepresentable {
     }
     func updateNSView(_ view: WKWebView, context: Context) {
         context.coordinator.onScrollFailure = onScrollFailure
+        context.coordinator.onLink = onLink
         let changedAnchor = context.coordinator.anchor != anchor
         context.coordinator.anchor = anchor
         guard context.coordinator.loaded != html else {
@@ -199,7 +218,8 @@ struct ReaderWindow: View {
                 if !model.renderedReference.isEmpty {
                     Text(model.renderedReference).font(.headline).padding(12)
                 }
-                PassageView(html: model.html, anchor: model.renderedAnchor, onScrollFailure: { model.message = $0 })
+                PassageView(html: model.html, anchor: model.renderedAnchor,
+                            onScrollFailure: { model.message = $0 }, onLink: { model.followLink($0) })
                 if !model.message.isEmpty {
                     Text(model.message).foregroundStyle(.secondary).padding(12)
                         .accessibilityLabel(model.message)

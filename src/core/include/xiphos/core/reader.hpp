@@ -2,6 +2,7 @@
 #pragma once
 #include "render.hpp"
 #include "content.hpp"
+#include "link.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -18,6 +19,7 @@ public:
   Reader(const Reader &) = delete;
   Reader &operator=(const Reader &) = delete;
   const std::vector<Module> &modules() const;
+  PassageLink resolve_link(const std::string &current_module, const std::string &url);
   Entry read(const std::string &module, const std::string &reference);
   Chapter read_chapter(const std::string &module, const std::string &reference,
                        const DisplayOptions &options = {});

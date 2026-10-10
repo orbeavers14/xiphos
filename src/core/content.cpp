@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/content.hpp"
+#include "xiphos/core/link.hpp"
 namespace xiphos::core {
 namespace {
 std::string attribute(const std::string &value) {
@@ -26,7 +27,7 @@ std::string display_chapter(const Chapter &chapter, const DisplayOptions &option
     html += "\" aria-label=\"" + attribute(chapter.verses[i].reference) + "\"";
     if (selected) html += " aria-current=\"location\"";
     html += ">";
-    if (options.verse_numbers) html += "<sup>" + std::to_string(i + 1) + "</sup> ";
+    if (options.verse_numbers) html += "<sup><a href=\"" + attribute(passage_uri(chapter.verses[i].reference)) + "\">" + std::to_string(i + 1) + "</a></sup> ";
     html += chapter.verses[i].html + "</section>\n";
   }
   return html;

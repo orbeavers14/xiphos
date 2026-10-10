@@ -9,6 +9,7 @@ typedef struct xc_reader xc_reader;
 typedef struct xc_entry xc_entry;
 typedef struct xc_session xc_session;
 typedef struct xc_chapter xc_chapter;
+typedef struct xc_link xc_link;
 typedef enum xc_status { XC_OK = 0, XC_INVALID_ARGUMENT = 1,
   XC_MODULE_NOT_FOUND = 2, XC_ENGINE_ERROR = 3 } xc_status;
 /* Version of this experimental ABI, not a parity or stability guarantee. */
@@ -49,6 +50,15 @@ size_t xc_session_history_count(const xc_session *session);
  * visit's module, matching legacy retention of the first visit's metadata. */
 const char *xc_session_module(const xc_session *session);
 void xc_session_clear_history(xc_session *session);
+/* Resolve single-reference sword:// or bible:// links. Empty URI module uses
+ * current_module. Exact installed IDs only; no abbreviations/fallback, ranges,
+ * fragments or passagestudy actions yet. No history/key mutation or I/O dispatch.
+ * Output strings owned until release, including after reader close. */
+xc_status xc_resolve_link(xc_reader *reader, const char *current_module,
+                          const char *uri, xc_link **out);
+const char *xc_link_module(const xc_link *link);
+const char *xc_link_reference(const xc_link *link);
+void xc_link_release(xc_link *link);
 /* Chapter snapshots include every verse, including empty entries, using the
  * module's versification. Strings survive reader/session close until release.
  * These are raw rendered entries, not full Xiphos chapter-decoration parity. */

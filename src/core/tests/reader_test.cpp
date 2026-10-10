@@ -71,6 +71,14 @@ int main(int argc, char **argv) {
     check(std::strcmp(xc_module_type(r, 0), "Biblical Texts") == 0, "type");
     check(xc_module_description(r, 1) == nullptr, "bounds");
     check(xc_module_count(nullptr) == 0 && xc_module_id(nullptr, 0) == nullptr, "null reader");
+    xc_link *link = nullptr;
+    check(xc_resolve_link(r, "ParityTest", "sword:///John+3%3A17", &link) == XC_OK, "resolve default passage link");
+    check(std::string(xc_link_module(link)) == "ParityTest" && std::string(xc_link_reference(link)) == "John 3:17", "resolved target");
+    xc_link *badlink = nullptr;
+    check(xc_resolve_link(r, "ParityTest", "sword://Missing/John3:17", &badlink) == XC_MODULE_NOT_FOUND && !badlink, "missing link module");
+    check(xc_resolve_link(r, "ParityTest", "https://example.com", &badlink) == XC_INVALID_ARGUMENT && !badlink, "external link unsupported");
+    check(xc_resolve_link(nullptr, "ParityTest", "sword:///John3:17", &badlink) == XC_INVALID_ARGUMENT, "null link reader");
+    check(xc_resolve_link(r, "ParityTest", "sword:///John3:17", nullptr) == XC_INVALID_ARGUMENT, "null link output");
     xc_entry *entry = nullptr;
     check(xc_read(r, "ParityTest", "John 3:16", &entry) == XC_OK, "read verse");
     const std::string actual = xc_entry_html(entry);
@@ -161,6 +169,10 @@ int main(int argc, char **argv) {
     xc_entry_release(second);
     check(xc_session_history_count(tab) == 2 && xc_session_can_forward(tab), "duplicate keeps forward");
     xc_close(r);
+    check(std::string(xc_link_reference(link)) == "John 3:17", "link survives reader close");
+    xc_link_release(link);
+    xc_link_release(nullptr);
+    check(xc_link_module(nullptr) == nullptr, "null link accessor");
     check(xc_session_navigate(tab, 1, &second) == XC_OK, "session survives reader close");
     check(std::string(xc_entry_html(second)).find("Second fixture") != std::string::npos, "forward text");
     xc_session_clear_history(tab);

@@ -10,6 +10,7 @@ struct xc_session {
   explicit xc_session(xc_reader &r) : owner(r.value), value(*owner) {}
 };
 struct xc_chapter { xiphos::core::Chapter value; };
+struct xc_link { xiphos::core::PassageLink value; };
 struct xc_entry { xiphos::core::Entry value; };
 namespace {
 xc_status failure() noexcept {
@@ -77,6 +78,16 @@ const char *xc_session_module(const xc_session *s) {
   const auto &h = s->value.history(); return h.entries()[h.cursor()].module.c_str();
 }
 void xc_session_clear_history(xc_session *s) { if (s) s->value.clear_history(); }
+xc_status xc_resolve_link(xc_reader *r, const char *current, const char *uri, xc_link **out) {
+  if (!out) return XC_INVALID_ARGUMENT;
+  *out = nullptr;
+  if (!r || !uri || !*uri) return XC_INVALID_ARGUMENT;
+  try { *out = new xc_link{r->value->resolve_link(current ? current : "", uri)}; return XC_OK; }
+  catch (...) { return failure(); }
+}
+const char *xc_link_module(const xc_link *link) { return link ? link->value.module.c_str() : nullptr; }
+const char *xc_link_reference(const xc_link *link) { return link ? link->value.reference.c_str() : nullptr; }
+void xc_link_release(xc_link *link) { delete link; }
 xc_status xc_read_chapter(xc_reader *r, const char *id, const char *ref, xc_chapter **out) {
   return xc_read_chapter_with_options(r, id, ref,
           XC_CHAPTER_VERSE_NUMBERS | XC_CHAPTER_HIGHLIGHT_SELECTED, out);

@@ -20,6 +20,7 @@ struct RenderedChapter {
     let selectedAnchor: String
     let html: String
 }
+struct PassageTarget { let module: String; let reference: String }
 struct CoreError: LocalizedError {
     let status: xc_status
     var errorDescription: String? {
@@ -50,6 +51,16 @@ final class CoreReader {
         }
     }
     deinit { xc_close(handle) }
+    func resolveLink(_ uri: String, currentModule: String) throws -> PassageTarget {
+        var result: OpaquePointer?
+        let status = currentModule.withCString { module in
+            uri.withCString { xc_resolve_link(handle, module, $0, &result) }
+        }
+        guard status == XC_OK, let result else { throw CoreError(status: status) }
+        defer { xc_link_release(result) }
+        return PassageTarget(module: String(cString: xc_link_module(result)!),
+                             reference: String(cString: xc_link_reference(result)!))
+    }
     func readChapter(module: String, reference: String, verseNumbers: Bool = true, highlightSelected: Bool = true) throws -> RenderedChapter {
         var result: OpaquePointer?
         let flags = (verseNumbers ? UInt32(XC_CHAPTER_VERSE_NUMBERS) : 0) |
