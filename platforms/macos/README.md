@@ -25,12 +25,23 @@ cmake -S platforms/macos -B build/macos \
   '-DXIPHOS_SWORD_EXTRA_LIBRARIES=z;bz2;/absolute/path/to/liblzma.dylib'
 ```
 
-The app uses standard SWORD module discovery. For an isolated preview with the
-test module, launch a fresh app instance through macOS Launch Services after tests:
+The app uses standard SWORD module discovery for normal launches. For an
+isolated GUI test, use the opt-in target after configuring the macOS build:
 
 ```sh
-/usr/bin/open -n --env "XIPHOS_MODULE_ROOT=$PWD/build/macos/core/fixture" \
-  build/macos/XiphosNativePreview.app
+cmake --build build/macos --target preview_fixture
+```
+
+This builds the preview, runs the core fixture test, then copies the app and
+only the generated primary fixture into a unique `/private/tmp/xiphos-preview.*`
+directory. Launch Services starts that copy with an explicit module root and a
+fresh window. It does not request access to the Documents-hosted repository or
+change privacy settings. Temporary copies stay available for inspection; quit
+that preview before removing its printed temporary directory. This target is
+not part of default builds or CI. To launch an already-built/tested fixture:
+
+```sh
+/bin/sh platforms/macos/launch-fixture.sh build/macos
 ```
 
 Run GUI launches from a normal user Terminal or Finder. In a restricted agent
@@ -40,10 +51,10 @@ A sandboxed direct executable launch can abort during AppKit's
 identify an engine defect. Do not change system security settings to work
 around it. `open` returning success is not a GUI smoke test: verify the window
 and rendered content. Core/adapter tests remain separate from GUI checks.
-If a Documents-hosted preview blocks while opening module configuration files,
-copy the generated app and fixture to an isolated temporary directory and set
-XIPHOS_MODULE_ROOT to that fixture copy for the GUI check. This avoided observed
-startup blocking without changing system permissions; its cause is unconfirmed.
+macOS can prompt when an app reads protected Documents storage. The user
+confirmed repeated Documents permission prompts during these checks. Use the
+fixture target above for development rather than repeatedly granting access.
+Normal user-library permissions and stable app signing remain release work.
 
 Select `ParityTest`, enter `John 3:16`, then `John 3:17`: the displayed original
 fixture text should change. Back should restore John 3:16, Forward John 3:17,

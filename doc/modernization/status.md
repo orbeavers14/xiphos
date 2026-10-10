@@ -352,3 +352,19 @@ Keep regression tests after features are checked off. Keep current parity
 requirements, architecture, supported user documentation and required license/
 attribution files. Git history and linked PRs preserve removed implementation
 and detailed review history; avoid a growing archive of duplicate work notes.
+
+## Repeated macOS folder prompt: development workflow changed
+
+The user confirmed that the repeated dialog asks Xiphos Native Preview for
+Documents access. Documents-hosted GUI fixture tests can wait for this response
+during engine configuration reads. A temporary app/fixture copy was responsive.
+An opt-in `preview_fixture` build target now creates that isolated copy, verifies
+the core fixture and launches it with an explicit root. Default builds and CI
+do not launch a GUI. No privacy permissions, Full Disk Access or signing
+identities are changed. This fixes the test workflow; release signing, chosen
+user-library locations and persistent access still require separate validation.
+
+Launcher validation: shell syntax passed; `preview_fixture` built successfully,
+its core fixture test passed (1/1), and the newly copied app showed the original
+John 3:16 fixture text in a fresh GUI inspection. This launch read temporary
+fixture storage rather than the repository's protected Documents folder.

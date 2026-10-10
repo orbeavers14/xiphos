@@ -56,4 +56,12 @@ if(BUILD_TESTING)
   add_custom_target(macos_adapter_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/adapter_smoke")
   add_test(NAME swift_adapter COMMAND "${CMAKE_CURRENT_BINARY_DIR}/adapter_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/fixture")
   set_tests_properties(swift_adapter PROPERTIES FIXTURES_REQUIRED sword_fixture)
+  # Opt-in GUI target, never part of default builds/CI. Generate/verify the
+  # fixture before copying it and the app out of protected Documents storage.
+  add_custom_target(preview_fixture
+    COMMAND ${CMAKE_CTEST_COMMAND} --test-dir "${CMAKE_CURRENT_BINARY_DIR}"
+      -R "^core_reader$" --output-on-failure
+    COMMAND /bin/sh "${CMAKE_CURRENT_SOURCE_DIR}/launch-fixture.sh" "${CMAKE_CURRENT_BINARY_DIR}"
+    DEPENDS macos_preview core_reader_test
+    VERBATIM)
 endif()
