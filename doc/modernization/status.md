@@ -465,6 +465,37 @@ menu composition, translated labels, effective filter support across SDKs,
 images/fonts and broader Xiphos decorations remain pending. No legacy files
 are retired and full feature acceptance remains **0/38**.
 
+## Swift option adapter integration: locally tested, native controls pending
+
+Implemented 2026-10-10 on `modernization/macos-option-adapter`. This integration
+branch combines the asynchronous macOS reader from PR #2 with the core option
+policy/bridge and module metadata from PRs #3/#4. The local merge retained
+Swift 6 compilation, actor/model tests and explicit CoreOptions static linking.
+The combined foundation passed **11/11** local checks before adapter changes.
+
+Swift now binds the 18 named C flags as a Sendable OptionSet, copies module
+eligibility/headings/transliteration metadata from owned async catalogs and
+wraps tab set/clear, configured chapter reads and history-free entry refresh.
+No alias rules, filter defaults, variant precedence or rendering policy are
+implemented in Swift. The synchronous characterization adapter does not expose
+this new metadata; the native app uses the worker-backed catalog.
+
+The resulting local build and CTest passed **12/12**, including the new Swift
+option adapter test against the original OSIS fixture. Tests cover copied
+metadata, all 16 red-letter/Strong's/morphology/note combinations, verse/chapter
+agreement, visible red-letter/Strong's output changes, opposite tab settings,
+history-free refresh, unknown flags, defaults after clear, closed tabs and
+values surviving background shutdown. CTest explicitly prepares the isolated
+option fixture before this Swift test. No GUI control change is claimed by
+these adapter checks, and core sanitizer evidence belongs to the preceding
+unchanged C++ behavior. No GitHub build was dispatched.
+
+Next: wire module-aware native option controls and configured refreshes into
+ReaderModel, then test GUI behavior, module preferences and visual/workflow
+parity. Full native menus, wider markup/SDK validation and release acceptance
+remain pending. The provisional estimate remains about **5%**, accepted
+feature groups **0/38**, release-ready native platforms **0/3**.
+
 ## Verified implementation, pending acceptance
 
 Evidence below applies to implementation commit
