@@ -101,8 +101,14 @@ The initial Reader owns one SWMgr. Its reads are serialized per instance;
 C handles must also be serialized, and cannot be closed during use. Results
 own copies and survive later reads/reader destruction. SWORD has global locale/
 filter state: this slice does not promise concurrent independent readers or
-runtime locale switching. UI calls run on the main thread for this small read
-slice; move expensive discovery/search work to one engine executor later.
+runtime locale switching. StudyWorker now constructs/uses/destroys the reader
+and tab sessions on one engine thread, serializing copied requests and results
+through futures. Native hosts share one worker per process. Initialization/job
+errors propagate without stopping the queue; shutdown drains accepted work.
+The C ABI and macOS preview still call the synchronous reader/session path.
+Next is a nonblocking request bridge and async UI integration; callers must not
+wait on worker futures or join its shutdown on a UI thread. Cancellation and
+interruption of an active SWORD operation remain separate work.
 
 C ABI v1 is experimental, static-linked, and exposes opaque handles, status
 codes and UTF-8 borrowed strings with explicit lifetimes. It is not yet a

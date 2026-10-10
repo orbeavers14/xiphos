@@ -235,6 +235,34 @@ selectors, synchronized commentary and platform-wide visual parity remain
 pending. The new menus are native preview controls, not accepted design parity.
 Overall planning estimate remains approximately **5% (3–7%)**.
 
+## Shared engine worker: core foundation, UI integration pending
+
+Implemented 2026-10-10: `StudyWorker` owns a reader and independent tab sessions
+on one C++ engine thread. Discovery, reading, chapter/navigation snapshots,
+link resolution, history and teardown run there. Requests copy their inputs,
+execute FIFO and return owned values through futures. Initialization failures
+and operation errors reach their futures without terminating later jobs.
+Closing a tab rejects later requests for that ID; IDs are not reused. Worker
+shutdown drains accepted jobs and destroys sessions/reader on the engine thread.
+
+Local macOS CTest **5/5** passed; address/undefined-behavior sanitizer CTest
+**4/4** passed. A separate ThreadSanitizer build passed the worker plus required
+fixture tests (**2/2**), including four concurrent request producers. External
+SWORD is prebuilt and uninstrumented, so race checks cover the instrumented
+core/queue and are not a proof of global engine thread safety. Tests also cover
+FIFO visits/Back/history, tab isolation, copied input/results, failed operations,
+closed tabs, chapter/options/link/selector results, initialization failures and
+queued work surviving worker destruction.
+
+The macOS preview is not connected to this worker yet. Next: additive
+nonblocking C request handles, async Swift consumption with stale-result
+protection and background shutdown; then verify a responsive reading window.
+No cancellation/interruption of an active SWORD call is provided by this first
+worker API. Native hosts must share one worker per process; unrelated SWORD
+instances, global locale switching and legacy global calls cannot run alongside
+it concurrently. Do not wait on futures or destroy a worker on the UI thread.
+The legacy rendering/history path and synchronous C API remain available.
+
 ## Verified implementation, pending acceptance
 
 Evidence below applies to implementation commit
