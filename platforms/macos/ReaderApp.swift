@@ -10,7 +10,7 @@ final class ReaderModel: ObservableObject {
     @Published var reference = "John 3:16"
     @Published var renderedReference = ""
     @Published var html = ""
-    @Published var message = ""
+    @Published var message = "Loading installed modules…"
     @Published var showChapter = false
     @Published var verseNumbers = true
     @Published var highlightSelected = true
@@ -18,105 +18,147 @@ final class ReaderModel: ObservableObject {
     @Published var choices: ReferenceChoices?
     @Published var canBack = false
     @Published var canForward = false
-    private var reader: CoreReader?
-    private var session: CoreSession?
+    @Published var isBusy = true
+    private let worker: CoreWorker?
+    private var tab: UInt64?
     private var displayedEntry: RenderedEntry?
     private var displayedModule: String?
-    init() {
+    private var revision: UInt64 = 0
+    private var closed = false
+    init(worker: CoreWorker?, startupError: String?) {
+        self.worker = worker
+        guard worker != nil else {
+            message = startupError ?? "Unable to start the reading engine."
+            isBusy = false
+            return
+        }
+        Task { [weak self] in await self?.start() }
+    }
+    deinit {
+        if let worker, let tab { Task { try? await worker.closeTab(tab) } }
+    }
+    func close() {
+        guard !closed else { return }
+        closed = true
+        revision &+= 1
+        if let worker, let tab {
+            self.tab = nil
+            Task { try? await worker.closeTab(tab) }
+        }
+    }
+    private func start() async {
+        guard let worker else { return }
+        defer { if !closed { isBusy = false } }
         do {
-            reader = try CoreReader(root: ProcessInfo.processInfo.environment["XIPHOS_MODULE_ROOT"])
-            session = try CoreSession(reader: reader!)
-            modules = reader!.modules
+            let discovered = try await worker.modules()
+            guard !closed else { return }
+            let opened = try await worker.createTab()
+            guard !closed else { try? await worker.closeTab(opened); return }
+            tab = opened
+            modules = discovered
             selection = modules.first(where: { $0.type == "Biblical Texts" })?.id
             if modules.isEmpty { message = "No installed SWORD modules found. Install modules with the existing Xiphos application, then reopen this preview." }
-            else if selection == nil { message = "Select a Bible or commentary module to read a verse." }
-            else { read() }
-        } catch { message = error.localizedDescription }
+            else if let selection {
+                let entry = try await worker.visit(tab: opened, module: selection, reference: reference)
+                try await present(entry, module: selection, token: revision)
+            } else { message = "Select a Bible or commentary module to read a verse." }
+        } catch { if !closed { message = error.localizedDescription } }
+    }
+    private func run(_ action: @escaping @MainActor (UInt64) async throws -> Void) {
+        guard !closed, !isBusy, tab != nil else { return }
+        revision &+= 1
+        let token = revision
+        isBusy = true
+        Task {
+            defer { if token == revision && !closed { isBusy = false } }
+            guard token == revision && !closed else { return }
+            do { try await action(token) }
+            catch {
+                guard token == revision && !closed else { return }
+                message = error.localizedDescription
+                if let worker, let tab, let history = try? await worker.history(tab) {
+                    guard token == revision && !closed else { return }
+                    canBack = history.canBack; canForward = history.canForward
+                }
+            }
+        }
+    }
+    func selectionChanged() {
+        guard selection != displayedModule else { return }
+        read()
     }
     func read() {
-        guard let session, let selection else { return }
-        do {
-            let entry = try session.visit(module: selection, reference: reference)
-            updateHistoryButtons()
-            try display(entry, module: selection)
-        } catch {
-            html = ""
-            renderedReference = ""
-            renderedAnchor = nil
-            choices = nil
-            displayedEntry = nil
-            displayedModule = nil
-            message = error.localizedDescription
+        guard let worker, let tab, let selection else { return }
+        let submitted = reference
+        run { token in
+            let entry = try await worker.visit(tab: tab, module: selection, reference: submitted)
+            try await self.present(entry, module: selection, token: token)
         }
     }
-    private func updateHistoryButtons() {
-        canBack = session?.canBack ?? false
-        canForward = session?.canForward ?? false
-    }
-    func navigate(_ direction: Int32) {
-        guard let session else { return }
-        do {
-            let entry = try session.navigate(direction)
-            selection = session.historyModule
-            reference = entry.reference
-            try display(entry, module: selection ?? "")
-            updateHistoryButtons()
-        } catch { message = error.localizedDescription }
-    }
-    private func display(_ entry: RenderedEntry, module: String) throws {
-        if showChapter, let reader {
-            let chapter = try reader.readChapter(module: module, reference: entry.reference,
-                                                 verseNumbers: verseNumbers, highlightSelected: highlightSelected)
-            html = chapter.html
-            renderedAnchor = chapter.selectedAnchor
-            renderedReference = chapter.title
+    private func present(_ entry: RenderedEntry, module: String, token: UInt64, updateInput: Bool = true) async throws {
+        guard let worker, let tab else { return }
+        let chapterMode = showChapter
+        let numbers = verseNumbers, highlight = highlightSelected
+        let chapter = chapterMode ? try await worker.readChapter(module: module, reference: entry.reference,
+                                                                  verseNumbers: numbers, highlightSelected: highlight) : nil
+        let selectors = try await worker.referenceChoices(module: module, reference: entry.reference)
+        let history = try await worker.history(tab)
+        guard token == revision && !closed else { return }
+        if let chapter {
+            html = chapter.html; renderedAnchor = chapter.selectedAnchor; renderedReference = chapter.title
             message = chapter.verses.allSatisfy { $0.html.isEmpty } ? "This module has no text in this chapter." : ""
         } else {
-            html = entry.html
-            renderedAnchor = nil
-            renderedReference = entry.reference
+            html = entry.html; renderedAnchor = nil; renderedReference = entry.reference
             message = entry.html.isEmpty ? "This module has no text at this reference." : ""
         }
-        if let reader { choices = try reader.referenceChoices(module: module, reference: entry.reference) }
-        displayedEntry = entry
-        displayedModule = module
+        choices = selectors
+        if updateInput { reference = entry.reference; selection = module }
+        displayedEntry = entry; displayedModule = module
+        canBack = history.canBack; canForward = history.canForward
+    }
+    func navigate(_ direction: Int32) {
+        guard let worker, let tab else { return }
+        run { token in
+            let entry = try await worker.navigate(tab: tab, direction: direction)
+            let history = try await worker.history(tab)
+            try await self.present(entry, module: history.module ?? "", token: token)
+        }
     }
     func refreshDisplay() {
         guard let entry = displayedEntry, let module = displayedModule else { return }
-        do { try display(entry, module: module) }
-        catch { message = error.localizedDescription }
+        run { token in try await self.present(entry, module: module, token: token, updateInput: false) }
     }
     func navigateChapter(_ direction: Int32) {
-        guard let session, let selection else { return }
-        do {
-            let entry = try session.navigateChapter(module: selection, reference: reference, direction: direction)
-            reference = entry.reference
-            try display(entry, module: selection)
-            updateHistoryButtons()
-        } catch { message = "The adjacent chapter is unavailable. Check the reference and module." }
+        guard let worker, let tab, let module = displayedModule, let entry = displayedEntry else { return }
+        run { token in
+            let next = try await worker.navigateChapter(tab: tab, module: module, reference: entry.reference, direction: direction)
+            try await self.present(next, module: module, token: token)
+        }
     }
     func chooseReference(_ target: String) {
-        guard let session, let module = displayedModule else { return }
-        do {
-            let entry = try session.visit(module: module, reference: target)
-            reference = entry.reference
-            try display(entry, module: module)
-            updateHistoryButtons()
-        } catch { message = error.localizedDescription }
+        guard let worker, let tab, let module = displayedModule else { return }
+        run { token in
+            let entry = try await worker.visit(tab: tab, module: module, reference: target)
+            try await self.present(entry, module: module, token: token)
+        }
     }
     func followLink(_ uri: String) {
-        guard let reader, let session, let current = displayedModule else { return }
-        do {
-            let target = try reader.resolveLink(uri, currentModule: current)
-            let entry = try session.visit(module: target.module, reference: target.reference)
-            // Unsupported links/errors keep the committed passage and history.
-            reference = entry.reference
-            try display(entry, module: target.module)
-            selection = target.module
-            updateHistoryButtons()
-        } catch { message = "This link is unavailable in this preview. Passage ranges, notes and other study actions are still pending." }
+        guard let worker, let tab, let module = displayedModule else { return }
+        run { token in
+            let target = try await worker.resolveLink(uri, currentModule: module)
+            let entry = try await worker.visit(tab: tab, module: target.module, reference: target.reference)
+            try await self.present(entry, module: target.module, token: token)
+        }
     }
-    func clearHistory() { session?.clearHistory(); updateHistoryButtons() }
+    func clearHistory() {
+        guard let worker, let tab else { return }
+        run { token in
+            try await worker.clearHistory(tab)
+            let history = try await worker.history(tab)
+            guard token == self.revision && !self.closed else { return }
+            self.canBack = history.canBack; self.canForward = history.canForward
+        }
+    }
 }
 
 struct PassageView: NSViewRepresentable {
@@ -124,7 +166,7 @@ struct PassageView: NSViewRepresentable {
     let anchor: String?
     var onScrollFailure: (String) -> Void
     var onLink: (String) -> Void
-    final class Coordinator: NSObject, WKNavigationDelegate {
+    @MainActor final class Coordinator: NSObject, WKNavigationDelegate {
         var loaded: String?
         var anchor: String?
         var navigation: WKNavigation?
@@ -146,7 +188,7 @@ struct PassageView: NSViewRepresentable {
             scrollToAnchor(webView)
         }
         func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
-                     decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+                     decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void) {
             if action.navigationType == .linkActivated, let url = action.request.url {
                 decisionHandler(.cancel)
                 // Cancel browser navigation first; only the core interprets commands.
@@ -203,7 +245,10 @@ struct ReferenceMenu: View {
 }
 
 struct ReaderWindow: View {
-    @StateObject private var model = ReaderModel()
+    @StateObject private var model: ReaderModel
+    init(worker: CoreWorker?, startupError: String?) {
+        _model = StateObject(wrappedValue: ReaderModel(worker: worker, startupError: startupError))
+    }
     var body: some View {
         HSplitView {
             List(selection: $model.selection) {
@@ -218,6 +263,7 @@ struct ReaderWindow: View {
                     }
                 }
             }.frame(minWidth: 190, idealWidth: 230, maxWidth: 320)
+                .disabled(model.isBusy)
                 .accessibilityLabel("Installed SWORD modules")
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
@@ -229,13 +275,13 @@ struct ReaderWindow: View {
                     TextField("Passage reference", text: $model.reference).onSubmit { model.read() }
                         .accessibilityLabel("Passage reference")
                     Button("Read") { model.read() }.disabled(model.selection == nil)
-                }.padding(12)
+                }.padding(12).disabled(model.isBusy)
                 if let choices = model.choices {
                     HStack {
                         ReferenceMenu(title: "Book", label: choices.bookLabel, choices: choices.books, select: model.chooseReference)
                         ReferenceMenu(title: "Chapter", label: choices.chapterLabel, choices: choices.chapters, select: model.chooseReference)
                         ReferenceMenu(title: "Verse", label: choices.verseLabel, choices: choices.verses, select: model.chooseReference)
-                    }.padding(.horizontal, 12).padding(.bottom, 8)
+                    }.padding(.horizontal, 12).padding(.bottom, 8).disabled(model.isBusy)
                 }
                 HStack {
                     Toggle("Whole chapter", isOn: $model.showChapter)
@@ -246,7 +292,7 @@ struct ReaderWindow: View {
                     }.disabled(!model.showChapter)
                     Button("Previous chapter") { model.navigateChapter(-1) }.disabled(model.selection == nil)
                     Button("Next chapter") { model.navigateChapter(1) }.disabled(model.selection == nil)
-                }.padding(.horizontal, 12).padding(.bottom, 8)
+                }.padding(.horizontal, 12).padding(.bottom, 8).disabled(model.isBusy)
                 Divider()
                 if !model.renderedReference.isEmpty {
                     Text(model.renderedReference).font(.headline).padding(12)
@@ -257,19 +303,34 @@ struct ReaderWindow: View {
                     Text(model.message).foregroundStyle(.secondary).padding(12)
                         .accessibilityLabel(model.message)
                 }
+                if model.isBusy {
+                    HStack { ProgressView().controlSize(.small); Text("Loading…").font(.caption) }.padding(8)
+                }
                 Divider()
                 Text("Xiphos native preview • Chapter reading and history slice").font(.caption).foregroundStyle(.secondary).padding(8)
             }.frame(minWidth: 450)
         }.frame(minWidth: 700, minHeight: 450)
-            .onChange(of: model.selection) { _ in model.read() }
+            .onChange(of: model.selection) { _ in model.selectionChanged() }
             .onChange(of: model.verseNumbers) { _ in model.refreshDisplay() }
             .onChange(of: model.highlightSelected) { _ in model.refreshDisplay() }
+            .onDisappear { model.close() }
     }
 }
 
+#if !XIPHOS_PREVIEW_TEST
 @main
 struct XiphosNativePreview: App {
+    private let worker: CoreWorker?
+    private let startupError: String?
+    init() {
+        do {
+            worker = try CoreWorker(root: ProcessInfo.processInfo.environment["XIPHOS_MODULE_ROOT"])
+            startupError = nil
+        } catch { worker = nil; startupError = error.localizedDescription }
+    }
     var body: some Scene {
-        WindowGroup("Xiphos Native Preview") { ReaderWindow() }
+        WindowGroup("Xiphos Native Preview") { ReaderWindow(worker: worker, startupError: startupError) }
     }
 }
+
+#endif

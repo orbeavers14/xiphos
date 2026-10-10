@@ -106,9 +106,11 @@ and tab sessions on one engine thread, serializing copied requests and results
 through futures. Native hosts share one worker per process. Initialization/job
 errors propagate without stopping the queue; shutdown drains accepted work.
 The C ABI now exposes nonblocking worker requests, copied module/history
-snapshots and one-time result transfer. The macOS preview still uses the
-synchronous reader/session path. Next is async UI integration; callers must not
-wait on worker futures or join its shutdown on a UI thread. Cancellation and
+snapshots and one-time result transfer. The macOS preview consumes requests
+through a Swift actor and shares one worker across windows, each with a core
+study tab. Main-actor presentation guards closed-window results and serializes
+window actions. Worker shutdown drains/joins on a background queue. Callers
+must not wait on futures or join shutdown on a UI thread. Cancellation and
 interruption of an active SWORD operation remain separate work.
 
 C ABI v1 is experimental, static-linked, and exposes opaque handles, status

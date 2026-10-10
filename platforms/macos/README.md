@@ -5,7 +5,17 @@ installed module discovery, a module sidebar, direct reference entry, shared Bac
 WKWebView verse pane backed by the shared C++ core. The adapter owns only C
 handles and copied presentation values. It does not implement SWORD logic.
 
-Requires macOS 13+, Xcode Command Line Tools, CMake and SWORD >=1.8.1.
+The application shares one C++ engine worker across windows. Each window owns
+its own core study tab and history. The Swift actor submits copied requests and
+polls without blocking the main thread; discovery, rendering and navigation
+all run on the engine thread. Loading controls serialize window actions, and
+closed windows discard late presentation results. Closing a tab or draining
+the engine runs away from the main thread. Canceling a Swift task does not
+cancel an accepted engine action; active SWORD cancellation is pending.
+The synchronous adapter remains available for characterization tests.
+
+Requires macOS 13+, a Swift 6-capable Xcode toolchain, CMake and SWORD >=1.8.1.
+Swift sources compile in Swift 6 language mode.
 The requested deployment target defaults to 13.0; actual compatibility also
 depends on the SWORD SDK minimum OS. Set `CMAKE_OSX_DEPLOYMENT_TARGET` to match
 a newer SDK if necessary (the inspected local SDK requires 26.0). With a
