@@ -42,3 +42,15 @@ reference-only identity, retains forward entries on new visits and keeps the
 first visit's module metadata on a duplicate reference. Capacity is 50.
 Commentary restoration, synthetic entries, history export and persistence are
 later slices. The shared C++11 helper is also used by legacy tab_history.c.
+
+## Chapter snapshots and navigation
+
+`Reader::read_chapter` / `xc_read_chapter` returns a copied title, normalized
+anchor and ordered rendered verse entries, including empty text. Enumeration
+uses the module's VerseKey/versification. Release C snapshots exactly once;
+borrowed snapshot strings survive reader close until chapter release.
+`StudySession::navigate_chapter` / `xc_session_navigate_chapter` resolves verse 1
+of the preceding/following chapter using SWORD, then records a successful visit.
+Only -1/+1 are accepted; Bible ends do not wrap. Failed destinations leave
+session history unchanged. This is not full decorated Xiphos chapter output;
+headings, options, semantic actions and synchronized study panes are pending.

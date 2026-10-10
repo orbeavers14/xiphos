@@ -77,8 +77,9 @@ native integration. Introduce these services incrementally with legacy tests.
   study session; no frontend-maintained Bible canon or history algorithms.
   The local next slice adds shared reference lookup/history and native session
   navigation. GTK keeps its existing callbacks/storage, calling the shared
-  lookup rule. Full chapter/reference navigation and session persistence remain
-  pending. See status for the characterized rules and limits.
+  lookup rule. The next slice adds chapter snapshots and adjacent-chapter navigation using
+  cloned module VerseKeys. Full chapter decorations/options, broader reference
+  controls and session persistence remain pending. See status for the characterized rules and limits.
 * Search seam: backend search plus main/search_* becomes an asynchronous
   service with cancellation/progress/result sets; GUI callbacks become events.
 * Storage seam: settings.c/configs.cc/xml.c and bookmark GTK data structures

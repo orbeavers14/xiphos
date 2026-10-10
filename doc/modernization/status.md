@@ -76,11 +76,13 @@ inclusion in this public fork.
 5. Extract search/parallel/link/preview, then compatible storage/editors,
    module management and BibleSync, followed by platform release acceptance.
 
-## Local next slice: shared history (not published)
+## Shared history slice: pushed, pending acceptance
 
-Implemented locally on 2026-10-10 after the CI-budget change. No GitHub push or
-hosted build was requested for this slice. Scoped implementation and local
-checks are complete; review, platform CI and acceptance remain pending.
+Implemented and tested locally on 2026-10-10 after the CI-budget change, then
+pushed as `6f759e0` at the user's request. Draft CI runner jobs remain gated.
+Scoped implementation and local checks are complete; review, platform CI and
+acceptance remain pending. Future completed commits are pushed after local
+checks while intermediate development stays local.
 
 - [x] Characterized legacy reference-only deduplication, preserved forward
   entries, original text/commentary metadata retention and 50-entry eviction.
@@ -108,9 +110,38 @@ teardown must be serialized. No cross-reader/global-engine concurrency promise
 is added. macOS 13 runtime, full legacy app and Windows/Linux integration are
 not validated by these local checks.
 
-Next: full chapter rendering and shared reference navigation/options, then the
-established study-pane composition. Keep the overall estimate at approximately
+Next after the chapter snapshot slice: decorated chapter output/options,
+broader reference controls and the established study-pane composition. Keep the overall estimate at approximately
 5% until broader milestones and platform parity are accepted.
+
+## Chapter reading slice: local validation, pending acceptance
+
+Implemented 2026-10-10: owned chapter snapshots and adjacent-chapter navigation
+in the C++ reader/session, additive C ABI and thin Swift adapter. Enumeration
+uses a cloned module VerseKey with that module's locale/versification; no
+frontend canon or chapter-length tables. Every verse is retained in order,
+including missing text. Chapter reads keep the module at the requested anchor;
+chapter navigation records a successful visit and stops at Bible boundaries.
+
+Local macOS CTest **3/3** and sanitizer CTest **2/2** passed (same SDK and leak
+limitations below). Tests compare every fixture chapter verse/reference with
+the legacy setKey/renderText sequence, exercise Vulg versus KJV verse counts,
+check missing/unsupported modules, invalid inputs, snapshot lifetime, cross-book
+navigation, Bible boundaries and history rollback on failed navigation. Swift
+adapter checks cover copied chapter values and chapter navigation.
+
+Fresh preview check: Whole chapter displayed John 3 with all 36 verse positions
+and both original fixture texts; Next chapter selected John 4:1 and displayed
+John 4 with a missing-text message; Back restored John 3:16 and both fixture
+texts. This is a scoped reading check, not screenshot/design parity.
+
+Full Xiphos chapter decorations/options, introductions/headings, selected-verse
+highlight/scroll, semantic study links, synchronized panes and RTL/layout
+acceptance remain pending. The preview uses simple numbered sections and still
+runs synchronous reading on the main thread; a shared engine executor is later
+work. GTK chapter code is retained unchanged; shared render_entry remains its
+common engine seam. Full GTK runtime, alternate representative content,
+Windows/Linux integration and older macOS runtimes are still unvalidated.
 
 ## Verified implementation, pending acceptance
 
@@ -177,7 +208,7 @@ own CI result before acceptance.
 - [ ] Accessibility, localization, keyboard workflows and platform integration.
 - [ ] Packaging/signing, license notices, upgrades and complete parity review.
 
-The current macOS preview has a module sidebar and a single-verse pane. It
+The current macOS preview has a module sidebar and a verse/chapter pane. It
 is not yet the established full study layout. Windows and GTK4 native
 frontends are not implemented. SwordKit has an initial source/license screen;
 actual reuse and integration remain pending.

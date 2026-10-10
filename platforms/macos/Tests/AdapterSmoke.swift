@@ -23,6 +23,12 @@ struct AdapterSmoke {
         guard back.html.contains("café"), session.canForward, session.historyModule == "ParityTest" else { fatalError("back") }
         let forward = try session.navigate(1)
         guard forward.html.contains("Second fixture") else { fatalError("forward") }
+        let chapter = try reader.readChapter(module: "ParityTest", reference: "John 3:16")
+        guard chapter.title == "John 3", chapter.verses.count == 36,
+              chapter.verses[15].html.contains("café"), chapter.verses[16].html.contains("Second fixture"),
+              chapter.html.contains("id=\"verse-16\"") else { fatalError("chapter snapshot") }
+        let nextBook = try session.navigateChapter(module: "ParityTest", reference: "John 21:25", direction: 1)
+        guard nextBook.reference == "Acts 1:1" else { fatalError("chapter navigation") }
         session.clearHistory()
         guard session.historyCount == 0, !session.canBack, !session.canForward else { fatalError("clear") }
         print("Swift adapter smoke checks passed")

@@ -6,6 +6,7 @@
 #include <swmgr.h>
 #include <swmodule.h>
 #include <markupfiltmgr.h>
+#include <versekey.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -37,6 +38,29 @@ int main(int argc, char **argv) {
       config << "[ParityTest]\nDataPath=./modules/texts/rawtext/test/\n"
                 "ModDrv=RawText\nSourceType=OSIS\nEncoding=UTF-8\n"
                 "Lang=en\nDescription=Original parity fixture\nVersification=KJV\n";
+    }
+    // An alternate versification must drive chapter lengths too; use an
+    // isolated root so the primary discovery/adapter fixture stays unchanged.
+    const auto alternate = root / "alternate";
+    std::filesystem::create_directories(alternate / "mods.d");
+    {
+      std::ofstream config(alternate / "mods.d/alternate.conf");
+      config << "[Alternate]\nDataPath=" << data << "\nModDrv=RawText\n"
+                "SourceType=OSIS\nEncoding=UTF-8\nVersification=Vulg\n";
+    }
+    {
+      xiphos::core::Reader reader(alternate.string());
+      const auto snapshot = reader.read_chapter("Alternate", "Psalms 9:1");
+      sword::SWMgr baseline(alternate.string().c_str(), true,
+                            new sword::MarkupFilterMgr(sword::FMT_XHTML), false, false);
+      auto *alt_module = baseline.getModule("Alternate");
+      alt_module->setKey("Psalms 9:1");
+      auto *key = dynamic_cast<sword::VerseKey *>(alt_module->getKey());
+      check(key && std::string(key->getVersificationSystem()) == "Vulg", "alternate versification loaded");
+      check(snapshot.verses.size() == static_cast<size_t>(key->getVerseMax()), "alternate chapter length");
+      sword::VerseKey kjv;
+      kjv.setText("Psalms 9:1");
+      check(key->getVerseMax() != kjv.getVerseMax(), "fixture exercises different verse counts");
     }
     check(c_header_test(), "C header and symbols");
     xc_reader *r = nullptr;
@@ -70,6 +94,41 @@ int main(int argc, char **argv) {
     check(xc_read(r, "ParityTest", "", &second) == XC_INVALID_ARGUMENT && !second, "empty reference");
     check(xc_read(nullptr, "ParityTest", "John 3:16", &second) == XC_INVALID_ARGUMENT, "null read");
     check(xc_read(r, "ParityTest", "John 3:16", nullptr) == XC_INVALID_ARGUMENT, "null out");
+    xc_chapter *chapter = nullptr;
+    check(xc_read_chapter(r, "ParityTest", "John 3:16", &chapter) == XC_OK, "read chapter");
+    module->setKey("John 3:16");
+    auto *legacy_key = dynamic_cast<sword::VerseKey *>(module->getKey());
+    check(legacy_key && xc_chapter_count(chapter) == static_cast<size_t>(legacy_key->getVerseMax()), "engine chapter length");
+    check(std::string(xc_chapter_title(chapter)) == "John 3", "chapter title");
+    for (size_t i = 0; i < xc_chapter_count(chapter); ++i) {
+      legacy_key->setVerse(static_cast<int>(i + 1));
+      check(std::string(xc_chapter_verse_reference(chapter, i)) == module->getKeyText(), "chapter ordered references");
+      check(std::string(xc_chapter_verse_html(chapter, i)) == module->renderText().c_str(), "every verse matches legacy rendering");
+    }
+    check(std::string(xc_chapter_verse_html(chapter, 15)) == actual, "chapter anchor text");
+    check(std::string(xc_chapter_verse_html(chapter, 16)).find("Second fixture") != std::string::npos, "chapter following text");
+    check(std::string(xc_chapter_verse_html(chapter, 0)).empty(), "missing verses retained");
+    check(xc_chapter_verse_html(chapter, xc_chapter_count(chapter)) == nullptr, "chapter bounds");
+    xc_chapter *failed = nullptr;
+    check(xc_read_chapter(r, "Missing", "John 3:16", &failed) == XC_MODULE_NOT_FOUND && !failed, "missing chapter module");
+    check(xc_read_chapter(r, "ParityTest", "", &failed) == XC_INVALID_ARGUMENT && !failed, "empty chapter reference");
+    check(xc_read_chapter(nullptr, "ParityTest", "John 3", &failed) == XC_INVALID_ARGUMENT, "null chapter reader");
+    check(xc_read_chapter(r, "ParityTest", "John 3", nullptr) == XC_INVALID_ARGUMENT, "null chapter output");
+    xc_session *chapters = nullptr;
+    check(xc_session_open(r, &chapters) == XC_OK, "chapter navigation session");
+    check(xc_session_navigate_chapter(chapters, "ParityTest", "John 21:25", 1, &second) == XC_OK, "next book chapter");
+    check(std::string(xc_entry_reference(second)) == "Acts 1:1", "next book verse one");
+    xc_entry_release(second);
+    check(xc_session_navigate_chapter(chapters, "ParityTest", "John 1:10", -1, &second) == XC_OK, "previous book chapter");
+    check(std::string(xc_entry_reference(second)) == "Luke 24:1", "previous book final chapter");
+    xc_entry_release(second);
+    check(xc_session_navigate_chapter(chapters, "ParityTest", "Genesis 1:1", -1, &second) == XC_INVALID_ARGUMENT && !second, "Bible start does not wrap");
+    check(xc_session_navigate_chapter(chapters, "ParityTest", "Revelation 22:1", 1, &second) == XC_INVALID_ARGUMENT && !second, "Bible end does not wrap");
+    check(xc_session_navigate_chapter(chapters, "ParityTest", "John 3:16", 0, &second) == XC_INVALID_ARGUMENT && !second, "invalid chapter direction");
+    check(xc_session_history_count(chapters) == 2, "failed chapter navigation preserves history");
+    check(xc_session_navigate(chapters, -1, &second) == XC_OK && std::string(xc_entry_reference(second)) == "Acts 1:1", "chapter moves participate in history");
+    xc_entry_release(second);
+    xc_session_close(chapters);
     xc_session *tab = nullptr, *other = nullptr;
     check(xc_session_open(r, &tab) == XC_OK, "open session");
     check(xc_session_open(r, &other) == XC_OK, "open independent session");
@@ -103,6 +162,10 @@ int main(int argc, char **argv) {
     xc_session_close(nullptr);
     check(xc_session_open(nullptr, &tab) == XC_INVALID_ARGUMENT && !tab, "null session reader");
     check(xc_session_history_count(nullptr) == 0 && xc_session_module(nullptr) == nullptr, "null session snapshot");
+    check(std::string(xc_chapter_verse_html(chapter, 15)) == actual, "chapter survives reader close");
+    xc_chapter_release(chapter);
+    xc_chapter_release(nullptr);
+    check(xc_chapter_count(nullptr) == 0 && xc_chapter_reference(nullptr) == nullptr, "null chapter snapshot");
     const auto dictroot = root / "dictionary";
     std::filesystem::create_directories(dictroot / "mods.d");
     std::filesystem::create_directories(dictroot / "data");
@@ -115,6 +178,7 @@ int main(int argc, char **argv) {
     check(xc_module_count(r) == 1, "dictionary discovered");
     check(xc_read(r, "DictionaryTest", "peace", &second) == XC_INVALID_ARGUMENT && !second,
           "unsupported key type returns error");
+    check(xc_read_chapter(r, "DictionaryTest", "peace", &failed) == XC_INVALID_ARGUMENT && !failed, "dictionary chapter rejected");
     xc_close(r);
     check(std::string(xc_entry_html(entry)) == actual, "result survives reader close");
     xc_entry_release(entry);

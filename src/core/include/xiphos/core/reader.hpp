@@ -7,6 +7,10 @@
 namespace xiphos::core {
 struct Module { std::string id, description, type, language; };
 struct Entry { std::string reference, html; };
+struct Chapter {
+  std::string reference, title;
+  std::vector<Entry> verses;
+};
 
 class Reader {
 public:
@@ -18,6 +22,9 @@ public:
   Reader &operator=(const Reader &) = delete;
   const std::vector<Module> &modules() const;
   Entry read(const std::string &module, const std::string &reference);
+  Chapter read_chapter(const std::string &module, const std::string &reference);
+  std::string adjacent_chapter(const std::string &module, const std::string &reference,
+                               int direction);
 private:
   struct Impl;
   std::unique_ptr<Impl> impl_;

@@ -11,6 +11,7 @@ final class ReaderModel: ObservableObject {
     @Published var renderedReference = ""
     @Published var html = ""
     @Published var message = ""
+    @Published var showChapter = false
     @Published var canBack = false
     @Published var canForward = false
     private var reader: CoreReader?
@@ -31,9 +32,7 @@ final class ReaderModel: ObservableObject {
         do {
             let entry = try session.visit(module: selection, reference: reference)
             updateHistoryButtons()
-            html = entry.html
-            renderedReference = entry.reference
-            message = entry.html.isEmpty ? "This module has no text at this reference." : ""
+            try display(entry, module: selection)
         } catch {
             html = ""
             renderedReference = ""
@@ -50,11 +49,35 @@ final class ReaderModel: ObservableObject {
             let entry = try session.navigate(direction)
             selection = session.historyModule
             reference = entry.reference
-            renderedReference = entry.reference
-            html = entry.html
-            message = entry.html.isEmpty ? "This module has no text at this reference." : ""
+            try display(entry, module: selection ?? "")
             updateHistoryButtons()
         } catch { message = error.localizedDescription }
+    }
+    private func display(_ entry: RenderedEntry, module: String) throws {
+        if showChapter, let reader {
+            let chapter = try reader.readChapter(module: module, reference: entry.reference)
+            html = chapter.html
+            renderedReference = chapter.title
+            message = chapter.verses.allSatisfy { $0.html.isEmpty } ? "This module has no text in this chapter." : ""
+        } else {
+            html = entry.html
+            renderedReference = entry.reference
+            message = entry.html.isEmpty ? "This module has no text at this reference." : ""
+        }
+    }
+    func refreshDisplay() {
+        guard let reader, let selection else { return }
+        do { try display(reader.read(module: selection, reference: reference), module: selection) }
+        catch { message = error.localizedDescription }
+    }
+    func navigateChapter(_ direction: Int32) {
+        guard let session, let selection else { return }
+        do {
+            let entry = try session.navigateChapter(module: selection, reference: reference, direction: direction)
+            reference = entry.reference
+            try display(entry, module: selection)
+            updateHistoryButtons()
+        } catch { message = "The adjacent chapter is unavailable. Check the reference and module." }
     }
     func clearHistory() { session?.clearHistory(); updateHistoryButtons() }
 }
@@ -119,6 +142,12 @@ struct ReaderWindow: View {
                         .accessibilityLabel("Passage reference")
                     Button("Read") { model.read() }.disabled(model.selection == nil)
                 }.padding(12)
+                HStack {
+                    Toggle("Whole chapter", isOn: $model.showChapter)
+                        .onChange(of: model.showChapter) { _ in model.refreshDisplay() }
+                    Button("Previous chapter") { model.navigateChapter(-1) }.disabled(model.selection == nil)
+                    Button("Next chapter") { model.navigateChapter(1) }.disabled(model.selection == nil)
+                }.padding(.horizontal, 12).padding(.bottom, 8)
                 Divider()
                 if !model.renderedReference.isEmpty {
                     Text(model.renderedReference).font(.headline).padding(12)
@@ -129,7 +158,7 @@ struct ReaderWindow: View {
                         .accessibilityLabel(model.message)
                 }
                 Divider()
-                Text("Xiphos native preview • Verse reading and history slice").font(.caption).foregroundStyle(.secondary).padding(8)
+                Text("Xiphos native preview • Chapter reading and history slice").font(.caption).foregroundStyle(.secondary).padding(8)
             }.frame(minWidth: 450)
         }.frame(minWidth: 700, minHeight: 450)
             .onChange(of: model.selection) { _ in model.read() }

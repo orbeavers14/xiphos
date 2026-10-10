@@ -9,6 +9,7 @@ struct xc_session {
   xiphos::core::StudySession value;
   explicit xc_session(xc_reader &r) : owner(r.value), value(*owner) {}
 };
+struct xc_chapter { xiphos::core::Chapter value; };
 struct xc_entry { xiphos::core::Entry value; };
 namespace {
 xc_status failure() noexcept {
@@ -76,6 +77,34 @@ const char *xc_session_module(const xc_session *s) {
   const auto &h = s->value.history(); return h.entries()[h.cursor()].module.c_str();
 }
 void xc_session_clear_history(xc_session *s) { if (s) s->value.clear_history(); }
+xc_status xc_read_chapter(xc_reader *r, const char *id, const char *ref, xc_chapter **out) {
+  if (!out) return XC_INVALID_ARGUMENT;
+  *out = nullptr;
+  if (!r || !id || !*id || !ref || !*ref) return XC_INVALID_ARGUMENT;
+  try { *out = new xc_chapter{r->value->read_chapter(id, ref)}; return XC_OK; }
+  catch (...) { return failure(); }
+}
+const char *xc_chapter_reference(const xc_chapter *c) { return c ? c->value.reference.c_str() : nullptr; }
+const char *xc_chapter_title(const xc_chapter *c) { return c ? c->value.title.c_str() : nullptr; }
+size_t xc_chapter_count(const xc_chapter *c) { return c ? c->value.verses.size() : 0; }
+const char *xc_chapter_verse_reference(const xc_chapter *c, size_t i) {
+  return c && i < c->value.verses.size() ? c->value.verses[i].reference.c_str() : nullptr;
+}
+const char *xc_chapter_verse_html(const xc_chapter *c, size_t i) {
+  return c && i < c->value.verses.size() ? c->value.verses[i].html.c_str() : nullptr;
+}
+void xc_chapter_release(xc_chapter *c) { delete c; }
+xc_status xc_session_navigate_chapter(xc_session *s, const char *id, const char *ref,
+                                     int direction, xc_entry **out) {
+  if (!out) return XC_INVALID_ARGUMENT;
+  *out = nullptr;
+  if (!s || !id || !*id || !ref || !*ref) return XC_INVALID_ARGUMENT;
+  try {
+    auto result = std::make_unique<xc_entry>();
+    result->value = s->value.navigate_chapter(id, ref, direction);
+    *out = result.release(); return XC_OK;
+  } catch (...) { return failure(); }
+}
 const char *xc_entry_reference(const xc_entry *e) { return e ? e->value.reference.c_str() : nullptr; }
 const char *xc_entry_html(const xc_entry *e) { return e ? e->value.html.c_str() : nullptr; }
 void xc_entry_release(xc_entry *e) { delete e; }

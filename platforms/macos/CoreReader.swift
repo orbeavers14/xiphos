@@ -12,6 +12,17 @@ struct RenderedEntry {
     let reference: String
     let html: String
 }
+struct RenderedChapter {
+    let reference: String
+    let title: String
+    let verses: [RenderedEntry]
+    // Presentation only; verse order/count/references are supplied by C++.
+    var html: String {
+        verses.enumerated().map { index, verse in
+            "<section id=\"verse-\(index + 1)\"><sup>\(index + 1)</sup> \(verse.html)</section>"
+        }.joined(separator: "\n")
+    }
+}
 struct CoreError: LocalizedError {
     let status: xc_status
     var errorDescription: String? {
@@ -42,6 +53,20 @@ final class CoreReader {
         }
     }
     deinit { xc_close(handle) }
+    func readChapter(module: String, reference: String) throws -> RenderedChapter {
+        var result: OpaquePointer?
+        let status = module.withCString { id in
+            reference.withCString { ref in xc_read_chapter(handle, id, ref, &result) }
+        }
+        guard status == XC_OK, let result else { throw CoreError(status: status) }
+        defer { xc_chapter_release(result) }
+        return RenderedChapter(reference: String(cString: xc_chapter_reference(result)!),
+            title: String(cString: xc_chapter_title(result)!),
+            verses: (0..<xc_chapter_count(result)).map { index in
+                RenderedEntry(reference: String(cString: xc_chapter_verse_reference(result, index)!),
+                              html: String(cString: xc_chapter_verse_html(result, index)!))
+            })
+    }
     func read(module: String, reference: String) throws -> RenderedEntry {
         var result: OpaquePointer?
         let status = module.withCString { id in
@@ -79,6 +104,13 @@ final class CoreSession {
         var result: OpaquePointer?
         let status = module.withCString { id in
             reference.withCString { ref in xc_session_visit(handle, id, ref, &result) }
+        }
+        return try copyResult(status, result)
+    }
+    func navigateChapter(module: String, reference: String, direction: Int32) throws -> RenderedEntry {
+        var result: OpaquePointer?
+        let status = module.withCString { id in
+            reference.withCString { ref in xc_session_navigate_chapter(handle, id, ref, direction, &result) }
         }
         return try copyResult(status, result)
     }

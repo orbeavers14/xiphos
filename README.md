@@ -6,7 +6,7 @@ C++ application core and native frontends:
 
 | Platform | Target frontend | Current implementation |
 |---|---|---|
-| macOS | SwiftUI / AppKit | Read-only module and single-verse preview |
+| macOS | SwiftUI / AppKit | Module/verse/chapter preview with shared history |
 | Windows | WinUI 3 | Planned; legacy GTK application retained |
 | Linux | GTK4 | Planned; legacy GTK3 application retained |
 
@@ -43,10 +43,11 @@ migration. See the [current status and sign-off rules](doc/modernization/status.
 * Native macOS preview and adapter tests: [platforms/macos/README.md](platforms/macos/README.md).
 * Translations: documentation in [doc](doc).
 
-A locally tested next slice adds shared session history and macOS
-Back/Forward/Clear History; it is not yet published or accepted. The next
-implementation milestone is chapter rendering and shared reference navigation,
-followed by equivalent reading panes on GTK4 and WinUI 3.
+Locally tested follow-up slices add shared session history, chapter snapshots
+and previous/next chapter navigation with thin macOS controls. Completed
+commits are pushed to the draft branch after local checks; acceptance remains
+pending. Next are chapter options/decorations and the established study-pane
+composition, followed by equivalent reading panes on GTK4 and WinUI 3.
 Each milestone needs reviewable changes, regression tests and parity evidence
 before the corresponding legacy files can be retired.
 

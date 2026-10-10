@@ -8,6 +8,7 @@ extern "C" {
 typedef struct xc_reader xc_reader;
 typedef struct xc_entry xc_entry;
 typedef struct xc_session xc_session;
+typedef struct xc_chapter xc_chapter;
 typedef enum xc_status { XC_OK = 0, XC_INVALID_ARGUMENT = 1,
   XC_MODULE_NOT_FOUND = 2, XC_ENGINE_ERROR = 3 } xc_status;
 /* Version of this experimental ABI, not a parity or stability guarantee. */
@@ -48,6 +49,21 @@ size_t xc_session_history_count(const xc_session *session);
  * visit's module, matching legacy retention of the first visit's metadata. */
 const char *xc_session_module(const xc_session *session);
 void xc_session_clear_history(xc_session *session);
+/* Chapter snapshots include every verse, including empty entries, using the
+ * module's versification. Strings survive reader/session close until release.
+ * These are raw rendered entries, not full Xiphos chapter-decoration parity. */
+xc_status xc_read_chapter(xc_reader *reader, const char *module, const char *reference,
+                          xc_chapter **out);
+const char *xc_chapter_reference(const xc_chapter *chapter);
+const char *xc_chapter_title(const xc_chapter *chapter);
+size_t xc_chapter_count(const xc_chapter *chapter);
+const char *xc_chapter_verse_reference(const xc_chapter *chapter, size_t index);
+const char *xc_chapter_verse_html(const xc_chapter *chapter, size_t index);
+void xc_chapter_release(xc_chapter *chapter);
+/* Moves to verse 1 of the adjacent chapter, across books/testaments as SWORD
+ * permits, and records a successful visit. -1/+1 only; no wrap at Bible ends. */
+xc_status xc_session_navigate_chapter(xc_session *session, const char *module,
+                                     const char *reference, int direction, xc_entry **out);
 const char *xc_entry_reference(const xc_entry *entry);
 const char *xc_entry_html(const xc_entry *entry);
 void xc_entry_release(xc_entry *entry);

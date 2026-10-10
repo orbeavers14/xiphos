@@ -10,6 +10,7 @@ public:
   explicit StudySession(Reader &reader) : reader_(reader) {}
   Entry visit(const std::string &module, const std::string &reference);
   Entry navigate(int direction);
+  Entry navigate_chapter(const std::string &module, const std::string &reference, int direction);
   const History &history() const { return history_; }
   void clear_history() { history_.clear(); }
 private:

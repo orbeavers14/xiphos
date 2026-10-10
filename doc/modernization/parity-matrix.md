@@ -3,17 +3,16 @@
 Source inventory, not an assertion of runtime parity. Baseline and seams are in
 [architecture.md](architecture.md). macOS/Windows/Linux refer to NEW frontends;
 the legacy GTK3 application remains the behavioral oracle. **No row is fully
-validated for any native platform.** `partial` describes only this initial
-read-only slice. `pending` means not implemented/validated. Core fixture tests
+validated for any native platform.** `partial` describes scoped implementation/tests, not accepted parity. `pending` means not implemented/validated. Core fixture tests
 cover F01/F02 narrowly, not a representative Bible/module corpus.
 
 | ID | Required capability / established workflow | Source evidence | Architectural owner | Acceptance evidence required | Initial core/macOS evidence | WinUI 3 | GTK4 |
 |---|---|---|---|---|---|---|---|
 | F01 | Module discovery / metadata / about | src/backend/sword_main.cc; src/gtk/about_modules.c | module-service | Compare IDs, descriptions, type, language, version and licenses with legacy; empty library | core tested; macOS smoke | pending | pending |
 | F02 | Verse entry rendering / normalization / versification | src/backend/sword_main.cc; src/main/navbar_versekey.cc | reader-service | Same reference and XHTML as legacy for KJV and alternate canons, Unicode, missing entries | partial core tested; macOS smoke | pending | pending |
-| F03 | Chapter / whole-book / headings / verse highlighting | src/main/display.cc; src/main/modulecache.hh; help/C/xiphos-50-preferences-general-settings.page | content-service | Compare chapter boundaries, headings, selected verse, scrolling and full book mode | pending | pending | pending |
-| F04 | Book/chapter/verse selectors and direct reference entry | src/main/navbar_versekey.cc; ui/navbar_versekey.gtkbuilder | study-session | Selectors synchronize Bible/commentary; Return resolves ranges and localized names | direct entry partial only | pending | pending |
-| F05 | History / tabs / detach / session save and restore | src/main/tab_history.c; src/gtk/tabbed_browser.c; src/gtk/main_menu.c | study-session + window-host | Back/forward per tab, open/close/detach, restart and explicit saved-session round trip | partial (local Back/Forward/Clear only) | pending | pending |
+| F03 | Chapter / whole-book / headings / verse highlighting | src/main/display.cc; src/main/modulecache.hh; help/C/xiphos-50-preferences-general-settings.page | content-service | Compare chapter boundaries, headings, selected verse, scrolling and full book mode | partial chapter snapshot/adjacent navigation; decorations pending | pending | pending |
+| F04 | Book/chapter/verse selectors and direct reference entry | src/main/navbar_versekey.cc; ui/navbar_versekey.gtkbuilder | study-session | Selectors synchronize Bible/commentary; Return resolves ranges and localized names | partial direct entry + adjacent chapter | pending | pending |
+| F05 | History / tabs / detach / session save and restore | src/main/tab_history.c; src/gtk/tabbed_browser.c; src/gtk/main_menu.c | study-session + window-host | Back/forward per tab, open/close/detach, restart and explicit saved-session round trip | partial Back/Forward/Clear only | pending | pending |
 | F06 | Main pane composition / resize / view toggles / fullscreen | src/gtk/main_window.c; help/C/figures/interface.png; ui/xi-menus.gtkbuilder | layout-model + native windows | Sidebar left, preview below; Bible central; commentary upper right; dictionary/book/devotional lower right; validate resizing and toggles | partial macOS shell only | pending | pending |
 | F07 | Module tree category/language grouping / favorites / hidden | src/gtk/sidebar.c; src/main/settings.c | module-library policy | Toggle favorites/hide, group all three ways, restart and preserve selections | pending | pending | pending |
 | F08 | Commentary synchronization / chapter mode / detached view | src/gtk/commentary.c; src/main/display.cc | study-session | Reference changes update commentary; headings, chapter mode and separate window match | pending | pending | pending |

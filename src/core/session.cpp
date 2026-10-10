@@ -6,6 +6,10 @@ Entry StudySession::visit(const std::string &module, const std::string &referenc
   history_.visit({entry.reference, module, ""});
   return entry;
 }
+Entry StudySession::navigate_chapter(const std::string &module, const std::string &reference,
+                                     int direction) {
+  return visit(module, reader_.adjacent_chapter(module, reference, direction));
+}
 Entry StudySession::navigate(int direction) {
   const auto &location = history_.destination(direction);
   auto entry = reader_.read(location.module, location.reference);

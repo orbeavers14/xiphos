@@ -48,7 +48,10 @@ No modules is a supported startup state. A nonexistent explicit root reports
 an error. A non-verse-key module reports that this slice does not support it.
 SWORD normalizes references; this is not strict input validation.
 
-Only SWORD entry XHTML is shown. Chapter display, synchronized commentary,
+Select Whole chapter to display all verse positions in the module's chapter.
+Previous/Next chapter use shared C++ navigation and participate in history.
+Only SWORD entry XHTML with simple verse numbers is shown. Xiphos chapter
+decorations/options, selected-verse scrolling, synchronized commentary,
 parallel views, semantic links, images, search, persistence, editors,
 installation and BibleSync are pending. JavaScript and network content are
 disabled in this development pane. The app is unsigned, unnotarized and linked
