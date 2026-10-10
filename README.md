@@ -43,8 +43,10 @@ migration. See the [current status and sign-off rules](doc/modernization/status.
 * Native macOS preview and adapter tests: [platforms/macos/README.md](platforms/macos/README.md).
 * Translations: documentation in [doc](doc).
 
-The next implementation milestone is shared study-session navigation and
-chapter rendering, followed by equivalent reading panes on GTK4 and WinUI 3.
+A locally tested next slice adds shared session history and macOS
+Back/Forward/Clear History; it is not yet published or accepted. The next
+implementation milestone is chapter rendering and shared reference navigation,
+followed by equivalent reading panes on GTK4 and WinUI 3.
 Each milestone needs reviewable changes, regression tests and parity evidence
 before the corresponding legacy files can be retired.
 

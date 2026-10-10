@@ -27,3 +27,18 @@ WebKit, help and packaging dependencies. There is no search/history/storage
 implementation here yet. The C ABI is experimental and documented in c_api.h.
 Follow the [architecture](../../doc/modernization/architecture.md) and
 [parity ledger](../../doc/modernization/parity-matrix.md) before expanding it.
+
+## Study-session history
+
+`StudySession`/`xc_session` adds one history per tab or window. The C++ session
+borrows its Reader; C ABI sessions retain the reader and remain valid after
+`xc_close`. Visit and navigate return independently owned entries; release each
+once. Serialize calls and teardown across all handles sharing a reader.
+
+Navigation direction is -1/+1. An unavailable destination returns invalid
+argument without moving the cursor. Failed visits do not add history. Clear
+History leaves displayed content to the frontend. Legacy behavior uses
+reference-only identity, retains forward entries on new visits and keeps the
+first visit's module metadata on a duplicate reference. Capacity is 50.
+Commentary restoration, synthetic entries, history export and persistence are
+later slices. The shared C++11 helper is also used by legacy tab_history.c.

@@ -11,10 +11,14 @@ final class ReaderModel: ObservableObject {
     @Published var renderedReference = ""
     @Published var html = ""
     @Published var message = ""
+    @Published var canBack = false
+    @Published var canForward = false
     private var reader: CoreReader?
+    private var session: CoreSession?
     init() {
         do {
             reader = try CoreReader(root: ProcessInfo.processInfo.environment["XIPHOS_MODULE_ROOT"])
+            session = try CoreSession(reader: reader!)
             modules = reader!.modules
             selection = modules.first(where: { $0.type == "Biblical Texts" })?.id
             if modules.isEmpty { message = "No installed SWORD modules found. Install modules with the existing Xiphos application, then reopen this preview." }
@@ -23,9 +27,10 @@ final class ReaderModel: ObservableObject {
         } catch { message = error.localizedDescription }
     }
     func read() {
-        guard let reader, let selection else { return }
+        guard let session, let selection else { return }
         do {
-            let entry = try reader.read(module: selection, reference: reference)
+            let entry = try session.visit(module: selection, reference: reference)
+            updateHistoryButtons()
             html = entry.html
             renderedReference = entry.reference
             message = entry.html.isEmpty ? "This module has no text at this reference." : ""
@@ -35,6 +40,23 @@ final class ReaderModel: ObservableObject {
             message = error.localizedDescription
         }
     }
+    private func updateHistoryButtons() {
+        canBack = session?.canBack ?? false
+        canForward = session?.canForward ?? false
+    }
+    func navigate(_ direction: Int32) {
+        guard let session else { return }
+        do {
+            let entry = try session.navigate(direction)
+            selection = session.historyModule
+            reference = entry.reference
+            renderedReference = entry.reference
+            html = entry.html
+            message = entry.html.isEmpty ? "This module has no text at this reference." : ""
+            updateHistoryButtons()
+        } catch { message = error.localizedDescription }
+    }
+    func clearHistory() { session?.clearHistory(); updateHistoryButtons() }
 }
 
 struct PassageView: NSViewRepresentable {
@@ -88,6 +110,11 @@ struct ReaderWindow: View {
                 .accessibilityLabel("Installed SWORD modules")
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
+                    Button("Back") { model.navigate(-1) }.disabled(!model.canBack)
+                    Button("Forward") { model.navigate(1) }.disabled(!model.canForward)
+                    Menu("History") {
+                        Button("Clear History") { model.clearHistory() }
+                    }
                     TextField("Passage reference", text: $model.reference).onSubmit { model.read() }
                         .accessibilityLabel("Passage reference")
                     Button("Read") { model.read() }.disabled(model.selection == nil)
@@ -102,7 +129,7 @@ struct ReaderWindow: View {
                         .accessibilityLabel(model.message)
                 }
                 Divider()
-                Text("Xiphos native preview • Verse reading slice").font(.caption).foregroundStyle(.secondary).padding(8)
+                Text("Xiphos native preview • Verse reading and history slice").font(.caption).foregroundStyle(.secondary).padding(8)
             }.frame(minWidth: 450)
         }.frame(minWidth: 700, minHeight: 450)
             .onChange(of: model.selection) { _ in model.read() }

@@ -76,6 +76,42 @@ inclusion in this public fork.
 5. Extract search/parallel/link/preview, then compatible storage/editors,
    module management and BibleSync, followed by platform release acceptance.
 
+## Local next slice: shared history (not published)
+
+Implemented locally on 2026-10-10 after the CI-budget change. No GitHub push or
+hosted build was requested for this slice. Scoped implementation and local
+checks are complete; review, platform CI and acceptance remain pending.
+
+- [x] Characterized legacy reference-only deduplication, preserved forward
+  entries, original text/commentary metadata retention and 50-entry eviction.
+- [x] Shared C++11 history policy; the legacy C path calls the same reference
+  lookup helper without replacing its GTK/session storage or callbacks.
+- [x] C++ study session and additive C ABI: per-session history, Back/Forward,
+  Clear History, retained reader ownership, copied results and error handling.
+- [x] Thin Swift session adapter and native Back/Forward/Clear History controls.
+- [x] Local macOS CTest 3/3 passed, including C ABI and Swift adapter checks.
+- [x] Local address/undefined-behavior sanitizer CTest 2/2 passed with the same
+  externally built SWORD/leak-detection limitations recorded below.
+- [x] Standalone history compiled/tested as C++11 with warnings as errors.
+- [x] Original baseline and modified legacy add-history function bodies,
+  compiled with a minimal GTK callback stub, agreed over 120 scripted visits,
+  duplicates and capacity evictions. This is not a full GTK app runtime test.
+- [x] Fresh preview UI: read John 3:17, Back restored John 3:16, Forward restored
+  John 3:17; Clear History disabled navigation without clearing the verse pane.
+
+This slice supports a Bible module per session. History stores a commentary
+field for the legacy model, but native commentary-pane restoration, history
+menu selection/export, synthetic entries, first-back callback side effects,
+multiple tab/detached-window UI and persistence remain pending. The original
+GTK pathways for these features are retained. Per-reader/session calls and
+teardown must be serialized. No cross-reader/global-engine concurrency promise
+is added. macOS 13 runtime, full legacy app and Windows/Linux integration are
+not validated by these local checks.
+
+Next: full chapter rendering and shared reference navigation/options, then the
+established study-pane composition. Keep the overall estimate at approximately
+5% until broader milestones and platform parity are accepted.
+
 ## Verified implementation, pending acceptance
 
 Evidence below applies to implementation commit

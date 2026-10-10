@@ -37,10 +37,10 @@ configure_file(Info.plist "${app}/Contents/Info.plist" @ONLY)
 add_custom_command(OUTPUT "${app}/Contents/MacOS/XiphosNativePreview"
   COMMAND ${SWIFTC} -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
     -I "${bridge}" "${adapter}" "${CMAKE_CURRENT_SOURCE_DIR}/ReaderApp.swift"
-    "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>"
+    "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>"
     ${sword_link_flags} -lc++ -framework SwiftUI -framework AppKit -framework WebKit
     -o "${app}/Contents/MacOS/XiphosNativePreview"
-  DEPENDS xiphos_core xiphos_core_render CoreReader.swift ReaderApp.swift Bridge/module.modulemap
+  DEPENDS xiphos_core xiphos_core_render xiphos_core_history CoreReader.swift ReaderApp.swift Bridge/module.modulemap
     ../../src/core/include/xiphos/core/c_api.h
   VERBATIM)
 add_custom_target(macos_preview ALL DEPENDS "${app}/Contents/MacOS/XiphosNativePreview")
@@ -48,9 +48,9 @@ if(BUILD_TESTING)
   add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/adapter_smoke"
     COMMAND ${SWIFTC} -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
       -I "${bridge}" "${adapter}" "${CMAKE_CURRENT_SOURCE_DIR}/Tests/AdapterSmoke.swift"
-      "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>"
+      "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>"
       ${sword_link_flags} -lc++ -o "${CMAKE_CURRENT_BINARY_DIR}/adapter_smoke"
-    DEPENDS xiphos_core xiphos_core_render CoreReader.swift Tests/AdapterSmoke.swift
+    DEPENDS xiphos_core xiphos_core_render xiphos_core_history CoreReader.swift Tests/AdapterSmoke.swift
       Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h
     VERBATIM)
   add_custom_target(macos_adapter_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/adapter_smoke")

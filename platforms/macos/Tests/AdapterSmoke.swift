@@ -14,6 +14,17 @@ struct AdapterSmoke {
             _ = try reader.read(module: "Missing", reference: "John 3:16")
             fatalError("missing module succeeded")
         } catch is CoreError { }
+        let session = try CoreSession(reader: reader)
+        let other = try CoreSession(reader: reader)
+        _ = try session.visit(module: "ParityTest", reference: "John 3:16")
+        _ = try session.visit(module: "ParityTest", reference: "John 3:17")
+        guard session.canBack, !session.canForward, other.historyCount == 0 else { fatalError("session isolation") }
+        let back = try session.navigate(-1)
+        guard back.html.contains("café"), session.canForward, session.historyModule == "ParityTest" else { fatalError("back") }
+        let forward = try session.navigate(1)
+        guard forward.html.contains("Second fixture") else { fatalError("forward") }
+        session.clearHistory()
+        guard session.historyCount == 0, !session.canBack, !session.canForward else { fatalError("clear") }
         print("Swift adapter smoke checks passed")
     }
 }

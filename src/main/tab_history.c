@@ -33,6 +33,10 @@
 #include "gui/widgets.h"
 
 #include "main/tab_history.h"
+#include "xiphos/core/history.h"
+#if TABHISTORYLENGTH != XH_HISTORY_LIMIT
+#error History capacity must match the shared core
+#endif
 #include "main/settings.h"
 #include "main/sidebar.h"
 #include "main/sword.h"
@@ -149,13 +153,15 @@ void main_add_tab_history_item(gpointer data)
 
 	/* check to see if item is already in list
 	   if so do nothing except set button sensitivity */
-	for (i = 0; i < tab->history_items; ++i) {
-		if (!strcmp(tab->history_list[i].verseref,
-			    tab->text_commentary_key)) {
-			tab->current_history_item = i;
-			main_update_tab_history_menu(data);
-			return;
-		}
+	const char *references[TABHISTORYLENGTH];
+	for (i = 0; i < tab->history_items; ++i)
+		references[i] = tab->history_list[i].verseref;
+	size_t found = xh_find_reference(references, tab->history_items,
+					tab->text_commentary_key);
+	if (found < (size_t)tab->history_items) {
+		tab->current_history_item = found;
+		main_update_tab_history_menu(data);
+		return;
 	}
 
 	/* if we have hit max length, dispose of oldest */

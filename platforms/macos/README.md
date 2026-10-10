@@ -1,7 +1,7 @@
 # macOS native reader preview
 
 This is a read-only vertical slice, not a complete Xiphos replacement. It has
-installed module discovery, a module sidebar, direct reference entry, and a
+installed module discovery, a module sidebar, direct reference entry, shared Back/Forward/Clear History, and a
 WKWebView verse pane backed by the shared C++ core. The adapter owns only C
 handles and copied presentation values. It does not implement SWORD logic.
 
@@ -42,7 +42,8 @@ around it. `open` returning success is not a GUI smoke test: verify the window
 and rendered content. Core/adapter tests remain separate from GUI checks.
 
 Select `ParityTest`, enter `John 3:16`, then `John 3:17`: the displayed original
-fixture text should change. No test text comes from a copyrighted Bible.
+fixture text should change. Back should restore John 3:16, Forward John 3:17,
+and Clear History should disable both buttons while keeping the current text. No test text comes from a copyrighted Bible.
 No modules is a supported startup state. A nonexistent explicit root reports
 an error. A non-verse-key module reports that this slice does not support it.
 SWORD normalizes references; this is not strict input validation.
