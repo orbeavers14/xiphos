@@ -357,12 +357,41 @@ scoped-option/worker test passed **1/1**. External SWORD is uninstrumented.
 The default legacy seam build and C++11 policy warnings-as-errors check passed.
 Swift static linking now includes CoreOptions because the reader references it.
 
-No native option controls or additive C request functions are included yet.
-Next: expose typed option values/tab chapter operations through the nonblocking
-bridge, add module capability discovery, wire native controls, then compare
+At this checkpoint native option controls and additive C requests were pending.
+The following checkpoint adds requests; next is module capability discovery,
+native controls, and comparisons of
 broader OSIS/ThML/GBF output and existing Xiphos decorations. This fixture does
 not prove all options or complete study-pane parity. No GitHub build was
 requested; full acceptance and the provisional estimate remain unchanged.
+
+## Nonblocking tab option bridge: locally tested, native controls pending
+
+Implemented 2026-10-10 on the shared-engine-options branch. The experimental
+C API adds 18 named engine-option flag bits, asynchronous tab set/clear,
+configured tab chapter reads and history-free configured entry refreshes.
+Flags are copied before queueing; unknown bits fail immediately and leave the
+output request NULL. Closed-tab errors arrive through normal polling. Zero
+flags apply explicit Off filters with engine headings On; clearing removes the
+tab override and restores unconfigured behavior. Variant precedence remains in
+the shared C++ policy. Existing unconfigured chapter and reader calls remain.
+
+Local macOS CTest **8/8 passed**. The original OSIS fixture tests all 16
+combinations of red-letter/Strong's/morphology/note flags through the C API,
+comparing owned entry HTML to direct SWORD baseline output. Opposite tab options,
+configured chapters, unconfigured chapter compatibility, caller flag mutation,
+invalid engine/display bits, missing observers, closed tabs, dropped clear
+observation and chapter lifetime after worker shutdown are checked. Refresh
+can render a different reference without adding or moving history. The C
+compiler checks new declarations and symbols; C++17 warnings-as-errors passed.
+Focused address/undefined-behavior and ThreadSanitizer selections each passed
+**3/3** (scoped options, async requests and required reader fixture). External
+SWORD remains uninstrumented; ICU-enabled and wider markup behavior remain
+unvalidated. No GitHub build was dispatched.
+
+Next: module-supported option discovery and native controls consuming this
+bridge, with the asynchronous macOS work from PR #2. Preserve Xiphos module
+preferences and broader decorations rather than inventing frontend defaults.
+No feature group is accepted by this checkpoint; estimate remains about **5%**.
 
 ## Verified implementation, pending acceptance
 

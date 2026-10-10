@@ -86,6 +86,11 @@ std::future<StudyTab> StudyWorker::create_tab() {
 std::future<void> StudyWorker::close_tab(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s) { s.tab(tab); s.tabs.erase(tab); });
 }
+std::future<Entry> StudyWorker::read_entry(StudyTab tab, std::string module, std::string reference) {
+  return impl_->submit([tab, module = std::move(module), reference = std::move(reference)](Impl::State &s) {
+    return s.tab(tab).read_entry(module, reference);
+  });
+}
 std::future<Entry> StudyWorker::visit(StudyTab tab, std::string module, std::string reference) {
   return impl_->submit([tab, module = std::move(module), reference = std::move(reference)](Impl::State &s) {
     return s.tab(tab).visit(module, reference);

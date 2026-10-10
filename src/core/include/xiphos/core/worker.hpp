@@ -28,6 +28,7 @@ public:
   std::future<std::vector<Module>> modules();
   std::future<StudyTab> create_tab();
   std::future<void> close_tab(StudyTab tab);
+  std::future<Entry> read_entry(StudyTab tab, std::string module, std::string reference);
   std::future<Entry> visit(StudyTab tab, std::string module, std::string reference);
   std::future<Entry> navigate(StudyTab tab, int direction);
   std::future<Entry> navigate_chapter(StudyTab tab, std::string module, std::string reference, int direction);

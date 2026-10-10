@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/worker.hpp"
+#include "xiphos/core/c_api.h"
+#include <chrono>
+#include <thread>
 #include <rawtext.h>
 #include <markupfiltmgr.h>
 #include <swmgr.h>
@@ -28,6 +31,15 @@ std::map<sword::SWOptionFilter *, std::string> filter_values(EngineManager &mana
     if (value) result.emplace(filter, value);
   }
   return result;
+}
+xc_status wait(xc_request *request) {
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+  xc_status status;
+  while ((status = xc_request_poll(request)) == XC_PENDING) {
+    check(std::chrono::steady_clock::now() < deadline, "C option request timeout");
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+  return status;
 }
 int main(int argc, char **argv) {
   try {
@@ -135,6 +147,70 @@ int main(int argc, char **argv) {
       try { worker.set_engine_options(first, off).get(); } catch (const std::invalid_argument &) { rejected = true; }
       check(rejected, "closed tab rejects option updates");
       check(worker.visit(second, "OptionTest", "John 3:16").get().html == expected_off, "queue continues after bad option tab");
+    }
+    {
+      xc_worker *worker = nullptr;
+      check(xc_worker_open(path.c_str(), &worker) == XC_OK, "C option worker");
+      xc_request *request = nullptr;
+      check(xc_worker_create_tab(worker, &request) == XC_OK && wait(request) == XC_OK, "C first tab");
+      const auto first = xc_request_tab(request); xc_request_release(request);
+      check(xc_worker_create_tab(worker, &request) == XC_OK && wait(request) == XC_OK, "C second tab");
+      const auto second = xc_request_tab(request); xc_request_release(request);
+      check(xc_worker_set_engine_options(worker, second, 0, &request) == XC_OK && wait(request) == XC_OK, "C explicit zero options");
+      xc_request_release(request);
+      for (unsigned bits = 0; bits < expected.size(); ++bits) {
+        unsigned flags = (bits & 1 ? XC_ENGINE_WORDS_IN_RED : 0) |
+                         (bits & 2 ? XC_ENGINE_STRONGS : 0) |
+                         (bits & 4 ? XC_ENGINE_MORPHOLOGY : 0) |
+                         (bits & 8 ? XC_ENGINE_FOOTNOTES : 0);
+        check(xc_worker_set_engine_options(worker, first, flags, &request) == XC_OK, "C option flags accepted");
+        flags = 0; // Caller mutation cannot alter the queued settings.
+        check(wait(request) == XC_OK, "C options ready"); xc_request_release(request);
+        check(xc_worker_visit(worker, first, "OptionTest", "John 3:16", &request) == XC_OK && wait(request) == XC_OK, "C configured visit");
+        auto *entry = xc_request_take_entry(request);
+        check(entry && xc_entry_html(entry) == expected[bits], "C all 16 options render equivalently");
+        xc_entry_release(entry); xc_request_release(request);
+        check(xc_worker_visit(worker, second, "OptionTest", "John 3:16", &request) == XC_OK && wait(request) == XC_OK, "C isolated second visit");
+        entry = xc_request_take_entry(request);
+        check(entry && xc_entry_html(entry) == expected_off, "C tab settings do not bleed");
+        xc_entry_release(entry); xc_request_release(request);
+      }
+      check(xc_worker_read_tab_entry(worker, first, "OptionTest", "John 3:16", &request) == XC_OK && wait(request) == XC_OK, "C history-free configured refresh");
+      auto *refreshed = xc_request_take_entry(request);
+      check(refreshed && xc_entry_html(refreshed) == expected_on, "C configured refresh output");
+      xc_entry_release(refreshed); xc_request_release(request);
+      check(xc_worker_read_tab_entry(worker, first, "OptionTest", "John 3:17", &request) == XC_OK && wait(request) == XC_OK, "C noncurrent snapshot request");
+      xc_request_release(request);
+      check(xc_worker_history(worker, first, &request) == XC_OK && wait(request) == XC_OK, "C history after refresh");
+      auto *unchanged = xc_request_take_history(request);
+      check(unchanged && xc_history_count(unchanged) == 1 && !xc_history_can_back(unchanged) && !xc_history_can_forward(unchanged), "C refresh preserves history");
+      xc_history_release(unchanged); xc_request_release(request);
+      check(xc_worker_read_tab_chapter(worker, first, "OptionTest", "John 3:16", XC_CHAPTER_VERSE_NUMBERS, &request) == XC_OK && wait(request) == XC_OK, "C configured tab chapter");
+      auto *chapter = xc_request_take_chapter(request);
+      check(chapter && xc_chapter_verse_html(chapter, 15) == expected_on, "C tab chapter output");
+      check(xc_request_take_chapter(request) == nullptr, "C tab chapter transfer once");
+      xc_request_release(request);
+      check(xc_worker_read_chapter(worker, "OptionTest", "John 3:16", 0, &request) == XC_OK && wait(request) == XC_OK, "C unconfigured chapter still available");
+      auto *plain = xc_request_take_chapter(request);
+      check(plain && xc_chapter_verse_html(plain, 15) == default_text, "C non-tab chapter defaults unchanged");
+      xc_chapter_release(plain); xc_request_release(request);
+      request = nullptr;
+      check(xc_worker_set_engine_options(worker, first, 1u << 30, &request) == XC_INVALID_ARGUMENT && !request, "C unknown engine bits rejected");
+      check(xc_worker_read_tab_chapter(worker, first, "OptionTest", "John 3:16", 1u << 30, &request) == XC_INVALID_ARGUMENT && !request, "C unknown display bits rejected");
+      check(xc_worker_set_engine_options(worker, first, 0, nullptr) == XC_INVALID_ARGUMENT, "C missing observer rejected");
+      check(xc_worker_clear_engine_options(worker, first, &request) == XC_OK, "C clear accepted");
+      xc_request_release(request); // Drop observation; accepted clear must execute.
+      check(xc_worker_visit(worker, first, "OptionTest", "John 3:16", &request) == XC_OK && wait(request) == XC_OK, "C visit after dropped clear");
+      auto *entry = xc_request_take_entry(request);
+      check(entry && xc_entry_html(entry) == default_text, "C clear returns to defaults");
+      xc_entry_release(entry); xc_request_release(request);
+      check(xc_worker_close_tab(worker, first, &request) == XC_OK && wait(request) == XC_OK, "C close configured tab");
+      xc_request_release(request);
+      check(xc_worker_set_engine_options(worker, first, 0, &request) == XC_OK && wait(request) == XC_INVALID_ARGUMENT, "C closed tab failure at poll");
+      xc_request_release(request);
+      xc_worker_close(worker);
+      check(xc_chapter_verse_html(chapter, 15) == expected_on, "C chapter survives worker close");
+      xc_chapter_release(chapter);
     }
     std::cout << "Scoped engine output/tab isolation checks passed\n";
   } catch (const std::exception &error) { std::cerr << error.what() << '\n'; return 1; }

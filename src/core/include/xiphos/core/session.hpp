@@ -9,6 +9,8 @@ namespace xiphos::core {
 class StudySession {
 public:
   explicit StudySession(Reader &reader) : reader_(reader) {}
+  // Render with this tab's settings without moving or adding history.
+  Entry read_entry(const std::string &module, const std::string &reference);
   Entry visit(const std::string &module, const std::string &reference);
   Entry navigate(int direction);
   Entry navigate_chapter(const std::string &module, const std::string &reference, int direction);
@@ -21,7 +23,6 @@ public:
   const History &history() const { return history_; }
   void clear_history() { history_.clear(); }
 private:
-  Entry read(const std::string &module, const std::string &reference);
   Reader &reader_;
   std::optional<EngineOptions> options_;
   History history_;

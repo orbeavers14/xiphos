@@ -18,6 +18,30 @@ typedef struct xc_catalog xc_catalog;
 typedef struct xc_history xc_history;
 typedef enum xc_status { XC_OK = 0, XC_INVALID_ARGUMENT = 1,
   XC_MODULE_NOT_FOUND = 2, XC_ENGINE_ERROR = 3, XC_PENDING = 4 } xc_status;
+/* Explicit SWORD filter settings, not saved-preference defaults. All-zero
+ * means Off filters with engine headings On; clear restores unconfigured reads.
+ * Variant flags retain legacy Primary > Secondary > All precedence; no variant
+ * flag leaves the engine's existing variant value unchanged during the scope. */
+typedef enum xc_engine_option_flag {
+  XC_ENGINE_STRONGS = 1u << 0,
+  XC_ENGINE_MORPHOLOGY = 1u << 1,
+  XC_ENGINE_FOOTNOTES = 1u << 2,
+  XC_ENGINE_GREEK_ACCENTS = 1u << 3,
+  XC_ENGINE_LEMMAS = 1u << 4,
+  XC_ENGINE_CROSS_REFERENCES = 1u << 5,
+  XC_ENGINE_HEBREW_VOWELS = 1u << 6,
+  XC_ENGINE_HEBREW_CANTILLATION = 1u << 7,
+  XC_ENGINE_ITALIC_HEADINGS = 1u << 8,
+  XC_ENGINE_WORDS_IN_RED = 1u << 9,
+  XC_ENGINE_TRANSLITERATED_FORMS = 1u << 10,
+  XC_ENGINE_ENUMERATIONS = 1u << 11,
+  XC_ENGINE_GLOSSES = 1u << 12,
+  XC_ENGINE_MORPHEME_SEGMENTATION = 1u << 13,
+  XC_ENGINE_TRANSLITERATION = 1u << 14,
+  XC_ENGINE_VARIANTS_PRIMARY = 1u << 15,
+  XC_ENGINE_VARIANTS_SECONDARY = 1u << 16,
+  XC_ENGINE_VARIANTS_ALL = 1u << 17
+} xc_engine_option_flag;
 /* Async native API: share ONE worker per process. Open starts initialization on
  * its engine thread; accepted requests return XC_OK with a non-NULL request.
  * Initialization/operation errors arrive through poll. Poll never waits; it
@@ -35,6 +59,15 @@ xc_status xc_worker_navigate(xc_worker *worker, uint64_t tab, int direction, xc_
 xc_status xc_worker_navigate_chapter(xc_worker *worker, uint64_t tab, const char *module, const char *reference, int direction, xc_request **out);
 xc_status xc_worker_history(xc_worker *worker, uint64_t tab, xc_request **out);
 xc_status xc_worker_clear_history(xc_worker *worker, uint64_t tab, xc_request **out);
+/* Settings belong to one tab and are copied on submission. Set/clear do not
+ * add history; subsequent visits/navigation/tab chapters use those settings.
+ * Unknown flag bits fail immediately with *out=NULL. Closed tabs fail at poll.
+ * Non-tab chapter reads below preserve the unconfigured reader behavior. */
+xc_status xc_worker_set_engine_options(xc_worker *worker, uint64_t tab, unsigned flags, xc_request **out);
+xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_request **out);
+/* Refresh with tab settings without adding/moving history. */
+xc_status xc_worker_read_tab_entry(xc_worker *worker, uint64_t tab, const char *module, const char *reference, xc_request **out);
+xc_status xc_worker_read_tab_chapter(xc_worker *worker, uint64_t tab, const char *module, const char *reference, unsigned display_flags, xc_request **out);
 xc_status xc_worker_read_chapter(xc_worker *worker, const char *module, const char *reference, unsigned flags, xc_request **out);
 xc_status xc_worker_reference_choices(xc_worker *worker, const char *module, const char *reference, xc_request **out);
 xc_status xc_worker_resolve_link(xc_worker *worker, const char *current_module, const char *uri, xc_request **out);
