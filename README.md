@@ -15,7 +15,7 @@ module behavior, data and established workflows while adding appropriate
 native menus, accessibility, keyboard controls, appearance and platform
 integration. Shared application behavior belongs in C++; platform adapters
 must not develop independent engines. SwordKit may become a Swift adapter
-once its source and license are reviewed.
+through an audited adapter to the shared core.
 
 ## Status
 
@@ -26,6 +26,10 @@ checks passed. The new Linux/macOS CI and legacy Linux PR builds passed at the
 recorded implementation commit. Windows cross-builds were still running when
 checked. [PR #1](https://github.com/orbeavers14/xiphos/pull/1) remains a draft.
 
+Overall modernization is estimated at **about 5%** (planning range 3–7%).
+**0/38 feature groups** have accepted parity across all native platforms.
+See the status page for the weighted estimate, ordered next steps and
+[source reuse decisions](doc/modernization/status.md#reuse-from-related-projects).
 No native platform has full functional, visual or workflow parity yet.
 The existing GTK application remains the complete implementation during the
 migration. See the [current status and sign-off rules](doc/modernization/status.md),

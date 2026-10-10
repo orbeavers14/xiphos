@@ -50,8 +50,10 @@ source/distribution obligations; modules have independent content licenses.
 The generated test module contains original prose and downloads no Bible text.
 Vendored Windows Festival resources have separate COPYING files (including
 voice/dictionary terms): review each before reuse in native packages.
-SwordKit's source, version and license were not available in connected repo
-search and are not yet audited. No SwordKit code is imported by this slice.
+SwordKit was subsequently inspected locally: README declares GPL-2.0-only
+and LICENSE contains GPL v2. The initial reuse screen and constraints are in
+[status.md](status.md#reuse-from-related-projects). No SwordKit code is imported
+by this slice; actual imports need file-level provenance/dependency review.
 Packaging and store distribution require a separate dependency/notice audit;
 this engineering inventory is not a completed distribution license review.
 
