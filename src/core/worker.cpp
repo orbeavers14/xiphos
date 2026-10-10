@@ -99,6 +99,17 @@ std::future<Entry> StudyWorker::navigate_chapter(StudyTab tab, std::string modul
     return s.tab(tab).navigate_chapter(module, reference, direction);
   });
 }
+std::future<void> StudyWorker::set_engine_options(StudyTab tab, EngineOptions options) {
+  return impl_->submit([tab, options](Impl::State &s) { s.tab(tab).set_engine_options(options); });
+}
+std::future<void> StudyWorker::clear_engine_options(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s) { s.tab(tab).clear_engine_options(); });
+}
+std::future<Chapter> StudyWorker::read_chapter(StudyTab tab, std::string module, std::string reference, DisplayOptions options) {
+  return impl_->submit([tab, module = std::move(module), reference = std::move(reference), options](Impl::State &s) {
+    return s.tab(tab).read_chapter(module, reference, options);
+  });
+}
 std::future<HistorySnapshot> StudyWorker::history(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s) {
     const auto &h = s.tab(tab).history();

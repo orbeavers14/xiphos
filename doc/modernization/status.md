@@ -325,6 +325,45 @@ the asynchronous macOS worker integration, with its own **8/8** local checks and
 fixture GUI evidence. The 7/7 count above belongs to this core-focused branch;
 it does not supersede those tests.
 
+## Scoped native engine options: rendered fixture validation, bridge pending
+
+Implemented 2026-10-10 after the policy extraction on the same focused branch.
+The reader accepts explicit filter options for verse and chapter rendering.
+Core study sessions own copied optional settings; visits, history navigation
+and tab chapter reads use those settings. Worker requests can set/clear tab
+options and read a tab chapter. Settings changes do not add history entries;
+clearing returns to the unconfigured reader behavior. Existing overloads and
+C/Swift callers retain their previous behavior.
+
+Scopes save every actual filter value and restore it after rendering, including
+exception unwinding and nested scopes. An initial output test showed that
+SWORD's name-based global getter can report one of several same-name filters
+with different initial values. Name-based restoration changed subsequent
+unconfigured output. The corrected native manager snapshots individual filter
+objects instead. Builds without ICU can leave the protected transliterator
+pointer uninitialized; it is inspected only when the manager advertises the
+Transliteration option. The inspected SDK does not validate an ICU-enabled
+transliterator configuration; that remains an explicit integration check.
+
+Local macOS build and CTest **8/8 passed on this branch**. An original-prose
+OSIS fixture registers red-letter, Strong's, morphology and note filters.
+All 16 filter combinations match direct original-policy SWORD setter/render
+calls; enabled and disabled output differ as expected. Tests cover unchanged default output, chapter
+options, per-tab opposite settings, history reuse, copied queued settings,
+clearing without history changes, and queue continuation after a closed-tab
+error. Individual filter values restore after exceptions and nested scopes.
+Targeted address/undefined-behavior checks passed **2/2**; targeted ThreadSanitizer
+scoped-option/worker test passed **1/1**. External SWORD is uninstrumented.
+The default legacy seam build and C++11 policy warnings-as-errors check passed.
+Swift static linking now includes CoreOptions because the reader references it.
+
+No native option controls or additive C request functions are included yet.
+Next: expose typed option values/tab chapter operations through the nonblocking
+bridge, add module capability discovery, wire native controls, then compare
+broader OSIS/ThML/GBF output and existing Xiphos decorations. This fixture does
+not prove all options or complete study-pane parity. No GitHub build was
+requested; full acceptance and the provisional estimate remain unchanged.
+
 ## Verified implementation, pending acceptance
 
 Evidence below applies to implementation commit

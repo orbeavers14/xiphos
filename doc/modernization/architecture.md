@@ -165,6 +165,10 @@ ordering, always-on engine headings and textual-variant precedence. It accepts
 copied booleans and applies them to a caller-owned SWMgr; it does not own a
 second engine, persistence, GUI controls or display heading visibility.
 The default legacy route builds this seam alongside rendering and history.
-Native use must apply settings on the shared worker before rendering, with
-explicit request/tab isolation; that integration is pending. Native frontends
-must not reproduce this policy or mutate engine filter state themselves.
+Native study sessions now own copied optional settings. Worker updates and tab
+chapter reads execute on the engine thread. Reader rendering scopes snapshot
+and restore individual filters, because same-name SWORD filters can have
+different initial values. The native EngineManager remains the reader's single
+owned SWMgr; no second engine is introduced. C request/Swift controls and module
+capability discovery are pending. Native frontends must not reproduce this
+policy or mutate engine filter state themselves.
