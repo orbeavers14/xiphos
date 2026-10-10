@@ -2,17 +2,17 @@
 import Foundation
 import XiphosCore
 
-struct InstalledModule: Identifiable {
+struct InstalledModule: Identifiable, Sendable {
     let id: String
     let description: String
     let type: String
     let language: String
 }
-struct RenderedEntry {
+struct RenderedEntry: Sendable {
     let reference: String
     let html: String
 }
-struct RenderedChapter {
+struct RenderedChapter: Sendable {
     let reference: String
     let title: String
     let verses: [RenderedEntry]
@@ -20,13 +20,13 @@ struct RenderedChapter {
     let selectedAnchor: String
     let html: String
 }
-struct ReferenceChoice { let label: String; let reference: String }
-struct ReferenceChoices {
+struct ReferenceChoice: Sendable { let label: String; let reference: String }
+struct ReferenceChoices: Sendable {
     let books: [ReferenceChoice]; let chapters: [ReferenceChoice]; let verses: [ReferenceChoice]
     let bookLabel: String; let chapterLabel: String; let verseLabel: String
 }
-struct PassageTarget { let module: String; let reference: String }
-struct CoreError: LocalizedError {
+struct PassageTarget: Sendable { let module: String; let reference: String }
+struct CoreError: LocalizedError, Sendable {
     let status: xc_status
     var errorDescription: String? {
         switch status {
@@ -63,16 +63,7 @@ final class CoreReader {
         }
         guard status == XC_OK, let result else { throw CoreError(status: status) }
         defer { xc_choices_release(result) }
-        func choices(_ kind: xc_choice_kind) -> [ReferenceChoice] {
-            (0..<xc_choices_count(result, kind)).map { index in
-                ReferenceChoice(label: String(cString: xc_choices_label(result, kind, index)!),
-                                reference: String(cString: xc_choices_reference(result, kind, index)!))
-            }
-        }
-        return ReferenceChoices(books: choices(XC_BOOK), chapters: choices(XC_CHAPTER), verses: choices(XC_VERSE),
-            bookLabel: String(cString: xc_choices_current_label(result, XC_BOOK)!),
-            chapterLabel: String(cString: xc_choices_current_label(result, XC_CHAPTER)!),
-            verseLabel: String(cString: xc_choices_current_label(result, XC_VERSE)!))
+        return CoreValues.choices(result)
     }
     func resolveLink(_ uri: String, currentModule: String) throws -> PassageTarget {
         var result: OpaquePointer?
@@ -81,8 +72,7 @@ final class CoreReader {
         }
         guard status == XC_OK, let result else { throw CoreError(status: status) }
         defer { xc_link_release(result) }
-        return PassageTarget(module: String(cString: xc_link_module(result)!),
-                             reference: String(cString: xc_link_reference(result)!))
+        return CoreValues.link(result)
     }
     func readChapter(module: String, reference: String, verseNumbers: Bool = true, highlightSelected: Bool = true) throws -> RenderedChapter {
         var result: OpaquePointer?
@@ -93,14 +83,7 @@ final class CoreReader {
         }
         guard status == XC_OK, let result else { throw CoreError(status: status) }
         defer { xc_chapter_release(result) }
-        return RenderedChapter(reference: String(cString: xc_chapter_reference(result)!),
-            title: String(cString: xc_chapter_title(result)!),
-            verses: (0..<xc_chapter_count(result)).map { index in
-                RenderedEntry(reference: String(cString: xc_chapter_verse_reference(result, index)!),
-                              html: String(cString: xc_chapter_verse_html(result, index)!))
-            }, selectedVerse: xc_chapter_selected_verse(result),
-            selectedAnchor: String(cString: xc_chapter_selected_anchor(result)!),
-            html: String(cString: xc_chapter_html(result)!))
+        return CoreValues.chapter(result)
     }
     func read(module: String, reference: String) throws -> RenderedEntry {
         var result: OpaquePointer?
@@ -109,8 +92,7 @@ final class CoreReader {
         }
         guard status == XC_OK, let result else { throw CoreError(status: status) }
         defer { xc_entry_release(result) }
-        return RenderedEntry(reference: String(cString: xc_entry_reference(result)!),
-                             html: String(cString: xc_entry_html(result)!))
+        return CoreValues.entry(result)
     }
 }
 
@@ -132,8 +114,7 @@ final class CoreSession {
     private func copyResult(_ status: xc_status, _ result: OpaquePointer?) throws -> RenderedEntry {
         guard status == XC_OK, let result else { throw CoreError(status: status) }
         defer { xc_entry_release(result) }
-        return RenderedEntry(reference: String(cString: xc_entry_reference(result)!),
-                             html: String(cString: xc_entry_html(result)!))
+        return CoreValues.entry(result)
     }
     func visit(module: String, reference: String) throws -> RenderedEntry {
         var result: OpaquePointer?
@@ -153,5 +134,40 @@ final class CoreSession {
         var result: OpaquePointer?
         let status = xc_session_navigate(handle, direction, &result)
         return try copyResult(status, result)
+    }
+}
+
+// Shared copying helpers for synchronous and asynchronous adapters. They add
+// no canon, display, navigation or history policy to either Swift interface.
+enum CoreValues {
+    static func entry(_ result: OpaquePointer) -> RenderedEntry {
+        RenderedEntry(reference: String(cString: xc_entry_reference(result)!),
+                      html: String(cString: xc_entry_html(result)!))
+    }
+    static func link(_ result: OpaquePointer) -> PassageTarget {
+        PassageTarget(module: String(cString: xc_link_module(result)!),
+                      reference: String(cString: xc_link_reference(result)!))
+    }
+    static func chapter(_ result: OpaquePointer) -> RenderedChapter {
+        return RenderedChapter(reference: String(cString: xc_chapter_reference(result)!),
+            title: String(cString: xc_chapter_title(result)!),
+            verses: (0..<xc_chapter_count(result)).map { index in
+                RenderedEntry(reference: String(cString: xc_chapter_verse_reference(result, index)!),
+                              html: String(cString: xc_chapter_verse_html(result, index)!))
+            }, selectedVerse: xc_chapter_selected_verse(result),
+            selectedAnchor: String(cString: xc_chapter_selected_anchor(result)!),
+            html: String(cString: xc_chapter_html(result)!))
+    }
+    static func choices(_ result: OpaquePointer) -> ReferenceChoices {
+        func choices(_ kind: xc_choice_kind) -> [ReferenceChoice] {
+            (0..<xc_choices_count(result, kind)).map { index in
+                ReferenceChoice(label: String(cString: xc_choices_label(result, kind, index)!),
+                                reference: String(cString: xc_choices_reference(result, kind, index)!))
+            }
+        }
+        return ReferenceChoices(books: choices(XC_BOOK), chapters: choices(XC_CHAPTER), verses: choices(XC_VERSE),
+            bookLabel: String(cString: xc_choices_current_label(result, XC_BOOK)!),
+            chapterLabel: String(cString: xc_choices_current_label(result, XC_CHAPTER)!),
+            verseLabel: String(cString: xc_choices_current_label(result, XC_VERSE)!))
     }
 }
