@@ -1,0 +1,131 @@
+# Native Xiphos migration: architecture and baseline
+
+Baseline: `orbeavers14/xiphos`, `master` at
+`c9976a873bf77630af67ec8df84642225e33f6b3` (2026-10-10 inspection).
+GitHub metadata confirms parent `crosswire/xiphos`. Work is on a new fork branch;
+existing files and user data are preserved. This is an incremental migration,
+not a claim that native Xiphos has full parity.
+
+## Build and dependency audit
+
+The top-level CMake build creates static backend/main/editor/WebKit/HTML
+libraries and the GTK executable. C and C++ are mixed; `src/gui` defines the
+GTK-facing headers, and `ui/*.gtkbuilder` describes menus and dialogs.
+`src/backend` is NOT platform independent: sword_main.cc includes GTK,
+settings, search UI, and dialog callbacks; module_manager.cc uses application
+state. `src/main` also directly references widgets. Moving those directories
+unchanged would preserve coupling rather than create a core.
+
+CMake requires SWORD >=1.8.1, BibleSync (>=1.2.0 Unix / >=2.0.1 Windows),
+SQLite (AndBible imports), GLib/GModule, ICU, UUID (Unix), libssh2 (Windows),
+libsoup 3 or 2.4, GTK3, ATK, Cairo, GDK, Pango, minizip, zlib, libxml2,
+and WebKitGTK 4.1 or 4.0. Legacy WebKit1/GtkHTML paths are optional.
+Gettext is optional; build tools include glib-genmarshal, xmllint, xsltproc,
+itstool, desktop-file-validate, appstreamcli, and selected help/package tools.
+GTKTVEDITOR must be selected for a usable editor with WebKit2; the default
+otherwise warns that notes/journal editing is unavailable.
+
+Existing Actions build Linux distributions and cross-compile Win32/Win64;
+Windows packaging uses a Fedora 30 Docker image and MinGW/GTK, not WinUI.
+Existing jobs also build help and release packages. They remain intact.
+The new standalone core build avoids desktop/help dependencies and permits
+engine integration tests on macOS and Linux. Windows can use SWORD include/
+library SDK paths; an actual MSVC SWORD SDK and WinUI build remain unvalidated.
+Local SDK: AppleClang 21, SWORD 1.9.0.3916; its static sword.pc omits zlib,
+bzip2 and lzma link requirements, so explicit extra libraries are needed.
+That SDK was built for macOS 26.0; local preview validation uses that target,
+not evidence of compatibility on macOS 13.
+
+## License and attribution audit
+
+COPYING contains GPL v2. Inspected C/C++ headers, build scripts, and manual
+legal.xml grant GPL v2 **or later**. Preserve those notices, AUTHORS, and
+COPYING; new source uses SPDX GPL-2.0-or-later. GitHub's GPL-2.0 label alone
+is less specific than these source notices. The original project credits
+SWORD, BibleTime and BibleCS contributions. Do not erase those acknowledgments.
+The inspected installed SWORD swmgr.h grants GPL version 2 (without an
+or-later clause). Its dependency terms constrain the linked distribution.
+SWORD and each bundled/transitive library must retain their own license and
+source/distribution obligations; modules have independent content licenses.
+The generated test module contains original prose and downloads no Bible text.
+Vendored Windows Festival resources have separate COPYING files (including
+voice/dictionary terms): review each before reuse in native packages.
+SwordKit's source, version and license were not available in connected repo
+search and are not yet audited. No SwordKit code is imported by this slice.
+Packaging and store distribution require a separate dependency/notice audit;
+this engineering inventory is not a completed distribution license review.
+
+## Boundaries and ownership
+
+SWORD -> shared Xiphos C++ services -> versioned C ABI -> native frontends.
+The core owns reference resolution, versification, module policy, rendering
+options, search scope/results, history/session models, parallel sets,
+annotations/bookmarks/imports and BibleSync state. Platform code owns controls,
+window layout, accessibility, file dialogs, clipboard/printing, scheduling and
+native integration. Introduce these services incrementally with legacy tests.
+
+* Reader/module seam: SWMgr/SWModule and owned immutable metadata/results.
+  Extracted `render_entry` is called by BOTH legacy BackEnd and new Reader.
+  The legacy call retains its strdup ownership and module-key side effect.
+* Display seam: split `src/main/display.cc`, modulecache/global_ops and URL
+  handling into content + semantic actions, then native web renderers. Raw
+  SWORD XHTML is only a foundation; it lacks Xiphos chapter decoration,
+  annotation coloring, link dispatch and preview semantics.
+* Navigation seam: navbar_versekey/navbar_book/tab_history becomes a per-tab
+  study session; no frontend-maintained Bible canon or history algorithms.
+* Search seam: backend search plus main/search_* becomes an asynchronous
+  service with cancellation/progress/result sets; GUI callbacks become events.
+* Storage seam: settings.c/configs.cc/xml.c and bookmark GTK data structures
+  become repositories with read-compatible loaders. No migration writes until
+  backup/round-trip tests validate settings, sessions, bookmarks and notes.
+* Installation seam: module_manager/mod_mgr becomes an install service with
+  explicit source/trust/cipher/progress policy; platform code supplies dialogs.
+* Sync seam: biblesync_glue becomes protocol/session policy with injected
+  networking and UI events. Match all modes and privacy controls.
+
+The initial Reader owns one SWMgr. Its reads are serialized per instance;
+C handles must also be serialized, and cannot be closed during use. Results
+own copies and survive later reads/reader destruction. SWORD has global locale/
+filter state: this slice does not promise concurrent independent readers or
+runtime locale switching. UI calls run on the main thread for this small read
+slice; move expensive discovery/search work to one engine executor later.
+
+C ABI v1 is experimental, static-linked, and exposes opaque handles, status
+codes and UTF-8 borrowed strings with explicit lifetimes. It is not yet a
+stable plugin/shared-library ABI; export decoration, dynamic packaging,
+semantic action events and asynchronous cancellation are later work.
+
+## SwordKit decision
+
+Evaluate SwordKit as Swift conveniences over this ABI. Its current direct
+SWORD bridge must not create a second SWMgr/search/history/annotation engine
+inside native Xiphos. Adapt its bridge or introduce a Xiphos-backed protocol;
+keep core behavior here, use Swift for presentation and lifetime management.
+Do not assume SwordKit's direct SWORD API is the shared application core.
+
+## Native design contract
+
+Keep the established reading/study composition, pane relationships, names,
+context actions and workflows. macOS uses SwiftUI/AppKit + WKWebView,
+Windows WinUI 3 + WebView2, Linux GTK4 + WebKitGTK. Native menu placement,
+keyboard equivalents, focus/accessibility, file dialogs, appearance, window
+restoration and platform packaging may differ without dropping capabilities.
+The initial macOS shell presents a module sidebar and verse pane only. It is
+not a replacement design or a reproduction of the full screenshot.
+Windows and GTK4 frontends are planned, not implemented by placeholder code.
+
+## Reviewable sequence and release gates
+
+1. This PR: inventory, rendering extraction, read-only C ABI, generated engine
+   fixture, macOS reader/adapter smoke test and additive CI.
+2. Shared study-session navigation and chapter rendering/options; compare
+   against legacy using a licensed representative module set and screenshots.
+3. Equivalent read panes on GTK4 and WinUI 3, accessibility/keyboard baselines.
+4. Search/parallel/preview, then persistence/import/editor/installation/sync
+   service extractions, each with legacy characterization and round-trip tests.
+5. Platform packaging, signing, localization and broad parity acceptance.
+
+The GTK app remains the supported complete implementation during migration.
+No release switch until every matrix row is independently validated on each
+platform, user data is proven compatible and regression checks pass. Build
+success alone never establishes functional, visual or workflow parity.

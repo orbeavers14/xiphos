@@ -57,3 +57,12 @@ uses a predefined style file called .clang-format in the source tree.
 We hope that your Bible study will be enhanced by Xiphos!
 
 The Xiphos Development Team
+
+## Native platform migration (experimental)
+
+The shared-core/native-frontend migration begins with a read-only macOS reader
+slice. The existing GTK application remains the complete application. See the
+[architecture and dependency audit](doc/modernization/architecture.md),
+[parity matrix](doc/modernization/parity-matrix.md),
+[standalone core tests](src/core/README.md), and
+[macOS preview build](platforms/macos/README.md).
