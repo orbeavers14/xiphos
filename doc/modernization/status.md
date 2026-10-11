@@ -691,3 +691,32 @@ history-free refreshes before exposing them. Native import/save of existing
 separate gates. No GitHub build was dispatched, no legacy implementation was
 retired and no feature-group acceptance changed. The provisional overall
 estimate stays about 5% (3–7%); 0/38 groups accepted and 0/3 release-ready platforms.
+
+
+## Module-scoped native preferences: locally checked, controls pending
+
+Implemented on `modernization/module-scoped-preferences`, based on the shared
+preference-default extraction. Study sessions now keep copied overrides by
+installed module ID, with worker-serialized set/clear/query operations and an
+explicit opt-in to the shared legacy defaults. Precedence is module override,
+tab-wide override, enabled legacy defaults, then unchanged SDK state. Existing
+unconfigured sessions retain their behavior. Settings are in memory; this
+slice does not import or save `modops.conf` or establish persistent-preference
+parity. The C bridge distinguishes configured flags from unconfigured SDK
+state; Swift exposes thin async wrappers without its own default policy.
+
+Local checks cover two distinct original OSIS modules, opposing settings,
+chapter output, reference-history restoration, history-free refreshes,
+independent tabs, copied queued settings, clear/fallback behavior, all 18 C flag
+round trips, invalid modules/masks/request kinds, worker error recovery and
+result lifetime after shutdown. The generated two-module fixture discards the
+copied SWORD catalog cache before discovery. Local macOS CTest passed 14/14;
+focused ASan/UBSan and ThreadSanitizer suites each passed 2/2 (including fixture
+setup; the external SWORD SDK remains uninstrumented). C++17 warnings-as-errors
+syntax checks passed for changed core and test sources. Swift module-option
+wrappers also passed their expanded integration check.
+
+Next: bind the validated reading-option controls to this state and ensure
+chapter rendering uses the same tab configuration. GUI comparisons, preference
+import/save, other settings and platform implementations still require their
+own evidence. No GitHub build was dispatched or official parity row accepted.

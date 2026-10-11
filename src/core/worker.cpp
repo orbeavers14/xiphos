@@ -110,6 +110,20 @@ std::future<void> StudyWorker::set_engine_options(StudyTab tab, EngineOptions op
 std::future<void> StudyWorker::clear_engine_options(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s) { s.tab(tab).clear_engine_options(); });
 }
+std::future<void> StudyWorker::enable_module_preferences(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s) { s.tab(tab).enable_module_preferences(); });
+}
+std::future<void> StudyWorker::set_module_engine_options(StudyTab tab, std::string module, EngineOptions options) {
+  return impl_->submit([tab, module = std::move(module), options](Impl::State &s) {
+    s.tab(tab).set_module_engine_options(module, options);
+  });
+}
+std::future<void> StudyWorker::clear_module_engine_options(StudyTab tab, std::string module) {
+  return impl_->submit([tab, module = std::move(module)](Impl::State &s) { s.tab(tab).clear_module_engine_options(module); });
+}
+std::future<std::optional<EngineOptions>> StudyWorker::module_engine_options(StudyTab tab, std::string module) {
+  return impl_->submit([tab, module = std::move(module)](Impl::State &s) { return s.tab(tab).module_engine_options(module); });
+}
 std::future<Chapter> StudyWorker::read_chapter(StudyTab tab, std::string module, std::string reference, DisplayOptions options) {
   return impl_->submit([tab, module = std::move(module), reference = std::move(reference), options](Impl::State &s) {
     return s.tab(tab).read_chapter(module, reference, options);

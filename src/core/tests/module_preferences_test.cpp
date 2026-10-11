@@ -1,0 +1,121 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+#include "xiphos/core/worker.hpp"
+#include "xiphos/core/c_api.h"
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <stdexcept>
+#include <thread>
+#include <chrono>
+using namespace xiphos::core;
+void check(bool condition, const char *message) { if (!condition) throw std::runtime_error(message); }
+xc_status wait(xc_request *r) {
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+  xc_status status;
+  while ((status = xc_request_poll(r)) == XC_PENDING) {
+    check(std::chrono::steady_clock::now() < deadline, "request deadline");
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+  return status;
+}
+int main(int argc, char **argv) {
+  try {
+    check(argc == 3, "source/destination fixture roots required");
+    const std::filesystem::path source(argv[1]), root(argv[2]);
+    std::filesystem::create_directories(root);
+    std::filesystem::copy(source, root, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+    std::ifstream input(root / "mods.d/options.conf");
+    std::string config((std::istreambuf_iterator<char>(input)), {});
+    check(config.find("[OptionTest]") == 0, "known option fixture");
+    config.replace(0, 12, "[OptionOther]");
+    config.replace(config.find("./data/"), 7, "./other-data/");
+    std::filesystem::create_directories(root / "other-data");
+    std::filesystem::copy(root / "data", root / "other-data", std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+    { std::ofstream output(root / "mods.d/other.conf"); output << config; }
+    // A copied SWORD catalog cache predates the new module configuration.
+    std::filesystem::remove(root / "mods.d/modules-conf.cache");
+    const auto path = root.string();
+    EngineOptions on, off;
+    on.words_in_red = on.strongs = on.morphs = on.footnotes = true;
+    const auto defaults = engine_options_from_preferences({});
+    {
+      Reader reader(path);
+      const auto expected_on = reader.read("OptionTest", "John 3:16", on).html;
+      const auto expected_off = reader.read("OptionTest", "John 3:16", off).html;
+      const auto expected_defaults = reader.read("OptionTest", "John 3:16", defaults).html;
+      StudySession first(reader), second(reader);
+      check(!first.module_engine_options("OptionTest"), "existing sessions remain unconfigured");
+      first.enable_module_preferences();
+      check(first.read_entry("OptionTest", "John 3:16").html == expected_defaults, "legacy defaults opt in");
+      check(!second.module_engine_options("OptionTest"), "opt in does not affect second tab");
+      first.set_engine_options(off);
+      first.set_module_engine_options("OptionTest", on);
+      check(first.read_entry("OptionTest", "John 3:16").html == expected_on, "module overrides tab");
+      check(first.read_entry("OptionOther", "John 3:16").html == expected_off, "other module retains tab fallback");
+      first.visit("OptionTest", "John 3:16"); first.visit("OptionOther", "John 3:17");
+      const auto before = first.history().entries().size();
+      first.clear_engine_options();
+      first.set_module_engine_options("OptionOther", off);
+      check(first.read_chapter("OptionTest", "John 3:16").verses.at(15).html == expected_on, "configured module chapter");
+      first.read_entry("OptionOther", "John 3:16");
+      check(first.history().entries().size() == before, "settings and refresh preserve history");
+      check(first.navigate(-1).html == expected_on, "Back restores module settings");
+      first.navigate(1);
+      check(first.history().entries().at(first.history().cursor()).module == "OptionOther", "Forward restores other module");
+      first.clear_module_engine_options("OptionTest");
+      check(first.read_entry("OptionTest", "John 3:16").html == expected_defaults, "module clear restores enabled defaults");
+      check(first.read_entry("OptionOther", "John 3:16").html == expected_off, "module clear retains other override");
+      bool rejected = false;
+      try { first.set_module_engine_options("Missing", on); } catch (const std::out_of_range &) { rejected = true; }
+      check(rejected && first.history().entries().size() == before, "unknown module does not mutate history");
+    }
+    {
+      StudyWorker worker(path);
+      const auto first = worker.create_tab().get(), second = worker.create_tab().get();
+      worker.enable_module_preferences(first).get();
+      auto accepted = worker.set_module_engine_options(first, "OptionTest", on);
+      on.strongs = false; accepted.get();
+      check(worker.module_engine_options(first, "OptionTest").get()->strongs, "queued options copied");
+      check(!worker.module_engine_options(second, "OptionTest").get(), "worker tab isolation");
+      worker.set_module_engine_options(first, "OptionOther", off).get();
+      check(worker.read_entry(first, "OptionTest", "John 3:16").get().html.find("3056") != std::string::npos, "worker module on");
+      check(worker.read_entry(first, "OptionOther", "John 3:16").get().html.find("3056") == std::string::npos, "worker other module off");
+      worker.close_tab(first).get();
+      bool rejected = false;
+      try { (void)worker.module_engine_options(first, "OptionTest").get(); } catch (const std::invalid_argument &) { rejected = true; }
+      check(rejected, "closed settings tab rejected");
+      check(!worker.module_engine_options(second, "OptionTest").get(), "queue continues after rejected query");
+    }
+    {
+      xc_worker *worker = nullptr; xc_request *r = nullptr;
+      check(xc_worker_open(path.c_str(), &worker) == XC_OK, "C worker opens");
+      check(xc_worker_create_tab(worker, &r) == XC_OK && wait(r) == XC_OK, "C tab");
+      const auto tab = xc_request_tab(r); xc_request_release(r);
+      unsigned flags = 99; int configured = 99;
+      check(xc_worker_module_engine_options(worker, tab, "OptionTest", &r) == XC_OK && wait(r) == XC_OK, "C SDK query");
+      check(xc_request_engine_options(r, &flags, &configured) == XC_OK && flags == 0 && configured == 0, "C SDK defaults distinguished");
+      xc_request_release(r);
+      check(xc_worker_enable_module_preferences(worker, tab, &r) == XC_OK && wait(r) == XC_OK, "C opt in");
+      check(xc_request_engine_options(r, &flags, &configured) == XC_INVALID_ARGUMENT, "wrong request kind rejected"); xc_request_release(r);
+      check(xc_worker_module_engine_options(worker, tab, "OptionTest", &r) == XC_OK && wait(r) == XC_OK, "C legacy defaults query");
+      check(xc_request_engine_options(r, &flags, &configured) == XC_OK && configured && (flags & XC_ENGINE_FOOTNOTES) && (flags & XC_ENGINE_WORDS_IN_RED) && (flags & XC_ENGINE_VARIANTS_PRIMARY) && !(flags & XC_ENGINE_STRONGS), "C default policy copied"); xc_request_release(r);
+      for (unsigned bit = 0; bit < 18; ++bit) {
+        const unsigned mask = 1u << bit;
+        check(xc_worker_set_module_engine_options(worker, tab, "OptionTest", mask, &r) == XC_OK && wait(r) == XC_OK, "C named module option"); xc_request_release(r);
+        check(xc_worker_module_engine_options(worker, tab, "OptionTest", &r) == XC_OK && wait(r) == XC_OK, "C configured query");
+        check(xc_request_engine_options(r, &flags, &configured) == XC_OK && configured && flags == mask, "all 18 flags round trip"); xc_request_release(r);
+      }
+      check(xc_worker_set_module_engine_options(worker, tab, "OptionTest", 1u << 30, &r) == XC_INVALID_ARGUMENT && !r, "unknown bits rejected before queue");
+      check(xc_worker_set_module_engine_options(worker, tab, nullptr, 0, &r) == XC_INVALID_ARGUMENT && !r, "null module rejected");
+      check(xc_worker_module_engine_options(nullptr, tab, "OptionTest", &r) == XC_INVALID_ARGUMENT && !r, "null worker rejected");
+      check(xc_worker_module_engine_options(worker, tab, "Missing", &r) == XC_OK && wait(r) == XC_MODULE_NOT_FOUND, "unknown module rejected on worker"); xc_request_release(r);
+      check(xc_worker_clear_module_engine_options(worker, tab, "OptionTest", &r) == XC_OK && wait(r) == XC_OK, "C clear module"); xc_request_release(r);
+      check(xc_worker_module_engine_options(worker, tab, "OptionTest", &r) == XC_OK && wait(r) == XC_OK, "query after error");
+      xc_worker_close(worker);
+      check(xc_request_engine_options(r, &flags, &configured) == XC_OK && configured && (flags & XC_ENGINE_FOOTNOTES), "copied settings survive worker close");
+      check(xc_request_engine_options(r, nullptr, &configured) == XC_INVALID_ARGUMENT && !configured, "null output initialized");
+      xc_request_release(r);
+    }
+    std::cout << "Module-scoped session/worker/C preference checks passed\n";
+  } catch (const std::exception &error) { std::cerr << error.what() << '\n'; return 1; }
+}
