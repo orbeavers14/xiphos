@@ -48,6 +48,9 @@ int main(int argc, char **argv) {
       const auto expected_defaults = reader.read("OptionTest", "John 3:16", defaults).html;
       StudySession first(reader), second(reader);
       check(!first.module_engine_options("OptionTest"), "existing sessions remain unconfigured");
+      bool unconfigured_save = false;
+      try { first.save_module_preferences((root / "unconfigured.conf").string()); } catch (const std::invalid_argument &) { unconfigured_save = true; }
+      check(unconfigured_save && !std::filesystem::exists(root / "unconfigured.conf"), "unconfigured SDK state never guessed on save");
       first.enable_module_preferences();
       check(first.read_entry("OptionTest", "John 3:16").html == expected_defaults, "legacy defaults opt in");
       check(!second.module_engine_options("OptionTest"), "opt in does not affect second tab");
@@ -73,6 +76,11 @@ int main(int argc, char **argv) {
       check(first.module_engine_options("OptionOther")->footnotes && first.module_engine_options("OptionOther")->words_in_red, "absent module section uses legacy defaults");
       check(first.read_entry("OptionTest", "John 3:16").html.find("3056") != std::string::npos, "import renders settings");
       check(!second.module_engine_options("OptionTest"), "import leaves other tab unconfigured");
+      const auto saved_path = (root / "session-saved.conf").string();
+      first.save_module_preferences(saved_path);
+      second.import_module_preferences(saved_path);
+      check(second.module_engine_options("OptionTest")->strongs && !second.module_engine_options("OptionTest")->words_in_red, "session save reloads in a separate tab");
+      check(first.history().entries().size() == before, "session save does not change history");
       bool failed_import = false;
       try { first.import_module_preferences(path + "/missing.conf"); } catch (const std::invalid_argument &) { failed_import = true; }
       check(failed_import && first.module_engine_options("OptionTest")->strongs && first.history().entries().size() == before, "failed import preserves options/history");
@@ -97,6 +105,7 @@ int main(int argc, char **argv) {
       worker.import_module_preferences(first, preference_path).get();
       check(worker.module_engine_options(first, "OptionTest").get()->strongs && !worker.module_engine_options(first, "OptionTest").get()->words_in_red, "worker import settings");
       check(!worker.module_engine_options(second, "OptionTest").get(), "worker import leaves other tab alone");
+      worker.save_module_preferences(first, (root / "worker-saved.conf").string()).get();
       worker.close_tab(first).get();
       bool rejected = false;
       try { (void)worker.module_engine_options(first, "OptionTest").get(); } catch (const std::invalid_argument &) { rejected = true; }
@@ -135,6 +144,12 @@ int main(int argc, char **argv) {
       check(xc_worker_import_module_preferences(worker, tab, "", &r) == XC_INVALID_ARGUMENT && !r, "C empty import path rejected");
       check(xc_worker_import_module_preferences(worker, tab, (path + "/missing.conf").c_str(), &r) == XC_OK && wait(r) == XC_INVALID_ARGUMENT, "C failed import status"); xc_request_release(r);
       check(xc_worker_module_engine_options(worker, tab, "OptionTest", &r) == XC_OK && wait(r) == XC_OK, "C query after failed import");
+      xc_request_release(r);
+      const auto save_path = (root / "c-saved.conf").string();
+      check(xc_worker_save_module_preferences(worker, tab, save_path.c_str(), &r) == XC_OK && wait(r) == XC_OK, "C explicit save"); xc_request_release(r);
+      check(read_module_engine_preferences(save_path).at("OptionTest").strongs, "C save bytes decoded");
+      check(xc_worker_save_module_preferences(worker, tab, "", &r) == XC_INVALID_ARGUMENT && !r, "C empty save path rejected");
+      check(xc_worker_module_engine_options(worker, tab, "OptionTest", &r) == XC_OK && wait(r) == XC_OK, "query after save");
       xc_worker_close(worker);
       check(xc_request_engine_options(r, &flags, &configured) == XC_OK && configured && (flags & XC_ENGINE_STRONGS), "copied settings survive worker close");
       check(xc_request_engine_options(r, nullptr, &configured) == XC_INVALID_ARGUMENT && !configured, "null output initialized");

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/session.hpp"
 #include <stdexcept>
+#include "xiphos/core/preferences.hpp"
 namespace xiphos::core {
 Entry StudySession::read_entry(const std::string &module, const std::string &reference) {
   const auto options = module_engine_options(module);
@@ -15,6 +16,15 @@ Chapter StudySession::read_chapter(const std::string &module, const std::string 
 void StudySession::require_module(const std::string &module) const {
   for (const auto &installed : reader_.modules()) if (installed.id == module) return;
   throw std::out_of_range("Module is not installed");
+}
+void StudySession::save_module_preferences(const std::string &path) const {
+  ModuleEnginePreferences settings;
+  for (const auto &module : reader_.modules()) {
+    const auto options = module_engine_options(module.id);
+    if (!options) throw std::invalid_argument("Enable module preferences before saving");
+    settings.emplace(module.id, *options);
+  }
+  save_module_engine_preferences(path, settings);
 }
 void StudySession::import_module_preferences(const std::string &path) {
   const auto loaded = read_module_engine_preferences(path);

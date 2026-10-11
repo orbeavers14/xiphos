@@ -28,6 +28,8 @@ public:
   // installed modules. Missing sections use legacy defaults. Failed imports
   // preserve settings/history; other tabs and source bytes are untouched.
   void import_module_preferences(const std::string &path);
+  // Saves explicit effective options, never guesses unconfigured SDK state.
+  void save_module_preferences(const std::string &path) const;
   void set_module_engine_options(const std::string &module, const EngineOptions &options);
   void clear_module_engine_options(const std::string &module);
   std::optional<EngineOptions> module_engine_options(const std::string &module) const;

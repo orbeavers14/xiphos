@@ -100,6 +100,12 @@ actor CoreWorker {
         let status = xc_worker_set_engine_options(try worker(), tab, options.rawValue, &request)
         xc_request_release(try await wait(status, request))
     }
+    func saveModulePreferences(tab: UInt64, path: String) async throws {
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = path.withCString { xc_worker_save_module_preferences(handle, tab, $0, &request) }
+        xc_request_release(try await wait(status, request))
+    }
     func importModulePreferences(tab: UInt64, path: String) async throws {
         var request: OpaquePointer?
         let handle = try worker()

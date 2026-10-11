@@ -208,3 +208,14 @@ overrides for that tab without visiting history. Unknown/uninstalled sections
 are ignored for rendering, and the original file is never rewritten. The macOS picker now binds this import and refreshes the committed passage
 without visiting history. Full display preferences, automatic restoration and
 compatible save/export remain separate gates.
+
+
+The native preference save layer uses a shared encoder for the 18 legacy engine
+keys and SWORD's writer to retain unrelated semantic values in the chosen file.
+It verifies a same-directory temporary configuration before rename replacement,
+with permission preservation and explicit unconfigured-state rejection. No
+frontend writes configuration or duplicates its schema. Existing source files
+are touched only by an explicit save path; import is still read-only. SWORD
+normalizes formatting/comment spacing, and its no-variant reload fallback stays
+primary. Native save picker, automatic restore, external-writer coordination,
+power-loss durability and Windows file-replacement validation are separate gates.

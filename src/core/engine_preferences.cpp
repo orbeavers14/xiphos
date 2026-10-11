@@ -5,6 +5,28 @@
 #include <sys/stat.h>
 #include <stdexcept>
 namespace xiphos { namespace core {
+EngineOptionPreferences engine_options_to_preferences(const EngineOptions &options) {
+  return {
+    {"Strong's Numbers", options.strongs ? "On" : "Off"},
+    {"Morphological Tags", options.morphs ? "On" : "Off"},
+    {"Footnotes", options.footnotes ? "On" : "Off"},
+    {"Greek Accents", options.greekaccents ? "On" : "Off"},
+    {"Lemmas", options.lemmas ? "On" : "Off"},
+    {"Cross-references", options.scripturerefs ? "On" : "Off"},
+    {"Hebrew Vowel Points", options.hebrewpoints ? "On" : "Off"},
+    {"Hebrew Cantillation", options.hebrewcant ? "On" : "Off"},
+    {"Italic Headings", options.italic_headings ? "On" : "Off"},
+    {"Words of Christ in Red", options.words_in_red ? "On" : "Off"},
+    {"Transliterated Forms", options.xlit ? "On" : "Off"},
+    {"Enumerations", options.enumerated ? "On" : "Off"},
+    {"Glosses", options.glosses ? "On" : "Off"},
+    {"Morpheme Segmentation", options.morphseg ? "On" : "Off"},
+    {"Transliteration", options.transliteration ? "On" : "Off"},
+    {"Primary Reading", options.variants_primary ? "On" : "Off"},
+    {"Secondary Reading", options.variants_secondary ? "On" : "Off"},
+    {"All Readings", options.variants_all ? "On" : "Off"}
+  };
+}
 ModuleEnginePreferences read_module_engine_preferences(const std::string &path) {
   if (path.empty()) throw std::invalid_argument("Preference file path is empty");
 #ifdef _WIN32
@@ -26,6 +48,8 @@ ModuleEnginePreferences read_module_engine_preferences(const std::string &path) 
   configuration.load();
   ModuleEnginePreferences result;
   for (const auto &section : configuration.getSections()) {
+    if (section.first == "_ConfOrder" || section.first == "_ConfComments")
+      continue; // Reserved SDK bookkeeping, not module preferences.
     EngineOptionPreferences values;
     for (const auto &item : section.second)
       values.emplace(item.first.c_str(), item.second.c_str());

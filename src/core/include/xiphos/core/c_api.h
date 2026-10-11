@@ -72,6 +72,10 @@ xc_status xc_worker_set_engine_options(xc_worker *worker, uint64_t tab, unsigned
 /* Explicit read-only modops.conf import replaces this tab's engine settings
  * for all installed modules; missing sections use shared legacy defaults.
  * Failed imports preserve state/history. Path is copied; no files are written. */
+/* Explicit save of configured engine settings. Preserves unrelated values in
+ * an existing file, verifying a temporary SWORD configuration before replacing
+ * it. Comments/layout normalize like legacy saves. No automatic persistence. */
+xc_status xc_worker_save_module_preferences(xc_worker *worker, uint64_t tab, const char *path, xc_request **out);
 xc_status xc_worker_import_module_preferences(xc_worker *worker, uint64_t tab, const char *path, xc_request **out);
 xc_status xc_worker_enable_module_preferences(xc_worker *worker, uint64_t tab, xc_request **out);
 xc_status xc_worker_set_module_engine_options(xc_worker *worker, uint64_t tab, const char *module, unsigned flags, xc_request **out);

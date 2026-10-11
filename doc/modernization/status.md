@@ -819,3 +819,42 @@ checks, then remaining options and study popups. Full display/preference
 migration, automatic restore, other platforms and full parity are still pending.
 No GitHub build was dispatched, no official acceptance was recorded and no
 legacy file retired. The overall estimate remains approximately 5% (3–7%).
+
+
+## Compatible engine-preference save: locally checked, native action pending
+
+Implemented 2026-10-11 on `modernization/preference-file-save`, based on the
+native importer. The shared C++ encoder emits all 18 legacy engine keys; the
+native core saves through SWORD's parser/writer. Existing unrelated display
+keys, unknown values, duplicate unknown keys and uninstalled-module sections
+are retained semantically. Formatting/comment spacing follows SWORD's legacy
+writer; exact source bytes are not promised for a save. Import remains read-only.
+
+Saving requires configured effective options for every installed module and
+never guesses SDK defaults. Session/worker/C/Swift APIs accept an explicit path;
+there is no automatic persistence or home discovery. A same-directory temporary
+configuration is written and reloaded to verify all actual sections/values,
+excluding only SWORD's reserved ordering/comment metadata. Existing permissions
+are preserved, new files are private, symlinks resolve to their existing target,
+and detected destination changes/read-only files fail before replacement.
+Temporary files are cleaned after success/failure. Replacement uses filesystem
+rename; power-loss durability and coordination with external writers are not
+claimed by this initial save layer. Windows replacement/path behavior remains
+an integration gate.
+
+Validation: 263 original configuration cases now include encoding followed by
+reload through the original initializer. New save tests cover preserved display/
+UTF-8/unknown values and duplicate keys, new files, all eight variant selections,
+permissions, existing symlinks, verification failure, read-only files, directory/
+missing-parent rejection and temporary cleanup. Session/worker/C/Swift save/load
+checks preserve history and reject unconfigured state without creating a file.
+The original no-variant fallback is retained: all variant flags off reloads as
+primary rather than representing a persistent no-selection override. Full local
+macOS CTest passed 16/16; focused ASan/UBSan passed 4/4 and ThreadSanitizer 3/3,
+including fixture setup (external SDK uninstrumented). The C++11 legacy seam
+build and C++11/C++17 warnings-as-errors checks passed.
+
+Next: native Save reading options picker and end-to-end new-file/overwrite/
+cancel checks. Automatic restoration, full preference migration, remaining
+options/popups and other native platforms remain pending. No GitHub build was
+dispatched, no parity group accepted and no legacy file retired.

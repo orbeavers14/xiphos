@@ -71,6 +71,13 @@ struct OptionAdapterSmoke {
         let importHistory = try await worker.history(tab)
         guard preservedOptions == imported, importHistory.count == 1,
               try Data(contentsOf: preferenceURL) == preferenceBytes else { fatalError("import failure/source/history preservation") }
+        let saveURL = URL(fileURLWithPath: CommandLine.arguments[1]).appendingPathComponent("adapter-saved-modops.conf")
+        try await worker.saveModulePreferences(tab: tab, path: saveURL.path)
+        let restoredTab = try await worker.createTab()
+        try await worker.importModulePreferences(tab: restoredTab, path: saveURL.path)
+        let savedOptions = try await worker.moduleEngineOptions(tab: restoredTab, module: "OptionTest")
+        guard savedOptions == imported else { fatalError("Swift explicit save/reload") }
+        try await worker.closeTab(restoredTab)
         try await worker.closeTab(tab)
         await worker.shutdown()
         guard modules[0].options.declared == declared, restored.html == original.html else { fatalError("copied metadata/results lifetime") }
