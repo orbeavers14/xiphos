@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 #include "render.hpp"
+#include "study_note.hpp"
 #include "engine_options.hpp"
 #include "content.hpp"
 #include "link.hpp"
@@ -27,6 +28,10 @@ public:
   const std::vector<Module> &modules() const;
   ReferenceChoices reference_choices(const std::string &module, const std::string &reference);
   PassageLink resolve_link(const std::string &current_module, const std::string &url);
+  StudyNote study_note(const std::string &module, const std::string &reference,
+                       const std::string &identifier);
+  StudyNote study_note(const std::string &module, const std::string &reference,
+                       const std::string &identifier, const EngineOptions &options);
   Entry read(const std::string &module, const std::string &reference);
   Entry read(const std::string &module, const std::string &reference, const EngineOptions &options);
   Chapter read_chapter(const std::string &module, const std::string &reference,
@@ -36,6 +41,8 @@ public:
   std::string adjacent_chapter(const std::string &module, const std::string &reference,
                                int direction);
 private:
+  StudyNote note_impl(const std::string &module, const std::string &reference,
+                      const std::string &identifier, const EngineOptions *options);
   Entry read_impl(const std::string &module, const std::string &reference, const EngineOptions *options);
   Chapter chapter_impl(const std::string &module, const std::string &reference,
                        const DisplayOptions &display, const EngineOptions *engine);

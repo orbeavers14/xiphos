@@ -52,6 +52,22 @@ PassageLink Reader::resolve_link(const std::string &current_module, const std::s
   impl_->verse_module(target.module, target.reference);
   return target;
 }
+StudyNote Reader::study_note(const std::string &id, const std::string &reference,
+                             const std::string &identifier) {
+  return note_impl(id, reference, identifier, nullptr);
+}
+StudyNote Reader::study_note(const std::string &id, const std::string &reference,
+                             const std::string &identifier, const EngineOptions &options) {
+  return note_impl(id, reference, identifier, &options);
+}
+StudyNote Reader::note_impl(const std::string &id, const std::string &reference,
+                            const std::string &identifier, const EngineOptions *options) {
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto &module = impl_->verse_module(id, reference);
+  std::unique_ptr<ScopedEngineOptions> scope;
+  if (options) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *options);
+  return render_study_note(module, reference, identifier);
+}
 Entry Reader::read(const std::string &id, const std::string &reference) {
   return read_impl(id, reference, nullptr);
 }

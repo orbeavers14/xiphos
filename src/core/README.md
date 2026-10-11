@@ -54,3 +54,16 @@ of the preceding/following chapter using SWORD, then records a successful visit.
 Only -1/+1 are accepted; Bible ends do not wrap. Failed destinations leave
 session history unchanged. This is not full decorated Xiphos chapter output;
 headings, options, semantic actions and synchronized study panes are pending.
+
+## Study-note retrieval
+
+`Reader::study_note`, `StudySession::study_note` and `StudyWorker::study_note`
+accept an explicit module, verse and SWORD note identifier. They regenerate
+that verse's entry attributes and return owned reference/type/label/body HTML
+and cross-reference-list metadata. Body conversion/rendering matches the
+existing backend; sessions apply their effective module options without
+visiting or moving history. Missing notes reject rather than inserting empty
+SDK attributes or reusing attributes from the last chapter verse. The helper
+is C++11-compatible in CoreRender; native host lifetime/thread rules still
+apply. Native link handling, hover presentation and expanded reference lists
+remain separate pending work.

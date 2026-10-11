@@ -904,3 +904,30 @@ both controls are absent for a module without those declarations.
 Cross-reference popup interactions, remaining language/variant controls and
 full study-pane/visual acceptance remain pending. No GitHub build dispatched,
 no parity group accepted and no legacy files retired.
+
+## Shared study-note retrieval: locally checked, native presentation pending
+
+Implemented 2026-10-11 on `modernization/shared-study-notes`, based on the
+language/reference controls. A C++11-compatible rendering helper reproduces
+the original backend's UTF8HTML conversion followed by SWORD body rendering.
+Reader/session/worker APIs accept module, verse and note identifier and return
+owned body HTML plus reference, label, type and reference-list metadata. The
+requested verse is rendered first to regenerate its attributes, preventing
+stale-note results after whole-chapter rendering. Missing notes use lookup
+without creating phantom SDK attributes.
+
+Sessions apply their effective module settings; previewing a note leaves
+history untouched. Worker requests copy arguments, reject closed tabs, recover
+after errors and return data that outlives the worker. Four Strong's/footnote
+combinations match direct original backend calls on an original Unicode/formatted
+note fixture. Tests also cover module/verse context, cross-reference metadata,
+failed-option restoration and separate-tab settings. Full local CTest passed
+17/17, ASan/UBSan 3/3 and ThreadSanitizer 3/3 including fixture setup (external
+SDK uninstrumented). The default legacy rendering seam still builds with
+C++11; helper/test warnings-as-errors checks passed.
+
+Next: expose note requests through the C/Swift adapters and handle generated
+note links in the native study pane. Cross-reference verse-list expansion,
+introductory notes, legacy hover/click distinctions and full popup/design parity
+remain pending. No GitHub build dispatched, no accepted parity group and no
+legacy code retired.
