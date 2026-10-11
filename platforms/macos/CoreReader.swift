@@ -76,6 +76,11 @@ struct ReferenceChoices: Sendable {
     let bookLabel: String; let chapterLabel: String; let verseLabel: String
 }
 struct PassageTarget: Sendable { let module: String; let reference: String }
+enum ContextualStudyLink: Sendable {
+    case passage(PassageTarget)
+    case note(RenderedStudyNote)
+    case references(RenderedReferenceList)
+}
 enum ResolvedStudyLink: Sendable {
     case passage(PassageTarget)
     case note(RenderedStudyNote)

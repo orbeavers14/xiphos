@@ -38,6 +38,7 @@ struct xc_request {
   virtual void update() = 0;
   void store(uint64_t v) { tab = v; }
   void store(std::optional<xiphos::core::EngineOptions> v) { options = v; options_result = true; }
+  void store(xiphos::core::ContextualStudyLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::ResolvedStudyLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::ReferenceList v) { references = std::make_unique<xc_reference_list>(xc_reference_list{std::move(v)}); }
   void store(xiphos::core::StudyNote v) { note = std::make_unique<xc_note>(xc_note{std::move(v)}); }
@@ -214,6 +215,10 @@ xc_status xc_request_engine_options(const xc_request *r, unsigned *flags, int *c
 }
 xc_status xc_worker_clear_engine_options(xc_worker *w, uint64_t tab, xc_request **out) {
   return queue_request(w, out, [=](auto &worker) { return worker.clear_engine_options(tab); });
+}
+xc_status xc_worker_resolve_study_link_at(xc_worker *w, uint64_t tab, const char *id, const char *context, const char *uri, xc_request **out) {
+  if (!context || !*context || !uri || !*uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.resolve_study_link_at(tab, id ? id : "", context, uri); });
 }
 xc_status xc_worker_resolve_study_link(xc_worker *w, uint64_t tab, const char *id, const char *uri, xc_request **out) {
   if (!uri || !*uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }

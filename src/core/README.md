@@ -95,7 +95,10 @@ source reference context. Single showRef commands also return lists, matching
 the legacy clicked sidebar workflow. Passage URIs still return navigation
 targets; notes still return owned bodies. All resolution preserves history.
 Hosts must pass committed source context rather than an unfinished input draft.
-C/Swift contextual request bindings are pending.
+`xc_worker_resolve_study_link_at` exposes the operation with nonempty source
+context and URI, copied submission arguments and one owned result kind.
+`CoreWorker.resolveStudyLinkAt` returns a Sendable passage/note/references enum.
+Native note-body dispatch follows separately.
 
 ## Reference-list parser seam
 
