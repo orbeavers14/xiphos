@@ -100,6 +100,18 @@ std::future<ReferenceList> StudyWorker::read_reference_list(StudyTab tab, std::s
     return s.tab(tab).read_reference_list(module, expression, context);
   });
 }
+std::future<ContextualStudyLink> StudyWorker::resolve_study_link_at(StudyTab tab, std::string current_module, std::string current_reference, std::string uri) {
+  return impl_->submit([tab, current_module = std::move(current_module), current_reference = std::move(current_reference),
+                        uri = std::move(uri)](Impl::State &s) -> ContextualStudyLink {
+    auto &session = s.tab(tab);
+    const auto target = xiphos::core::contextual_study_link(uri, current_module);
+    if (const auto *passage = std::get_if<PassageLink>(&target))
+      return s.reader.resolve_link(passage->module, passage_uri(passage->reference));
+    if (const auto *list = std::get_if<ReferenceListLink>(&target))
+      return session.read_reference_list(list->module, list->expression, current_reference);
+    return s.note_target(tab, std::get<StudyNoteLink>(target));
+  });
+}
 std::future<ResolvedStudyLink> StudyWorker::resolve_study_link(StudyTab tab, std::string current_module, std::string uri) {
   return impl_->submit([tab, current_module = std::move(current_module), uri = std::move(uri)](Impl::State &s) -> ResolvedStudyLink {
     s.tab(tab); // Both kinds require an open study context.

@@ -58,6 +58,23 @@ int main() {
       try { study_link(std::string("passagestudy.jsp?") + bad, "Current"); } catch (const std::invalid_argument &) { rejected = true; }
       require(rejected, "invalid/ambiguous/range reference commands reject");
     }
+    const auto listLink = contextual_study_link("xiphos.url?action=showRef&type=scripRef&value=16-19%3B16&module=", "Other");
+    require(std::holds_alternative<ReferenceListLink>(listLink) && std::get<ReferenceListLink>(listLink).module == "Other" &&
+            std::get<ReferenceListLink>(listLink).expression == "16-19;16", "contextual dispatch retains relative ranges and duplicates");
+    require(std::holds_alternative<ReferenceListLink>(contextual_study_link("passagestudy.jsp?action=showRef&type=scripRef&value=John.3.16", "Other")),
+            "single showRef command is also a sidebar preview");
+    require(std::holds_alternative<StudyNoteLink>(contextual_study_link("passagestudy.jsp?" + query, "Current")) &&
+            std::holds_alternative<PassageLink>(contextual_study_link("sword:///John3:16", "Other")), "contextual dispatch preserves note and passage kinds");
+    for (const auto &bad : {"https://example/passagestudy.jsp?action=showRef&type=scripRef&value=16-19",
+                          "passagestudy.jsp?action=showRef&type=scripRef&value=16-19&value=16",
+                          "passagestudy.jsp?action=showRef&type=scripRef&value=16-19&passage=John3:16",
+                          "passagestudy.jsp?action=showRef&type=scripRef&value=%00",
+                          "passagestudy.jsp?action=showRef&type=scripRef&value=John3:16%23fragment",
+                          "passagestudy.jsp?action=showRef&type=wrong&value=16-19"}) {
+      bool rejected = false;
+      try { contextual_study_link(bad, "Other"); } catch (const std::invalid_argument &) { rejected = true; }
+      require(rejected, "contextual range links retain origin/query validation");
+    }
     Chapter chapter;
     chapter.selected_verse = 2;
     chapter.verses = {{"A \"<&'", "<em>Original text</em>"}, {"B", ""}};

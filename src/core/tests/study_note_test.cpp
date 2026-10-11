@@ -97,6 +97,7 @@ int main(int argc, char **argv) {
             "module argument selects the correct note");
     }
     check(owned.html.find("Original other note") != std::string::npos, "copied note outlives reader");
+    std::future<ContextualStudyLink> acceptedList;
     std::future<StudyNote> accepted;
     std::string generated_note_uri;
     {
@@ -123,6 +124,40 @@ int main(int argc, char **argv) {
       const auto targetEntry = worker.read_entry(tab, target.module, target.reference).get();
       check(targetEntry.reference == "John 3:16" && targetEntry.html.find("Original red-letter fixture") != std::string::npos,
             "reference target normalized/rendered by module's SWORD key");
+      worker.visit(tab, "OptionOther", "John3:20").get();
+      worker.visit(tab, "OptionOther", "John3:19").get();
+      worker.navigate(tab, -1).get();
+      const auto previewHistory = worker.history(tab).get();
+      const auto contextualNote = worker.resolve_study_link_at(tab, "OptionTest", "John3:16", generated_note_uri).get();
+      check(std::get<StudyNote>(contextualNote).html == expected[3], "contextual dispatch keeps explicit note source");
+      check(std::get<PassageLink>(worker.resolve_study_link_at(tab, "OptionOther", "John3:20", "sword:///John3:18").get()).reference == "John3:18",
+            "contextual passage kind remains normal navigation target");
+      const auto singleList = std::get<ReferenceList>(worker.resolve_study_link_at(tab, "OptionOther", "John3:18", generated_reference_uri).get());
+      check(singleList.context == "John 3:18" && singleList.entries.size() == 1 && singleList.entries[0].reference == "John 3:16" &&
+            singleList.entries[0].html.find("3056") != std::string::npos, "single note reference is configured sidebar list");
+      const auto rangeNote = worker.study_note(tab, "OptionOther", "John3:20", "1").get();
+      const auto rangeHref = rangeNote.html.find("href=\"");
+      check(rangeHref != std::string::npos, "engine generated ranged reference URI");
+      const auto rangeEnd = rangeNote.html.find('"', rangeHref + 6);
+      const auto rangeUri = rangeNote.html.substr(rangeHref + 6, rangeEnd - rangeHref - 6);
+      const auto rangeList = std::get<ReferenceList>(worker.resolve_study_link_at(tab, "OptionOther", "John3:20", rangeUri).get());
+      check(rangeList.entries.size() == 4 && rangeList.entries.front().reference == "John 3:16" && rangeList.entries.back().reference == "John 3:19",
+            "actual SWORD ranged note link expands through shared parser");
+      const auto second = worker.create_tab().get();
+      auto secondOptions = options; secondOptions.strongs = false;
+      worker.set_module_engine_options(second, "OptionOther", secondOptions).get();
+      const auto secondList = std::get<ReferenceList>(worker.resolve_study_link_at(second, "OptionOther", "John3:20", rangeUri).get());
+      check(secondList.entries.front().html.find("3056") == std::string::npos, "contextual reference lists use separate tab settings");
+      bool invalidContext = false;
+      try { (void)worker.resolve_study_link_at(tab, "OptionOther", "", rangeUri).get(); }
+      catch (const std::invalid_argument &) { invalidContext = true; }
+      check(invalidContext, "list dispatch requires source reference");
+      std::string relativeUri = "passagestudy.jsp?action=showRef&type=scripRef&value=16-19%3B16&module=";
+      acceptedList = worker.resolve_study_link_at(tab, "OptionOther", "John3:20", relativeUri); relativeUri.clear();
+      const auto afterPreview = worker.history(tab).get();
+      check(afterPreview.entries.size() == previewHistory.entries.size() && afterPreview.cursor == previewHistory.cursor &&
+            afterPreview.can_forward && worker.history(second).get().entries.empty(), "all contextual previews preserve history and forward state");
+      worker.clear_history(tab).get();
       bool wrong_type = false;
       auto wrong_uri = generated_note_uri;
       wrong_uri.replace(wrong_uri.find("type=n"), 6, "type=x");
@@ -139,7 +174,13 @@ int main(int argc, char **argv) {
       try { (void)worker.study_note(tab, "OptionOther", "John 3:19", note_id).get(); }
       catch (const std::invalid_argument &) { rejected = true; }
       check(rejected, "closed tab rejects note request");
+      rejected = false;
+      try { (void)worker.resolve_study_link_at(tab, "OptionOther", "John3:20", rangeUri).get(); }
+      catch (const std::invalid_argument &) { rejected = true; }
+      check(rejected, "closed tab rejects contextual dispatch");
     }
+    const auto retainedList = std::get<ReferenceList>(acceptedList.get());
+    check(retainedList.entries.size() == 5 && retainedList.entries.back().reference == "John 3:16", "copied contextual list request survives worker teardown");
     check(accepted.get().html == expected[3], "queued note copies arguments and outlives worker");
     {
       xc_worker *worker = nullptr; xc_request *request = nullptr;

@@ -94,14 +94,20 @@ StudyNoteLink note_target(const CommandParameters &parameters, const std::string
     throw std::invalid_argument("Study-note link requires a single passage and identifier");
   return result;
 }
-PassageLink reference_target(const CommandParameters &parameters, const std::string &current_module) {
-  PassageLink result{parameter(parameters, "module"), parameter(parameters, "value")};
+ReferenceListLink reference_list_target(const CommandParameters &parameters, const std::string &current_module) {
+  ReferenceListLink result{parameter(parameters, "module"), parameter(parameters, "value")};
   if (result.module.empty()) result.module = current_module;
   if (parameter(parameters, "action") != "showRef" || parameter(parameters, "type") != "scripRef" ||
-      parameters.count("passage") || result.module.empty() || result.reference.empty() ||
-      result.reference.find_first_of("#?!-;,/") != std::string::npos)
-    throw std::invalid_argument("Reference link requires a single scripture reference");
+      parameters.count("passage") || result.module.empty() || result.expression.empty() ||
+      result.expression.find_first_of("#?!/") != std::string::npos)
+    throw std::invalid_argument("Reference link requires a scripture expression");
   return result;
+}
+PassageLink reference_target(const CommandParameters &parameters, const std::string &current_module) {
+  const auto list = reference_list_target(parameters, current_module);
+  if (list.expression.find_first_of("-;,") != std::string::npos)
+    throw std::invalid_argument("Reference link requires a single scripture reference");
+  return {list.module, list.expression};
 }
 }
 StudyNoteLink study_note_link(const std::string &url, const std::string &current_module) {
@@ -112,6 +118,13 @@ StudyCommandLink study_link(const std::string &url, const std::string &current_m
     return passage_link(url, current_module);
   const auto parameters = command_parameters(url);
   if (parameter(parameters, "action") == "showRef") return reference_target(parameters, current_module);
+  return note_target(parameters, current_module);
+}
+ContextualStudyCommandLink contextual_study_link(const std::string &url, const std::string &current_module) {
+  if (url.compare(0, 8, "sword://") == 0 || url.compare(0, 8, "bible://") == 0)
+    return passage_link(url, current_module);
+  const auto parameters = command_parameters(url);
+  if (parameter(parameters, "action") == "showRef") return reference_list_target(parameters, current_module);
   return note_target(parameters, current_module);
 }
 std::string passage_uri(const std::string &reference) {

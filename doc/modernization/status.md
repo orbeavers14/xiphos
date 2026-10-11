@@ -1128,3 +1128,25 @@ legacy history deduplication. No GitHub build was dispatched.
 Next: range/list links inside note bodies and remaining study interactions.
 Hover/pin, full visual parity and cross-platform acceptance remain pending.
 No feature group is officially accepted and no legacy file is retired.
+
+## Contextual reference-link core: locally checked, host binding pending
+
+Implemented 2026-10-11 on `modernization/contextual-reference-links`, based on
+the native list preview. Legacy `show_ref` clicks display verse lists in the
+sidebar. An additive core handler now resolves single/ranged/list showRef
+commands into configured reference-list snapshots with explicit source
+passage context. Passage URI navigation and study-note results keep their own
+types; earlier single-reference APIs retain their contracts. Query/origin
+validation remains shared, and previews never visit history.
+
+Validation: 19/19 local checks, 4/4 focused address/undefined-sanitizer checks
+and 3/3 focused thread-sanitizer checks passed (external SWORD SDK remains
+uninstrumented). Strict warning-as-error C++17 compilation passed. Tests use a
+real SWORD-generated range link and cover relative lists/duplicates, tab
+settings, source context, malformed commands, preserved backward/forward
+history, closed tabs and accepted results after worker shutdown. No GitHub
+build was dispatched.
+
+Next: C/Swift bindings and native note-body dispatch. Unknown-module legacy
+fallback, hover/pin and full preview/design parity remain acceptance work.
+No legacy retirement or feature sign-off occurs here.
