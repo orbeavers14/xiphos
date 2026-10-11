@@ -1391,3 +1391,10 @@ is unchanged. Validation: 24/24 local checks and strict C++11 compilation passed
 No GitHub builds. GTK presentation effects/full lexical parity are not tested;
 next extract explicit main/dialog selection policy through the shared core.
 Overall estimate about 6%, 0/38 feature groups accepted; no file retirement.
+
+
+The parity matrix now records scoped implementation evidence for F09, F15–F17,
+F29 and F37 rather than leaving implemented subsets marked wholly pending.
+The legacy C++11 seam libraries still build with the native core disabled.
+Full legacy GTK dependency/GUI validation remains unavailable on this Mac.
+These are evidence updates; no feature group or native platform is accepted.
