@@ -232,6 +232,10 @@ xc_status xc_request_engine_options(const xc_request *r, unsigned *flags, int *c
 xc_status xc_worker_clear_engine_options(xc_worker *w, uint64_t tab, xc_request **out) {
   return queue_request(w, out, [=](auto &worker) { return worker.clear_engine_options(tab); });
 }
+xc_status xc_worker_follow_study_link_at(xc_worker *w, uint64_t tab, const char *id, const char *context, const char *uri, xc_request **out) {
+  if (!context || !*context || !uri || !*uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.follow_study_link_at(tab, id ? id : "", context, uri); });
+}
 xc_status xc_worker_resolve_study_link_at(xc_worker *w, uint64_t tab, const char *id, const char *context, const char *uri, xc_request **out) {
   if (!context || !*context || !uri || !*uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.resolve_study_link_at(tab, id ? id : "", context, uri); });
@@ -262,6 +266,14 @@ xc_status xc_worker_set_lexicon_preferences(xc_worker *w, uint64_t tab, const xc
 }
 xc_status xc_worker_lexicon_preferences(xc_worker *w, uint64_t tab, xc_request **out) {
   return queue_request(w, out, [=](auto &worker) { return worker.lexicon_preferences(tab); });
+}
+xc_status xc_worker_visit_lexical(xc_worker *w, uint64_t tab, const char *module, const char *reference,
+                               const char *uri, int origin, xc_request **out) {
+  if (!uri || !*uri || (origin != XIPHOS_LEXICON_MAIN && origin != XIPHOS_LEXICON_DIALOG)) {
+    if (out) *out = nullptr;
+    return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w, out, [=](auto &worker) { return worker.visit_lexical(tab, module ? module : "", reference ? reference : "", uri, origin); });
 }
 xc_status xc_worker_read_lexical(xc_worker *w, uint64_t tab, const char *module, const char *reference,
                                const char *uri, int origin, xc_request **out) {

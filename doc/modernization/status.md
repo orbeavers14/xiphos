@@ -1714,3 +1714,21 @@ arguments, pending/type/bounds/take-once C ownership and snapshots after worker
 teardown. SWORD is uninstrumented. No GitHub builds. Next: lexical recorded
 commands, Swift snapshots and native history controls, then remaining dictionary
 workflows. No full acceptance or file retirement; estimate about 6% (4–8%).
+
+
+## Recorded lexical commands: locally checked, native history UI next
+
+Implemented 2026-10-11 on `modernization/recorded-lexical-commands`. Explicit
+lexical visits and contextual click dispatch render before recording the selected
+dictionary/raw value. Preview resolution stays unrecorded. Click and preview
+dispatch share one core parser/render path; note/list/passage kinds retain their
+existing target/preview behavior with no Bible visit. Failed lookup preserves
+dictionary history. Legacy Unicode click case normalization is explicitly still
+pending; Swift does not add a competing normalization implementation.
+
+Validation: 29/29 local checks, focused address/undefined and thread runs 2/2
+and strict C++17/C11 passed. Tests cover preview-versus-click recording, selected
+lexicon metadata, changed-click forward clearing, failed click retention, owned
+C kinds and passage no-visit behavior. SWORD is uninstrumented. No GitHub builds.
+Next: Swift history values and native history controls, then normalization, key
+chooser and remaining lexical workflows. No full acceptance/retirement; about 6%.

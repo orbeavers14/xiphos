@@ -8,6 +8,12 @@ void StudySession::set_lexicon_preferences(const LexiconPreferences &preferences
   auto replacement = std::make_optional(preferences);
   lexicons_.swap(replacement);
 }
+LexicalEntry StudySession::visit_lexical(const std::string &module, const std::string &reference,
+                                      const std::string &uri, int origin) {
+  auto result = read_lexical(module, reference, uri, origin);
+  dictionary_history_.visit({result.entry.module, result.command.value});
+  return result;
+}
 LexicalEntry StudySession::read_lexical(const std::string &module, const std::string &reference,
                                      const std::string &uri, int origin) {
   if (!lexicons_) throw std::invalid_argument("Configure lexicons before lexical lookup");
