@@ -56,6 +56,25 @@ failed rendering and null/empty Strong's preferences. Unicode values reach the
 hover render and click delegate unchanged; normalization belongs downstream.
 It uses explicit backend/presentation shims, not a live GTK or real-module run.
 
+## Initial macOS lexical transport
+
+The native reader now sends main-frame pointer-over links through a trusted
+WKUserScript in the isolated client world, with module scripts disabled. The
+core's existing no-record lexical API parses/selects/renders the URI using the
+view's committed source context. A separate information sidebar holds copied
+Strong's/morphology results; leaving a link retains content and resets transport
+deduplication so reentry can refresh it. Payload type/frame/size are checked.
+
+Hover reads do not mark the reading controls busy or visit either history.
+Only the latest request publishes; reading actions/window close invalidate
+pending publication, and failures retain the previous preview/status. Accepted
+engine actions still drain when a Swift observation is canceled. Dictionary
+click/close operations keep the information preview independent. This transport
+currently handles lexical links in the main reader/information view; notes,
+reference lists, dictionary-definition hover and detached dialogs are pending.
+Rapid pointer/keyboard ordering and representative real-module/platform checks
+remain acceptance gates. This is a scoped initial hover implementation.
+
 The existing worker's no-record lexical snapshots provide the shared lookup
 seam. Native hover transport should supply the committed source from its view,
 leave URI parsing/selection/rendering in C++, and publish copied results to the

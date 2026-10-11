@@ -25,8 +25,8 @@ note/reference-list previews. Dictionary work includes characterized lexical
 selection, native preferences and click results, direct lookup, key steps and
 shared separate history commands, native dictionary Back/Forward/Clear and a
 nearby-key chooser. Main clicks use shared Unicode casing; the macOS host
-initializes its environment locale before engine startup. Hover presentation,
-persistence and full established pane composition remain in progress.
+initializes its environment locale before engine startup. Strong's/morphology
+hovers use a separate information sidebar. Other hover families, persistence and full established pane composition remain in progress.
 
 The current local suite has 33 checks, supplemented by scoped sanitizer,
 strict-language and temporary-fixture GUI checks recorded in the status ledger.

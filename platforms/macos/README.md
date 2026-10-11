@@ -250,3 +250,15 @@ environment locale before creating the worker, matching legacy main.c. Invalid
 locale selection retains the existing process locale. Locale changes while
 workers run are unsupported. Import of Xiphos's saved forced-locale preference,
 representative real modules and cross-platform acceptance remain separate gates.
+
+Strong's/morphology pointer hovers now show copied raw lookup results in a
+separate Information Preview sidebar. The last preview stays when the pointer
+leaves the link and when the dictionary column closes. Clicks still use the
+recorded dictionary route. Hover uses committed Bible context, preserves draft
+input and both histories, and does not disable reading controls while waiting.
+Late/stale/closed results are discarded; failed/unsupported hovers retain the
+previous preview and status. The trusted event transport runs in WebKit's
+isolated client world, checks main-frame payloads, and keeps module JavaScript
+disabled. Parsing/selection/rendering remain in C++. This currently covers
+lexical links in the main reader/information view; all-link and keyboard/real-
+module/platform acceptance is pending. See [hover contracts](../../doc/modernization/hover-workflows.md).

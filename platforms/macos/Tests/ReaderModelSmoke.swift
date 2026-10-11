@@ -9,6 +9,13 @@ struct ReaderModelSmoke {
             try await Task.sleep(nanoseconds: 1_000_000)
         }
     }
+    @MainActor static func previewIdle(_ model: ReaderModel) async throws {
+        let deadline = Date().addingTimeInterval(10)
+        while model.isPreviewLoading {
+            guard Date() < deadline else { fatalError("information preview request timeout") }
+            try await Task.sleep(nanoseconds: 1_000_000)
+        }
+    }
     @MainActor static func readingOptions(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let first = ReaderModel(worker: worker, startupError: nil)
@@ -320,6 +327,21 @@ struct ReaderModelSmoke {
         first.applyLexiconPreferences(defaults) // busy action must be ignored
         try await idle(first)
         guard first.lexiconPreferences == changed, first.html == priorHTML, first.reference == "John 4:2" else { fatalError("busy preference action ignored") }
+        let beforeHoverMessage = first.message
+        first.previewLexicalLink("xiphos.url?action=showStrongs&type=Greek&value=caf%C3%A9")
+        guard !first.isBusy else { fatalError("hover blocks reading actions") }
+        try await previewIdle(first)
+        guard first.informationPreview?.value == "café", first.informationPreview?.entry.module == "DictionaryOne",
+              first.informationPreview?.sourceReference == "John 3:16", first.dictionaryEntry == nil, first.dictionaryHistory == nil,
+              first.reference == "John 4:2", first.html == priorHTML, first.canBack == back, first.canForward == forward,
+              second.informationPreview == nil else { fatalError("raw information hover preserves Bible/draft/dictionary/tab state") }
+        first.previewLexicalLink("xiphos.url?action=showMorph&type=Greek&value=alpha")
+        first.previewLexicalLink("xiphos.url?action=showStrongs&type=Greek&value=caf%C3%A9")
+        try await previewIdle(first)
+        guard first.informationPreview?.value == "café", first.informationPreview?.entry.module == "DictionaryOne" else { fatalError("latest hover owns publication") }
+        first.previewLexicalLink("https://example.invalid/xiphos.url?action=showStrongs&type=Greek&value=alpha")
+        try await previewIdle(first)
+        guard first.informationPreview?.value == "café", first.message == beforeHoverMessage else { fatalError("failed hover retains preview/status") }
         first.followLink("xiphos.url?action=showStrongs&type=Greek&value=alpha")
         try await idle(first)
         guard let lexical = first.lexicalPreview, lexical.kind == .strongs, lexical.entry.module == "DictionaryOne",
@@ -387,6 +409,10 @@ struct ReaderModelSmoke {
               first.reference == "John 4:2", first.html == priorHTML, first.canBack == back, first.canForward == forward else { fatalError("native Unicode click key/history/raw metadata and Bible preservation") }
         first.closeLexicalPreview()
         guard first.dictionarySelection == nil, first.dictionaryEntry == nil, first.dictionaryChoices == nil else { fatalError("close direct dictionary") }
+        guard first.informationPreview?.value == "café" else { fatalError("dictionary close retains information preview") }
+        first.previewLexicalLink("xiphos.url?action=showMorph&type=Greek&value=alpha")
+        first.close(); try await Task.sleep(nanoseconds: 50_000_000)
+        guard first.informationPreview == nil, !first.isPreviewLoading else { fatalError("closed window drops late hover") }
         second.applyLexiconPreferences(changed); second.close()
         try await Task.sleep(nanoseconds: 50_000_000)
         guard second.lexiconPreferences == defaults else { fatalError("closed model does not publish preferences") }

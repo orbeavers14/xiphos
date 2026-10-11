@@ -46,6 +46,8 @@ final class ReaderModel: ObservableObject {
     @Published var isBusy = true
     @Published private(set) var referencePreview: RenderedReferenceList?
     @Published private(set) var lexicalPreview: RenderedLexicalEntry?
+    @Published private(set) var informationPreview: RenderedLexicalEntry?
+    @Published private(set) var isPreviewLoading = false
     @Published private(set) var studyNote: RenderedStudyNote?
     @Published private(set) var lexiconPreferences: LexiconPreferences?
     @Published private(set) var engineOptions: EngineOptionFlags?
@@ -72,6 +74,10 @@ final class ReaderModel: ObservableObject {
         guard !closed else { return }
         closed = true
         revision &+= 1
+        hoverRevision &+= 1
+        hoverTask?.cancel(); hoverTask = nil
+        isPreviewLoading = false
+        informationPreview = nil
         if let worker, let tab {
             self.tab = nil
             Task { try? await worker.closeTab(tab) }
@@ -102,6 +108,8 @@ final class ReaderModel: ObservableObject {
     }
     private func run(_ action: @escaping @MainActor (UInt64) async throws -> Void) {
         guard !closed, !isBusy, tab != nil else { return }
+        hoverRevision &+= 1
+        hoverTask?.cancel(); hoverTask = nil; isPreviewLoading = false
         revision &+= 1
         let token = revision
         isBusy = true
@@ -117,6 +125,28 @@ final class ReaderModel: ObservableObject {
                     canBack = history.canBack; canForward = history.canForward
                 }
             }
+        }
+    }
+    private var hoverRevision: UInt64 = 0
+    private var hoverTask: Task<Void, Never>?
+    func previewLexicalLink(_ uri: String, currentModule: String? = nil, currentReference: String? = nil) {
+        guard !closed, !isBusy, let worker, let tab, uri.utf8.count <= 32_768 else { return }
+        guard let sourceModule = currentModule ?? displayedModule,
+              let sourceReference = currentReference ?? displayedEntry?.reference else { return }
+        hoverRevision &+= 1
+        let hoverToken = hoverRevision, displayToken = revision
+        hoverTask?.cancel()
+        isPreviewLoading = true
+        hoverTask = Task { [weak self] in
+            defer {
+                if let self, self.hoverRevision == hoverToken { self.isPreviewLoading = false }
+            }
+            do {
+                let result = try await worker.readLexical(tab: tab, module: sourceModule, reference: sourceReference, uri: uri)
+                guard let self, !Task.isCancelled, !self.closed, self.hoverRevision == hoverToken,
+                      self.revision == displayToken else { return }
+                self.informationPreview = result
+            } catch { /* Unsupported links/failed hovers retain the last preview. */ }
         }
     }
     func applyLexiconPreferences(_ submitted: LexiconPreferences) {
@@ -369,12 +399,19 @@ struct PassageView: NSViewRepresentable {
     let anchor: String?
     var onScrollFailure: (String) -> Void
     var onLink: (String) -> Void
-    @MainActor final class Coordinator: NSObject, WKNavigationDelegate {
+    var onLinkHover: ((String) -> Void)? = nil
+    @MainActor final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var loaded: String?
         var anchor: String?
         var navigation: WKNavigation?
         var onScrollFailure: ((String) -> Void)?
         var onLink: ((String) -> Void)?
+        var onLinkHover: ((String) -> Void)?
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            guard message.name == "xiphosHover", message.frameInfo.isMainFrame,
+                  let uri = message.body as? String, uri.utf8.count <= 32_768 else { return }
+            onLinkHover?(uri)
+        }
         func scrollToAnchor(_ webView: WKWebView) {
             guard let anchor,
                   let data = try? JSONSerialization.data(withJSONObject: anchor, options: [.fragmentsAllowed]),
@@ -406,6 +443,25 @@ struct PassageView: NSViewRepresentable {
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .nonPersistent()
         config.defaultWebpagePreferences.allowsContentJavaScript = false
+        // Trusted transport runs in an isolated world; module scripts remain
+        // disabled. The core interprets the URI, never this event script.
+        config.userContentController.add(context.coordinator, contentWorld: .defaultClient, name: "xiphosHover")
+        config.userContentController.addUserScript(WKUserScript(source: """
+            (() => {
+                let previous = null;
+                document.addEventListener('mouseover', event => {
+                    const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
+                    const uri = link ? link.href : null;
+                    if (uri === previous) return;
+                    previous = uri;
+                    if (uri && uri.length <= 32768) window.webkit.messageHandlers.xiphosHover.postMessage(uri);
+                }, true);
+                document.addEventListener('mouseout', event => {
+                    const next = event.relatedTarget instanceof Element ? event.relatedTarget.closest('a[href]') : null;
+                    if (!next) previous = null;
+                }, true);
+            })();
+            """, injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: .defaultClient))
         let view = WKWebView(frame: .zero, configuration: config)
         view.navigationDelegate = context.coordinator
         return view
@@ -413,6 +469,7 @@ struct PassageView: NSViewRepresentable {
     func updateNSView(_ view: WKWebView, context: Context) {
         context.coordinator.onScrollFailure = onScrollFailure
         context.coordinator.onLink = onLink
+        context.coordinator.onLinkHover = onLinkHover
         let changedAnchor = context.coordinator.anchor != anchor
         context.coordinator.anchor = anchor
         guard context.coordinator.loaded != html else {
@@ -434,6 +491,11 @@ struct PassageView: NSViewRepresentable {
             </style>
             </head><body>\(html)</body></html>
             """, baseURL: nil)
+    }
+    static func dismantleNSView(_ view: WKWebView, coordinator: Coordinator) {
+        view.configuration.userContentController.removeScriptMessageHandler(forName: "xiphosHover", contentWorld: .defaultClient)
+        view.navigationDelegate = nil
+        coordinator.onLink = nil; coordinator.onLinkHover = nil
     }
 }
 
@@ -588,6 +650,21 @@ struct ReaderWindow: View {
                         }
                     }.frame(minHeight: 140, idealHeight: 220)
                 }
+                if let preview = model.informationPreview {
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack {
+                            Text("Information Preview").font(.headline)
+                            Spacer()
+                            if model.isPreviewLoading { ProgressView().controlSize(.small) }
+                        }.padding(8)
+                        Text("\(preview.kind == .strongs ? "Strong’s" : "Morphology"): \(preview.value)")
+                            .font(.caption).padding(.horizontal, 8)
+                        Text(preview.entry.module).font(.caption).foregroundStyle(.secondary).padding(.horizontal, 8)
+                        PassageView(html: preview.entry.html, anchor: nil, onScrollFailure: { model.message = $0 },
+                                    onLink: { model.followLink($0, currentModule: preview.module, currentReference: preview.sourceReference) },
+                                    onLinkHover: { model.previewLexicalLink($0, currentModule: preview.module, currentReference: preview.sourceReference) })
+                    }.frame(minHeight: 140, idealHeight: 220)
+                }
             }.frame(minWidth: 190, idealWidth: 230, maxWidth: 320)
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
@@ -652,7 +729,8 @@ struct ReaderWindow: View {
                     Text(model.renderedReference).font(.headline).padding(12)
                 }
                 PassageView(html: model.html, anchor: model.renderedAnchor,
-                            onScrollFailure: { model.message = $0 }, onLink: { model.followLink($0) })
+                            onScrollFailure: { model.message = $0 }, onLink: { model.followLink($0) },
+                            onLinkHover: { model.previewLexicalLink($0) })
                 if !model.message.isEmpty {
                     Text(model.message).foregroundStyle(.secondary).padding(12)
                         .accessibilityLabel(model.message)

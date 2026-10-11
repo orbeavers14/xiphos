@@ -42,6 +42,8 @@ No milestone has official acceptance yet.
 - macOS reading controls, note/reference previews, five lexicon choices,
   Strong's/morphology click dictionary results, direct lookup/key steps and
   separate dictionary Back/Forward/Clear controls and nine-key chooser.
+  Strong's/morphology hover results now use a separate information sidebar,
+  retain the last preview and leave reading input/histories unchanged.
 - Legacy app delegates rendering, selected policy/parser/selection seams,
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
@@ -93,7 +95,8 @@ inclusion in this public fork.
 1. Review the stacked draft milestones and validate representative modules
    against the legacy application. Bundle remote builds at meaningful review
    checkpoints; keep routine development/testing local to conserve CI usage.
-2. Characterize hover presentation and compatible lexicon persistence. Complete remaining reading controls and
+2. Expand hover behavior across notes/references/dialogs and compatible lexicon
+   persistence. Complete remaining reading controls and
    characterize commentary/parallel panes while retaining study-pane composition.
 3. Implement equivalent GTK4 and WinUI 3 reading panes with native toolchains
    and interaction checks; retain the legacy app throughout migration.
@@ -120,6 +123,14 @@ C++11 and focused address/undefined checks cover that harness. The
 [hover contract inventory](hover-workflows.md) records destinations, retention
 and outstanding link families. Its source audit corrects the initial unsupported
 preview-pin requirement; linked/pinned tabs remain a separate parity workflow.
+
+Native lexical-hover checks cover raw values, committed source context, window
+isolation, latest-result ownership, failed-hover retention and closed-window
+protection. Temporary GUI checks confirmed Strong's/morphology definitions,
+pointer-leave retention, independent dictionary click/close behavior, unchanged
+John3:16 with an unfinished John4:2 draft and disabled history navigation.
+The source parser/selection/rendering stays in the existing C++ worker. Full
+link-family, keyboard, real-module and platform hover parity remains pending.
 
 Latest code milestones: [shared Unicode helper #54](https://github.com/orbeavers14/xiphos/pull/54),
 [legacy adoption #55](https://github.com/orbeavers14/xiphos/pull/55),
