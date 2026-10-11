@@ -8,6 +8,7 @@ extern "C" {
 #endif
 typedef struct xc_reader xc_reader;
 typedef struct xc_entry xc_entry;
+typedef struct xc_note xc_note;
 typedef struct xc_session xc_session;
 typedef struct xc_chapter xc_chapter;
 typedef struct xc_link xc_link;
@@ -86,6 +87,8 @@ xc_status xc_worker_module_engine_options(xc_worker *worker, uint64_t tab, const
 xc_status xc_request_engine_options(const xc_request *request, unsigned *flags, int *configured);
 xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_request **out);
 /* Refresh with tab settings without adding/moving history. */
+/* Explicit note preview uses tab settings without moving/adding history. */
+xc_status xc_worker_study_note(xc_worker *worker, uint64_t tab, const char *module, const char *reference, const char *identifier, xc_request **out);
 xc_status xc_worker_read_tab_entry(xc_worker *worker, uint64_t tab, const char *module, const char *reference, xc_request **out);
 xc_status xc_worker_read_tab_chapter(xc_worker *worker, uint64_t tab, const char *module, const char *reference, unsigned display_flags, xc_request **out);
 xc_status xc_worker_read_chapter(xc_worker *worker, const char *module, const char *reference, unsigned flags, xc_request **out);
@@ -97,6 +100,7 @@ void xc_request_release(xc_request *request);
  * Caller owns the transferred handle and uses its normal release function.
  * Copies survive worker/request close. Tab ID is zero unless ready/tab result. */
 uint64_t xc_request_tab(const xc_request *request);
+xc_note *xc_request_take_note(xc_request *request);
 xc_entry *xc_request_take_entry(xc_request *request);
 xc_chapter *xc_request_take_chapter(xc_request *request);
 xc_choices *xc_request_take_choices(xc_request *request);
@@ -205,6 +209,14 @@ void xc_chapter_release(xc_chapter *chapter);
  * permits, and records a successful visit. -1/+1 only; no wrap at Bible ends. */
 xc_status xc_session_navigate_chapter(xc_session *session, const char *module,
                                      const char *reference, int direction, xc_entry **out);
+/* Note strings are owned by the result until release; NULL handle -> NULL. */
+const char *xc_note_reference(const xc_note *note);
+const char *xc_note_identifier(const xc_note *note);
+const char *xc_note_type(const xc_note *note);
+const char *xc_note_label(const xc_note *note);
+const char *xc_note_html(const xc_note *note);
+const char *xc_note_reference_list(const xc_note *note);
+void xc_note_release(xc_note *note);
 const char *xc_entry_reference(const xc_entry *entry);
 const char *xc_entry_html(const xc_entry *entry);
 void xc_entry_release(xc_entry *entry);

@@ -931,3 +931,26 @@ note links in the native study pane. Cross-reference verse-list expansion,
 introductory notes, legacy hover/click distinctions and full popup/design parity
 remain pending. No GitHub build dispatched, no accepted parity group and no
 legacy code retired.
+
+## Study-note C and Swift adapters: locally checked
+
+Implemented 2026-10-11 on `modernization/study-note-adapters`, based on shared
+note retrieval. The experimental C API accepts explicit module/verse/identifier
+and a tab, queues a nonblocking note request and transfers an owned result once.
+Separate note handles expose six copied strings and remain valid after the
+request and worker close. Invalid/null inputs and wrong result types are checked;
+missing notes/modules/closed tabs return the existing contextual statuses.
+Swift adds a thin async worker method and Sendable result, with no independent
+attribute parsing, rendering or option policy.
+
+Full local CTest passed 17/17. C note tests cover argument copying, not-ready/
+wrong-kind/double-take access, metadata, reference lists, missing context,
+null inputs, queue recovery, unchanged history and result lifetime. Swift checks
+retrieve a note after a chapter render, retain it after shutdown and reject a
+missing verse note without changing history. Focused ASan/UBSan and
+ThreadSanitizer each passed 3/3 including fixtures (external SDK uninstrumented);
+C11/C++17 warnings-as-errors checks passed. No GitHub build dispatched.
+
+Next: shared decoding of generated study-note links and native presentation;
+expanded cross-reference workflows, hover behavior, introductory notes and full
+popup parity remain pending. No accepted feature group or legacy retirement.
