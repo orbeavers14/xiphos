@@ -110,6 +110,19 @@ PassageLink reference_target(const CommandParameters &parameters, const std::str
   return {list.module, list.expression};
 }
 }
+LexicalLink lexical_link(const std::string &url, const std::string &current_module) {
+  const auto parameters = command_parameters(url);
+  const auto action = parameter(parameters, "action");
+  if (action != "showStrongs" && action != "showMorph")
+    throw std::invalid_argument("Unsupported lexical action");
+  LexicalLink result{action == "showStrongs" ? LexicalLinkKind::strongs : LexicalLinkKind::morphology,
+                     parameter(parameters, "module"), parameter(parameters, "type"),
+                     parameter(parameters, "value"), parameter(parameters, "passage")};
+  if (result.module.empty()) result.module = current_module;
+  if (result.value.empty() || (result.kind == LexicalLinkKind::morphology && result.type.empty()))
+    throw std::invalid_argument("Lexical link requires a value and morphology type");
+  return result;
+}
 StudyNoteLink study_note_link(const std::string &url, const std::string &current_module) {
   return note_target(command_parameters(url), current_module);
 }

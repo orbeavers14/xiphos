@@ -1354,3 +1354,26 @@ legacy source, implement those shared policies, then add the native dictionary
 pane. Full dictionary browsing, general books, visual parity and platform
 acceptance remain pending. No legacy files retired; 0/38 feature groups fully
 accepted and the provisional overall estimate remains about 6%.
+
+
+## Shared lexical parser: locally checked, selection/dispatch pending
+
+Implemented 2026-10-11 on `modernization/shared-lexical-links`, based on the
+dictionary adapters. Typed Strong's/morphology commands preserve raw key/type,
+explicit/fallback source module, optional passage and Unicode. Existing strict
+origin/query parsing rejects ambiguous or malformed commands. Parsing does not
+select a dictionary or change the native dispatcher.
+
+The [lexical lookup seam inventory](lexical-lookup.md) records actual main versus
+dialog selection differences, preference defaults, source testament mutation,
+and clicked dictionary history/uppercase behavior versus raw-key hover previews.
+These observations require characterization before policy extraction; a single
+undocumented selection heuristic would lose existing behavior.
+
+Validation: 23/23 local checks, focused address/undefined check 1/1 and strict
+C++17 compilation passed. Cases cover generated commands, reordered parameters,
+encoded delimiters/Unicode/custom lemma tags, missing morphology types,
+external origins, duplicate parameters, control characters and malformed
+escapes. The existing dispatcher still rejects lexical actions until selection
+is integrated. No GitHub builds or user-data changes. Estimate about 6%; full
+F16 parity and native dictionary interactions remain pending.
