@@ -1,6 +1,6 @@
 # Modernization status and acceptance
 
-Updated 2026-10-10. Goal: preserve Xiphos functionality, visual composition,
+Updated 2026-10-11. Goal: preserve Xiphos functionality, visual composition,
 data and workflows through one shared C++ application core and separate
 SwiftUI/AppKit, WinUI 3 and GTK4 frontends. Native enhancements supplement
 that contract. The [parity matrix](parity-matrix.md) defines acceptance evidence;
@@ -858,3 +858,27 @@ Next: native Save reading options picker and end-to-end new-file/overwrite/
 cancel checks. Automatic restoration, full preference migration, remaining
 options/popups and other native platforms remain pending. No GitHub build was
 dispatched, no parity group accepted and no legacy file retired.
+
+## Native preference save: locally checked, acceptance pending
+
+Implemented 2026-10-11 on `modernization/macos-preference-save`, based on the
+shared preference writer. Preferences → Save reading options uses AppKit's
+Save panel and explicit user selection; the existing core performs all encoding,
+verification and replacement. A successful save reports completion without
+changing the rendered passage, reference draft, window settings or history.
+Failures show a contextual message and retain the current pane. Canceling the
+panel does not submit a save.
+
+Local Swift model checks passed 5/5 including fixtures; the strengthened
+non-default-setting save/reload scenario also passed its focused 3/3 run.
+Visible AppKit checks used generated modules/configuration outside Documents:
+new-file save, reimport restoring Strong's numbers, system-confirmed overwrite
+and cancel all passed. Overwrite retained `Headings=Off`, a UTF-8 custom value
+and an uninstalled-module section. Cancel left both test files' hashes unchanged.
+The shared writer's preceding 16/16 local tests and sanitizer checks remain the
+core validation baseline; no GitHub build was dispatched for this UI change.
+
+Next: remaining module reading controls and established study interactions, then
+full preference restoration and the other native frontends. This is explicit
+engine-option persistence only; full user-data migration and visual acceptance
+remain pending. No feature group accepted and no legacy file retired.

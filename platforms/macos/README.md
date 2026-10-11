@@ -101,8 +101,11 @@ Tags and Footnotes when the displayed module declares those options. New native
 tabs opt in to the shared legacy defaults. Preferences → Import reading options
 opens a native picker for an existing Xiphos `modops.conf`; its engine settings
 replace this window's options without changing the file. Other windows keep
-their settings. Canceling the picker does nothing. Preference writes and
-automatic restoration on launch remain pending. Settings remain separate for each module and window.
+their settings. Preferences → Save reading options opens the native Save panel
+for an explicit `modops.conf` destination, including the system overwrite
+confirmation. Saving preserves unrelated settings through the shared core.
+Canceling either picker does nothing. Automatic restoration on launch remains
+pending. Settings remain separate for each module and window.
 Changing an option refreshes the committed passage without adding history or
 replacing unsubmitted reference input. Verse and chapter views use the same
 configured tab. The SWORD red-letter class uses the existing Xiphos editor's
