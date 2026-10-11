@@ -8,12 +8,21 @@ cmake --build build/core --parallel
 ctest --test-dir build/core --output-on-failure
 ```
 
-Requires CMake >=3.16, C++17 and SWORD >=1.8.1. The legacy rendering seam uses
+Requires CMake >=3.16, C++17, SWORD >=1.8.1 and GLib >=2.32. The legacy rendering seam uses
 C++11. pkg-config discovery is preferred; SDKs can instead supply
 `SWORD_INCLUDE_DIR` and `SWORD_LIBRARY`, with
 `XIPHOS_SWORD_EXTRA_LIBRARIES` for static SDK transitive libraries. The fallback
 SDK version and architecture must be checked by the SDK provider. Windows
 SDK/MSVC linking has not yet been tested.
+
+GLib supplies the existing locale-sensitive dictionary-click Unicode casing;
+it does not bring GTK or a platform UI into the core. pkg-config is preferred.
+Prebuilt SDKs can supply `GLIB_INCLUDE_DIR`, `GLIB_CONFIG_INCLUDE_DIR` and
+`GLIB_LIBRARY`, plus `XIPHOS_GLIB_EXTRA_LIBRARIES` for static dependencies.
+SDK providers must verify the binary version/architecture and deployment target.
+Host locale initialization must happen before engine work starts; changing the
+process locale concurrently with workers is unsupported. The core does not
+silently change the application's locale.
 
 Tests generate a small on-disk RawText OSIS module with original prose.
 They validate discovery isolation, UTF-8 XHTML, legacy setKey/renderText
@@ -23,8 +32,8 @@ for the Swift smoke test and manual preview; no live user data is modified.
 
 The default legacy application still builds normally; its get_render_text
 calls the same rendering function. The standalone core build avoids all GTK,
-WebKit, help and packaging dependencies. There is no search/history/storage
-implementation here yet. The C ABI is experimental and documented in c_api.h.
+WebKit, help and packaging dependencies. Search and complete user-data storage
+remain pending. The C ABI is experimental and documented in c_api.h.
 Follow the [architecture](../../doc/modernization/architecture.md) and
 [parity ledger](../../doc/modernization/parity-matrix.md) before expanding it.
 

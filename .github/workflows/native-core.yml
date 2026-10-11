@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install engine dependency
-        run: sudo apt-get update && sudo apt-get install -y libsword-dev
+        run: sudo apt-get update && sudo apt-get install -y libsword-dev libglib2.0-dev
       - name: Build and test standalone core
         run: |
           cmake -S src/core -B build/core -DCMAKE_BUILD_TYPE=Release
@@ -44,7 +44,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install SWORD
-        run: brew install sword pkg-config
+        run: brew install sword glib pkg-config
       - name: Build native preview and test adapter
         run: |
           cmake -S platforms/macos -B build/macos -DCMAKE_BUILD_TYPE=Release
