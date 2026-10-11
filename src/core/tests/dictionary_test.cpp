@@ -55,6 +55,7 @@ int main(int argc, char **argv) {
     std::map<std::string, DictionaryEntry> expected;
     const std::vector<std::string> keys = {"alpha", "ALPHA", "café", "G03056", "G3056", "between", "zzzz"};
     std::string plainWord, redWord;
+    std::map<std::pair<std::string,int>,DictionaryEntry> adjacent;
     std::map<std::string,unsigned> expectedRoles;
     std::map<std::string,bool> expectedDictionary;
     {
@@ -78,6 +79,15 @@ int main(int argc, char **argv) {
         const auto html = render_entry(*module, key.c_str());
         expected.emplace(key, DictionaryEntry{"DictionaryOne", module->getKeyText(), html});
       }
+      for (const auto &key : keys) for (int direction : {-1, 1}) {
+        // Frozen sequence from main_dictionary_button_clicked and activated
+        // main_dictionary_entry_changed, including boundary/nearest-key cases.
+        module->setKey(key.c_str());
+        if (direction == -1) (*module)--; else (*module)++;
+        const std::string target = module->getKeyText();
+        const auto html = render_entry(*module, target.c_str());
+        adjacent.emplace(std::make_pair(key,direction),DictionaryEntry{"DictionaryOne",module->getKeyText(),html});
+      }
       legacy.setGlobalOption("Words of Christ in Red", "Off"); plainWord = render_entry(*module, "G03056");
       legacy.setGlobalOption("Words of Christ in Red", "On"); redWord = render_entry(*module, "G03056");
       check(plainWord != redWord && redWord.find("wordsOfJesus") != std::string::npos, "dictionary options affect actual output");
@@ -92,6 +102,21 @@ int main(int argc, char **argv) {
         check(result.module == "DictionaryOne" && result.key == expected.at(key).key && result.html == expected.at(key).html,
               "dictionary key/render behavior equals direct legacy SDK calls");
       }
+      for (const auto &item : adjacent) {
+        const auto result = reader.navigate_dictionary("DictionaryOne",item.first.first,item.first.second);
+        check(result.key == item.second.key && result.html == item.second.html,
+          "dictionary key navigation equals legacy SDK sequence including boundaries");
+      }
+      for (int direction : {0, 2, -2}) {
+        bool invalid=false;
+        try { reader.navigate_dictionary("DictionaryOne","alpha",direction); } catch (const std::invalid_argument &) { invalid=true; }
+        check(invalid,"invalid dictionary direction rejected");
+      }
+      for (const auto &key : {std::string(),std::string("alpha\0ignored",13)}) {
+        bool invalid=false;
+        try { reader.navigate_dictionary("DictionaryOne",key,1); } catch (const std::invalid_argument &) { invalid=true; }
+        check(invalid,"invalid dictionary navigation key rejected");
+      }
       StudySession first(reader), second(reader);
       auto options = engine_options_from_preferences({}); options.words_in_red = true;
       first.set_module_engine_options("DictionaryOne", options); options.words_in_red = false;
@@ -99,6 +124,11 @@ int main(int argc, char **argv) {
       first.visit("OriginalBible", "John3:16");
       check(first.read_dictionary("DictionaryOne", "G03056").html == redWord && second.read_dictionary("DictionaryOne", "G03056").html == plainWord,
             "dictionary output uses each tab's module options");
+      const auto next = reader.navigate_dictionary("DictionaryOne","CAFÉ",1);
+      const auto redNext=first.navigate_dictionary("DictionaryOne","CAFÉ",1);
+      const auto plainNext=second.navigate_dictionary("DictionaryOne","CAFÉ",1);
+      check(next.key == expected.at("G03056").key && redNext.html==redWord && plainNext.html==plainWord,
+        "dictionary navigation uses separate tab options");
       check(first.history().entries().size() == 1 && second.history().entries().empty(), "dictionary previews do not visit Bible history");
       check(first.read_dictionary("DictionaryTwo", "alpha").html.find("DictionaryTwo") != std::string::npos, "dictionary module context is explicit");
       bool rejected = false; try { reader.read_dictionary("DictionaryOne", ""); } catch (const std::invalid_argument &) { rejected = true; }
@@ -117,6 +147,9 @@ int main(int argc, char **argv) {
       std::string key = "alpha"; accepted = worker.read_dictionary(tab, "DictionaryOne", key); key.clear();
       bool rejected = false; try { (void)worker.read_dictionary(tab, "Missing", "alpha").get(); } catch (const std::out_of_range &) { rejected = true; }
       check(rejected && worker.history(tab).get().entries.empty(), "dictionary worker error preserves history and queue");
+      const auto navigation=worker.navigate_dictionary(tab,"DictionaryOne","alpha",1).get();
+      check(navigation.key==adjacent.at({"alpha",1}).key && worker.history(tab).get().entries.empty(),
+        "worker dictionary navigation returns copied result without Bible visit");
       worker.close_tab(tab).get(); rejected = false;
       try { (void)worker.read_dictionary(tab, "DictionaryOne", "alpha").get(); } catch (const std::invalid_argument &) { rejected = true; }
       check(rejected, "closed dictionary tab rejected");
@@ -158,6 +191,14 @@ int main(int argc, char **argv) {
       check(retained && !xc_request_take_dictionary_entry(request) && std::string(xc_dictionary_entry_module(retained)) == "DictionaryOne" &&
             !std::string(xc_dictionary_entry_key(retained)).empty() && std::string(xc_dictionary_entry_html(retained)) == redWord,
             "C dictionary copied arguments, settings and take-once ownership"); xc_request_release(request);
+      check(xc_worker_navigate_dictionary(worker,tab,"DictionaryOne","CAFÉ",1,&request)==XC_OK && wait(request)==XC_OK,
+        "C dictionary navigation submission");
+      auto *navigated=xc_request_take_dictionary_entry(request);
+      check(navigated && !xc_request_take_dictionary_entry(request) && std::string(xc_dictionary_entry_html(navigated))==redWord,
+        "C dictionary navigation options and take-once result");
+      xc_request_release(request); xc_dictionary_entry_release(navigated);
+      check(xc_worker_navigate_dictionary(worker,tab,"DictionaryOne","alpha",0,&request)==XC_INVALID_ARGUMENT && !request,
+        "C dictionary navigation invalid direction prequeue");
       for (const char *id : std::initializer_list<const char *>{nullptr, ""}) {
         check(xc_worker_read_dictionary(worker, tab, id, "alpha", &request) == XC_INVALID_ARGUMENT && !request, "C invalid dictionary module");
         check(xc_worker_read_dictionary(worker, tab, "DictionaryOne", id, &request) == XC_INVALID_ARGUMENT && !request, "C invalid dictionary key");

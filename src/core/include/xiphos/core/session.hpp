@@ -17,6 +17,7 @@ public:
   LexicalEntry read_lexical(const std::string &module, const std::string &reference,
                           const std::string &uri, int origin);
   // Render with this tab's settings without moving or adding history.
+  DictionaryEntry navigate_dictionary(const std::string &module, const std::string &key, int direction);
   DictionaryEntry read_dictionary(const std::string &module, const std::string &key);
   ReferenceList read_reference_list(const std::string &module, const std::string &expression,
                                     const std::string &context);

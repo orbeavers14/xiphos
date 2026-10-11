@@ -1584,3 +1584,21 @@ Next: characterize and extract legacy dictionary key navigation, separate
 history and click normalization. Full dictionary/right-pane workflows, hover,
 pinning, persistence and all-platform acceptance remain pending. No retirement;
 provisional overall estimate remains about 6% (4–8%).
+
+
+## Shared dictionary navigation: locally checked, native controls pending
+
+Implemented 2026-10-11 on `modernization/shared-dictionary-navigation`. Reader,
+session, worker and C requests now take a previous/next dictionary key step with
+tab options and an owned result. The operation reproduces the frozen legacy SDK
+sequence and retains boundary/nearest-key behavior. Empty/NUL values and invalid
+directions reject; Bible history is untouched. The legacy app is unchanged.
+
+Validation: all 27 local checks covered (22 passed in the full run, then all five
+dictionary fixture/dependent checks passed after correcting a test's assumed
+zero padding to use the SDK-resolved key). Fourteen direct-SDK navigation cases,
+per-tab options, worker history and C ownership checks passed; focused address/
+undefined and thread checks each passed 1/1, and strict C++17/C11 checks passed.
+SWORD itself remains uninstrumented. No GitHub builds. Next: shared legacy step
+helper/actual adapter characterization and native controls; dictionary history
+and full feature acceptance remain pending. Estimate about 6%; no retirement.
