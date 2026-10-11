@@ -882,3 +882,25 @@ Next: remaining module reading controls and established study interactions, then
 full preference restoration and the other native frontends. This is explicit
 engine-option persistence only; full user-data migration and visual acceptance
 remain pending. No feature group accepted and no legacy file retired.
+
+## Greek accents and cross-reference controls: locally checked
+
+Implemented 2026-10-11 on `modernization/macos-language-reference-options`,
+based on the native saver. The Reading options menu adds Greek Accents and
+Cross-references only when the shared catalog declares them. Settings still
+use the shared module/tab APIs and rendering policy; Swift does not parse or
+strip accents or references. Unsupported declarations and multiple-bit inputs
+are rejected by the model before queuing an update.
+
+A generated Greek OSIS entry with an original cross-reference note exercises
+all four option combinations against direct legacy SWORD setters. Model checks
+verify actual accented/plain text and note-marker changes, configured chapter
+output, unsubmitted input and history preservation, window isolation and save/
+reload. Full local CTest passed 16/16; focused ASan/UBSan passed 2/2 including
+fixture setup (external SDK uninstrumented). Visible temporary-fixture checks
+confirmed accented Greek becomes plain Greek, the reference marker hides, and
+both controls are absent for a module without those declarations.
+
+Cross-reference popup interactions, remaining language/variant controls and
+full study-pane/visual acceptance remain pending. No GitHub build dispatched,
+no parity group accepted and no legacy files retired.

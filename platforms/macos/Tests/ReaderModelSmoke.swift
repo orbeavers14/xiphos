@@ -89,6 +89,36 @@ struct ReaderModelSmoke {
         guard first.html == beforeSaveHTML, first.reference == beforeSaveDraft,
               first.canBack == beforeSaveBack, first.canForward == beforeSaveForward,
               first.message.contains("Unable to save"), try Data(contentsOf: saveURL) == savedBytes else { fatalError("model failed save preserves state/file") }
+        // Module declarations gate the new controls; an undeclared option must
+        // neither queue a refresh nor mutate the current module's settings.
+        let undeclaredOptions = first.engineOptions
+        first.setReadingOption(.greekAccents, enabled: false)
+        first.setReadingOption([.strongs, .footnotes], enabled: false)
+        guard !first.isBusy, first.engineOptions == undeclaredOptions else { fatalError("undeclared/multiple control flags rejected") }
+        first.showChapter = false
+        first.selection = "OptionOther"; first.reference = "John 3:18"; first.read(); try await idle(first)
+        first.setReadingOption(.footnotes, enabled: true); try await idle(first)
+        second.selection = "OptionOther"; second.reference = "John 3:18"; second.read(); try await idle(second)
+        second.setReadingOption(.footnotes, enabled: true); try await idle(second)
+        let accentedReferenceHTML = first.html
+        guard accentedReferenceHTML.contains("λόγος"), accentedReferenceHTML.contains("*x") else { fatalError("language/reference fixture output") }
+        let beforeLanguageBack = first.canBack, beforeLanguageForward = first.canForward
+        first.reference = "John 4:2"
+        first.setReadingOption(.greekAccents, enabled: false); try await idle(first)
+        guard first.html.contains("λογος"), !first.html.contains("λόγος"), first.html.contains("*x"),
+              second.html == accentedReferenceHTML else { fatalError("Greek accents change output with window isolation") }
+        first.setReadingOption(.crossReferences, enabled: false); try await idle(first)
+        guard !first.html.contains("*x"), first.reference == "John 4:2",
+              first.canBack == beforeLanguageBack, first.canForward == beforeLanguageForward else { fatalError("cross-reference refresh preserves draft/history") }
+        first.showChapter = true; first.refreshDisplay(); try await idle(first)
+        guard first.html.contains("λογος"), !first.html.contains("*x"), first.renderedAnchor == "verse-18" else { fatalError("language/reference chapter options") }
+        first.setReadingOption(.greekAccents, enabled: true); try await idle(first)
+        first.setReadingOption(.crossReferences, enabled: true); try await idle(first)
+        guard first.html.contains("λόγος"), first.html.contains("*x"), first.reference == "John 4:2",
+              second.html == accentedReferenceHTML else { fatalError("language/reference controls restore chapter output") }
+        first.saveReadingOptions(path: saveURL.path); try await idle(first)
+        second.importReadingOptions(path: saveURL.path); try await idle(second)
+        guard second.engineOptions == first.engineOptions else { fatalError("language/reference save reload") }
         first.close(); second.close(); await worker.shutdown()
         print("Native reading option model checks passed")
     }
