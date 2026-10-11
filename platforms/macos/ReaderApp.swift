@@ -199,15 +199,20 @@ final class ReaderModel: ObservableObject {
             try await self.present(entry, module: module, token: token)
         }
     }
-    func followLink(_ uri: String, currentModule: String? = nil) {
-        guard let worker, let tab, let displayedModule else { return }
+    func followLink(_ uri: String, currentModule: String? = nil, currentReference: String? = nil) {
+        guard let worker, let tab, let displayedModule, let displayedEntry else { return }
         let module = currentModule ?? displayedModule
+        let context = currentReference ?? displayedEntry.reference
         run { token in
-            switch try await worker.resolveStudyLink(tab: tab, currentModule: module, uri: uri) {
+            switch try await worker.resolveStudyLinkAt(tab: tab, currentModule: module, currentReference: context, uri: uri) {
             case .note(let note):
                 guard token == self.revision && !self.closed else { return }
                 self.referencePreview = nil
                 self.studyNote = note; self.message = ""
+            case .references(let references):
+                guard token == self.revision && !self.closed else { return }
+                if currentReference == nil { self.studyNote = nil }
+                self.referencePreview = references; self.message = ""
             case .passage(let target):
                 let entry = try await worker.visit(tab: tab, module: target.module, reference: target.reference)
                 try await self.present(entry, module: target.module, token: token)
@@ -376,19 +381,21 @@ struct ReaderWindow: View {
                 }.frame(minHeight: 120)
                     .disabled(model.isBusy)
                     .accessibilityLabel("Installed SWORD modules")
-                if let note = model.studyNote {
+                if model.studyNote != nil || model.referencePreview != nil {
                     VStack(alignment: .leading, spacing: 0) {
                         HStack {
-                            Text(model.referencePreview != nil ? "Referenced passages" : (note.type == "crossReference" ? "Cross-reference" : "Study note")).font(.headline)
+                            Text(model.referencePreview != nil ? "Referenced passages" : (model.studyNote?.type == "crossReference" ? "Cross-reference" : "Study note")).font(.headline)
                             Spacer()
                             Button("Close") { model.closeStudyNote() }.disabled(model.isBusy)
                         }.padding(8)
-                        Text("\(note.module) • \(note.reference)").font(.caption).padding(.horizontal, 8)
                         if let references = model.referencePreview {
+                            Text("\(references.module) • \(references.context)").font(.caption).padding(.horizontal, 8)
                             HStack {
-                                Text("\(references.entries.count) passages").font(.caption)
+                                Text("\(references.entries.count) \(references.entries.count == 1 ? "passage" : "passages")").font(.caption)
                                 Spacer()
-                                Button("Back to note") { model.showStudyNoteBody() }.disabled(model.isBusy)
+                                if model.studyNote != nil {
+                                    Button("Back to note") { model.showStudyNoteBody() }.disabled(model.isBusy)
+                                }
                             }.padding(8)
                             if references.limited {
                                 Text("Some ranges reached Xiphos's preview limit.").font(.caption).padding(.horizontal, 8)
@@ -400,14 +407,15 @@ struct ReaderWindow: View {
                                 Text("No referenced passages found.").foregroundStyle(.secondary).padding()
                             } else {
                                 PassageView(html: references.html, anchor: nil, onScrollFailure: { model.message = $0 },
-                                            onLink: { model.followLink($0, currentModule: references.module) })
+                                            onLink: { model.followLink($0, currentModule: references.module, currentReference: references.context) })
                             }
-                        } else {
+                        } else if let note = model.studyNote {
+                            Text("\(note.module) • \(note.reference)").font(.caption).padding(.horizontal, 8)
                             if !note.referenceList.isEmpty {
                                 Button("Show referenced passages") { model.showReferencedPassages() }.disabled(model.isBusy).padding(8)
                             }
                             PassageView(html: note.html, anchor: nil, onScrollFailure: { model.message = $0 },
-                                        onLink: { model.followLink($0, currentModule: note.module) })
+                                        onLink: { model.followLink($0, currentModule: note.module, currentReference: note.reference) })
                         }
                     }.frame(minHeight: 140, idealHeight: 220)
                 }

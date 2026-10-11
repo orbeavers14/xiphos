@@ -155,17 +155,43 @@ struct ReaderModelSmoke {
               first.html == beforeNoteHTML, first.reference == beforeNoteDraft else { fatalError("range/duplicate reference preview uses shared options and context") }
         first.followLink("https://example.invalid"); try await idle(first)
         guard first.referencePreview?.html == rangePreview.html, first.studyNote?.reference == "John 3:20" else { fatalError("failed preview link preserves reference list") }
-        first.followLink("xiphos-preview://study/passagestudy.jsp?action=showRef&type=scripRef&value=John.3.16&module=",
-                         currentModule: first.referencePreview?.module)
+        first.showStudyNoteBody()
+        first.followLink("xiphos-preview://study/passagestudy.jsp?action=showRef&type=scripRef&value=John.3.16-John.3.19&module=",
+                         currentModule: first.studyNote?.module, currentReference: first.studyNote?.reference)
+        try await idle(first)
+        guard first.referencePreview?.entries.count == 4, first.referencePreview?.context == "John 3:20",
+              first.html == beforeNoteHTML, first.reference == beforeNoteDraft,
+              first.canBack == beforeNoteBack, first.canForward == beforeNoteForward else { fatalError("ranged note link opens list without navigation") }
+        first.showStudyNoteBody()
+        first.followLink("passagestudy.jsp?action=showRef&type=scripRef&value=16-19%3B16&module=",
+                         currentModule: first.studyNote?.module, currentReference: first.studyNote?.reference)
+        try await idle(first)
+        guard first.referencePreview?.entries.count == 5, first.referencePreview?.entries[4].reference == "John 3:16",
+              first.referencePreview?.context == "John 3:20", first.reference == beforeNoteDraft else { fatalError("relative list uses note source instead of draft") }
+        first.followLink("passagestudy.jsp?action=showRef&type=scripRef&value=John.3.16&module=",
+                         currentModule: first.referencePreview?.module, currentReference: first.referencePreview?.context)
+        try await idle(first)
+        guard first.referencePreview?.entries.count == 1, first.studyNote?.reference == "John 3:20",
+              first.html == beforeNoteHTML, first.reference == beforeNoteDraft,
+              first.canBack == beforeNoteBack, first.canForward == beforeNoteForward else { fatalError("single note reference is a sidebar preview") }
+        first.followLink("sword:///John+3%3A16", currentModule: first.referencePreview?.module, currentReference: first.referencePreview?.context)
         try await idle(first)
         guard first.referencePreview == nil, first.studyNote == nil, first.selection == "OptionOther", first.reference == "John 3:16",
-              first.renderedAnchor == "verse-16", !first.canBack, first.canForward else { fatalError("reference inside note visits source module with shared normalization/history") }
+              first.renderedAnchor == "verse-16", !first.canBack, first.canForward else { fatalError("reference heading visits source module with shared history") }
         // The original history deduplicates this already visited reference,
         // returning to its first position while retaining forward entries.
         first.followLink(noteURI); try await idle(first)
         let beforeCloseNoteHTML = first.html
         first.closeStudyNote()
         guard first.referencePreview == nil, first.studyNote == nil, first.html == beforeCloseNoteHTML else { fatalError("close note preserves reader") }
+        first.reference = "John 4:2"
+        first.followLink("passagestudy.jsp?action=showRef&type=scripRef&value=16-17&module=")
+        try await idle(first)
+        guard first.studyNote == nil, first.referencePreview?.entries.count == 2,
+              first.referencePreview?.context == "John 3:16", first.reference == "John 4:2",
+              first.html == beforeCloseNoteHTML else { fatalError("standalone preview uses committed passage context") }
+        first.closeStudyNote()
+        guard first.referencePreview == nil else { fatalError("standalone list closes") }
         first.followLink("xiphos-preview://study/passagestudy.jsp?action=showNote&type=n&value=1&module=OptionTest&passage=John+3%3A16")
         try await idle(first)
         guard first.studyNote?.module == "OptionTest", first.selection == "OptionOther" else { fatalError("note records source module independent of main pane") }

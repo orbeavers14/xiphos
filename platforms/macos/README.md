@@ -120,14 +120,15 @@ a core-rendered body preview below the module list without changing the main
 passage, reference draft or history. The preview identifies its source module
 and passage; Close dismisses it, and a successful passage refresh clears stale
 preview content. Links inside a note use that note's module as their fallback.
-Single scripture-reference links inside notes navigate through the core using
-the note's module, normal SWORD reference normalization and shared history.
+Scripture-reference links inside notes open a sidebar passage list through the
+core using the note's module and committed source context. Single references,
+ranges and relative lists preserve the main passage, draft and history.
 Show referenced passages expands a note's reference list through the shared
 core, keeping order, duplicates, module settings and source context. It leaves
 the main passage, draft and history unchanged. Back to note restores the body;
 a passage heading navigates the main reader. Empty results and the existing
 2000-verse range limit are reported.
-Hover/pin behavior, range links inside note bodies, Strong's/morphology
+Hover/pin behavior, legacy unknown-module fallback, Strong's/morphology
 lookup, remaining option menus, full display-preference
 migration and visual/workflow parity remain pending.
 
