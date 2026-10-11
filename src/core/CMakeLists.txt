@@ -159,6 +159,11 @@ if(BUILD_TESTING)
   set_tests_properties(core_worker PROPERTIES FIXTURES_REQUIRED sword_fixture)
   file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/legacy_lexical_actual.inc" "")
 
+  # Re-extract actual prefixes whenever their source changes, not only when
+  # CMakeLists.txt changes; otherwise the characterization could test stale code.
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/../main/url.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../main/module_dialogs.cc")
   # Characterize selection prefixes without GTK presentation dependencies.
   file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../main/url.cc" lexical_source)
   string(FIND "${lexical_source}" "static gint show_morph(" lexical_start)

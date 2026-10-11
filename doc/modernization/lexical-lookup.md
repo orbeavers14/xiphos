@@ -100,3 +100,7 @@ main NT fallback name in an ignored temporary copy; the comparison failed at
 the expected morphology divergence. Production/generated source was not
 modified by that control. This confirms the harness detects a real selection
 regression; it does not extend GUI/module-corpus acceptance.
+
+The build explicitly watches both legacy selector source files and regenerates
+the extracted prefixes when either changes, preventing stale generated-code
+comparisons during subsequent extraction work.
