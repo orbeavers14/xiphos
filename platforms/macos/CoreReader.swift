@@ -24,6 +24,8 @@ struct EngineOptionFlags: OptionSet, Sendable {
     static let variantsSecondary = Self(rawValue: UInt32(XC_ENGINE_VARIANTS_SECONDARY.rawValue))
     static let variantsAll = Self(rawValue: UInt32(XC_ENGINE_VARIANTS_ALL.rawValue))
 }
+// ABI values match XiphosVariantReading; flag transitions stay in the core.
+enum VariantReading: Int32, Sendable { case primary = 0, secondary = 1, all = 2 }
 struct ModuleOptionInfo: Sendable {
     let declared: EngineOptionFlags
     let hasHeadings: Bool

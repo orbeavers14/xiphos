@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 import Foundation
+import XiphosCore
 @main
 struct OptionAdapterSmoke {
     @MainActor static func main() async throws {
@@ -9,6 +10,9 @@ struct OptionAdapterSmoke {
         let declared: EngineOptionFlags = [.wordsInRed, .strongs, .morphology, .footnotes]
         guard modules.count == 1, modules[0].options.declared == declared,
               !modules[0].options.hasHeadings else { fatalError("copied module option metadata") }
+        guard VariantReading.primary.rawValue == Int32(XIPHOS_VARIANT_PRIMARY.rawValue),
+              VariantReading.secondary.rawValue == Int32(XIPHOS_VARIANT_SECONDARY.rawValue),
+              VariantReading.all.rawValue == Int32(XIPHOS_VARIANT_ALL.rawValue) else { fatalError("Swift variant ABI values") }
         let tab = try await worker.createTab(), other = try await worker.createTab()
         let original = try await worker.visit(tab: tab, module: "OptionTest", reference: "John 3:16")
         try await worker.setEngineOptions(tab: other, options: [])
@@ -115,6 +119,10 @@ struct OptionAdapterSmoke {
         do {
             _ = try await worker.resolveStudyLinkAt(tab: tab, currentModule: "OptionTest", currentReference: "", uri: "sword:///John3:17")
             fatalError("Swift missing contextual reference accepted")
+        } catch is CoreError { }
+        do {
+            try await worker.selectModuleVariant(tab: tab, module: "OptionTest", reading: .all)
+            fatalError("Swift undeclared variant accepted")
         } catch is CoreError { }
         let noteHistory = try await worker.history(tab)
         guard noteHistory.count == 1 else { fatalError("Swift note preview changed history") }
