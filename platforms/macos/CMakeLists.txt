@@ -109,6 +109,10 @@ if(BUILD_TESTING)
   set_tests_properties(reader_model_options PROPERTIES FIXTURES_REQUIRED module_preferences_fixture)
   add_test(NAME reader_model_lexicons COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --lexicons "${CMAKE_CURRENT_BINARY_DIR}/core/dictionary-fixture")
   set_tests_properties(reader_model_lexicons PROPERTIES FIXTURES_REQUIRED dictionary_fixture)
+  add_test(NAME reader_model_locale COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --locale "${CMAKE_CURRENT_BINARY_DIR}/core/dictionary-fixture")
+  set_tests_properties(reader_model_locale PROPERTIES FIXTURES_REQUIRED dictionary_fixture ENVIRONMENT "LC_ALL=tr_TR.UTF-8")
+  add_test(NAME reader_model_invalid_locale COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --invalid-locale "${CMAKE_CURRENT_BINARY_DIR}/core/dictionary-fixture")
+  set_tests_properties(reader_model_invalid_locale PROPERTIES FIXTURES_REQUIRED dictionary_fixture ENVIRONMENT "LC_ALL=xiphos-invalid-locale")
   add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/option_adapter_smoke"
     COMMAND ${SWIFTC} -swift-version 6 -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
       -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/OptionAdapterSmoke.swift"

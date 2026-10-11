@@ -245,5 +245,8 @@ accessible names and help text while fitting the narrow column.
 Main-pane lexical clicks now use the shared GLib Unicode-uppercase requested
 key for reading/history while retaining raw link metadata. Hover/preview reads
 and dialog-origin clicks use raw keys and leave main dictionary history alone.
-Swift contains no duplicate casing implementation. Host process-locale setup,
+Swift contains no duplicate casing implementation. App startup initializes the
+environment locale before creating the worker, matching legacy main.c. Invalid
+locale selection retains the existing process locale. Locale changes while
+workers run are unsupported. Import of Xiphos's saved forced-locale preference,
 representative real modules and cross-platform acceptance remain separate gates.
