@@ -1398,3 +1398,10 @@ F29 and F37 rather than leaving implemented subsets marked wholly pending.
 The legacy C++11 seam libraries still build with the native core disabled.
 Full legacy GTK dependency/GUI validation remains unavailable on this Mac.
 These are evidence updates; no feature group or native platform is accepted.
+
+The selection characterization also passes address/undefined instrumentation
+on its GTK-free harness. A negative-control build deliberately replaced the
+main NT fallback name in an ignored temporary copy; the comparison failed at
+the expected morphology divergence. Production/generated source was not
+modified by that control. This confirms the harness detects a real selection
+regression; it does not extend GUI/module-corpus acceptance.

@@ -93,3 +93,10 @@ compilation and the 24-test local suite pass. This validates selection prefixes,
 not GUI effects, dictionary rendering, null dialog types or full lexical parity.
 The extraction guards fail configuration if required source markers disappear.
 No production selection logic has been changed yet.
+
+The selection characterization also passes address/undefined instrumentation
+on its GTK-free harness. A negative-control build deliberately replaced the
+main NT fallback name in an ignored temporary copy; the comparison failed at
+the expected morphology divergence. Production/generated source was not
+modified by that control. This confirms the harness detects a real selection
+regression; it does not extend GUI/module-corpus acceptance.
