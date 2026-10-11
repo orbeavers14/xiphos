@@ -48,6 +48,12 @@ foreach(extra IN LISTS XIPHOS_SWORD_EXTRA_LIBRARIES)
   endif()
 endforeach()
 set(bridge "${CMAKE_CURRENT_SOURCE_DIR}/Bridge")
+set(sdk_link_dependencies)
+foreach(library IN LISTS sword_link_flags)
+  if(IS_ABSOLUTE "${library}" AND EXISTS "${library}" AND NOT IS_DIRECTORY "${library}")
+    list(APPEND sdk_link_dependencies "${library}")
+  endif()
+endforeach()
 set(adapter "${CMAKE_CURRENT_SOURCE_DIR}/CoreReader.swift" "${CMAKE_CURRENT_SOURCE_DIR}/CoreWorker.swift")
 set(swift_cache "${CMAKE_CURRENT_BINARY_DIR}/swift-cache")
 set(swift_target "${CMAKE_SYSTEM_PROCESSOR}-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET}")
@@ -60,7 +66,7 @@ add_custom_command(OUTPUT "${app}/Contents/MacOS/XiphosNativePreview"
     "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
     ${sword_link_flags} -lc++ -framework SwiftUI -framework AppKit -framework WebKit
     -o "${app}/Contents/MacOS/XiphosNativePreview"
-  DEPENDS xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift ReaderApp.swift Bridge/module.modulemap
+  DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift ReaderApp.swift Bridge/module.modulemap
     ../../src/core/include/xiphos/core/c_api.h
   VERBATIM)
 add_custom_target(macos_preview ALL DEPENDS "${app}/Contents/MacOS/XiphosNativePreview")
@@ -70,7 +76,7 @@ if(BUILD_TESTING)
       -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/AdapterSmoke.swift"
       "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
       ${sword_link_flags} -lc++ -o "${CMAKE_CURRENT_BINARY_DIR}/adapter_smoke"
-    DEPENDS xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift Tests/AdapterSmoke.swift
+    DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift Tests/AdapterSmoke.swift
       Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h
     VERBATIM)
   add_custom_target(macos_adapter_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/adapter_smoke")
@@ -81,7 +87,7 @@ if(BUILD_TESTING)
       -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/AsyncAdapterSmoke.swift"
       "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
       ${sword_link_flags} -lc++ -o "${CMAKE_CURRENT_BINARY_DIR}/async_adapter_smoke"
-    DEPENDS xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift Tests/AsyncAdapterSmoke.swift
+    DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift Tests/AsyncAdapterSmoke.swift
       Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h
     VERBATIM)
   add_custom_target(macos_async_adapter_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/async_adapter_smoke")
@@ -93,7 +99,7 @@ if(BUILD_TESTING)
       "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
       ${sword_link_flags} -lc++ -framework SwiftUI -framework AppKit -framework WebKit
       -o "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke"
-    DEPENDS xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift ReaderApp.swift Tests/ReaderModelSmoke.swift
+    DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift ReaderApp.swift Tests/ReaderModelSmoke.swift
       Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h
     VERBATIM)
   add_custom_target(macos_reader_model_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke")
@@ -108,7 +114,7 @@ if(BUILD_TESTING)
       -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/OptionAdapterSmoke.swift"
       "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
       ${sword_link_flags} -lc++ -o "${CMAKE_CURRENT_BINARY_DIR}/option_adapter_smoke"
-    DEPENDS xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift Tests/OptionAdapterSmoke.swift
+    DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift Tests/OptionAdapterSmoke.swift
       Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h
     VERBATIM)
   add_custom_target(macos_option_adapter_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/option_adapter_smoke")
@@ -119,7 +125,7 @@ if(BUILD_TESTING)
       -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/DictionaryAdapterSmoke.swift"
       "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
       ${sword_link_flags} -lc++ -o "${CMAKE_CURRENT_BINARY_DIR}/dictionary_adapter_smoke"
-    DEPENDS xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift Tests/DictionaryAdapterSmoke.swift
+    DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift Tests/DictionaryAdapterSmoke.swift
       Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h
     VERBATIM)
   add_custom_target(macos_dictionary_adapter_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/dictionary_adapter_smoke")
@@ -130,7 +136,7 @@ if(BUILD_TESTING)
       -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/LexicalAdapterSmoke.swift"
       "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
       ${sword_link_flags} -lc++ -o "${CMAKE_CURRENT_BINARY_DIR}/lexical_adapter_smoke"
-    DEPENDS xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift Tests/LexicalAdapterSmoke.swift
+    DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift Tests/LexicalAdapterSmoke.swift
       Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h
     VERBATIM)
   add_custom_target(macos_lexical_adapter_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/lexical_adapter_smoke")

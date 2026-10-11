@@ -276,12 +276,16 @@ kind with count/cursor, module/key entries and back/forward flags; bounds return
 null/zero and snapshots survive worker teardown. Native integration follows.
 
 
-Explicit lexical visits render before recording selected dictionary/raw value.
+Main-origin lexical clicks render before recording the selected dictionary and
+the legacy GLib-uppercase requested key. Command metadata retains raw value.
+Dialog-origin clicks, hover and preview reads use raw keys without main history.
 The worker/C click dispatcher shares the contextual parser/result path with
 preview resolution and records only successful lexical commands. Passage
 targets, notes and reference lists retain their existing no-Bible-visit behavior;
-older preview resolution remains unrecorded. Legacy Unicode click normalization
-is still pending and is not silently replaced by Swift case conversion.
+older preview resolution remains unrecorded. C++ owns normalization; Swift does
+not implement casing. Hosts initialize process locale before worker creation.
+Malformed Unicode main clicks reject without changing history. A normalized
+requested key is retained even when the SDK resolves a different nearby entry.
 
 
 The nearby dictionary chooser returns nine owned keys in the legacy order,

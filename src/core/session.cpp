@@ -2,6 +2,7 @@
 #include "xiphos/core/session.hpp"
 #include <stdexcept>
 #include "xiphos/core/preferences.hpp"
+#include "xiphos/core/dictionary.hpp"
 namespace xiphos::core {
 void StudySession::set_lexicon_preferences(const LexiconPreferences &preferences) {
   (void)borrow_lexicon_preferences(preferences);
@@ -10,19 +11,26 @@ void StudySession::set_lexicon_preferences(const LexiconPreferences &preferences
 }
 LexicalEntry StudySession::visit_lexical(const std::string &module, const std::string &reference,
                                       const std::string &uri, int origin) {
-  auto result = read_lexical(module, reference, uri, origin);
-  dictionary_history_.visit({result.entry.module, result.command.value});
-  return result;
+  return lookup_lexical(module, reference, uri, origin, true);
 }
 LexicalEntry StudySession::read_lexical(const std::string &module, const std::string &reference,
                                      const std::string &uri, int origin) {
+  return lookup_lexical(module, reference, uri, origin, false);
+}
+LexicalEntry StudySession::lookup_lexical(const std::string &module, const std::string &reference,
+                                        const std::string &uri, int origin, bool click) {
   if (!lexicons_) throw std::invalid_argument("Configure lexicons before lexical lookup");
   auto command = lexical_link(uri, module);
   // Legacy morphology uses the caller's committed source context; a query
   // passage is retained as metadata rather than replacing that context.
   const auto &context = reference;
   const auto selected = reader_.select_lexicon(command, context, origin, *lexicons_);
-  auto entry = read_dictionary(selected, command.value);
+  // Main-pane clicks uppercase and record the requested key; information
+  // dialogs and hover previews keep the raw key and have no dictionary visit.
+  const bool main_click = click && origin == XIPHOS_LEXICON_MAIN;
+  const auto key = main_click ? dictionary_click_key(command.value) : command.value;
+  auto entry = read_dictionary(selected, key);
+  if (main_click) dictionary_history_.visit({selected, key});
   return {std::move(command), context, std::move(entry)};
 }
 DictionaryEntry StudySession::visit_dictionary(const std::string &module, const std::string &key) {

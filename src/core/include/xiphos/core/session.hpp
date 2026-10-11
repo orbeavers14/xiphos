@@ -65,6 +65,8 @@ private:
   bool module_preferences_ = false;
   std::map<std::string, EngineOptions> module_options_;
   void require_module(const std::string &module) const;
+  LexicalEntry lookup_lexical(const std::string &module, const std::string &reference,
+                            const std::string &uri, int origin, bool click);
   History history_;
   DictionaryHistory dictionary_history_;
 };

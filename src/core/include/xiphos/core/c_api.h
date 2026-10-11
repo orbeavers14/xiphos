@@ -128,7 +128,9 @@ xc_status xc_worker_lexicon_preferences(xc_worker *worker, uint64_t tab, xc_requ
  * module/reference become empty (valid for source-independent Strong's).
  * Greek morphology validates source on the worker. No Bible history visit.
  * Source reference is authoritative; query passage remains metadata. */
-/* Explicit lexical visit records selected module/raw value after rendering. */
+/* Main-origin click renders/records the legacy Unicode-uppercase requested key.
+ * Dialog-origin clicks retain raw key and do not visit dictionary history.
+ * Raw command metadata is preserved; process locale is host-owned. */
 xc_status xc_worker_visit_lexical(xc_worker *worker, uint64_t tab, const char *module, const char *reference, const char *uri, int origin, xc_request **out);
 xc_status xc_worker_read_lexical(xc_worker *worker, uint64_t tab, const char *module, const char *reference, const char *uri, int origin, xc_request **out);
 /* Copied nine-key chooser, preserving order/repeats at SDK boundaries. No visit.
