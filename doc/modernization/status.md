@@ -1059,3 +1059,28 @@ application/toolchain testing remains an acceptance gate on this macOS host.
 
 Next: shared rendered-list snapshots and C/Swift/native preview bindings. No
 GitHub build dispatched, accepted feature group or legacy file retirement.
+
+## Rendered reference-list snapshots: locally checked, host binding pending
+
+Implemented 2026-10-11 on `modernization/rendered-reference-lists`, based on
+shared parsing. Reader/session/worker requests return owned module, canonical
+context, original expression, entry snapshots, HTML and guard/skipped metadata.
+Shared rendering keeps reference order, duplicates and positions without text;
+headers use escaped labels and core-generated passage links. The reader restores
+the module key and SDK filter state after rendering. Sessions apply effective
+module settings without visiting or moving history, and queued inputs/results
+are copied.
+
+Four Strong's/Greek-accent combinations match direct legacy SWORD entry calls
+for a generated list containing Greek, notes and duplicate references. Tests
+also cover relative and cross-chapter ranges, missing-text positions, empty
+lists, 2000-verse guard propagation, two-tab settings/history, failed-module/
+context handling, closed tabs and result lifetime beyond reader/worker shutdown.
+Pure presentation tests cover escaping, retained engine markup and unique
+positions for duplicates. Full local CTest passed 19/19, ASan/UBSan 4/4 and
+ThreadSanitizer 3/3 including fixtures (external SDK uninstrumented).
+C++11/C++17 warnings-as-errors checks passed.
+
+Next: C/Swift request bindings and a native referenced-passage preview. Full
+GTK, hover/pin/expanded link workflows and cross-platform acceptance remain
+pending. No GitHub build dispatched, accepted parity group or legacy retirement.

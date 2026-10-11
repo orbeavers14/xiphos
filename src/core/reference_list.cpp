@@ -19,6 +19,7 @@ ParsedReferenceList parse_reference_list(sword::SWModule &module, const std::str
 		throw std::invalid_argument("SWORD could not resolve reference-list context");
 	auto parsed = current.parseVerseList(list.c_str(), current.getText(), true);
 	ParsedReferenceList result;
+	result.context = current.getText();
 	for (int i = 0; i < parsed.getCount(); ++i) {
 		auto *element = parsed.getElement(i);
 		if (!element || element->popError()) {

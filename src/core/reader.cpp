@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/reader.hpp"
+#include "xiphos/core/reference_list.hpp"
 #include <markupfiltmgr.h>
 #include "xiphos/core/engine_manager.hpp"
 #include <swmgr.h>
@@ -51,6 +52,38 @@ PassageLink Reader::resolve_link(const std::string &current_module, const std::s
   auto target = passage_link(url, current_module);
   impl_->verse_module(target.module, target.reference);
   return target;
+}
+ReferenceList Reader::read_reference_list(const std::string &id, const std::string &expression,
+                                         const std::string &context) {
+  return reference_list_impl(id, expression, context, nullptr);
+}
+ReferenceList Reader::read_reference_list(const std::string &id, const std::string &expression,
+                                         const std::string &context, const EngineOptions &options) {
+  return reference_list_impl(id, expression, context, &options);
+}
+ReferenceList Reader::reference_list_impl(const std::string &id, const std::string &expression,
+                                         const std::string &context, const EngineOptions *options) {
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto &module = impl_->verse_module(id, context);
+  const auto parsed = parse_reference_list(module, expression, context);
+  struct RestoreKey {
+    sword::SWModule &module;
+    std::string reference;
+    ~RestoreKey() { module.getKey()->setText(reference.c_str()); }
+  } restore{module, module.getKeyText()};
+  std::unique_ptr<ScopedEngineOptions> scope;
+  if (options) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *options);
+  ReferenceList result;
+  result.module = id; result.context = parsed.context; result.expression = expression;
+  result.limited = parsed.limited; result.skipped = parsed.skipped;
+  result.entries.reserve(parsed.references.size());
+  for (const auto &reference : parsed.references) {
+    auto html = render_entry(module, reference.c_str());
+    if (module.getKey()->getError()) throw std::invalid_argument("SWORD could not render a reference-list entry");
+    result.entries.push_back({module.getKeyText(), std::move(html)});
+  }
+  result.html = display_reference_list(result);
+  return result;
 }
 StudyNote Reader::study_note(const std::string &id, const std::string &reference,
                              const std::string &identifier) {

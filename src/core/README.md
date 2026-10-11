@@ -100,4 +100,9 @@ The legacy `BackEnd::parse_verse_list` now delegates to it while preserving its
 current-key mutation and GList result. Characterization compiles both a frozen
 pre-extraction adapter and the actual current adapter without GTK, comparing
 56 cases across KJV/KJVA; full GTK application validation remains a gate.
-Native rendered-list requests and presentation are pending.
+`Reader::read_reference_list`, `StudySession::read_reference_list` and
+`StudyWorker::read_reference_list` now return owned module/context/expression,
+entry snapshots, shared HTML and limit/skipped metadata. They use effective
+module options without visiting history and restore the module key after
+rendering. Missing text positions and duplicate entries remain present.
+Native C/Swift requests and presentation are pending.

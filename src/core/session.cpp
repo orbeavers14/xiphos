@@ -3,6 +3,12 @@
 #include <stdexcept>
 #include "xiphos/core/preferences.hpp"
 namespace xiphos::core {
+ReferenceList StudySession::read_reference_list(const std::string &module, const std::string &expression,
+                                              const std::string &context) {
+  const auto options = module_engine_options(module);
+  return options ? reader_.read_reference_list(module, expression, context, *options)
+                 : reader_.read_reference_list(module, expression, context);
+}
 StudyNote StudySession::study_note(const std::string &module, const std::string &reference,
                                   const std::string &identifier) {
   const auto options = module_engine_options(module);

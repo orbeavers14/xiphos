@@ -5,6 +5,7 @@
 namespace sword { class SWModule; }
 namespace xiphos { namespace core {
 struct ParsedReferenceList {
+	std::string context;
 	std::vector<std::string> references;
 	bool limited = false;
 	unsigned skipped = 0;

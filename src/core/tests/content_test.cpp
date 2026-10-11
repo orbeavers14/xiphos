@@ -73,6 +73,14 @@ int main() {
     require(plain.find("aria-current") != std::string::npos && plain.find("verse-2") != std::string::npos,
             "anchor and selection retained without highlighting");
     require(display_chapter({}, {}).empty(), "empty chapter fragment");
+    ReferenceList references;
+    references.entries = {{"A \"<&'", "<em>Original body</em>"}, {"A \"<&'", ""}};
+    const auto referenceHTML = display_reference_list(references);
+    require(referenceHTML.find("A &quot;&lt;&amp;&#39;") != std::string::npos && referenceHTML.find("<em>Original body</em>") != std::string::npos,
+            "reference labels escaped and engine body retained");
+    require(referenceHTML.find("reference-1") != std::string::npos && referenceHTML.find("reference-2") != std::string::npos,
+            "duplicate reference entries retain unique positions");
+    require(display_reference_list({}).empty(), "empty reference-list fragment");
     std::cout << "Chapter presentation checks passed\n";
   } catch (const std::exception &e) { std::cerr << e.what() << '\n'; return 1; }
 }

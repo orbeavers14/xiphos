@@ -28,6 +28,10 @@ public:
   const std::vector<Module> &modules() const;
   ReferenceChoices reference_choices(const std::string &module, const std::string &reference);
   PassageLink resolve_link(const std::string &current_module, const std::string &url);
+  ReferenceList read_reference_list(const std::string &module, const std::string &expression,
+                                    const std::string &context);
+  ReferenceList read_reference_list(const std::string &module, const std::string &expression,
+                                    const std::string &context, const EngineOptions &options);
   StudyNote study_note(const std::string &module, const std::string &reference,
                        const std::string &identifier);
   StudyNote study_note(const std::string &module, const std::string &reference,
@@ -41,6 +45,8 @@ public:
   std::string adjacent_chapter(const std::string &module, const std::string &reference,
                                int direction);
 private:
+  ReferenceList reference_list_impl(const std::string &module, const std::string &expression,
+                                    const std::string &context, const EngineOptions *options);
   StudyNote note_impl(const std::string &module, const std::string &reference,
                       const std::string &identifier, const EngineOptions *options);
   Entry read_impl(const std::string &module, const std::string &reference, const EngineOptions *options);
