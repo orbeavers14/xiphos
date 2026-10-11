@@ -141,6 +141,16 @@ final class ReaderModel: ObservableObject {
         }
         read()
     }
+    func navigateDictionary(_ direction: Int32) {
+        guard !closed, !isBusy, direction == -1 || direction == 1, let worker, let tab,
+              let current = dictionaryEntry, dictionarySelection == current.module else { return }
+        run { token in
+            let entry = try await worker.navigateDictionary(tab: tab, module: current.module, key: current.key, direction: direction)
+            guard token == self.revision && !self.closed else { return }
+            self.dictionaryEntry = entry; self.dictionaryKey = entry.key
+            self.lexicalPreview = nil; self.message = ""
+        }
+    }
     func lookupDictionary() {
         guard !closed, !isBusy, let worker, let tab, let module = dictionarySelection,
               modules.contains(where: { $0.id == module && $0.isDictionary }) else { return }
@@ -630,6 +640,11 @@ struct ReaderWindow: View {
                             .accessibilityLabel("Dictionary word or key")
                         Button("Look up") { model.lookupDictionary() }
                     }.padding(8).disabled(model.isBusy)
+                    HStack {
+                        Button("Previous key") { model.navigateDictionary(-1) }
+                        Button("Next key") { model.navigateDictionary(1) }
+                    }.padding(.horizontal, 8).padding(.bottom, 8)
+                        .disabled(model.isBusy || model.dictionaryEntry == nil || model.dictionarySelection != model.dictionaryEntry?.module)
                     Divider()
                     if let entry = model.dictionaryEntry {
                         Text("\(entry.module) • \(entry.key)").font(.caption).padding(8)

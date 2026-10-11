@@ -189,6 +189,17 @@ actor CoreWorker {
         defer { xc_lexical_entry_release(result) }
         return CoreValues.lexicalEntry(result)
     }
+    func navigateDictionary(tab: UInt64, module: String, key: String, direction: Int32) async throws -> RenderedDictionaryEntry {
+        guard (direction == -1 || direction == 1), ![module, key].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { id in key.withCString { xc_worker_navigate_dictionary(handle, tab, id, $0, direction, &request) } }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_dictionary_entry(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_dictionary_entry_release(result) }
+        return CoreValues.dictionaryEntry(result)
+    }
     func readDictionary(tab: UInt64, module: String, key: String) async throws -> RenderedDictionaryEntry {
         guard ![module, key].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?

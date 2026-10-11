@@ -347,6 +347,17 @@ struct ReaderModelSmoke {
         guard first.dictionaryEntry?.html.contains("Unicode") == true, !first.message.isEmpty else { fatalError("invalid direct lookup retained result") }
         first.dictionaryKey = "ALPHA"; first.dictionarySelection = "DictionaryTwo"; first.lookupDictionary(); try await idle(first)
         guard first.dictionaryEntry?.module == "DictionaryTwo", first.dictionaryEntry?.html.contains("DictionaryTwo") == true else { fatalError("explicit direct dictionary switch") }
+        first.dictionaryKey = "unfinished key"
+        first.navigateDictionary(1); try await idle(first)
+        guard first.dictionaryEntry?.html.contains("Unicode") == true, first.dictionaryKey == first.dictionaryEntry?.key,
+              first.dictionarySource?.reference == "John 3:16", first.reference == "John 4:2", first.html == priorHTML,
+              first.canBack == back, first.canForward == forward else { fatalError("native key navigation uses committed key and preserves Bible") }
+        first.navigateDictionary(-1); try await idle(first)
+        guard first.dictionaryEntry?.html.contains("DictionaryTwo") == true else { fatalError("native previous dictionary key") }
+        first.navigateDictionary(0)
+        guard !first.isBusy else { fatalError("invalid native direction queued") }
+        first.dictionarySelection = "DictionaryOne"; first.navigateDictionary(1)
+        guard !first.isBusy, first.dictionaryEntry?.module == "DictionaryTwo" else { fatalError("uncommitted dictionary switch blocked navigation") }
         first.closeLexicalPreview()
         guard first.dictionarySelection == nil, first.dictionaryEntry == nil else { fatalError("close direct dictionary") }
         second.applyLexiconPreferences(changed); second.close()
