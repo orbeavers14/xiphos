@@ -9,6 +9,7 @@ extern "C" {
 typedef struct xc_reader xc_reader;
 typedef struct xc_entry xc_entry;
 typedef struct xc_note xc_note;
+typedef struct xc_reference_list xc_reference_list;
 typedef struct xc_session xc_session;
 typedef struct xc_chapter xc_chapter;
 typedef struct xc_link xc_link;
@@ -92,6 +93,8 @@ xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_req
  * After XC_OK take_link or take_note identifies the result kind. */
 xc_status xc_worker_resolve_study_link(xc_worker *worker, uint64_t tab, const char *current_module, const char *uri, xc_request **out);
 xc_status xc_worker_study_note_link(xc_worker *worker, uint64_t tab, const char *current_module, const char *uri, xc_request **out);
+/* Expression may be empty; context/module must be nonempty. No history visit. */
+xc_status xc_worker_read_reference_list(xc_worker *worker, uint64_t tab, const char *module, const char *expression, const char *context, xc_request **out);
 xc_status xc_worker_study_note(xc_worker *worker, uint64_t tab, const char *module, const char *reference, const char *identifier, xc_request **out);
 xc_status xc_worker_read_tab_entry(xc_worker *worker, uint64_t tab, const char *module, const char *reference, xc_request **out);
 xc_status xc_worker_read_tab_chapter(xc_worker *worker, uint64_t tab, const char *module, const char *reference, unsigned display_flags, xc_request **out);
@@ -104,6 +107,7 @@ void xc_request_release(xc_request *request);
  * Caller owns the transferred handle and uses its normal release function.
  * Copies survive worker/request close. Tab ID is zero unless ready/tab result. */
 uint64_t xc_request_tab(const xc_request *request);
+xc_reference_list *xc_request_take_reference_list(xc_request *request);
 xc_note *xc_request_take_note(xc_request *request);
 xc_entry *xc_request_take_entry(xc_request *request);
 xc_chapter *xc_request_take_chapter(xc_request *request);
@@ -213,7 +217,18 @@ void xc_chapter_release(xc_chapter *chapter);
  * permits, and records a successful visit. -1/+1 only; no wrap at Bible ends. */
 xc_status xc_session_navigate_chapter(xc_session *session, const char *module,
                                      const char *reference, int direction, xc_entry **out);
-/* Note strings are owned by the result until release; NULL handle -> NULL. */
+/* Snapshot strings are owned by their result until release; NULL -> NULL.
+ * Invalid list indexes -> NULL; NULL count/limit/skipped -> zero. */
+size_t xc_reference_list_count(const xc_reference_list *references);
+const char *xc_reference_list_module(const xc_reference_list *references);
+const char *xc_reference_list_context(const xc_reference_list *references);
+const char *xc_reference_list_expression(const xc_reference_list *references);
+const char *xc_reference_list_html(const xc_reference_list *references);
+const char *xc_reference_list_entry_reference(const xc_reference_list *references, size_t index);
+const char *xc_reference_list_entry_html(const xc_reference_list *references, size_t index);
+int xc_reference_list_limited(const xc_reference_list *references);
+unsigned xc_reference_list_skipped(const xc_reference_list *references);
+void xc_reference_list_release(xc_reference_list *references);
 const char *xc_note_module(const xc_note *note);
 const char *xc_note_reference(const xc_note *note);
 const char *xc_note_identifier(const xc_note *note);

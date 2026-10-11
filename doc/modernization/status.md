@@ -1084,3 +1084,25 @@ C++11/C++17 warnings-as-errors checks passed.
 Next: C/Swift request bindings and a native referenced-passage preview. Full
 GTK, hover/pin/expanded link workflows and cross-platform acceptance remain
 pending. No GitHub build dispatched, accepted parity group or legacy retirement.
+
+## Reference-list C and Swift adapters: locally checked
+
+Implemented 2026-10-11 on `modernization/reference-list-adapters`, based on
+rendered snapshots. The C API queues explicit module/expression/context/tab
+requests and transfers one owned reference-list result. It exposes copied
+metadata, entries, HTML and guard/skipped information with safe null/index
+handling. Empty expressions are valid; module/context are required. Swift adds
+a thin async method and Sendable copied snapshot; parsing and rendering remain
+in the shared core.
+
+Full local CTest passed 19/19. C checks cover queued argument copying, result
+kind/not-ready/double-take, actual legacy entry outputs, metadata/index bounds,
+empty/guarded lists, null/missing/closed inputs, queue recovery and unchanged
+history. A request can be observed and its result retained after worker
+shutdown. Swift verifies normalized context, duplicate order, configured
+output, empty/error handling and result lifetime after shutdown. Focused
+ASan/UBSan and ThreadSanitizer each passed 3/3 including fixtures (external SDK
+uninstrumented); C11/C++17 warnings-as-errors checks passed.
+
+Next: native referenced-passage preview and visible cross-reference workflow.
+No GitHub build dispatched, accepted parity group or legacy file retirement.

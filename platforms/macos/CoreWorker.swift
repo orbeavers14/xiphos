@@ -146,6 +146,20 @@ actor CoreWorker {
         let status = xc_worker_clear_engine_options(try worker(), tab, &request)
         xc_request_release(try await wait(status, request))
     }
+    func readReferenceList(tab: UInt64, module: String, expression: String, context: String) async throws -> RenderedReferenceList {
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { id in
+            expression.withCString { input in
+                context.withCString { xc_worker_read_reference_list(handle, tab, id, input, $0, &request) }
+            }
+        }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_reference_list(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_reference_list_release(result) }
+        return CoreValues.referenceList(result)
+    }
     func resolveStudyLink(tab: UInt64, currentModule: String, uri: String) async throws -> ResolvedStudyLink {
         var request: OpaquePointer?
         let handle = try worker()

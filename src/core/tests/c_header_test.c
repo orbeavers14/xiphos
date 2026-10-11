@@ -5,7 +5,13 @@ int c_header_test(void) {
   const char *references[] = {"A", "B"};
   xc_session *session = NULL;
   xc_request *request = NULL;
-  return xc_note_module(NULL) == NULL && xc_note_reference(NULL) == NULL && xc_note_identifier(NULL) == NULL &&
+  return xc_reference_list_count(NULL) == 0 && xc_reference_list_module(NULL) == NULL &&
+         xc_reference_list_context(NULL) == NULL && xc_reference_list_expression(NULL) == NULL &&
+         xc_reference_list_html(NULL) == NULL && xc_reference_list_entry_reference(NULL, 0) == NULL &&
+         xc_reference_list_entry_html(NULL, 0) == NULL && xc_reference_list_limited(NULL) == 0 &&
+         xc_reference_list_skipped(NULL) == 0 && xc_request_take_reference_list(NULL) == NULL &&
+         xc_worker_read_reference_list(NULL, 0, "M", "John3:16", "John3:16", &request) == XC_INVALID_ARGUMENT && request == NULL &&
+         xc_note_module(NULL) == NULL && xc_note_reference(NULL) == NULL && xc_note_identifier(NULL) == NULL &&
          xc_note_type(NULL) == NULL && xc_note_label(NULL) == NULL &&
          xc_note_html(NULL) == NULL && xc_note_reference_list(NULL) == NULL &&
          xc_request_take_note(NULL) == NULL &&

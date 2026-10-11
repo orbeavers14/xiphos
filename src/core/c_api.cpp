@@ -15,6 +15,7 @@ struct xc_session {
 struct xc_chapter { xiphos::core::Chapter value; };
 struct xc_choices { xiphos::core::ReferenceChoices value; };
 struct xc_link { xiphos::core::PassageLink value; };
+struct xc_reference_list { xiphos::core::ReferenceList value; };
 struct xc_note { xiphos::core::StudyNote value; };
 struct xc_entry { xiphos::core::Entry value; };
 struct xc_worker { xiphos::core::StudyWorker value; explicit xc_worker(const char *root) : value(root ? root : "") {} };
@@ -25,6 +26,7 @@ struct xc_request {
   uint64_t tab = 0;
   bool options_result = false;
   std::optional<xiphos::core::EngineOptions> options;
+  std::unique_ptr<xc_reference_list> references;
   std::unique_ptr<xc_note> note;
   std::unique_ptr<xc_entry> entry;
   std::unique_ptr<xc_chapter> chapter;
@@ -37,6 +39,7 @@ struct xc_request {
   void store(uint64_t v) { tab = v; }
   void store(std::optional<xiphos::core::EngineOptions> v) { options = v; options_result = true; }
   void store(xiphos::core::ResolvedStudyLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
+  void store(xiphos::core::ReferenceList v) { references = std::make_unique<xc_reference_list>(xc_reference_list{std::move(v)}); }
   void store(xiphos::core::StudyNote v) { note = std::make_unique<xc_note>(xc_note{std::move(v)}); }
   void store(xiphos::core::Entry v) { entry = std::make_unique<xc_entry>(xc_entry{std::move(v)}); }
   void store(xiphos::core::Chapter v) { chapter = std::make_unique<xc_chapter>(xc_chapter{std::move(v)}); }
@@ -220,6 +223,10 @@ xc_status xc_worker_study_note_link(xc_worker *w, uint64_t tab, const char *id, 
   if (!uri || !*uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.study_note_link(tab, id ? id : "", uri); });
 }
+xc_status xc_worker_read_reference_list(xc_worker *w, uint64_t tab, const char *id, const char *expression, const char *context, xc_request **out) {
+  if (!id || !*id || !expression || !context || !*context) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.read_reference_list(tab, id, expression, context); });
+}
 xc_status xc_worker_study_note(xc_worker *w, uint64_t tab, const char *id, const char *ref, const char *identifier, xc_request **out) {
   if (!id || !*id || !ref || !*ref || !identifier || !*identifier) {
     if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
@@ -259,6 +266,7 @@ xc_status xc_request_poll(xc_request *r) {
 }
 void xc_request_release(xc_request *r) { delete r; }
 uint64_t xc_request_tab(const xc_request *r) { return r && r->status == XC_OK ? r->tab : 0; }
+xc_reference_list *xc_request_take_reference_list(xc_request *r) { return r && r->status == XC_OK ? r->references.release() : nullptr; }
 xc_note *xc_request_take_note(xc_request *r) { return r && r->status == XC_OK ? r->note.release() : nullptr; }
 xc_entry *xc_request_take_entry(xc_request *r) { return r && r->status == XC_OK ? r->entry.release() : nullptr; }
 xc_chapter *xc_request_take_chapter(xc_request *r) { return r && r->status == XC_OK ? r->chapter.release() : nullptr; }
@@ -438,6 +446,16 @@ xc_status xc_session_navigate_chapter(xc_session *s, const char *id, const char 
     *out = result.release(); return XC_OK;
   } catch (...) { return failure(); }
 }
+size_t xc_reference_list_count(const xc_reference_list *r) { return r ? r->value.entries.size() : 0; }
+const char *xc_reference_list_module(const xc_reference_list *r) { return r ? r->value.module.c_str() : nullptr; }
+const char *xc_reference_list_context(const xc_reference_list *r) { return r ? r->value.context.c_str() : nullptr; }
+const char *xc_reference_list_expression(const xc_reference_list *r) { return r ? r->value.expression.c_str() : nullptr; }
+const char *xc_reference_list_html(const xc_reference_list *r) { return r ? r->value.html.c_str() : nullptr; }
+const char *xc_reference_list_entry_reference(const xc_reference_list *r, size_t i) { return r && i < r->value.entries.size() ? r->value.entries[i].reference.c_str() : nullptr; }
+const char *xc_reference_list_entry_html(const xc_reference_list *r, size_t i) { return r && i < r->value.entries.size() ? r->value.entries[i].html.c_str() : nullptr; }
+int xc_reference_list_limited(const xc_reference_list *r) { return r && r->value.limited; }
+unsigned xc_reference_list_skipped(const xc_reference_list *r) { return r ? r->value.skipped : 0; }
+void xc_reference_list_release(xc_reference_list *r) { delete r; }
 const char *xc_note_module(const xc_note *n) { return n ? n->value.module.c_str() : nullptr; }
 const char *xc_note_reference(const xc_note *n) { return n ? n->value.reference.c_str() : nullptr; }
 const char *xc_note_identifier(const xc_note *n) { return n ? n->value.identifier.c_str() : nullptr; }

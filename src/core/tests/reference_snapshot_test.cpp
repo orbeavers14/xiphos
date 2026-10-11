@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/worker.hpp"
+#include "xiphos/core/c_api.h"
+#include <chrono>
+#include <thread>
 #include "xiphos/core/engine_manager.hpp"
 #include <markupfiltmgr.h>
 #include <array>
@@ -7,6 +10,15 @@
 #include <stdexcept>
 using namespace xiphos::core;
 void check(bool condition, const char *message) { if (!condition) throw std::runtime_error(message); }
+xc_status wait(xc_request *request) {
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+  xc_status status;
+  while ((status = xc_request_poll(request)) == XC_PENDING) {
+    check(std::chrono::steady_clock::now() < deadline, "C reference-list request deadline");
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+  return status;
+}
 int main(int argc, char **argv) {
   try {
     check(argc == 2, "fixture root required"); const std::string root = argv[1];
@@ -84,6 +96,57 @@ int main(int argc, char **argv) {
     }
     const auto result = accepted.get();
     check(result.entries.size() == 5 && result.entries[0].html == expected[3][0].html, "queued arguments copied and result outlives worker");
+    {
+      xc_worker *worker = nullptr; xc_request *request = nullptr;
+      check(xc_worker_open(root.c_str(), &worker) == XC_OK, "C reference-list worker");
+      check(xc_worker_create_tab(worker, &request) == XC_OK && wait(request) == XC_OK && !xc_request_take_reference_list(request), "C wrong request kind");
+      const auto tab = xc_request_tab(request); xc_request_release(request);
+      const unsigned flags = XC_ENGINE_STRONGS | XC_ENGINE_WORDS_IN_RED | XC_ENGINE_FOOTNOTES | XC_ENGINE_GREEK_ACCENTS | XC_ENGINE_CROSS_REFERENCES;
+      check(xc_worker_set_module_engine_options(worker, tab, "OptionOther", flags, &request) == XC_OK && wait(request) == XC_OK, "C list options");
+      xc_request_release(request);
+      std::string input = expression, context = "John.3.16";
+      check(xc_worker_read_reference_list(worker, tab, "OptionOther", input.c_str(), context.c_str(), &request) == XC_OK && !xc_request_take_reference_list(request),
+            "C reference list submitted/not ready"); input = ""; context = "";
+      check(wait(request) == XC_OK && !xc_request_take_entry(request) && !xc_request_take_note(request), "C reference-list result kind");
+      auto *snapshot = xc_request_take_reference_list(request);
+      check(snapshot && !xc_request_take_reference_list(request), "C reference-list transfers once"); xc_request_release(request);
+      check(xc_reference_list_count(snapshot) == 5 && std::string(xc_reference_list_module(snapshot)) == "OptionOther" &&
+            std::string(xc_reference_list_context(snapshot)) == "John 3:16" && std::string(xc_reference_list_expression(snapshot)) == expression &&
+            !xc_reference_list_limited(snapshot) && !xc_reference_list_skipped(snapshot), "C copied snapshot metadata");
+      for (std::size_t i = 0; i < expected[3].size(); ++i)
+        check(std::string(xc_reference_list_entry_reference(snapshot, i)) == expected[3][i].reference &&
+              std::string(xc_reference_list_entry_html(snapshot, i)) == expected[3][i].html, "C actual rendered entry outputs");
+      check(!xc_reference_list_entry_reference(snapshot, 5) && !xc_reference_list_entry_html(snapshot, static_cast<std::size_t>(-1)), "C snapshot bounds");
+      check(xc_worker_read_reference_list(worker, tab, "OptionOther", "", "John3:16", &request) == XC_OK && wait(request) == XC_OK, "C empty expression accepted");
+      auto *empty = xc_request_take_reference_list(request); xc_request_release(request);
+      check(empty && xc_reference_list_count(empty) == 0 && !xc_reference_list_entry_reference(empty, 0) && std::string(xc_reference_list_html(empty)).empty(), "C empty snapshot");
+      xc_reference_list_release(empty);
+      check(xc_worker_read_reference_list(worker, tab, "OptionOther", "Gen1:1-Rev22:21", "John3:16", &request) == XC_OK && wait(request) == XC_OK, "C guarded list");
+      auto *guarded = xc_request_take_reference_list(request); xc_request_release(request);
+      check(guarded && xc_reference_list_limited(guarded) && xc_reference_list_count(guarded) == 2000, "C guard metadata"); xc_reference_list_release(guarded);
+      check(xc_worker_read_reference_list(worker, tab, "Missing", expression.c_str(), "John3:16", &request) == XC_OK && wait(request) == XC_MODULE_NOT_FOUND &&
+            !xc_request_take_reference_list(request), "C missing module error"); xc_request_release(request);
+      check(xc_worker_read_reference_list(worker, tab, nullptr, "16", "John3:16", &request) == XC_INVALID_ARGUMENT && !request, "C null module rejected");
+      check(xc_worker_read_reference_list(worker, tab, "OptionOther", nullptr, "John3:16", &request) == XC_INVALID_ARGUMENT && !request, "C null expression rejected");
+      check(xc_worker_read_reference_list(worker, tab, "OptionOther", "16", "", &request) == XC_INVALID_ARGUMENT && !request, "C empty context rejected");
+      check(xc_worker_read_reference_list(worker, tab, "OptionOther", "16", "John3:16", nullptr) == XC_INVALID_ARGUMENT, "C null output rejected");
+      check(xc_worker_history(worker, tab, &request) == XC_OK && wait(request) == XC_OK, "C list queue recovers");
+      auto *history = xc_request_take_history(request); xc_request_release(request);
+      check(history && xc_history_count(history) == 0, "C list preview preserves history"); xc_history_release(history);
+      xc_request *held = nullptr;
+      check(xc_worker_read_reference_list(worker, tab, "OptionOther", expression.c_str(), "John3:16", &held) == XC_OK, "C request retained through shutdown");
+      check(xc_worker_close_tab(worker, tab, &request) == XC_OK && wait(request) == XC_OK, "C list tab close"); xc_request_release(request);
+      check(xc_worker_read_reference_list(worker, tab, "OptionOther", "16", "John3:16", &request) == XC_OK && wait(request) == XC_INVALID_ARGUMENT, "C closed list tab rejected");
+      xc_request_release(request); xc_worker_close(worker);
+      check(wait(held) == XC_OK, "C pending list result observed after worker close");
+      auto *afterClose = xc_request_take_reference_list(held); xc_request_release(held);
+      check(afterClose && xc_reference_list_count(afterClose) == 5 && std::string(xc_reference_list_entry_html(snapshot, 0)) == expected[3][0].html,
+            "C request/result snapshots outlive worker"); xc_reference_list_release(afterClose); xc_reference_list_release(snapshot);
+      xc_reference_list_release(nullptr);
+      check(!xc_reference_list_module(nullptr) && !xc_reference_list_context(nullptr) && !xc_reference_list_expression(nullptr) && !xc_reference_list_html(nullptr) &&
+            !xc_reference_list_count(nullptr) && !xc_reference_list_limited(nullptr) && !xc_reference_list_skipped(nullptr) &&
+            !xc_reference_list_entry_reference(nullptr, 0) && !xc_reference_list_entry_html(nullptr, 0) && !xc_request_take_reference_list(nullptr), "C null reference-list access");
+    }
     std::cout << "Rendered reference-list legacy output/settings/history/lifetime checks passed\n";
   } catch (const std::exception &error) { std::cerr << error.what() << '\n'; return 1; }
 }

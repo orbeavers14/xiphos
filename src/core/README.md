@@ -105,4 +105,9 @@ pre-extraction adapter and the actual current adapter without GTK, comparing
 entry snapshots, shared HTML and limit/skipped metadata. They use effective
 module options without visiting history and restore the module key after
 rendering. Missing text positions and duplicate entries remain present.
-Native C/Swift requests and presentation are pending.
+`xc_worker_read_reference_list` queues a snapshot that transfers once through
+`xc_request_take_reference_list`. Its strings/entries remain owned until
+`xc_reference_list_release`, including after worker/request close. Empty
+expressions are valid; module and context are required. Swift's async
+`CoreWorker.readReferenceList` copies the result into a Sendable snapshot.
+Native preview presentation remains pending.

@@ -40,6 +40,15 @@ struct InstalledModule: Identifiable, Sendable {
         self.id = id; self.description = description; self.type = type; self.language = language; self.options = options
     }
 }
+struct RenderedReferenceList: Sendable {
+    let module: String
+    let context: String
+    let expression: String
+    let entries: [RenderedEntry]
+    let html: String
+    let limited: Bool
+    let skipped: UInt32
+}
 struct RenderedStudyNote: Sendable {
     let module: String
     let reference: String
@@ -192,6 +201,15 @@ enum CoreValues {
     static func link(_ result: OpaquePointer) -> PassageTarget {
         PassageTarget(module: String(cString: xc_link_module(result)!),
                       reference: String(cString: xc_link_reference(result)!))
+    }
+    static func referenceList(_ result: OpaquePointer) -> RenderedReferenceList {
+        RenderedReferenceList(module: String(cString: xc_reference_list_module(result)!),
+            context: String(cString: xc_reference_list_context(result)!), expression: String(cString: xc_reference_list_expression(result)!),
+            entries: (0..<xc_reference_list_count(result)).map { index in
+                RenderedEntry(reference: String(cString: xc_reference_list_entry_reference(result, index)!),
+                              html: String(cString: xc_reference_list_entry_html(result, index)!))
+            }, html: String(cString: xc_reference_list_html(result)!), limited: xc_reference_list_limited(result) != 0,
+            skipped: xc_reference_list_skipped(result))
     }
     static func chapter(_ result: OpaquePointer) -> RenderedChapter {
         return RenderedChapter(reference: String(cString: xc_chapter_reference(result)!),
