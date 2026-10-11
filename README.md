@@ -24,9 +24,9 @@ Bible history, scoped reading options, engine-preference import/save and
 note/reference-list previews. Dictionary work includes characterized lexical
 selection, native preferences and click results, direct lookup, key steps and
 shared separate history commands, native dictionary Back/Forward/Clear and a
-nearby-key chooser.
-Hover, pinning, click normalization and full established pane composition remain
-in progress.
+nearby-key chooser. Main clicks use shared Unicode casing; the macOS host
+initializes its environment locale before engine startup. Hover, pinning,
+persistence and full established pane composition remain in progress.
 
 The current local suite has 32 checks, supplemented by scoped sanitizer,
 strict-language and temporary-fixture GUI checks recorded in the status ledger.
@@ -51,10 +51,8 @@ migration. See the [current status and sign-off rules](doc/modernization/status.
 * Native macOS preview and adapter tests: [platforms/macos/README.md](platforms/macos/README.md).
 * Translations: documentation in [doc](doc).
 
-Locally tested follow-up slices add shared session history, chapter snapshots
-and previous/next chapter navigation with thin macOS controls. Completed
-commits are pushed to the draft branch after local checks; acceptance remains
-pending. Next are chapter options/decorations and the established study-pane
+Completed scoped commits are pushed after local checks and kept in draft PRs.
+Next are hover/pinning, compatible lexicon persistence and established study-pane
 composition, followed by equivalent reading panes on GTK4 and WinUI 3.
 Each milestone needs reviewable changes, regression tests and parity evidence
 before the corresponding legacy files can be retired.
