@@ -152,6 +152,16 @@ actor CoreWorker {
         let status = xc_worker_clear_engine_options(try worker(), tab, &request)
         xc_request_release(try await wait(status, request))
     }
+    func readDictionary(tab: UInt64, module: String, key: String) async throws -> RenderedDictionaryEntry {
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { id in key.withCString { xc_worker_read_dictionary(handle, tab, id, $0, &request) } }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_dictionary_entry(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_dictionary_entry_release(result) }
+        return CoreValues.dictionaryEntry(result)
+    }
     func readReferenceList(tab: UInt64, module: String, expression: String, context: String) async throws -> RenderedReferenceList {
         var request: OpaquePointer?
         let handle = try worker()

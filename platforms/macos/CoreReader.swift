@@ -42,6 +42,7 @@ struct InstalledModule: Identifiable, Sendable {
         self.id = id; self.description = description; self.type = type; self.language = language; self.options = options
     }
 }
+struct RenderedDictionaryEntry: Sendable { let module: String; let key: String; let html: String }
 struct RenderedReferenceList: Sendable {
     let module: String
     let context: String
@@ -208,6 +209,10 @@ enum CoreValues {
     static func link(_ result: OpaquePointer) -> PassageTarget {
         PassageTarget(module: String(cString: xc_link_module(result)!),
                       reference: String(cString: xc_link_reference(result)!))
+    }
+    static func dictionaryEntry(_ result: OpaquePointer) -> RenderedDictionaryEntry {
+        RenderedDictionaryEntry(module: String(cString: xc_dictionary_entry_module(result)!),
+            key: String(cString: xc_dictionary_entry_key(result)!), html: String(cString: xc_dictionary_entry_html(result)!))
     }
     static func referenceList(_ result: OpaquePointer) -> RenderedReferenceList {
         RenderedReferenceList(module: String(cString: xc_reference_list_module(result)!),

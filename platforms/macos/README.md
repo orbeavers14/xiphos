@@ -145,3 +145,9 @@ This opt-in target tests and copies only the generated fixture and preview to a
 temporary directory outside Documents. It does not launch during ordinary
 builds/CI or access an installed user library. Launch success alone is not a
 GUI check; quit the temporary app before removing its copy.
+
+
+The Swift worker also exposes explicit dictionary previews as copied
+`RenderedDictionaryEntry` values using the shared C API. Original RawLD
+fixtures check settings isolation, Unicode, failure recovery and lifetime;
+the native dictionary pane and Strong's/morphology link dispatch are pending.
