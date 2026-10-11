@@ -56,6 +56,7 @@
 #include "main/url.hh"
 
 #include "backend/sword_main.hh"
+#include "xiphos/core/lexicon.h"
 
 #include "gui/debug_glib_null.h"
 
@@ -1018,37 +1019,20 @@ static gint show_note(DIALOG_DATA *d, const gchar *module, const gchar *passage,
 static gint show_morph(DIALOG_DATA *d, const gchar *type,
 		       const gchar *value, gboolean clicked)
 {
-	gchar *modbuf = NULL;
-	BackEnd *be = (BackEnd *)d->backend;
-
-	// 1. For Greek
-	if (!strcmp(type, "Greek") || strstr(type, "x-Robinson") || strstr(type, "robinson") || strstr(type, "packard")) {
-		// Which testament (1 = AT, 2 = NT)
-		int testament = be->get_key_testament(d->mod_name, d->key);
-		if (testament == 2) {
-			// --- If New Testament ---
-			if (settings.morph_greek_lex_nt && be->is_module(settings.morph_greek_lex_nt)) {
-				modbuf = settings.morph_greek_lex_nt;
-			} else if (be->is_module("Robinson")) {
-				modbuf = (char *)"Robinson";
-			}
-		} else {
-			// --- If old Testament (Septuagint) ---
-			if (settings.morph_greek_lex_ot && be->is_module(settings.morph_greek_lex_ot)) {
-				modbuf = settings.morph_greek_lex_ot;
-			} else if (be->is_module("Packard")) {
-				modbuf = (char *)"Packard";
-			}
-		}
-	}
-	// 2. For Hebrew
-	else if (!strcmp(type, "Hebrew") || strstr(type, "x-HebMorph")) {
-		// Check if user has chosen a heb morph dic.
-		if (settings.morph_heb_lex && be->is_module(settings.morph_heb_lex)) {
-			modbuf = settings.morph_heb_lex;
-		}
-	}
-
+	const XiphosLexiconPreferences preferences = {settings.lex_greek, settings.lex_hebrew,
+	    settings.morph_greek_lex_nt, settings.morph_greek_lex_ot, settings.morph_heb_lex};
+	struct Context { BackEnd *engine; const char *module; const char *key; };
+	Context source = {(BackEnd *)d->backend, d->mod_name, d->key};
+	const XiphosLexiconContext context = {&source,
+	    [](void *user, const char *module) -> int {
+		return static_cast<Context *>(user)->engine->is_module(module);
+	    },
+	    [](void *user) -> int {
+		auto *source = static_cast<Context *>(user);
+		return source->engine->get_key_testament(source->module, source->key);
+	    }};
+	const gchar *modbuf = xiphos_core_select_lexicon(XIPHOS_LEXICON_DIALOG, XIPHOS_LEXICON_MORPHOLOGY,
+	    type, &preferences, &context);
 	if (!modbuf)
 		return 0;
 
@@ -1099,12 +1083,10 @@ static gint show_morph(DIALOG_DATA *d, const gchar *type,
 static gint show_strongs(DIALOG_DATA *t, const gchar *type,
 			 const gchar *value, gboolean clicked)
 {
-	const gchar *modbuf = NULL;
-
-	if (!strcmp(type, "Greek"))
-		modbuf = settings.lex_greek;
-	else if (!strcmp(type, "Hebrew"))
-		modbuf = settings.lex_hebrew;
+	const XiphosLexiconPreferences preferences = {settings.lex_greek, settings.lex_hebrew,
+	    settings.morph_greek_lex_nt, settings.morph_greek_lex_ot, settings.morph_heb_lex};
+	const gchar *modbuf = xiphos_core_select_lexicon(XIPHOS_LEXICON_DIALOG, XIPHOS_LEXICON_STRONGS,
+	    type, &preferences, NULL);
 
 	if (clicked) {
 		static GtkWidget *dlg;

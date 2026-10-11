@@ -163,3 +163,18 @@ query decoding with note/reference parsing. It does not select a lexicon,
 normalize a key or change existing contextual dispatch. The main/dialog
 selection differences and subsequent gates are recorded in
 [lexical-lookup.md](../../doc/modernization/lexical-lookup.md).
+
+
+## Shared lexicon selection
+
+The C11-callable `xiphos_core_select_lexicon` in CoreOptions owns the legacy
+main/dialog Strong's and morphology selection policy. Both legacy handlers
+now delegate to it while retaining their display, history and source-testament
+behavior. Preferences are borrowed nullable strings; synchronous callbacks
+provide installed-module checks and a source testament only when needed.
+Returned strings borrow preferences or static fallback storage and must be
+copied before preference changes. A missing selection returns NULL; an empty
+configured string remains distinct from NULL. Main fallback availability and
+overlapping Hebrew/Greek checks intentionally differ from dialog selection.
+No global settings, SWORD manager or GTK types enter the helper. Native copied
+preferences/context and dictionary dispatch are the next integration seam.

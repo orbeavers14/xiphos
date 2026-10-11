@@ -104,3 +104,23 @@ regression; it does not extend GUI/module-corpus acceptance.
 The build explicitly watches both legacy selector source files and regenerates
 the extracted prefixes when either changes, preventing stale generated-code
 comparisons during subsequent extraction work.
+
+
+## Shared selection extraction added 2026-10-11
+
+The C11-callable CoreOptions helper now implements the characterized policy;
+actual main/dialog prefixes delegate with borrowed preferences and synchronous
+callbacks. The source context and legacy get_key_testament calls remain in
+those adapters, including existing mutation behavior. Presentation/click/hover
+code remains in the legacy handlers. The helper validates origin/action and
+null preferences/type; main untyped Strong's retains InvStrongsRealGreek.
+Invalid null dialog/morphology types now return no selection instead of
+performing an invalid strcmp; valid-command behavior is unchanged.
+
+The expanded comparison checks 16,968 cases including null versus empty
+morphology and Strong's preferences, and compares installed-module callback
+order as well as source context. A C11 translation unit calls the linked helper
+and checks borrowed-pointer identity. The 24-test local suite, final focused
+checks, strict C++11/C11 checks and focused address/undefined instrumentation
+pass. Legacy C++11 seam libraries build. Full GTK/UI validation is still not
+available here; native preference/dispatch integration is pending.
