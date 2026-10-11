@@ -25,10 +25,10 @@ note/reference-list previews. Dictionary work includes characterized lexical
 selection, native preferences and click results, direct lookup, key steps and
 shared separate history commands, native dictionary Back/Forward/Clear and a
 nearby-key chooser. Main clicks use shared Unicode casing; the macOS host
-initializes its environment locale before engine startup. Hover, pinning,
+initializes its environment locale before engine startup. Hover presentation,
 persistence and full established pane composition remain in progress.
 
-The current local suite has 32 checks, supplemented by scoped sanitizer,
+The current local suite has 33 checks, supplemented by scoped sanitizer,
 strict-language and temporary-fixture GUI checks recorded in the status ledger.
 The legacy app retains its existing UI and delegates selected seams to shared
 helpers. Routine development and testing stay local to conserve GitHub builds;
@@ -52,7 +52,7 @@ migration. See the [current status and sign-off rules](doc/modernization/status.
 * Translations: documentation in [doc](doc).
 
 Completed scoped commits are pushed after local checks and kept in draft PRs.
-Next are hover/pinning, compatible lexicon persistence and established study-pane
+Next are hover presentation, compatible lexicon persistence and established study-pane
 composition, followed by equivalent reading panes on GTK4 and WinUI 3.
 Each milestone needs reviewable changes, regression tests and parity evidence
 before the corresponding legacy files can be retired.

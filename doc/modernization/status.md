@@ -46,7 +46,7 @@ No milestone has official acceptance yet.
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
 
-Current local suite: **32 checks**. The shared Unicode click-key utility reuses
+Current local suite: **33 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.
@@ -93,7 +93,7 @@ inclusion in this public fork.
 1. Review the stacked draft milestones and validate representative modules
    against the legacy application. Bundle remote builds at meaningful review
    checkpoints; keep routine development/testing local to conserve CI usage.
-2. Characterize hover/pinning and compatible lexicon persistence. Complete remaining reading controls and
+2. Characterize hover presentation and compatible lexicon persistence. Complete remaining reading controls and
    characterize commentary/parallel panes while retaining study-pane composition.
 3. Implement equivalent GTK4 and WinUI 3 reading panes with native toolchains
    and interaction checks; retain the legacy app throughout migration.
@@ -109,10 +109,17 @@ inclusion in this public fork.
 | Inventory and architecture | Source/build/dependency/license audit; 38 feature groups; generated UI/manual inventory; shared ownership/thread boundary | Representative licensed modules, full workflow/visual baselines and native platform tooling |
 | Reading and navigation | Owned module/verse/chapter snapshots; legacy SDK comparisons; copied C/Swift adapters; nonblocking worker; per-tab Bible history | Full chapter composition, commentary/parallel panes, restoration and all platform interactions |
 | Reading settings | Shared 18-field policy/defaults/scoped options; native toggles/variants; explicit import/save preserving unknown/uninstalled settings | Remaining controls, complete preferences/profile compatibility and real-module corpus |
-| Study links | Notes, contextual links and ordered reference-list snapshots; legacy parser comparisons; native copied previews | Hover/pinning, detached dialogs and complete link/pane workflows |
-| Dictionary and lexicons | Characterized selection, owned reading/key steps, 9-key chooser; separate history agrees over 10,287 transitions; native controls | Persistence, hover/pinning, pane composition and full GTK4/WinUI interactions |
+| Study links | Notes, contextual links and ordered reference-list snapshots; legacy parser comparisons; native copied previews | Hover presentation, detached dialogs and complete link/pane workflows |
+| Dictionary and lexicons | Characterized selection, owned reading/key steps, 9-key chooser; separate history agrees over 10,287 transitions; native controls | Persistence, hover presentation, pane composition and full GTK4/WinUI interactions |
 | Unicode click policy | Shared/actual legacy casing agrees over 4,448,324 comparisons in four locales; native main clicks normalize/record; raw dialog/hover semantics retained | Unicode database/version comparisons, real-module workflows and forced-locale preference import |
 | Native environment locale | 31/31 suite then 3/3 focused fixture/Turkish/invalid-locale checks; 32 checks now defined | Saved locale selection, translation resources and other native host startup |
+
+The full local suite now passes **33/33**. Complete main lexical click/hover
+handlers agree over **135,258 frozen/actual callback comparisons**; strict
+C++11 and focused address/undefined checks cover that harness. The
+[hover contract inventory](hover-workflows.md) records destinations, retention
+and outstanding link families. Its source audit corrects the initial unsupported
+preview-pin requirement; linked/pinned tabs remain a separate parity workflow.
 
 Latest code milestones: [shared Unicode helper #54](https://github.com/orbeavers14/xiphos/pull/54),
 [legacy adoption #55](https://github.com/orbeavers14/xiphos/pull/55),
@@ -175,7 +182,8 @@ make every file associated with a milestone obsolete.
 After acceptance, remove disposable plans, superseded notes and generated
 reports once useful decisions/evidence are captured in this status page or
 architecture. Generated build/test fixtures and inventories stay under ignored
-`build/`; keep the code that regenerates them. Detailed historical evidence remains in Git history and linked PRs; the current
+`build/`; keep the code that regenerates them. Detailed historical evidence
+remains in Git history and linked PRs; the current
 page retains the compact evidence and acceptance contract.
 
 Retire legacy source, assets, build rules or dependencies only when:
