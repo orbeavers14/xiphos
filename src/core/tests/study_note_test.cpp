@@ -124,9 +124,9 @@ int main(int argc, char **argv) {
       const auto targetEntry = worker.read_entry(tab, target.module, target.reference).get();
       check(targetEntry.reference == "John 3:16" && targetEntry.html.find("Original red-letter fixture") != std::string::npos,
             "reference target normalized/rendered by module's SWORD key");
-      worker.visit(tab, "OptionOther", "John3:20").get();
-      worker.visit(tab, "OptionOther", "John3:19").get();
-      worker.navigate(tab, -1).get();
+      (void)worker.visit(tab, "OptionOther", "John3:20").get();
+      (void)worker.visit(tab, "OptionOther", "John3:19").get();
+      (void)worker.navigate(tab, -1).get();
       const auto previewHistory = worker.history(tab).get();
       const auto contextualNote = worker.resolve_study_link_at(tab, "OptionTest", "John3:16", generated_note_uri).get();
       check(std::get<StudyNote>(contextualNote).html == expected[3], "contextual dispatch keeps explicit note source");
