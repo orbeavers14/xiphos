@@ -15,6 +15,7 @@ private struct ReadingOptionSaveError: LocalizedError {
 final class ReaderModel: ObservableObject {
     @Published var modules: [InstalledModule] = []
     @Published var selection: String?
+    @Published var showLexiconPreferences = false
     @Published var reference = "John 3:16"
     @Published var renderedReference = ""
     @Published var html = ""
@@ -29,6 +30,7 @@ final class ReaderModel: ObservableObject {
     @Published var isBusy = true
     @Published private(set) var referencePreview: RenderedReferenceList?
     @Published private(set) var studyNote: RenderedStudyNote?
+    @Published private(set) var lexiconPreferences: LexiconPreferences?
     @Published private(set) var engineOptions: EngineOptionFlags?
     @Published private(set) var moduleOptions = ModuleOptionInfo.unknown
     private let worker: CoreWorker?
@@ -68,7 +70,10 @@ final class ReaderModel: ObservableObject {
             guard !closed else { try? await worker.closeTab(opened); return }
             tab = opened
             try await worker.enableModulePreferences(tab: opened)
+            try await worker.enableLexiconPreferences(tab: opened)
+            let lexicons = try await worker.lexiconPreferences(tab: opened)
             guard !closed else { return }
+            lexiconPreferences = lexicons
             modules = discovered
             selection = modules.first(where: { $0.type == "Biblical Texts" })?.id
             if modules.isEmpty { message = "No installed SWORD modules found. Install modules with the existing Xiphos application, then reopen this preview." }
@@ -95,6 +100,30 @@ final class ReaderModel: ObservableObject {
                     canBack = history.canBack; canForward = history.canForward
                 }
             }
+        }
+    }
+    func applyLexiconPreferences(_ submitted: LexiconPreferences) {
+        guard !closed, !isBusy, let worker, let tab, let previous = lexiconPreferences else { return }
+        // Legacy "-- Select --" entries do not replace the existing preference.
+        let replacement = LexiconPreferences(greek: submitted.greek ?? previous.greek,
+            hebrew: submitted.hebrew ?? previous.hebrew,
+            greekMorphNT: submitted.greekMorphNT ?? previous.greekMorphNT,
+            greekMorphOT: submitted.greekMorphOT ?? previous.greekMorphOT,
+            hebrewMorph: submitted.hebrewMorph ?? previous.hebrewMorph)
+        let fields: [(String?, String?, LexiconRoles)] = [(replacement.greek, previous.greek, .greekDefinition),
+            (replacement.hebrew, previous.hebrew, .hebrewDefinition),
+            (replacement.greekMorphNT, previous.greekMorphNT, .greekMorphology),
+            (replacement.greekMorphOT, previous.greekMorphOT, .greekMorphology),
+            (replacement.hebrewMorph, previous.hebrewMorph, .hebrewMorphology)]
+        guard fields.allSatisfy({ value, prior, role in
+            value == prior || modules.contains(where: { $0.id == value && $0.isDictionary && $0.lexiconRoles.contains(role) })
+        }) else { message = "Choose a dictionary from the corresponding lexicon list."; return }
+        run { token in
+            try await worker.setLexiconPreferences(tab: tab, preferences: replacement)
+            let copied = try await worker.lexiconPreferences(tab: tab)
+            guard token == self.revision && !self.closed else { return }
+            self.lexiconPreferences = copied
+            self.message = "Lexicon choices applied to this window."
         }
     }
     func selectionChanged() {
@@ -340,6 +369,48 @@ struct ReferenceMenu: View {
     }
 }
 
+@MainActor private final class LexiconDraft: ObservableObject {
+    @Published var preferences: LexiconPreferences
+    init(preferences: LexiconPreferences) { self.preferences = preferences }
+}
+
+private struct LexiconPreferencesView: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var model: ReaderModel
+    @StateObject private var draft: LexiconDraft
+    init(model: ReaderModel, preferences: LexiconPreferences) {
+        self.model = model; _draft = StateObject(wrappedValue: LexiconDraft(preferences: preferences))
+    }
+    private func picker(_ title: String, selection: Binding<String?>, role: LexiconRoles) -> some View {
+        let choices = model.modules.filter { $0.isDictionary && $0.lexiconRoles.contains(role) }
+        return Picker(title, selection: selection) {
+            Text("-- Select --").tag(nil as String?)
+            if let current = selection.wrappedValue, !choices.contains(where: { $0.id == current }) {
+                Text(current.isEmpty ? "-- Select --" : "\(current) (unavailable)").tag(Optional(current))
+            }
+            ForEach(choices) { Text($0.id).tag(Optional($0.id)) }
+        }
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Lexicon dictionaries").font(.title2)
+            Text("Choose the dictionaries used for original-language study in this window.")
+            Form {
+                picker("Greek lexicon", selection: $draft.preferences.greek, role: .greekDefinition)
+                picker("Hebrew lexicon", selection: $draft.preferences.hebrew, role: .hebrewDefinition)
+                picker("Greek morphology (New Testament)", selection: $draft.preferences.greekMorphNT, role: .greekMorphology)
+                picker("Greek morphology (Old Testament)", selection: $draft.preferences.greekMorphOT, role: .greekMorphology)
+                picker("Hebrew morphology", selection: $draft.preferences.hebrewMorph, role: .hebrewMorphology)
+            }
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
+                Button("Apply") { model.applyLexiconPreferences(draft.preferences); dismiss() }.keyboardShortcut(.defaultAction)
+            }
+        }.padding(24).frame(width: 560).disabled(model.isBusy)
+    }
+}
+
 struct ReaderWindow: View {
     @StateObject private var model: ReaderModel
     init(worker: CoreWorker?, startupError: String?) {
@@ -488,6 +559,8 @@ struct ReaderWindow: View {
                     Menu("Preferences") {
                         Button("Import reading options…") { choosePreferenceFile() }
                         Button("Save reading options…") { chooseSaveFile() }
+                        Divider()
+                        Button("Lexicon dictionaries…") { model.showLexiconPreferences = true }.disabled(model.lexiconPreferences == nil)
                     }.disabled(model.modules.isEmpty)
                     Button("Previous chapter") { model.navigateChapter(-1) }.disabled(model.selection == nil)
                     Button("Next chapter") { model.navigateChapter(1) }.disabled(model.selection == nil)
@@ -512,6 +585,9 @@ struct ReaderWindow: View {
             .onChange(of: model.selection) { _ in model.selectionChanged() }
             .onChange(of: model.verseNumbers) { _ in model.refreshDisplay() }
             .onChange(of: model.highlightSelected) { _ in model.refreshDisplay() }
+            .sheet(isPresented: $model.showLexiconPreferences) {
+                if let preferences = model.lexiconPreferences { LexiconPreferencesView(model: model, preferences: preferences) }
+            }
             .onDisappear { model.close() }
     }
 }
