@@ -69,6 +69,10 @@ xc_status xc_worker_set_engine_options(xc_worker *worker, uint64_t tab, unsigned
  * otherwise unconfigured SDK state. Clearing one layer retains other layers.
  * Installed module and live tab validation happens on the worker at poll time.
  * Settings and queries do not change history. Arguments/results are copied. */
+/* Explicit read-only modops.conf import replaces this tab's engine settings
+ * for all installed modules; missing sections use shared legacy defaults.
+ * Failed imports preserve state/history. Path is copied; no files are written. */
+xc_status xc_worker_import_module_preferences(xc_worker *worker, uint64_t tab, const char *path, xc_request **out);
 xc_status xc_worker_enable_module_preferences(xc_worker *worker, uint64_t tab, xc_request **out);
 xc_status xc_worker_set_module_engine_options(xc_worker *worker, uint64_t tab, const char *module, unsigned flags, xc_request **out);
 xc_status xc_worker_clear_module_engine_options(xc_worker *worker, uint64_t tab, const char *module, xc_request **out);

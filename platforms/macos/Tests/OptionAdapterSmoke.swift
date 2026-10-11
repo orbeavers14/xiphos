@@ -56,6 +56,21 @@ struct OptionAdapterSmoke {
         guard cleared == defaults else { fatalError("module clear restores shared defaults") }
         let unchangedHistory = try await worker.history(tab)
         guard unchangedHistory.count == 1 else { fatalError("module settings changed history") }
+        let preferenceURL = URL(fileURLWithPath: CommandLine.arguments[1]).appendingPathComponent("adapter-modops.conf")
+        let preferenceBytes = Data("; Original adapter fixture\n[OptionTest]\nStrong's Numbers=On\nWords of Christ in Red=Off\nFootnotes=Off\nCustomValue=café\n".utf8)
+        try preferenceBytes.write(to: preferenceURL)
+        try await worker.importModulePreferences(tab: tab, path: preferenceURL.path)
+        let imported = try await worker.moduleEngineOptions(tab: tab, module: "OptionTest")
+        guard imported?.contains(.strongs) == true, imported?.contains(.wordsInRed) == false,
+              imported?.contains(.footnotes) == false else { fatalError("Swift explicit preference import") }
+        do {
+            try await worker.importModulePreferences(tab: tab, path: preferenceURL.path + ".missing")
+            fatalError("missing import accepted")
+        } catch is CoreError { }
+        let preservedOptions = try await worker.moduleEngineOptions(tab: tab, module: "OptionTest")
+        let importHistory = try await worker.history(tab)
+        guard preservedOptions == imported, importHistory.count == 1,
+              try Data(contentsOf: preferenceURL) == preferenceBytes else { fatalError("import failure/source/history preservation") }
         try await worker.closeTab(tab)
         await worker.shutdown()
         guard modules[0].options.declared == declared, restored.html == original.html else { fatalError("copied metadata/results lifetime") }

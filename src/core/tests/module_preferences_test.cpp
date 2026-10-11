@@ -35,6 +35,9 @@ int main(int argc, char **argv) {
     // A copied SWORD catalog cache predates the new module configuration.
     std::filesystem::remove(root / "mods.d/modules-conf.cache");
     const auto path = root.string();
+    const auto preference_path = (root / "modops.conf").string();
+    const std::string preference_bytes = "; Original fixture, preserve bytes and unknown data.\n[OptionTest]\nStrong's Numbers=On\nWords of Christ in Red=Off\nFootnotes=Off\nHeadings=Off\nCustomValue=café\n[Uninstalled]\nMorphological Tags=On\n";
+    { std::ofstream output(preference_path, std::ios::binary); output << preference_bytes; }
     EngineOptions on, off;
     on.words_in_red = on.strongs = on.morphs = on.footnotes = true;
     const auto defaults = engine_options_from_preferences({});
@@ -65,6 +68,17 @@ int main(int argc, char **argv) {
       first.clear_module_engine_options("OptionTest");
       check(first.read_entry("OptionTest", "John 3:16").html == expected_defaults, "module clear restores enabled defaults");
       check(first.read_entry("OptionOther", "John 3:16").html == expected_off, "module clear retains other override");
+      first.import_module_preferences(preference_path);
+      check(first.module_engine_options("OptionTest")->strongs && !first.module_engine_options("OptionTest")->words_in_red, "file settings replace prior overrides");
+      check(first.module_engine_options("OptionOther")->footnotes && first.module_engine_options("OptionOther")->words_in_red, "absent module section uses legacy defaults");
+      check(first.read_entry("OptionTest", "John 3:16").html.find("3056") != std::string::npos, "import renders settings");
+      check(!second.module_engine_options("OptionTest"), "import leaves other tab unconfigured");
+      bool failed_import = false;
+      try { first.import_module_preferences(path + "/missing.conf"); } catch (const std::invalid_argument &) { failed_import = true; }
+      check(failed_import && first.module_engine_options("OptionTest")->strongs && first.history().entries().size() == before, "failed import preserves options/history");
+      failed_import = false;
+      try { first.import_module_preferences(path); } catch (const std::invalid_argument &) { failed_import = true; }
+      check(failed_import, "directory import rejected");
       bool rejected = false;
       try { first.set_module_engine_options("Missing", on); } catch (const std::out_of_range &) { rejected = true; }
       check(rejected && first.history().entries().size() == before, "unknown module does not mutate history");
@@ -80,6 +94,9 @@ int main(int argc, char **argv) {
       worker.set_module_engine_options(first, "OptionOther", off).get();
       check(worker.read_entry(first, "OptionTest", "John 3:16").get().html.find("3056") != std::string::npos, "worker module on");
       check(worker.read_entry(first, "OptionOther", "John 3:16").get().html.find("3056") == std::string::npos, "worker other module off");
+      worker.import_module_preferences(first, preference_path).get();
+      check(worker.module_engine_options(first, "OptionTest").get()->strongs && !worker.module_engine_options(first, "OptionTest").get()->words_in_red, "worker import settings");
+      check(!worker.module_engine_options(second, "OptionTest").get(), "worker import leaves other tab alone");
       worker.close_tab(first).get();
       bool rejected = false;
       try { (void)worker.module_engine_options(first, "OptionTest").get(); } catch (const std::invalid_argument &) { rejected = true; }
@@ -111,11 +128,21 @@ int main(int argc, char **argv) {
       check(xc_worker_module_engine_options(worker, tab, "Missing", &r) == XC_OK && wait(r) == XC_MODULE_NOT_FOUND, "unknown module rejected on worker"); xc_request_release(r);
       check(xc_worker_clear_module_engine_options(worker, tab, "OptionTest", &r) == XC_OK && wait(r) == XC_OK, "C clear module"); xc_request_release(r);
       check(xc_worker_module_engine_options(worker, tab, "OptionTest", &r) == XC_OK && wait(r) == XC_OK, "query after error");
+      xc_request_release(r);
+      check(xc_worker_import_module_preferences(worker, tab, preference_path.c_str(), &r) == XC_OK && wait(r) == XC_OK, "C explicit import"); xc_request_release(r);
+      check(xc_worker_module_engine_options(worker, tab, "OptionTest", &r) == XC_OK && wait(r) == XC_OK, "C imported options query");
+      check(xc_request_engine_options(r, &flags, &configured) == XC_OK && flags & XC_ENGINE_STRONGS && !(flags & XC_ENGINE_WORDS_IN_RED), "C imported flags"); xc_request_release(r);
+      check(xc_worker_import_module_preferences(worker, tab, "", &r) == XC_INVALID_ARGUMENT && !r, "C empty import path rejected");
+      check(xc_worker_import_module_preferences(worker, tab, (path + "/missing.conf").c_str(), &r) == XC_OK && wait(r) == XC_INVALID_ARGUMENT, "C failed import status"); xc_request_release(r);
+      check(xc_worker_module_engine_options(worker, tab, "OptionTest", &r) == XC_OK && wait(r) == XC_OK, "C query after failed import");
       xc_worker_close(worker);
-      check(xc_request_engine_options(r, &flags, &configured) == XC_OK && configured && (flags & XC_ENGINE_FOOTNOTES), "copied settings survive worker close");
+      check(xc_request_engine_options(r, &flags, &configured) == XC_OK && configured && (flags & XC_ENGINE_STRONGS), "copied settings survive worker close");
       check(xc_request_engine_options(r, nullptr, &configured) == XC_INVALID_ARGUMENT && !configured, "null output initialized");
       xc_request_release(r);
     }
+    std::ifstream preserved(preference_path, std::ios::binary);
+    const std::string after((std::istreambuf_iterator<char>(preserved)), {});
+    check(after == preference_bytes && !std::filesystem::exists(root / "missing.conf"), "import never writes source or creates missing files");
     std::cout << "Module-scoped session/worker/C preference checks passed\n";
   } catch (const std::exception &error) { std::cerr << error.what() << '\n'; return 1; }
 }

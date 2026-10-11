@@ -42,7 +42,7 @@ target_include_directories(xiphos_core_history PUBLIC include)
 target_compile_features(xiphos_core_history PUBLIC cxx_std_11)
 set_target_properties(xiphos_core_history PROPERTIES POSITION_INDEPENDENT_CODE ON)
 # Shared legacy-compatible filter policy is built even without the native core.
-add_library(xiphos_core_options STATIC engine_options.cpp)
+add_library(xiphos_core_options STATIC engine_options.cpp engine_preferences.cpp)
 add_library(Xiphos::CoreOptions ALIAS xiphos_core_options)
 target_include_directories(xiphos_core_options PUBLIC include)
 target_compile_features(xiphos_core_options PUBLIC cxx_std_11)
