@@ -1425,3 +1425,27 @@ representative lexicon corpus remain unvalidated. No GitHub builds or installed
 user-data changes. Next: copied native lexicon preferences and safe verse-key
 context, shared lexical dispatch and native dictionary/hover presentation.
 Estimate remains about 6%, with 0/38 groups fully accepted.
+
+
+## Shared lexical reader: locally checked, adapters/UI pending
+
+Implemented 2026-10-11 on `modernization/shared-lexical-reader`, based on shared
+selection. Explicit copied per-tab lexicon preferences retain nullable/empty
+values and legacy defaults; existing tabs remain unconfigured until set.
+Lexical previews parse/select/render with the shared policy and selected
+dictionary's engine settings, returning owned command/source/dictionary data.
+The worker serializes copied requests. Greek source testament is read from a
+validated cloned VerseKey, preserving the module's committed location. URI
+passage stays metadata; caller reference remains authoritative like legacy.
+
+Validation: 25/25 local checks, focused address/undefined and thread checks
+2/2 each (including the original dictionary fixture), and strict C++17 checks
+passed. Cases cover actual OT/NT source keys, main/dialog differences, explicit
+module versus passage metadata, separate tab/module settings, opt-in defaults,
+Unicode ownership, invalid/missing/non-verse contexts and selected modules,
+NUL preference/context rejection, atomic failed settings, history/location
+preservation, queue recovery, closed tabs and accepted results after shutdown.
+SWORD itself remains uninstrumented. No GitHub builds or user-data changes.
+Next: C/Swift bindings for these copied preferences/lookup values, native
+preferences and dictionary/hover/click workflows. Full lexical/platform parity
+is pending; no retirement or accepted groups. Estimate remains about 6%.

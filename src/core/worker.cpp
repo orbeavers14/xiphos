@@ -95,6 +95,20 @@ std::future<StudyTab> StudyWorker::create_tab() {
 std::future<void> StudyWorker::close_tab(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s) { s.tab(tab); s.tabs.erase(tab); });
 }
+std::future<void> StudyWorker::set_lexicon_preferences(StudyTab tab, LexiconPreferences preferences) {
+  return impl_->submit([tab, preferences = std::move(preferences)](Impl::State &s) {
+    s.tab(tab).set_lexicon_preferences(preferences);
+  });
+}
+std::future<std::optional<LexiconPreferences>> StudyWorker::lexicon_preferences(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s) { return s.tab(tab).lexicon_preferences(); });
+}
+std::future<LexicalEntry> StudyWorker::read_lexical(StudyTab tab, std::string module, std::string reference,
+                                               std::string uri, int origin) {
+  return impl_->submit([tab, module = std::move(module), reference = std::move(reference), uri = std::move(uri), origin](Impl::State &s) {
+    return s.tab(tab).read_lexical(module, reference, uri, origin);
+  });
+}
 std::future<DictionaryEntry> StudyWorker::read_dictionary(StudyTab tab, std::string module, std::string key) {
   return impl_->submit([tab, module = std::move(module), key = std::move(key)](Impl::State &s) {
     return s.tab(tab).read_dictionary(module, key);

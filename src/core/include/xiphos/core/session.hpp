@@ -10,6 +10,12 @@ namespace xiphos::core {
 class StudySession {
 public:
   explicit StudySession(Reader &reader) : reader_(reader) {}
+  // Explicit copied lexicons; existing tabs remain unconfigured until set.
+  void set_lexicon_preferences(const LexiconPreferences &preferences);
+  const std::optional<LexiconPreferences> &lexicon_preferences() const { return lexicons_; }
+  // Reference is the committed source context; URI passage remains metadata.
+  LexicalEntry read_lexical(const std::string &module, const std::string &reference,
+                          const std::string &uri, int origin);
   // Render with this tab's settings without moving or adding history.
   DictionaryEntry read_dictionary(const std::string &module, const std::string &key);
   ReferenceList read_reference_list(const std::string &module, const std::string &expression,
@@ -46,6 +52,7 @@ public:
   void clear_history() { history_.clear(); }
 private:
   Reader &reader_;
+  std::optional<LexiconPreferences> lexicons_;
   std::optional<EngineOptions> options_;
   bool module_preferences_ = false;
   std::map<std::string, EngineOptions> module_options_;

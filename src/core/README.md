@@ -178,3 +178,24 @@ configured string remains distinct from NULL. Main fallback availability and
 overlapping Hebrew/Greek checks intentionally differ from dialog selection.
 No global settings, SWORD manager or GTK types enter the helper. Native copied
 preferences/context and dictionary dispatch are the next integration seam.
+
+
+## Copied lexical lookup sessions
+
+LexiconPreferences owns five optional module names with legacy defaults;
+setting them explicitly configures one tab without reading/writing a profile.
+Null versus empty values survive copying and borrowed-helper conversion.
+Embedded NULs reject before state replacement. Unconfigured tabs reject lookup.
+
+StudySession::read_lexical parses the command, selects with the shared policy
+and renders through its existing dictionary path, applying the selected
+module's engine settings. It returns owned command/source-reference/dictionary
+values without adding Bible history. The supplied reference is the committed
+source context; a query passage is preserved as metadata, not substituted for
+that context. Explicit URI module still overrides fallback module.
+Reader::select_lexicon queries a cloned, validated source VerseKey only when
+the policy requires a testament. No independent canon parser or source-key
+mutation is introduced. Missing selected modules and wrong module types fail
+through the normal renderer. The worker copies settings/arguments and executes
+selection plus rendering FIFO. C/Swift bindings and native pane/hover/click
+history are pending; existing contextual dispatch is unchanged.
