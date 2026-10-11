@@ -239,6 +239,7 @@ target_include_directories(xiphos
 # specify libraries or flags to use when linking
 target_link_libraries(xiphos
   PRIVATE
+  Xiphos::CoreOptions
   Threads::Threads
   PkgConfig::Core
   PkgConfig::Gtk

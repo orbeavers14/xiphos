@@ -1215,3 +1215,21 @@ build was dispatched.
 Next: variant-reading selection and remaining reading/display controls, then
 lexicon interactions. Full theme, hover/pin and platform acceptance remain
 pending; no feature sign-off or legacy retirement.
+
+## Shared variant-selection legacy seam: locally checked
+
+Implemented 2026-10-11 on `modernization/shared-variant-selection`, based on
+Hebrew controls. The primary/secondary/all mapping moves from GTK's existing
+reading_selector into a C-callable CoreOptions helper. GTK delegates while
+retaining option saves, dialog/main navigation and invalid-choice behavior.
+Legacy code and copyright notices remain; native operation is pending.
+
+Validation: 20/20 local checks; the actual adapted callback equals the frozen
+2fb7387 original for 12 valid/invalid/dialog/main cases, including Unicode and
+percent signs in module names. The focused address/undefined check passed.
+The default C++11 legacy seam builds, and strict C11 actual-adapter/header and
+C++11 helper checks pass. Full GTK application dependencies remain unavailable
+on this Mac, so this is seam validation, not a full GTK runtime check. No
+GitHub build dispatched or feature group accepted.
+
+Next: shared tab-aware variant selection, C/Swift binding and native controls.
