@@ -1449,3 +1449,25 @@ SWORD itself remains uninstrumented. No GitHub builds or user-data changes.
 Next: C/Swift bindings for these copied preferences/lookup values, native
 preferences and dictionary/hover/click workflows. Full lexical/platform parity
 is pending; no retirement or accepted groups. Estimate remains about 6%.
+
+
+## Lexical adapters: locally checked, native controls pending
+
+Implemented 2026-10-11 on `modernization/lexical-adapters`, based on the shared
+lexical reader. C requests copy nullable preference names and transfer owned
+configured/unconfigured snapshots and lexical results once. Swift copies
+Sendable preferences/results, validates enum constants and rejects embedded
+NULs before submission. Core default names and selection/render policies remain
+shared; no Swift dictionary-selection implementation was introduced.
+
+Validation: 26/26 local checks, focused address/undefined and thread checks
+2/2 each and strict C++17/C11 checks passed. C tests cover copied submissions,
+null versus empty names, default snapshots, pending/wrong-kind/take-once results,
+metadata/source context, invalid URI/origin/output, error recovery, unchanged
+history, closed tabs and snapshots/accepted requests after worker teardown.
+Swift tests cover shared defaults/ABI, copied nullable preferences, isolated
+tabs, actual OT selection, NUL/external failures and owned values after close.
+SWORD itself remains uninstrumented. No GitHub builds or user-data changes.
+Native controls, feature-filtered dictionary choices, preview/pane composition,
+hover/click dictionary history and profile persistence remain pending. Overall
+estimate about 6%; no accepted parity groups or legacy file retirement.

@@ -152,6 +152,41 @@ actor CoreWorker {
         let status = xc_worker_clear_engine_options(try worker(), tab, &request)
         xc_request_release(try await wait(status, request))
     }
+    func enableLexiconPreferences(tab: UInt64) async throws {
+        var request: OpaquePointer?
+        let status = xc_worker_enable_lexicon_preferences(try worker(), tab, &request)
+        xc_request_release(try await wait(status, request))
+    }
+    func setLexiconPreferences(tab: UInt64, preferences: LexiconPreferences) async throws {
+        let values = [preferences.greek, preferences.hebrew, preferences.greekMorphNT, preferences.greekMorphOT, preferences.hebrewMorph]
+        guard !values.compactMap({ $0 }).contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = CoreValues.withLexiconNames(preferences) { xc_worker_set_lexicon_preferences(handle, tab, $0, &request) }
+        xc_request_release(try await wait(status, request))
+    }
+    func lexiconPreferences(tab: UInt64) async throws -> LexiconPreferences? {
+        var request: OpaquePointer?
+        let status = xc_worker_lexicon_preferences(try worker(), tab, &request)
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_lexicons(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_lexicons_release(result) }
+        return CoreValues.lexicons(result)
+    }
+    func readLexical(tab: UInt64, module: String, reference: String, uri: String, origin: LexiconOrigin = .main) async throws -> RenderedLexicalEntry {
+        guard ![module, reference, uri].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { id in reference.withCString { context in
+            uri.withCString { xc_worker_read_lexical(handle, tab, id, context, $0, origin.rawValue, &request) }
+        } }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_lexical_entry(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_lexical_entry_release(result) }
+        return CoreValues.lexicalEntry(result)
+    }
     func readDictionary(tab: UInt64, module: String, key: String) async throws -> RenderedDictionaryEntry {
         var request: OpaquePointer?
         let handle = try worker()

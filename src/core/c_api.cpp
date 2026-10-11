@@ -16,6 +16,8 @@ struct xc_chapter { xiphos::core::Chapter value; };
 struct xc_choices { xiphos::core::ReferenceChoices value; };
 struct xc_link { xiphos::core::PassageLink value; };
 struct xc_reference_list { xiphos::core::ReferenceList value; };
+struct xc_lexicons { std::optional<xiphos::core::LexiconPreferences> value; };
+struct xc_lexical_entry { xiphos::core::LexicalEntry value; };
 struct xc_dictionary_entry { xiphos::core::DictionaryEntry value; };
 struct xc_note { xiphos::core::StudyNote value; };
 struct xc_entry { xiphos::core::Entry value; };
@@ -29,6 +31,8 @@ struct xc_request {
   std::optional<xiphos::core::EngineOptions> options;
   std::unique_ptr<xc_reference_list> references;
   std::unique_ptr<xc_dictionary_entry> dictionary;
+  std::unique_ptr<xc_lexical_entry> lexical;
+  std::unique_ptr<xc_lexicons> lexicons;
   std::unique_ptr<xc_note> note;
   std::unique_ptr<xc_entry> entry;
   std::unique_ptr<xc_chapter> chapter;
@@ -43,6 +47,8 @@ struct xc_request {
   void store(xiphos::core::ContextualStudyLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::ResolvedStudyLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::ReferenceList v) { references = std::make_unique<xc_reference_list>(xc_reference_list{std::move(v)}); }
+  void store(std::optional<xiphos::core::LexiconPreferences> v) { lexicons = std::make_unique<xc_lexicons>(xc_lexicons{std::move(v)}); }
+  void store(xiphos::core::LexicalEntry v) { lexical = std::make_unique<xc_lexical_entry>(xc_lexical_entry{std::move(v)}); }
   void store(xiphos::core::DictionaryEntry v) { dictionary = std::make_unique<xc_dictionary_entry>(xc_dictionary_entry{std::move(v)}); }
   void store(xiphos::core::StudyNote v) { note = std::make_unique<xc_note>(xc_note{std::move(v)}); }
   void store(xiphos::core::Entry v) { entry = std::make_unique<xc_entry>(xc_entry{std::move(v)}); }
@@ -235,6 +241,33 @@ xc_status xc_worker_study_note_link(xc_worker *w, uint64_t tab, const char *id, 
   if (!uri || !*uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.study_note_link(tab, id ? id : "", uri); });
 }
+xc_status xc_worker_enable_lexicon_preferences(xc_worker *w, uint64_t tab, xc_request **out) {
+  return queue_request(w, out, [=](auto &worker) { return worker.set_lexicon_preferences(tab, {}); });
+}
+xc_status xc_worker_set_lexicon_preferences(xc_worker *w, uint64_t tab, const xc_lexicon_names *names, xc_request **out) {
+  if (!names) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) {
+    const auto copy = [](const char *value) -> std::optional<std::string> { return value ? std::make_optional(std::string(value)) : std::nullopt; };
+    xiphos::core::LexiconPreferences preferences;
+    preferences.greek = copy(names->greek);
+    preferences.hebrew = copy(names->hebrew);
+    preferences.greek_morph_nt = copy(names->greek_morph_nt);
+    preferences.greek_morph_ot = copy(names->greek_morph_ot);
+    preferences.hebrew_morph = copy(names->hebrew_morph);
+    return worker.set_lexicon_preferences(tab, std::move(preferences));
+  });
+}
+xc_status xc_worker_lexicon_preferences(xc_worker *w, uint64_t tab, xc_request **out) {
+  return queue_request(w, out, [=](auto &worker) { return worker.lexicon_preferences(tab); });
+}
+xc_status xc_worker_read_lexical(xc_worker *w, uint64_t tab, const char *module, const char *reference,
+                               const char *uri, int origin, xc_request **out) {
+  if (!uri || !*uri || (origin != XIPHOS_LEXICON_MAIN && origin != XIPHOS_LEXICON_DIALOG)) {
+    if (out) *out = nullptr;
+    return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w, out, [=](auto &worker) { return worker.read_lexical(tab, module ? module : "", reference ? reference : "", uri, origin); });
+}
 xc_status xc_worker_read_dictionary(xc_worker *w, uint64_t tab, const char *id, const char *key, xc_request **out) {
   if (!id || !*id || !key || !*key) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.read_dictionary(tab, id, key); });
@@ -283,6 +316,8 @@ xc_status xc_request_poll(xc_request *r) {
 void xc_request_release(xc_request *r) { delete r; }
 uint64_t xc_request_tab(const xc_request *r) { return r && r->status == XC_OK ? r->tab : 0; }
 xc_reference_list *xc_request_take_reference_list(xc_request *r) { return r && r->status == XC_OK ? r->references.release() : nullptr; }
+xc_lexical_entry *xc_request_take_lexical_entry(xc_request *r) { return r && r->status == XC_OK ? r->lexical.release() : nullptr; }
+xc_lexicons *xc_request_take_lexicons(xc_request *r) { return r && r->status == XC_OK ? r->lexicons.release() : nullptr; }
 xc_dictionary_entry *xc_request_take_dictionary_entry(xc_request *r) { return r && r->status == XC_OK ? r->dictionary.release() : nullptr; }
 xc_note *xc_request_take_note(xc_request *r) { return r && r->status == XC_OK ? r->note.release() : nullptr; }
 xc_entry *xc_request_take_entry(xc_request *r) { return r && r->status == XC_OK ? r->entry.release() : nullptr; }
@@ -473,6 +508,23 @@ const char *xc_reference_list_entry_html(const xc_reference_list *r, size_t i) {
 int xc_reference_list_limited(const xc_reference_list *r) { return r && r->value.limited; }
 unsigned xc_reference_list_skipped(const xc_reference_list *r) { return r ? r->value.skipped : 0; }
 void xc_reference_list_release(xc_reference_list *r) { delete r; }
+int xc_lexicons_configured(const xc_lexicons *lexicons) { return lexicons && lexicons->value ? 1 : 0; }
+const char *xc_lexicons_greek(const xc_lexicons *lexicons) { return lexicons && lexicons->value && lexicons->value->greek ? lexicons->value->greek->c_str() : nullptr; }
+const char *xc_lexicons_hebrew(const xc_lexicons *lexicons) { return lexicons && lexicons->value && lexicons->value->hebrew ? lexicons->value->hebrew->c_str() : nullptr; }
+const char *xc_lexicons_greek_morph_nt(const xc_lexicons *lexicons) { return lexicons && lexicons->value && lexicons->value->greek_morph_nt ? lexicons->value->greek_morph_nt->c_str() : nullptr; }
+const char *xc_lexicons_greek_morph_ot(const xc_lexicons *lexicons) { return lexicons && lexicons->value && lexicons->value->greek_morph_ot ? lexicons->value->greek_morph_ot->c_str() : nullptr; }
+const char *xc_lexicons_hebrew_morph(const xc_lexicons *lexicons) { return lexicons && lexicons->value && lexicons->value->hebrew_morph ? lexicons->value->hebrew_morph->c_str() : nullptr; }
+void xc_lexicons_release(xc_lexicons *lexicons) { delete lexicons; }
+int xc_lexical_entry_kind(const xc_lexical_entry *entry) { return entry ? (entry->value.command.kind == xiphos::core::LexicalLinkKind::strongs ? XIPHOS_LEXICON_STRONGS : XIPHOS_LEXICON_MORPHOLOGY) : -1; }
+const char *xc_lexical_entry_module(const xc_lexical_entry *entry) { return entry ? entry->value.command.module.c_str() : nullptr; }
+const char *xc_lexical_entry_type(const xc_lexical_entry *entry) { return entry ? entry->value.command.type.c_str() : nullptr; }
+const char *xc_lexical_entry_value(const xc_lexical_entry *entry) { return entry ? entry->value.command.value.c_str() : nullptr; }
+const char *xc_lexical_entry_passage(const xc_lexical_entry *entry) { return entry ? entry->value.command.passage.c_str() : nullptr; }
+const char *xc_lexical_entry_source_reference(const xc_lexical_entry *entry) { return entry ? entry->value.source_reference.c_str() : nullptr; }
+const char *xc_lexical_entry_dictionary_module(const xc_lexical_entry *entry) { return entry ? entry->value.entry.module.c_str() : nullptr; }
+const char *xc_lexical_entry_dictionary_key(const xc_lexical_entry *entry) { return entry ? entry->value.entry.key.c_str() : nullptr; }
+const char *xc_lexical_entry_dictionary_html(const xc_lexical_entry *entry) { return entry ? entry->value.entry.html.c_str() : nullptr; }
+void xc_lexical_entry_release(xc_lexical_entry *entry) { delete entry; }
 const char *xc_dictionary_entry_module(const xc_dictionary_entry *entry) { return entry ? entry->value.module.c_str() : nullptr; }
 const char *xc_dictionary_entry_key(const xc_dictionary_entry *entry) { return entry ? entry->value.key.c_str() : nullptr; }
 const char *xc_dictionary_entry_html(const xc_dictionary_entry *entry) { return entry ? entry->value.html.c_str() : nullptr; }

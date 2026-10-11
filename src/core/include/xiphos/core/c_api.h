@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "variant.h"
+#include "lexicon.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -11,6 +12,12 @@ typedef struct xc_reader xc_reader;
 typedef struct xc_entry xc_entry;
 typedef struct xc_note xc_note;
 typedef struct xc_dictionary_entry xc_dictionary_entry;
+typedef struct xc_lexical_entry xc_lexical_entry;
+typedef struct xc_lexicons xc_lexicons;
+/* Borrowed submission strings. NULL is unset; empty is an explicit empty name. */
+typedef struct {
+  const char *greek, *hebrew, *greek_morph_nt, *greek_morph_ot, *hebrew_morph;
+} xc_lexicon_names;
 typedef struct xc_reference_list xc_reference_list;
 typedef struct xc_session xc_session;
 typedef struct xc_chapter xc_chapter;
@@ -102,6 +109,17 @@ xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_req
 xc_status xc_worker_resolve_study_link_at(xc_worker *worker, uint64_t tab, const char *current_module, const char *current_reference, const char *uri, xc_request **out);
 xc_status xc_worker_resolve_study_link(xc_worker *worker, uint64_t tab, const char *current_module, const char *uri, xc_request **out);
 xc_status xc_worker_study_note_link(xc_worker *worker, uint64_t tab, const char *current_module, const char *uri, xc_request **out);
+/* Copied per-tab lexicons, separate from engine modops.conf fields. Enable
+ * explicitly sets legacy defaults without profile access; set replaces all
+ * five nullable names. Getter transfers a snapshot even when unconfigured. */
+xc_status xc_worker_enable_lexicon_preferences(xc_worker *worker, uint64_t tab, xc_request **out);
+xc_status xc_worker_set_lexicon_preferences(xc_worker *worker, uint64_t tab, const xc_lexicon_names *names, xc_request **out);
+xc_status xc_worker_lexicon_preferences(xc_worker *worker, uint64_t tab, xc_request **out);
+/* URI must be nonempty; origin is XIPHOS_LEXICON_MAIN/DIALOG. Nullable source
+ * module/reference become empty (valid for source-independent Strong's).
+ * Greek morphology validates source on the worker. No Bible history visit.
+ * Source reference is authoritative; query passage remains metadata. */
+xc_status xc_worker_read_lexical(xc_worker *worker, uint64_t tab, const char *module, const char *reference, const char *uri, int origin, xc_request **out);
 /* Explicit dictionary preview with tab settings; module/key nonempty. No visit. */
 xc_status xc_worker_read_dictionary(xc_worker *worker, uint64_t tab, const char *module, const char *key, xc_request **out);
 /* Expression may be empty; context/module must be nonempty. No history visit. */
@@ -120,6 +138,8 @@ void xc_request_release(xc_request *request);
 uint64_t xc_request_tab(const xc_request *request);
 xc_reference_list *xc_request_take_reference_list(xc_request *request);
 xc_dictionary_entry *xc_request_take_dictionary_entry(xc_request *request);
+xc_lexical_entry *xc_request_take_lexical_entry(xc_request *request);
+xc_lexicons *xc_request_take_lexicons(xc_request *request);
 xc_note *xc_request_take_note(xc_request *request);
 xc_entry *xc_request_take_entry(xc_request *request);
 xc_chapter *xc_request_take_chapter(xc_request *request);
@@ -241,6 +261,26 @@ const char *xc_reference_list_entry_html(const xc_reference_list *references, si
 int xc_reference_list_limited(const xc_reference_list *references);
 unsigned xc_reference_list_skipped(const xc_reference_list *references);
 void xc_reference_list_release(xc_reference_list *references);
+/* Strings borrow from owned snapshots until release. NULL name preserves an
+ * unset preference; configured distinguishes a wholly unconfigured tab. */
+int xc_lexicons_configured(const xc_lexicons *lexicons);
+const char *xc_lexicons_greek(const xc_lexicons *lexicons);
+const char *xc_lexicons_hebrew(const xc_lexicons *lexicons);
+const char *xc_lexicons_greek_morph_nt(const xc_lexicons *lexicons);
+const char *xc_lexicons_greek_morph_ot(const xc_lexicons *lexicons);
+const char *xc_lexicons_hebrew_morph(const xc_lexicons *lexicons);
+void xc_lexicons_release(xc_lexicons *lexicons);
+/* Kind is XIPHOS_LEXICON_STRONGS/MORPHOLOGY; invalid handle returns -1. */
+int xc_lexical_entry_kind(const xc_lexical_entry *entry);
+const char *xc_lexical_entry_module(const xc_lexical_entry *entry);
+const char *xc_lexical_entry_type(const xc_lexical_entry *entry);
+const char *xc_lexical_entry_value(const xc_lexical_entry *entry);
+const char *xc_lexical_entry_passage(const xc_lexical_entry *entry);
+const char *xc_lexical_entry_source_reference(const xc_lexical_entry *entry);
+const char *xc_lexical_entry_dictionary_module(const xc_lexical_entry *entry);
+const char *xc_lexical_entry_dictionary_key(const xc_lexical_entry *entry);
+const char *xc_lexical_entry_dictionary_html(const xc_lexical_entry *entry);
+void xc_lexical_entry_release(xc_lexical_entry *entry);
 const char *xc_dictionary_entry_module(const xc_dictionary_entry *entry);
 const char *xc_dictionary_entry_key(const xc_dictionary_entry *entry);
 const char *xc_dictionary_entry_html(const xc_dictionary_entry *entry);
