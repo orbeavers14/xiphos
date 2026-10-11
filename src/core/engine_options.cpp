@@ -2,11 +2,20 @@
 // Extracted from Xiphos global_ops.cc; Copyright (C) 2000-2026 Xiphos Developer Team
 #include "xiphos/core/engine_options.hpp"
 #include "xiphos/core/engine_manager.hpp"
+#include "xiphos/core/variant.h"
 #include <swoptfilter.h>
 #include <swmodule.h>
 #include <set>
 #include <stdexcept>
 namespace xiphos { namespace core {
+EngineOptions select_variant_reading(EngineOptions options, int choice) {
+  const auto selection = xiphos_core_variant_selection(choice);
+  if (!selection.valid) throw std::invalid_argument("Invalid textual variant selection");
+  options.variants_primary = selection.primary;
+  options.variants_secondary = selection.secondary;
+  options.variants_all = selection.all;
+  return options;
+}
 EngineOptions engine_options_from_preferences(const EngineOptionPreferences &preferences) {
   auto value = [&](const char *key) -> std::string {
     const auto found = preferences.find(key);

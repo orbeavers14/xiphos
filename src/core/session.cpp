@@ -51,6 +51,15 @@ void StudySession::import_module_preferences(const std::string &path) {
   options_.reset();
   module_preferences_ = true;
 }
+void StudySession::select_module_variant(const std::string &module, int choice) {
+  const auto options = module_engine_options(module);
+  if (!options) throw std::invalid_argument("Enable module preferences before selecting a variant");
+  bool declared = false;
+  for (const auto &installed : reader_.modules())
+    if (installed.id == module) declared = installed.options.declared.variants_primary;
+  if (!declared) throw std::invalid_argument("Module does not declare a textual variant filter");
+  set_module_engine_options(module, select_variant_reading(*options, choice));
+}
 void StudySession::set_module_engine_options(const std::string &module, const EngineOptions &options) {
   require_module(module);
   module_options_[module] = options;
