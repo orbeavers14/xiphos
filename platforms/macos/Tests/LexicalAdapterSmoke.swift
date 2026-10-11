@@ -43,6 +43,13 @@ import XiphosCore
             _ = try await worker.resolveStudyLinkAt(tab: first, currentModule: "OriginalBible", currentReference: "John3:16", uri: strongs + "\0ignored")
             fatalError("contextual embedded NUL accepted")
         } catch is CoreError { }
+        guard try await worker.dictionaryHistory(tab: first).entries.isEmpty else { fatalError("Swift contextual preview recorded history") }
+        guard case .lexical(let clicked) = try await worker.followStudyLinkAt(tab: first, currentModule: "OriginalBible", currentReference: "John3:16", uri: strongs),
+              clicked.entry.module == "DictionaryOne" else { fatalError("Swift recorded contextual lexical click") }
+        _ = try await worker.visitLexical(tab: first, module: "OriginalBible", reference: "John3:16", uri: strongs)
+        let lexicalHistory = try await worker.dictionaryHistory(tab: first)
+        guard lexicalHistory.entries == [DictionaryLocation(module: "DictionaryOne", key: "alpha")], !lexicalHistory.canBack,
+              try await worker.dictionaryHistory(tab: second).entries.isEmpty else { fatalError("Swift recorded lexical dedup/history isolation") }
         let secondEntry = try await worker.readLexical(tab: second, module: "", reference: "", uri: strongs)
         guard firstEntry.kind == .strongs, firstEntry.entry.module == "DictionaryOne", firstEntry.entry.html.contains("café"),
               firstEntry.module == "OriginalBible", firstEntry.sourceReference == "John3:16", firstEntry.type == "Greek", firstEntry.value == "alpha",
@@ -65,7 +72,7 @@ import XiphosCore
         do { _ = try await worker.readLexical(tab: first, module: "", reference: "", uri: strongs); fatalError("closed tab accepted") }
         catch is CoreError { }
         try await worker.closeTab(second); await worker.shutdown()
-        guard copied?.greek == "DictionaryOne", firstEntry.entry.html.contains("café"), morph.entry.module == "DictionaryTwo" else { fatalError("copied values after shutdown") }
+        guard lexicalHistory.entries[0].module == "DictionaryOne", copied?.greek == "DictionaryOne", firstEntry.entry.html.contains("café"), morph.entry.module == "DictionaryTwo" else { fatalError("copied values after shutdown") }
         print("Swift lexical adapter checks passed")
     }
 }

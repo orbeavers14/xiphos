@@ -25,13 +25,29 @@ import Foundation
             do { _ = try await worker.navigateDictionary(tab: first, module: "DictionaryOne", key: key, direction: direction); fatalError("invalid dictionary navigation accepted") }
             catch is CoreError { }
         }
+        guard try await worker.dictionaryHistory(tab: first).entries.isEmpty else { fatalError("preview/key step recorded dictionary history") }
+        _ = try await worker.visitDictionary(tab: first, module: "DictionaryOne", key: "alpha")
+        _ = try await worker.visitDictionary(tab: first, module: "DictionaryTwo", key: "café")
+        let dictionaryBack = try await worker.navigateDictionaryHistory(tab: first, direction: -1)
+        let copiedHistory = try await worker.dictionaryHistory(tab: first)
+        guard dictionaryBack.module == "DictionaryOne", copiedHistory.cursor == 0, copiedHistory.canForward, !copiedHistory.canBack,
+              copiedHistory.entries == [DictionaryLocation(module: "DictionaryOne", key: "alpha"), DictionaryLocation(module: "DictionaryTwo", key: "café")],
+              try await worker.dictionaryHistory(tab: second).entries.isEmpty else { fatalError("Swift copied dictionary history/navigation/isolation") }
+        do { _ = try await worker.visitDictionary(tab: first, module: "DictionaryOne", key: "alpha\0ignored"); fatalError("recorded NUL key accepted") }
+        catch is CoreError { }
+        guard try await worker.dictionaryHistory(tab: first) == copiedHistory else { fatalError("failed recorded lookup changed history") }
+        _ = try await worker.navigateDictionaryHistory(tab: first, direction: 1)
+        try await worker.clearDictionaryHistory(tab: first)
+        guard try await worker.dictionaryHistory(tab: first).entries.isEmpty else { fatalError("Swift dictionary history clear") }
         let history = try await worker.history(first)
         guard history.count == 0 else { fatalError("dictionary preview changed history") }
         try await worker.closeTab(first)
+        do { _ = try await worker.dictionaryHistory(tab: first); fatalError("closed history tab accepted") }
+        catch is CoreError { }
         do { _ = try await worker.readDictionary(tab: first, module: "DictionaryOne", key: "alpha"); fatalError("closed dictionary tab accepted") }
         catch is CoreError { }
         try await worker.closeTab(second); await worker.shutdown()
-        guard unicode.html.contains("café"), red.html.contains("wordsOfJesus") else { fatalError("copied dictionary values after shutdown") }
+        guard copiedHistory.entries[1].key == "café", unicode.html.contains("café"), red.html.contains("wordsOfJesus") else { fatalError("copied dictionary values after shutdown") }
         print("Swift dictionary adapter checks passed")
     }
 }
