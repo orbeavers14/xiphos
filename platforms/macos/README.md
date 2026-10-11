@@ -215,3 +215,13 @@ clicks. Preview and recorded paths share their Swift ownership bridge and the
 same C++ parser/renderer. Core snapshots are released after copying and values
 survive engine shutdown. Native history controls follow separately; legacy
 Unicode click normalization remains pending.
+
+
+The native dictionary column now has its own Back/Forward/History menu. Lexical
+clicks use recorded core dispatch and refresh copied history flags; repeating
+the current click preserves Forward. Direct input and previous/next key steps
+retain the existing no-record workflow. Clear retains the displayed definition
+and all Bible state, and closing the dictionary retains its history. History
+navigation uses committed current Bible context for nested links. Unicode click
+normalization, nearby-key chooser, detached windows and full pane parity remain
+pending, so dictionary feature acceptance is still partial.
