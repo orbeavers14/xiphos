@@ -29,6 +29,7 @@ final class ReaderModel: ObservableObject {
     @Published var canForward = false
     @Published var isBusy = true
     @Published private(set) var referencePreview: RenderedReferenceList?
+    @Published private(set) var lexicalPreview: RenderedLexicalEntry?
     @Published private(set) var studyNote: RenderedStudyNote?
     @Published private(set) var lexiconPreferences: LexiconPreferences?
     @Published private(set) var engineOptions: EngineOptionFlags?
@@ -254,6 +255,9 @@ final class ReaderModel: ObservableObject {
                 guard token == self.revision && !self.closed else { return }
                 if currentReference == nil { self.studyNote = nil }
                 self.referencePreview = references; self.message = ""
+            case .lexical(let lexical):
+                guard token == self.revision && !self.closed else { return }
+                self.lexicalPreview = lexical; self.message = ""
             case .passage(let target):
                 let entry = try await worker.visit(tab: tab, module: target.module, reference: target.reference)
                 try await self.present(entry, module: target.module, token: token)
@@ -270,6 +274,7 @@ final class ReaderModel: ObservableObject {
         }
     }
     func showStudyNoteBody() { referencePreview = nil }
+    func closeLexicalPreview() { guard !closed, !isBusy else { return }; lexicalPreview = nil }
     func closeStudyNote() { referencePreview = nil; studyNote = nil }
     func clearHistory() {
         guard let worker, let tab else { return }
@@ -581,6 +586,19 @@ struct ReaderWindow: View {
                 Divider()
                 Text("Xiphos native preview • Chapter reading and history slice").font(.caption).foregroundStyle(.secondary).padding(8)
             }.frame(minWidth: 450)
+            if let lexical = model.lexicalPreview {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack {
+                        Text("Dictionary").font(.headline)
+                        Spacer()
+                        Button("Close") { model.closeLexicalPreview() }.disabled(model.isBusy)
+                    }.padding(8)
+                    Text("\(lexical.entry.module) • \(lexical.entry.key)").font(.caption).padding(.horizontal, 8)
+                    Divider().padding(.top, 8)
+                    PassageView(html: lexical.entry.html, anchor: nil, onScrollFailure: { model.message = $0 },
+                                onLink: { model.followLink($0, currentModule: lexical.module, currentReference: lexical.sourceReference) })
+                }.frame(minWidth: 230, idealWidth: 300)
+            }
         }.frame(minWidth: 700, minHeight: 450)
             .onChange(of: model.selection) { _ in model.selectionChanged() }
             .onChange(of: model.verseNumbers) { _ in model.refreshDisplay() }

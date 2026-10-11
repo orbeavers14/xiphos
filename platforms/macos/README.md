@@ -180,3 +180,14 @@ persistence, default general dictionary and lookup-pane interactions are pending
 For disposable UI checks, run the local fixture tests and launch
 `sh platforms/macos/launch-fixture.sh build/macos lexicons`; this copies only
 original generated data and the preview into temporary storage.
+
+
+Contextual Strong's and morphology clicks now receive copied lexical results
+from the shared worker and show a dictionary column on the right. Selection,
+source testament and rendering stay in C++; Swift only presents the returned
+module/key/HTML. Nested links use the captured source passage. Closing or
+replacing the result preserves Bible history and unfinished reference input.
+The right column is an initial composition: commentary above it, pane toggles,
+manual lookup, dictionary key navigation/history, hover and pinning remain
+pending. This is not full dictionary or visual parity. Generated dictionary
+fixtures now include original word/morphology markup for real WebKit click checks.

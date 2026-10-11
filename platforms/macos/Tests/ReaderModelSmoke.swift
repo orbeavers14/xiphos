@@ -320,6 +320,20 @@ struct ReaderModelSmoke {
         first.applyLexiconPreferences(defaults) // busy action must be ignored
         try await idle(first)
         guard first.lexiconPreferences == changed, first.html == priorHTML, first.reference == "John 4:2" else { fatalError("busy preference action ignored") }
+        first.followLink("xiphos.url?action=showStrongs&type=Greek&value=alpha")
+        try await idle(first)
+        guard let lexical = first.lexicalPreview, lexical.kind == .strongs, lexical.entry.module == "DictionaryOne",
+              lexical.entry.html.contains("café"), lexical.sourceReference == "John 3:16",
+              first.reference == "John 4:2", first.html == priorHTML, first.renderedReference == priorRendered,
+              first.canBack == back, first.canForward == forward, second.lexicalPreview == nil else { fatalError("native lexical source/pane/draft/history/isolation") }
+        first.followLink("xiphos.url?action=showMorph&type=Greek&value=alpha")
+        try await idle(first)
+        guard first.lexicalPreview?.kind == .morphology, first.lexicalPreview?.entry.module == "MorphGreek" else { fatalError("native morphology preference") }
+        first.followLink("https://example.invalid/xiphos.url?action=showStrongs&type=Greek&value=alpha")
+        try await idle(first)
+        guard first.lexicalPreview?.entry.module == "MorphGreek", !first.message.isEmpty else { fatalError("failed lookup retained dictionary") }
+        first.closeLexicalPreview()
+        guard first.lexicalPreview == nil, first.html == priorHTML, first.reference == "John 4:2" else { fatalError("close dictionary preserved reading") }
         second.applyLexiconPreferences(changed); second.close()
         try await Task.sleep(nanoseconds: 50_000_000)
         guard second.lexiconPreferences == defaults else { fatalError("closed model does not publish preferences") }

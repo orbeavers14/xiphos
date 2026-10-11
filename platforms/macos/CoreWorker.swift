@@ -214,6 +214,7 @@ actor CoreWorker {
         return CoreValues.referenceList(result)
     }
     func resolveStudyLinkAt(tab: UInt64, currentModule: String, currentReference: String, uri: String) async throws -> ContextualStudyLink {
+        guard ![currentModule, currentReference, uri].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?
         let handle = try worker()
         let status = currentModule.withCString { id in
@@ -230,6 +231,10 @@ actor CoreWorker {
         if let result = xc_request_take_note(completed) {
             defer { xc_note_release(result) }
             return .note(noteValue(result))
+        }
+        if let result = xc_request_take_lexical_entry(completed) {
+            defer { xc_lexical_entry_release(result) }
+            return .lexical(CoreValues.lexicalEntry(result))
         }
         guard let result = xc_request_take_link(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
         defer { xc_link_release(result) }

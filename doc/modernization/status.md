@@ -1536,3 +1536,28 @@ separation and retained older dispatch behavior; the full suite covers existing
 note/list/passage/native workflows. SWORD itself is uninstrumented. No GitHub
 builds or user-data changes. Full lexical UI/feature acceptance remains pending;
 no retirement, estimate about 6%.
+
+
+## Native lexical click preview: locally checked, dictionary workflow pending
+
+Implemented 2026-10-11 on `modernization/macos-lexical-preview`. Swift contextual
+dispatch owns the fourth lexical result. The native model publishes it only for
+the active window/revision, and a right-hand dictionary column presents copied
+module/key/HTML with captured source context for nested links. The core retains
+all lookup selection/rendering logic. Failed actions retain the prior result;
+Close preserves passage, unfinished input and Bible history.
+
+Validation: 27/27 local checks passed, including contextual Swift ownership/NUL
+rejection and native Strong's/morphology preference selection, window isolation,
+draft/history preservation and failed-result retention. Visible temporary GUI
+checks clicked actual SWORD-rendered 03056 and N-NSM links, showing DictionaryOne
+and MorphGreek original definitions while John3:16 remained displayed, John4:2
+remained unfinished and Back/Forward stayed disabled. Close removed the column
+and retained reading state. Only generated fixtures under /private/tmp were used.
+No GitHub builds or installed data changes.
+
+Next: direct dictionary lookup/module selection, key navigation and separate
+lookup history, then hover/pinning/profile persistence and the full established
+right-side composition. No full feature acceptance/file retirement; provisional
+estimate stays about 6% (4–8%), with 0/38 full groups accepted and 0/3 platforms
+release-ready.

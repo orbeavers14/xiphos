@@ -103,6 +103,7 @@ enum ContextualStudyLink: Sendable {
     case passage(PassageTarget)
     case note(RenderedStudyNote)
     case references(RenderedReferenceList)
+    case lexical(RenderedLexicalEntry)
 }
 enum ResolvedStudyLink: Sendable {
     case passage(PassageTarget)
