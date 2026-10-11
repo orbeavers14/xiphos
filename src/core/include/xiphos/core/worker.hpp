@@ -9,6 +9,11 @@ namespace xiphos::core {
 using StudyTab = std::uint64_t;
 using ContextualStudyLink = std::variant<PassageLink, StudyNote, ReferenceList, LexicalEntry>;
 using ResolvedStudyLink = std::variant<PassageLink, StudyNote>;
+struct DictionaryHistorySnapshot {
+  std::vector<DictionaryLocation> entries;
+  std::size_t cursor = 0;
+  bool can_back = false, can_forward = false;
+};
 struct HistorySnapshot {
   std::vector<Location> entries;
   std::size_t cursor = 0;
@@ -35,6 +40,10 @@ public:
   std::future<std::optional<LexiconPreferences>> lexicon_preferences(StudyTab tab);
   std::future<LexicalEntry> read_lexical(StudyTab tab, std::string module, std::string reference,
                                       std::string uri, int origin);
+  std::future<DictionaryEntry> visit_dictionary(StudyTab tab, std::string module, std::string key);
+  std::future<DictionaryEntry> navigate_dictionary_history(StudyTab tab, int direction);
+  std::future<DictionaryHistorySnapshot> dictionary_history(StudyTab tab);
+  std::future<void> clear_dictionary_history(StudyTab tab);
   std::future<DictionaryEntry> navigate_dictionary(StudyTab tab, std::string module, std::string key, int direction);
   std::future<DictionaryEntry> read_dictionary(StudyTab tab, std::string module, std::string key);
   std::future<ReferenceList> read_reference_list(StudyTab tab, std::string module, std::string expression, std::string context);

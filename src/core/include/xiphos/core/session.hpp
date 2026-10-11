@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 #include "history.hpp"
+#include "dictionary_history.hpp"
 #include "reader.hpp"
 #include <optional>
 #include <map>
@@ -17,6 +18,11 @@ public:
   LexicalEntry read_lexical(const std::string &module, const std::string &reference,
                           const std::string &uri, int origin);
   // Render with this tab's settings without moving or adding history.
+  // Explicit recorded visit; retains requested module/key, without case policy.
+  DictionaryEntry visit_dictionary(const std::string &module, const std::string &key);
+  DictionaryEntry navigate_dictionary_history(int direction);
+  const DictionaryHistory &dictionary_history() const { return dictionary_history_; }
+  void clear_dictionary_history() { dictionary_history_.clear(); }
   DictionaryEntry navigate_dictionary(const std::string &module, const std::string &key, int direction);
   DictionaryEntry read_dictionary(const std::string &module, const std::string &key);
   ReferenceList read_reference_list(const std::string &module, const std::string &expression,
@@ -59,5 +65,6 @@ private:
   std::map<std::string, EngineOptions> module_options_;
   void require_module(const std::string &module) const;
   History history_;
+  DictionaryHistory dictionary_history_;
 };
 }

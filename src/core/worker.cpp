@@ -109,6 +109,23 @@ std::future<LexicalEntry> StudyWorker::read_lexical(StudyTab tab, std::string mo
     return s.tab(tab).read_lexical(module, reference, uri, origin);
   });
 }
+std::future<DictionaryEntry> StudyWorker::visit_dictionary(StudyTab tab, std::string module, std::string key) {
+  return impl_->submit([tab, module = std::move(module), key = std::move(key)](Impl::State &s) {
+    return s.tab(tab).visit_dictionary(module, key);
+  });
+}
+std::future<DictionaryEntry> StudyWorker::navigate_dictionary_history(StudyTab tab, int direction) {
+  return impl_->submit([tab, direction](Impl::State &s) { return s.tab(tab).navigate_dictionary_history(direction); });
+}
+std::future<DictionaryHistorySnapshot> StudyWorker::dictionary_history(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s) {
+    const auto &history = s.tab(tab).dictionary_history();
+    return DictionaryHistorySnapshot{history.entries(), history.cursor(), history.can_back(), history.can_forward()};
+  });
+}
+std::future<void> StudyWorker::clear_dictionary_history(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s) { s.tab(tab).clear_dictionary_history(); });
+}
 std::future<DictionaryEntry> StudyWorker::navigate_dictionary(StudyTab tab, std::string module, std::string key, int direction) {
   return impl_->submit([tab, module = std::move(module), key = std::move(key), direction](Impl::State &s) {
     return s.tab(tab).navigate_dictionary(module, key, direction);

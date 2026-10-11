@@ -22,14 +22,33 @@ platform workflows are characterized. Reassess after each accepted milestone.
 | User-data compatibility and migration | 15% | 1% | 0.15% |
 | Release packaging and comprehensive acceptance | 10% | 0% | 0% |
 
-The revised estimate includes explicit engine-preference import/save and the
-shared note/reference workflow; it does not imply complete preference or
-preview parity. These weights and within-area percentages are engineering estimates, not
+The estimate includes explicit engine-preference import/save, shared note/reference
+workflows and partial dictionary/lexical services and native controls; it does
+not imply complete preference, preview or dictionary parity. These weights and within-area percentages are engineering estimates, not
 completed issue counts. Foundation still needs a representative module corpus,
 Windows native tooling and regression infrastructure. **0 of 38 feature groups
 have full accepted parity across the native platforms; 0 of 3 native apps are
-release-ready.** PR #1 is implemented and partially verified, pending review
-and merge. No milestone has official acceptance yet.
+release-ready.** The stacked draft milestones are implemented and locally checked
+within their documented scope, pending review, platform checks and merge.
+No milestone has official acceptance yet.
+
+## Current locally checked scope
+
+- Shared C++ module/verse/chapter reading, Bible history, rendering options,
+  engine-preference import/save, note and reference-list previews.
+- Shared lexical command parsing, characterized Greek/Hebrew selection and
+  copied dictionary reading/key navigation; separate dictionary history state
+  and explicit visit/navigation/snapshot commands.
+- macOS reading controls, note/reference previews, five lexicon choices,
+  Strong's/morphology click dictionary results, direct lookup and key steps.
+- Legacy app delegates rendering, selected policy/parser/selection seams,
+  dictionary key stepping and dictionary history to shared C++ helpers.
+
+Current local suite: **29 checks**. The dictionary history value/legacy adapters
+also agree over **10,287 tested transitions**. Sanitizer and strict-language
+checks are scoped per ledger entry below; they do not instrument the SWORD SDK.
+GTK full-app runtime and native Windows/Linux interaction checks remain pending.
+Routine milestones use local builds; no new GitHub builds were dispatched.
 
 ## Reuse from related projects
 
@@ -69,9 +88,10 @@ inclusion in this public fork.
 1. Review the stacked draft milestones and validate representative modules
    against the legacy application. Bundle remote builds at meaningful review
    checkpoints; keep routine development/testing local to conserve CI usage.
-2. Complete reading decorations, remaining language/variant controls, expanded
-   cross-references and Strong's/morphology interactions. Characterize commentary
-   and parallel panes while retaining established study-pane composition.
+2. Connect explicit dictionary history commands to native lexical clicks and
+   controls; characterize click normalization, nearby-key chooser, hover/pinning
+   and compatible lexicon persistence. Complete remaining reading controls and
+   characterize commentary/parallel panes while retaining study-pane composition.
 3. Implement equivalent GTK4 and WinUI 3 reading panes with native toolchains
    and interaction checks; retain the legacy app throughout migration.
 4. Expand compatible storage and restoration beyond the 18 engine fields, then
@@ -1675,3 +1695,22 @@ still requires its platform build environment; the harness validates state and
 adapter callbacks. No GitHub builds. Next: explicit shared dictionary visit/
 history-navigation commands and native history controls. Full feature acceptance
 remains pending; provisional estimate about 6%.
+
+
+## Dictionary history commands: locally checked, native integration next
+
+Implemented 2026-10-11 on `modernization/dictionary-history-commands`. Each core
+tab owns separate dictionary history. Explicit visit renders before recording
+the requested module/key; history navigation renders before committing its
+cursor. Worker/C expose copied owned snapshots, navigation and clear. Existing
+preview/key-step requests still do not record dictionary history. Case policy
+is not inferred here; legacy click normalization remains a separate seam.
+
+Validation: 29/29 local checks; focused address/undefined and thread runs passed
+2/2 including the original dictionary fixture. Strict C++17/C11 checks passed.
+Tests cover failed visit/move retention, requested-key preservation, current
+options on history navigation, separate Bible/dictionary/tab state, copied
+arguments, pending/type/bounds/take-once C ownership and snapshots after worker
+teardown. SWORD is uninstrumented. No GitHub builds. Next: lexical recorded
+commands, Swift snapshots and native history controls, then remaining dictionary
+workflows. No full acceptance or file retirement; estimate about 6% (4–8%).

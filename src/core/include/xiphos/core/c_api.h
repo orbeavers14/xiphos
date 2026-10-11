@@ -11,6 +11,7 @@ extern "C" {
 typedef struct xc_reader xc_reader;
 typedef struct xc_entry xc_entry;
 typedef struct xc_note xc_note;
+typedef struct xc_dictionary_history xc_dictionary_history;
 typedef struct xc_dictionary_entry xc_dictionary_entry;
 typedef struct xc_lexical_entry xc_lexical_entry;
 typedef struct xc_lexicons xc_lexicons;
@@ -123,6 +124,21 @@ xc_status xc_worker_lexicon_preferences(xc_worker *worker, uint64_t tab, xc_requ
  * Greek morphology validates source on the worker. No Bible history visit.
  * Source reference is authoritative; query passage remains metadata. */
 xc_status xc_worker_read_lexical(xc_worker *worker, uint64_t tab, const char *module, const char *reference, const char *uri, int origin, xc_request **out);
+/* Explicit dictionary visit records requested module/key after successful read.
+ * No case normalization/Bible visit. History navigation commits after rendering.
+ * Existing preview and key-step requests do not record dictionary history. */
+xc_status xc_worker_visit_dictionary(xc_worker *worker, uint64_t tab, const char *module, const char *key, xc_request **out);
+xc_status xc_worker_navigate_dictionary_history(xc_worker *worker, uint64_t tab, int direction, xc_request **out);
+xc_status xc_worker_dictionary_history(xc_worker *worker, uint64_t tab, xc_request **out);
+xc_status xc_worker_clear_dictionary_history(xc_worker *worker, uint64_t tab, xc_request **out);
+xc_dictionary_history *xc_request_take_dictionary_history(xc_request *request);
+size_t xc_dictionary_history_count(const xc_dictionary_history *history);
+size_t xc_dictionary_history_cursor(const xc_dictionary_history *history);
+int xc_dictionary_history_can_back(const xc_dictionary_history *history);
+int xc_dictionary_history_can_forward(const xc_dictionary_history *history);
+const char *xc_dictionary_history_module(const xc_dictionary_history *history, size_t index);
+const char *xc_dictionary_history_key(const xc_dictionary_history *history, size_t index);
+void xc_dictionary_history_release(xc_dictionary_history *history);
 /* One dictionary key step (-1/+1), preserving SDK boundary behavior and tab
  * options. Returns the owned dictionary kind; does not visit Bible history. */
 xc_status xc_worker_navigate_dictionary(xc_worker *worker, uint64_t tab, const char *module, const char *key, int direction, xc_request **out);

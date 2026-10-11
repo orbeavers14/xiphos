@@ -256,3 +256,12 @@ forward data on a different visit and evicts oldest entries above 50. Invalid
 moves reject before mutation; visits build replacement state before publishing.
 The legacy actual/frozen adapters agree over 10,287 tested transitions. Session
 commands, legacy delegation and frontend history controls are not connected yet.
+
+
+Each study tab now owns separate dictionary history with explicit visit, history
+navigation, snapshot and clear requests. Visits render before recording the
+requested module/key, and history moves render before cursor commit. This layer
+does not infer click case normalization. Existing dictionary previews and key
+steps retain their no-record behavior. C transfers a distinct owned history
+kind with count/cursor, module/key entries and back/forward flags; bounds return
+null/zero and snapshots survive worker teardown. Native integration follows.

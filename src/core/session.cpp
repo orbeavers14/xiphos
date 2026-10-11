@@ -19,6 +19,17 @@ LexicalEntry StudySession::read_lexical(const std::string &module, const std::st
   auto entry = read_dictionary(selected, command.value);
   return {std::move(command), context, std::move(entry)};
 }
+DictionaryEntry StudySession::visit_dictionary(const std::string &module, const std::string &key) {
+  auto entry = read_dictionary(module, key);
+  dictionary_history_.visit({module, key});
+  return entry;
+}
+DictionaryEntry StudySession::navigate_dictionary_history(int direction) {
+  const auto target = dictionary_history_.destination(direction);
+  auto entry = read_dictionary(target.module, target.key);
+  dictionary_history_.move(direction);
+  return entry;
+}
 DictionaryEntry StudySession::navigate_dictionary(const std::string &module, const std::string &key, int direction) {
   const auto options = module_engine_options(module);
   return options ? reader_.navigate_dictionary(module, key, direction, *options)

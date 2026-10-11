@@ -6,7 +6,7 @@ C++ application core and native frontends:
 
 | Platform | Target frontend | Current implementation |
 |---|---|---|
-| macOS | SwiftUI / AppKit | Module/verse/chapter reading, history, note preview and engine options |
+| macOS | SwiftUI / AppKit | Reading/history/options, note/reference previews, lexical/direct dictionary lookup and key steps |
 | Windows | WinUI 3 | Planned; legacy GTK application retained |
 | Linux | GTK4 | Planned; legacy GTK3 application retained |
 
@@ -19,12 +19,18 @@ through an audited adapter to the shared core.
 
 ## Status
 
-The first slice adds installed-module discovery, verse rendering, an
-experimental C API and a macOS reading window. The legacy rendering call uses
-the same shared function. Local engine, adapter, sanitizer and visible reading
-checks passed. The new Linux/macOS CI and legacy Linux PR builds passed at the
-recorded implementation commit. Windows cross-builds were still running when
-checked. [PR #1](https://github.com/orbeavers14/xiphos/pull/1) remains a draft.
+The shared core and macOS preview now cover module/verse/chapter reading,
+Bible history, scoped reading options, engine-preference import/save and
+note/reference-list previews. Dictionary work includes characterized lexical
+selection, native preferences and click results, direct lookup, key steps and
+shared separate history commands. Native dictionary history controls, hover,
+pinning and full established pane composition remain in progress.
+
+The current local suite has 29 checks, supplemented by scoped sanitizer,
+strict-language and temporary-fixture GUI checks recorded in the status ledger.
+The legacy app retains its existing UI and delegates selected seams to shared
+helpers. Routine development and testing stay local to conserve GitHub builds;
+platform CI and full acceptance are reserved for meaningful checkpoints.
 
 Overall modernization is estimated at **about 6%** (planning range 4–8%).
 **0/38 feature groups** have accepted parity across all native platforms.
