@@ -38,9 +38,19 @@ struct InstalledModule: Identifiable, Sendable {
     let type: String
     let language: String
     let options: ModuleOptionInfo
-    init(id: String, description: String, type: String, language: String, options: ModuleOptionInfo = .unknown) {
+    let isDictionary: Bool
+    let lexiconRoles: LexiconRoles
+    init(id: String, description: String, type: String, language: String, options: ModuleOptionInfo = .unknown, isDictionary: Bool = false, lexiconRoles: LexiconRoles = []) {
         self.id = id; self.description = description; self.type = type; self.language = language; self.options = options
+        self.isDictionary = isDictionary; self.lexiconRoles = lexiconRoles
     }
+}
+struct LexiconRoles: OptionSet, Sendable {
+    let rawValue: UInt32
+    static let greekDefinition = Self(rawValue: UInt32(XIPHOS_LEXICON_GREEK_DEF.rawValue))
+    static let hebrewDefinition = Self(rawValue: UInt32(XIPHOS_LEXICON_HEBREW_DEF.rawValue))
+    static let greekMorphology = Self(rawValue: UInt32(XIPHOS_LEXICON_GREEK_PARSE.rawValue))
+    static let hebrewMorphology = Self(rawValue: UInt32(XIPHOS_LEXICON_HEBREW_PARSE.rawValue))
 }
 enum LexiconOrigin: Int32, Sendable { case main = 0, dialog = 1 }
 enum LexicalKind: Int32, Sendable { case strongs = 0, morphology = 1 }
@@ -124,7 +134,9 @@ final class CoreReader {
             InstalledModule(id: String(cString: xc_module_id(opened, index)!),
                 description: String(cString: xc_module_description(opened, index)!),
                 type: String(cString: xc_module_type(opened, index)!),
-                language: String(cString: xc_module_language(opened, index)!))
+                language: String(cString: xc_module_language(opened, index)!),
+                isDictionary: xc_module_is_dictionary(opened, index) != 0,
+                lexiconRoles: LexiconRoles(rawValue: xc_module_lexicon_roles(opened, index)))
         }
     }
     deinit { xc_close(handle) }

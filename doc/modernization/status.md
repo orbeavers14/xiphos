@@ -1471,3 +1471,24 @@ SWORD itself remains uninstrumented. No GitHub builds or user-data changes.
 Native controls, feature-filtered dictionary choices, preview/pane composition,
 hover/click dictionary history and profile persistence remain pending. Overall
 estimate about 6%; no accepted parity groups or legacy file retirement.
+
+
+## Lexicon catalog metadata: locally checked, native selectors next
+
+Implemented 2026-10-11 on `modernization/lexicon-catalog-metadata`, based on the
+lexical adapters. The core catalog copies dictionary classification and exact
+first-Feature lexicon roles for Greek/Hebrew definitions and morphology.
+Devotionals are excluded from dictionary choices like the legacy list. C and
+both synchronous/worker Swift adapters expose copied values and bounds-safe
+queries; the frontend need not read SWORD metadata or implement role matching.
+
+Validation: 26/26 local checks passed, followed by focused catalog/C/Swift
+checks, strict C++17/C++11/C11 checks and an address/undefined dictionary check
+1/1. Expanded original fixtures cover all roles, generic dictionaries, exact
+case, multiple Feature entries, a devotional and a non-dictionary advertising
+GreekDef. Metadata compares with direct SDK type/first-Feature legacy predicates;
+synchronous and worker adapters agree. Native-disabled C++11 seam libraries
+build. SWORD itself is uninstrumented. No GitHub builds or user-data changes.
+Next: native lexicon preference selectors and dictionary presentation; full
+module corpus, effective capability, persistence and platform parity pending.
+No retirement/accepted groups; estimate remains about 6%.

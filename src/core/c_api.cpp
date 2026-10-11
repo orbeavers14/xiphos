@@ -331,6 +331,8 @@ const char *xc_catalog_id(const xc_catalog *c, size_t i) { auto m = catalog_at(c
 const char *xc_catalog_description(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m ? m->description.c_str() : nullptr; }
 const char *xc_catalog_type(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m ? m->type.c_str() : nullptr; }
 const char *xc_catalog_language(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m ? m->language.c_str() : nullptr; }
+int xc_catalog_is_dictionary(const xc_catalog *c, size_t i) { return c && i < c->value.size() && c->value[i].dictionary ? 1 : 0; }
+unsigned xc_catalog_lexicon_roles(const xc_catalog *c, size_t i) { return c && i < c->value.size() ? c->value[i].lexicon_roles : 0; }
 unsigned xc_catalog_declared_engine_flags(const xc_catalog *c, size_t i) {
   const auto *module = catalog_at(c, i);
   if (!module) return 0;
@@ -382,6 +384,8 @@ const char *xc_module_id(const xc_reader *r, size_t i) { auto m = module_at(r, i
 const char *xc_module_description(const xc_reader *r, size_t i) { auto m = module_at(r, i); return m ? m->description.c_str() : nullptr; }
 const char *xc_module_type(const xc_reader *r, size_t i) { auto m = module_at(r, i); return m ? m->type.c_str() : nullptr; }
 const char *xc_module_language(const xc_reader *r, size_t i) { auto m = module_at(r, i); return m ? m->language.c_str() : nullptr; }
+int xc_module_is_dictionary(const xc_reader *r, size_t i) { return r && i < r->value->modules().size() && r->value->modules()[i].dictionary ? 1 : 0; }
+unsigned xc_module_lexicon_roles(const xc_reader *r, size_t i) { return r && i < r->value->modules().size() ? r->value->modules()[i].lexicon_roles : 0; }
 xc_status xc_read(xc_reader *r, const char *id, const char *ref, xc_entry **out) {
   if (!out) return XC_INVALID_ARGUMENT;
   *out = nullptr;

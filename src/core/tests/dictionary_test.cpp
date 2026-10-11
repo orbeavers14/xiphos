@@ -26,7 +26,11 @@ int main(int argc, char **argv) {
   try {
     check(argc == 2, "dictionary fixture root required"); const std::filesystem::path root(argv[1]);
     std::filesystem::create_directories(root / "mods.d");
-    for (const auto *id : {"DictionaryOne", "DictionaryTwo"}) {
+    const std::map<std::string,std::string> features{{"DictionaryOne","GreekDef"},{"DictionaryTwo","HebrewDef"},
+      {"MorphGreek","GreekParse"},{"MorphHebrew","HebrewParse"},{"GenericDictionary",""},
+      {"OriginalDevotional","DailyDevotion"},{"CaseFeature","greekdef"},{"MultipleFeatures","GreekParse"}};
+    for (const auto &fixture : features) {
+      const auto *id=fixture.first.c_str();
       std::filesystem::create_directories(root / id);
       const auto path = (root / id / "lexicon").string();
       check(sword::RawLD::createModule(path.c_str()) == 0, "create original dictionary");
@@ -37,18 +41,35 @@ int main(int argc, char **argv) {
       std::ofstream config(root / "mods.d" / (std::string(id) + ".conf"));
       config << '[' << id << "]\nDataPath=./" << id << "/lexicon\nModDrv=RawLD\nSourceType=OSIS\nEncoding=UTF-8\n"
                 "Description=Original dictionary fixture\nLang=en\nGlobalOptionFilter=OSISRedLetterWords\n";
+      if (!fixture.second.empty()) config << "Feature=" << fixture.second << '\n';
+      if (fixture.first=="MultipleFeatures") config << "Feature=HebrewDef\n";
     }
     std::filesystem::create_directories(root / "bible");
     check(sword::RawText::createModule((root / "bible").string().c_str()) == 0, "create non-dictionary fixture");
     { sword::RawText writer((root / "bible").string().c_str()); writer.setKey("John3:16"); writer.setEntry("Original Bible fixture."); }
-    { std::ofstream config(root / "mods.d/bible.conf"); config << "[OriginalBible]\nDataPath=./bible/\nModDrv=RawText\nSourceType=OSIS\nEncoding=UTF-8\n"; }
+    { std::ofstream config(root / "mods.d/bible.conf"); config << "[OriginalBible]\nDataPath=./bible/\nModDrv=RawText\nSourceType=OSIS\nEncoding=UTF-8\nFeature=GreekDef\n"; }
     std::filesystem::remove(root / "mods.d/modules-conf.cache");
     const auto path = root.string();
     std::map<std::string, DictionaryEntry> expected;
     const std::vector<std::string> keys = {"alpha", "ALPHA", "café", "G03056", "G3056", "between", "zzzz"};
     std::string plainWord, redWord;
+    std::map<std::string,unsigned> expectedRoles;
+    std::map<std::string,bool> expectedDictionary;
     {
       EngineManager legacy(path.c_str(), true, new sword::MarkupFilterMgr(sword::FMT_XHTML), false, false);
+      for (const auto &item : legacy.Modules) {
+        auto &m=*item.second; const auto *feature=m.getConfigEntry("Feature");
+        const bool dictionary=std::string(m.getType())=="Lexicons / Dictionaries" && (!feature || std::string(feature)!="DailyDevotion");
+        unsigned roles=0;
+        // The legacy preferences comparator tests exact first Feature equality.
+        if (dictionary && feature) {
+          if (std::string(feature)=="GreekDef") roles=XIPHOS_LEXICON_GREEK_DEF;
+          if (std::string(feature)=="HebrewDef") roles=XIPHOS_LEXICON_HEBREW_DEF;
+          if (std::string(feature)=="GreekParse") roles=XIPHOS_LEXICON_GREEK_PARSE;
+          if (std::string(feature)=="HebrewParse") roles=XIPHOS_LEXICON_HEBREW_PARSE;
+        }
+        expectedRoles[m.getName()]=roles; expectedDictionary[m.getName()]=dictionary;
+      }
       auto *module = legacy.getModule("DictionaryOne"); check(module != nullptr, "load original dictionary");
       for (const auto &key : keys) {
         // Same setKey/renderText sequence as BackEnd::get_render_text.
@@ -62,6 +83,8 @@ int main(int argc, char **argv) {
     DictionaryEntry owned;
     {
       Reader reader(path);
+      for (const auto &m : reader.modules()) check(m.dictionary==expectedDictionary.at(m.id) && m.lexicon_roles==expectedRoles.at(m.id),
+        "core dictionary/role metadata equals legacy type and first Feature comparator");
       for (const auto &key : keys) {
         const auto result = reader.read_dictionary("DictionaryOne", key);
         check(result.module == "DictionaryOne" && result.key == expected.at(key).key && result.html == expected.at(key).html,
@@ -97,11 +120,28 @@ int main(int argc, char **argv) {
       check(rejected, "closed dictionary tab rejected");
     }
     check(accepted.get().html == owned.html, "copied dictionary request/result survives worker shutdown");
+    {
+      xc_reader *reader=nullptr; check(xc_open(path.c_str(),&reader)==XC_OK,"C synchronous dictionary catalog");
+      for (std::size_t i=0;i<xc_module_count(reader);++i) {
+        const std::string id=xc_module_id(reader,i);
+        check((xc_module_is_dictionary(reader,i)!=0)==expectedDictionary.at(id) && xc_module_lexicon_roles(reader,i)==expectedRoles.at(id),"C synchronous dictionary roles");
+      }
+      check(!xc_module_is_dictionary(reader,xc_module_count(reader)) && !xc_module_lexicon_roles(reader,xc_module_count(reader)) &&
+            !xc_module_is_dictionary(nullptr,0) && !xc_module_lexicon_roles(nullptr,0),"C synchronous metadata bounds"); xc_close(reader);
+    }
     xc_dictionary_entry *retained = nullptr;
     xc_request *acceptedRequest = nullptr;
     {
       xc_worker *worker = nullptr; xc_request *request = nullptr;
       check(xc_worker_open(path.c_str(), &worker) == XC_OK, "C dictionary worker");
+      check(xc_worker_modules(worker,&request)==XC_OK && wait(request)==XC_OK,"C dictionary catalog");
+      auto *catalog=xc_request_take_catalog(request); xc_request_release(request);
+      for (std::size_t i=0;i<xc_catalog_count(catalog);++i) {
+        const std::string id=xc_catalog_id(catalog,i);
+        check((xc_catalog_is_dictionary(catalog,i)!=0)==expectedDictionary.at(id) && xc_catalog_lexicon_roles(catalog,i)==expectedRoles.at(id),"C dictionary catalog roles");
+      }
+      check(!xc_catalog_is_dictionary(catalog,xc_catalog_count(catalog)) && !xc_catalog_lexicon_roles(catalog,xc_catalog_count(catalog)) &&
+            !xc_catalog_is_dictionary(nullptr,0) && !xc_catalog_lexicon_roles(nullptr,0),"C catalog metadata bounds"); xc_catalog_release(catalog);
       check(xc_worker_create_tab(worker, &request) == XC_OK && wait(request) == XC_OK, "C dictionary tab");
       const auto tab = xc_request_tab(request);
       check(!xc_request_take_dictionary_entry(request), "C tab result cannot be dictionary");

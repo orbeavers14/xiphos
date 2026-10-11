@@ -15,6 +15,8 @@ struct Module {
   std::string id, description, type, language;
   ModuleOptions options;
   bool transliteration_available = false;
+  bool dictionary = false;
+  unsigned lexicon_roles = 0;
 };
 
 
