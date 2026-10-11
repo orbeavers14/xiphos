@@ -28,6 +28,7 @@ public:
   std::future<std::vector<Module>> modules();
   std::future<StudyTab> create_tab();
   std::future<void> close_tab(StudyTab tab);
+  std::future<StudyNote> study_note_link(StudyTab tab, std::string current_module, std::string uri);
   std::future<StudyNote> study_note(StudyTab tab, std::string module, std::string reference, std::string identifier);
   std::future<Entry> read_entry(StudyTab tab, std::string module, std::string reference);
   std::future<Entry> visit(StudyTab tab, std::string module, std::string reference);

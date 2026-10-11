@@ -146,6 +146,14 @@ actor CoreWorker {
         let status = xc_worker_clear_engine_options(try worker(), tab, &request)
         xc_request_release(try await wait(status, request))
     }
+    func studyNoteLink(tab: UInt64, currentModule: String, uri: String) async throws -> RenderedStudyNote {
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = currentModule.withCString { id in
+            uri.withCString { xc_worker_study_note_link(handle, tab, id, $0, &request) }
+        }
+        return try await note(status, request)
+    }
     func studyNote(tab: UInt64, module: String, reference: String, identifier: String) async throws -> RenderedStudyNote {
         var request: OpaquePointer?
         let handle = try worker()
@@ -154,6 +162,9 @@ actor CoreWorker {
                 identifier.withCString { xc_worker_study_note(handle, tab, id, ref, $0, &request) }
             }
         }
+        return try await note(status, request)
+    }
+    private func note(_ status: xc_status, _ request: OpaquePointer?) async throws -> RenderedStudyNote {
         let completed = try await wait(status, request)
         defer { xc_request_release(completed) }
         guard let result = xc_request_take_note(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }

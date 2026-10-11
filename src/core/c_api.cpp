@@ -211,6 +211,10 @@ xc_status xc_request_engine_options(const xc_request *r, unsigned *flags, int *c
 xc_status xc_worker_clear_engine_options(xc_worker *w, uint64_t tab, xc_request **out) {
   return queue_request(w, out, [=](auto &worker) { return worker.clear_engine_options(tab); });
 }
+xc_status xc_worker_study_note_link(xc_worker *w, uint64_t tab, const char *id, const char *uri, xc_request **out) {
+  if (!uri || !*uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.study_note_link(tab, id ? id : "", uri); });
+}
 xc_status xc_worker_study_note(xc_worker *w, uint64_t tab, const char *id, const char *ref, const char *identifier, xc_request **out) {
   if (!id || !*id || !ref || !*ref || !identifier || !*identifier) {
     if (out) *out = nullptr; return XC_INVALID_ARGUMENT;

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/link.hpp"
 #include <stdexcept>
+#include <map>
 namespace xiphos::core {
 namespace {
 int hex(char c) {
@@ -39,6 +40,49 @@ PassageLink passage_link(const std::string &url, const std::string &current_modu
   if (result.module.empty() || result.reference.empty() ||
       result.reference.find_first_of("#?!-;,/") != std::string::npos)
     throw std::invalid_argument("This slice supports unanchored single-reference links");
+  return result;
+}
+StudyNoteLink study_note_link(const std::string &url, const std::string &current_module) {
+  const auto query = url.find('?');
+  const auto path = url.substr(0, query);
+  // Only local engine commands and the native host's fixed internal origin.
+  if (query == std::string::npos || url.find('#') != std::string::npos ||
+      (path != "passagestudy.jsp" && path != "xiphos.url" &&
+       path != "xiphos-preview://study/passagestudy.jsp" && path != "xiphos-preview://study/xiphos.url"))
+    throw std::invalid_argument("Unsupported study-note link");
+  std::map<std::string, std::string> parameters;
+  auto position = query + 1;
+  while (position < url.size()) {
+    const auto end = url.find('&', position);
+    const auto parameter = url.substr(position, end == std::string::npos ? end : end - position);
+    const auto equal = parameter.find('=');
+    if (equal == std::string::npos || equal == 0) throw std::invalid_argument("Malformed note parameter");
+    for (std::size_t i = 0; i < parameter.size(); ++i) {
+      if (parameter[i] == '%') {
+        if (i + 2 >= parameter.size() || hex(parameter[i+1]) < 0 || hex(parameter[i+2]) < 0)
+          throw std::invalid_argument("Malformed note escape");
+        i += 2;
+      }
+    }
+    const auto name = decode(parameter.substr(0, equal));
+    if (name != "action" && name != "type" && name != "value" && name != "module" && name != "passage")
+      throw std::invalid_argument("Unsupported note parameter");
+    if (!parameters.emplace(name, decode(parameter.substr(equal + 1))).second)
+      throw std::invalid_argument("Duplicate note parameter");
+    if (end == std::string::npos) break;
+    position = end + 1;
+    if (position == url.size()) throw std::invalid_argument("Empty note parameter");
+  }
+  const auto get = [&parameters](const char *name) {
+    const auto found = parameters.find(name);
+    return found == parameters.end() ? std::string() : found->second;
+  };
+  StudyNoteLink result{get("module"), get("passage"), get("value"), get("type")};
+  if (result.module.empty()) result.module = current_module;
+  if (get("action") != "showNote" || (result.type != "n" && result.type != "x") ||
+      result.module.empty() || result.reference.empty() || result.identifier.empty() ||
+      result.reference.find_first_of("#?!-;,/") != std::string::npos)
+    throw std::invalid_argument("Study-note link requires a single passage and identifier");
   return result;
 }
 std::string passage_uri(const std::string &reference) {

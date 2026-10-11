@@ -954,3 +954,26 @@ C11/C++17 warnings-as-errors checks passed. No GitHub build dispatched.
 Next: shared decoding of generated study-note links and native presentation;
 expanded cross-reference workflows, hover behavior, introductory notes and full
 popup parity remain pending. No accepted feature group or legacy retirement.
+
+## Shared study-note links: locally checked, native binding pending
+
+Implemented 2026-10-11 on `modernization/shared-note-links`, based on note
+adapters. The core decodes local SWORD `passagestudy.jsp`/`xiphos.url` showNote
+commands and the fixed native preview origin, resolving explicit module/verse/
+identifier/type in one queued tab operation. Values decode separately, so an
+encoded ampersand in a module name cannot become an extra query parameter.
+External origins, malformed escapes, duplicate/unknown parameters, unknown
+actions/types, controls and unsupported ranges reject. Note type is validated
+against the requested entry's attributes. Swift calls this shared operation.
+
+Full local CTest passed 17/17. Pure tests cover native/legacy local origins,
+UTF-8/default modules/reordered parameters and invalid inputs; integration
+checks consume an actual SWORD-generated note URI with an explicit module
+different from the fallback. C and Swift verify resolved body/context and
+external-link rejection. Focused ASan/UBSan passed 4/4 and ThreadSanitizer 3/3
+including fixtures (external SDK uninstrumented). C11/C++17 warnings-as-errors
+checks passed.
+
+Next: native preview binding and visible clicks. Hover behavior, expanded
+cross-reference lists, introductory notes and full popup/design parity remain
+pending. No GitHub build dispatched, accepted group or legacy retirement.

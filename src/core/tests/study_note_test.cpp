@@ -94,12 +94,26 @@ int main(int argc, char **argv) {
     }
     check(owned.html.find("Original other note") != std::string::npos, "copied note outlives reader");
     std::future<StudyNote> accepted;
+    std::string generated_note_uri;
     {
       StudyWorker worker(path);
       const auto tab = worker.create_tab().get();
       worker.enable_module_preferences(tab).get();
       auto options = engine_options_from_preferences({}); options.strongs = true;
       worker.set_module_engine_options(tab, "OptionOther", options).get();
+      const auto rendered = worker.read_entry(tab, "OptionOther", "John 3:19").get().html;
+      const auto href = rendered.find("href=\"");
+      check(href != std::string::npos, "engine generates note URI");
+      const auto end = rendered.find('"', href + 6);
+      generated_note_uri = rendered.substr(href + 6, end - href - 6);
+      check(worker.study_note_link(tab, "OptionTest", generated_note_uri).get().html == expected[3],
+            "actual engine note URI resolves explicit module/verse/body");
+      bool wrong_type = false;
+      auto wrong_uri = generated_note_uri;
+      wrong_uri.replace(wrong_uri.find("type=n"), 6, "type=x");
+      try { (void)worker.study_note_link(tab, "OptionTest", wrong_uri).get(); }
+      catch (const std::invalid_argument &) { wrong_type = true; }
+      check(wrong_type, "note link type validated against entry metadata");
       std::string id = note_id;
       accepted = worker.study_note(tab, "OptionOther", "John 3:19", id); id = "missing";
       auto failure = worker.study_note(tab, "OptionOther", "John 3:17", note_id);
@@ -131,6 +145,14 @@ int main(int argc, char **argv) {
       check(std::string(xc_note_html(note)) == expected[3] && std::string(xc_note_reference(note)) == "John 3:19" &&
             std::string(xc_note_identifier(note)) == note_id && std::string(xc_note_type(note)) == note_type &&
             std::string(xc_note_label(note)) == note_label && std::string(xc_note_reference_list(note)).empty(), "C note copied metadata/body");
+      check(xc_worker_study_note_link(worker, tab, "OptionTest", generated_note_uri.c_str(), &request) == XC_OK && wait(request) == XC_OK,
+            "C generated note URI resolves");
+      auto *linked = xc_request_take_note(request); xc_request_release(request);
+      check(linked && std::string(xc_note_html(linked)) == expected[3], "C note link result"); xc_note_release(linked);
+      check(xc_worker_study_note_link(worker, tab, "OptionTest", "https://example.invalid/passagestudy.jsp", &request) == XC_OK && wait(request) == XC_INVALID_ARGUMENT,
+            "C external note URI rejected"); xc_request_release(request);
+      check(xc_worker_study_note_link(worker, tab, nullptr, nullptr, &request) == XC_INVALID_ARGUMENT && request == nullptr,
+            "C null note URI rejected before queue");
       check(xc_worker_study_note(worker, tab, "OptionOther", "John 3:18", reference_id.c_str(), &request) == XC_OK && wait(request) == XC_OK,
             "C cross-reference note");
       auto *reference = xc_request_take_note(request); xc_request_release(request);

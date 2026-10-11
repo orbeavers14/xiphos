@@ -18,6 +18,30 @@ int main() {
       try { passage_link(bad, "Current"); } catch (const std::invalid_argument &) { rejected = true; }
       require(rejected, "unsupported links rejected");
     }
+    const std::string query = "action=showNote&type=n&value=1&module=Option%26Greek&passage=John+3%3A16";
+    const auto note = study_note_link("passagestudy.jsp?" + query, "Current");
+    require(note.module == "Option&Greek" && note.reference == "John 3:16" && note.identifier == "1" && note.type == "n",
+            "note parameters decode individually without splitting encoded delimiters");
+    const auto nativeNote = study_note_link("xiphos-preview://study/passagestudy.jsp?" + query, "Current");
+    require(nativeNote.module == note.module && nativeNote.reference == note.reference, "native local note origin");
+    const auto fallbackNote = study_note_link("xiphos.url?passage=Ésaïe%203%3A1&type=x&action=showNote&value=2", "Current");
+    require(fallbackNote.module == "Current" && fallbackNote.reference == "Ésaïe 3:1" && fallbackNote.type == "x", "note fallback module/UTF-8/reordered parameters");
+    for (const auto bad : {"https://example/passagestudy.jsp?", "xiphos-preview://other/passagestudy.jsp?",
+                          "file:///passagestudy.jsp?", "passagestudy.jsp#fragment?", "Passagestudy.jsp?"}) {
+      bool rejected = false;
+      try { study_note_link(std::string(bad) + query, "Current"); } catch (const std::invalid_argument &) { rejected = true; }
+      require(rejected, "external or ambiguous note origin rejected");
+    }
+    for (const auto bad : {"action=showNote&type=n&value=1", "action=showStrongs&type=n&value=1&passage=John3:16",
+                          "action=showNote&type=z&value=1&passage=John3:16", "action=showNote&type=n&value=&passage=John3:16",
+                          "action=showNote&type=n&value=1&passage=John3:16&value=2", "action=showNote&type=n&value=1&passage=John%003:16",
+                          "action=showNote&type=n&value=1&passage=John%2", "action=showNote&type=n&value=1&passage=John%GG",
+                          "action=showNote&type=n&value=1&passage=John3:16-17", "action=showNote&type=n&value=1&passage=John3:16&",
+                          "action=showNote&type=n&value=1&passage=John3:16&unknown=1"}) {
+      bool rejected = false;
+      try { study_note_link(std::string("passagestudy.jsp?") + bad, "Current"); } catch (const std::invalid_argument &) { rejected = true; }
+      require(rejected, "malformed/unsupported note query rejected");
+    }
     Chapter chapter;
     chapter.selected_verse = 2;
     chapter.verses = {{"A \"<&'", "<em>Original text</em>"}, {"B", ""}};

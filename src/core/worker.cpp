@@ -86,6 +86,15 @@ std::future<StudyTab> StudyWorker::create_tab() {
 std::future<void> StudyWorker::close_tab(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s) { s.tab(tab); s.tabs.erase(tab); });
 }
+std::future<StudyNote> StudyWorker::study_note_link(StudyTab tab, std::string current_module, std::string uri) {
+  return impl_->submit([tab, current_module = std::move(current_module), uri = std::move(uri)](Impl::State &s) {
+    const auto link = xiphos::core::study_note_link(uri, current_module);
+    auto note = s.tab(tab).study_note(link.module, link.reference, link.identifier);
+    if ((link.type == "x") != (note.type == "crossReference"))
+      throw std::invalid_argument("Study-note link type does not match the entry");
+    return note;
+  });
+}
 std::future<StudyNote> StudyWorker::study_note(StudyTab tab, std::string module, std::string reference, std::string identifier) {
   return impl_->submit([tab, module = std::move(module), reference = std::move(reference),
                         identifier = std::move(identifier)](Impl::State &s) {

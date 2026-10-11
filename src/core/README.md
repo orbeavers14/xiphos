@@ -70,3 +70,11 @@ through `xc_request_take_note`; note strings survive worker/request close until
 `xc_note_release`. Swift `CoreWorker.studyNote` copies the six result strings
 into a Sendable value. Native link handling, hover presentation and expanded
 reference lists remain separate pending work.
+
+`study_note_link` decodes local SWORD `showNote` commands, including the fixed
+`xiphos-preview://study/` native origin. Query values decode individually;
+unknown actions/parameters, duplicates, malformed escapes, control characters,
+external origins and passage ranges reject. `StudyWorker::study_note_link` and
+`xc_worker_study_note_link` resolve and render in one engine job with tab
+settings, validating the link's note/cross-reference type against entry metadata.
+Swift exposes the same operation without a frontend URL parser.
