@@ -22,6 +22,13 @@ struct StudyWorker::Impl {
       if (found == tabs.end()) throw std::invalid_argument("Study tab is closed or unknown");
       return *found->second;
     }
+    StudyNote note_link(StudyTab id, const std::string &current_module, const std::string &uri) {
+      const auto link = xiphos::core::study_note_link(uri, current_module);
+      auto note = tab(id).study_note(link.module, link.reference, link.identifier);
+      if ((link.type == "x") != (note.type == "crossReference"))
+        throw std::invalid_argument("Study-note link type does not match the entry");
+      return note;
+    }
   };
   using Job = std::function<void(State *, std::exception_ptr)>;
   std::mutex mutex;
@@ -86,13 +93,17 @@ std::future<StudyTab> StudyWorker::create_tab() {
 std::future<void> StudyWorker::close_tab(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s) { s.tab(tab); s.tabs.erase(tab); });
 }
+std::future<ResolvedStudyLink> StudyWorker::resolve_study_link(StudyTab tab, std::string current_module, std::string uri) {
+  return impl_->submit([tab, current_module = std::move(current_module), uri = std::move(uri)](Impl::State &s) -> ResolvedStudyLink {
+    s.tab(tab); // Both kinds require an open study context.
+    if (uri.compare(0, 8, "sword://") == 0 || uri.compare(0, 8, "bible://") == 0)
+      return s.reader.resolve_link(current_module, uri);
+    return s.note_link(tab, current_module, uri);
+  });
+}
 std::future<StudyNote> StudyWorker::study_note_link(StudyTab tab, std::string current_module, std::string uri) {
   return impl_->submit([tab, current_module = std::move(current_module), uri = std::move(uri)](Impl::State &s) {
-    const auto link = xiphos::core::study_note_link(uri, current_module);
-    auto note = s.tab(tab).study_note(link.module, link.reference, link.identifier);
-    if ((link.type == "x") != (note.type == "crossReference"))
-      throw std::invalid_argument("Study-note link type does not match the entry");
-    return note;
+    return s.note_link(tab, current_module, uri);
   });
 }
 std::future<StudyNote> StudyWorker::study_note(StudyTab tab, std::string module, std::string reference, std::string identifier) {

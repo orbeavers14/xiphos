@@ -6,7 +6,7 @@ C++ application core and native frontends:
 
 | Platform | Target frontend | Current implementation |
 |---|---|---|
-| macOS | SwiftUI / AppKit | Module/verse/chapter preview with shared history |
+| macOS | SwiftUI / AppKit | Module/verse/chapter reading, history, note preview and engine options |
 | Windows | WinUI 3 | Planned; legacy GTK application retained |
 | Linux | GTK4 | Planned; legacy GTK3 application retained |
 

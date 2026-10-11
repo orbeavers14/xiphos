@@ -41,6 +41,7 @@ struct InstalledModule: Identifiable, Sendable {
     }
 }
 struct RenderedStudyNote: Sendable {
+    let module: String
     let reference: String
     let identifier: String
     let type: String
@@ -66,6 +67,10 @@ struct ReferenceChoices: Sendable {
     let bookLabel: String; let chapterLabel: String; let verseLabel: String
 }
 struct PassageTarget: Sendable { let module: String; let reference: String }
+enum ResolvedStudyLink: Sendable {
+    case passage(PassageTarget)
+    case note(RenderedStudyNote)
+}
 struct CoreError: LocalizedError, Sendable {
     let status: xc_status
     var errorDescription: String? {

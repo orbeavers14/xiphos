@@ -5,7 +5,7 @@ int c_header_test(void) {
   const char *references[] = {"A", "B"};
   xc_session *session = NULL;
   xc_request *request = NULL;
-  return xc_note_reference(NULL) == NULL && xc_note_identifier(NULL) == NULL &&
+  return xc_note_module(NULL) == NULL && xc_note_reference(NULL) == NULL && xc_note_identifier(NULL) == NULL &&
          xc_note_type(NULL) == NULL && xc_note_label(NULL) == NULL &&
          xc_note_html(NULL) == NULL && xc_note_reference_list(NULL) == NULL &&
          xc_request_take_note(NULL) == NULL &&
