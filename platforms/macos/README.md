@@ -94,10 +94,30 @@ disabled in this development pane. The app is unsigned, unnotarized and linked
 against the installed SDK; it is not a redistributable standalone package.
 See [parity ledger](../../doc/modernization/parity-matrix.md).
 
-The async adapter also exposes copied module option eligibility and typed core
-tab filter settings, configured chapter reads and history-free refreshes.
-`swift_option_adapter` exercises these bindings against the isolated original
-OSIS fixture, prepared automatically by CTest. These bindings are not yet
-connected to native option controls or preference persistence. Declared module
-features do not guarantee effective SDK/markup support; headings eligibility
-and global transliteration availability are separate values.
+The async adapter exposes copied module option eligibility, typed engine flags,
+and module-specific settings from the shared core. The native Reading options
+menu currently binds Words of Christ in Red, Strong's Numbers, Morphological
+Tags and Footnotes when the displayed module declares those options. New native
+tabs opt in to the shared legacy defaults; existing preference files are not
+imported or written yet. Settings remain separate for each module and window.
+Changing an option refreshes the committed passage without adding history or
+replacing unsubmitted reference input. Verse and chapter views use the same
+configured tab. The SWORD red-letter class uses the existing Xiphos editor's
+red style; user-defined colors and full theme parity remain pending.
+
+`reader_model_options` checks these controls with two original generated OSIS
+modules and two model windows. `swift_option_adapter` also exercises the typed
+bindings. Declared eligibility does not prove filter/markup support across all
+SWORD versions. Note/Strong's/morphology popup interaction, the remaining option
+menus, persistent settings and full visual/workflow parity are pending.
+
+For a local GUI check with those generated modules, run:
+
+```sh
+cmake --build build/macos --target preview_reading_options_fixture -j4
+```
+
+This opt-in target tests and copies only the generated fixture and preview to a
+temporary directory outside Documents. It does not launch during ordinary
+builds/CI or access an installed user library. Launch success alone is not a
+GUI check; quit the temporary app before removing its copy.

@@ -19,6 +19,8 @@ final class ReaderModel: ObservableObject {
     @Published var canBack = false
     @Published var canForward = false
     @Published var isBusy = true
+    @Published private(set) var engineOptions: EngineOptionFlags?
+    @Published private(set) var moduleOptions = ModuleOptionInfo.unknown
     private let worker: CoreWorker?
     private var tab: UInt64?
     private var displayedEntry: RenderedEntry?
@@ -55,6 +57,8 @@ final class ReaderModel: ObservableObject {
             let opened = try await worker.createTab()
             guard !closed else { try? await worker.closeTab(opened); return }
             tab = opened
+            try await worker.enableModulePreferences(tab: opened)
+            guard !closed else { return }
             modules = discovered
             selection = modules.first(where: { $0.type == "Biblical Texts" })?.id
             if modules.isEmpty { message = "No installed SWORD modules found. Install modules with the existing Xiphos application, then reopen this preview." }
@@ -99,11 +103,14 @@ final class ReaderModel: ObservableObject {
         guard let worker, let tab else { return }
         let chapterMode = showChapter
         let numbers = verseNumbers, highlight = highlightSelected
-        let chapter = chapterMode ? try await worker.readChapter(module: module, reference: entry.reference,
+        let chapter = chapterMode ? try await worker.readTabChapter(tab: tab, module: module, reference: entry.reference,
                                                                   verseNumbers: numbers, highlightSelected: highlight) : nil
         let selectors = try await worker.referenceChoices(module: module, reference: entry.reference)
         let history = try await worker.history(tab)
+        let options = try await worker.moduleEngineOptions(tab: tab, module: module)
         guard token == revision && !closed else { return }
+        engineOptions = options
+        moduleOptions = modules.first(where: { $0.id == module })?.options ?? .unknown
         if let chapter {
             html = chapter.html; renderedAnchor = chapter.selectedAnchor; renderedReference = chapter.title
             message = chapter.verses.allSatisfy { $0.html.isEmpty } ? "This module has no text in this chapter." : ""
@@ -127,6 +134,21 @@ final class ReaderModel: ObservableObject {
     func refreshDisplay() {
         guard let entry = displayedEntry, let module = displayedModule else { return }
         run { token in try await self.present(entry, module: module, token: token, updateInput: false) }
+    }
+    func setReadingOption(_ flag: EngineOptionFlags, enabled: Bool) {
+        let supported: EngineOptionFlags = [.wordsInRed, .strongs, .morphology, .footnotes]
+        guard supported.contains(flag), flag.rawValue.nonzeroBitCount == 1,
+              moduleOptions.declared.contains(flag), var options = engineOptions,
+              let worker, let tab, let module = displayedModule, let entry = displayedEntry else { return }
+        if enabled { options.insert(flag) } else { options.remove(flag) }
+        let updated = options
+        run { token in
+            try await worker.setModuleEngineOptions(tab: tab, module: module, options: updated)
+            guard token == self.revision && !self.closed else { return }
+            self.engineOptions = updated
+            let refreshed = try await worker.readTabEntry(tab: tab, module: module, reference: entry.reference)
+            try await self.present(refreshed, module: module, token: token, updateInput: false)
+        }
     }
     func navigateChapter(_ direction: Int32) {
         guard let worker, let tab, let module = displayedModule, let entry = displayedEntry else { return }
@@ -221,6 +243,8 @@ struct PassageView: NSViewRepresentable {
             <!doctype html><html><head><meta charset="utf-8">
             <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
             <style>:root { color-scheme: light dark; } body { font: 18px Georgia, serif; line-height: 1.55; margin: 24px; }
+            /* Existing Xiphos editor/template.h styles this SWORD class red. */
+            span.wordsOfJesus { color: red; }
             .xc-verse { scroll-margin-top: 12px; }
             .xc-verse.xc-current { background: Highlight; color: HighlightText; }
             .xc-verse sup { font-size: 0.7em; padding-right: 4px; }
@@ -248,6 +272,13 @@ struct ReaderWindow: View {
     @StateObject private var model: ReaderModel
     init(worker: CoreWorker?, startupError: String?) {
         _model = StateObject(wrappedValue: ReaderModel(worker: worker, startupError: startupError))
+    }
+    @ViewBuilder private func readingOption(_ title: String, flag: EngineOptionFlags) -> some View {
+        if model.moduleOptions.declared.contains(flag) {
+            Toggle(title, isOn: Binding(
+                get: { model.engineOptions?.contains(flag) ?? false },
+                set: { model.setReadingOption(flag, enabled: $0) }))
+        }
     }
     var body: some View {
         HSplitView {
@@ -290,6 +321,15 @@ struct ReaderWindow: View {
                         Toggle("Verse numbers", isOn: $model.verseNumbers)
                         Toggle("Highlight selected verse", isOn: $model.highlightSelected)
                     }.disabled(!model.showChapter)
+                    Menu("Reading options") {
+                        readingOption("Words of Christ in Red", flag: .wordsInRed)
+                        readingOption("Strong's Numbers", flag: .strongs)
+                        readingOption("Morphological Tags", flag: .morphology)
+                        readingOption("Footnotes", flag: .footnotes)
+                    }.disabled(model.engineOptions == nil || model.moduleOptions.declared.intersection(
+                        [.wordsInRed, .strongs, .morphology, .footnotes]).isEmpty)
+                }.padding(.horizontal, 12).padding(.bottom, 8).disabled(model.isBusy)
+                HStack {
                     Button("Previous chapter") { model.navigateChapter(-1) }.disabled(model.selection == nil)
                     Button("Next chapter") { model.navigateChapter(1) }.disabled(model.selection == nil)
                 }.padding(.horizontal, 12).padding(.bottom, 8).disabled(model.isBusy)
