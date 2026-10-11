@@ -96,7 +96,10 @@ inclusion in this public fork.
    against the legacy application. Bundle remote builds at meaningful review
    checkpoints; keep routine development/testing local to conserve CI usage.
 2. Expand hover behavior across notes/references/dialogs and compatible lexicon
-   persistence. Complete remaining reading controls and
+   persistence. The [profile seam audit](hover-workflows.md#lexicon-profile-persistence-seam)
+   identifies XML keys, startup defaults, duplicate-node behavior and the locale
+   startup boundary; executable profile fixtures are the next persistence gate.
+   Complete remaining reading controls and
    characterize commentary/parallel panes while retaining study-pane composition.
 3. Implement equivalent GTK4 and WinUI 3 reading panes with native toolchains
    and interaction checks; retain the legacy app throughout migration.
@@ -135,7 +138,9 @@ link-family, keyboard, real-module and platform hover parity remains pending.
 Latest code milestones: [shared Unicode helper #54](https://github.com/orbeavers14/xiphos/pull/54),
 [legacy adoption #55](https://github.com/orbeavers14/xiphos/pull/55),
 [native click/origin policy #56](https://github.com/orbeavers14/xiphos/pull/56),
-[macOS locale startup #57](https://github.com/orbeavers14/xiphos/pull/57).
+[macOS locale startup #57](https://github.com/orbeavers14/xiphos/pull/57),
+[lexical hover characterization #59](https://github.com/orbeavers14/xiphos/pull/59),
+[native lexical hover #60](https://github.com/orbeavers14/xiphos/pull/60).
 Scoped address/undefined and thread checks cover shared ownership/state changes;
 strict C++11/C++17/C11 checks cover the corresponding seams. These are not full
 SDK instrumentation or a leak audit. See each PR for its exact checks and scope.
