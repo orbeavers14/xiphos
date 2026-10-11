@@ -41,7 +41,7 @@ No milestone has official acceptance yet.
   and explicit visit/navigation/snapshot commands.
 - macOS reading controls, note/reference previews, five lexicon choices,
   Strong's/morphology click dictionary results, direct lookup/key steps and
-  separate dictionary Back/Forward/Clear controls.
+  separate dictionary Back/Forward/Clear controls and nine-key chooser.
 - Legacy app delegates rendering, selected policy/parser/selection seams,
   dictionary key stepping and dictionary history to shared C++ helpers.
 
@@ -89,7 +89,7 @@ inclusion in this public fork.
 1. Review the stacked draft milestones and validate representative modules
    against the legacy application. Bundle remote builds at meaningful review
    checkpoints; keep routine development/testing local to conserve CI usage.
-2. Characterize click normalization, nearby-key chooser, hover/pinning
+2. Characterize click normalization and hover/pinning
    and compatible lexicon persistence. Complete remaining reading controls and
    characterize commentary/parallel panes while retaining study-pane composition.
 3. Implement equivalent GTK4 and WinUI 3 reading panes with native toolchains
@@ -1788,3 +1788,23 @@ and post-teardown snapshots are checked. Full GTK GUI runtime remains pending;
 SWORD is uninstrumented. No GitHub builds. Next: copied Swift choices and native
 menu, followed by normalization, hover/pinning/persistence/composition. No full
 acceptance or file retirement; about 6%.
+
+
+## Native nearby-key chooser: locally checked, normalization/hover next
+
+Implemented 2026-10-11 on `modernization/macos-dictionary-choices`. Swift copies
+module/key/nine choices, retaining SDK boundary repeats. A native menu gives
+repeated rows distinct identities. Dictionary results share one guarded
+presentation path that refreshes choices before publishing; invalid/stale
+selection is ignored and valid selection uses unrecorded direct lookup. The
+module picker and accessible icon menus fit the narrow dictionary column.
+
+Validation: 29/29 local checks. Swift/model checks cover copied choices, boundary
+repeats, NUL rejection, committed module/key refresh, invalid choice and unchanged
+Bible/draft/history. Temporary GUI checks confirmed all nine rows including six
+repeated N-NSM entries, selected CAFÉ and the final repeated row with correct
+original definitions, and closed the column while John3:16, unfinished John4:2
+and disabled histories stayed intact. Visual checks confirmed controls fit
+without truncated labels. No GitHub builds or installed-data changes. Next:
+Unicode click normalization, hover/pinning, compatible persistence and complete
+pane composition. No full feature acceptance/file retirement; about 6% (4–8%).

@@ -62,6 +62,7 @@ struct RenderedLexicalEntry: Sendable {
     let module: String, type: String, value: String, passage: String, sourceReference: String
     let entry: RenderedDictionaryEntry
 }
+struct DictionaryChoices: Sendable, Equatable { let module: String; let key: String; let keys: [String] }
 struct RenderedDictionaryEntry: Sendable { let module: String; let key: String; let html: String }
 struct RenderedReferenceList: Sendable {
     let module: String

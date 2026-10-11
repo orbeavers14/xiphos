@@ -39,6 +39,11 @@ import Foundation
         _ = try await worker.navigateDictionaryHistory(tab: first, direction: 1)
         try await worker.clearDictionaryHistory(tab: first)
         guard try await worker.dictionaryHistory(tab: first).entries.isEmpty else { fatalError("Swift dictionary history clear") }
+        let choices = try await worker.dictionaryChoices(tab: first, module: "DictionaryOne", key: "ALPHA")
+        guard choices.module == "DictionaryOne", choices.key == "ALPHA", choices.keys.count == 9,
+              Set(choices.keys).count < choices.keys.count else { fatalError("Swift copied nearby keys retain boundary repeats") }
+        do { _ = try await worker.dictionaryChoices(tab: first, module: "DictionaryOne", key: "alpha\0ignored"); fatalError("chooser NUL key accepted") }
+        catch is CoreError { }
         let history = try await worker.history(first)
         guard history.count == 0 else { fatalError("dictionary preview changed history") }
         try await worker.closeTab(first)
@@ -47,7 +52,7 @@ import Foundation
         do { _ = try await worker.readDictionary(tab: first, module: "DictionaryOne", key: "alpha"); fatalError("closed dictionary tab accepted") }
         catch is CoreError { }
         try await worker.closeTab(second); await worker.shutdown()
-        guard copiedHistory.entries[1].key == "café", unicode.html.contains("café"), red.html.contains("wordsOfJesus") else { fatalError("copied dictionary values after shutdown") }
+        guard choices.keys.count == 9, copiedHistory.entries[1].key == "café", unicode.html.contains("café"), red.html.contains("wordsOfJesus") else { fatalError("copied dictionary values after shutdown") }
         print("Swift dictionary adapter checks passed")
     }
 }

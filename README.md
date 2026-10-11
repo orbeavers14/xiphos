@@ -23,7 +23,8 @@ The shared core and macOS preview now cover module/verse/chapter reading,
 Bible history, scoped reading options, engine-preference import/save and
 note/reference-list previews. Dictionary work includes characterized lexical
 selection, native preferences and click results, direct lookup, key steps and
-shared separate history commands and native dictionary Back/Forward/Clear.
+shared separate history commands, native dictionary Back/Forward/Clear and a
+nearby-key chooser.
 Hover, pinning, click normalization and full established pane composition remain
 in progress.
 
