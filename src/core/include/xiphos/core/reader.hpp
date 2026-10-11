@@ -20,6 +20,7 @@ struct Module {
 };
 
 
+struct DictionaryChoices { std::string module, key; std::vector<std::string> keys; };
 class Reader {
 public:
   // Empty root uses SWORD's standard discovery. Explicit root disables home
@@ -46,6 +47,7 @@ public:
   DictionaryEntry read_dictionary(const std::string &module, const std::string &key);
   DictionaryEntry read_dictionary(const std::string &module, const std::string &key, const EngineOptions &options);
   // One SDK key step; direction is -1 (previous) or +1 (next).
+  DictionaryChoices dictionary_choices(const std::string &module, const std::string &key);
   DictionaryEntry navigate_dictionary(const std::string &module, const std::string &key, int direction);
   DictionaryEntry navigate_dictionary(const std::string &module, const std::string &key, int direction, const EngineOptions &options);
   Entry read(const std::string &module, const std::string &reference);

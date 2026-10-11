@@ -146,6 +146,19 @@ DictionaryEntry Reader::read_dictionary(const std::string &module, const std::st
 DictionaryEntry Reader::read_dictionary(const std::string &module, const std::string &key, const EngineOptions &options) {
   return dictionary_impl(module, key, &options);
 }
+DictionaryChoices Reader::dictionary_choices(const std::string &id, const std::string &key) {
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  if (id.empty() || key.empty() || id.find('\0') != std::string::npos || key.find('\0') != std::string::npos)
+    throw std::invalid_argument("Dictionary module/key is empty or contains NUL");
+  auto *module = impl_->manager->getModule(id.c_str());
+  if (!module) throw std::out_of_range("Module is not installed");
+  if (!dynamic_cast<sword::SWLD *>(module)) throw std::invalid_argument("Module is not a dictionary");
+  const std::string saved = module->getKeyText();
+  struct Restore { sword::SWModule &module; const std::string &key; ~Restore() { module.setKey(key.c_str()); } } restore{*module, saved};
+  module->setKey(key.c_str());
+  const std::string resolved = module->getKeyText();
+  return {id, resolved, dictionary_nearby_keys(*module)};
+}
 DictionaryEntry Reader::navigate_dictionary(const std::string &module, const std::string &key, int direction) {
   if (direction != -1 && direction != 1) throw std::invalid_argument("Invalid dictionary direction");
   return dictionary_impl(module, key, nullptr, direction);

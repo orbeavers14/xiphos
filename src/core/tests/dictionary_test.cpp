@@ -33,15 +33,39 @@ struct Widgets { Entry *entry_dict = &entry; } widgets;
 struct Backend {
   sword::SWMgr *manager = nullptr; sword::SWModule *display_mod = nullptr;
   void set_module_key(const char *id, const char *key) { display_mod=manager->getModule(id); display_mod->setKey(key); }
+  char *get_module_key() { const auto *text=display_mod->getKeyText(); auto *copy=static_cast<char *>(std::malloc(std::strlen(text)+1)); std::strcpy(copy,text); return copy; }
 } instance;
 Backend *backend = &instance;
 gchar *g_strdup(const char *value) { auto *copy=static_cast<gchar *>(std::malloc(std::strlen(value)+1)); std::strcpy(copy,value); return copy; }
 void g_free(void *value) { std::free(value); }
 void gtk_entry_set_text(Entry *target,const char *value) { target->text=value; }
 void gtk_widget_activate(Entry *target) { ++target->activations; target->html=render_entry(*backend->display_mod,target->text.c_str()); }
+struct GtkWidget { std::string label, action_key; std::vector<std::unique_ptr<GtkWidget>> children; };
+GtkWidget *gtk_menu_new() { return new GtkWidget; }
+GtkWidget *gtk_menu_item_new_with_label(const char *text) { auto *item=new GtkWidget; item->label=text; return item; }
+void gtk_widget_show(GtkWidget *) {}
+void gtk_container_add(GtkWidget *menu,GtkWidget *item) { menu->children.emplace_back(item); }
+void g_signal_connect(GtkWidget *item,const char *,void *,char *key) { item->action_key=key; std::free(key); }
+const char *gtk_entry_get_text(Entry *target) { return target->text.c_str(); }
+std::string configured_module="DictionaryOne", configured_key;
+void xml_set_value(const char *,const char *,const char *name,const char *value) { if (!std::strcmp(name,"dict")) configured_module=value; else if (!std::strcmp(name,"dictionary")) configured_key=value; }
+char *xml_get_value(const char *group,const char *) { return const_cast<char *>((!std::strcmp(group,"modules")?configured_module:configured_key).c_str()); }
+void main_check_unlock(const char *,bool) {}
+void ignore_log(const char *,...) {}
 #define GTK_ENTRY(value) (value)
+#define GTK_CONTAINER(value) (value)
+#define G_OBJECT(value) (value)
+#define G_CALLBACK(value) nullptr
+#define XI_message(message) ignore_log message
+#define TRUE true
 #include "legacy_dictionary_adapter.inc"
+#include "legacy_dictionary_choices_actual.inc"
 #undef GTK_ENTRY
+#undef GTK_CONTAINER
+#undef G_OBJECT
+#undef G_CALLBACK
+#undef XI_message
+#undef TRUE
 }
 int main(int argc, char **argv) {
   try {
@@ -77,6 +101,7 @@ int main(int argc, char **argv) {
     const std::vector<std::string> keys = {"alpha", "ALPHA", "café", "G03056", "G3056", "between", "zzzz"};
     std::string plainWord, redWord;
     std::map<std::pair<std::string,int>,DictionaryEntry> adjacent;
+    std::map<std::string,std::vector<std::string>> nearby;
     std::map<std::string,unsigned> expectedRoles;
     std::map<std::string,bool> expectedDictionary;
     {
@@ -109,6 +134,12 @@ int main(int argc, char **argv) {
         const auto html = render_entry(*module, target.c_str());
         adjacent.emplace(std::make_pair(key,direction),DictionaryEntry{"DictionaryOne",module->getKeyText(),html});
       }
+      for (const auto &key : keys) {
+        (void)render_entry(*module,key.c_str());
+        for (int i=0;i<5;++i) (*module)--;
+        auto &values=nearby[key];
+        for (int i=0;i<9;++i) { (*module)++; values.emplace_back(module->getKeyText()); }
+      }
       actual_legacy_dictionary::instance.manager=&legacy;
       for (const auto &item : adjacent) {
         actual_legacy_dictionary::settings.dictkey=item.first.first.c_str();
@@ -116,6 +147,15 @@ int main(int argc, char **argv) {
         actual_legacy_dictionary::main_dictionary_button_clicked(item.first.second==-1?0:1);
         check(actual_legacy_dictionary::entry.text==item.second.key && actual_legacy_dictionary::entry.html==item.second.html &&
           actual_legacy_dictionary::entry.activations==before+1,"actual legacy key adapter equals frozen SDK sequence");
+      }
+      for (const auto &key : keys) {
+        actual_legacy_dictionary::entry.text=key;
+        std::unique_ptr<actual_legacy_dictionary::GtkWidget> menu(actual_legacy_dictionary::main_dictionary_drop_down_new(
+          const_cast<char *>("DictionaryOne"),const_cast<char *>(key.c_str())));
+        check(menu && menu->children.size()==9,"actual dictionary chooser retains nine entries");
+        for (std::size_t i=0;i<menu->children.size();++i)
+          check(menu->children[i]->label==nearby.at(key)[i] && menu->children[i]->action_key==nearby.at(key)[i],
+            "actual legacy chooser labels/actions equal frozen SDK order including repeats");
       }
       const auto activations=actual_legacy_dictionary::entry.activations;
       actual_legacy_dictionary::settings.havedict=false;
@@ -138,6 +178,10 @@ int main(int argc, char **argv) {
         const auto result = reader.read_dictionary("DictionaryOne", key);
         check(result.module == "DictionaryOne" && result.key == expected.at(key).key && result.html == expected.at(key).html,
               "dictionary key/render behavior equals direct legacy SDK calls");
+      }
+      for (const auto &key : keys) {
+        const auto choices=reader.dictionary_choices("DictionaryOne",key);
+        check(choices.module=="DictionaryOne" && choices.keys==nearby.at(key),"owned core dictionary chooser equals frozen/actual order");
       }
       for (const auto &item : adjacent) {
         const auto result = reader.navigate_dictionary("DictionaryOne",item.first.first,item.first.second);
@@ -184,6 +228,8 @@ int main(int argc, char **argv) {
       std::string key = "alpha"; accepted = worker.read_dictionary(tab, "DictionaryOne", key); key.clear();
       bool rejected = false; try { (void)worker.read_dictionary(tab, "Missing", "alpha").get(); } catch (const std::out_of_range &) { rejected = true; }
       check(rejected && worker.history(tab).get().entries.empty(), "dictionary worker error preserves history and queue");
+      const auto choices=worker.dictionary_choices(tab,"DictionaryOne","alpha").get();
+      check(choices.keys==nearby.at("alpha") && worker.dictionary_history(tab).get().entries.empty(),"worker chooser has no history side effect");
       const auto navigation=worker.navigate_dictionary(tab,"DictionaryOne","alpha",1).get();
       check(navigation.key==adjacent.at({"alpha",1}).key && worker.history(tab).get().entries.empty(),
         "worker dictionary navigation returns copied result without Bible visit");
@@ -202,6 +248,7 @@ int main(int argc, char **argv) {
             !xc_module_is_dictionary(nullptr,0) && !xc_module_lexicon_roles(nullptr,0),"C synchronous metadata bounds"); xc_close(reader);
     }
     xc_dictionary_entry *retained = nullptr;
+    xc_dictionary_choices *retainedChoices = nullptr;
     xc_request *acceptedRequest = nullptr;
     {
       xc_worker *worker = nullptr; xc_request *request = nullptr;
@@ -236,6 +283,13 @@ int main(int argc, char **argv) {
       xc_request_release(request); xc_dictionary_entry_release(navigated);
       check(xc_worker_navigate_dictionary(worker,tab,"DictionaryOne","alpha",0,&request)==XC_INVALID_ARGUMENT && !request,
         "C dictionary navigation invalid direction prequeue");
+      check(xc_worker_dictionary_choices(worker,tab,"DictionaryOne","alpha",&request)==XC_OK && wait(request)==XC_OK,"C dictionary chooser");
+      auto *choices=xc_request_take_dictionary_choices(request);
+      check(choices && !xc_request_take_dictionary_choices(request) && xc_dictionary_choices_count(choices)==9 &&
+        std::string(xc_dictionary_choices_module(choices))=="DictionaryOne" && !xc_dictionary_choices_at(choices,9) &&
+        !xc_dictionary_choices_module(nullptr) && !xc_dictionary_choices_count(nullptr),"C chooser owned kind/bounds");
+      for (std::size_t i=0;i<9;++i) check(std::string(xc_dictionary_choices_at(choices,i))==nearby.at("alpha")[i],"C copied chooser keys");
+      xc_request_release(request); retainedChoices=choices;
       for (const char *id : std::initializer_list<const char *>{nullptr, ""}) {
         check(xc_worker_read_dictionary(worker, tab, id, "alpha", &request) == XC_INVALID_ARGUMENT && !request, "C invalid dictionary module");
         check(xc_worker_read_dictionary(worker, tab, "DictionaryOne", id, &request) == XC_INVALID_ARGUMENT && !request, "C invalid dictionary key");
@@ -252,8 +306,12 @@ int main(int argc, char **argv) {
       check(xc_worker_close_tab(worker, tab, &request) == XC_OK && wait(request) == XC_OK, "C dictionary close tab"); xc_request_release(request);
       check(xc_worker_read_dictionary(worker, tab, "DictionaryOne", "alpha", &request) == XC_OK && wait(request) == XC_INVALID_ARGUMENT,
             "C closed dictionary tab rejected"); xc_request_release(request);
+      check(xc_worker_dictionary_choices(worker,tab,"DictionaryOne","alpha",&request)==XC_OK && wait(request)==XC_INVALID_ARGUMENT,
+        "closed dictionary chooser tab rejected"); xc_request_release(request);
       xc_worker_close(worker);
     }
+    check(std::string(xc_dictionary_choices_at(retainedChoices,0))==nearby.at("alpha")[0],"C chooser snapshot survives worker/request teardown");
+    xc_dictionary_choices_release(retainedChoices);
     check(wait(acceptedRequest) == XC_OK, "C accepted dictionary observed after worker close");
     auto *afterClose = xc_request_take_dictionary_entry(acceptedRequest); xc_request_release(acceptedRequest);
     check(afterClose && std::string(xc_dictionary_entry_html(afterClose)).find("café") != std::string::npos &&

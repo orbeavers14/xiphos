@@ -1770,3 +1770,21 @@ stayed intact. Bible Back/Forward remained disabled. No GitHub builds or
 installed-data changes. Next: Unicode click normalization, nearby-key chooser,
 hover/pinning, compatible persistence and established pane composition. No full
 feature acceptance/file retirement; about 6% (4–8%).
+
+
+## Shared nearby dictionary chooser: locally checked, native menu next
+
+Implemented 2026-10-11 on `modernization/shared-dictionary-choices`. The shared
+C++11 nine-key sequence replaces inline legacy key traversal while retaining
+menu label/action ownership and ordering. Reader/worker/C return owned choices,
+validate dictionary type/open tab, preserve prior dictionary key text and avoid
+history visits. Boundary repeats remain intact.
+
+Validation: 29/29 local checks, then focused ownership/closed-tab assertions.
+Seven starting keys compare all 63 actual legacy labels/actions and core values
+with a frozen SDK sequence. Address/undefined and thread checks each passed 1/1;
+strict C++11/C++17/C11 and the native-disabled subset passed. C bounds/take-once
+and post-teardown snapshots are checked. Full GTK GUI runtime remains pending;
+SWORD is uninstrumented. No GitHub builds. Next: copied Swift choices and native
+menu, followed by normalization, hover/pinning/persistence/composition. No full
+acceptance or file retirement; about 6%.

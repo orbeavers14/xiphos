@@ -11,6 +11,7 @@ extern "C" {
 typedef struct xc_reader xc_reader;
 typedef struct xc_entry xc_entry;
 typedef struct xc_note xc_note;
+typedef struct xc_dictionary_choices xc_dictionary_choices;
 typedef struct xc_dictionary_history xc_dictionary_history;
 typedef struct xc_dictionary_entry xc_dictionary_entry;
 typedef struct xc_lexical_entry xc_lexical_entry;
@@ -130,6 +131,15 @@ xc_status xc_worker_lexicon_preferences(xc_worker *worker, uint64_t tab, xc_requ
 /* Explicit lexical visit records selected module/raw value after rendering. */
 xc_status xc_worker_visit_lexical(xc_worker *worker, uint64_t tab, const char *module, const char *reference, const char *uri, int origin, xc_request **out);
 xc_status xc_worker_read_lexical(xc_worker *worker, uint64_t tab, const char *module, const char *reference, const char *uri, int origin, xc_request **out);
+/* Copied nine-key chooser, preserving order/repeats at SDK boundaries. No visit.
+ * Requires an open tab; preserves the Reader's dictionary key text. */
+xc_status xc_worker_dictionary_choices(xc_worker *worker, uint64_t tab, const char *module, const char *key, xc_request **out);
+xc_dictionary_choices *xc_request_take_dictionary_choices(xc_request *request);
+const char *xc_dictionary_choices_module(const xc_dictionary_choices *choices);
+const char *xc_dictionary_choices_key(const xc_dictionary_choices *choices);
+size_t xc_dictionary_choices_count(const xc_dictionary_choices *choices);
+const char *xc_dictionary_choices_at(const xc_dictionary_choices *choices, size_t index);
+void xc_dictionary_choices_release(xc_dictionary_choices *choices);
 /* Explicit dictionary visit records requested module/key after successful read.
  * No case normalization/Bible visit. History navigation commits after rendering.
  * Existing preview and key-step requests do not record dictionary history. */

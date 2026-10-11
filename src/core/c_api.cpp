@@ -18,6 +18,7 @@ struct xc_link { xiphos::core::PassageLink value; };
 struct xc_reference_list { xiphos::core::ReferenceList value; };
 struct xc_lexicons { std::optional<xiphos::core::LexiconPreferences> value; };
 struct xc_lexical_entry { xiphos::core::LexicalEntry value; };
+struct xc_dictionary_choices { xiphos::core::DictionaryChoices value; };
 struct xc_dictionary_history { xiphos::core::DictionaryHistorySnapshot value; };
 struct xc_dictionary_entry { xiphos::core::DictionaryEntry value; };
 struct xc_note { xiphos::core::StudyNote value; };
@@ -31,6 +32,7 @@ struct xc_request {
   bool options_result = false;
   std::optional<xiphos::core::EngineOptions> options;
   std::unique_ptr<xc_reference_list> references;
+  std::unique_ptr<xc_dictionary_choices> dictionary_choices;
   std::unique_ptr<xc_dictionary_history> dictionary_history;
   std::unique_ptr<xc_dictionary_entry> dictionary;
   std::unique_ptr<xc_lexical_entry> lexical;
@@ -51,6 +53,7 @@ struct xc_request {
   void store(xiphos::core::ReferenceList v) { references = std::make_unique<xc_reference_list>(xc_reference_list{std::move(v)}); }
   void store(std::optional<xiphos::core::LexiconPreferences> v) { lexicons = std::make_unique<xc_lexicons>(xc_lexicons{std::move(v)}); }
   void store(xiphos::core::LexicalEntry v) { lexical = std::make_unique<xc_lexical_entry>(xc_lexical_entry{std::move(v)}); }
+  void store(xiphos::core::DictionaryChoices v) { dictionary_choices = std::make_unique<xc_dictionary_choices>(xc_dictionary_choices{std::move(v)}); }
   void store(xiphos::core::DictionaryHistorySnapshot v) { dictionary_history = std::make_unique<xc_dictionary_history>(xc_dictionary_history{std::move(v)}); }
   void store(xiphos::core::DictionaryEntry v) { dictionary = std::make_unique<xc_dictionary_entry>(xc_dictionary_entry{std::move(v)}); }
   void store(xiphos::core::StudyNote v) { note = std::make_unique<xc_note>(xc_note{std::move(v)}); }
@@ -283,6 +286,16 @@ xc_status xc_worker_read_lexical(xc_worker *w, uint64_t tab, const char *module,
   }
   return queue_request(w, out, [=](auto &worker) { return worker.read_lexical(tab, module ? module : "", reference ? reference : "", uri, origin); });
 }
+xc_status xc_worker_dictionary_choices(xc_worker *w, uint64_t tab, const char *id, const char *key, xc_request **out) {
+  if (!id || !*id || !key || !*key) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.dictionary_choices(tab, id, key); });
+}
+xc_dictionary_choices *xc_request_take_dictionary_choices(xc_request *r) { return r && r->status == XC_OK ? r->dictionary_choices.release() : nullptr; }
+const char *xc_dictionary_choices_module(const xc_dictionary_choices *c) { return c ? c->value.module.c_str() : nullptr; }
+const char *xc_dictionary_choices_key(const xc_dictionary_choices *c) { return c ? c->value.key.c_str() : nullptr; }
+size_t xc_dictionary_choices_count(const xc_dictionary_choices *c) { return c ? c->value.keys.size() : 0; }
+const char *xc_dictionary_choices_at(const xc_dictionary_choices *c, size_t i) { return c && i < c->value.keys.size() ? c->value.keys[i].c_str() : nullptr; }
+void xc_dictionary_choices_release(xc_dictionary_choices *c) { delete c; }
 xc_status xc_worker_visit_dictionary(xc_worker *w, uint64_t tab, const char *id, const char *key, xc_request **out) {
   if (!id || !*id || !key || !*key) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.visit_dictionary(tab, id, key); });
