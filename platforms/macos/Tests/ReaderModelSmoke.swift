@@ -96,6 +96,10 @@ struct ReaderModelSmoke {
         first.setReadingOption(.hebrewVowels, enabled: false)
         first.setReadingOption(.hebrewCantillation, enabled: false)
         first.selectVariant(.all)
+        first.setReadingOption(.lemmas, enabled: true)
+        first.setReadingOption(.transliteratedForms, enabled: true)
+        first.setReadingOption(.glosses, enabled: false)
+        first.setReadingOption(.morphemeSegmentation, enabled: true)
         first.setReadingOption([.strongs, .footnotes], enabled: false)
         guard !first.isBusy, first.engineOptions == undeclaredOptions else { fatalError("undeclared/multiple control flags rejected") }
         first.showChapter = false
@@ -168,6 +172,32 @@ struct ReaderModelSmoke {
         guard second.engineOptions?.contains(.variantsSecondary) == true, second.html.contains("Original secondary reading"),
               !second.html.contains("Original primary reading") else { fatalError("native variant save/reload") }
         first.showChapter = true; first.refreshDisplay(); try await idle(first)
+        first.showChapter = false; first.reference = "John 3:23"; first.read(); try await idle(first)
+        second.reference = "John 3:23"; second.read(); try await idle(second)
+        let annotationFlags: [EngineOptionFlags] = [.lemmas, .transliteratedForms, .glosses, .morphemeSegmentation]
+        for flag in annotationFlags {
+            first.setReadingOption(flag, enabled: false); try await idle(first)
+            second.setReadingOption(flag, enabled: false); try await idle(second)
+        }
+        let plainAnnotations = first.html, secondAnnotations = second.html
+        let annotationBack = first.canBack, annotationForward = first.canForward
+        first.reference = "John 4:2"
+        for flag in annotationFlags {
+            first.setReadingOption(flag, enabled: true); try await idle(first)
+            guard first.html != plainAnnotations, second.html == secondAnnotations,
+                  first.reference == "John 4:2", first.canBack == annotationBack, first.canForward == annotationForward else { fatalError("annotation option refresh/isolation/history") }
+            first.setReadingOption(flag, enabled: false); try await idle(first)
+            guard first.html == plainAnnotations else { fatalError("annotation control restores engine output") }
+        }
+        for flag in annotationFlags { first.setReadingOption(flag, enabled: true); try await idle(first) }
+        guard first.html.contains("fixtureLemma"), first.html.contains("fixtureXlit"), first.html.contains("fixtureGloss"),
+              first.html.contains("<span class=\"morph\">first</span>") else { fatalError("all annotation controls affect real output") }
+        first.showChapter = true; first.refreshDisplay(); try await idle(first)
+        guard first.renderedAnchor == "verse-23", first.html.contains("fixtureGloss"), first.reference == "John 4:2" else { fatalError("annotation chapter refresh") }
+        first.saveReadingOptions(path: saveURL.path); try await idle(first)
+        second.importReadingOptions(path: saveURL.path); try await idle(second)
+        guard second.html.contains("fixtureLemma"), second.html.contains("fixtureXlit"), second.html.contains("fixtureGloss"),
+              second.engineOptions == first.engineOptions else { fatalError("annotation save/reload") }
         let noteURI = "xiphos-preview://study/passagestudy.jsp?action=showNote&type=n&value=1&module=OptionOther&passage=John+3%3A19"
         let beforeNoteHTML = first.html, beforeNoteDraft = first.reference
         let beforeNoteBack = first.canBack, beforeNoteForward = first.canForward

@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
     std::filesystem::create_directories(root / "other-data");
     std::filesystem::copy(root / "data", root / "other-data", std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
     { std::ofstream output(root / "mods.d/other.conf"); output << config
-        << "GlobalOptionFilter=UTF8GreekAccents\nGlobalOptionFilter=OSISScripref\nGlobalOptionFilter=UTF8HebrewPoints\nGlobalOptionFilter=UTF8Cantillation\nGlobalOptionFilter=OSISVariants\n"; }
+        << "GlobalOptionFilter=UTF8GreekAccents\nGlobalOptionFilter=OSISScripref\nGlobalOptionFilter=UTF8HebrewPoints\nGlobalOptionFilter=UTF8Cantillation\nGlobalOptionFilter=OSISVariants\nGlobalOptionFilter=OSISLemma\nGlobalOptionFilter=OSISXlit\nGlobalOptionFilter=OSISGlosses\nGlobalOptionFilter=OSISMorphSegmentation\n"; }
     {
       sword::RawText writer((root / "other-data").string().c_str());
       writer.setKey("John 3:18");
@@ -48,6 +48,12 @@ int main(int argc, char **argv) {
                       "<w lemma=\"strong:G3056\">word</w></note></verse>");
       // OSIS variant markup follows CrossWire's OSISVariants filter documentation:
       // https://www.crosswire.org/sword/apiref/classOSISVariants.html
+      writer.setKey("John 3:23");
+      writer.setEntry("<verse osisID=\"John.3.23\">"
+                      "<w lemma=\"lemma.fixture:fixtureLemma\">originalLemmaWord</w> "
+                      "<w xlit=\"x-fixture:fixtureXlit\">originalXlitWord</w> "
+                      "<w gloss=\"x-fixture:fixtureGloss\">originalGlossWord</w> "
+                      "<w><seg type=\"morph\">first</seg><seg type=\"morph\">second</seg></w></verse>");
       writer.setKey("John 3:22");
       writer.setEntry("<verse osisID=\"John.3.22\">Original shared text. "
                       "<seg type=\"x-variant\" subType=\"x-1\">Original primary reading.</seg> "
@@ -68,6 +74,7 @@ int main(int argc, char **argv) {
     EngineOptions on, off;
     on.words_in_red = on.strongs = on.morphs = on.footnotes = true;
     const auto defaults = engine_options_from_preferences({});
+    std::array<std::string, 16> annotation_output;
     std::array<std::string, 4> hebrew_output;
     std::array<std::string, 4> language_reference_output;
     {
@@ -88,6 +95,15 @@ int main(int argc, char **argv) {
       }
       check(hebrew_output[3].find("שָׁל֑וֹם") != std::string::npos && hebrew_output[0].find("שׁלום") != std::string::npos &&
             hebrew_output[1] != hebrew_output[3] && hebrew_output[2] != hebrew_output[3], "both Hebrew filters change actual output");
+      for (unsigned bits = 0; bits < annotation_output.size(); ++bits) {
+        baseline.setGlobalOption("Lemmas", bits & 1 ? "On" : "Off");
+        baseline.setGlobalOption("Transliterated Forms", bits & 2 ? "On" : "Off");
+        baseline.setGlobalOption("Glosses", bits & 4 ? "On" : "Off");
+        baseline.setGlobalOption("Morpheme Segmentation", bits & 8 ? "On" : "Off");
+        annotation_output[bits] = render_entry(*module, "John3:23");
+      }
+      for (unsigned bit = 0; bit < 4; ++bit)
+        check(annotation_output[0] != annotation_output[1u << bit], "each annotation filter changes actual output");
       check(language_reference_output[3].find("λόγος") != std::string::npos &&
             language_reference_output[0].find("λογος") != std::string::npos &&
             language_reference_output[1] != language_reference_output[3], "both filters change actual rendered output");
@@ -105,6 +121,12 @@ int main(int argc, char **argv) {
         options.hebrewpoints = bits & 1; options.hebrewcant = bits & 2;
         check(reader.read("OptionOther", "John 3:21", options).html == hebrew_output[bits],
               "all Hebrew filter combinations match direct legacy calls");
+      }
+      for (unsigned bits = 0; bits < annotation_output.size(); ++bits) {
+        auto options = defaults; options.lemmas = bits & 1; options.xlit = bits & 2;
+        options.glosses = bits & 4; options.morphseg = bits & 8;
+        check(reader.read("OptionOther", "John3:23", options).html == annotation_output[bits],
+              "all annotation combinations equal direct legacy calls");
       }
       const auto expected_on = reader.read("OptionTest", "John 3:16", on).html;
       const auto expected_off = reader.read("OptionTest", "John 3:16", off).html;
