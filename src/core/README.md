@@ -224,3 +224,13 @@ Feature entry (GreekDef/HebrewDef/GreekParse/HebrewParse). It does not union all
 Feature entries or promise effective lookup compatibility. Both synchronous
 and worker Swift adapters expose the same copied values. Native selection
 controls can use these flags without accessing SWORD or duplicating matching.
+
+
+The contextual worker dispatcher now returns a fourth owned result kind,
+LexicalEntry, for Strong's/morphology commands after tab lexicons are explicitly
+configured. It uses the same query parsing, selection and preview service;
+source-reference and no-Bible-history rules are retained. The C request exposes
+this kind through take_lexical_entry alongside existing takes. Older study_link
+and resolve_study_link APIs retain their two-kind contract. Swift contextual
+dispatch/pane presentation is the next integration step; explicit readLexical
+already exposes copied values.

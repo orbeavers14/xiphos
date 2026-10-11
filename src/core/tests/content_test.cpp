@@ -97,11 +97,12 @@ int main() {
       bool rejected = false; try { (void)lexical_link(bad, "Current"); } catch (const std::invalid_argument &) { rejected = true; }
       require(rejected, "lexical command origin/escape/duplicate/action validation");
     }
-    // Existing dispatch remains unchanged until preferred dictionary policy is characterized.
-    bool lexicalDispatchRejected = false;
-    try { (void)contextual_study_link("passagestudy.jsp?action=showStrongs&type=Greek&value=03056", "Current"); }
-    catch (const std::invalid_argument &) { lexicalDispatchRejected = true; }
-    require(lexicalDispatchRejected, "lexical parser does not silently change existing native dispatch");
+    const auto lexicalDispatch = contextual_study_link("passagestudy.jsp?action=showStrongs&type=Greek&value=03056", "Current");
+    require(std::holds_alternative<LexicalLink>(lexicalDispatch) && std::get<LexicalLink>(lexicalDispatch).value == "03056", "contextual dispatch returns typed lexical commands");
+    bool legacyDispatchRejected = false;
+    try { (void)study_link("passagestudy.jsp?action=showStrongs&type=Greek&value=03056", "Current"); }
+    catch (const std::invalid_argument &) { legacyDispatchRejected = true; }
+    require(legacyDispatchRejected, "older two-kind command API retains its established contract");
     Chapter chapter;
     chapter.selected_verse = 2;
     chapter.verses = {{"A \"<&'", "<em>Original text</em>"}, {"B", ""}};

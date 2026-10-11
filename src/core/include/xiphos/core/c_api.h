@@ -104,8 +104,11 @@ xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_req
 /* Resolves an internal passage target or renders a note, without visiting.
  * After XC_OK take_link or take_note identifies the result kind. */
 /* Contextual showRef dispatch returns a reference list; passage URIs and notes
- * return their existing kinds. Source context/URI must be nonempty. No visit.
- * After XC_OK take_reference_list, take_link or take_note identifies the kind. */
+ * return their existing kinds. Strong's/morphology return an owned lexical
+ * preview after explicit tab lexicon configuration. Source context/URI must
+ * be nonempty for this contextual API. No Bible history visit.
+ * After XC_OK take_reference_list, take_link, take_note or take_lexical_entry
+ * identifies the kind. Older resolve_study_link retains its two-kind contract. */
 xc_status xc_worker_resolve_study_link_at(xc_worker *worker, uint64_t tab, const char *current_module, const char *current_reference, const char *uri, xc_request **out);
 xc_status xc_worker_resolve_study_link(xc_worker *worker, uint64_t tab, const char *current_module, const char *uri, xc_request **out);
 xc_status xc_worker_study_note_link(xc_worker *worker, uint64_t tab, const char *current_module, const char *uri, xc_request **out);
