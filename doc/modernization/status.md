@@ -1106,3 +1106,25 @@ uninstrumented); C11/C++17 warnings-as-errors checks passed.
 
 Next: native referenced-passage preview and visible cross-reference workflow.
 No GitHub build dispatched, accepted parity group or legacy file retirement.
+
+## macOS referenced-passage preview: locally checked
+
+Implemented 2026-10-11 on `modernization/macos-reference-list-preview`, based on
+the reference-list adapters. Show referenced passages renders the note's full
+reference list through the shared worker and settings policy. The lower study
+pane displays source context, count, empty results and range-limit/skipped
+notices. Back to note restores the body; Close clears both previews. Passage
+headings use existing shared navigation. No parser or SWORD policy moved into
+Swift.
+
+Validation: all 19 local tests passed. The native model checks single and
+range/duplicate lists, configured Strong's/Greek output, unchanged main pane,
+draft and history, separate windows, failed actions and late results after
+closing a window. A temporary GUI fixture visibly displayed five passages in
+order (including duplicate John 3:16 and Greek text), retained an unfinished
+John 4:2 draft, returned to the note, and navigated from a list heading with
+legacy history deduplication. No GitHub build was dispatched.
+
+Next: range/list links inside note bodies and remaining study interactions.
+Hover/pin, full visual parity and cross-platform acceptance remain pending.
+No feature group is officially accepted and no legacy file is retired.

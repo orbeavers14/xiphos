@@ -82,8 +82,8 @@ are still pending.
 Select Whole chapter to display all verse positions in the module's chapter.
 Previous/Next chapter use shared C++ navigation and participate in history.
 Clicking a verse number visits it through the shared session. Exact-ID single
-reference sword/bible links are supported; ranges, notes and other actions are
-pending and leave the pane unchanged.
+reference sword/bible links are supported; unsupported URI actions leave the
+pane unchanged. Generated study-note links are described below.
 The shared core supplies chapter fragments, selected-verse anchors and optional
 verse numbers/highlights. Display controls refresh the committed passage; the
 native web view scrolls to the selected verse with module scripts disabled.
@@ -122,7 +122,12 @@ and passage; Close dismisses it, and a successful passage refresh clears stale
 preview content. Links inside a note use that note's module as their fallback.
 Single scripture-reference links inside notes navigate through the core using
 the note's module, normal SWORD reference normalization and shared history.
-Hover/pin behavior, expanded cross-reference lists/ranges, Strong's/morphology
+Show referenced passages expands a note's reference list through the shared
+core, keeping order, duplicates, module settings and source context. It leaves
+the main passage, draft and history unchanged. Back to note restores the body;
+a passage heading navigates the main reader. Empty results and the existing
+2000-verse range limit are reported.
+Hover/pin behavior, range links inside note bodies, Strong's/morphology
 lookup, remaining option menus, full display-preference
 migration and visual/workflow parity remain pending.
 

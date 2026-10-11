@@ -27,6 +27,7 @@ final class ReaderModel: ObservableObject {
     @Published var canBack = false
     @Published var canForward = false
     @Published var isBusy = true
+    @Published private(set) var referencePreview: RenderedReferenceList?
     @Published private(set) var studyNote: RenderedStudyNote?
     @Published private(set) var engineOptions: EngineOptionFlags?
     @Published private(set) var moduleOptions = ModuleOptionInfo.unknown
@@ -118,6 +119,7 @@ final class ReaderModel: ObservableObject {
         let history = try await worker.history(tab)
         let options = try await worker.moduleEngineOptions(tab: tab, module: module)
         guard token == revision && !closed else { return }
+        referencePreview = nil
         studyNote = nil
         engineOptions = options
         moduleOptions = modules.first(where: { $0.id == module })?.options ?? .unknown
@@ -204,6 +206,7 @@ final class ReaderModel: ObservableObject {
             switch try await worker.resolveStudyLink(tab: tab, currentModule: module, uri: uri) {
             case .note(let note):
                 guard token == self.revision && !self.closed else { return }
+                self.referencePreview = nil
                 self.studyNote = note; self.message = ""
             case .passage(let target):
                 let entry = try await worker.visit(tab: tab, module: target.module, reference: target.reference)
@@ -211,7 +214,17 @@ final class ReaderModel: ObservableObject {
             }
         }
     }
-    func closeStudyNote() { studyNote = nil }
+    func showReferencedPassages() {
+        guard let note = studyNote, !note.referenceList.isEmpty, let worker, let tab else { return }
+        run { token in
+            let references = try await worker.readReferenceList(tab: tab, module: note.module,
+                expression: note.referenceList, context: note.reference)
+            guard token == self.revision && !self.closed else { return }
+            self.referencePreview = references; self.message = ""
+        }
+    }
+    func showStudyNoteBody() { referencePreview = nil }
+    func closeStudyNote() { referencePreview = nil; studyNote = nil }
     func clearHistory() {
         guard let worker, let tab else { return }
         run { token in
@@ -286,6 +299,7 @@ struct PassageView: NSViewRepresentable {
             <style>:root { color-scheme: light dark; } body { font: 18px Georgia, serif; line-height: 1.55; margin: 24px; }
             /* Existing Xiphos editor/template.h styles this SWORD class red. */
             span.wordsOfJesus { color: red; }
+            .xc-reference { margin-bottom: 20px; } .xc-reference header { font-weight: bold; }
             .xc-verse { scroll-margin-top: 12px; }
             .xc-verse.xc-current { background: Highlight; color: HighlightText; }
             .xc-verse sup { font-size: 0.7em; padding-right: 4px; }
@@ -365,13 +379,36 @@ struct ReaderWindow: View {
                 if let note = model.studyNote {
                     VStack(alignment: .leading, spacing: 0) {
                         HStack {
-                            Text(note.type == "crossReference" ? "Cross-reference" : "Study note").font(.headline)
+                            Text(model.referencePreview != nil ? "Referenced passages" : (note.type == "crossReference" ? "Cross-reference" : "Study note")).font(.headline)
                             Spacer()
                             Button("Close") { model.closeStudyNote() }.disabled(model.isBusy)
                         }.padding(8)
                         Text("\(note.module) • \(note.reference)").font(.caption).padding(.horizontal, 8)
-                        PassageView(html: note.html, anchor: nil, onScrollFailure: { model.message = $0 },
-                                    onLink: { model.followLink($0, currentModule: note.module) })
+                        if let references = model.referencePreview {
+                            HStack {
+                                Text("\(references.entries.count) passages").font(.caption)
+                                Spacer()
+                                Button("Back to note") { model.showStudyNoteBody() }.disabled(model.isBusy)
+                            }.padding(8)
+                            if references.limited {
+                                Text("Some ranges reached Xiphos's preview limit.").font(.caption).padding(.horizontal, 8)
+                            }
+                            if references.skipped > 0 {
+                                Text("\(references.skipped) references could not be resolved.").font(.caption).padding(.horizontal, 8)
+                            }
+                            if references.entries.isEmpty {
+                                Text("No referenced passages found.").foregroundStyle(.secondary).padding()
+                            } else {
+                                PassageView(html: references.html, anchor: nil, onScrollFailure: { model.message = $0 },
+                                            onLink: { model.followLink($0, currentModule: references.module) })
+                            }
+                        } else {
+                            if !note.referenceList.isEmpty {
+                                Button("Show referenced passages") { model.showReferencedPassages() }.disabled(model.isBusy).padding(8)
+                            }
+                            PassageView(html: note.html, anchor: nil, onScrollFailure: { model.message = $0 },
+                                        onLink: { model.followLink($0, currentModule: note.module) })
+                        }
                     }.frame(minHeight: 140, idealHeight: 220)
                 }
             }.frame(minWidth: 190, idealWidth: 230, maxWidth: 320)

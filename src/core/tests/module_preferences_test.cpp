@@ -46,6 +46,10 @@ int main(int argc, char **argv) {
       writer.setEntry("<verse osisID=\"John.3.19\">Other module entry."
                       "<note type=\"study\" n=\"b\">Original other note café <hi type=\"italic\">body</hi> "
                       "<w lemma=\"strong:G3056\">word</w></note></verse>");
+      writer.setKey("John 3:20");
+      writer.setEntry("<verse osisID=\"John.3.20\">Original range-reference fixture."
+                      "<note type=\"crossReference\" n=\"r\"><reference osisRef=\"John.3.16-John.3.19\">John 3:16–19</reference>; "
+                      "<reference osisRef=\"John.3.16\">John 3:16</reference></note></verse>");
     }
     // A copied SWORD catalog cache predates the new module configuration.
     std::filesystem::remove(root / "mods.d/modules-conf.cache");

@@ -135,17 +135,37 @@ struct ReaderModelSmoke {
         try await idle(first)
         guard first.studyNote?.type == "crossReference", first.studyNote?.referenceList.isEmpty == false,
               first.html == beforeNoteHTML, first.reference == beforeNoteDraft else { fatalError("cross-reference body preview metadata/context") }
-        first.followLink("xiphos-preview://study/passagestudy.jsp?action=showRef&type=scripRef&value=John.3.16&module=",
-                         currentModule: first.studyNote?.module)
+        first.showReferencedPassages()
+        guard first.isBusy else { fatalError("reference preview starts without blocking") }
         try await idle(first)
-        guard first.studyNote == nil, first.selection == "OptionOther", first.reference == "John 3:16",
+        guard let singlePreview = first.referencePreview, singlePreview.module == "OptionOther",
+              singlePreview.entries.count == 1, singlePreview.entries[0].reference == "John 3:16",
+              first.html == beforeNoteHTML, first.reference == beforeNoteDraft,
+              first.canBack == beforeNoteBack, first.canForward == beforeNoteForward,
+              second.referencePreview == nil else { fatalError("reference preview preserves pane/draft/history/window isolation") }
+        first.showStudyNoteBody()
+        guard first.referencePreview == nil, first.studyNote?.type == "crossReference" else { fatalError("return from references preserves note") }
+        first.followLink("xiphos-preview://study/passagestudy.jsp?action=showNote&type=x&value=1&module=OptionOther&passage=John+3%3A20")
+        try await idle(first)
+        first.showReferencedPassages(); try await idle(first)
+        guard let rangePreview = first.referencePreview, rangePreview.entries.count == 5,
+              rangePreview.entries[0].reference == "John 3:16", rangePreview.entries[3].reference == "John 3:19",
+              rangePreview.entries[4].reference == "John 3:16", rangePreview.entries[0].html.contains("3056"),
+              rangePreview.entries[2].html.contains("λόγος"), !rangePreview.limited,
+              first.html == beforeNoteHTML, first.reference == beforeNoteDraft else { fatalError("range/duplicate reference preview uses shared options and context") }
+        first.followLink("https://example.invalid"); try await idle(first)
+        guard first.referencePreview?.html == rangePreview.html, first.studyNote?.reference == "John 3:20" else { fatalError("failed preview link preserves reference list") }
+        first.followLink("xiphos-preview://study/passagestudy.jsp?action=showRef&type=scripRef&value=John.3.16&module=",
+                         currentModule: first.referencePreview?.module)
+        try await idle(first)
+        guard first.referencePreview == nil, first.studyNote == nil, first.selection == "OptionOther", first.reference == "John 3:16",
               first.renderedAnchor == "verse-16", !first.canBack, first.canForward else { fatalError("reference inside note visits source module with shared normalization/history") }
         // The original history deduplicates this already visited reference,
         // returning to its first position while retaining forward entries.
         first.followLink(noteURI); try await idle(first)
         let beforeCloseNoteHTML = first.html
         first.closeStudyNote()
-        guard first.studyNote == nil, first.html == beforeCloseNoteHTML else { fatalError("close note preserves reader") }
+        guard first.referencePreview == nil, first.studyNote == nil, first.html == beforeCloseNoteHTML else { fatalError("close note preserves reader") }
         first.followLink("xiphos-preview://study/passagestudy.jsp?action=showNote&type=n&value=1&module=OptionTest&passage=John+3%3A16")
         try await idle(first)
         guard first.studyNote?.module == "OptionTest", first.selection == "OptionOther" else { fatalError("note records source module independent of main pane") }
@@ -157,6 +177,12 @@ struct ReaderModelSmoke {
         first.followLink(noteURI)
         first.close(); try await Task.sleep(nanoseconds: 50_000_000)
         guard first.studyNote == nil else { fatalError("closed model does not publish note result") }
+        second.followLink("xiphos-preview://study/passagestudy.jsp?action=showNote&type=x&value=1&module=OptionOther&passage=John+3%3A20")
+        try await idle(second)
+        guard second.referencePreview == nil else { fatalError("second window has no prior reference preview") }
+        second.showReferencedPassages(); second.close()
+        try await Task.sleep(nanoseconds: 50_000_000)
+        guard second.referencePreview == nil else { fatalError("closed model does not publish reference preview") }
         first.close(); second.close(); await worker.shutdown()
         print("Native reading option model checks passed")
     }
