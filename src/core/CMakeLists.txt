@@ -82,7 +82,18 @@ target_link_libraries(xiphos_core PUBLIC Xiphos::CoreRender Xiphos::CoreHistory 
 set_target_properties(xiphos_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 if(BUILD_TESTING)
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../main/sword.cc")
+  file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../main/sword.cc" click_key_source)
+  string(FIND "${click_key_source}" "\n\t// old_key is uppercase\n" click_key_start)
+  string(FIND "${click_key_source}" "\n\told_key = gtk_entry_get_text" click_key_end)
+  if(click_key_start LESS 0 OR click_key_end LESS click_key_start)
+    message(FATAL_ERROR "Cannot extract legacy dictionary click-key adapter")
+  endif()
+  math(EXPR click_key_length "${click_key_end} - ${click_key_start}")
+  string(SUBSTRING "${click_key_source}" ${click_key_start} ${click_key_length} click_key_adapter)
+  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/legacy_dictionary_click_key_actual.inc" "${click_key_adapter}\n")
   add_executable(core_dictionary_key_test tests/dictionary_key_test.cpp)
+  target_include_directories(core_dictionary_key_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
   target_link_libraries(core_dictionary_key_test PRIVATE Xiphos::CoreRender)
   add_test(NAME core_dictionary_key COMMAND core_dictionary_key_test)
   # Compile the actual legacy adapter body into the characterization harness,

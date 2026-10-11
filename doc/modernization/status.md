@@ -47,7 +47,8 @@ No milestone has official acceptance yet.
 
 Current local suite: **30 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
-four local locales**; adoption by click paths is the next milestone.
+four local locales** including the actual adapted legacy casing block; native
+click adoption is the next milestone.
 The dictionary history value/legacy adapters
 also agree over **10,287 tested transitions**. Sanitizer and strict-language
 checks are scoped per ledger entry below; they do not instrument the SWORD SDK.
@@ -1832,3 +1833,22 @@ locale initialization, cross-version Unicode databases, distribution packaging
 and full GTK/platform runtime remain acceptance work. No GitHub builds, no
 installed-data changes or file retirement. Next: adopt the helper in main-pane
 legacy/native click commands while keeping hover and dialog behavior distinct.
+
+## Legacy dictionary click casing: locally checked
+
+Implemented 2026-10-11 on `modernization/dictionary-click-normalization`.
+The actual main dictionary display function now uses the shared C++11 casing
+helper. Its owned string survives entry activation/history/tab copies and
+releases on return, replacing the previously unreleased GLib allocation.
+Malformed UTF-8 now returns before entry/history publication; earlier module
+selection effects are retained. Devotional routing and dialog/hover paths are
+unchanged. This input rejection is an explicit safety correction for inputs
+outside GLib's documented UTF-8 precondition.
+
+Validation: 30/30 local checks. A source-extracted actual casing block matches
+the frozen call and shared helper across 4,448,324 comparisons/four local
+locales; its malformed-input guard, strict C++11 and address/undefined check
+(1/1) pass. Inspected downstream entry/history/tab setters copy the key.
+Full GTK runtime remains unavailable locally and pending. No GitHub builds or
+legacy file retirement. Next: native main-click normalization and origin-specific
+history, then hover/pinning/persistence and pane composition.
