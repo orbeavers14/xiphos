@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
     check(argc == 2, "fixture path required");
     const std::string path = argv[1];
     std::array<std::string, 4> expected;
-    std::string note_id, note_type, note_label, reference_id, reference_list;
+    std::string note_id, note_type, note_label, reference_id, reference_list, generated_reference_uri;
     {
       EngineManager legacy(path.c_str(), true, new sword::MarkupFilterMgr(sword::FMT_XHTML), false, false);
       auto *module = legacy.getModule("OptionOther");
@@ -65,6 +65,10 @@ int main(int argc, char **argv) {
       }
       const auto reference = reader.study_note("OptionOther", "John 3:18", reference_id);
       check(reference.reference_list == reference_list && !reference_list.empty(), "cross-reference list copied");
+      const auto reference_href = reference.html.find("href=\"");
+      check(reference_href != std::string::npos, "engine generates reference URI inside note");
+      const auto reference_end = reference.html.find('"', reference_href + 6);
+      generated_reference_uri = reference.html.substr(reference_href + 6, reference_end - reference_href - 6);
       owned = reader.study_note("OptionOther", "John 3:19", note_id);
       const auto before = reader.read("OptionOther", "John 3:19").html;
       bool missing = false;
@@ -113,6 +117,12 @@ int main(int argc, char **argv) {
       const auto resolvedPassage = worker.resolve_study_link(tab, "OptionOther", "sword:///John+3%3A18").get();
       check(std::holds_alternative<PassageLink>(resolvedPassage) && std::get<PassageLink>(resolvedPassage).module == "OptionOther" &&
             std::get<PassageLink>(resolvedPassage).reference == "John 3:18", "shared dispatch identifies passage without visiting");
+      const auto noteReference = worker.resolve_study_link(tab, "OptionOther", generated_reference_uri).get();
+      check(std::holds_alternative<PassageLink>(noteReference) && std::get<PassageLink>(noteReference).module == "OptionOther", "actual note reference URI resolves source fallback");
+      const auto &target = std::get<PassageLink>(noteReference);
+      const auto targetEntry = worker.read_entry(tab, target.module, target.reference).get();
+      check(targetEntry.reference == "John 3:16" && targetEntry.html.find("Original red-letter fixture") != std::string::npos,
+            "reference target normalized/rendered by module's SWORD key");
       bool wrong_type = false;
       auto wrong_uri = generated_note_uri;
       wrong_uri.replace(wrong_uri.find("type=n"), 6, "type=x");
@@ -160,6 +170,16 @@ int main(int argc, char **argv) {
       auto *resolved_link = xc_request_take_link(request);
       check(resolved_link && !xc_request_take_note(request) && std::string(xc_link_module(resolved_link)) == "OptionOther", "C dispatch passage result kind");
       xc_link_release(resolved_link); xc_request_release(request);
+      check(xc_worker_resolve_study_link(worker, tab, "OptionOther", generated_reference_uri.c_str(), &request) == XC_OK && wait(request) == XC_OK,
+            "C generated note reference URI dispatch");
+      auto *reference_link = xc_request_take_link(request); xc_request_release(request);
+      check(reference_link && std::string(xc_link_module(reference_link)) == "OptionOther", "C reference fallback source");
+      check(xc_worker_read_tab_entry(worker, tab, xc_link_module(reference_link), xc_link_reference(reference_link), &request) == XC_OK && wait(request) == XC_OK,
+            "C note reference renders target");
+      xc_link_release(reference_link);
+      auto *reference_entry = xc_request_take_entry(request); xc_request_release(request);
+      check(reference_entry && std::string(xc_entry_reference(reference_entry)) == "John 3:16", "C reference normalized by engine");
+      xc_entry_release(reference_entry);
       check(xc_worker_study_note_link(worker, tab, "OptionTest", generated_note_uri.c_str(), &request) == XC_OK && wait(request) == XC_OK,
             "C generated note URI resolves");
       auto *linked = xc_request_take_note(request); xc_request_release(request);

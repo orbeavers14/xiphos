@@ -42,6 +42,22 @@ int main() {
       try { study_note_link(std::string("passagestudy.jsp?") + bad, "Current"); } catch (const std::invalid_argument &) { rejected = true; }
       require(rejected, "malformed/unsupported note query rejected");
     }
+    const auto reference = study_link("xiphos-preview://study/passagestudy.jsp?action=showRef&type=scripRef&value=John.3.16&module=", "Current");
+    require(std::holds_alternative<PassageLink>(reference) && std::get<PassageLink>(reference).module == "Current" &&
+            std::get<PassageLink>(reference).reference == "John.3.16", "generated reference command defaults to note source module");
+    const auto explicitReference = study_link("xiphos.url?module=Other%26Greek&value=Ésaïe%203%3A1&type=scripRef&action=showRef", "Current");
+    require(std::get<PassageLink>(explicitReference).module == "Other&Greek" && std::get<PassageLink>(explicitReference).reference == "Ésaïe 3:1",
+            "reference explicit module/Unicode/parameter order");
+    require(std::holds_alternative<StudyNoteLink>(study_link("passagestudy.jsp?" + query, "Current")), "shared command dispatch retains notes");
+    require(std::holds_alternative<PassageLink>(study_link("sword:///John+3%3A16", "Current")), "shared command dispatch retains passage URIs");
+    for (const auto bad : {"action=showRef&type=wrong&value=John.3.16", "action=showRef&type=scripRef&value=",
+                          "action=showRef&type=scripRef&value=John.3.16-John.3.17", "action=showRef&type=scripRef&value=John.3.16,John.3.17",
+                          "action=showRef&type=scripRef&value=John.3.16&value=John.3.17", "action=showRef&type=scripRef&value=John.3.16&passage=John3:17",
+                          "action=showRef&type=scripRef&value=John%00", "action=showRef&type=scripRef&value=John%GG"}) {
+      bool rejected = false;
+      try { study_link(std::string("passagestudy.jsp?") + bad, "Current"); } catch (const std::invalid_argument &) { rejected = true; }
+      require(rejected, "invalid/ambiguous/range reference commands reject");
+    }
     Chapter chapter;
     chapter.selected_verse = 2;
     chapter.verses = {{"A \"<&'", "<em>Original text</em>"}, {"B", ""}};

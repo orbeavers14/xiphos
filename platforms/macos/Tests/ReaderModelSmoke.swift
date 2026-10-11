@@ -135,8 +135,17 @@ struct ReaderModelSmoke {
         try await idle(first)
         guard first.studyNote?.type == "crossReference", first.studyNote?.referenceList.isEmpty == false,
               first.html == beforeNoteHTML, first.reference == beforeNoteDraft else { fatalError("cross-reference body preview metadata/context") }
+        first.followLink("xiphos-preview://study/passagestudy.jsp?action=showRef&type=scripRef&value=John.3.16&module=",
+                         currentModule: first.studyNote?.module)
+        try await idle(first)
+        guard first.studyNote == nil, first.selection == "OptionOther", first.reference == "John 3:16",
+              first.renderedAnchor == "verse-16", !first.canBack, first.canForward else { fatalError("reference inside note visits source module with shared normalization/history") }
+        // The original history deduplicates this already visited reference,
+        // returning to its first position while retaining forward entries.
+        first.followLink(noteURI); try await idle(first)
+        let beforeCloseNoteHTML = first.html
         first.closeStudyNote()
-        guard first.studyNote == nil, first.html == beforeNoteHTML else { fatalError("close note preserves reader") }
+        guard first.studyNote == nil, first.html == beforeCloseNoteHTML else { fatalError("close note preserves reader") }
         first.followLink("xiphos-preview://study/passagestudy.jsp?action=showNote&type=n&value=1&module=OptionTest&passage=John+3%3A16")
         try await idle(first)
         guard first.studyNote?.module == "OptionTest", first.selection == "OptionOther" else { fatalError("note records source module independent of main pane") }
