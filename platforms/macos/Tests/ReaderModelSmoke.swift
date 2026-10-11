@@ -51,6 +51,28 @@ struct ReaderModelSmoke {
         guard first.engineOptions == unchanged?.subtracting(.footnotes) else { fatalError("footnotes control") }
         first.setReadingOption(.morphology, enabled: true); try await idle(first)
         guard first.engineOptions?.contains(.morphology) == true else { fatalError("morphology control") }
+        let importURL = URL(fileURLWithPath: root).appendingPathComponent("model-modops.conf")
+        let importBytes = Data("; Original model fixture\n[OptionOther]\nStrong's Numbers=On\nWords of Christ in Red=Off\nFootnotes=Off\nMorphological Tags=Off\n[OptionTest]\nStrong's Numbers=Off\nWords of Christ in Red=On\n".utf8)
+        try importBytes.write(to: importURL)
+        first.reference = "John 4:2"
+        let historyBack = first.canBack, historyForward = first.canForward
+        first.importReadingOptions(path: importURL.path); try await idle(first)
+        guard first.reference == "John 4:2", first.renderedAnchor == "verse-17",
+              first.engineOptions?.contains(.strongs) == true,
+              first.engineOptions?.contains(.wordsInRed) == false,
+              first.engineOptions?.contains(.footnotes) == false,
+              first.engineOptions?.contains(.morphology) == false,
+              first.canBack == historyBack, first.canForward == historyForward,
+              second.engineOptions == initial else { fatalError("model import preserves draft/history/window isolation") }
+        let importedHTML = first.html, importedOptions = first.engineOptions
+        first.importReadingOptions(path: importURL.path + ".missing"); try await idle(first)
+        guard first.html == importedHTML, first.engineOptions == importedOptions,
+              first.reference == "John 4:2", !first.message.isEmpty,
+              try Data(contentsOf: importURL) == importBytes else { fatalError("model import failure preserves settings/source") }
+        first.navigate(-1); try await idle(first)
+        guard first.selection == "OptionTest", first.engineOptions?.contains(.strongs) == false,
+              first.engineOptions?.contains(.wordsInRed) == true,
+              !first.html.contains("3056") else { fatalError("imported other module preference restoration") }
         first.close(); second.close(); await worker.shutdown()
         print("Native reading option model checks passed")
     }
