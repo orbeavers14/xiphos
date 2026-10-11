@@ -1193,3 +1193,25 @@ Next: remaining language/variant controls and Strong's/morphology interactions.
 Hover/pin, unknown-module fallback, full visual/workflow and platform acceptance
 remain pending. Estimated completion stays about 6% (4–8% provisional range);
 0/38 feature groups accepted, 0/3 native platforms release-ready.
+
+## macOS Hebrew reading controls: locally checked
+
+Implemented 2026-10-11 on `modernization/macos-hebrew-options`, based on
+contextual native links. Hebrew Vowel Points and Hebrew Cantillation controls
+bind the existing shared flags/settings and appear only for declared module
+filters. Refresh keeps the committed passage, unfinished draft and history.
+The original generated Hebrew fixture supplies all four option combinations.
+
+Validation: 19/19 local checks and 2/2 focused address/undefined checks passed;
+strict C++17 fixture compilation passed. All four core renders equal direct
+legacy SWORD setter/render calls. Native model checks undeclared rejection,
+window isolation, chapter output, draft/history preservation, save/reload and
+restoration. Temporary GUI checks confirmed original/cantillation-off/vowels-off
+text, preserved draft during vowel refresh, chapter output and hidden Hebrew
+controls for an undeclared module. The SDK retains the shin dot when vowel
+points are off; expected output follows the actual engine behavior. No GitHub
+build was dispatched.
+
+Next: variant-reading selection and remaining reading/display controls, then
+lexicon interactions. Full theme, hover/pin and platform acceptance remain
+pending; no feature sign-off or legacy retirement.

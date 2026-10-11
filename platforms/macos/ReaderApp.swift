@@ -171,7 +171,7 @@ final class ReaderModel: ObservableObject {
         }
     }
     func setReadingOption(_ flag: EngineOptionFlags, enabled: Bool) {
-        let supported: EngineOptionFlags = [.wordsInRed, .strongs, .morphology, .footnotes, .greekAccents, .crossReferences]
+        let supported: EngineOptionFlags = [.wordsInRed, .strongs, .morphology, .footnotes, .greekAccents, .crossReferences, .hebrewVowels, .hebrewCantillation]
         guard supported.contains(flag), flag.rawValue.nonzeroBitCount == 1,
               moduleOptions.declared.contains(flag), var options = engineOptions,
               let worker, let tab, let module = displayedModule, let entry = displayedEntry else { return }
@@ -452,8 +452,10 @@ struct ReaderWindow: View {
                         readingOption("Footnotes", flag: .footnotes)
                         readingOption("Cross-references", flag: .crossReferences)
                         readingOption("Greek Accents", flag: .greekAccents)
+                        readingOption("Hebrew Vowel Points", flag: .hebrewVowels)
+                        readingOption("Hebrew Cantillation", flag: .hebrewCantillation)
                     }.disabled(model.engineOptions == nil || model.moduleOptions.declared.intersection(
-                        [.wordsInRed, .strongs, .morphology, .footnotes, .greekAccents, .crossReferences]).isEmpty)
+                        [.wordsInRed, .strongs, .morphology, .footnotes, .greekAccents, .crossReferences, .hebrewVowels, .hebrewCantillation]).isEmpty)
                 }.padding(.horizontal, 12).padding(.bottom, 8).disabled(model.isBusy)
                 HStack {
                     Menu("Preferences") {

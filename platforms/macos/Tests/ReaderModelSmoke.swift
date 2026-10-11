@@ -93,6 +93,8 @@ struct ReaderModelSmoke {
         // neither queue a refresh nor mutate the current module's settings.
         let undeclaredOptions = first.engineOptions
         first.setReadingOption(.greekAccents, enabled: false)
+        first.setReadingOption(.hebrewVowels, enabled: false)
+        first.setReadingOption(.hebrewCantillation, enabled: false)
         first.setReadingOption([.strongs, .footnotes], enabled: false)
         guard !first.isBusy, first.engineOptions == undeclaredOptions else { fatalError("undeclared/multiple control flags rejected") }
         first.showChapter = false
@@ -119,6 +121,26 @@ struct ReaderModelSmoke {
         first.saveReadingOptions(path: saveURL.path); try await idle(first)
         second.importReadingOptions(path: saveURL.path); try await idle(second)
         guard second.engineOptions == first.engineOptions else { fatalError("language/reference save reload") }
+        first.showChapter = false
+        first.selection = "OptionOther"; first.reference = "John 3:21"; first.read(); try await idle(first)
+        second.selection = "OptionOther"; second.reference = "John 3:21"; second.read(); try await idle(second)
+        let pointedHebrew = second.html
+        guard first.html.contains("שָׁל֑וֹם"), first.moduleOptions.declared.contains([.hebrewVowels, .hebrewCantillation]) else { fatalError("declared Hebrew filters enabled by legacy defaults") }
+        let hebrewBack = first.canBack, hebrewForward = first.canForward
+        first.reference = "John 4:2"
+        first.setReadingOption(.hebrewCantillation, enabled: false); try await idle(first)
+        guard !first.html.contains("֑"), first.html.contains("שָׁלוֹם"), second.html == pointedHebrew else { fatalError("cantillation refresh with separate window settings") }
+        first.setReadingOption(.hebrewVowels, enabled: false); try await idle(first)
+        guard first.html.contains("שׁלום"), first.reference == "John 4:2", first.canBack == hebrewBack,
+              first.canForward == hebrewForward else { fatalError("Hebrew refresh preserves draft and history") }
+        first.showChapter = true; first.refreshDisplay(); try await idle(first)
+        guard first.html.contains("שׁלום"), first.renderedAnchor == "verse-21" else { fatalError("Hebrew options apply in chapter view") }
+        first.saveReadingOptions(path: saveURL.path); try await idle(first)
+        second.importReadingOptions(path: saveURL.path); try await idle(second)
+        guard second.engineOptions?.contains(.hebrewVowels) == false, second.engineOptions?.contains(.hebrewCantillation) == false else { fatalError("Hebrew settings save/reload") }
+        first.setReadingOption(.hebrewVowels, enabled: true); try await idle(first)
+        first.setReadingOption(.hebrewCantillation, enabled: true); try await idle(first)
+        guard first.html.contains("שָׁל֑וֹם"), first.reference == "John 4:2" else { fatalError("Hebrew controls restore original output") }
         let noteURI = "xiphos-preview://study/passagestudy.jsp?action=showNote&type=n&value=1&module=OptionOther&passage=John+3%3A19"
         let beforeNoteHTML = first.html, beforeNoteDraft = first.reference
         let beforeNoteBack = first.canBack, beforeNoteForward = first.canForward
