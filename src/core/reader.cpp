@@ -1,3 +1,4 @@
+#include "xiphos/core/dictionary.hpp"
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/reader.hpp"
 #include "xiphos/core/reference_list.hpp"
@@ -167,8 +168,7 @@ DictionaryEntry Reader::dictionary_impl(const std::string &id, const std::string
     // Legacy main_dictionary_button_clicked: set current key, step, copy key,
     // then activate the entry. Preserve SDK boundary/matching behavior.
     module->setKey(key.c_str());
-    if (direction == -1) (*module)--; else (*module)++;
-    target = module->getKeyText();
+    target = dictionary_step_key(*module, direction);
   }
   DictionaryEntry result{id, "", render_entry(*module, target.c_str())};
   result.key = module->getKeyText();

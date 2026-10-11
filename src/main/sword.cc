@@ -28,6 +28,7 @@
 
 #include <swmgr.h>
 #include <swmodule.h>
+#include "xiphos/core/dictionary.hpp"
 #include <stringmgr.h>
 #include <localemgr.h>
 
@@ -1043,11 +1044,9 @@ void main_dictionary_button_clicked(gint direction)
 
 	backend->set_module_key(settings.DictWindowModule,
 				settings.dictkey);
-	if (direction == 0)
-		(*backend->display_mod)--;
-	else
-		(*backend->display_mod)++;
-	key = g_strdup((char *)backend->display_mod->getKeyText());
+	const std::string adjacent = xiphos::core::dictionary_step_key(
+	    *backend->display_mod, direction == 0 ? -1 : 1);
+	key = g_strdup(adjacent.c_str());
 	gtk_entry_set_text(GTK_ENTRY(widgets.entry_dict), key);
 	gtk_widget_activate(widgets.entry_dict);
 	g_free(key);

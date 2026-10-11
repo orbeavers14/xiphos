@@ -153,3 +153,10 @@ directions, including first/last, nearest-match and normalized numeric keys.
 Per-tab red-letter output, C ownership and no Bible visit are checked separately.
 The existing legacy function is unchanged; a shared legacy-compatible helper
 and actual adapter characterization can follow before replacing its inline step.
+
+
+The next seam now exists: `dictionary_step_key` is in the C++11 CoreRender
+subset, used by both the legacy handler and native Reader. The actual handler
+is extracted into the dictionary harness with entry/presentation stubs, and its
+14 key-step results and two guards agree with the frozen SDK sequence. This
+checks adapter wiring without claiming full GTK UI validation on the Mac.

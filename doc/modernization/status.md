@@ -1602,3 +1602,21 @@ undefined and thread checks each passed 1/1, and strict C++17/C11 checks passed.
 SWORD itself remains uninstrumented. No GitHub builds. Next: shared legacy step
 helper/actual adapter characterization and native controls; dictionary history
 and full feature acceptance remain pending. Estimate about 6%; no retirement.
+
+
+## Legacy dictionary step seam: locally checked, full GTK run unavailable
+
+Implemented 2026-10-11 on `modernization/legacy-dictionary-step`. A C++11
+CoreRender helper now owns the SDK key-step result. Both the native Reader and
+legacy main_dictionary_button_clicked use it. Existing legacy key setup, GTK
+direction mapping, guards, entry activation and presentation remain in place.
+CMake extracts the actual handler and watches its source for regeneration.
+
+Validation: 27/27 local checks passed, including 14 actual legacy-handler versus
+frozen SDK comparisons and both no-dictionary/null-module guards. The old helper
+subset built with the native core disabled; strict C++11 helper and C++17
+reader/adapter-harness checks passed. Focused address/undefined and thread checks
+each passed 1/1. Full GTK app build/runtime remains unavailable on this Mac;
+SWORD is uninstrumented. No GitHub builds. Next: native previous/next controls,
+then dictionary history and remaining workflows. No full acceptance/retirement;
+estimate about 6%.
