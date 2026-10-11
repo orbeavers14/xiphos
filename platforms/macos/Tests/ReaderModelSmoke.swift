@@ -334,6 +334,21 @@ struct ReaderModelSmoke {
         guard first.lexicalPreview?.entry.module == "MorphGreek", !first.message.isEmpty else { fatalError("failed lookup retained dictionary") }
         first.closeLexicalPreview()
         guard first.lexicalPreview == nil, first.html == priorHTML, first.reference == "John 4:2" else { fatalError("close dictionary preserved reading") }
+        first.selection = "GenericDictionary"; first.dictionaryKey = ""; first.selectionChanged()
+        guard first.selection == "OriginalBible", first.dictionarySelection == "GenericDictionary", first.dictionaryEntry == nil else { fatalError("dictionary module selection kept Bible selection") }
+        first.dictionaryKey = "café"; first.lookupDictionary(); try await idle(first)
+        guard first.dictionaryEntry?.module == "GenericDictionary", first.dictionaryEntry?.html.contains("Unicode") == true,
+              first.dictionarySource?.module == "OriginalBible", first.dictionarySource?.reference == "John 3:16",
+              first.lexicalPreview == nil, first.reference == "John 4:2", first.html == priorHTML,
+              first.canBack == back, first.canForward == forward else { fatalError("direct dictionary source/draft/history") }
+        first.dictionaryKey = ""; first.lookupDictionary()
+        guard !first.isBusy, first.dictionaryEntry?.module == "GenericDictionary", first.message.contains("Enter") else { fatalError("empty direct lookup retained result") }
+        first.dictionaryKey = "alpha\0ignored"; first.lookupDictionary(); try await idle(first)
+        guard first.dictionaryEntry?.html.contains("Unicode") == true, !first.message.isEmpty else { fatalError("invalid direct lookup retained result") }
+        first.dictionaryKey = "ALPHA"; first.dictionarySelection = "DictionaryTwo"; first.lookupDictionary(); try await idle(first)
+        guard first.dictionaryEntry?.module == "DictionaryTwo", first.dictionaryEntry?.html.contains("DictionaryTwo") == true else { fatalError("explicit direct dictionary switch") }
+        first.closeLexicalPreview()
+        guard first.dictionarySelection == nil, first.dictionaryEntry == nil else { fatalError("close direct dictionary") }
         second.applyLexiconPreferences(changed); second.close()
         try await Task.sleep(nanoseconds: 50_000_000)
         guard second.lexiconPreferences == defaults else { fatalError("closed model does not publish preferences") }

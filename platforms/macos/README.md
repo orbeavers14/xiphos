@@ -191,3 +191,11 @@ The right column is an initial composition: commentary above it, pane toggles,
 manual lookup, dictionary key navigation/history, hover and pinning remain
 pending. This is not full dictionary or visual parity. Generated dictionary
 fixtures now include original word/morphology markup for real WebKit click checks.
+
+
+Selecting a classified dictionary in the module list now opens its own lookup
+column and keeps the committed Bible selected. The column has a filtered module
+picker and word/key field, and uses the shared dictionary reader. A successful
+lookup copies the SDK-resolved key into the dictionary field; errors retain the
+previous definition. This does not implement legacy click Unicode normalization,
+key browsing or dictionary history. Devotional classification remains separate.
