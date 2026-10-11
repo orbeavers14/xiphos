@@ -5,6 +5,7 @@
 #include "xiphos/core/engine_manager.hpp"
 #include <swmgr.h>
 #include <swmodule.h>
+#include <swld.h>
 #include <versekey.h>
 #include <filesystem>
 #include <mutex>
@@ -100,6 +101,24 @@ StudyNote Reader::note_impl(const std::string &id, const std::string &reference,
   std::unique_ptr<ScopedEngineOptions> scope;
   if (options) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *options);
   return render_study_note(module, reference, identifier);
+}
+DictionaryEntry Reader::read_dictionary(const std::string &module, const std::string &key) {
+  return dictionary_impl(module, key, nullptr);
+}
+DictionaryEntry Reader::read_dictionary(const std::string &module, const std::string &key, const EngineOptions &options) {
+  return dictionary_impl(module, key, &options);
+}
+DictionaryEntry Reader::dictionary_impl(const std::string &id, const std::string &key, const EngineOptions *options) {
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  if (key.empty()) throw std::invalid_argument("Dictionary key is empty");
+  auto *module = impl_->manager->getModule(id.c_str());
+  if (!module) throw std::out_of_range("Module is not installed");
+  if (!dynamic_cast<sword::SWLD *>(module)) throw std::invalid_argument("Module is not a dictionary");
+  std::unique_ptr<ScopedEngineOptions> scope;
+  if (options) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *options);
+  DictionaryEntry result{id, "", render_entry(*module, key.c_str())};
+  result.key = module->getKeyText();
+  return result;
 }
 Entry Reader::read(const std::string &id, const std::string &reference) {
   return read_impl(id, reference, nullptr);

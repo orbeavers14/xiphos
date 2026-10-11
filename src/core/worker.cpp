@@ -95,6 +95,11 @@ std::future<StudyTab> StudyWorker::create_tab() {
 std::future<void> StudyWorker::close_tab(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s) { s.tab(tab); s.tabs.erase(tab); });
 }
+std::future<DictionaryEntry> StudyWorker::read_dictionary(StudyTab tab, std::string module, std::string key) {
+  return impl_->submit([tab, module = std::move(module), key = std::move(key)](Impl::State &s) {
+    return s.tab(tab).read_dictionary(module, key);
+  });
+}
 std::future<ReferenceList> StudyWorker::read_reference_list(StudyTab tab, std::string module, std::string expression, std::string context) {
   return impl_->submit([tab, module = std::move(module), expression = std::move(expression), context = std::move(context)](Impl::State &s) {
     return s.tab(tab).read_reference_list(module, expression, context);

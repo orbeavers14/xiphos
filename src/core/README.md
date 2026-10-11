@@ -137,3 +137,15 @@ without visiting history. `xc_worker_select_module_variant` exposes the operatio
 XIPHOS_VARIANT_* constants; invalid choice/module/output arguments reject
 before submission. Swift submits a typed value and retrieves effective options
 from the core. The native menu follows the existing three legacy selections.
+
+## Dictionary snapshots
+
+`Reader::read_dictionary` requires an explicit installed SWORD dictionary
+(SWLD) and a nonempty key, then uses the same shared setKey/renderText seam as
+legacy BackEnd::get_render_text. Results own module, post-render key and HTML.
+SWORD controls case handling, padding, Unicode and nearest/missing-key behavior;
+this API does not promise an exact-key search. Session/worker requests apply
+effective module settings and never visit Bible history. Preference/filter
+scopes and worker ownership match the existing reader. C/Swift bindings,
+preferred lexicon selection, Strong's/morphology dispatch and native dictionary
+pane remain pending.

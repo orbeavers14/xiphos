@@ -1306,3 +1306,26 @@ and [OSISXHTML](https://crosswire.org/sword/apiref/osisxhtml_8cpp_source.html).
 Next: lexicon/dictionary service and interactions, remaining enumerations,
 headings and global transliteration controls. Full visual/platform parity and
 acceptance remain pending; no legacy file retirement.
+
+## Shared dictionary reader: locally checked, native binding pending
+
+Implemented 2026-10-11 on `modernization/shared-dictionary-reader`, based on
+word annotation controls. The core renders an explicit installed SWLD dictionary
+module/key through the existing legacy-compatible setKey/renderText seam.
+Snapshots own module, post-render key and Unicode HTML. Sessions use module
+settings; the worker serializes copied requests. Dictionary previews do not
+visit Bible history. SWORD owns normalization/padding/nearest-key behavior;
+this is not an independent exact-match index.
+
+Validation: 22/22 local checks, focused address/undefined and thread checks
+1/1 each and strict C++17 compilation passed. Two original RawLD dictionaries
+and a Bible fixture compare actual output/key values with direct legacy SDK
+calls for case, Unicode, padded and missing keys. Checks cover actual filter
+output, separate tab/module context, empty/missing/wrong-type requests, no
+history visits, closed tabs, copied arguments and owned results after teardown.
+No installed user library or GitHub build was used.
+
+Next: C/Swift binding, shared preferred-lexicon and Strong's/morphology dispatch,
+then the established native dictionary pane. General books, dictionary browsing,
+full module corpus and all platform acceptance remain pending. No legacy
+retirement or full feature acceptance; estimate remains about 6%.
