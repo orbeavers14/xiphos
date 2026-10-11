@@ -39,9 +39,10 @@ DictionaryLocation displayed;
 void main_dict_history_add(const gchar *,const gchar *);
 void main_display_dictionary(const char *module,const char *key) { displayed={module,key}; main_dict_history_add(module,key); }
 #include "legacy_dictionary_history_actual.inc"
-void clear() { g_list_free_full(dict_history_back,dict_history_entry_free); g_list_free_full(dict_history_forward,dict_history_entry_free); dict_history_back=nullptr; dict_history_forward=nullptr; back=false; forward=false; }
-std::vector<DictionaryLocation> locations() { std::vector<DictionaryLocation> result; for (auto *p=dict_history_back;p;p=p->next) { auto *e=static_cast<DictHistoryEntry *>(p->data); result.push_back({e->mod_name,e->key}); } for (auto *p=g_list_last(dict_history_forward);p;p=p->prev) { auto *e=static_cast<DictHistoryEntry *>(p->data); result.push_back({e->mod_name,e->key}); } return result; }
+void clear() { dictionary_history.clear(); back=false; forward=false; }
+std::vector<DictionaryLocation> locations() { return dictionary_history.entries(); }
 }
+
 #undef g_new0
 bool equal(const std::vector<DictionaryLocation> &a,const std::vector<DictionaryLocation> &b) { if (a.size()!=b.size()) return false; for (std::size_t i=0;i<a.size();++i) if (a[i].module!=b[i].module || a[i].key!=b[i].key) return false; return true; }
 int main() {
