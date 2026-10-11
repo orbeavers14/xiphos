@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 #include <string>
+#include <map>
 #include <utility>
 #include <vector>
 namespace sword { class SWMgr; class SWOptionFilter; class SWModule; }
@@ -29,6 +30,10 @@ struct EngineOptions {
   bool variants_secondary = false;
   bool variants_all = false;
 };
+// Exact modops.conf engine-setting semantics from legacy main_new_globals.
+// Unknown keys are ignored; this parser does not read or write user files.
+using EngineOptionPreferences = std::map<std::string, std::string>;
+EngineOptions engine_options_from_preferences(const EngineOptionPreferences &preferences);
 struct ModuleOptions {
   EngineOptions declared;
   bool headings = false;

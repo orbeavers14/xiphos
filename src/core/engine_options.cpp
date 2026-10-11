@@ -7,6 +7,34 @@
 #include <set>
 #include <stdexcept>
 namespace xiphos { namespace core {
+EngineOptions engine_options_from_preferences(const EngineOptionPreferences &preferences) {
+  auto value = [&](const char *key) -> std::string {
+    const auto found = preferences.find(key);
+    return found == preferences.end() ? std::string() : found->second;
+  };
+  EngineOptions o;
+  o.strongs = value("Strong's Numbers") == "On";
+  o.morphs = value("Morphological Tags") == "On";
+  o.lemmas = value("Lemmas") == "On";
+  o.transliteration = value("Transliteration") == "On";
+  o.italic_headings = value("Italic Headings") == "On";
+  o.xlit = value("Transliterated Forms") == "On";
+  o.enumerated = value("Enumerations") == "On";
+  o.morphseg = value("Morpheme Segmentation") == "On";
+  o.variants_all = value("All Readings") == "On";
+  o.variants_primary = value("Primary Reading") == "On";
+  o.variants_secondary = value("Secondary Reading") == "On";
+  o.words_in_red = value("Words of Christ in Red") != "Off";
+  o.footnotes = value("Footnotes") != "Off";
+  o.scripturerefs = value("Cross-references") != "Off";
+  o.greekaccents = value("Greek Accents") != "Off";
+  o.hebrewpoints = value("Hebrew Vowel Points") != "Off";
+  o.hebrewcant = value("Hebrew Cantillation") != "Off";
+  o.glosses = value("Glosses") != "Off";
+  if (!o.variants_all && !o.variants_primary && !o.variants_secondary)
+    o.variants_primary = true;
+  return o;
+}
 ModuleOptions module_options(const sword::SWModule &module) {
   const auto &config = module.getConfig();
   auto has = [&](const char *filter) { return config.has("GlobalOptionFilter", filter); };
