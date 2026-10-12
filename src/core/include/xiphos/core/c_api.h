@@ -88,6 +88,9 @@ xc_status xc_request_engine_options(const xc_request *request, unsigned *flags, 
 xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_request **out);
 /* Refresh with tab settings without adding/moving history. */
 /* Explicit note preview uses tab settings without moving/adding history. */
+/* Resolves an internal passage target or renders a note, without visiting.
+ * After XC_OK take_link or take_note identifies the result kind. */
+xc_status xc_worker_resolve_study_link(xc_worker *worker, uint64_t tab, const char *current_module, const char *uri, xc_request **out);
 xc_status xc_worker_study_note_link(xc_worker *worker, uint64_t tab, const char *current_module, const char *uri, xc_request **out);
 xc_status xc_worker_study_note(xc_worker *worker, uint64_t tab, const char *module, const char *reference, const char *identifier, xc_request **out);
 xc_status xc_worker_read_tab_entry(xc_worker *worker, uint64_t tab, const char *module, const char *reference, xc_request **out);
@@ -211,6 +214,7 @@ void xc_chapter_release(xc_chapter *chapter);
 xc_status xc_session_navigate_chapter(xc_session *session, const char *module,
                                      const char *reference, int direction, xc_entry **out);
 /* Note strings are owned by the result until release; NULL handle -> NULL. */
+const char *xc_note_module(const xc_note *note);
 const char *xc_note_reference(const xc_note *note);
 const char *xc_note_identifier(const xc_note *note);
 const char *xc_note_type(const xc_note *note);

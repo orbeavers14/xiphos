@@ -67,7 +67,7 @@ SDK attributes or reusing attributes from the last chapter verse. The helper
 is C++11-compatible in CoreRender; native host lifetime/thread rules still
 apply. `xc_worker_study_note` returns a polled request whose result transfers once
 through `xc_request_take_note`; note strings survive worker/request close until
-`xc_note_release`. Swift `CoreWorker.studyNote` copies the six result strings
+`xc_note_release`. Swift `CoreWorker.studyNote` copies the result strings
 into a Sendable value. Native link handling, hover presentation and expanded
 reference lists remain separate pending work.
 
@@ -78,3 +78,8 @@ external origins and passage ranges reject. `StudyWorker::study_note_link` and
 `xc_worker_study_note_link` resolve and render in one engine job with tab
 settings, validating the link's note/cross-reference type against entry metadata.
 Swift exposes the same operation without a frontend URL parser.
+
+`resolve_study_link` also accepts passage URIs, returning a passage target or an
+owned note while preserving history. `xc_worker_resolve_study_link` stores the
+corresponding result kind; `CoreWorker.resolveStudyLink` exposes a typed Swift
+enum. Notes carry their source module so nested links have the correct fallback.

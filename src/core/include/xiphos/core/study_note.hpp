@@ -4,7 +4,7 @@
 namespace sword { class SWModule; }
 namespace xiphos { namespace core {
 struct StudyNote {
-  std::string reference, identifier, type, label, html, reference_list;
+  std::string module, reference, identifier, type, label, html, reference_list;
 };
 // Regenerates entry attributes at the requested passage and copies note data
 // before rendering its body. Matches legacy UTF8HTML/renderText processing.

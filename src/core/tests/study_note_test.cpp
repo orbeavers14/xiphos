@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
         options.strongs = bits & 1; options.footnotes = bits & 2;
         reader.read_chapter("OptionOther", "John 3:18"); // Leaves attributes from a different verse.
         const auto note = reader.study_note("OptionOther", "John 3:19", note_id, options);
-        check(note.html == expected[bits] && note.reference == "John 3:19" && note.identifier == note_id &&
+        check(note.module == "OptionOther" && note.html == expected[bits] && note.reference == "John 3:19" && note.identifier == note_id &&
               note.type == note_type && note.label == note_label, "note body/metadata matches legacy calls");
       }
       const auto reference = reader.study_note("OptionOther", "John 3:18", reference_id);
@@ -108,6 +108,11 @@ int main(int argc, char **argv) {
       generated_note_uri = rendered.substr(href + 6, end - href - 6);
       check(worker.study_note_link(tab, "OptionTest", generated_note_uri).get().html == expected[3],
             "actual engine note URI resolves explicit module/verse/body");
+      const auto resolvedNote = worker.resolve_study_link(tab, "OptionTest", generated_note_uri).get();
+      check(std::holds_alternative<StudyNote>(resolvedNote) && std::get<StudyNote>(resolvedNote).html == expected[3], "shared dispatch identifies note result");
+      const auto resolvedPassage = worker.resolve_study_link(tab, "OptionOther", "sword:///John+3%3A18").get();
+      check(std::holds_alternative<PassageLink>(resolvedPassage) && std::get<PassageLink>(resolvedPassage).module == "OptionOther" &&
+            std::get<PassageLink>(resolvedPassage).reference == "John 3:18", "shared dispatch identifies passage without visiting");
       bool wrong_type = false;
       auto wrong_uri = generated_note_uri;
       wrong_uri.replace(wrong_uri.find("type=n"), 6, "type=x");
@@ -142,9 +147,19 @@ int main(int argc, char **argv) {
       auto *note = xc_request_take_note(request);
       check(note && xc_request_take_note(request) == nullptr, "note result transfers only once");
       xc_request_release(request);
-      check(std::string(xc_note_html(note)) == expected[3] && std::string(xc_note_reference(note)) == "John 3:19" &&
+      check(std::string(xc_note_module(note)) == "OptionOther" && std::string(xc_note_html(note)) == expected[3] && std::string(xc_note_reference(note)) == "John 3:19" &&
             std::string(xc_note_identifier(note)) == note_id && std::string(xc_note_type(note)) == note_type &&
             std::string(xc_note_label(note)) == note_label && std::string(xc_note_reference_list(note)).empty(), "C note copied metadata/body");
+      check(xc_worker_resolve_study_link(worker, tab, "OptionTest", generated_note_uri.c_str(), &request) == XC_OK && wait(request) == XC_OK,
+            "C shared note dispatch");
+      auto *resolved_note = xc_request_take_note(request);
+      check(resolved_note && !xc_request_take_link(request) && std::string(xc_note_html(resolved_note)) == expected[3], "C dispatch note result kind");
+      xc_note_release(resolved_note); xc_request_release(request);
+      check(xc_worker_resolve_study_link(worker, tab, "OptionOther", "sword:///John+3%3A18", &request) == XC_OK && wait(request) == XC_OK,
+            "C shared passage dispatch");
+      auto *resolved_link = xc_request_take_link(request);
+      check(resolved_link && !xc_request_take_note(request) && std::string(xc_link_module(resolved_link)) == "OptionOther", "C dispatch passage result kind");
+      xc_link_release(resolved_link); xc_request_release(request);
       check(xc_worker_study_note_link(worker, tab, "OptionTest", generated_note_uri.c_str(), &request) == XC_OK && wait(request) == XC_OK,
             "C generated note URI resolves");
       auto *linked = xc_request_take_note(request); xc_request_release(request);
@@ -178,7 +193,7 @@ int main(int argc, char **argv) {
       xc_worker_close(worker);
       check(std::string(xc_note_html(note)) == expected[3], "C note outlives worker/request"); xc_note_release(note);
       xc_note_release(nullptr);
-      check(!xc_note_reference(nullptr) && !xc_note_identifier(nullptr) && !xc_note_type(nullptr) && !xc_note_label(nullptr) &&
+      check(!xc_note_module(nullptr) && !xc_note_reference(nullptr) && !xc_note_identifier(nullptr) && !xc_note_type(nullptr) && !xc_note_label(nullptr) &&
             !xc_note_html(nullptr) && !xc_note_reference_list(nullptr) && !xc_request_take_note(nullptr), "C null result access");
     }
     std::cout << "Shared study-note legacy rendering, context, lifetime and isolation checks passed\n";

@@ -119,6 +119,35 @@ struct ReaderModelSmoke {
         first.saveReadingOptions(path: saveURL.path); try await idle(first)
         second.importReadingOptions(path: saveURL.path); try await idle(second)
         guard second.engineOptions == first.engineOptions else { fatalError("language/reference save reload") }
+        let noteURI = "xiphos-preview://study/passagestudy.jsp?action=showNote&type=n&value=1&module=OptionOther&passage=John+3%3A19"
+        let beforeNoteHTML = first.html, beforeNoteDraft = first.reference
+        let beforeNoteBack = first.canBack, beforeNoteForward = first.canForward
+        first.followLink(noteURI); try await idle(first)
+        guard let preview = first.studyNote, preview.module == "OptionOther", preview.reference == "John 3:19",
+              preview.html.contains("Original other note"), preview.html.contains("3056"),
+              first.html == beforeNoteHTML, first.reference == beforeNoteDraft,
+              first.canBack == beforeNoteBack, first.canForward == beforeNoteForward,
+              second.studyNote == nil else { fatalError("note preview uses linked verse/settings and preserves pane/draft/history/window isolation") }
+        first.followLink("https://example.invalid/passagestudy.jsp"); try await idle(first)
+        guard first.studyNote?.html == preview.html, first.html == beforeNoteHTML, first.reference == beforeNoteDraft,
+              first.canBack == beforeNoteBack, first.canForward == beforeNoteForward else { fatalError("failed note link preserves preview/pane/history") }
+        first.followLink("xiphos-preview://study/passagestudy.jsp?action=showNote&type=x&value=1&module=OptionOther&passage=John+3%3A18")
+        try await idle(first)
+        guard first.studyNote?.type == "crossReference", first.studyNote?.referenceList.isEmpty == false,
+              first.html == beforeNoteHTML, first.reference == beforeNoteDraft else { fatalError("cross-reference body preview metadata/context") }
+        first.closeStudyNote()
+        guard first.studyNote == nil, first.html == beforeNoteHTML else { fatalError("close note preserves reader") }
+        first.followLink("xiphos-preview://study/passagestudy.jsp?action=showNote&type=n&value=1&module=OptionTest&passage=John+3%3A16")
+        try await idle(first)
+        guard first.studyNote?.module == "OptionTest", first.selection == "OptionOther" else { fatalError("note records source module independent of main pane") }
+        first.followLink("sword:///John+3%3A16", currentModule: first.studyNote?.module); try await idle(first)
+        guard first.selection == "OptionTest", first.studyNote == nil else { fatalError("links in note use its source module fallback") }
+        first.followLink(noteURI); try await idle(first)
+        first.followLink("sword:///John+3%3A19", currentModule: first.studyNote?.module); try await idle(first)
+        guard first.studyNote == nil, first.reference == "John 3:19", first.renderedAnchor == "verse-19" else { fatalError("passage link dispatch clears stale preview and visits passage") }
+        first.followLink(noteURI)
+        first.close(); try await Task.sleep(nanoseconds: 50_000_000)
+        guard first.studyNote == nil else { fatalError("closed model does not publish note result") }
         first.close(); second.close(); await worker.shutdown()
         print("Native reading option model checks passed")
     }

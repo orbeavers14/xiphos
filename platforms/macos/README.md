@@ -115,9 +115,14 @@ red style; user-defined colors and full theme parity remain pending.
 `reader_model_options` checks these controls with two original generated OSIS
 modules and two model windows. `swift_option_adapter` also exercises the typed
 bindings. Declared eligibility does not prove filter/markup support across all
-SWORD versions. Note/Strong's/morphology popup interaction, the remaining option
-menus, full display-preference migration, persistent settings and full
-visual/workflow parity are pending.
+SWORD versions. Clicking a generated study-note or cross-reference marker opens
+a core-rendered body preview below the module list without changing the main
+passage, reference draft or history. The preview identifies its source module
+and passage; Close dismisses it, and a successful passage refresh clears stale
+preview content. Links inside a note use that note's module as their fallback.
+Hover/pin behavior, expanded cross-reference lists, reference links inside notes,
+Strong's/morphology lookup, remaining option menus, full display-preference
+migration and visual/workflow parity remain pending.
 
 For a local GUI check with those generated modules, run:
 

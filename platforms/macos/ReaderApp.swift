@@ -27,6 +27,7 @@ final class ReaderModel: ObservableObject {
     @Published var canBack = false
     @Published var canForward = false
     @Published var isBusy = true
+    @Published private(set) var studyNote: RenderedStudyNote?
     @Published private(set) var engineOptions: EngineOptionFlags?
     @Published private(set) var moduleOptions = ModuleOptionInfo.unknown
     private let worker: CoreWorker?
@@ -117,6 +118,7 @@ final class ReaderModel: ObservableObject {
         let history = try await worker.history(tab)
         let options = try await worker.moduleEngineOptions(tab: tab, module: module)
         guard token == revision && !closed else { return }
+        studyNote = nil
         engineOptions = options
         moduleOptions = modules.first(where: { $0.id == module })?.options ?? .unknown
         if let chapter {
@@ -195,14 +197,21 @@ final class ReaderModel: ObservableObject {
             try await self.present(entry, module: module, token: token)
         }
     }
-    func followLink(_ uri: String) {
-        guard let worker, let tab, let module = displayedModule else { return }
+    func followLink(_ uri: String, currentModule: String? = nil) {
+        guard let worker, let tab, let displayedModule else { return }
+        let module = currentModule ?? displayedModule
         run { token in
-            let target = try await worker.resolveLink(uri, currentModule: module)
-            let entry = try await worker.visit(tab: tab, module: target.module, reference: target.reference)
-            try await self.present(entry, module: target.module, token: token)
+            switch try await worker.resolveStudyLink(tab: tab, currentModule: module, uri: uri) {
+            case .note(let note):
+                guard token == self.revision && !self.closed else { return }
+                self.studyNote = note; self.message = ""
+            case .passage(let target):
+                let entry = try await worker.visit(tab: tab, module: target.module, reference: target.reference)
+                try await self.present(entry, module: target.module, token: token)
+            }
         }
     }
+    func closeStudyNote() { studyNote = nil }
     func clearHistory() {
         guard let worker, let tab else { return }
         run { token in
@@ -272,6 +281,7 @@ struct PassageView: NSViewRepresentable {
         context.coordinator.loaded = html
         context.coordinator.navigation = view.loadHTMLString("""
             <!doctype html><html><head><meta charset="utf-8">
+            <base href="xiphos-preview://study/">
             <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
             <style>:root { color-scheme: light dark; } body { font: 18px Georgia, serif; line-height: 1.55; margin: 24px; }
             /* Existing Xiphos editor/template.h styles this SWORD class red. */
@@ -337,20 +347,34 @@ struct ReaderWindow: View {
     }
     var body: some View {
         HSplitView {
-            List(selection: $model.selection) {
-                ForEach(Array(Set(model.modules.map(\.type))).sorted(), id: \.self) { type in
-                    Section(type) {
-                        ForEach(model.modules.filter { $0.type == type }) { module in
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(module.id)
-                                Text(module.description).font(.caption).foregroundStyle(.secondary).lineLimit(2)
-                            }.tag(module.id)
+            VSplitView {
+                List(selection: $model.selection) {
+                    ForEach(Array(Set(model.modules.map(\.type))).sorted(), id: \.self) { type in
+                        Section(type) {
+                            ForEach(model.modules.filter { $0.type == type }) { module in
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(module.id)
+                                    Text(module.description).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                                }.tag(module.id)
+                            }
                         }
                     }
+                }.frame(minHeight: 120)
+                    .disabled(model.isBusy)
+                    .accessibilityLabel("Installed SWORD modules")
+                if let note = model.studyNote {
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack {
+                            Text(note.type == "crossReference" ? "Cross-reference" : "Study note").font(.headline)
+                            Spacer()
+                            Button("Close") { model.closeStudyNote() }.disabled(model.isBusy)
+                        }.padding(8)
+                        Text("\(note.module) • \(note.reference)").font(.caption).padding(.horizontal, 8)
+                        PassageView(html: note.html, anchor: nil, onScrollFailure: { model.message = $0 },
+                                    onLink: { model.followLink($0, currentModule: note.module) })
+                    }.frame(minHeight: 140, idealHeight: 220)
                 }
             }.frame(minWidth: 190, idealWidth: 230, maxWidth: 320)
-                .disabled(model.isBusy)
-                .accessibilityLabel("Installed SWORD modules")
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
                     Button("Back") { model.navigate(-1) }.disabled(!model.canBack)

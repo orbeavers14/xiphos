@@ -21,6 +21,7 @@ StudyNote render_study_note(sword::SWModule &module, const std::string &referenc
     return found == values.end() ? std::string() : std::string(found->second.c_str());
   };
   StudyNote result;
+  result.module = module.getName();
   result.reference = module.getKeyText(); result.identifier = identifier;
   result.type = value("type"); result.label = value("n"); result.reference_list = value("refList");
   sword::SWBuf body(value("body").c_str());

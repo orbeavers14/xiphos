@@ -1002,3 +1002,35 @@ checks passed.
 Next: native preview binding and visible clicks. Hover behavior, expanded
 cross-reference lists, introductory notes and full popup/design parity remain
 pending. No GitHub build dispatched, accepted group or legacy retirement.
+
+## Native study-note preview: locally checked, full interaction parity pending
+
+Implemented 2026-10-11 on `modernization/macos-study-note-preview`, based on
+shared note links. Shared dispatch now returns a passage target or rendered note
+in one worker operation; the C request exposes the corresponding owned result,
+and Swift binds the copied result. Clicking a generated note/cross-reference
+marker opens a body preview below the module list. The main passage, draft input
+and history stay unchanged. Close dismisses the preview; a successful passage
+refresh clears it. Errors retain the current preview and main pane, and closed
+models cannot publish late note results.
+
+Notes now carry their source module through C/Swift, so links inside an explicitly
+different module's note use that module as their fallback. The preview labels
+source module and passage. A trusted fixed HTML base resolves relative engine
+commands into the already validated internal origin; browser navigation is
+canceled before core dispatch, with module JavaScript/network content still
+disabled. This is an initial preview pane, not accepted full Xiphos composition.
+
+Full local CTest passed 17/17; strengthened note-module fallback model checks
+passed 3/3 including fixtures. ASan/UBSan and ThreadSanitizer each passed 3/3
+including fixtures (external SDK uninstrumented), and C++11/C++17/C11
+warnings-as-errors checks passed. Visible checks on temporary generated fixtures
+confirmed study-note text, whole-chapter note retrieval, cross-reference body
+content, Close and source labels. An unsubmitted reference remained unchanged
+while the note opened. Model checks also cover two-window isolation, error
+preservation, normal passage dispatch and late-result suppression.
+
+Next: reference links inside notes and expanded cross-reference workflows.
+Hover/pin behavior, introductory notes, Strong's/morphology lookup, all language/
+variant controls and full visual/platform acceptance remain pending. No GitHub
+build dispatched, accepted parity group or legacy file retirement.

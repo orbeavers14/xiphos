@@ -146,6 +146,23 @@ actor CoreWorker {
         let status = xc_worker_clear_engine_options(try worker(), tab, &request)
         xc_request_release(try await wait(status, request))
     }
+    func resolveStudyLink(tab: UInt64, currentModule: String, uri: String) async throws -> ResolvedStudyLink {
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = currentModule.withCString { id in
+            uri.withCString { xc_worker_resolve_study_link(handle, tab, id, $0, &request) }
+        }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        if let result = xc_request_take_note(completed) {
+            defer { xc_note_release(result) }
+            return .note(noteValue(result))
+        }
+        guard let result = xc_request_take_link(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_link_release(result) }
+        return .passage(PassageTarget(module: String(cString: xc_link_module(result)!),
+            reference: String(cString: xc_link_reference(result)!)))
+    }
     func studyNoteLink(tab: UInt64, currentModule: String, uri: String) async throws -> RenderedStudyNote {
         var request: OpaquePointer?
         let handle = try worker()
@@ -169,7 +186,10 @@ actor CoreWorker {
         defer { xc_request_release(completed) }
         guard let result = xc_request_take_note(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
         defer { xc_note_release(result) }
-        return RenderedStudyNote(reference: String(cString: xc_note_reference(result)!),
+        return noteValue(result)
+    }
+    private func noteValue(_ result: OpaquePointer) -> RenderedStudyNote {
+        RenderedStudyNote(module: String(cString: xc_note_module(result)!), reference: String(cString: xc_note_reference(result)!),
             identifier: String(cString: xc_note_identifier(result)!), type: String(cString: xc_note_type(result)!),
             label: String(cString: xc_note_label(result)!), html: String(cString: xc_note_html(result)!),
             referenceList: String(cString: xc_note_reference_list(result)!))
