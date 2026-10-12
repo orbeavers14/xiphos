@@ -42,7 +42,9 @@ PassageLink passage_link(const std::string &url, const std::string &current_modu
     throw std::invalid_argument("This slice supports unanchored single-reference links");
   return result;
 }
-StudyNoteLink study_note_link(const std::string &url, const std::string &current_module) {
+namespace {
+using CommandParameters = std::map<std::string, std::string>;
+CommandParameters command_parameters(const std::string &url) {
   const auto query = url.find('?');
   const auto path = url.substr(0, query);
   // Only local engine commands and the native host's fixed internal origin.
@@ -73,6 +75,13 @@ StudyNoteLink study_note_link(const std::string &url, const std::string &current
     position = end + 1;
     if (position == url.size()) throw std::invalid_argument("Empty note parameter");
   }
+  return parameters;
+}
+std::string parameter(const CommandParameters &parameters, const char *name) {
+  const auto found = parameters.find(name);
+  return found == parameters.end() ? std::string() : found->second;
+}
+StudyNoteLink note_target(const CommandParameters &parameters, const std::string &current_module) {
   const auto get = [&parameters](const char *name) {
     const auto found = parameters.find(name);
     return found == parameters.end() ? std::string() : found->second;
@@ -84,6 +93,26 @@ StudyNoteLink study_note_link(const std::string &url, const std::string &current
       result.reference.find_first_of("#?!-;,/") != std::string::npos)
     throw std::invalid_argument("Study-note link requires a single passage and identifier");
   return result;
+}
+PassageLink reference_target(const CommandParameters &parameters, const std::string &current_module) {
+  PassageLink result{parameter(parameters, "module"), parameter(parameters, "value")};
+  if (result.module.empty()) result.module = current_module;
+  if (parameter(parameters, "action") != "showRef" || parameter(parameters, "type") != "scripRef" ||
+      parameters.count("passage") || result.module.empty() || result.reference.empty() ||
+      result.reference.find_first_of("#?!-;,/") != std::string::npos)
+    throw std::invalid_argument("Reference link requires a single scripture reference");
+  return result;
+}
+}
+StudyNoteLink study_note_link(const std::string &url, const std::string &current_module) {
+  return note_target(command_parameters(url), current_module);
+}
+StudyCommandLink study_link(const std::string &url, const std::string &current_module) {
+  if (url.compare(0, 8, "sword://") == 0 || url.compare(0, 8, "bible://") == 0)
+    return passage_link(url, current_module);
+  const auto parameters = command_parameters(url);
+  if (parameter(parameters, "action") == "showRef") return reference_target(parameters, current_module);
+  return note_target(parameters, current_module);
 }
 std::string passage_uri(const std::string &reference) {
   static const char digits[] = "0123456789ABCDEF";

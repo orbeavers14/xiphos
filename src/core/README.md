@@ -83,3 +83,9 @@ Swift exposes the same operation without a frontend URL parser.
 owned note while preserving history. `xc_worker_resolve_study_link` stores the
 corresponding result kind; `CoreWorker.resolveStudyLink` exposes a typed Swift
 enum. Notes carry their source module so nested links have the correct fallback.
+
+Shared `study_link` decoding also accepts local `showRef&type=scripRef`
+commands for one scripture reference. Dispatch validates the module with the
+existing reader, and the eventual visit uses that module's own SWORD key for
+normalization. Native hosts pass the note's source module as the fallback.
+Ranges and multiple-reference lists remain separate pending work.

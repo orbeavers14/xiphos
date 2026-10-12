@@ -26,7 +26,7 @@ checks passed. The new Linux/macOS CI and legacy Linux PR builds passed at the
 recorded implementation commit. Windows cross-builds were still running when
 checked. [PR #1](https://github.com/orbeavers14/xiphos/pull/1) remains a draft.
 
-Overall modernization is estimated at **about 5%** (planning range 3–7%).
+Overall modernization is estimated at **about 6%** (planning range 4–8%).
 **0/38 feature groups** have accepted parity across all native platforms.
 See the status page for the weighted estimate, ordered next steps and
 [source reuse decisions](doc/modernization/status.md#reuse-from-related-projects).

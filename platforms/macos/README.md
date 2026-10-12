@@ -120,8 +120,10 @@ a core-rendered body preview below the module list without changing the main
 passage, reference draft or history. The preview identifies its source module
 and passage; Close dismisses it, and a successful passage refresh clears stale
 preview content. Links inside a note use that note's module as their fallback.
-Hover/pin behavior, expanded cross-reference lists, reference links inside notes,
-Strong's/morphology lookup, remaining option menus, full display-preference
+Single scripture-reference links inside notes navigate through the core using
+the note's module, normal SWORD reference normalization and shared history.
+Hover/pin behavior, expanded cross-reference lists/ranges, Strong's/morphology
+lookup, remaining option menus, full display-preference
 migration and visual/workflow parity remain pending.
 
 For a local GUI check with those generated modules, run:

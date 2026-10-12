@@ -33,8 +33,8 @@ that contract. The [parity matrix](parity-matrix.md) defines acceptance evidence
 
 ## Overall completion estimate
 
-Approximately **5% complete** toward a validated native release on all three
-platforms (planning range **3–7%**, not a measured parity score). This counts
+Approximately **6% complete** toward a validated native release on all three
+platforms (planning range **4–8%**, not a measured parity score). This counts
 modernization work, not functionality inherited from the existing GTK app.
 The estimate is deliberately provisional and should change as services and
 platform workflows are characterized. Reassess after each accepted milestone.
@@ -42,12 +42,14 @@ platform workflows are characterized. Reassess after each accepted milestone.
 | Work area | Share of total effort | Estimated work completed | Contribution |
 |---|---:|---:|---:|
 | Inventory, architecture, build/test foundation | 10% | 40% | 4.0% |
-| Shared application services | 35% | 2% | 0.7% |
-| Three native frontends and design/workflow adaptation | 30% | 1% | 0.3% |
-| User-data compatibility and migration | 15% | 0% | 0% |
+| Shared application services | 35% | 4% | 1.4% |
+| Three native frontends and design/workflow adaptation | 30% | 2% | 0.6% |
+| User-data compatibility and migration | 15% | 1% | 0.15% |
 | Release packaging and comprehensive acceptance | 10% | 0% | 0% |
 
-These weights and within-area percentages are engineering estimates, not
+The revised estimate includes explicit engine-preference import/save and the
+shared note/reference workflow; it does not imply complete preference or
+preview parity. These weights and within-area percentages are engineering estimates, not
 completed issue counts. Foundation still needs a representative module corpus,
 Windows native tooling and regression infrastructure. **0 of 38 feature groups
 have full accepted parity across the native platforms; 0 of 3 native apps are
@@ -89,20 +91,18 @@ inclusion in this public fork.
 
 ## Next steps in order
 
-1. Finish PR #1 checks and review, validate representative module types and
-   rendering against the legacy app, then record scoped acceptance on merge.
-2. Review the asynchronous macOS integration separately from the core
-   foundation; broaden startup/shutdown and real-module interaction checks.
-   Bind native option controls after shared preference defaults and module-scoped
-   state are characterized; then expand decorated chapter options and
-   characterize commentary/parallel panes.
-   Screen and workflow comparisons must retain the established study-pane composition.
-3. Evaluate selected SwordKit Swift helpers and BibleUI controls against that
-   core API; add only a justified, audited adapter/component in a focused PR.
-4. Implement equivalent reading panes in GTK4 and WinUI 3 with native toolchain
-   CI and interaction checks; retain the legacy app through migration.
-5. Extract search/parallel/link/preview, then compatible storage/editors,
-   module management and BibleSync, followed by platform release acceptance.
+1. Review the stacked draft milestones and validate representative modules
+   against the legacy application. Bundle remote builds at meaningful review
+   checkpoints; keep routine development/testing local to conserve CI usage.
+2. Complete reading decorations, remaining language/variant controls, expanded
+   cross-references and Strong's/morphology interactions. Characterize commentary
+   and parallel panes while retaining established study-pane composition.
+3. Implement equivalent GTK4 and WinUI 3 reading panes with native toolchains
+   and interaction checks; retain the legacy app throughout migration.
+4. Expand compatible storage and restoration beyond the 18 engine fields, then
+   extract search, editors, module management and BibleSync with regression evidence.
+5. Reassess audited SwordKit/BibleUI reuse against the shared API when a concrete
+   adapter/component saves work, then complete visual/platform release acceptance.
 
 ## Shared history slice: pushed, pending acceptance
 
@@ -1034,3 +1034,28 @@ Next: reference links inside notes and expanded cross-reference workflows.
 Hover/pin behavior, introductory notes, Strong's/morphology lookup, all language/
 variant controls and full visual/platform acceptance remain pending. No GitHub
 build dispatched, accepted parity group or legacy file retirement.
+
+## Scripture-reference links inside notes: locally checked
+
+Implemented 2026-10-11 on `modernization/shared-reference-links`, based on
+native note preview. Shared command decoding now accepts the engine's local
+`showRef&type=scripRef` links for a single reference. The parser shares strict
+local-origin/query validation with note commands. Core dispatch validates the
+module and returns the target; visits normalize through the module's own SWORD
+key and existing history. The native note adapter supplies its source module
+as fallback, without a Swift reference/URL parser.
+
+Full local CTest passed 17/17, ASan/UBSan 4/4 and ThreadSanitizer 3/3 including
+fixtures (external SDK uninstrumented); C++17 warnings-as-errors checks passed.
+Pure tests cover encoded/Unicode/explicit/default modules, dispatch kinds and
+invalid/range/ambiguous requests. C++/C tests use an actual reference URI from
+a SWORD-rendered cross-reference note and verify normalized entry output. Native
+model and visible temporary-fixture checks confirmed the reference click opens
+John 3:16 in the note's source module, closes the stale note and preserves
+original reference-deduplicated history (Forward remains available).
+
+Next: expanded cross-reference lists/ranges and remaining study interactions.
+Hover/pin behavior, introductory notes, Strong's/morphology lookup, complete
+layout and other native platforms remain pending. Overall planning estimate is
+now approximately 6% (4–8%), with 0/38 accepted feature groups and 0/3 release-ready
+platforms. No GitHub build dispatched and no legacy file retired.

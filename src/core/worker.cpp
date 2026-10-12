@@ -22,12 +22,14 @@ struct StudyWorker::Impl {
       if (found == tabs.end()) throw std::invalid_argument("Study tab is closed or unknown");
       return *found->second;
     }
-    StudyNote note_link(StudyTab id, const std::string &current_module, const std::string &uri) {
-      const auto link = xiphos::core::study_note_link(uri, current_module);
+    StudyNote note_target(StudyTab id, const StudyNoteLink &link) {
       auto note = tab(id).study_note(link.module, link.reference, link.identifier);
       if ((link.type == "x") != (note.type == "crossReference"))
         throw std::invalid_argument("Study-note link type does not match the entry");
       return note;
+    }
+    StudyNote note_link(StudyTab id, const std::string &current_module, const std::string &uri) {
+      return note_target(id, xiphos::core::study_note_link(uri, current_module));
     }
   };
   using Job = std::function<void(State *, std::exception_ptr)>;
@@ -96,9 +98,10 @@ std::future<void> StudyWorker::close_tab(StudyTab tab) {
 std::future<ResolvedStudyLink> StudyWorker::resolve_study_link(StudyTab tab, std::string current_module, std::string uri) {
   return impl_->submit([tab, current_module = std::move(current_module), uri = std::move(uri)](Impl::State &s) -> ResolvedStudyLink {
     s.tab(tab); // Both kinds require an open study context.
-    if (uri.compare(0, 8, "sword://") == 0 || uri.compare(0, 8, "bible://") == 0)
-      return s.reader.resolve_link(current_module, uri);
-    return s.note_link(tab, current_module, uri);
+    const auto target = xiphos::core::study_link(uri, current_module);
+    if (const auto *passage = std::get_if<PassageLink>(&target))
+      return s.reader.resolve_link(passage->module, passage_uri(passage->reference));
+    return s.note_target(tab, std::get<StudyNoteLink>(target));
   });
 }
 std::future<StudyNote> StudyWorker::study_note_link(StudyTab tab, std::string current_module, std::string uri) {
