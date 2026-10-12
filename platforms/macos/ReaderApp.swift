@@ -53,6 +53,8 @@ final class ReaderModel: ObservableObject {
     @Published private(set) var referencePreview: RenderedReferenceList?
     @Published private(set) var lexicalPreview: RenderedLexicalEntry?
     @Published private(set) var informationPreview: RenderedLexicalEntry?
+    @Published private(set) var informationNote: RenderedStudyNote?
+    @Published private(set) var crossReferencesInVerseList = true
     @Published private(set) var isPreviewLoading = false
     @Published private(set) var studyNote: RenderedStudyNote?
     @Published private(set) var lexiconPreferences: LexiconPreferences?
@@ -84,6 +86,7 @@ final class ReaderModel: ObservableObject {
         hoverTask?.cancel(); hoverTask = nil
         isPreviewLoading = false
         informationPreview = nil
+        informationNote = nil
         if let worker, let tab {
             self.tab = nil
             Task { try? await worker.closeTab(tab) }
@@ -101,8 +104,10 @@ final class ReaderModel: ObservableObject {
             try await worker.enableModulePreferences(tab: opened)
             try await worker.enableLexiconPreferences(tab: opened)
             let lexicons = try await worker.lexiconPreferences(tab: opened)
+            let previewList = try await worker.crossReferencePreviewList(tab: opened)
             guard !closed else { return }
             lexiconPreferences = lexicons
+            crossReferencesInVerseList = previewList
             modules = discovered
             selection = modules.first(where: { $0.type == "Biblical Texts" })?.id
             if modules.isEmpty { message = "No installed SWORD modules found. Install modules with the existing Xiphos application, then reopen this preview." }
@@ -135,7 +140,7 @@ final class ReaderModel: ObservableObject {
     }
     private var hoverRevision: UInt64 = 0
     private var hoverTask: Task<Void, Never>?
-    func previewLexicalLink(_ uri: String, currentModule: String? = nil, currentReference: String? = nil) {
+    func previewStudyLink(_ uri: String, currentModule: String? = nil, currentReference: String? = nil) {
         guard !closed, !isBusy, let worker, let tab, uri.utf8.count <= 32_768 else { return }
         guard let sourceModule = currentModule ?? displayedModule,
               let sourceReference = currentReference ?? displayedEntry?.reference else { return }
@@ -148,11 +153,29 @@ final class ReaderModel: ObservableObject {
                 if let self, self.hoverRevision == hoverToken { self.isPreviewLoading = false }
             }
             do {
-                let result = try await worker.readLexical(tab: tab, module: sourceModule, reference: sourceReference, uri: uri)
+                let result = try await worker.hoverStudyLinkAt(tab: tab, currentModule: sourceModule, currentReference: sourceReference, uri: uri)
                 guard let self, !Task.isCancelled, !self.closed, self.hoverRevision == hoverToken,
                       self.revision == displayToken else { return }
-                self.informationPreview = result
+                switch result {
+                case .noPresentation: break
+                case .lexical(let entry):
+                    self.informationPreview = entry; self.informationNote = nil
+                case .note(let note):
+                    self.informationNote = note; self.informationPreview = nil
+                case .references(let references):
+                    self.referencePreview = references; self.studyNote = nil
+                }
             } catch { /* Unsupported links/failed hovers retain the last preview. */ }
+        }
+    }
+    func setCrossReferencesInVerseList(_ enabled: Bool) {
+        guard let worker, let tab else { return }
+        run { token in
+            try await worker.setCrossReferencePreviewList(tab: tab, enabled: enabled)
+            let copied = try await worker.crossReferencePreviewList(tab: tab)
+            guard token == self.revision && !self.closed else { return }
+            self.crossReferencesInVerseList = copied
+            self.message = "Cross-reference preview updated."
         }
     }
     func applyLexiconPreferences(_ submitted: LexiconPreferences) {
@@ -712,7 +735,21 @@ struct ReaderWindow: View {
                         Text(preview.entry.module).font(.caption).foregroundStyle(.secondary).padding(.horizontal, 8)
                         PassageView(html: preview.entry.html, anchor: nil, onScrollFailure: { model.message = $0 },
                                     onLink: { model.followLink($0, currentModule: preview.module, currentReference: preview.sourceReference) },
-                                    onLinkHover: { model.previewLexicalLink($0, currentModule: preview.module, currentReference: preview.sourceReference) })
+                                    onLinkHover: { model.previewStudyLink($0, currentModule: preview.module, currentReference: preview.sourceReference) })
+                    }.frame(minHeight: 140, idealHeight: 220)
+                } else if let note = model.informationNote {
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack {
+                            Text("Information Preview").font(.headline)
+                            Spacer()
+                            if model.isPreviewLoading { ProgressView().controlSize(.small) }
+                        }.padding(8)
+                        Text(note.type == "crossReference" ? "Cross-references" : "Study note")
+                            .font(.caption).padding(.horizontal, 8)
+                        Text("\(note.module) • \(note.reference)").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 8)
+                        PassageView(html: note.html, anchor: nil, onScrollFailure: { model.message = $0 },
+                                    onLink: { model.followLink($0, currentModule: note.module, currentReference: note.reference) },
+                                    onLinkHover: { model.previewStudyLink($0, currentModule: note.module, currentReference: note.reference) })
                     }.frame(minHeight: 140, idealHeight: 220)
                 }
             }.frame(minWidth: 190, idealWidth: 230, maxWidth: 320)
@@ -772,6 +809,10 @@ struct ReaderWindow: View {
                         Button("Lexicon dictionaries…") { model.showLexiconPreferences = true }.disabled(model.lexiconPreferences == nil)
                         Button("Import lexicon choices…") { chooseLexiconImport() }
                         Button("Save lexicon choices…") { chooseLexiconSave() }.disabled(model.lexiconPreferences == nil)
+                        Divider()
+                        Toggle("Cross-references in verse list", isOn: Binding(
+                            get: { model.crossReferencesInVerseList },
+                            set: { model.setCrossReferencesInVerseList($0) }))
                     }.disabled(model.modules.isEmpty)
                     Button("Previous chapter") { model.navigateChapter(-1) }.disabled(model.selection == nil)
                     Button("Next chapter") { model.navigateChapter(1) }.disabled(model.selection == nil)
@@ -782,7 +823,7 @@ struct ReaderWindow: View {
                 }
                 PassageView(html: model.html, anchor: model.renderedAnchor,
                             onScrollFailure: { model.message = $0 }, onLink: { model.followLink($0) },
-                            onLinkHover: { model.previewLexicalLink($0) })
+                            onLinkHover: { model.previewStudyLink($0) })
                 if !model.message.isEmpty {
                     Text(model.message).foregroundStyle(.secondary).padding(12)
                         .accessibilityLabel(model.message)

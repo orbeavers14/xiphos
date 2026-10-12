@@ -70,8 +70,9 @@ Only the latest request publishes; reading actions/window close invalidate
 pending publication, and failures retain the previous preview/status. Accepted
 engine actions still drain when a Swift observation is canceled. Dictionary
 click/close operations keep the information preview independent. This transport
-currently handles lexical links in the main reader/information view; notes,
-reference lists, dictionary-definition hover and detached dialogs are pending.
+initially handled lexical links. Main-reader/information notes and cross-reference
+destinations now use the shared service below; sidebar, dictionary-definition
+hover and detached dialogs remain pending.
 Rapid pointer/keyboard ordering and representative real-module/platform checks
 remain acceptance gates. This is a scoped initial hover implementation.
 
@@ -234,4 +235,14 @@ These tests supplement the frozen callback harness; they do not replace full
 GTK/native gesture, representative-module or platform acceptance. The new
 service now has a typed Swift adapter, tested against generated fixtures for
 all result kinds and preference/state/lifetime semantics. It is not yet
-connected to native pointer transport at this adapter checkpoint.
+connected to main-reader/information pointer transport through the guarded
+model at the native study-hover checkpoint.
+
+Native `previewStudyLink` publishes typed results without URI/type matching.
+Body notes and lexical entries share the retained information slot; reference
+results update the sidebar while keeping the last information. The core-owned
+mode is copied at startup and exposed through a per-window native toggle.
+Latest/revision/closed guards cover each kind, and actions invalidate pending
+hovers. Explicit no-presentation/failed results retain preview/status. Existing
+click behavior remains as documented; sidebar/dictionary-definition/detached
+hover and complete source/fallback/heading/keyboard/visual parity remain pending.
