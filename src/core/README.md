@@ -294,3 +294,20 @@ actual legacy menu adapter. Reader validates SWLD, positions the requested key,
 copies the keys and restores the preceding dictionary key text. Worker requires
 an open tab and C returns a separate owned choices kind; no history visit occurs.
 Native menu presentation follows separately.
+
+## Read-only legacy XML profile subset
+
+The native core requires libxml2 headers/library (the existing legacy XML
+dependency); CMake discovers them with FindLibXml2. `parse_study_profile` accepts
+XML bytes with an XML-supported declared encoding. `read_study_profile` reads
+one explicit regular file. Both return owned UTF-8 lexicon preferences and
+optional saved locale, with legacy missing/empty/duplicate-node lookup rules.
+Unavailable module names are retained. No home discovery, source-file writes,
+locale changes or preference publication occurs. DTD, malformed/wrong-root,
+invalid NUL and over-16-MiB inputs reject. XML comments/unrelated sections are
+not exposed or modified. These read-only APIs are not a native import/save UI.
+
+`core_xml_profile` compares complete frozen/current XML helpers;
+`core_profile_reader` compares shared results with the actual getter and checks
+owned lifetimes, encoding, file preservation, failure cases and parser isolation.
+Local sanitizer coverage excludes the system libxml2 implementation.

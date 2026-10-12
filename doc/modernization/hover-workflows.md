@@ -149,3 +149,14 @@ The test records this observed failure rather than expecting literal-text
 round trips from that helper. A new explicit writer must serialize literal
 names safely without reproducing that data-loss behavior; document this scoped
 correction and validate escaping/round-trip preservation independently.
+
+The shared `parse_study_profile`/`read_study_profile` reader is now implemented
+with 367 local checks, including comparisons with the actual getter/default
+rules. It copies five effective preferences and optional saved locale, decodes
+XML encodings into UTF-8, preserves unavailable names and does not mutate files
+or process locale. Independent parser contexts and owned results support
+concurrent read callers. DTD declarations stop parsing before resource loading;
+malformed/wrong-root input, invalid NUL code units and over-16-MiB sources reject.
+These explicit limits are not evidence of accepting every historical profile.
+The next gate is a safe literal-text writer preserving unrelated settings, then
+worker/native import/save integration and saved-locale startup characterization.

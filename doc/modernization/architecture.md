@@ -241,10 +241,20 @@ engine access and checked errors while preserving established workflows. A
 later C++20 requirement is a separate toolchain/validation milestone, not a
 prerequisite for extracting these services. Keep requirements per CMake target.
 
-The native test suite additionally requires libxml2 headers/library, an existing
+The native core additionally requires libxml2 headers/library, an existing
 legacy dependency. The current XML helper characterization uses six complete
 frozen/actual functions with real libxml2 and no GTK or user-profile access.
 The [profile contract](hover-workflows.md#lexicon-profile-persistence-seam)
-records duplicate/missing-node and escaping behavior. Native profile parsing/
-saving is not yet implemented; no new runtime dependency is linked by this
-test-only milestone. Linux review CI installs libxml2-dev; macOS uses the SDK.
+records duplicate/missing-node and escaping behavior. The owned profile reader now parses
+explicit files/in-memory XML and returns UTF-8 lexicon preferences plus saved
+locale as data. It reuses libxml2 without GTK and preserves the actual getter/
+default rules. DTD documents, malformed/wrong-root input, NUL code units and
+over-16-MiB documents reject. Parser contexts stop at DTD declarations before
+loading resources; process-wide loaders/substitution defaults remain untouched.
+Native import/save and saved-locale startup application are pending. Linux
+review CI installs libxml2-dev; macOS uses the SDK and explicit Swift link inputs.
+
+The inspected [libxml2 2.9.13 copyright notice](https://raw.githubusercontent.com/GNOME/libxml2/v2.9.13/Copyright)
+grants an MIT-style permission with notice-retention obligations and identifies
+per-file exceptions. No libxml2 source is vendored. Native package/release
+validation must check the actual linked artifact and retain applicable notices.
