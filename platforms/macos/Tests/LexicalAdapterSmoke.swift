@@ -36,6 +36,13 @@ import XiphosCore
         try await worker.setLexiconPreferences(tab: second, preferences: preferences)
         let strongs = "xiphos.url?action=showStrongs&type=Greek&value=alpha"
         let firstEntry = try await worker.readLexical(tab: first, module: "OriginalBible", reference: "John3:16", uri: strongs)
+        guard case .lexical(let contextual) = try await worker.resolveStudyLinkAt(tab: first, currentModule: "OriginalBible", currentReference: "John3:16", uri: strongs),
+              contextual.entry.module == firstEntry.entry.module, contextual.entry.html == firstEntry.entry.html,
+              contextual.sourceReference == "John3:16" else { fatalError("contextual lexical adapter") }
+        do {
+            _ = try await worker.resolveStudyLinkAt(tab: first, currentModule: "OriginalBible", currentReference: "John3:16", uri: strongs + "\0ignored")
+            fatalError("contextual embedded NUL accepted")
+        } catch is CoreError { }
         let secondEntry = try await worker.readLexical(tab: second, module: "", reference: "", uri: strongs)
         guard firstEntry.kind == .strongs, firstEntry.entry.module == "DictionaryOne", firstEntry.entry.html.contains("café"),
               firstEntry.module == "OriginalBible", firstEntry.sourceReference == "John3:16", firstEntry.type == "Greek", firstEntry.value == "alpha",

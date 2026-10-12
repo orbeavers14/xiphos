@@ -37,6 +37,8 @@ int main(int argc, char **argv) {
       sword::RawLD writer(path.c_str());
       writer.setKey("alpha"); writer.setEntry((std::string("<p>Original ") + id + " café <hi type=\"italic\">alpha</hi>.</p>").c_str());
       writer.setKey("café"); writer.setEntry("<p>Original Unicode key definition.</p>");
+      writer.setKey("03056"); writer.setEntry("<p>Original word definition.</p>");
+      writer.setKey("N-NSM"); writer.setEntry("<p>Original morphology definition.</p>");
       writer.setKey("G03056"); writer.setEntry("<q who=\"Jesus\">Original keyed word definition.</q>");
       std::ofstream config(root / "mods.d" / (std::string(id) + ".conf"));
       config << '[' << id << "]\nDataPath=./" << id << "/lexicon\nModDrv=RawLD\nSourceType=OSIS\nEncoding=UTF-8\n"
@@ -46,8 +48,8 @@ int main(int argc, char **argv) {
     }
     std::filesystem::create_directories(root / "bible");
     check(sword::RawText::createModule((root / "bible").string().c_str()) == 0, "create non-dictionary fixture");
-    { sword::RawText writer((root / "bible").string().c_str()); writer.setKey("John3:16"); writer.setEntry("Original Bible fixture."); }
-    { std::ofstream config(root / "mods.d/bible.conf"); config << "[OriginalBible]\nDataPath=./bible/\nModDrv=RawText\nSourceType=OSIS\nEncoding=UTF-8\nFeature=GreekDef\n"; }
+    { sword::RawText writer((root / "bible").string().c_str()); writer.setKey("John3:16"); writer.setEntry("Original Bible fixture: <w lemma=\"strong:G03056\" morph=\"robinson:N-NSM\">word</w>."); }
+    { std::ofstream config(root / "mods.d/bible.conf"); config << "[OriginalBible]\nDataPath=./bible/\nModDrv=RawText\nSourceType=OSIS\nEncoding=UTF-8\nFeature=GreekDef\nGlobalOptionFilter=OSISStrongs\nGlobalOptionFilter=OSISMorph\n"; }
     std::filesystem::remove(root / "mods.d/modules-conf.cache");
     const auto path = root.string();
     std::map<std::string, DictionaryEntry> expected;
