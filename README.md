@@ -30,7 +30,7 @@ hovers and footnote bodies use a separate information sidebar; cross-reference
 hovers follow a core-owned per-window list/information preference. Explicit lexicon XML import/save uses native file pickers. Other hover families,
 complete persistence and established pane composition remain in progress.
 
-The current local suite has 45 checks, supplemented by scoped sanitizer,
+The current local suite has 46 checks, supplemented by scoped sanitizer,
 strict-language and temporary-fixture GUI checks recorded in the status ledger.
 The legacy app retains its existing UI and delegates selected seams to shared
 helpers. Routine development and testing stay local to conserve GitHub builds;

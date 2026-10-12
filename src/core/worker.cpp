@@ -24,8 +24,10 @@ struct StudyWorker::Impl {
       if (found == tabs.end()) throw std::invalid_argument("Study tab is closed or unknown");
       return *found->second;
     }
-    StudyNote note_target(StudyTab id, const StudyNoteLink &link) {
-      auto note = tab(id).study_note(link.module, link.reference, link.identifier);
+    StudyNote note_target(StudyTab id, const StudyNoteLink &link, bool render_body = true) {
+      auto &session = tab(id);
+      auto note = render_body ? session.study_note(link.module, link.reference, link.identifier)
+                              : session.study_note_metadata(link.module, link.reference, link.identifier);
       if ((link.type == "x") != (note.type == "crossReference"))
         throw std::invalid_argument("Study-note link type does not match the entry");
       return note;
@@ -140,7 +142,7 @@ std::future<StudyHoverLink> StudyWorker::hover_study_link_at(StudyTab tab, std::
     const auto &link = std::get<StudyNoteLink>(target);
     const auto destination = xiphos_core_note_presentation(link.type.c_str(), 0, session.cross_reference_preview_list());
     if (destination == XIPHOS_NOTE_NO_PRESENTATION) return std::monostate{};
-    auto note = s.note_target(tab, link);
+    auto note = s.note_target(tab, link, destination == XIPHOS_NOTE_HOVER_BODY);
     if (destination == XIPHOS_NOTE_HOVER_BODY) return note;
     if (destination == XIPHOS_NOTE_HOVER_REFERENCES)
       return session.read_reference_list(note.module, note.reference_list, current_reference);
