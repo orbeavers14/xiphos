@@ -95,6 +95,11 @@ std::future<StudyTab> StudyWorker::create_tab() {
 std::future<void> StudyWorker::close_tab(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s) { s.tab(tab); s.tabs.erase(tab); });
 }
+std::future<ReferenceList> StudyWorker::read_reference_list(StudyTab tab, std::string module, std::string expression, std::string context) {
+  return impl_->submit([tab, module = std::move(module), expression = std::move(expression), context = std::move(context)](Impl::State &s) {
+    return s.tab(tab).read_reference_list(module, expression, context);
+  });
+}
 std::future<ResolvedStudyLink> StudyWorker::resolve_study_link(StudyTab tab, std::string current_module, std::string uri) {
   return impl_->submit([tab, current_module = std::move(current_module), uri = std::move(uri)](Impl::State &s) -> ResolvedStudyLink {
     s.tab(tab); // Both kinds require an open study context.

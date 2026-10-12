@@ -30,6 +30,7 @@ public:
   std::future<std::vector<Module>> modules();
   std::future<StudyTab> create_tab();
   std::future<void> close_tab(StudyTab tab);
+  std::future<ReferenceList> read_reference_list(StudyTab tab, std::string module, std::string expression, std::string context);
   std::future<ResolvedStudyLink> resolve_study_link(StudyTab tab, std::string current_module, std::string uri);
   std::future<StudyNote> study_note_link(StudyTab tab, std::string current_module, std::string uri);
   std::future<StudyNote> study_note(StudyTab tab, std::string module, std::string reference, std::string identifier);
