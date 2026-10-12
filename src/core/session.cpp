@@ -16,6 +16,19 @@ void StudySession::require_module(const std::string &module) const {
   for (const auto &installed : reader_.modules()) if (installed.id == module) return;
   throw std::out_of_range("Module is not installed");
 }
+void StudySession::import_module_preferences(const std::string &path) {
+  const auto loaded = read_module_engine_preferences(path);
+  ModuleEnginePreferences replacement;
+  for (const auto &module : reader_.modules()) {
+    const auto found = loaded.find(module.id);
+    replacement.emplace(module.id, found == loaded.end()
+        ? engine_options_from_preferences({}) : found->second);
+  }
+  // Commit only after all file reads, decoding and allocations succeed.
+  module_options_.swap(replacement);
+  options_.reset();
+  module_preferences_ = true;
+}
 void StudySession::set_module_engine_options(const std::string &module, const EngineOptions &options) {
   require_module(module);
   module_options_[module] = options;

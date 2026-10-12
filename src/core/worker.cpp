@@ -110,6 +110,9 @@ std::future<void> StudyWorker::set_engine_options(StudyTab tab, EngineOptions op
 std::future<void> StudyWorker::clear_engine_options(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s) { s.tab(tab).clear_engine_options(); });
 }
+std::future<void> StudyWorker::import_module_preferences(StudyTab tab, std::string path) {
+  return impl_->submit([tab, path = std::move(path)](Impl::State &s) { s.tab(tab).import_module_preferences(path); });
+}
 std::future<void> StudyWorker::enable_module_preferences(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s) { s.tab(tab).enable_module_preferences(); });
 }

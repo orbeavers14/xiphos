@@ -784,3 +784,31 @@ GTK4/WinUI implementations and release checks remain pending. No GitHub build
 was dispatched, no source retired and no feature group officially accepted.
 Overall provisional completion remains about 5% (3–7%), 0/38 accepted groups,
 and 0/3 release-ready native platforms.
+
+
+## Read-only legacy preference import: locally checked, native picker pending
+
+Implemented 2026-10-11 on `modernization/preference-file-import`, based on the
+native reading-control slice. The C++11 preference seam decodes an explicitly
+supplied existing regular file with SWORD's own `SWConfig` and the characterized
+shared engine-default policy. It never discovers a home path or writes a file.
+Worker imports replace one tab's engine preferences for installed modules;
+missing sections use legacy defaults and unknown module sections are ignored.
+Other tabs, display/layout settings and history remain unchanged. Replacement
+state is fully prepared before commit, so file/decoding/allocation failures
+leave prior settings intact. Imports reset that tab's earlier engine overrides.
+
+Validation: all 263 original initialization cases now also compare the file
+loader's decoded engine values. Expanded session/worker/C/Swift checks cover
+imported output, absent sections, unknown sections and keys, UTF-8 values,
+missing files and directory rejection, failure-state preservation, retained
+history/window isolation and byte-for-byte unchanged source files. Full local
+macOS CTest passed 15/15; focused ASan/UBSan passed 3/3 and ThreadSanitizer passed
+2/2, including fixture setup (external SWORD SDK uninstrumented). The default
+legacy seam build and C++11/C++17 warnings-as-errors syntax checks passed.
+Windows-specific file handling remains unvalidated on a Windows toolchain.
+
+Next: expose an explicit native import picker and then compatible preference
+export/save with round-trip and failure checks. This is the 18-field engine
+subset, not full preference migration or persistent setting parity. No GitHub
+build was dispatched and no feature group was accepted or legacy file retired.

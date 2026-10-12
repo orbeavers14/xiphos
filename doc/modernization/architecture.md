@@ -198,3 +198,13 @@ bridge returns copied flags plus a configured marker, so SDK defaults are never
 mistaken for an explicit all-off mask. Persistence/import remains separate work. The macOS preview now binds four
 reading options and uses configured tab rendering for both verse and chapter
 views; frontends obtain defaults and module state through the async adapter.
+
+
+Explicit legacy engine-preference imports decode through `CoreOptions` using
+SWORD's configuration parser on the serialized worker. A session first prepares
+settings for every installed module, then commits them as one replacement;
+missing sections receive shared legacy defaults. Import resets previous engine
+overrides for that tab without visiting history. Unknown/uninstalled sections
+are ignored for rendering, and the original file is never rewritten. Native
+picker integration, full display preferences and compatible save/export remain
+separate gates.

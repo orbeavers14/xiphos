@@ -35,6 +35,7 @@ public:
   std::future<void> set_engine_options(StudyTab tab, EngineOptions options);
   std::future<void> clear_engine_options(StudyTab tab);
   std::future<void> enable_module_preferences(StudyTab tab);
+  std::future<void> import_module_preferences(StudyTab tab, std::string path);
   std::future<void> set_module_engine_options(StudyTab tab, std::string module, EngineOptions options);
   std::future<void> clear_module_engine_options(StudyTab tab, std::string module);
   std::future<std::optional<EngineOptions>> module_engine_options(StudyTab tab, std::string module);

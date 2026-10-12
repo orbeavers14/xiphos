@@ -34,6 +34,10 @@ struct EngineOptions {
 // Unknown keys are ignored; this parser does not read or write user files.
 using EngineOptionPreferences = std::map<std::string, std::string>;
 EngineOptions engine_options_from_preferences(const EngineOptionPreferences &preferences);
+// Read-only legacy SWORD configuration decoding. No home-directory discovery,
+// file creation, preference writes or installed-module filtering.
+using ModuleEnginePreferences = std::map<std::string, EngineOptions>;
+ModuleEnginePreferences read_module_engine_preferences(const std::string &path);
 struct ModuleOptions {
   EngineOptions declared;
   bool headings = false;

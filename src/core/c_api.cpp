@@ -172,6 +172,10 @@ xc_status xc_worker_set_engine_options(xc_worker *w, uint64_t tab, unsigned flag
   const auto options = options_from_flags(flags);
   return queue_request(w, out, [=](auto &worker) { return worker.set_engine_options(tab, options); });
 }
+xc_status xc_worker_import_module_preferences(xc_worker *w, uint64_t tab, const char *path, xc_request **out) {
+  if (!path || !*path) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.import_module_preferences(tab, path); });
+}
 xc_status xc_worker_enable_module_preferences(xc_worker *w, uint64_t tab, xc_request **out) {
   return queue_request(w, out, [=](auto &worker) { return worker.enable_module_preferences(tab); });
 }
