@@ -12,6 +12,7 @@
 #include <thread>
 #include <type_traits>
 #include <utility>
+#include <algorithm>
 namespace xiphos::core {
 struct StudyWorker::Impl {
   struct State {
@@ -134,12 +135,15 @@ std::future<StudyHoverLink> StudyWorker::hover_study_link_at(StudyTab tab, std::
     if (current_reference.empty() || uri.empty() || current_module.find('\0') != std::string::npos ||
         current_reference.find('\0') != std::string::npos || uri.find('\0') != std::string::npos)
       throw std::invalid_argument("Hover requires copied source context and a valid URI");
-    const auto target = xiphos::core::contextual_study_link(uri, current_module);
+    const auto target = xiphos::core::contextual_hover_link(uri, current_module, current_reference);
     if (std::holds_alternative<PassageLink>(target) || std::holds_alternative<ReferenceListLink>(target))
       return std::monostate{};
     if (std::holds_alternative<LexicalLink>(target))
       return session.read_lexical(current_module, current_reference, uri, XIPHOS_LEXICON_MAIN);
-    const auto &link = std::get<StudyNoteLink>(target);
+    auto link = std::get<StudyNoteLink>(target);
+    if (!std::any_of(s.reader.modules().begin(), s.reader.modules().end(),
+                    [&](const Module &module) { return module.id == link.module; }))
+      link.module = current_module;
     const auto destination = xiphos_core_note_presentation(link.type.c_str(), 0, session.cross_reference_preview_list());
     if (destination == XIPHOS_NOTE_NO_PRESENTATION) return std::monostate{};
     auto note = s.note_target(tab, link, destination == XIPHOS_NOTE_HOVER_BODY);

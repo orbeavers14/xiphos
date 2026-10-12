@@ -220,8 +220,9 @@ its initial English label/theme styling is not full localization/visual parity.
 The service accepts the existing strict local n/x parser domain. Missing/type-
 mismatched notes and invalid context/URLs reject; copied results remain valid
 after later calls and shutdown. It does not reproduce every legacy malformed/
-nullable-attribute case, heading verse-zero setup, abbreviation/module fallback
-or short-passage substitution. Explicit showRef and passage links have no
+nullable-attribute case, heading verse-zero setup or abbreviation behavior.
+Regular main-hover short-passage/unavailable-module fallback is now implemented
+as described below; foreign-view/global-main equivalence remains a gate. Explicit showRef and passage links have no
 presentation; status/bookmark/dictionary-URI and detached-dialog hover remain
 pending. The existing raw preview/click APIs and native click behavior are
 unchanged in this service milestone. Native click destination adaptation must
@@ -266,3 +267,15 @@ Every required value is copied before a body render may replace SDK attributes;
 metadata snapshots survive later calls and close. Embedded NUL module/reference/
 identifier inputs reject rather than silently truncating. This is not a timing
 benchmark or SDK-internal allocation/ownership audit.
+
+`contextual_hover_link` reuses the existing parameter/URI decoder and adds the
+characterized note passage rule: decoded values shorter than five bytes use
+committed context. Empty or absent passage parameters follow that rule. The
+worker falls back to the supplied source module when the explicit module is
+absent from its copied catalog; installed modules and full passages are kept.
+Twelve generated module/passage combinations match the expected rendered note,
+with separate five-byte/UTF-8 boundary, explicit-source, strict-parser isolation,
+malformed input, history and C snapshot-lifetime checks. Independent raw/click
+parsers remain unchanged. Fallback is scoped to the caller’s committed view;
+foreign-information/global-main context equivalence, abbreviations, heading
+verse zero and complete module/platform behavior are not accepted by this test.
