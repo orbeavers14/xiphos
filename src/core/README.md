@@ -471,3 +471,10 @@ returns 0/1 for a ready presentation result, -1 for pending/failed/wrong-kind; i
 may be repeated. Native selection and refresh read this shared policy, and the
 existing explicit module import/save now persists chapter mode. No independent
 Swift preference/default implementation is needed.
+
+`render_preverse_headings` is an owned C++11 heading collection seam matching
+legacy sequential attributes, UTF8HTML conversion and SDK rendering. It refreshes
+entry attributes before each lookup and stops at the first empty index. Frozen/
+current complete-function comparisons use disabled block flags and identity
+cleanup; those transformations, caching and native display remain pending. See
+[heading scope](../../doc/modernization/heading-workflows.md).

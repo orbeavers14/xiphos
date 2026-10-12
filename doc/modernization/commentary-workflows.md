@@ -97,7 +97,7 @@ selected-row/link contrast, defaults and module-setting restoration.
 
 ## Verification and remaining acceptance
 
-The full local suite passes **55/55**. Core/adapter/model tests include:
+The full local suite passes **56/56**. Core/adapter/model tests include:
 
 | Test | Evidence |
 |---|---|

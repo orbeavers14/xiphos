@@ -57,6 +57,12 @@ study-pane composition/commentary workflow before broader native feature claims.
 
 ## Current locally checked scope
 
+An initial [preverse heading collector](heading-workflows.md) now agrees with
+complete frozen/current collection functions when block/cleanup postprocessors
+are disabled/shimmed. Normal and address/undefined checks pass; native heading
+display and the remaining transformation/cache/presentation work are pending.
+
+
 The [commentary synchronization slice](commentary-workflows.md) includes shared
 paired visits/history, typed C/Swift adapters and native upper-right commentary
 above dictionary content. Sparse/linked chapter traversal and selected/missing
@@ -69,7 +75,7 @@ classification and default/Off decoding. A combined single-decode import stages
 engine and presentation settings together; verified save preserves unrelated,
 personal and uninstalled settings. Native adapters apply these defaults and
 restore each module setting; explicit import/save round trips preserve drafts
-and history. The full suite passes **55/55**; focused address/undefined and thread
+and history. The full suite passes **56/56**; focused address/undefined and thread
 adapter checks pass **1/1** each, with the external
 SDK instrumentation limits described below. Headings, detached windows,
 companion/personal editing, saved pane startup and broader corpus/visual acceptance
@@ -93,7 +99,7 @@ the fully accepted parity count remains zero.
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
 
-Current local suite: **55 checks**. The shared Unicode click-key utility reuses
+Current local suite: **56 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.

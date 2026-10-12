@@ -1,0 +1,57 @@
+# Preverse heading collection: initial seam
+
+Updated 2026-10-12. This supports the F03/F08 heading work but does not establish
+complete rendering, caching or visual parity. Native heading display is pending.
+
+## Source and scope
+
+`src/main/display.cc:CacheHeader` clears a cached header, reads sequential
+`Heading/Preverse` attributes starting at zero, renders each through SWORD,
+postprocesses it and appends it. It stops at the first empty/missing index.
+`src/backend/sword_main.cc:BackEnd::get_entry_attribute` defaults to refreshing
+the current entry's attributes before each lookup and converts the attribute
+through SWORD's UTF8HTML filter before returning it.
+
+The C++11 `render_preverse_headings` helper preserves this SDK collection/dataflow
+and returns owned strings. It refreshes attributes after each previous buffer
+render, preserves the current module key and stops at the first empty index.
+Callers establish engine options and serialize the module first. It does not
+implement Xiphos block rendering, CleanupContent transformations or GTK caching.
+
+The test includes complete frozen functions from CrossWire c9976a8 and extracts
+the complete current functions at configure time. It compares their output with
+the helper using disabled block flags and an identity CleanupContent shim that
+checks the non-reset header call. This validates collection/dataflow under that
+scope, not the shimmed transformations or the complete cached display path.
+The original license notices remain with the frozen functions.
+
+## Evidence
+
+`core_heading_collection` creates original-prose RawCom OSIS data with composite
+preverse headings, Unicode text, an entry without headings and mixed interverse/
+preverse markup. It compares frozen/current/helper output, key identity and
+selection, body exclusion and absence of stale headings after navigation. Where
+the local SDK numbers an interverse heading before a preverse heading, it checks
+legacy termination at the resulting numbering gap.
+
+The fixture's preverse container follows the vendor's
+[OSIS heading filter source](https://www.crosswire.org/svn/sword/trunk/src/modules/filters/osisheadings.cpp).
+The installed SDK and local test oracle determine behavior; the test does not
+assume that every OSIS title becomes a separate preverse attribute on every SDK.
+
+Normal and address/undefined checks pass; strict C++11 syntax also passes. SWORD
+and GLib are not fully instrumented, and leak detection is disabled. The shared
+helper is available to the legacy-compatible library but is not yet adopted by
+legacy or native render paths.
+
+## Next acceptance work
+
+- Shared Headings preference decoding, import/save and native controls.
+- Owned headings in chapter snapshots and source-equivalent placement relative
+  to commentary section/selections, then Bible chapter/entry integration.
+- ThML and representative module data, numbering gaps, canonical headings,
+  linked entries, selected references and heading note/lexical links.
+- Block/cleanup transformations, cache invalidation, personal commentaries,
+  fonts/images/colors and legacy/native runtime/visual comparison.
+
+No existing renderer or source file is retired by this seam.
