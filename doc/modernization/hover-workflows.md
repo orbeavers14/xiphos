@@ -246,3 +246,13 @@ Latest/revision/closed guards cover each kind, and actions invalidate pending
 hovers. Explicit no-presentation/failed results retain preview/status. Existing
 click behavior remains as documented; sidebar/dictionary-definition/detached
 hover and complete source/fallback/heading/keyboard/visual parity remain pending.
+
+Information-link mode now calls the owned Reader/session reference-target API,
+which reuses the existing parser without rendering full verse bodies. The
+formatter consumes parsed target names/context directly; sidebar mode still
+uses full rendered snapshots. Sixty-four generated module/context/expression
+cases agree with those full snapshots, retaining order, duplicates, normalized
+context, skipped/limited metadata and the 2,000-verse per-range cap. Target
+snapshots survive later rendering and session/reader close. No benchmark or
+quantified savings is claimed; this removes a source-visible unnecessary render
+path without introducing an alternate parser or frontend behavior policy.

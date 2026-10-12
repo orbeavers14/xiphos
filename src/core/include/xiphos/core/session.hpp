@@ -30,6 +30,8 @@ public:
   DictionaryEntry read_dictionary(const std::string &module, const std::string &key);
   ReferenceList read_reference_list(const std::string &module, const std::string &expression,
                                     const std::string &context);
+  ParsedReferenceList reference_targets(const std::string &module, const std::string &expression,
+                                         const std::string &context);
   StudyNote study_note(const std::string &module, const std::string &reference,
                        const std::string &identifier);
   Entry read_entry(const std::string &module, const std::string &reference);

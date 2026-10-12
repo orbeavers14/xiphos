@@ -49,7 +49,7 @@ int main(int argc,char **argv) {
    std::string copied=body; surviving=worker.hover_study_link_at(first,"OptionOther","John3:23",copied); copied.clear();
   }
   check(std::get<StudyNote>(surviving.get()).html.find("Original other note")!=std::string::npos,"copied queued hover result survives shutdown");
-  ReferenceList malicious; malicious.context="John<&\"'"; malicious.entries.push_back({"John<&\"'","Unexpected body"});
+  ParsedReferenceList malicious; malicious.context="John<&\"'"; malicious.references.push_back("John<&\"'");
   const auto escaped=display_reference_links(malicious);
   check(escaped.find("John&lt;&amp;&quot;&#39;")!=std::string::npos && escaped.find("Unexpected body")==std::string::npos && escaped.find("John%3C%26%22%27")!=std::string::npos,"reference labels and encoded URI attributes safely escaped");
   xc_note *held=nullptr;

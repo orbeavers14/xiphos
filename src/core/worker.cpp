@@ -142,9 +142,9 @@ std::future<StudyHoverLink> StudyWorker::hover_study_link_at(StudyTab tab, std::
     if (destination == XIPHOS_NOTE_NO_PRESENTATION) return std::monostate{};
     auto note = s.note_target(tab, link);
     if (destination == XIPHOS_NOTE_HOVER_BODY) return note;
-    auto references = session.read_reference_list(note.module, note.reference_list, current_reference);
-    if (destination == XIPHOS_NOTE_HOVER_REFERENCES) return references;
-    note.html = display_reference_links(references);
+    if (destination == XIPHOS_NOTE_HOVER_REFERENCES)
+      return session.read_reference_list(note.module, note.reference_list, current_reference);
+    note.html = display_reference_links(session.reference_targets(note.module, note.reference_list, current_reference));
     return note;
   });
 }

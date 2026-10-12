@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/content.hpp"
 #include "xiphos/core/link.hpp"
+#include "xiphos/core/reference_list.hpp"
 namespace xiphos::core {
 namespace {
 std::string attribute(const std::string &value) {
@@ -28,11 +29,11 @@ std::string display_reference_list(const ReferenceList &references) {
   }
   return html;
 }
-std::string display_reference_links(const ReferenceList &references) {
+std::string display_reference_links(const ParsedReferenceList &references) {
   std::string html;
-  for (const auto &entry : references.entries)
-    html += "<a href=\"" + attribute(passage_uri(entry.reference)) + "\">" +
-        attribute(entry.reference) + ",</a><br/>";
+  for (const auto &reference : references.references)
+    html += "<a href=\"" + attribute(passage_uri(reference)) + "\">" +
+        attribute(reference) + ",</a><br/>";
   html += "<a href=\"" + attribute(passage_uri(references.context)) + "\">Back to " +
       attribute(references.context) + "</a><br/>";
   return html;

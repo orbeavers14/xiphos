@@ -355,3 +355,10 @@ setter/getter requests. C callers use existing snapshot transfers and the
 `xc_request_no_presentation` copied marker; a successful void request is not a
 no-presentation result. Explicit reference/passages are no-ops in this slice;
 status/dictionary URI/dialog, heading and fallback compatibility remain pending.
+
+`Reader::reference_targets` / `StudySession::reference_targets` return owned
+`ParsedReferenceList` names/context/guard metadata without verse HTML or module
+key/filter changes. They reuse the existing characterized parser; embedded NUL
+arguments reject. Information-link hover uses these targets directly, while
+sidebar hover retains rendered ReferenceList snapshots. The target-only API is
+C++ internal-facing at this milestone; no new frontend schema/parser is added.
