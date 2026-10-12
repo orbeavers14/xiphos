@@ -30,6 +30,7 @@
 #include <swmodule.h>
 #include "xiphos/core/dictionary.hpp"
 #include "xiphos/core/dictionary_history.hpp"
+#include <stdexcept>
 #include <stringmgr.h>
 #include <localemgr.h>
 
@@ -1235,7 +1236,14 @@ void main_display_dictionary(const char *mod_name,
 	gui_notebook_dict_goto_dict();
 
 	// old_key is uppercase
-	key = g_utf8_strup(key, -1);
+	std::string click_key;
+	try {
+		click_key = xiphos::core::dictionary_click_key(key);
+	} catch (const std::invalid_argument &) {
+		XI_message(("Dictionary click key is not valid UTF-8"));
+		return;
+	}
+	key = click_key.c_str();
 	old_key = gtk_entry_get_text(GTK_ENTRY(widgets.entry_dict));
 	if (!strcmp(old_key, key))
 		main_dictionary_entry_changed(settings.DictWindowModule);
