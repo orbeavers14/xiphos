@@ -73,6 +73,22 @@ struct ReaderModelSmoke {
         guard first.selection == "OptionTest", first.engineOptions?.contains(.strongs) == false,
               first.engineOptions?.contains(.wordsInRed) == true,
               !first.html.contains("3056") else { fatalError("imported other module preference restoration") }
+        first.setReadingOption(.strongs, enabled: true); try await idle(first)
+        first.reference = "John 4:2"
+        let saveURL = URL(fileURLWithPath: root).appendingPathComponent("model-saved-modops.conf")
+        let beforeSaveHTML = first.html, beforeSaveDraft = first.reference
+        let beforeSaveBack = first.canBack, beforeSaveForward = first.canForward
+        first.saveReadingOptions(path: saveURL.path); try await idle(first)
+        guard first.html == beforeSaveHTML, first.reference == beforeSaveDraft,
+              first.canBack == beforeSaveBack, first.canForward == beforeSaveForward,
+              first.message == "Reading options saved." else { fatalError("model save preserves pane/input/history") }
+        second.importReadingOptions(path: saveURL.path); try await idle(second)
+        guard second.engineOptions == first.engineOptions else { fatalError("model save/reload in second window") }
+        let savedBytes = try Data(contentsOf: saveURL)
+        first.saveReadingOptions(path: root); try await idle(first)
+        guard first.html == beforeSaveHTML, first.reference == beforeSaveDraft,
+              first.canBack == beforeSaveBack, first.canForward == beforeSaveForward,
+              first.message.contains("Unable to save"), try Data(contentsOf: saveURL) == savedBytes else { fatalError("model failed save preserves state/file") }
         first.close(); second.close(); await worker.shutdown()
         print("Native reading option model checks passed")
     }

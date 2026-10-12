@@ -7,6 +7,10 @@ private struct ReadingOptionImportError: LocalizedError {
     var errorDescription: String? { "Unable to import reading options. Choose a readable Xiphos modops.conf file." }
 }
 
+private struct ReadingOptionSaveError: LocalizedError {
+    var errorDescription: String? { "Unable to save reading options. Choose a writable file location." }
+}
+
 @MainActor
 final class ReaderModel: ObservableObject {
     @Published var modules: [InstalledModule] = []
@@ -138,6 +142,15 @@ final class ReaderModel: ObservableObject {
     func refreshDisplay() {
         guard let entry = displayedEntry, let module = displayedModule else { return }
         run { token in try await self.present(entry, module: module, token: token, updateInput: false) }
+    }
+    func saveReadingOptions(path: String) {
+        guard let worker, let tab else { return }
+        run { token in
+            do { try await worker.saveModulePreferences(tab: tab, path: path) }
+            catch { throw ReadingOptionSaveError() }
+            guard token == self.revision && !self.closed else { return }
+            self.message = "Reading options saved."
+        }
     }
     func importReadingOptions(path: String) {
         guard let worker, let tab else { return }
@@ -304,6 +317,17 @@ struct ReaderWindow: View {
             model.importReadingOptions(path: url.path)
         }
     }
+    private func chooseSaveFile() {
+        let panel = NSSavePanel()
+        panel.title = "Save Xiphos reading options"
+        panel.message = "Save your reading options in a Xiphos modops.conf file."
+        panel.prompt = "Save"
+        panel.nameFieldStringValue = "modops.conf"
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            model.saveReadingOptions(path: url.path)
+        }
+    }
     @ViewBuilder private func readingOption(_ title: String, flag: EngineOptionFlags) -> some View {
         if model.moduleOptions.declared.contains(flag) {
             Toggle(title, isOn: Binding(
@@ -363,6 +387,7 @@ struct ReaderWindow: View {
                 HStack {
                     Menu("Preferences") {
                         Button("Import reading options…") { choosePreferenceFile() }
+                        Button("Save reading options…") { chooseSaveFile() }
                     }.disabled(model.modules.isEmpty)
                     Button("Previous chapter") { model.navigateChapter(-1) }.disabled(model.selection == nil)
                     Button("Next chapter") { model.navigateChapter(1) }.disabled(model.selection == nil)
