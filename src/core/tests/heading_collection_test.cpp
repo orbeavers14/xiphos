@@ -2,6 +2,7 @@
 #include "xiphos/core/headings.hpp"
 #include <rawcom.h>
 #include <rawtext.h>
+#include <versekey.h>
 #include <swmgr.h>
 #include <swmodule.h>
 #include <markupfiltmgr.h>
@@ -55,8 +56,22 @@ int main(int argc, char **argv) {
       std::ofstream config(root / "mods.d/text.conf");
       config << "[Text]\nDataPath=./text/\nModDrv=RawText\nEncoding=UTF-8\n";
     }
+    std::filesystem::create_directories(root / "thml");
+    check(RawCom::createModule((root / "thml").string().c_str()) == 0, "create original ThML heading fixture");
+    {
+      RawCom writer((root / "thml").string().c_str());
+      writer.setKey("John 3:16");
+      writer.setEntry("<div class=\"sechead\">Original ThML heading café.</div><div class=\"title\">Second ThML heading.</div>Original ThML entry body.");
+      VerseKey source("John 3:16"); writer.setKey("John 3:17"); writer.linkEntry(&source);
+      writer.setKey("John 3:18"); writer.setEntry("Original ThML entry without headings.");
+      writer.setKey("John 3:19"); writer.setEntry("<div class=\"sechead\">Original ThML heading-only entry.</div>");
+      writer.setKey("John 3:20"); writer.setEntry("<div class=\"sechead\">Original heading with <scripRef passage=\"John 3:17\">original passage link</scripRef>.</div>Original linked-heading body.");
+      std::ofstream config(root / "mods.d/thml.conf");
+      config << "[ThMLNotes]\nDataPath=./thml/\nModDrv=RawCom\nSourceType=ThML\nEncoding=UTF-8\nGlobalOptionFilter=ThMLHeadings\nGlobalOptionFilter=ThMLScripref\n";
+    }
     std::filesystem::remove(root / "mods.d/modules-conf.cache");
     SWMgr manager(root.string().c_str(), true, new MarkupFilterMgr(FMT_XHTML), false, false);
+    manager.setGlobalOption("Cross-references", "On");
     manager.setGlobalOption("Headings", "On"); auto *module = manager.getModule("Notes");
     check(module != nullptr, "load heading fixture");
     GLOBAL_OPS options;
@@ -82,6 +97,29 @@ int main(int argc, char **argv) {
         if ((zero == attributes.end() || !zero->second.length()) && later != attributes.end() && later->second.length())
           check(copied.empty(), "legacy first-empty-index termination preserves a preverse numbering gap");
       }
+    }
+    auto *thml = manager.getModule("ThMLNotes");
+    check(thml != nullptr, "load ThML heading fixture");
+    FrozenHeadingBackend thml_frozen{thml}; CurrentHeadingBackend thml_current{thml};
+    std::string initial;
+    for (const auto &reference : {"John 3:16", "John 3:17", "John 3:18", "John 3:19", "John 3:20", "John 3:16"}) {
+      thml->setKey(reference); ModuleCache::CacheVerse old, current;
+      frozen_cache_header(old, *thml, &options, &thml_frozen);
+      actual_cache_header(current, *thml, &options, &thml_current);
+      const std::string before = thml->getKeyText(); auto *identity = thml->getKey();
+      const auto collected = xiphos::core::render_preverse_headings(*thml);
+      std::string joined; for (const auto &heading : collected) joined += heading;
+      check(joined == old.html && joined == current.html && identity == thml->getKey() && before == thml->getKeyText(),
+            "ThML matches frozen/current collection and preserves selected key");
+      if (std::string(reference) == "John 3:16") {
+        check(collected.size() == 2 && joined.find("Original ThML heading") != std::string::npos &&
+              joined.find("Second ThML heading") != std::string::npos && joined.find("Original ThML entry body") == std::string::npos,
+              "two sequential ThML headers remain separate from body");
+        initial = joined;
+      } else if (std::string(reference) == "John 3:17") check(joined == initial, "linked verse preserves shared heading content");
+      else if (std::string(reference) == "John 3:18") check(collected.empty(), "ThML navigation removes stale headings");
+      else if (std::string(reference) == "John 3:19") check(joined.find("Original ThML heading-only") != std::string::npos, "ThML heading-only data retained");
+      else { check(joined.find("href=") != std::string::npos, "SDK renders passage links inside ThML headings"); }
     }
     std::cout << "Preverse heading collection characterization checks passed\n";
   } catch (const std::exception &e) { std::cerr << e.what() << '\n'; return 1; }

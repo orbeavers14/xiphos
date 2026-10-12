@@ -59,8 +59,10 @@ study-pane composition/commentary workflow before broader native feature claims.
 
 An initial [preverse heading collector](heading-workflows.md) now agrees with
 complete frozen/current collection functions when block/cleanup postprocessors
-are disabled/shimmed. Normal and address/undefined checks pass; native heading
-display and the remaining transformation/cache/presentation work are pending.
+are disabled/shimmed, including original OSIS and ThML multi-heading/linked data.
+Owned core/macOS commentary headings, shared preferences and reference-preview
+source context pass local checks. Complete transformations/cache/presentation,
+Bible headings and broader SDK/corpus/visual acceptance remain pending.
 
 
 The [commentary synchronization slice](commentary-workflows.md) includes shared

@@ -99,7 +99,8 @@ selected-row/link contrast, defaults and module-setting restoration.
 
 Preverse headings have owned core snapshots, shared Headings defaults/import/save,
 typed C/Swift adapters and native verse/chapter controls. Heading-only entries
-remain visible; toggles preserve body text, draft input and history. Complete
+remain visible; toggles preserve body text, draft input and history. OSIS/ThML
+fixtures include multiple/linked headings and source-context reference previews. Complete
 heading transformations and corpus/visual parity remain pending.
 
 The full local suite passes **58/58**. Core/adapter/model tests include:

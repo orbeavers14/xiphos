@@ -29,16 +29,20 @@ The original license notices remain with the frozen functions.
 
 ## Evidence
 
-`core_heading_collection` creates original-prose RawCom OSIS data with composite
+`core_heading_collection` creates original-prose RawCom OSIS and ThML data with composite
 preverse headings, Unicode text, an entry without headings and mixed interverse/
 preverse markup. It compares frozen/current/helper output, key identity and
 selection, body exclusion and absence of stale headings after navigation. Where
 the local SDK numbers an interverse heading before a preverse heading, it checks
-legacy termination at the resulting numbering gap.
+legacy termination at the resulting numbering gap. ThML adds two sequential
+headers, a linked verse, no-heading and heading-only entries. Frozen/current
+collection agrees with all of these on the local SDK; sparse chapter snapshots
+render linked heading content once while retaining the missing-selection anchor.
 
 The fixture's preverse container follows the vendor's
 [OSIS heading filter source](https://www.crosswire.org/svn/sword/trunk/src/modules/filters/osisheadings.cpp).
-The installed SDK and local test oracle determine behavior; the test does not
+The [ThML filter source](https://www.crosswire.org/svn/sword/trunk/src/modules/filters/thmlheadings.cpp)
+informs original `sechead`/`title` fixtures. The installed SDK and local test oracle determine behavior; the test does not
 assume that every OSIS title becomes a separate preverse attribute on every SDK.
 
 Normal and address/undefined checks pass; strict C++11 syntax also passes. SWORD
@@ -61,13 +65,16 @@ profile is active, leaving ordinary body-only reads unchanged. Native model test
 cover busy/closed commands, drafts/history, window isolation, heading-only entries
 and explicit import/save. A temporary preview verified headings above the verse
 body, chapter toggling and retained draft input. The control governs preverse
-attributes; interverse titles remain part of SDK body rendering.
+attributes; interverse titles remain part of SDK body rendering. ThML heading
+scripture links produce SDK reference-preview commands. Core and native model
+checks preserve the commentary source module, copied preview text, draft input
+and history; this is not proof of other heading note/lexical link families.
 
 ## Next acceptance work
 
 - Bible chapter/entry heading integration and complete placement/visual acceptance.
-- ThML and representative module data, numbering gaps, canonical headings,
-  linked entries, selected references and heading note/lexical links.
+- Representative module data, canonical headings, broader numbering gaps,
+  linked entries/selection across SDKs and heading note/lexical links.
 - Block/cleanup transformations, cache invalidation, personal commentaries,
   fonts/images/colors and legacy/native runtime/visual comparison.
 

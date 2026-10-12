@@ -35,6 +35,21 @@ struct ReaderModelSmoke {
               model.commentaryChapter?.html.contains("Original heading") == false else { fatalError("heading update preserves body/draft/history and rejects busy edit") }
         other.chooseCommentary("Notes"); try await idle(other)
         guard other.commentaryHeadings else { fatalError("heading preferences isolated by window") }
+        other.chooseCommentary("ThMLNotes"); try await idle(other)
+        guard other.commentaryEntry?.headingHTML.contains("Second ThML heading") == true,
+              other.commentaryChapter?.verses.filter({ $0.headingHTML.contains("Original ThML heading café") }).count == 1 else { fatalError("native ThML sparse chapter keeps shared header once") }
+        other.reference = "John 3:20"; other.read(); try await idle(other)
+        guard let header = other.commentaryEntry?.headingHTML,
+              let start = header.range(of: "href=\""), let end = header[start.upperBound...].firstIndex(of: "\"") else { fatalError("native ThML heading retains SDK reference URI") }
+        let uri = String(header[start.upperBound..<end])
+        let otherBody = other.commentaryEntry?.html, otherBack = other.canBack
+        other.reference = "John 4:2"
+        other.followCommentaryLink(uri); try await idle(other)
+        guard other.referencePreview?.module == "ThMLNotes", other.referencePreview?.entries.first?.reference == "John 3:17",
+              other.commentaryEntry?.html == otherBody, other.reference == "John 4:2", other.canBack == otherBack else { fatalError("native heading reference preview retains source/draft/history") }
+        other.setCommentaryHeadings(false); try await idle(other)
+        guard other.commentaryEntry?.headingHTML.isEmpty == true, other.commentaryEntry?.html == otherBody,
+              model.commentaryHeadings == false else { fatalError("ThML heading preference preserves body and other module/window") }
         model.setCommentaryChapterMode(false); try await idle(model)
         model.setCommentaryHeadings(true); try await idle(model)
         guard model.commentaryChapter == nil, model.commentaryEntry?.headingHTML.contains("Original heading") == true,

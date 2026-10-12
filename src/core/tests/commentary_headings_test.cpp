@@ -32,6 +32,20 @@ int main(int argc, char **argv) {
     check(pair.commentary->heading_html == entry.heading_html && session.history().entries().empty(), "paired no-record commentary carries headings");
     const auto heading_only = session.read_commentary_entry("Notes", "John 3:19");
     check(heading_only.html.empty() && heading_only.heading_html.find("Original heading-only") != std::string::npos, "heading-only entry retains presentation content");
+    const auto thml = session.read_commentary_entry("ThMLNotes", "John 3:16");
+    check(thml.heading_html.find("Original ThML heading") != std::string::npos && thml.heading_html.find("Second ThML heading") != std::string::npos &&
+          thml.html.find("Original ThML entry body") != std::string::npos && thml.html.find("Original ThML heading") == std::string::npos,
+          "ThML commentary owns two headings separately from body");
+    check(session.read_commentary_entry("ThMLNotes", "John 3:17").heading_html == thml.heading_html, "ThML linked verse headings agree");
+    const auto sparse_thml = session.read_commentary_chapter("ThMLNotes", "John 3:17");
+    unsigned shared_sections = 0;
+    for (const auto &verse : sparse_thml.verses) if (verse.heading_html == thml.heading_html) ++shared_sections;
+    check(shared_sections == 1 && sparse_thml.selected_anchor == "commentary-verse-17", "ThML linked chapter header rendered once with missing-selection anchor");
+    session.set_headings("ThMLNotes", false);
+    check(session.read_commentary_entry("ThMLNotes", "John 3:16").heading_html.empty() &&
+          session.read_commentary_entry("ThMLNotes", "John 3:16").html == thml.html,
+          "ThML heading controls preserve body");
+    session.set_headings("ThMLNotes", true);
     session.set_headings("Notes", false);
     const auto hidden = session.read_commentary_chapter("Notes", "John 3:16");
     check(hidden.html.find("Original heading") == std::string::npos && hidden.html.find("xc-heading") == std::string::npos &&
@@ -50,6 +64,16 @@ int main(int argc, char **argv) {
     worker.set_headings(tab, "Notes", false).get();
     check(!worker.module_presentation_options(tab, "Notes").get().headings && worker.module_presentation_options(other, "Notes").get().headings,
           "heading settings isolated across tabs");
+    const auto linked_header = worker.read_passage(tab, "Text", "ThMLNotes", "John 3:20").get().commentary->heading_html;
+    const auto href = linked_header.find("href=\""); check(href != std::string::npos, "owned heading contains SDK passage link");
+    const auto href_end = linked_header.find('"', href + 6);
+    const auto uri = linked_header.substr(href + 6, href_end - href - 6);
+    const auto link = worker.follow_pane_link_at(tab, "Text", "ThMLNotes", "John 3:20", uri).get();
+    check(std::holds_alternative<ReferenceList>(link), "SDK heading link is a reference preview command");
+    const auto &references = std::get<ReferenceList>(link);
+    check(references.module == "ThMLNotes" && references.entries.size() == 1 && references.entries.front().reference == "John 3:17" &&
+          references.entries.front().html.find("Original ThML entry body") != std::string::npos &&
+          worker.history(tab).get().entries.empty(), "heading reference preview retains commentary source without recording a visit");
     const auto queued = worker.read_commentary_chapter(tab, "Notes", "John 3:16").get();
     check(queued.html.find("Original heading") == std::string::npos && worker.history(tab).get().entries.empty(), "queued heading preference used without Bible visit");
     auto wait = [](xc_request *r) {
