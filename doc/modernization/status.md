@@ -32,6 +32,28 @@ release-ready.** The stacked draft milestones are implemented and locally checke
 within their documented scope, pending review, platform checks and merge.
 No milestone has official acceptance yet.
 
+## Parity coverage snapshot
+
+The ledger currently has **14 of 38 groups with some initial shared-core/macOS
+implementation evidence**, and **24 pending groups**. None of the 14 is fully
+accepted: groups bundle many capabilities, and reading a verse does not complete
+whole-book rendering, commentary synchronization, tabs/session restore or visual
+composition. This is a count of groups touched, not a parity percentage and not
+a replacement for the weighted engineering estimate above.
+
+| New frontend | Initial evidence in ledger | Fully accepted groups | Main gaps |
+|---|---:|---:|---|
+| macOS/shared-core slice | 14 partial, 24 pending | 0/38 | Full pane layout, commentary, parallel views, search, bookmarks/annotations, editors, installation, complete settings/data migration, accessibility/translation and release packaging |
+| WinUI 3 | 0 initial frontend entries, 38 pending | 0/38 | Native frontend/tooling, shared-core integration, full workflows and validation |
+| GTK4 | 0 initial frontend entries, 38 pending | 0/38 | Native frontend, shared-core integration, full workflows and validation |
+
+The existing GTK3 app is retained as the behavioral oracle; its inherited
+functionality does not count as implemented parity in a new frontend. Fixture
+comparisons and local tests support individual seams, while representative
+modules/profiles and legacy/native visual, keyboard and runtime comparisons
+remain required. Prioritize the integration checkpoint below, then the main
+study-pane composition/commentary workflow before broader native feature claims.
+
 ## Current locally checked scope
 
 - Shared C++ module/verse/chapter reading, Bible history, rendering options,
