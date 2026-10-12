@@ -1175,3 +1175,22 @@ build was dispatched.
 Next: C/Swift bindings and native note-body dispatch. Unknown-module legacy
 fallback, hover/pin and full preview/design parity remain acceptance work.
 No legacy retirement or feature sign-off occurs here.
+
+## Contextual C/Swift link adapters: locally checked
+
+Implemented 2026-10-11 on `modernization/contextual-link-adapters`, based on
+the contextual core. The additive C request reports passage, note or
+reference-list handles through existing owned-result accessors. Source context
+and URI must be nonempty; nullable module fallback works when the command
+provides an explicit module. Swift copies the typed result into Sendable values
+and releases the C handles. No frontend parser was introduced.
+
+Validation: 19/19 local checks, focused address/undefined and thread checks
+3/3 each, strict C++17 compilation and C11 header checks passed. C cases cover
+all three result kinds, pending/wrong-kind/double-take, null arguments, external
+origin rejection, configured five-entry lists and requests/results retained
+after shutdown. Swift covers all three kinds, relative duplicate lists, invalid
+context, history preservation and copied-value lifetime. No GitHub builds.
+
+Next: native note-body clicks should open the sidebar list with their committed
+source context. Full hover/pin and preview parity remain pending.

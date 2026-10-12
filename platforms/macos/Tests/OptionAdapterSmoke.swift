@@ -103,12 +103,25 @@ struct OptionAdapterSmoke {
             _ = try await worker.readReferenceList(tab: tab, module: "OptionTest", expression: "16", context: "")
             fatalError("Swift missing reference-list context accepted")
         } catch is CoreError { }
+        let contextual = try await worker.resolveStudyLinkAt(tab: tab, currentModule: "OptionTest", currentReference: "John3:16",
+            uri: "passagestudy.jsp?action=showRef&type=scripRef&value=16-17%3B16&module=")
+        guard case .references(let contextualReferences) = contextual, contextualReferences.entries.count == 3,
+              contextualReferences.context == "John 3:16", contextualReferences.entries[0].html.contains("3056") else { fatalError("Swift contextual reference result") }
+        let contextualNote = try await worker.resolveStudyLinkAt(tab: tab, currentModule: "OptionTest", currentReference: "John3:17",
+            uri: "passagestudy.jsp?action=showNote&type=n&value=1&passage=John3:16")
+        guard case .note(let dispatchedNote) = contextualNote, dispatchedNote.html == note.html else { fatalError("Swift contextual note result") }
+        let contextualPassage = try await worker.resolveStudyLinkAt(tab: tab, currentModule: "OptionTest", currentReference: "John3:16", uri: "sword:///John3:17")
+        guard case .passage(let dispatchedPassage) = contextualPassage, dispatchedPassage.module == "OptionTest", dispatchedPassage.reference == "John3:17" else { fatalError("Swift contextual passage result") }
+        do {
+            _ = try await worker.resolveStudyLinkAt(tab: tab, currentModule: "OptionTest", currentReference: "", uri: "sword:///John3:17")
+            fatalError("Swift missing contextual reference accepted")
+        } catch is CoreError { }
         let noteHistory = try await worker.history(tab)
         guard noteHistory.count == 1 else { fatalError("Swift note preview changed history") }
         try await worker.closeTab(restoredTab)
         try await worker.closeTab(tab)
         await worker.shutdown()
-        guard references.entries[0].html.contains("3056"), note.html.contains("Original note."), modules[0].options.declared == declared, restored.html == original.html else { fatalError("copied metadata/results lifetime") }
+        guard contextualReferences.entries[0].html.contains("3056"), references.entries[0].html.contains("3056"), note.html.contains("Original note."), modules[0].options.declared == declared, restored.html == original.html else { fatalError("copied metadata/results lifetime") }
         print("Swift tab option/metadata adapter checks passed")
     }
 }

@@ -221,6 +221,38 @@ int main(int argc, char **argv) {
       auto *reference_entry = xc_request_take_entry(request); xc_request_release(request);
       check(reference_entry && std::string(xc_entry_reference(reference_entry)) == "John 3:16", "C reference normalized by engine");
       xc_entry_release(reference_entry);
+      check(xc_worker_resolve_study_link_at(worker, tab, "OptionTest", "John3:16", generated_note_uri.c_str(), &request) == XC_OK && wait(request) == XC_OK,
+            "C contextual note dispatch");
+      auto *contextNote = xc_request_take_note(request);
+      check(contextNote && !xc_request_take_link(request) && !xc_request_take_reference_list(request), "contextual note result type");
+      xc_note_release(contextNote); xc_request_release(request);
+      check(xc_worker_resolve_study_link_at(worker, tab, "OptionOther", "John3:20", "sword:///John3:18", &request) == XC_OK && wait(request) == XC_OK,
+            "C contextual passage dispatch");
+      auto *contextLink = xc_request_take_link(request);
+      check(contextLink && !xc_request_take_note(request) && !xc_request_take_reference_list(request), "contextual passage result type");
+      xc_link_release(contextLink); xc_request_release(request);
+      std::string listUri = "passagestudy.jsp?action=showRef&type=scripRef&value=16-19%3B16&module=OptionOther";
+      check(xc_worker_resolve_study_link_at(worker, tab, nullptr, "John3:20", listUri.c_str(), &request) == XC_OK,
+            "C contextual explicit module permits null fallback");
+      check(!xc_request_take_reference_list(request) && wait(request) == XC_OK, "C contextual list pending observation");
+      auto *contextList = xc_request_take_reference_list(request);
+      check(contextList && !xc_request_take_reference_list(request) && !xc_request_take_link(request) && !xc_request_take_note(request),
+            "C contextual list transfers once and separates types");
+      xc_request_release(request);
+      check(xc_reference_list_count(contextList) == 5 && std::string(xc_reference_list_context(contextList)) == "John 3:20" &&
+            std::string(xc_reference_list_entry_html(contextList, 0)).find("3056") != std::string::npos, "C contextual list values/options");
+      for (const auto *context : {static_cast<const char *>(nullptr), ""})
+        check(xc_worker_resolve_study_link_at(worker, tab, "OptionOther", context, listUri.c_str(), &request) == XC_INVALID_ARGUMENT && !request,
+              "C missing context rejected before queue");
+      check(xc_worker_resolve_study_link_at(worker, tab, "OptionOther", "John3:20", nullptr, &request) == XC_INVALID_ARGUMENT && !request,
+            "C null contextual URI");
+      check(xc_worker_resolve_study_link_at(worker, tab, "OptionOther", "John3:20", listUri.c_str(), nullptr) == XC_INVALID_ARGUMENT,
+            "C null contextual output");
+      check(xc_worker_resolve_study_link_at(worker, tab, "OptionOther", "John3:20", "https://example.invalid/passagestudy.jsp", &request) == XC_OK &&
+            wait(request) == XC_INVALID_ARGUMENT, "C external contextual origin"); xc_request_release(request);
+      xc_request *retainedRequest = nullptr;
+      check(xc_worker_resolve_study_link_at(worker, tab, "OptionOther", "John3:20", listUri.c_str(), &retainedRequest) == XC_OK,
+            "C contextual result accepted for shutdown"); listUri.clear();
       check(xc_worker_study_note_link(worker, tab, "OptionTest", generated_note_uri.c_str(), &request) == XC_OK && wait(request) == XC_OK,
             "C generated note URI resolves");
       auto *linked = xc_request_take_note(request); xc_request_release(request);
@@ -252,6 +284,11 @@ int main(int argc, char **argv) {
       check(xc_worker_study_note(worker, tab, "OptionOther", "John 3:19", "1", &request) == XC_OK && wait(request) == XC_INVALID_ARGUMENT,
             "C closed note tab rejected"); xc_request_release(request);
       xc_worker_close(worker);
+      check(wait(retainedRequest) == XC_OK, "accepted contextual request observed after shutdown");
+      auto *retainedContextList = xc_request_take_reference_list(retainedRequest); xc_request_release(retainedRequest);
+      check(retainedContextList && xc_reference_list_count(retainedContextList) == 5 && xc_reference_list_count(contextList) == 5,
+            "owned contextual list handles survive worker/request");
+      xc_reference_list_release(retainedContextList); xc_reference_list_release(contextList);
       check(std::string(xc_note_html(note)) == expected[3], "C note outlives worker/request"); xc_note_release(note);
       xc_note_release(nullptr);
       check(!xc_note_module(nullptr) && !xc_note_reference(nullptr) && !xc_note_identifier(nullptr) && !xc_note_type(nullptr) && !xc_note_label(nullptr) &&

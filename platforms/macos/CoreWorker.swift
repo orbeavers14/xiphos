@@ -160,6 +160,29 @@ actor CoreWorker {
         defer { xc_reference_list_release(result) }
         return CoreValues.referenceList(result)
     }
+    func resolveStudyLinkAt(tab: UInt64, currentModule: String, currentReference: String, uri: String) async throws -> ContextualStudyLink {
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = currentModule.withCString { id in
+            currentReference.withCString { context in
+                uri.withCString { xc_worker_resolve_study_link_at(handle, tab, id, context, $0, &request) }
+            }
+        }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        if let result = xc_request_take_reference_list(completed) {
+            defer { xc_reference_list_release(result) }
+            return .references(CoreValues.referenceList(result))
+        }
+        if let result = xc_request_take_note(completed) {
+            defer { xc_note_release(result) }
+            return .note(noteValue(result))
+        }
+        guard let result = xc_request_take_link(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_link_release(result) }
+        return .passage(PassageTarget(module: String(cString: xc_link_module(result)!),
+            reference: String(cString: xc_link_reference(result)!)))
+    }
     func resolveStudyLink(tab: UInt64, currentModule: String, uri: String) async throws -> ResolvedStudyLink {
         var request: OpaquePointer?
         let handle = try worker()
