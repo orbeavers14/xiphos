@@ -273,3 +273,11 @@ preview resolution and records only successful lexical commands. Passage
 targets, notes and reference lists retain their existing no-Bible-visit behavior;
 older preview resolution remains unrecorded. Legacy Unicode click normalization
 is still pending and is not silently replaced by Swift case conversion.
+
+
+The nearby dictionary chooser returns nine owned keys in the legacy order,
+including repeated labels at SDK boundaries. Its C++11 helper is used by the
+actual legacy menu adapter. Reader validates SWLD, positions the requested key,
+copies the keys and restores the preceding dictionary key text. Worker requires
+an open tab and C returns a separate owned choices kind; no history visit occurs.
+Native menu presentation follows separately.

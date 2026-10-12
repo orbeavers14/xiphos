@@ -947,8 +947,6 @@ static void dict_key_list_select(GtkMenuItem *menuitem, gpointer user_data)
 
 GtkWidget *main_dictionary_drop_down_new(char *mod_name, char *old_key)
 {
-	gint count = 9, i;
-	gchar *new_key;
 	gchar *key = NULL;
 	GtkWidget *menu;
 
@@ -977,27 +975,16 @@ GtkWidget *main_dictionary_drop_down_new(char *mod_name, char *old_key)
 	backend->set_module_key(mod_name, key);
 	backend->display_mod->display();
 
-	new_key = g_strdup((char *)backend->display_mod->getKeyText());
-
-	for (i = 0; i < (count / 2) + 1; i++) {
-		(*backend->display_mod)--;
-	}
-
-	for (i = 0; i < count; i++) {
-		free(new_key);
-		(*backend->display_mod)++;
-		new_key = g_strdup((char *)backend->display_mod->getKeyText());
-		/* add menu item */
-		GtkWidget *item =
-		    gtk_menu_item_new_with_label((gchar *)new_key);
+	const auto adjacent = xiphos::core::dictionary_nearby_keys(*backend->display_mod);
+	for (const auto &new_key : adjacent) {
+		GtkWidget *item = gtk_menu_item_new_with_label(new_key.c_str());
 		gtk_widget_show(item);
 		g_signal_connect(G_OBJECT(item), "activate",
 				 G_CALLBACK(dict_key_list_select),
-				 g_strdup(new_key));
+				 g_strdup(new_key.c_str()));
 		gtk_container_add(GTK_CONTAINER(menu), item);
 	}
 
-	free(new_key);
 	g_free(key);
 	return menu;
 }

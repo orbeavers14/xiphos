@@ -182,3 +182,15 @@ reports whether it changed state, preserving the legacy early return on an
 identical current pair. Navigation copies the destination, moves the cursor and
 uses the existing navigating flag during display. Hand-managed GList ownership
 was removed from this adapter, while GTK presentation behavior remains intact.
+
+
+### Nearby dictionary keys (2026-10-11)
+
+The legacy chooser positions/renders the current entry, steps back five times,
+then takes nine forward steps and labels/actions from the SDK key text. Repeated
+keys at boundaries are retained. CoreRender now shares this sequence with the
+actual legacy menu adapter; seven starting-key cases compare all 63 labels and
+action keys against a frozen direct-SDK sequence. The native Reader returns
+copied choices and restores previous dictionary key text; worker/C requests are
+explicit, require an open tab and do not record history. Full GTK interaction
+and native menu presentation are separate validation gates.

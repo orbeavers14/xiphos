@@ -41,6 +41,7 @@ public:
   std::future<LexicalEntry> visit_lexical(StudyTab tab, std::string module, std::string reference, std::string uri, int origin);
   std::future<LexicalEntry> read_lexical(StudyTab tab, std::string module, std::string reference,
                                       std::string uri, int origin);
+  std::future<DictionaryChoices> dictionary_choices(StudyTab tab, std::string module, std::string key);
   std::future<DictionaryEntry> visit_dictionary(StudyTab tab, std::string module, std::string key);
   std::future<DictionaryEntry> navigate_dictionary_history(StudyTab tab, int direction);
   std::future<DictionaryHistorySnapshot> dictionary_history(StudyTab tab);
