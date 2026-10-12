@@ -70,7 +70,10 @@ No milestone has official acceptance yet.
 - Legacy app delegates rendering, selected policy/parser/selection seams,
   dictionary key stepping and dictionary history to shared C++ helpers.
 
-Current local suite: **29 checks**. The dictionary history value/legacy adapters
+Current local suite: **30 checks**. The shared Unicode click-key utility reuses
+GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
+four local locales**; adoption by click paths is the next milestone.
+The dictionary history value/legacy adapters
 also agree over **10,287 tested transitions**. Sanitizer and strict-language
 checks are scoped per ledger entry below; they do not instrument the SWORD SDK.
 GTK full-app runtime and native Windows/Linux interaction checks remain pending.
@@ -1833,3 +1836,24 @@ and disabled histories stayed intact. Visual checks confirmed controls fit
 without truncated labels. No GitHub builds or installed-data changes. Next:
 Unicode click normalization, hover/pinning, compatible persistence and complete
 pane composition. No full feature acceptance/file retirement; about 6% (4–8%).
+
+## Shared Unicode dictionary click key: locally checked, adoption next
+
+Implemented 2026-10-11 on `modernization/shared-dictionary-normalization`.
+The C++11 helper reuses GLib's legacy locale-sensitive Unicode uppercase and
+owns/frees its allocation. Invalid UTF-8, embedded NUL and oversized byte
+lengths reject. Raw/hover rendering is unchanged. Standalone/native builds now
+discover GLib without GTK; prebuilt SDK fallback and Swift static link inputs
+are supported. Draft-gated future CI dependency installation is updated.
+
+Validation: 30/30 local checks; 4,448,324 frozen GLib comparisons across every
+valid non-NUL scalar plus multi-character inputs in C, en_US.UTF-8, tr_TR.UTF-8
+and lt_LT.UTF-8. The helper/harness pass strict C++11 and address/undefined
+checks (1/1). The native-disabled seam subset builds. GLib/SWORD themselves
+are uninstrumented. Local GLib 2.86.5 was built from the checksum-verified GNOME
+archive; local PCRE2 10.46 provided missing dependency headers. All dependency
+sources/tools/builds remain outside the tracked repository. Native process
+locale initialization, cross-version Unicode databases, distribution packaging
+and full GTK/platform runtime remain acceptance work. No GitHub builds, no
+installed-data changes or file retirement. Next: adopt the helper in main-pane
+legacy/native click commands while keeping hover and dialog behavior distinct.

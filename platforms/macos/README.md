@@ -14,7 +14,8 @@ the engine runs away from the main thread. Canceling a Swift task does not
 cancel an accepted engine action; active SWORD cancellation is pending.
 The synchronous adapter remains available for characterization tests.
 
-Requires macOS 13+, a Swift 6-capable Xcode toolchain, CMake and SWORD >=1.8.1.
+Requires macOS 13+, a Swift 6-capable Xcode toolchain, CMake, SWORD >=1.8.1
+and GLib >=2.32 (the existing portable Unicode utility, without GTK).
 Swift sources compile in Swift 6 language mode.
 The requested deployment target defaults to 13.0; actual compatibility also
 depends on the SWORD SDK minimum OS. Set `CMAKE_OSX_DEPLOYMENT_TARGET` to match
@@ -27,6 +28,12 @@ cmake --build build/macos --parallel
 ctest --test-dir build/macos --output-on-failure
 open build/macos/XiphosNativePreview.app
 ```
+
+GLib also uses pkg-config discovery; prebuilt SDKs can set `GLIB_INCLUDE_DIR`,
+`GLIB_CONFIG_INCLUDE_DIR`, `GLIB_LIBRARY` and static transitive dependencies in
+`XIPHOS_GLIB_EXTRA_LIBRARIES`. The preview is a development build. A distributable
+app still needs dependency bundling, notices, source/relink materials as applicable,
+signing and compatibility validation; the build does not establish release readiness.
 
 For a static SDK whose sword.pc omits dependencies, pass those explicitly:
 

@@ -57,6 +57,18 @@ by this slice; actual imports need file-level provenance/dependency review.
 Packaging and store distribution require a separate dependency/notice audit;
 this engineering inventory is not a completed distribution license review.
 
+The shared dictionary-click casing seam reuses GLib, already required by the
+legacy app, without GTK/GModule in the native core. The inspected GLib 2.86.5
+`glib/gutf8.c` is LGPL-2.1-or-later; its COPYING and per-file notices remain
+external dependency material. Local-only characterization used a pinned
+source archive from GNOME with SHA-256
+`ce85a947bb8b3c0204dbeff79aec39bcb46371c6fafb64ba5b8726c71e038d5f`, matching
+GNOME's published checksum. No GLib source is vendored into this repository.
+Release packaging must account for its linked form, source/notice and relinking
+requirements alongside SWORD and other dependencies. Unicode database versions
+and process locale are part of cross-platform acceptance, not assumed identical.
+See [GLib's casing contract](https://docs.gtk.org/glib/func.utf8_strup.html).
+
 ## Boundaries and ownership
 
 SWORD -> shared Xiphos C++ services -> versioned C ABI -> native frontends.
