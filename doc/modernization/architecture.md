@@ -257,8 +257,9 @@ verifies serialized/reloaded values and stages an explicit same-directory file
 before replacement, sharing permission/symlink/cleanup/change-detection policy
 with the existing engine-preference writer. Empty/null choices reject rather
 than silently reloading defaults. Existing empty/malformed files are preserved
-on error. XML formatting/encoding normalizes to UTF-8. No native XML import/
-save controls or saved-locale startup application are implemented yet.
+on error. XML formatting/encoding normalizes to UTF-8. Native XML import/
+save controls now delegate through the Swift adapter and serialized core;
+saved-locale startup application remains pending.
 The serialized worker and C API now expose explicit selected-file import/save:
 import prepares copied preferences before tab publication; save rejects an
 unconfigured tab before file work. Existing history/engine settings are retained.

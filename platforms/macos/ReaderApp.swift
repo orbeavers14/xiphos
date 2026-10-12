@@ -20,6 +20,12 @@ private struct ReadingOptionImportError: LocalizedError {
 private struct ReadingOptionSaveError: LocalizedError {
     var errorDescription: String? { "Unable to save reading options. Choose a writable file location." }
 }
+private struct LexiconProfileImportError: LocalizedError {
+    var errorDescription: String? { "Unable to import lexicon choices. Choose a readable Xiphos settings file." }
+}
+private struct LexiconProfileSaveError: LocalizedError {
+    var errorDescription: String? { "Unable to save lexicon choices. Choose a writable Xiphos settings file or a new location." }
+}
 
 @MainActor
 final class ReaderModel: ObservableObject {
@@ -171,6 +177,26 @@ final class ReaderModel: ObservableObject {
             guard token == self.revision && !self.closed else { return }
             self.lexiconPreferences = copied
             self.message = "Lexicon choices applied to this window."
+        }
+    }
+    func importLexiconProfile(path: String) {
+        guard let worker, let tab else { return }
+        run { token in
+            let imported: LexiconPreferences
+            do { imported = try await worker.importLexiconProfile(tab: tab, path: path) }
+            catch { throw LexiconProfileImportError() }
+            guard token == self.revision && !self.closed else { return }
+            self.lexiconPreferences = imported
+            self.message = "Lexicon choices imported for this window."
+        }
+    }
+    func saveLexiconProfile(path: String) {
+        guard let worker, let tab, lexiconPreferences != nil else { return }
+        run { token in
+            do { try await worker.saveLexiconProfile(tab: tab, path: path) }
+            catch { throw LexiconProfileSaveError() }
+            guard token == self.revision && !self.closed else { return }
+            self.message = "Lexicon choices saved."
         }
     }
     func selectionChanged() {
@@ -584,6 +610,30 @@ struct ReaderWindow: View {
             model.saveReadingOptions(path: url.path)
         }
     }
+    private func chooseLexiconImport() {
+        let panel = NSOpenPanel()
+        panel.title = "Import Xiphos lexicon choices"
+        panel.message = "Choose a Xiphos settings file to import lexicon dictionaries for this window."
+        panel.prompt = "Import"
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            model.importLexiconProfile(path: url.path)
+        }
+    }
+    private func chooseLexiconSave() {
+        let panel = NSSavePanel()
+        panel.title = "Save Xiphos lexicon choices"
+        panel.message = "Save this window’s lexicon choices. Other settings in an existing file are kept."
+        panel.prompt = "Save"
+        panel.nameFieldStringValue = "settings.xml"
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            model.saveLexiconProfile(path: url.path)
+        }
+    }
     @ViewBuilder private func readingOption(_ title: String, flag: EngineOptionFlags) -> some View {
         if model.moduleOptions.declared.contains(flag) {
             Toggle(title, isOn: Binding(
@@ -720,6 +770,8 @@ struct ReaderWindow: View {
                         Button("Save reading options…") { chooseSaveFile() }
                         Divider()
                         Button("Lexicon dictionaries…") { model.showLexiconPreferences = true }.disabled(model.lexiconPreferences == nil)
+                        Button("Import lexicon choices…") { chooseLexiconImport() }
+                        Button("Save lexicon choices…") { chooseLexiconSave() }.disabled(model.lexiconPreferences == nil)
                     }.disabled(model.modules.isEmpty)
                     Button("Previous chapter") { model.navigateChapter(-1) }.disabled(model.selection == nil)
                     Button("Next chapter") { model.navigateChapter(1) }.disabled(model.selection == nil)

@@ -67,13 +67,15 @@ No milestone has official acceptance yet.
 - macOS reading controls, note/reference previews, five lexicon choices,
   Strong's/morphology click dictionary results, direct lookup/key steps and
   separate dictionary Back/Forward/Clear controls and nine-key chooser.
+  Explicit XML lexicon import/save uses native file pickers while retaining
+  unavailable choices, other settings and reading/dictionary state.
   Strong's/morphology hover results now use a separate information sidebar,
   retain the last preview and leave reading input/histories unchanged.
 - Legacy app delegates rendering, selected policy/parser/selection seams,
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
 
-Current local suite: **38 checks**. The shared Unicode click-key utility reuses
+Current local suite: **39 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.
@@ -125,8 +127,9 @@ inclusion in this public fork.
    identifies XML keys, startup defaults, duplicate-node behavior and the locale
    startup boundary; 296 XML helper comparisons/assertions now establish the local profile seam.
    The shared owned reader now matches the characterized getter/default rules;
-   shared safe literal-text saving and worker/C/Swift commands are also implemented. Native import/save controls
-   and saved-locale startup application are next.
+   shared safe literal-text saving, worker/C/Swift commands and native selected-file
+   controls are implemented. Saved-locale startup application and other hover
+   families remain next.
    Complete remaining reading controls and
    characterize commentary/parallel panes while retaining study-pane composition.
 3. Implement equivalent GTK4 and WinUI 3 reading panes with native toolchains
@@ -148,7 +151,7 @@ inclusion in this public fork.
 | Unicode click policy | Shared/actual legacy casing agrees over 4,448,324 comparisons in four locales; native main clicks normalize/record; raw dialog/hover semantics retained | Unicode database/version comparisons, real-module workflows and forced-locale preference import |
 | Native environment locale | 31/31 suite then 3/3 focused fixture/Turkish/invalid-locale checks; 32 checks now defined | Saved locale selection, translation resources and other native host startup |
 
-The full local suite now passes **38/38**. Complete main lexical click/hover
+The full local suite now passes **39/39**. Complete main lexical click/hover
 handlers agree over **135,258 frozen/actual callback comparisons**; strict
 C++11 and focused address/undefined checks cover that harness. The
 [hover contract inventory](hover-workflows.md) records destinations, retention
@@ -163,7 +166,7 @@ applies saved locale. The separate explicit writer passes 39 preservation,
 round-trip and failure checks, retains unrelated XML/locale/duplicate keys and
 uses the same staged replacement helper as engine preferences. Null/empty
 choices reject because legacy defaults cannot round trip them. Native XML
-import/save UI, interprocess locking, power-loss durability and Windows runtime
+full-profile storage, interprocess locking, power-loss durability and Windows runtime
 replacement validation remain pending. Worker/C commands now check tab-scoped
 publication, failed-import retention, history/engine-setting isolation, copied
 paths/results and accepted-job drain after observer release/shutdown. The Swift
@@ -178,6 +181,13 @@ John3:16 with an unfinished John4:2 draft and disabled history navigation.
 The source parser/selection/rendering stays in the existing C++ worker. Full
 link-family, keyboard, real-module and platform hover parity remains pending.
 
+Native profile model checks additionally cover busy-action rejection, unchanged
+committed reading/draft/panes, friendly failures, stale hover invalidation and
+closed-window publication. A disposable GUI run confirmed import of all five
+choices (including unavailable dictionaries), native save to a new file and a
+visible malformed-file error while John3:16, the John4:2 draft and disabled
+history controls stayed intact. No installed user profile was accessed.
+
 Latest code milestones: [shared Unicode helper #54](https://github.com/orbeavers14/xiphos/pull/54),
 [legacy adoption #55](https://github.com/orbeavers14/xiphos/pull/55),
 [native click/origin policy #56](https://github.com/orbeavers14/xiphos/pull/56),
@@ -185,7 +195,10 @@ Latest code milestones: [shared Unicode helper #54](https://github.com/orbeavers
 [lexical hover characterization #59](https://github.com/orbeavers14/xiphos/pull/59),
 [native lexical hover #60](https://github.com/orbeavers14/xiphos/pull/60),
 [XML helper characterization #62](https://github.com/orbeavers14/xiphos/pull/62),
-[owned profile reader #63](https://github.com/orbeavers14/xiphos/pull/63).
+[owned profile reader #63](https://github.com/orbeavers14/xiphos/pull/63),
+[verified profile writer #64](https://github.com/orbeavers14/xiphos/pull/64),
+[serialized commands #65](https://github.com/orbeavers14/xiphos/pull/65),
+[typed Swift adapter #66](https://github.com/orbeavers14/xiphos/pull/66).
 Scoped address/undefined and thread checks cover shared ownership/state changes;
 strict C++11/C++17/C11 checks cover the corresponding seams. These are not full
 SDK instrumentation or a leak audit. See each PR for its exact checks and scope.
