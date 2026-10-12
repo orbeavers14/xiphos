@@ -97,7 +97,8 @@ See [parity ledger](../../doc/modernization/parity-matrix.md).
 The async adapter exposes copied module option eligibility, typed engine flags,
 and module-specific settings from the shared core. The native Reading options
 menu currently binds Words of Christ in Red, Strong's Numbers, Morphological
-Tags, Footnotes, Cross-references and Greek Accents when the displayed module
+Tags, Footnotes, Cross-references, Greek Accents, Hebrew Vowel Points and Hebrew
+Cantillation when the displayed module
 declares those options. New native
 tabs opt in to the shared legacy defaults. Preferences → Import reading options
 opens a native picker for an existing Xiphos `modops.conf`; its engine settings

@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
     std::filesystem::create_directories(root / "other-data");
     std::filesystem::copy(root / "data", root / "other-data", std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
     { std::ofstream output(root / "mods.d/other.conf"); output << config
-        << "GlobalOptionFilter=UTF8GreekAccents\nGlobalOptionFilter=OSISScripref\n"; }
+        << "GlobalOptionFilter=UTF8GreekAccents\nGlobalOptionFilter=OSISScripref\nGlobalOptionFilter=UTF8HebrewPoints\nGlobalOptionFilter=UTF8Cantillation\n"; }
     {
       sword::RawText writer((root / "other-data").string().c_str());
       writer.setKey("John 3:18");
@@ -46,6 +46,8 @@ int main(int argc, char **argv) {
       writer.setEntry("<verse osisID=\"John.3.19\">Other module entry."
                       "<note type=\"study\" n=\"b\">Original other note café <hi type=\"italic\">body</hi> "
                       "<w lemma=\"strong:G3056\">word</w></note></verse>");
+      writer.setKey("John 3:21");
+      writer.setEntry("<verse osisID=\"John.3.21\">שָׁל֑וֹם</verse>");
       writer.setKey("John 3:20");
       writer.setEntry("<verse osisID=\"John.3.20\">Original range-reference fixture."
                       "<note type=\"crossReference\" n=\"r\"><reference osisRef=\"John.3.16-John.3.19\">John 3:16–19</reference>; "
@@ -60,6 +62,7 @@ int main(int argc, char **argv) {
     EngineOptions on, off;
     on.words_in_red = on.strongs = on.morphs = on.footnotes = true;
     const auto defaults = engine_options_from_preferences({});
+    std::array<std::string, 4> hebrew_output;
     std::array<std::string, 4> language_reference_output;
     {
       EngineManager baseline(path.c_str(), true, new sword::MarkupFilterMgr(sword::FMT_XHTML), false, false);
@@ -72,6 +75,13 @@ int main(int argc, char **argv) {
         baseline.setGlobalOption("Cross-references", bits & 2 ? "On" : "Off");
         language_reference_output[bits] = render_entry(*module, "John 3:18");
       }
+      for (unsigned bits = 0; bits < hebrew_output.size(); ++bits) {
+        baseline.setGlobalOption("Hebrew Vowel Points", bits & 1 ? "On" : "Off");
+        baseline.setGlobalOption("Hebrew Cantillation", bits & 2 ? "On" : "Off");
+        hebrew_output[bits] = render_entry(*module, "John 3:21");
+      }
+      check(hebrew_output[3].find("שָׁל֑וֹם") != std::string::npos && hebrew_output[0].find("שׁלום") != std::string::npos &&
+            hebrew_output[1] != hebrew_output[3] && hebrew_output[2] != hebrew_output[3], "both Hebrew filters change actual output");
       check(language_reference_output[3].find("λόγος") != std::string::npos &&
             language_reference_output[0].find("λογος") != std::string::npos &&
             language_reference_output[1] != language_reference_output[3], "both filters change actual rendered output");
@@ -83,6 +93,12 @@ int main(int argc, char **argv) {
         options.greekaccents = bits & 1; options.scripturerefs = bits & 2;
         check(reader.read("OptionOther", "John 3:18", options).html == language_reference_output[bits],
               "all language/reference combinations match legacy engine calls");
+      }
+      for (unsigned bits = 0; bits < hebrew_output.size(); ++bits) {
+        auto options = defaults;
+        options.hebrewpoints = bits & 1; options.hebrewcant = bits & 2;
+        check(reader.read("OptionOther", "John 3:21", options).html == hebrew_output[bits],
+              "all Hebrew filter combinations match direct legacy calls");
       }
       const auto expected_on = reader.read("OptionTest", "John 3:16", on).html;
       const auto expected_off = reader.read("OptionTest", "John 3:16", off).html;
