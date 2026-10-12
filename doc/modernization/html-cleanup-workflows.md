@@ -57,12 +57,36 @@ whitespace, casing, Unicode and both commentary classifications. Paragraph
 capability is stubbed absent; commentary classification is controlled. This
 characterizes the content fields and adjacent settings, not all initialization
 side effects. Import/save, failed import/save, FIFO tab isolation and unchanged
-history pass. The full suite passes 60/60; focused address/undefined and thread
+history pass. The full suite passes 61/61; focused address/undefined and thread
 checks pass 1/1 each, and strict C++11/native-disabled helper builds pass.
+
+## Shared content application/discovery stage
+
+`cleanup_html_content` applies off preferences and discovers unknown image/font
+content using legacy case-insensitive detection. Image cleanup precedes font
+handling, so font discovery sees the changed text. The result owns HTML, effective
+states, discovery events and malformed diagnostic suffixes captured at the time
+of each stage. It validates states/embedded NUL and does not perform file I/O.
+
+Legacy `CleanupContent` now delegates this stage, retaining its file-save callbacks,
+diagnostic ordering and subsequent note/xref numbering. The legacy save function
+only reads/writes the module configuration; it does not consume the HTML buffer.
+Current/frozen complete functions agree over 60,750 bounded content/state/reset
+combinations. Additional 36 numbering cases compare reported/unreported note
+labels, counters and callback order; these do not establish complete SDK/cache/
+chapter numbering parity. Case-insensitive discovery also agrees in 144 cases
+across C, English, German and Turkish locales available on this host. Host locale
+must be initialized before concurrent engine work, as elsewhere in the core.
+
+The full local suite passes 61/61. Updated focused normal/address/undefined/thread
+checks pass 1/1 each. Strict C++11 and the native-disabled legacy helper build
+pass. Full GTK runtime and other platform/libc behavior remain acceptance gates.
+The shared stage is ready for native snapshot integration; no native automatic
+file-save behavior is implied by its discovery events.
 
 ## Next work
 
-- Explicit handling of legacy unknown-content discovery and save side effects.
+- Native handling of discovery state and explicit save; automatic save/startup policy.
 - Native setters/controls and snapshot application under those settings; heading/body consistency.
 - Note/xref numbering, block rendering, CSS/image paths, sizing, fonts/themes and
   representative legacy/native runtime/visual acceptance.

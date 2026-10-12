@@ -497,5 +497,11 @@ Respect Font Faces. Combined import stores both; save writes known states and
 leaves target declarations intact for unknown. Invalid enum values reject before
 replacement. The legacy initializer delegates these fields and Headings to the
 same parser; 200 complete frozen/current profile combinations pass. Native
-controls/application and remaining cleanup require separate work. See
+controls/application and remaining cleanup require separate work.
+`cleanup_html_content` shares the image/font application and discovery stage with
+legacy `CleanupContent`, returning owned HTML, effective states, discovery events
+and diagnostic suffixes. It preserves image-before-font order and avoids file I/O.
+Complete frozen/current comparisons cover 60,750 content combinations plus 36
+numbering and 144 locale cases; native integration and broader rendering remain
+pending. See
 [cleanup scope](../../doc/modernization/html-cleanup-workflows.md).

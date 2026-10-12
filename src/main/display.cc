@@ -684,20 +684,27 @@ CleanupContent(GString *text,
 	       const char *name,
 	       bool reset = true)
 {
-	if (ops->image_content == 0)
-		ClearImages((gchar *)text->str);
-	else if ((ops->image_content == -1) && // "unknown"
-		 (strcasestr(text->str, "<img ") != NULL)) {
-		ops->image_content = 1; // now known.
-		main_save_module_options(name, "Image Content", 1);
-	}
-	if (ops->respect_font_faces == 0)
-		ClearFontFaces((gchar *)text->str);
-	else if ((ops->respect_font_faces == -1) && // "unknown"
-		 (strcasestr(text->str, CLEAR_FONT_NAME) != NULL)) {
-		ops->respect_font_faces = 1; // now known.
-		main_save_module_options(name, "Respect Font Faces", 1);
-	}
+    const auto cleaned = xiphos::core::cleanup_html_content(
+        text->str, static_cast<xiphos::core::ContentPreference>(ops->image_content),
+        static_cast<xiphos::core::ContentPreference>(ops->respect_font_faces));
+    memcpy(text->str, cleaned.html.c_str(), cleaned.html.size());
+    auto report = [&](xiphos::core::ContentCleanupKind kind) {
+        for (const auto &issue : cleaned.diagnostics) {
+            if (issue.kind != kind) continue;
+            if (kind == xiphos::core::ContentCleanupKind::image)
+                XI_message(("ClearImages: no img end: %s\n", issue.suffix.c_str()));
+            else
+                XI_message(("ClearFontFaces: no closing double quote: %s\n", issue.suffix.c_str()));
+        }
+    };
+    report(xiphos::core::ContentCleanupKind::image);
+    ops->image_content = static_cast<int>(cleaned.image_content);
+    if (cleaned.discovered_images)
+        main_save_module_options(name, "Image Content", 1);
+    report(xiphos::core::ContentCleanupKind::font_face);
+    ops->respect_font_faces = static_cast<int>(cleaned.respect_font_faces);
+    if (cleaned.discovered_font_faces)
+        main_save_module_options(name, "Respect Font Faces", 1);
 
 	gint pos;
 	gchar value[50], *reported, *s = text->str;
