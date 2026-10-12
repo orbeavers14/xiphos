@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/worker.hpp"
+#include "xiphos/core/c_api.h"
+#include <chrono>
+#include <thread>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -65,6 +68,39 @@ int main(int argc, char **argv) {
     const auto owned = accepted.get();
     check(owned.cleanup_diagnostics.front().suffix == malformed.cleanup_diagnostics.front().suffix && owned.html == malformed.html,
           "owned cleaned result/diagnostics survive worker drain");
+    auto wait = [](xc_request *request) {
+      const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+      xc_status status;
+      while ((status = xc_request_poll(request)) == XC_PENDING) {
+        check(std::chrono::steady_clock::now() < deadline, "content C request timeout");
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      }
+      return status;
+    };
+    xc_worker *bridge = nullptr; xc_request *request = nullptr;
+    check(xc_worker_open(root.c_str(), &bridge) == XC_OK && xc_worker_create_tab(bridge, &request) == XC_OK && wait(request) == XC_OK,
+          "content C tab opened");
+    int images = 7, fonts = 7;
+    check(xc_request_content_options(request, &images, &fonts) == XC_INVALID_ARGUMENT && images == -1 && fonts == -1, "wrong kind resets content outputs");
+    const auto ctab = xc_request_tab(request); xc_request_release(request);
+    check(xc_worker_module_presentation_options(bridge, ctab, "Text", &request) == XC_OK &&
+          xc_request_content_options(request, &images, &fonts) == XC_PENDING && wait(request) == XC_OK, "typed content result requires poll");
+    check(xc_request_content_options(request, &images, &fonts) == XC_OK && images == -1 && fonts == -1 &&
+          xc_request_content_options(request, &images, &fonts) == XC_OK, "unknown is a valid repeated ready result");
+    check(xc_request_content_options(request, nullptr, &fonts) == XC_INVALID_ARGUMENT, "missing output pointer rejected"); xc_request_release(request);
+    check(xc_worker_set_image_content(bridge, ctab, "Text", 2, &request) == XC_INVALID_ARGUMENT && !request &&
+          xc_worker_set_respect_font_faces(bridge, ctab, "Text", -1, &request) == XC_INVALID_ARGUMENT && !request, "nonboolean setters rejected before queue");
+    check(xc_worker_set_image_content(bridge, ctab, "Text", 0, &request) == XC_OK, "C image setter accepted"); xc_request_release(request);
+    check(xc_worker_set_respect_font_faces(bridge, ctab, "Text", 0, &request) == XC_OK, "C font setter accepted"); xc_request_release(request);
+    xc_request *presentation = nullptr;
+    check(xc_worker_module_presentation_options(bridge, ctab, "Text", &presentation) == XC_OK &&
+          xc_worker_read_tab_entry(bridge, ctab, "Text", "John 3:21", &request) == XC_OK, "C FIFO content refresh accepted");
+    xc_worker_close(bridge);
+    check(wait(presentation) == XC_OK && xc_request_content_options(presentation, &images, &fonts) == XC_OK && images == 0 && fonts == 0 &&
+          wait(request) == XC_OK, "dropped setters and typed snapshot survive worker drain");
+    auto *copy = xc_request_take_entry(request); xc_request_release(request); xc_request_release(presentation);
+    check(copy && std::string(xc_entry_html(copy)) == hidden.html, "owned C cleaned HTML matches core after request/worker release"); xc_entry_release(copy);
+    check(xc_request_content_options(nullptr, &images, &fonts) == XC_INVALID_ARGUMENT && images == -1 && fonts == -1, "null typed content guard");
     std::cout << "Content snapshot/discovery checks passed\n";
   } catch (const std::exception &e) { std::cerr << e.what() << '\n'; return 1; }
 }

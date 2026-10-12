@@ -32,6 +32,11 @@ struct ModuleOptionInfo: Sendable {
     let transliterationAvailable: Bool
     static let unknown = Self(declared: [], hasHeadings: false, transliterationAvailable: false)
 }
+// Nil carries the core's unknown content state; no display defaults live here.
+struct ContentDisplayOptions: Sendable {
+    let images: Bool?, fontFaces: Bool?
+    static let unknown = Self(images: nil, fontFaces: nil)
+}
 struct InstalledModule: Identifiable, Sendable {
     let id: String
     let description: String

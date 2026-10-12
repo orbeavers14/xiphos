@@ -506,6 +506,8 @@ numbering and 144 locale cases. Sessions/workers apply it to entry/chapter bodie
 and commentary headings, record discovered states without file I/O, and offer
 image/font setters. `Chapter.verse_ordinals` retains copied SDK positions for
 rebuilding sparse HTML; `Entry.cleanup_diagnostics` owns malformed suffixes.
-Ordinary Reader output stays compatible. State/diagnostic C/Swift adapters, native
-controls, other pane families and broader rendering remain pending. See
+Ordinary Reader output stays compatible. `xc_request_content_options` returns
+status and unknown/off/on fields, while C setters validate 0/1. Swift/native
+controls carry core state and fetch after discovery, preserving drafts/history.
+Diagnostic adapters, other pane families and broader rendering remain pending. See
 [cleanup scope](../../doc/modernization/html-cleanup-workflows.md).

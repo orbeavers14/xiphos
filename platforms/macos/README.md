@@ -182,3 +182,14 @@ macOS permissions or read the installed user library.
 
 Use fixture kind `headings` to inspect original-prose OSIS headings and heading-only
 entries after the local heading checks pass.
+
+## Image and font display controls
+
+Reading options and Commentary options show Image content/Respect font faces once
+the shared core knows each setting through content discovery or explicit import.
+Unknown fields remain hidden. Toggles refresh the committed passage, retain draft
+input/history and use per-module/window state. Explicit reading-options save/import
+persists known states. The `headings` fixture includes original styled Bible and
+commentary data; its resource/font names are synthetic, so resource loading and
+installed-font appearance require separate validation. See
+[scope and acceptance](../../doc/modernization/html-cleanup-workflows.md).

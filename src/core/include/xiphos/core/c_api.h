@@ -95,6 +95,12 @@ xc_status xc_worker_set_commentary_chapter_mode(xc_worker *worker, uint64_t tab,
 int xc_request_commentary_chapter_mode(const xc_request *request);
 /* Same typed result rules as chapter mode; setters accept only 0 or 1. */
 int xc_request_headings(const xc_request *request);
+/* Ready presentation result returns XC_OK and states -1=unknown, 0=off, 1=on.
+ * Otherwise returns pending/failure/wrong-kind status; outputs reset to unknown.
+ * Getter may repeat; setters accept only 0/1 and do not visit history. */
+xc_status xc_request_content_options(const xc_request *request, int *images, int *font_faces);
+xc_status xc_worker_set_image_content(xc_worker *worker, uint64_t tab, const char *module, int enabled, xc_request **out);
+xc_status xc_worker_set_respect_font_faces(xc_worker *worker, uint64_t tab, const char *module, int enabled, xc_request **out);
 xc_status xc_worker_set_headings(xc_worker *worker, uint64_t tab, const char *module, int enabled, xc_request **out);
 xc_status xc_worker_set_engine_options(xc_worker *worker, uint64_t tab, unsigned flags, xc_request **out);
 /* Opt-in legacy module defaults; no preference files are read or written.

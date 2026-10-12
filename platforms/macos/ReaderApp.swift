@@ -36,6 +36,8 @@ final class ReaderModel: ObservableObject {
     @Published private(set) var commentaryChapter: RenderedChapter?
     @Published private(set) var showCommentaryChapter = false
     @Published private(set) var commentaryHeadings = true
+    @Published private(set) var contentOptions = ContentDisplayOptions.unknown
+    @Published private(set) var commentaryContentOptions = ContentDisplayOptions.unknown
     @Published var dictionarySelection: String?
     @Published var dictionaryKey = ""
     @Published private(set) var dictionaryEntry: RenderedDictionaryEntry?
@@ -260,6 +262,24 @@ final class ReaderModel: ObservableObject {
             try await self.present(entry, module: main, token: token, updateInput: false)
         }
     }
+    func setImageContent(_ enabled: Bool, commentary: Bool = false) {
+        setContentOption(enabled, commentary: commentary, fontFaces: false)
+    }
+    func setRespectFontFaces(_ enabled: Bool, commentary: Bool = false) {
+        setContentOption(enabled, commentary: commentary, fontFaces: true)
+    }
+    private func setContentOption(_ enabled: Bool, commentary: Bool, fontFaces: Bool) {
+        guard let worker, let tab, let main = displayedModule, let entry = displayedEntry else { return }
+        let module = commentary ? commentarySelection : main
+        let options = commentary ? commentaryContentOptions : contentOptions
+        guard !module.isEmpty, (fontFaces ? options.fontFaces : options.images) != nil else { return }
+        run { token in
+            if fontFaces { try await worker.setRespectFontFaces(tab: tab, module: module, enabled: enabled) }
+            else { try await worker.setImageContent(tab: tab, module: module, enabled: enabled) }
+            let refreshed = try await worker.readTabEntry(tab: tab, module: main, reference: entry.reference)
+            try await self.present(refreshed, module: main, token: token, updateInput: false)
+        }
+    }
     func setCommentaryHeadings(_ enabled: Bool) {
         guard let worker, let tab, let main = displayedModule, let entry = displayedEntry, !commentarySelection.isEmpty else { return }
         let module = commentarySelection
@@ -361,6 +381,10 @@ final class ReaderModel: ObservableObject {
             commentaryChapter = try await worker.readTabCommentaryChapter(tab: tab, module: pair.commentaryModule,
                 reference: commentary.reference, verseNumbers: numbers, highlightSelected: highlight)
         } else { commentaryChapter = nil }
+        let contentOptions = try await worker.contentDisplayOptions(tab: tab, module: module)
+        let commentaryContentOptions = if let pair, pair.commentary != nil {
+            try await worker.contentDisplayOptions(tab: tab, module: pair.commentaryModule)
+        } else { ContentDisplayOptions.unknown }
         let selectors = try await worker.referenceChoices(module: module, reference: entry.reference)
         let history = try await worker.history(tab)
         let options = try await worker.moduleEngineOptions(tab: tab, module: module)
@@ -372,6 +396,8 @@ final class ReaderModel: ObservableObject {
         self.commentaryChapter = commentaryChapter
         showCommentaryChapter = commentaryMode
         commentaryHeadings = headings
+        self.contentOptions = contentOptions
+        self.commentaryContentOptions = commentaryContentOptions
         engineOptions = options
         moduleOptions = modules.first(where: { $0.id == module })?.options ?? .unknown
         if let chapter {
@@ -860,6 +886,12 @@ struct ReaderWindow: View {
                         Toggle("Highlight selected verse", isOn: $model.highlightSelected)
                     }.disabled(!model.showChapter && !model.showCommentaryChapter)
                     Menu("Reading options") {
+                        if let images = model.contentOptions.images {
+                            Toggle("Image content", isOn: Binding(get: { images }, set: { model.setImageContent($0) }))
+                        }
+                        if let fonts = model.contentOptions.fontFaces {
+                            Toggle("Respect font faces", isOn: Binding(get: { fonts }, set: { model.setRespectFontFaces($0) }))
+                        }
                         readingOption("Words of Christ in Red", flag: .wordsInRed)
                         readingOption("Strong's Numbers", flag: .strongs)
                         readingOption("Morphological Tags", flag: .morphology)
@@ -879,8 +911,8 @@ struct ReaderWindow: View {
                                 variantOption("All Readings", flag: .variantsAll, reading: .all)
                             }
                         }
-                    }.disabled(model.engineOptions == nil || model.moduleOptions.declared.intersection(
-                        [.wordsInRed, .strongs, .morphology, .footnotes, .greekAccents, .crossReferences, .hebrewVowels, .hebrewCantillation, .lemmas, .transliteratedForms, .glosses, .morphemeSegmentation, .variantsPrimary]).isEmpty)
+                    }.disabled(model.engineOptions == nil || (model.contentOptions.images == nil && model.contentOptions.fontFaces == nil && model.moduleOptions.declared.intersection(
+                        [.wordsInRed, .strongs, .morphology, .footnotes, .greekAccents, .crossReferences, .hebrewVowels, .hebrewCantillation, .lemmas, .transliteratedForms, .glosses, .morphemeSegmentation, .variantsPrimary]).isEmpty))
                 }.padding(.horizontal, 12).padding(.bottom, 8).disabled(model.isBusy)
                 HStack {
                     Menu("Preferences") {
@@ -941,6 +973,16 @@ struct ReaderWindow: View {
                                 get: { model.commentaryHeadings }, set: { model.setCommentaryHeadings($0) }))
                                 .padding(.horizontal, 8).padding(.bottom, 8).disabled(model.isBusy || model.commentaryEntry == nil ||
                                     model.modules.first(where: { $0.id == model.commentarySelection })?.options.hasHeadings != true)
+                            if model.commentaryContentOptions.images != nil || model.commentaryContentOptions.fontFaces != nil {
+                                Menu("Commentary options") {
+                                    if let images = model.commentaryContentOptions.images {
+                                        Toggle("Image content", isOn: Binding(get: { images }, set: { model.setImageContent($0, commentary: true) }))
+                                    }
+                                    if let fonts = model.commentaryContentOptions.fontFaces {
+                                        Toggle("Respect font faces", isOn: Binding(get: { fonts }, set: { model.setRespectFontFaces($0, commentary: true) }))
+                                    }
+                                }.padding(.horizontal, 8).padding(.bottom, 8).disabled(model.isBusy)
+                            }
                             if let entry = model.commentaryEntry {
                                 Text(model.commentaryChapter?.title ?? entry.reference).font(.caption).padding(8)
                                 PassageView(html: model.commentaryChapter?.html ?? (entry.headingHTML + entry.html), anchor: model.commentaryChapter?.selectedAnchor, onScrollFailure: { model.message = $0 },

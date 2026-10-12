@@ -53,7 +53,7 @@ remain compatible. Shared per-module Headings preferences default on, decode
 exact Off, and participate in combined import/save. Commentary chapter capability
 controls selective mode persistence; unrelated and unavailable settings survive.
 
-The full local suite passes 62/62. Focused address/undefined checks pass 2/2
+The full local suite passes 63/63. Focused address/undefined checks pass 2/2
 and thread checks 2/2, including heading-only entries, body exclusion, preference
 round trips, FIFO tab isolation and unchanged history.
 

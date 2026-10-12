@@ -57,7 +57,7 @@ whitespace, casing, Unicode and both commentary classifications. Paragraph
 capability is stubbed absent; commentary classification is controlled. This
 characterizes the content fields and adjacent settings, not all initialization
 side effects. Import/save, failed import/save, FIFO tab isolation and unchanged
-history pass. The full suite passes 62/62; focused address/undefined and thread
+history pass. The full suite passes 63/63; focused address/undefined and thread
 checks pass 1/1 each, and strict C++11/native-disabled helper builds pass.
 
 ## Shared content application/discovery stage
@@ -78,7 +78,7 @@ chapter numbering parity. Case-insensitive discovery also agrees in 144 cases
 across C, English, German and Turkish locales available on this host. Host locale
 must be initialized before concurrent engine work, as elsewhere in the core.
 
-The full local suite passes 62/62. Updated focused normal/address/undefined/thread
+The full local suite passes 63/63. Updated focused normal/address/undefined/thread
 checks pass 1/1 each. Strict C++11 and the native-disabled legacy helper build
 pass. Full GTK runtime and other platform/libc behavior remain acceptance gates.
 Core sessions/workers now apply the stage to Bible entry/chapter bodies and
@@ -93,14 +93,38 @@ cleanup against SDK output, header/body consistency, byte lengths, copied SDK
 positions, sparse linked anchors, tab isolation, explicit import/save and worker
 drain ownership. Owned C++ entries retain malformed cleanup diagnostics. Focused
 address/undefined and thread checks pass 2/2 each (fixture plus service). The full
-local suite passes 62/62; native state/diagnostic adapters and controls are pending.
+local suite passes 63/63. Native state adapters/controls are connected; diagnostic
+adapters remain pending.
 Image blanking intentionally retains SWORD's surrounding image link, matching
 legacy behavior; image-link routing/resource loading is separate acceptance work.
+
+## Native controls and typed state adapters
+
+`xc_request_content_options` returns status plus two tri-state outputs. Pending,
+failed, wrong-kind and invalid-pointer calls reset outputs to unknown; ready
+unknown is a valid result. Getter calls may repeat. Setters validate exact 0/1
+before queueing. C tests cover dropped observers, FIFO updates, invalid inputs,
+ready unknown, worker drain and copied cleaned HTML after handle release.
+
+Swift carries unknown as nil and reads states after entry/chapter rendering,
+including discovery from later chapter entries. Native Reading options and
+Commentary options show image/font toggles only when the core state is known,
+matching legacy menu visibility. Main changes refresh the committed entry rather
+than submitting a draft; commentary changes refresh shared headings/body/chapter.
+Model checks cover busy/closed guards, per-window/module isolation, verse/chapter
+mode, unknown eligibility and explicit save/import. A temporary generated preview
+verified menu checks, independent Bible/commentary states, retained draft and pane
+composition. This does not validate image resource loading or installed-font
+appearance; fixture resource names/fonts are original synthetic data.
+
+Full local suite: 63/63. Updated focused normal/address/undefined/thread adapter
+checks: 2/2 each including fixture. External SDK instrumentation and full runtime/
+platform limits remain as described above.
 
 ## Next work
 
 - Native handling of discovery state and explicit save; automatic save/startup policy.
-- C/Swift state/diagnostic adapters and native controls; note/dictionary/reference-preview cleanup.
+- C/Swift diagnostic adapters and note/dictionary/reference-preview cleanup.
 - Note/xref numbering, block rendering, CSS/image paths, sizing, fonts/themes and
   representative legacy/native runtime/visual acceptance.
 

@@ -450,6 +450,33 @@ actor CoreWorker {
         defer { xc_chapter_release(result) }
         return CoreValues.chapter(result)
     }
+    func contentDisplayOptions(tab: UInt64, module: String) async throws -> ContentDisplayOptions {
+        guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { xc_worker_module_presentation_options(handle, tab, $0, &request) }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        var images: Int32 = -1, fonts: Int32 = -1
+        let result = xc_request_content_options(completed, &images, &fonts)
+        guard result == XC_OK else { throw CoreError(status: result) }
+        guard (-1...1).contains(images), (-1...1).contains(fonts) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        return ContentDisplayOptions(images: images == -1 ? nil : images != 0, fontFaces: fonts == -1 ? nil : fonts != 0)
+    }
+    func setImageContent(tab: UInt64, module: String, enabled: Bool) async throws {
+        guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { xc_worker_set_image_content(handle, tab, $0, enabled ? 1 : 0, &request) }
+        xc_request_release(try await wait(status, request))
+    }
+    func setRespectFontFaces(tab: UInt64, module: String, enabled: Bool) async throws {
+        guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { xc_worker_set_respect_font_faces(handle, tab, $0, enabled ? 1 : 0, &request) }
+        xc_request_release(try await wait(status, request))
+    }
     func commentaryChapterMode(tab: UInt64, module: String) async throws -> Bool {
         guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?

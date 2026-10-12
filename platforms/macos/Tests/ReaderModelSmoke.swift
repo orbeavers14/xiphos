@@ -16,6 +16,48 @@ struct ReaderModelSmoke {
             try await Task.sleep(nanoseconds: 1_000_000)
         }
     }
+    @MainActor static func content(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let model = ReaderModel(worker: worker, startupError: nil)
+        let other = ReaderModel(worker: worker, startupError: nil)
+        try await idle(model); try await idle(other)
+        guard model.contentOptions.images == nil, model.contentOptions.fontFaces == nil else { fatalError("native preserves unknown content state") }
+        model.setImageContent(false); try await idle(model)
+        guard model.contentOptions.images == nil else { fatalError("unknown content control stays unavailable") }
+        model.reference = "John 3:21"; model.read(); try await idle(model)
+        guard model.contentOptions.images == true, model.contentOptions.fontFaces == true, model.html.contains("<img ") else { fatalError("native fetches discovered content after reading") }
+        let original = model.html, back = model.canBack
+        model.reference = "John 4:2"
+        model.setImageContent(false); model.setImageContent(true); try await idle(model)
+        guard model.contentOptions.images == false, !model.html.contains("<img "), model.html.contains("OriginalBibleFont"),
+              model.reference == "John 4:2", model.canBack == back else { fatalError("image control refreshes committed body and rejects busy edit") }
+        model.setRespectFontFaces(false); try await idle(model)
+        guard model.contentOptions.fontFaces == false, !model.html.contains("OriginalBibleFont"), model.html.contains("Original styled Bible body") else { fatalError("font control uses shared byte-preserving cleanup") }
+        other.reference = "John 3:21"; other.read(); try await idle(other)
+        guard other.html == original, other.contentOptions.images == true else { fatalError("content controls isolated across native windows") }
+        model.chooseCommentary("ThMLNotes"); try await idle(model)
+        guard model.commentaryContentOptions.images == true, model.commentaryContentOptions.fontFaces == true,
+              model.commentaryEntry?.headingHTML.contains("OriginalHeadingFont") == true else { fatalError("commentary discovery exposes separate module controls") }
+        model.setImageContent(false, commentary: true); try await idle(model)
+        model.setRespectFontFaces(false, commentary: true); try await idle(model)
+        guard model.commentaryEntry?.headingHTML.contains("<img ") == false, model.commentaryEntry?.headingHTML.contains("OriginalHeadingFont") == false,
+              model.commentaryChapter?.html.contains("<img ") == false, model.reference == "John 4:2", model.canBack == back else { fatalError("commentary controls clean headings/body/chapter without submitting draft") }
+        model.setCommentaryChapterMode(false); try await idle(model)
+        guard model.commentaryChapter == nil, model.commentaryEntry?.html.contains("OriginalBodyFont") == false else { fatalError("content preferences retained in verse mode") }
+        let profile = URL(fileURLWithPath: root).appendingPathComponent("native-content.conf")
+        try Data("[Text]\nCustom=keep\n[Uninstalled]\nImage Content=On\n".utf8).write(to: profile)
+        model.saveReadingOptions(path: profile.path); try await idle(model)
+        model.setImageContent(true); try await idle(model)
+        model.setRespectFontFaces(true); try await idle(model)
+        model.importReadingOptions(path: profile.path); try await idle(model)
+        guard model.contentOptions.images == false, model.contentOptions.fontFaces == false, model.commentaryContentOptions.images == false,
+              model.reference == "John 4:2", model.canBack == back, try String(contentsOf: profile, encoding: .utf8).contains("Custom=keep") else { fatalError("native content save/import preserves draft/history/other values") }
+        let snapshot = model.html
+        model.close(); model.setImageContent(true); try await idle(model)
+        guard model.html == snapshot else { fatalError("closed model cannot publish content changes") }
+        other.close(); await worker.shutdown()
+        print("Native content control checks passed")
+    }
     @MainActor static func headings(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let model = ReaderModel(worker: worker, startupError: nil)
@@ -729,6 +771,9 @@ struct ReaderModelSmoke {
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--lexicons" {
             try await lexicons(root: CommandLine.arguments[2]); return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--content" {
+            try await content(root: CommandLine.arguments[2]); return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--headings" {
             try await headings(root: CommandLine.arguments[2]); return

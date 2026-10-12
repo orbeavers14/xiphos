@@ -235,6 +235,24 @@ xc_status xc_worker_set_headings(xc_worker *w, uint64_t tab, const char *id, int
   if (!id || !*id || (enabled != 0 && enabled != 1)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.set_headings(tab, id, enabled != 0); });
 }
+xc_status xc_worker_set_image_content(xc_worker *w, uint64_t tab, const char *id, int enabled, xc_request **out) {
+  if (!id || !*id || (enabled != 0 && enabled != 1)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.set_image_content(tab, id, enabled != 0); });
+}
+xc_status xc_worker_set_respect_font_faces(xc_worker *w, uint64_t tab, const char *id, int enabled, xc_request **out) {
+  if (!id || !*id || (enabled != 0 && enabled != 1)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.set_respect_font_faces(tab, id, enabled != 0); });
+}
+xc_status xc_request_content_options(const xc_request *r, int *images, int *font_faces) {
+  if (images) *images = -1;
+  if (font_faces) *font_faces = -1;
+  if (!r || !images || !font_faces) return XC_INVALID_ARGUMENT;
+  if (r->status != XC_OK) return r->status;
+  if (!r->presentation) return XC_INVALID_ARGUMENT;
+  *images = static_cast<int>(r->presentation->image_content);
+  *font_faces = static_cast<int>(r->presentation->respect_font_faces);
+  return XC_OK;
+}
 int xc_request_headings(const xc_request *r) {
   return r && r->status == XC_OK && r->presentation ? (r->presentation->headings ? 1 : 0) : -1;
 }
