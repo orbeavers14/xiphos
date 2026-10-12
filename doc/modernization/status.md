@@ -60,7 +60,10 @@ study-pane composition/commentary workflow before broader native feature claims.
 [Word block characterization](word-block-workflows.md) compares complete frozen/
 current functions over 1,457 valid cases, including original Greek/Hebrew SDK
 output. It records inherited input-buffer mutation and recursive static-tag defects;
-owned/bounded native block rendering is still pending. Shared owned lexical CSS
+an initial owned/bounded C++11 block renderer now preserves supported layout,
+fixes local recursion/input ownership and retains original HTML on unsupported
+markup. Tests add 8,000 malformed samples and 400 concurrent renders. Native
+snapshot adoption and broader corpus/visual acceptance remain pending. Shared owned lexical CSS
 now matches frozen selection and three actual legacy call sites over 768 cases,
 plus 2,048 concurrent selections. Strict C++11/native-disabled builds pass. Native
 CSS/parser integration and pixel acceptance remain pending. Focused normal/address/

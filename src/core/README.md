@@ -519,9 +519,11 @@ rendering remain pending. See
 `core_word_blocks` compares complete frozen/current block helpers and entry over
 1,457 valid cases, with original Greek/Hebrew SDK data. It preserves displayed-code
 versus hyperlink distinctions and records input mutation/static recursion defects.
-This is sequential source characterization, not a safe concurrent/native block
-service. `lexical_block_style` provides owned C++11 CSS and replaces selection in
+The legacy comparisons are sequential characterization; `render_word_blocks`
+adds an owned C++11 result with local output/recursion state, conservative bounds/
+grammar guards and original-HTML fallback. It corrects inherited closing-tag/input
+ownership defects and is checked across 8,000 malformed samples and 400 concurrent
+owned calls. It is not yet adopted by native snapshots or the legacy parser. `lexical_block_style` provides owned C++11 CSS and replaces selection in
 three legacy renderer call sites. Frozen/current/helper comparisons cover 768
 call-site cases plus 2,048 concurrent selections; strict C++11/native-disabled
-builds pass. Owned bounded parsing, native integration and visual acceptance
-remain pending. See [scope](../../doc/modernization/word-block-workflows.md).
+builds pass. Broader grammar/corpus, native integration and visual acceptance remain pending. See [scope](../../doc/modernization/word-block-workflows.md).

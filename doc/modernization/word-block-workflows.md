@@ -1,7 +1,8 @@
 # Word/Strong’s/morphology block layout: characterization
 
 Updated 2026-10-12. Supports F03/F17/F18 rendering work. This is source behavior
-characterization, not an owned core block renderer or native layout acceptance.
+characterization plus an initial owned core renderer; native layout acceptance
+and snapshot adoption remain pending.
 
 `src/main/display.cc:block_dump`, `block_render_secondary` and `block_render` group
 words and annotations into word/strongs/morph spans. They preserve lexical href
@@ -45,7 +46,29 @@ and native-disabled helper builds pass; focused address/undefined/thread checks
 pass 1/1 each. This establishes CSS data/selection, not RTL/font pixel layout or
 native application. The native block parser remains pending.
 
-Next: an owned, bounded block implementation with explicit supported/fallback
-behavior, local recursion state and preserved valid lexical links. Integrate heading/body snapshots only after those contracts pass;
-representative SDK/module, RTL/font, note/paragraph and runtime/visual acceptance
-remain gates. No existing block-render source is retired by this characterization.
+`render_word_blocks` now provides an owned C++11 interface around the characterized
+valid grammar. It copies mutable working input, uses local output/tag/recursion
+state and corrects inherited mixed-style closing tags. Existing valid content,
+spacing and lexical value handling remain compared with frozen output, allowing
+only that explicit closing-tag correction. The caller's input is unchanged.
+
+The guard requires bounded balanced/case-matched markup, recognized small/em/anchor
+annotation shapes and supported labels. Unsupported/malformed input, depth above
+64 or input above 1 MiB returns original HTML with applied=false; NUL is rejected.
+This is a conservative supported grammar, not a general HTML parser/sanitizer.
+Non-ASCII annotation labels and broader SDK shapes remain corpus work, while
+Unicode words and the original Greek/Hebrew SDK fixture are checked. Internal
+legacy-compatible GLib string operations remain behind this owned boundary and
+still need later modernization; no unsafe API is exposed for unchecked input.
+
+The updated harness compares owned results alongside the 1,457 valid baseline
+cases, checks 8,000 bounded malformed samples, fallback/depth/size/NUL contracts
+and 400 concurrent owned renders. Normal, address/undefined and thread checks
+pass 1/1 each; strict C++11 and native-disabled helper builds pass. External SDK/
+GLib instrumentation limits remain. The old legacy parser remains the source
+oracle and has not yet been switched to this new guarded interface.
+
+Next: validate broader SDK/lemma/note/paragraph shapes and fallback policy, then
+adopt owned rendering/styles in heading/body snapshots with native controls and
+visual evidence. Representative RTL/font/module, keyboard/runtime and full GTK/
+other-platform acceptance remain gates. No block-render source file is retired.

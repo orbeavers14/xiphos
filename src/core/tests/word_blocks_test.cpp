@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+#include "xiphos/core/word_blocks.hpp"
+#include <atomic>
+#include <thread>
 #include <swbuf.h>
 #include <swmgr.h>
 #include <rawtext.h>
@@ -57,6 +60,21 @@ int main(int argc, char **argv) {
       const auto old = run(frozen::block_render, input), actual = run(current::block_render, input);
       check(old.html == actual.html && old.warning == actual.warning && old.input == actual.input,
             "complete frozen/current word block dataflow agrees on bounded valid markup");
+      const auto original = input;
+      const auto owned = xiphos::core::render_word_blocks(input);
+      auto expected = old.html;
+      // Correct the characterized recursive static-tag defect for outer font
+      // switches; valid lexical content/spacing remains the frozen contract.
+      for (const auto *tag : {"i", "b"}) {
+        const std::string opening = std::string("<") + tag + ">", closing = std::string("</") + tag + ">";
+        if (input.compare(0, opening.size(), opening) == 0 && input.size() >= closing.size() &&
+            input.compare(input.size() - closing.size(), closing.size(), closing) == 0) {
+          const auto last = expected.rfind("</");
+          if (last != std::string::npos) expected.replace(last, expected.size() - last, closing);
+        }
+      }
+      if (!owned.applied || owned.html != expected) { std::cerr << "Owned mismatch for: " << input << "\n"; }
+      check(owned.applied && owned.html == expected && input == original, "owned valid rendering preserves frozen layout with local closing-tag correction and immutable input");
       ++comparisons; return old;
     };
     for (const auto &word : {"", "Original", "Original café", "λόγος", "L<font size=\"-1\">ORD</font>", "<a href=\"sword:///John%203:16\">Original link</a>"})
@@ -100,6 +118,36 @@ int main(int argc, char **argv) {
       const auto rendered = compare(sdk);
       check(!rendered.html.empty() && rendered.warning.empty(), "complete block renderer accepts original SDK lexical output");
     }
+    for (const auto &input : {"<small>unrecognized note</small>", "<b>unfinished", "Original > text", "<a href=\"unfinished>Original</a>",
+                             "<small><em>(<a href=\"original\">λ</a>)</em></small>", "<img alt=\"a > b\" />"}) {
+      const auto result = xiphos::core::render_word_blocks(input);
+      check(!result.applied && result.html == input, "unsupported/malformed block markup preserves original HTML");
+    }
+    std::string deep;
+    for (unsigned n = 0; n < 65; ++n) deep += "<i>";
+    deep += "Original"; for (unsigned n = 0; n < 65; ++n) deep += "</i>";
+    check(!xiphos::core::render_word_blocks(deep).applied && !xiphos::core::render_word_blocks(std::string(1024 * 1024 + 1, 'x')).applied,
+          "depth and input-size bounds preserve unsupported data");
+    bool nul = false; try { xiphos::core::render_word_blocks(std::string("a\0b", 3)); } catch (const std::invalid_argument &) { nul = true; }
+    check(nul, "embedded NUL rejected");
+    unsigned random = 0x5eed;
+    const std::string alphabet = "Original <>/smallabiuem=\"'&;()\t";
+    for (unsigned n = 0; n < 8000; ++n) {
+      std::string input;
+      for (unsigned i = 0; i < n % 120; ++i) { random = random * 1664525u + 1013904223u; input += alphabet[random % alphabet.size()]; }
+      const auto result = xiphos::core::render_word_blocks(input);
+      check(result.applied || result.html == input, "bounded malformed corpus never drops unsupported input");
+    }
+    const std::string concurrent_input = "<i><b>Original " + strong("3056", true) + morph("N-NSM", true) + "</b></i>";
+    const auto concurrent_expected = xiphos::core::render_word_blocks(concurrent_input).html;
+    std::atomic<bool> mismatch{false}; std::vector<std::thread> renderers;
+    for (unsigned n = 0; n < 4; ++n) renderers.emplace_back([&] {
+      for (unsigned i = 0; i < 100; ++i) {
+        const auto result = xiphos::core::render_word_blocks(concurrent_input);
+        if (!result.applied || result.html != concurrent_expected) mismatch = true;
+      }
+    });
+    for (auto &renderer : renderers) renderer.join(); check(!mismatch, "owned output and recursion state isolated across concurrent calls");
     std::cout << "Word block frozen/current checks passed: " << comparisons << " valid cases\n";
   } catch (const std::exception &e) { std::cerr << e.what() << '\n'; return 1; }
 }
