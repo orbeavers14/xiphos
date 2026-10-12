@@ -1402,3 +1402,31 @@ external origins, duplicate parameters, control characters and malformed
 escapes. The existing dispatcher still rejects lexical actions until selection
 is integrated. No GitHub builds or user-data changes. Estimate about 6%; full
 F16 parity and native dictionary interactions remain pending.
+
+
+## Lexical selection characterization: locally checked, extraction next
+
+Implemented 2026-10-11 on `modernization/lexical-selection-characterization`.
+The test compiles actual legacy main/dialog selection prefixes, compares frozen
+96068973 logic and verifies source module/key calls across 11,264 cases plus
+explicit differing fallbacks/context. It covers both testaments, all installed
+lexicon combinations, null morphology preferences, exact/case-sensitive tags,
+custom lemma namespaces and overlapping Greek/Hebrew tags. Production behavior
+is unchanged. Validation: 24/24 local checks and strict C++11 compilation passed.
+No GitHub builds. GTK presentation effects/full lexical parity are not tested;
+next extract explicit main/dialog selection policy through the shared core.
+Overall estimate about 6%, 0/38 feature groups accepted; no file retirement.
+
+
+The parity matrix now records scoped implementation evidence for F09, F15–F17,
+F29 and F37 rather than leaving implemented subsets marked wholly pending.
+The legacy C++11 seam libraries still build with the native core disabled.
+Full legacy GTK dependency/GUI validation remains unavailable on this Mac.
+These are evidence updates; no feature group or native platform is accepted.
+
+The selection characterization also passes address/undefined instrumentation
+on its GTK-free harness. A negative-control build deliberately replaced the
+main NT fallback name in an ignored temporary copy; the comparison failed at
+the expected morphology divergence. Production/generated source was not
+modified by that control. This confirms the harness detects a real selection
+regression; it does not extend GUI/module-corpus acceptance.
