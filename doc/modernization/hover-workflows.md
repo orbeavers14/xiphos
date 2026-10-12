@@ -167,7 +167,7 @@ No native startup application, tab mutation or XML preview-mode save occurs.
 | core_hover_source: 12 generated combinations plus boundaries | Explicit/fallback modules/passages, five-byte/UTF-8 thresholds, parser isolation, errors/history/C lifetime |
 | Temporary native GUI fixtures | Profile import/save/error, main body/crossref modes/Back, nested sidebar note hover and pointer-leave retention; draft/main/history isolation |
 
-The current local suite passes 48/48. Scoped address/undefined/thread checks cover
+The current local suite passes 49/49. Scoped address/undefined/thread checks cover
 shared ownership/state changes; strict C++11/C++17/C11 checks cover their seams.
 SWORD, system libxml2 and GLib are not fully instrumented. The note harness tracks
 handler GStrings and reclaims frozen early-return allocations after recording;

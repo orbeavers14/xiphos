@@ -51,11 +51,18 @@ No milestone has official acceptance yet.
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
 
-Current local suite: **48 checks**. The shared Unicode click-key utility reuses
+Current local suite: **49 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.
-The dictionary history value/legacy adapters also agree over **10,287 tested transitions**. Sanitizer and strict-language
+The committed `core_tab_history_adapter` harness now compares complete frozen/current
+add/fake tab-history functions over 49,560 bounded state/callback comparisons,
+including all counts through the 50-entry limit, duplicate positions, cursor and
+first-back state, absent/empty/Unicode modules, maximum-sized keys and sequential
+eviction visits. It uses the actual layout/limits header with explicit GUI/type
+shims; a negative control detects changed first-back behavior. The adapted
+functions/helper are unchanged from #1, but this reproducible test is a later
+milestone and does not certify full GTK runtime. The dictionary history value/legacy adapters also agree over **10,287 tested transitions**. Sanitizer and strict-language
 checks are scoped in the evidence table below; they do not instrument SWORD or GLib.
 GTK full-app runtime and native Windows/Linux interaction checks remain pending.
 Routine milestones use local builds; no new GitHub builds were dispatched.
@@ -127,7 +134,7 @@ inclusion in this public fork.
 | Unicode click policy | Shared/actual legacy casing agrees over 4,448,324 comparisons in four locales; native main clicks normalize/record; raw dialog/hover semantics retained | Unicode database/version comparisons, real-module workflows and forced-locale preference import |
 | Native environment locale | 31/31 suite then 3/3 focused fixture/Turkish/invalid-locale checks; 32 checks now defined | Saved locale selection, translation resources and other native host startup |
 
-The full local suite now passes **48/48**. Complete main note/reference callbacks
+The full local suite now passes **49/49**. Complete main note/reference callbacks
 also agree over 96,792 frozen/actual ordered comparisons, including preference
 routing, heading setup and early guards. The legacy handler now avoids its
 early-return GString allocation without changing callback traces. This harness
@@ -247,7 +254,8 @@ Latest code milestones: [shared Unicode helper #54](https://github.com/orbeavers
 [development guide cleanup #76](https://github.com/orbeavers14/xiphos/pull/76),
 [nested study hover #77](https://github.com/orbeavers14/xiphos/pull/77),
 [workflow guide cleanup #78](https://github.com/orbeavers14/xiphos/pull/78),
-[preview profile reader #79](https://github.com/orbeavers14/xiphos/pull/79).
+[preview profile reader #79](https://github.com/orbeavers14/xiphos/pull/79),
+[committed history adapter characterization #80](https://github.com/orbeavers14/xiphos/pull/80).
 Scoped address/undefined and thread checks cover shared ownership/state changes;
 strict C++11/C++17/C11 checks cover the corresponding seams. These are not full
 SDK instrumentation or a leak audit. See each PR for its exact checks and scope.
