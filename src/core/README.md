@@ -1,4 +1,4 @@
-# Shared core: initial reader slice
+# Shared Xiphos application core
 
 Build/test independently of the GTK application:
 
@@ -8,8 +8,8 @@ cmake --build build/core --parallel
 ctest --test-dir build/core --output-on-failure
 ```
 
-Requires CMake >=3.16, C++17, SWORD >=1.8.1 and GLib >=2.32. The legacy rendering seam uses
-C++11. pkg-config discovery is preferred; SDKs can instead supply
+Requires CMake >=3.16, C++17, SWORD >=1.8.1, GLib >=2.32 and libxml2 headers/library. Legacy-linked helpers retain
+C++11 compatibility. pkg-config discovery is preferred; SDKs can instead supply
 `SWORD_INCLUDE_DIR` and `SWORD_LIBRARY`, with
 `XIPHOS_SWORD_EXTRA_LIBRARIES` for static SDK transitive libraries. The fallback
 SDK version and architecture must be checked by the SDK provider. Windows
@@ -30,8 +30,9 @@ comparison, C header consumption, handle/result ownership, missing modules,
 empty libraries and invalid arguments. Fixtures remain in the build directory
 for the Swift smoke test and manual preview; no live user data is modified.
 
-The default legacy application still builds normally; its get_render_text
-calls the same rendering function. The standalone core build avoids all GTK,
+The default legacy build remains available with its get_render_text delegate
+calling the same rendering function; full GTK build/runtime acceptance is
+still required. The standalone core build avoids all GTK,
 WebKit, help and packaging dependencies. Search and complete user-data storage
 remain pending. The C ABI is experimental and documented in c_api.h.
 Follow the [architecture](../../doc/modernization/architecture.md) and
@@ -62,7 +63,7 @@ borrowed snapshot strings survive reader close until chapter release.
 of the preceding/following chapter using SWORD, then records a successful visit.
 Only -1/+1 are accepted; Bible ends do not wrap. Failed destinations leave
 session history unchanged. This is not full decorated Xiphos chapter output;
-headings, options, semantic actions and synchronized study panes are pending.
+full decorations, remaining options/actions and synchronized study panes are pending.
 
 ## Study-note retrieval
 
@@ -77,8 +78,9 @@ is C++11-compatible in CoreRender; native host lifetime/thread rules still
 apply. `xc_worker_study_note` returns a polled request whose result transfers once
 through `xc_request_take_note`; note strings survive worker/request close until
 `xc_note_release`. Swift `CoreWorker.studyNote` copies the result strings
-into a Sendable value. Native link handling, hover presentation and expanded
-reference lists remain separate pending work.
+into a Sendable value. Native link handling, main/information hover and expanded
+reference lists are implemented in scoped form; complete link-family/platform
+acceptance remains pending.
 
 `study_note_link` decodes local SWORD `showNote` commands, including the fixed
 `xiphos-preview://study/` native origin. Query values decode individually;
@@ -129,7 +131,7 @@ rendering. Missing text positions and duplicate entries remain present.
 `xc_reference_list_release`, including after worker/request close. Empty
 expressions are valid; module and context are required. Swift's async
 `CoreWorker.readReferenceList` copies the result into a Sendable snapshot.
-Native preview presentation remains pending.
+Native ordered-list presentation is implemented; complete platform/visual acceptance remains pending.
 
 ## Variant-selection legacy seam
 
@@ -160,8 +162,8 @@ validates nonempty module/key before submission, reports engine/type failures at
 poll time and transfers an owned dictionary handle once. Getters borrow strings
 until handle release; the handle survives request/worker shutdown. Swift copies
 these fields into a Sendable RenderedDictionaryEntry through CoreWorker.
-Preferred lexicon selection, Strong's/morphology dispatch and the native
-dictionary pane remain pending.
+Shared preferred-lexicon selection, Strong's/morphology dispatch and the native
+dictionary pane are implemented in scoped form; full dictionary parity remains pending.
 
 
 ## Lexical command parsing
@@ -186,7 +188,7 @@ copied before preference changes. A missing selection returns NULL; an empty
 configured string remains distinct from NULL. Main fallback availability and
 overlapping Hebrew/Greek checks intentionally differ from dialog selection.
 No global settings, SWORD manager or GTK types enter the helper. Native copied
-preferences/context and dictionary dispatch are the next integration seam.
+preferences/context and dictionary dispatch now use this helper.
 
 
 ## Copied lexical lookup sessions
@@ -206,8 +208,8 @@ Reader::select_lexicon queries a cloned, validated source VerseKey only when
 the policy requires a testament. No independent canon parser or source-key
 mutation is introduced. Missing selected modules and wrong module types fail
 through the normal renderer. The worker copies settings/arguments and executes
-selection plus rendering FIFO. C/Swift bindings and native pane/hover/click
-history are pending; existing contextual dispatch is unchanged.
+selection plus rendering FIFO. C/Swift bindings, native panes, scoped main
+hover and recorded-click history now use the shared services described below.
 
 
 ## Lexical C/Swift adapters
@@ -223,7 +225,8 @@ Swift copies preferences and typed results into Sendable values, checks ABI
 origin/kind constants, and rejects embedded NUL preferences/source/URI before C
 submission. Defaults come from the core rather than a second Swift policy.
 Native preference panels, dictionary presentation, hover/click history and
-legacy-profile persistence remain pending.
+explicit five-field XML persistence are implemented in scoped form; full
+profile/platform parity remains pending.
 
 
 The copied catalog now exposes dictionary classification and declared lexicon
@@ -241,7 +244,7 @@ configured. It uses the same query parsing, selection and preview service;
 source-reference and no-Bible-history rules are retained. The C request exposes
 this kind through take_lexical_entry alongside existing takes. Older study_link
 and resolve_study_link APIs retain their two-kind contract. Swift contextual
-dispatch/pane presentation is the next integration step; explicit readLexical
+dispatch/pane presentation is implemented in scoped form; explicit readLexical
 already exposes copied values.
 
 
@@ -344,8 +347,8 @@ C++11 compatible with a C11 header and is already used by legacy main/url.cc.
 It does not retrieve notes, alter source/module state or implement dialog rules.
 The complete callback oracle retains nullable refList distinctions and heading
 setup; frontends must not merge these branches or reimplement tag matching.
-The owned main-hover worker service now uses this policy; native pointer
-integration and complete click/hover workflows remain pending.
+The owned main-hover worker service and main/information native pointer
+transport now use this policy; complete click/hover workflows remain pending.
 
 `hover_study_link_at` returns a `StudyHoverLink`: monostate for explicit no
 presentation, StudyNote for body/link-only information, ReferenceList for
@@ -354,7 +357,7 @@ Each tab owns the enabled-by-default cross-reference list mode through copied
 setter/getter requests. C callers use existing snapshot transfers and the
 `xc_request_no_presentation` copied marker; a successful void request is not a
 no-presentation result. Explicit reference/passages are no-ops in this slice;
-status/dictionary URI/dialog, heading and fallback compatibility remain pending.
+status/dictionary URI/dialog, heading and complete source/fallback compatibility remain pending.
 
 `Reader::reference_targets` / `StudySession::reference_targets` return owned
 `ParsedReferenceList` names/context/guard metadata without verse HTML or module
