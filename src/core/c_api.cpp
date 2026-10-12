@@ -30,6 +30,7 @@ struct xc_request {
   xc_status status = XC_PENDING;
   uint64_t tab = 0;
   bool options_result = false;
+  bool preview_preference_result = false, preview_preference = true, no_presentation = false;
   std::optional<xiphos::core::EngineOptions> options;
   std::unique_ptr<xc_reference_list> references;
   std::unique_ptr<xc_dictionary_choices> dictionary_choices;
@@ -47,6 +48,9 @@ struct xc_request {
   virtual ~xc_request() = default;
   virtual void update() = 0;
   void store(uint64_t v) { tab = v; }
+  void store(bool v) { preview_preference = v; preview_preference_result = true; }
+  void store(std::monostate) { no_presentation = true; }
+  void store(xiphos::core::StudyHoverLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(std::optional<xiphos::core::EngineOptions> v) { options = v; options_result = true; }
   void store(xiphos::core::ContextualStudyLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::ResolvedStudyLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
@@ -243,6 +247,26 @@ xc_status xc_worker_resolve_study_link_at(xc_worker *w, uint64_t tab, const char
   if (!context || !*context || !uri || !*uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.resolve_study_link_at(tab, id ? id : "", context, uri); });
 }
+xc_status xc_worker_hover_study_link_at(xc_worker *w, uint64_t tab, const char *id, const char *context, const char *uri, xc_request **out) {
+  if (!context || !*context || !uri || !*uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.hover_study_link_at(tab, id ? id : "", context, uri); });
+}
+xc_status xc_worker_set_cross_reference_preview_list(xc_worker *w, uint64_t tab, int enabled, xc_request **out) {
+  if (enabled != 0 && enabled != 1) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.set_cross_reference_preview_list(tab, enabled != 0); });
+}
+xc_status xc_worker_cross_reference_preview_list(xc_worker *w, uint64_t tab, xc_request **out) {
+  return queue_request(w, out, [=](auto &worker) { return worker.cross_reference_preview_list(tab); });
+}
+xc_status xc_request_cross_reference_preview_list(const xc_request *r, int *enabled) {
+  if (enabled) *enabled = 0;
+  if (!r || !enabled) return XC_INVALID_ARGUMENT;
+  if (r->status != XC_OK) return r->status;
+  if (!r->preview_preference_result) return XC_INVALID_ARGUMENT;
+  *enabled = r->preview_preference ? 1 : 0;
+  return XC_OK;
+}
+int xc_request_no_presentation(const xc_request *r) { return r && r->status == XC_OK && r->no_presentation; }
 xc_status xc_worker_resolve_study_link(xc_worker *w, uint64_t tab, const char *id, const char *uri, xc_request **out) {
   if (!uri || !*uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.resolve_study_link(tab, id ? id : "", uri); });

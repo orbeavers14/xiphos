@@ -113,9 +113,20 @@ xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_req
  * identifies the kind. Older resolve_study_link retains its two-kind contract. */
 /* Explicit click dispatch records successful lexical visits in dictionary
  * history; other command kinds retain preview/target behavior. No Bible visit.
- * Requested lexical value is recorded; legacy Unicode click case policy pending. */
+ * Legacy Unicode-uppercase requested key is recorded; raw command metadata is retained. */
 xc_status xc_worker_follow_study_link_at(xc_worker *worker, uint64_t tab, const char *current_module, const char *current_reference, const char *uri, xc_request **out);
 xc_status xc_worker_resolve_study_link_at(xc_worker *worker, uint64_t tab, const char *current_module, const char *current_reference, const char *uri, xc_request **out);
+/* Main hover only; use existing note/reference-list/lexical snapshot takes.
+ * showRef and passage links return an explicit no-presentation marker; no
+ * status-text/dictionary-URI/dialog hover is implemented by this slice.
+ * No history visits; preference is copied per tab and defaults enabled. */
+xc_status xc_worker_hover_study_link_at(xc_worker *worker, uint64_t tab, const char *current_module, const char *current_reference, const char *uri, xc_request **out);
+xc_status xc_worker_set_cross_reference_preview_list(xc_worker *worker, uint64_t tab, int enabled, xc_request **out);
+xc_status xc_worker_cross_reference_preview_list(xc_worker *worker, uint64_t tab, xc_request **out);
+xc_status xc_request_cross_reference_preview_list(const xc_request *request, int *enabled);
+/* True only for a completed successful explicit no-presentation hover result.
+ * This copied marker is not a transferred snapshot; repeated queries are valid. */
+int xc_request_no_presentation(const xc_request *request);
 xc_status xc_worker_resolve_study_link(xc_worker *worker, uint64_t tab, const char *current_module, const char *uri, xc_request **out);
 xc_status xc_worker_study_note_link(xc_worker *worker, uint64_t tab, const char *current_module, const char *uri, xc_request **out);
 /* Copied per-tab lexicons, separate from engine modops.conf fields. Enable

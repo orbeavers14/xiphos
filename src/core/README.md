@@ -344,4 +344,14 @@ C++11 compatible with a C11 header and is already used by legacy main/url.cc.
 It does not retrieve notes, alter source/module state or implement dialog rules.
 The complete callback oracle retains nullable refList distinctions and heading
 setup; frontends must not merge these branches or reimplement tag matching.
-Native note hover is pending at this extraction checkpoint.
+The owned main-hover worker service now uses this policy; native pointer
+integration and complete click/hover workflows remain pending.
+
+`hover_study_link_at` returns a `StudyHoverLink`: monostate for explicit no
+presentation, StudyNote for body/link-only information, ReferenceList for
+sidebar destinations, or raw LexicalEntry. It does not visit either history.
+Each tab owns the enabled-by-default cross-reference list mode through copied
+setter/getter requests. C callers use existing snapshot transfers and the
+`xc_request_no_presentation` copied marker; a successful void request is not a
+no-presentation result. Explicit reference/passages are no-ops in this slice;
+status/dictionary URI/dialog, heading and fallback compatibility remain pending.
