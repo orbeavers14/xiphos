@@ -73,7 +73,7 @@ No milestone has official acceptance yet.
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
 
-Current local suite: **34 checks**. The shared Unicode click-key utility reuses
+Current local suite: **35 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.
@@ -124,7 +124,8 @@ inclusion in this public fork.
    persistence. The [profile seam audit](hover-workflows.md#lexicon-profile-persistence-seam)
    identifies XML keys, startup defaults, duplicate-node behavior and the locale
    startup boundary; 296 XML helper comparisons/assertions now establish the local profile seam.
-   The shared owned profile API and safe literal-text writer are next.
+   The shared owned reader now matches the characterized getter/default rules;
+   safe literal-text saving and native import controls are next.
    Complete remaining reading controls and
    characterize commentary/parallel panes while retaining study-pane composition.
 3. Implement equivalent GTK4 and WinUI 3 reading panes with native toolchains
@@ -146,12 +147,18 @@ inclusion in this public fork.
 | Unicode click policy | Shared/actual legacy casing agrees over 4,448,324 comparisons in four locales; native main clicks normalize/record; raw dialog/hover semantics retained | Unicode database/version comparisons, real-module workflows and forced-locale preference import |
 | Native environment locale | 31/31 suite then 3/3 focused fixture/Turkish/invalid-locale checks; 32 checks now defined | Saved locale selection, translation resources and other native host startup |
 
-The full local suite now passes **34/34**. Complete main lexical click/hover
+The full local suite now passes **35/35**. Complete main lexical click/hover
 handlers agree over **135,258 frozen/actual callback comparisons**; strict
 C++11 and focused address/undefined checks cover that harness. The
 [hover contract inventory](hover-workflows.md) records destinations, retention
 and outstanding link families. Its source audit corrects the initial unsupported
 preview-pin requirement; linked/pinned tabs remain a separate parity workflow.
+
+The owned C++ profile reader passes 367 checks, including actual XML helper
+comparisons, UTF-16 decoding, unavailable names, concurrent parser isolation,
+explicit file preservation and invalid-input guards. Focused address/undefined
+and thread checks pass; libxml2 itself is not instrumented. The reader never
+applies saved locale or writes files; native import/save is still pending.
 
 Native lexical-hover checks cover raw values, committed source context, window
 isolation, latest-result ownership, failed-hover retention and closed-window
