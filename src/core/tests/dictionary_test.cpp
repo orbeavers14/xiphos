@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/worker.hpp"
 #include "xiphos/core/c_api.h"
+#include "xiphos/core/dictionary.hpp"
+#include <cstdlib>
+#include <cstring>
 #include <chrono>
 #include <thread>
 #include "xiphos/core/engine_manager.hpp"
@@ -21,6 +24,24 @@ xc_status wait(xc_request *request) {
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
   return status;
+}
+namespace actual_legacy_dictionary {
+using gint = int; using gchar = char;
+struct Settings { bool havedict = true; const char *DictWindowModule = "DictionaryOne"; const char *dictkey = nullptr; } settings;
+struct Entry { std::string text, html; unsigned activations=0; } entry;
+struct Widgets { Entry *entry_dict = &entry; } widgets;
+struct Backend {
+  sword::SWMgr *manager = nullptr; sword::SWModule *display_mod = nullptr;
+  void set_module_key(const char *id, const char *key) { display_mod=manager->getModule(id); display_mod->setKey(key); }
+} instance;
+Backend *backend = &instance;
+gchar *g_strdup(const char *value) { auto *copy=static_cast<gchar *>(std::malloc(std::strlen(value)+1)); std::strcpy(copy,value); return copy; }
+void g_free(void *value) { std::free(value); }
+void gtk_entry_set_text(Entry *target,const char *value) { target->text=value; }
+void gtk_widget_activate(Entry *target) { ++target->activations; target->html=render_entry(*backend->display_mod,target->text.c_str()); }
+#define GTK_ENTRY(value) (value)
+#include "legacy_dictionary_adapter.inc"
+#undef GTK_ENTRY
 }
 int main(int argc, char **argv) {
   try {
@@ -88,6 +109,22 @@ int main(int argc, char **argv) {
         const auto html = render_entry(*module, target.c_str());
         adjacent.emplace(std::make_pair(key,direction),DictionaryEntry{"DictionaryOne",module->getKeyText(),html});
       }
+      actual_legacy_dictionary::instance.manager=&legacy;
+      for (const auto &item : adjacent) {
+        actual_legacy_dictionary::settings.dictkey=item.first.first.c_str();
+        const auto before=actual_legacy_dictionary::entry.activations;
+        actual_legacy_dictionary::main_dictionary_button_clicked(item.first.second==-1?0:1);
+        check(actual_legacy_dictionary::entry.text==item.second.key && actual_legacy_dictionary::entry.html==item.second.html &&
+          actual_legacy_dictionary::entry.activations==before+1,"actual legacy key adapter equals frozen SDK sequence");
+      }
+      const auto activations=actual_legacy_dictionary::entry.activations;
+      actual_legacy_dictionary::settings.havedict=false;
+      actual_legacy_dictionary::main_dictionary_button_clicked(1);
+      actual_legacy_dictionary::settings.havedict=true; actual_legacy_dictionary::settings.DictWindowModule=nullptr;
+      actual_legacy_dictionary::main_dictionary_button_clicked(0);
+      check(actual_legacy_dictionary::entry.activations==activations,"actual legacy dictionary guards retain no-op behavior");
+      actual_legacy_dictionary::settings.DictWindowModule="DictionaryOne";
+      actual_legacy_dictionary::settings.dictkey=nullptr; actual_legacy_dictionary::instance.manager=nullptr;
       legacy.setGlobalOption("Words of Christ in Red", "Off"); plainWord = render_entry(*module, "G03056");
       legacy.setGlobalOption("Words of Christ in Red", "On"); redWord = render_entry(*module, "G03056");
       check(plainWord != redWord && redWord.find("wordsOfJesus") != std::string::npos, "dictionary options affect actual output");

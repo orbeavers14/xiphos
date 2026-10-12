@@ -242,3 +242,9 @@ key, takes one SDK step, copies the returned key and renders it using tab module
 options. SDK boundary/nearest-key behavior remains authoritative. Empty/NUL
 module or key and invalid direction reject; no Bible-history visit is made.
 Native key controls and separate dictionary history follow independently.
+
+
+The dictionary step helper belongs to the legacy-compatible C++11 CoreRender
+subset and is used by the existing GTK handler as well as native Reader. Its
+owned key prevents SDK pointer lifetime from crossing presentation work. Actual
+legacy handler wiring is compiled into the fixture characterization harness.
