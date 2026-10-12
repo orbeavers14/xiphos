@@ -140,10 +140,11 @@ final class ReaderModel: ObservableObject {
     }
     private var hoverRevision: UInt64 = 0
     private var hoverTask: Task<Void, Never>?
-    func previewStudyLink(_ uri: String, currentModule: String? = nil, currentReference: String? = nil) {
+    func previewStudyLink(_ uri: String) {
         guard !closed, !isBusy, let worker, let tab, uri.utf8.count <= 32_768 else { return }
-        guard let sourceModule = currentModule ?? displayedModule,
-              let sourceReference = currentReference ?? displayedEntry?.reference else { return }
+        // Legacy main hover policy uses the live committed main context, even
+        // when the information/sidebar content was produced by an older view.
+        guard let sourceModule = displayedModule, let sourceReference = displayedEntry?.reference else { return }
         hoverRevision &+= 1
         let hoverToken = hoverRevision, displayToken = revision
         hoverTask?.cancel()
@@ -711,7 +712,8 @@ struct ReaderWindow: View {
                                 Text("No referenced passages found.").foregroundStyle(.secondary).padding()
                             } else {
                                 PassageView(html: references.html, anchor: nil, onScrollFailure: { model.message = $0 },
-                                            onLink: { model.followLink($0, currentModule: references.module, currentReference: references.context) })
+                                            onLink: { model.followLink($0, currentModule: references.module, currentReference: references.context) },
+                                            onLinkHover: { model.previewStudyLink($0) })
                             }
                         } else if let note = model.studyNote {
                             Text("\(note.module) • \(note.reference)").font(.caption).padding(.horizontal, 8)
@@ -719,7 +721,8 @@ struct ReaderWindow: View {
                                 Button("Show referenced passages") { model.showReferencedPassages() }.disabled(model.isBusy).padding(8)
                             }
                             PassageView(html: note.html, anchor: nil, onScrollFailure: { model.message = $0 },
-                                        onLink: { model.followLink($0, currentModule: note.module, currentReference: note.reference) })
+                                        onLink: { model.followLink($0, currentModule: note.module, currentReference: note.reference) },
+                                        onLinkHover: { model.previewStudyLink($0) })
                         }
                     }.frame(minHeight: 140, idealHeight: 220)
                 }
@@ -735,7 +738,7 @@ struct ReaderWindow: View {
                         Text(preview.entry.module).font(.caption).foregroundStyle(.secondary).padding(.horizontal, 8)
                         PassageView(html: preview.entry.html, anchor: nil, onScrollFailure: { model.message = $0 },
                                     onLink: { model.followLink($0, currentModule: preview.module, currentReference: preview.sourceReference) },
-                                    onLinkHover: { model.previewStudyLink($0, currentModule: preview.module, currentReference: preview.sourceReference) })
+                                    onLinkHover: { model.previewStudyLink($0) })
                     }.frame(minHeight: 140, idealHeight: 220)
                 } else if let note = model.informationNote {
                     VStack(alignment: .leading, spacing: 0) {
@@ -749,7 +752,7 @@ struct ReaderWindow: View {
                         Text("\(note.module) • \(note.reference)").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 8)
                         PassageView(html: note.html, anchor: nil, onScrollFailure: { model.message = $0 },
                                     onLink: { model.followLink($0, currentModule: note.module, currentReference: note.reference) },
-                                    onLinkHover: { model.previewStudyLink($0, currentModule: note.module, currentReference: note.reference) })
+                                    onLinkHover: { model.previewStudyLink($0) })
                     }.frame(minHeight: 140, idealHeight: 220)
                 }
             }.frame(minWidth: 190, idealWidth: 230, maxWidth: 320)
@@ -880,7 +883,8 @@ struct ReaderWindow: View {
                     if let entry = model.dictionaryEntry {
                         Text("\(entry.module) • \(entry.key)").font(.caption).padding(8)
                         PassageView(html: entry.html, anchor: nil, onScrollFailure: { model.message = $0 },
-                                    onLink: { model.followLink($0, currentModule: model.dictionarySource?.module, currentReference: model.dictionarySource?.reference) })
+                                    onLink: { model.followLink($0, currentModule: model.dictionarySource?.module, currentReference: model.dictionarySource?.reference) },
+                                    onLinkHover: { model.previewStudyLink($0) })
                     } else {
                         Text("Enter a word or key to look up.").foregroundStyle(.secondary).padding()
                         Spacer()

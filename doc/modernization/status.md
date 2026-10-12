@@ -204,8 +204,17 @@ Main-hover source parsing now adds the characterized decoded-byte short
 passage fallback (<5 bytes) and unavailable-module fallback to the supplied
 committed source. Twelve generated combinations match the expected source
 note, while explicit installed modules/full passages and independent strict
-raw/click parsers remain intact. Foreign information/global-main context,
-heading, aliases and representative modules still need acceptance.
+raw/click parsers remain intact. Main, information, reference-list, note-body
+and dictionary-definition surfaces now share semantic hover dispatch using
+the live committed main source. An older information preview cannot supply
+the fallback context; explicit URI targets remain authoritative. Model checks
+cover retained old information and nested reference-list results without
+changing draft/main HTML/history. A temporary GUI run verified a note inside
+the five-passage sidebar opened retained information for John 3:16 while the
+main stayed at John 3:20 and the draft at John 4:2. Detached dialogs, generic
+dictionary URI hover, heading, aliases and representative modules remain
+acceptance gates; dictionary semantic callback wiring is not full keyed-module
+hover validation.
 
 Latest code milestones: [shared Unicode helper #54](https://github.com/orbeavers14/xiphos/pull/54),
 [legacy adoption #55](https://github.com/orbeavers14/xiphos/pull/55),
@@ -226,7 +235,9 @@ Latest code milestones: [shared Unicode helper #54](https://github.com/orbeavers
 [native study hover #72](https://github.com/orbeavers14/xiphos/pull/72),
 [reference targets #73](https://github.com/orbeavers14/xiphos/pull/73),
 [metadata-only notes #74](https://github.com/orbeavers14/xiphos/pull/74),
-[note source fallback #75](https://github.com/orbeavers14/xiphos/pull/75).
+[note source fallback #75](https://github.com/orbeavers14/xiphos/pull/75),
+[development guide cleanup #76](https://github.com/orbeavers14/xiphos/pull/76),
+[nested study hover #77](https://github.com/orbeavers14/xiphos/pull/77).
 Scoped address/undefined and thread checks cover shared ownership/state changes;
 strict C++11/C++17/C11 checks cover the corresponding seams. These are not full
 SDK instrumentation or a leak audit. See each PR for its exact checks and scope.

@@ -100,7 +100,7 @@ The synchronous adapter is retained for characterization tests.
 | Lexicons | Five role-filtered choices with unavailable saved names retained; -- Select -- keeps the prior value, Cancel discards a draft, Apply changes this window only |
 | Lexicon XML | Explicit Import/Save lexicon choices pickers using the shared reader/verified writer; five values updated while other settings survive |
 | Notes/references | Copied body previews, explicit ordered range/relative/reference lists and source-aware passage navigation; current click destinations remain a separate parity gate |
-| Hover | Main-reader/information lexical/footnote results retained in Information Preview; cross-reference sidebar or information-link mode selected by a core-owned per-window preference |
+| Hover | Main-reader/information/sidebar/note-body/dictionary semantic lexical/footnote results retained in Information Preview; cross-reference sidebar or information-link mode selected by a core-owned per-window preference |
 
 Reading/display/option refreshes use committed source context and preserve
 unfinished reference input without visiting history. Successful navigation is
