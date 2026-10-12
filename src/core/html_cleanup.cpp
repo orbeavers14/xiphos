@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+#include "xiphos/core/html_cleanup.hpp"
+#include <algorithm>
+#include <stdexcept>
+namespace xiphos { namespace core {
+namespace {
+HtmlCleanupResult blank(std::string html, const char *prefix, std::size_t prefix_length,
+                        char end, char replacement, bool include_tag) {
+  if (html.find('\0') != std::string::npos) throw std::invalid_argument("Cleanup HTML contains NUL");
+  HtmlCleanupResult result; result.html = std::move(html);
+  std::size_t position = 0;
+  while ((position = result.html.find(prefix, position)) != std::string::npos) {
+    const auto content = position + prefix_length;
+    const auto closing = result.html.find(end, content);
+    if (closing == std::string::npos) {
+      result.malformed_offset = include_tag ? position : content;
+      break;
+    }
+    const auto first = include_tag ? position : content;
+    const auto last = include_tag ? closing + 1 : closing;
+    std::fill(result.html.begin() + first, result.html.begin() + last, replacement);
+    position = closing; // Legacy continues its next substring search here.
+  }
+  return result;
+}
+}
+HtmlCleanupResult blank_images(std::string html) {
+  return blank(std::move(html), "<img ", 4, '>', ' ', true);
+}
+HtmlCleanupResult blank_font_faces(std::string html) {
+  return blank(std::move(html), "<font face=\"", 12, '"', '.', false);
+}
+}}

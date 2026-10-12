@@ -484,3 +484,14 @@ remain pending. C/Swift heading getters borrow/copy from existing owned handles,
 and native commentary controls use the shared per-module setting. Extraction
 scopes/restores registered Headings filters even without a module engine profile. See
 [heading scope](../../doc/modernization/heading-workflows.md).
+
+### Byte-preserving image/font cleanup
+
+`blank_images` and `blank_font_faces` return owned HTML plus an optional malformed-
+suffix offset (`npos` when complete). They preserve the exact case-sensitive legacy
+operations and byte length, with explicit embedded-NUL rejection. Legacy wrappers
+copy the result into their existing buffer and retain diagnostics/side effects in
+`CleanupContent`. Frozen/current/owned comparisons cover 27,648 bounded cases;
+strict C++11 and native-disabled builds pass. Native application, presentation
+preferences and remaining cleanup require separate work. See
+[cleanup scope](../../doc/modernization/html-cleanup-workflows.md).

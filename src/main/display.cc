@@ -22,6 +22,7 @@
 #include <config.h>
 #endif
 
+#include "xiphos/core/html_cleanup.hpp"
 #include <glib.h>
 #include <treekeyidx.h>
 
@@ -289,45 +290,22 @@ markedCacheCheck(int thisChapterVerse)
 void
 ClearImages(gchar *text)
 {
-	gchar *s;
-
-	for (s = strstr(text, "<img "); s; s = strstr(s, "<img ")) {
-		gchar *t;
-		if ((t = strchr(s + 4, '>'))) {
-			while (s <= t)
-				*(s++) = ' ';
-		} else {
-			XI_message(("ClearImages: no img end: %s\n", s));
-			return;
-		}
-	}
+    const auto result = xiphos::core::blank_images(text);
+    memcpy(text, result.html.c_str(), result.html.size());
+    if (result.malformed_offset != std::string::npos)
+        XI_message(("ClearImages: no img end: %s\n", text + result.malformed_offset));
 }
 
-//
-// utility function to blank font names `<font face="..." />' in text.
-//
-
-#define	CLEAR_FONT_NAME		"<font face=\""
-#define	CLEAR_FONT_NAME_LENGTH	12
+#define CLEAR_FONT_NAME "<font face=\""
+#define CLEAR_FONT_NAME_LENGTH 12
 
 void
 ClearFontFaces(gchar *text)
 {
-	gchar *s;
-
-	// huge assumption: no nested <font> specs: <font face="">
-	// is never followed by another <font anything> before </font>.
-	for (s = strstr(text, CLEAR_FONT_NAME); s; s = strstr(s, CLEAR_FONT_NAME)) {
-		gchar *t;
-		s += CLEAR_FONT_NAME_LENGTH;
-		if ((t = strchr(s, '"'))) {
-			while (s < t)
-				*(s++) = '.';
-		} else {
-			XI_message(("ClearFontFaces: no closing double quote: %s\n", s));
-			return;
-		}
-	}
+    const auto result = xiphos::core::blank_font_faces(text);
+    memcpy(text, result.html.c_str(), result.html.size());
+    if (result.malformed_offset != std::string::npos)
+        XI_message(("ClearFontFaces: no closing double quote: %s\n", text + result.malformed_offset));
 }
 
 //
