@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/worker.hpp"
 #include "xiphos/core/variant.h"
+#include "xiphos/core/c_api.h"
+#include <chrono>
+#include <thread>
 #include "xiphos/core/engine_manager.hpp"
 #include <markupfiltmgr.h>
 #include <array>
@@ -8,6 +11,15 @@
 #include <stdexcept>
 using namespace xiphos::core;
 void check(bool condition, const char *message) { if (!condition) throw std::runtime_error(message); }
+xc_status wait(xc_request *request) {
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+  xc_status status;
+  while ((status = xc_request_poll(request)) == XC_PENDING) {
+    check(std::chrono::steady_clock::now() < deadline, "C variant request deadline");
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+  return status;
+}
 int main(int argc, char **argv) {
   try {
     check(argc == 2, "variant fixture root required"); const std::string root = argv[1];
@@ -76,6 +88,40 @@ int main(int argc, char **argv) {
       worker.close_tab(tab).get(); rejected = false;
       try { worker.select_module_variant(tab, "OptionOther", XIPHOS_VARIANT_ALL).get(); } catch (const std::invalid_argument &) { rejected = true; }
       check(rejected, "closed tab rejects variant selection");
+    }
+    {
+      xc_worker *worker = nullptr; xc_request *request = nullptr;
+      check(xc_worker_open(root.c_str(), &worker) == XC_OK, "C variant worker");
+      check(xc_worker_create_tab(worker, &request) == XC_OK && wait(request) == XC_OK, "C variant tab");
+      const auto tab = xc_request_tab(request); xc_request_release(request);
+      check(xc_worker_select_module_variant(worker, tab, "OptionOther", XIPHOS_VARIANT_ALL, &request) == XC_OK && wait(request) == XC_INVALID_ARGUMENT,
+            "C unconfigured selection rejects"); xc_request_release(request);
+      const unsigned variantFlags = XC_ENGINE_VARIANTS_PRIMARY | XC_ENGINE_VARIANTS_SECONDARY | XC_ENGINE_VARIANTS_ALL;
+      check(xc_worker_set_module_engine_options(worker, tab, "OptionOther", XC_ENGINE_STRONGS | variantFlags, &request) == XC_OK && wait(request) == XC_OK,
+            "C prior ambiguous flags"); xc_request_release(request);
+      const std::array<unsigned, 3> selectedFlags = {XC_ENGINE_VARIANTS_PRIMARY, XC_ENGINE_VARIANTS_SECONDARY, XC_ENGINE_VARIANTS_ALL};
+      for (int choice = 0; choice < 3; ++choice) {
+        check(xc_worker_select_module_variant(worker, tab, "OptionOther", choice, &request) == XC_OK && wait(request) == XC_OK, "C variant selection");
+        check(!xc_request_take_entry(request), "selection request is status-only"); xc_request_release(request);
+        check(xc_worker_module_engine_options(worker, tab, "OptionOther", &request) == XC_OK && wait(request) == XC_OK, "C selected flags");
+        unsigned flags = 0; int configured = 0;
+        check(xc_request_engine_options(request, &flags, &configured) == XC_OK && configured && flags == (XC_ENGINE_STRONGS | selectedFlags[choice]),
+              "C selection preserves unrelated flags and selects one reading"); xc_request_release(request);
+        check(xc_worker_read_tab_entry(worker, tab, "OptionOther", "John3:22", &request) == XC_OK && wait(request) == XC_OK, "C selected rendering");
+        auto *entry = xc_request_take_entry(request); xc_request_release(request);
+        check(entry && std::string(xc_entry_html(entry)) == expected[choice], "C actual variant output"); xc_entry_release(entry);
+      }
+      for (const int choice : {-1, 3})
+        check(xc_worker_select_module_variant(worker, tab, "OptionOther", choice, &request) == XC_INVALID_ARGUMENT && !request, "C invalid choice before queue");
+      check(xc_worker_select_module_variant(worker, tab, nullptr, 0, &request) == XC_INVALID_ARGUMENT && !request &&
+            xc_worker_select_module_variant(worker, tab, "", 0, &request) == XC_INVALID_ARGUMENT && !request &&
+            xc_worker_select_module_variant(worker, tab, "OptionOther", 0, nullptr) == XC_INVALID_ARGUMENT, "C null/empty selection arguments");
+      check(xc_worker_select_module_variant(worker, tab, "Missing", 0, &request) == XC_OK && wait(request) == XC_MODULE_NOT_FOUND, "C missing variant module"); xc_request_release(request);
+      check(xc_worker_enable_module_preferences(worker, tab, &request) == XC_OK && wait(request) == XC_OK, "C enable preferences"); xc_request_release(request);
+      check(xc_worker_select_module_variant(worker, tab, "OptionTest", 0, &request) == XC_OK && wait(request) == XC_INVALID_ARGUMENT, "C undeclared variant"); xc_request_release(request);
+      check(xc_worker_close_tab(worker, tab, &request) == XC_OK && wait(request) == XC_OK, "C close variant tab"); xc_request_release(request);
+      check(xc_worker_select_module_variant(worker, tab, "OptionOther", 0, &request) == XC_OK && wait(request) == XC_INVALID_ARGUMENT, "C closed variant tab"); xc_request_release(request);
+      xc_worker_close(worker);
     }
     std::cout << "Shared variant rendering, isolation, history and storage checks passed\n";
   } catch (const std::exception &error) { std::cerr << error.what() << '\n'; return 1; }

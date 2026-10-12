@@ -99,7 +99,9 @@ and module-specific settings from the shared core. The native Reading options
 menu currently binds Words of Christ in Red, Strong's Numbers, Morphological
 Tags, Footnotes, Cross-references, Greek Accents, Hebrew Vowel Points and Hebrew
 Cantillation when the displayed module
-declares those options. New native
+declares those options. Textual Variants offers Primary Reading, Secondary
+Reading and All Readings for modules with declared variant filters; selecting
+one updates all three legacy variant fields in the shared core. New native
 tabs opt in to the shared legacy defaults. Preferences → Import reading options
 opens a native picker for an existing Xiphos `modops.conf`; its engine settings
 replace this window's options without changing the file. Other windows keep

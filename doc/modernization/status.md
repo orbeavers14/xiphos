@@ -1279,3 +1279,26 @@ failed operations, copied worker submission and save/reload. No GitHub builds.
 
 Next: C/Swift operation bindings and native variant choices. No full variant
 or platform parity is accepted; legacy operation remains available.
+
+## Native textual-variant controls and adapters: locally checked
+
+Implemented 2026-10-11 on `modernization/macos-variant-controls`, based on the
+tab-aware variant service. An additive C request and typed Swift adapter invoke
+the shared selection policy. Native Reading options exposes the legacy
+Primary Reading, Secondary Reading and All Readings choices for declared
+variant filters. The core updates all three flags; Swift retrieves the result
+and refreshes the committed passage without changing the draft or history.
+
+Validation: 21/21 local checks, focused address/undefined and thread checks
+3/3 each, strict C++17 and C11 header checks passed. C checks actual output,
+ambiguous prior flags, status-only result kind, invalid/null/missing/undeclared
+and closed-tab requests. Swift verifies ABI values and undeclared rejection;
+the native model verifies all three choices, unchanged unrelated flags,
+chapter/entry output, window isolation and save/reload. Temporary GUI checks
+selected all three outputs, preserved draft John 4:2 while John 3:22 remained
+committed, and confirmed no variant menu for an undeclared module. No GitHub
+build was dispatched.
+
+Next: remaining word-annotation/display controls and lexicon interactions.
+Full variant-module corpus, visual/workflow and platform acceptance remain
+pending. Overall estimate remains about 6%; 0/38 accepted feature groups.

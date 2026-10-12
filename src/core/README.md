@@ -133,4 +133,7 @@ actual extracted adapter are characterized without requiring GTK libraries.
 EngineOptions value, retaining every unrelated flag and rejecting invalid
 choices. `StudySession::select_module_variant` and its worker operation require
 configured settings and a declared variant filter, then update one module
-without visiting history. C/Swift controls follow separately.
+without visiting history. `xc_worker_select_module_variant` exposes the operation with the shared
+XIPHOS_VARIANT_* constants; invalid choice/module/output arguments reject
+before submission. Swift submits a typed value and retrieves effective options
+from the core. The native menu follows the existing three legacy selections.

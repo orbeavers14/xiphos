@@ -191,6 +191,10 @@ xc_status xc_worker_import_module_preferences(xc_worker *w, uint64_t tab, const 
 xc_status xc_worker_enable_module_preferences(xc_worker *w, uint64_t tab, xc_request **out) {
   return queue_request(w, out, [=](auto &worker) { return worker.enable_module_preferences(tab); });
 }
+xc_status xc_worker_select_module_variant(xc_worker *w, uint64_t tab, const char *id, int choice, xc_request **out) {
+  if (!id || !*id || !xiphos_core_variant_selection(choice).valid) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.select_module_variant(tab, id, choice); });
+}
 xc_status xc_worker_set_module_engine_options(xc_worker *w, uint64_t tab, const char *id, unsigned flags, xc_request **out) {
   if (!id || !*id || (flags & ~((1u << 18) - 1))) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   const auto options = options_from_flags(flags);

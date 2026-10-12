@@ -95,6 +95,7 @@ struct ReaderModelSmoke {
         first.setReadingOption(.greekAccents, enabled: false)
         first.setReadingOption(.hebrewVowels, enabled: false)
         first.setReadingOption(.hebrewCantillation, enabled: false)
+        first.selectVariant(.all)
         first.setReadingOption([.strongs, .footnotes], enabled: false)
         guard !first.isBusy, first.engineOptions == undeclaredOptions else { fatalError("undeclared/multiple control flags rejected") }
         first.showChapter = false
@@ -141,6 +142,32 @@ struct ReaderModelSmoke {
         first.setReadingOption(.hebrewVowels, enabled: true); try await idle(first)
         first.setReadingOption(.hebrewCantillation, enabled: true); try await idle(first)
         guard first.html.contains("שָׁל֑וֹם"), first.reference == "John 4:2" else { fatalError("Hebrew controls restore original output") }
+        first.reference = "John 3:22"; first.read(); try await idle(first)
+        second.reference = "John 3:22"; second.read(); try await idle(second)
+        let primaryHTML = second.html
+        guard first.html.contains("Original primary reading"), !first.html.contains("Original secondary reading") else { fatalError("legacy primary reading default") }
+        let variantFlags: EngineOptionFlags = [.variantsPrimary, .variantsSecondary, .variantsAll]
+        let unrelatedFlags = first.engineOptions?.subtracting(variantFlags)
+        let variantBack = first.canBack, variantForward = first.canForward
+        first.reference = "John 4:2"
+        for choice in [VariantReading.secondary, .all, .primary] {
+            first.selectVariant(choice)
+            guard first.isBusy else { fatalError("nonblocking variant selection") }
+            try await idle(first)
+            guard first.html.contains("Original primary reading") == (choice != .secondary),
+                  first.html.contains("Original secondary reading") == (choice != .primary),
+                  first.engineOptions?.subtracting(variantFlags) == unrelatedFlags,
+                  first.reference == "John 4:2", first.canBack == variantBack, first.canForward == variantForward,
+                  second.html == primaryHTML, first.renderedAnchor == "verse-22" else { fatalError("native variant chapter/output/options/history/window isolation") }
+        }
+        first.showChapter = false; first.refreshDisplay(); try await idle(first)
+        first.selectVariant(.secondary); try await idle(first)
+        guard !first.html.contains("Original primary reading"), first.html.contains("Original secondary reading") else { fatalError("variant single-entry output") }
+        first.saveReadingOptions(path: saveURL.path); try await idle(first)
+        second.importReadingOptions(path: saveURL.path); try await idle(second)
+        guard second.engineOptions?.contains(.variantsSecondary) == true, second.html.contains("Original secondary reading"),
+              !second.html.contains("Original primary reading") else { fatalError("native variant save/reload") }
+        first.showChapter = true; first.refreshDisplay(); try await idle(first)
         let noteURI = "xiphos-preview://study/passagestudy.jsp?action=showNote&type=n&value=1&module=OptionOther&passage=John+3%3A19"
         let beforeNoteHTML = first.html, beforeNoteDraft = first.reference
         let beforeNoteBack = first.canBack, beforeNoteForward = first.canForward

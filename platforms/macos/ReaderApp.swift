@@ -170,6 +170,18 @@ final class ReaderModel: ObservableObject {
             } else { self.message = "Reading options imported." }
         }
     }
+    func selectVariant(_ reading: VariantReading) {
+        guard engineOptions != nil, moduleOptions.declared.contains(.variantsPrimary),
+              let worker, let tab, let module = displayedModule, let entry = displayedEntry else { return }
+        run { token in
+            try await worker.selectModuleVariant(tab: tab, module: module, reading: reading)
+            let updated = try await worker.moduleEngineOptions(tab: tab, module: module)
+            guard token == self.revision && !self.closed else { return }
+            self.engineOptions = updated
+            let refreshed = try await worker.readTabEntry(tab: tab, module: module, reference: entry.reference)
+            try await self.present(refreshed, module: module, token: token, updateInput: false)
+        }
+    }
     func setReadingOption(_ flag: EngineOptionFlags, enabled: Bool) {
         let supported: EngineOptionFlags = [.wordsInRed, .strongs, .morphology, .footnotes, .greekAccents, .crossReferences, .hebrewVowels, .hebrewCantillation]
         guard supported.contains(flag), flag.rawValue.nonzeroBitCount == 1,
@@ -364,6 +376,10 @@ struct ReaderWindow: View {
                 set: { model.setReadingOption(flag, enabled: $0) }))
         }
     }
+    private func variantOption(_ title: String, flag: EngineOptionFlags, reading: VariantReading) -> some View {
+        Toggle(title, isOn: Binding(get: { model.engineOptions?.contains(flag) ?? false },
+                                   set: { _ in model.selectVariant(reading) }))
+    }
     var body: some View {
         HSplitView {
             VSplitView {
@@ -454,8 +470,15 @@ struct ReaderWindow: View {
                         readingOption("Greek Accents", flag: .greekAccents)
                         readingOption("Hebrew Vowel Points", flag: .hebrewVowels)
                         readingOption("Hebrew Cantillation", flag: .hebrewCantillation)
+                        if model.moduleOptions.declared.contains(.variantsPrimary) {
+                            Menu("Textual Variants") {
+                                variantOption("Primary Reading", flag: .variantsPrimary, reading: .primary)
+                                variantOption("Secondary Reading", flag: .variantsSecondary, reading: .secondary)
+                                variantOption("All Readings", flag: .variantsAll, reading: .all)
+                            }
+                        }
                     }.disabled(model.engineOptions == nil || model.moduleOptions.declared.intersection(
-                        [.wordsInRed, .strongs, .morphology, .footnotes, .greekAccents, .crossReferences, .hebrewVowels, .hebrewCantillation]).isEmpty)
+                        [.wordsInRed, .strongs, .morphology, .footnotes, .greekAccents, .crossReferences, .hebrewVowels, .hebrewCantillation, .variantsPrimary]).isEmpty)
                 }.padding(.horizontal, 12).padding(.bottom, 8).disabled(model.isBusy)
                 HStack {
                     Menu("Preferences") {

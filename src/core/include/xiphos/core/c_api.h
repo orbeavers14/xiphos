@@ -3,6 +3,7 @@
 #define XIPHOS_CORE_C_API_H
 #include <stddef.h>
 #include <stdint.h>
+#include "variant.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -80,6 +81,9 @@ xc_status xc_worker_set_engine_options(xc_worker *worker, uint64_t tab, unsigned
 xc_status xc_worker_save_module_preferences(xc_worker *worker, uint64_t tab, const char *path, xc_request **out);
 xc_status xc_worker_import_module_preferences(xc_worker *worker, uint64_t tab, const char *path, xc_request **out);
 xc_status xc_worker_enable_module_preferences(xc_worker *worker, uint64_t tab, xc_request **out);
+/* Choice uses XIPHOS_VARIANT_PRIMARY/SECONDARY/ALL. Requires configured
+ * settings and a declared filter; preserves unrelated options and history. */
+xc_status xc_worker_select_module_variant(xc_worker *worker, uint64_t tab, const char *module, int choice, xc_request **out);
 xc_status xc_worker_set_module_engine_options(xc_worker *worker, uint64_t tab, const char *module, unsigned flags, xc_request **out);
 xc_status xc_worker_clear_module_engine_options(xc_worker *worker, uint64_t tab, const char *module, xc_request **out);
 xc_status xc_worker_module_engine_options(xc_worker *worker, uint64_t tab, const char *module, xc_request **out);
