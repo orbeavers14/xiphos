@@ -1194,3 +1194,27 @@ context, history preservation and copied-value lifetime. No GitHub builds.
 
 Next: native note-body clicks should open the sidebar list with their committed
 source context. Full hover/pin and preview parity remain pending.
+
+## macOS contextual note-body links: locally checked
+
+Implemented 2026-10-11 on `modernization/macos-contextual-links`, based on the
+contextual adapters. Native note-body scripture links now open the shared
+sidebar reference-list preview, including single references and ranges. This
+supersedes the earlier single-reference main-navigation preview behavior and
+follows legacy clicked `show_ref` composition. Each web pane passes its own
+committed source module/reference; relative lists cannot use unfinished input.
+A standalone list can appear without a note, and Back to note appears only
+when a note body is available. Passage headings continue shared navigation.
+
+Validation: 19/19 local checks passed. Native model checks cover ranged,
+relative duplicate and single reference links, standalone preview, correct
+context despite a draft, configured output, unchanged main pane/history and
+header navigation. Visible temporary GUI checks clicked SWORD's actual range
+and single body links, confirmed four/one sidebar passages, retained main
+John 3:20 plus draft John 4:2, returned to the note and navigated from a heading
+with legacy history deduplication. No GitHub build was dispatched.
+
+Next: remaining language/variant controls and Strong's/morphology interactions.
+Hover/pin, unknown-module fallback, full visual/workflow and platform acceptance
+remain pending. Estimated completion stays about 6% (4–8% provisional range);
+0/38 feature groups accepted, 0/3 native platforms release-ready.
