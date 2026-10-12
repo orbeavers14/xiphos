@@ -361,7 +361,7 @@ bool small_supported(const std::string &text) {
     if (tag.find('\'') != std::string::npos) return false;
     for (auto i = open + 1; i < close; ++i) {
       const auto c = static_cast<unsigned char>(content[i]);
-      if (c >= 128 || c == '<' || c == '>' || c == '"' || c == '&' || c == '!') return false;
+      if ((!strong && c >= 128) || c == '<' || c == '>' || c == '"' || c == '&' || c == '!') return false;
     }
     if (++anchors > 8 || (!strong && anchors > 1)) return false;
     at = close + 4;

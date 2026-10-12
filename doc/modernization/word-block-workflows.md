@@ -13,7 +13,7 @@ participate in layout. CSS then places annotations under each word.
 
 Complete frozen helper/entry functions from CrossWire c9976a8 retain GPL notices.
 Current complete functions are extracted at configure time. `core_word_blocks`
-compares owned copies of output, warnings and mutated input over 1,457 bounded
+compares owned copies of output, warnings and mutated input over 1,458 bounded
 valid cases: Unicode words, casing/classes, numeric codes, NASB-style exclamation
 values, repeated annotations, styled text and original Greek/Hebrew SWORD output.
 The fixture uses original prose, not a redistributed Bible module.
@@ -56,12 +56,14 @@ The guard requires bounded balanced/case-matched markup, recognized small/em/anc
 annotation shapes and supported labels. Unsupported/malformed input, depth above
 64 or input above 1 MiB returns original HTML with applied=false; NUL is rejected.
 This is a conservative supported grammar, not a general HTML parser/sanitizer.
-Non-ASCII annotation labels and broader SDK shapes remain corpus work, while
-Unicode words and the original Greek/Hebrew SDK fixture are checked. Internal
+Non-ASCII morphology labels and broader SDK shapes remain corpus work. Unicode
+words, a Greek lemma annotation's displayed text/full lookup value, and original
+Greek/Hebrew SDK output are checked. Strong's/lemma labels do not run through the
+inherited ASCII morphology case conversion; unsupported morphology stays raw. Internal
 legacy-compatible GLib string operations remain behind this owned boundary and
 still need later modernization; no unsafe API is exposed for unchecked input.
 
-The updated harness compares owned results alongside the 1,457 valid baseline
+The updated harness compares owned results alongside the 1,458 valid baseline
 cases, checks 8,000 bounded malformed samples, fallback/depth/size/NUL contracts
 and 400 concurrent owned renders. Normal, address/undefined and thread checks
 pass 1/1 each; strict C++11 and native-disabled helper builds pass. External SDK/

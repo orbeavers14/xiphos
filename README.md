@@ -41,7 +41,7 @@ The legacy app retains its existing UI and delegates selected seams to shared
 helpers. Routine development and testing stay local to conserve GitHub builds;
 platform CI and full acceptance are reserved for meaningful checkpoints.
 
-Overall modernization is estimated at **about 7%** (planning range 5–9%).
+Overall modernization is estimated at **about 8%** (planning range 6–10%).
 **0/38 feature groups** have accepted parity across all native platforms.
 See the status page for the weighted estimate, ordered next steps and
 [source reuse decisions](doc/modernization/status.md#reuse-from-related-projects).

@@ -90,6 +90,9 @@ int main(int argc, char **argv) {
         }
       }
     for (const auto &input : {"Original plain text.", "Original\twords", "<i><i>Original</i></i>", "<i><b>Original</b></i>", "<p>Original paragraph.</p>"}) compare(input);
+    const auto lemma = compare("Original " + strong("λόγος", true));
+    check(lemma.html.find("λόγος") != std::string::npos && lemma.html.find("value=λόγος") != std::string::npos,
+          "Unicode lemma annotation retains displayed text and lexical value");
     const auto lower = compare("Original " + morph("V IMP AAI", true));
     check(lower.html.find("v-imp-aai") != std::string::npos && lower.html.find("value=V IMP AAI") != std::string::npos,
           "morph display lowercases/spaces become hyphens without changing original URI value");

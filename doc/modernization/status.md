@@ -7,8 +7,8 @@ that contract. The [parity matrix](parity-matrix.md) defines acceptance evidence
 
 ## Overall completion estimate
 
-Approximately **7% complete** toward a validated native release on all three
-platforms (planning range **5–9%**, not a measured parity score). This counts
+Approximately **8% complete** toward a validated native release on all three
+platforms (planning range **6–10%**, not a measured parity score). This counts
 modernization work, not functionality inherited from the existing GTK app.
 The estimate is deliberately provisional and should change as services and
 platform workflows are characterized. Reassess after each accepted milestone.
@@ -16,10 +16,16 @@ platform workflows are characterized. Reassess after each accepted milestone.
 | Work area | Share of total effort | Estimated work completed | Contribution |
 |---|---:|---:|---:|
 | Inventory, architecture, build/test foundation | 10% | 40% | 4.0% |
-| Shared application services | 35% | 6% | 2.1% |
+| Shared application services | 35% | 8% | 2.8% |
 | Three native frontends and design/workflow adaptation | 30% | 3% | 0.9% |
 | User-data compatibility and migration | 15% | 1% | 0.15% |
 | Release packaging and comprehensive acceptance | 10% | 0% | 0% |
+
+The weighted contribution is approximately 7.85%, rounded to 8%. The service
+estimate now includes owned commentary headings, shared image/font cleanup and
+preferences, typed snapshot/state/diagnostic adapters, and initial owned lexical
+rendering/styles. These are scoped engineering milestones, not accepted whole
+feature rows or proof that the core is complete.
 
 The estimate includes explicit engine/presentation preference import/save, shared
 note/reference workflows, paired/sparse commentary services and partial
@@ -58,7 +64,7 @@ study-pane composition/commentary workflow before broader native feature claims.
 ## Current locally checked scope
 
 [Word block characterization](word-block-workflows.md) compares complete frozen/
-current functions over 1,457 valid cases, including original Greek/Hebrew SDK
+current functions over 1,458 valid cases, including original Greek/Hebrew SDK
 output. It records inherited input-buffer mutation and recursive static-tag defects;
 an initial owned/bounded C++11 block renderer now preserves supported layout,
 fixes local recursion/input ownership and retains original HTML on unsupported
@@ -114,7 +120,7 @@ Headings import/save and pass 65/65 local checks, with focused address/undefined
 check pass. Complete heading
 transformations, detached windows,
 companion/personal editing, saved pane startup and broader corpus/visual acceptance
-remain pending. The engineering estimate is now about 7% (range 5–9%);
+remain pending. The engineering estimate is now about 8% (range 6–10%);
 the fully accepted parity count remains zero.
 
 - Shared C++ module/verse/chapter reading, Bible history, rendering options,
