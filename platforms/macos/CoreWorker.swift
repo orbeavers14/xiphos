@@ -2,6 +2,12 @@
 import Foundation
 import XiphosCore
 
+struct DictionaryLocation: Sendable, Equatable { let module: String; let key: String }
+struct CoreDictionaryHistoryState: Sendable, Equatable {
+    let entries: [DictionaryLocation]
+    let cursor: Int
+    let canBack: Bool, canForward: Bool
+}
 struct CoreHistoryState: Sendable {
     let canBack: Bool
     let canForward: Bool
@@ -177,11 +183,20 @@ actor CoreWorker {
         return CoreValues.lexicons(result)
     }
     func readLexical(tab: UInt64, module: String, reference: String, uri: String, origin: LexiconOrigin = .main) async throws -> RenderedLexicalEntry {
+        try await lexicalLookup(tab: tab, module: module, reference: reference, uri: uri, origin: origin, record: false)
+    }
+    func visitLexical(tab: UInt64, module: String, reference: String, uri: String, origin: LexiconOrigin = .main) async throws -> RenderedLexicalEntry {
+        try await lexicalLookup(tab: tab, module: module, reference: reference, uri: uri, origin: origin, record: true)
+    }
+    private func lexicalLookup(tab: UInt64, module: String, reference: String, uri: String, origin: LexiconOrigin, record: Bool) async throws -> RenderedLexicalEntry {
         guard ![module, reference, uri].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?
         let handle = try worker()
         let status = module.withCString { id in reference.withCString { context in
-            uri.withCString { xc_worker_read_lexical(handle, tab, id, context, $0, origin.rawValue, &request) }
+            uri.withCString { value in
+                record ? xc_worker_visit_lexical(handle, tab, id, context, value, origin.rawValue, &request)
+                       : xc_worker_read_lexical(handle, tab, id, context, value, origin.rawValue, &request)
+            }
         } }
         let completed = try await wait(status, request)
         defer { xc_request_release(completed) }
@@ -194,22 +209,53 @@ actor CoreWorker {
         var request: OpaquePointer?
         let handle = try worker()
         let status = module.withCString { id in key.withCString { xc_worker_navigate_dictionary(handle, tab, id, $0, direction, &request) } }
-        let completed = try await wait(status, request)
-        defer { xc_request_release(completed) }
-        guard let result = xc_request_take_dictionary_entry(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
-        defer { xc_dictionary_entry_release(result) }
-        return CoreValues.dictionaryEntry(result)
+        return try await dictionaryValue(status, request)
     }
     func readDictionary(tab: UInt64, module: String, key: String) async throws -> RenderedDictionaryEntry {
         guard ![module, key].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?
         let handle = try worker()
         let status = module.withCString { id in key.withCString { xc_worker_read_dictionary(handle, tab, id, $0, &request) } }
+        return try await dictionaryValue(status, request)
+    }
+    private func dictionaryValue(_ status: xc_status, _ request: OpaquePointer?) async throws -> RenderedDictionaryEntry {
         let completed = try await wait(status, request)
         defer { xc_request_release(completed) }
         guard let result = xc_request_take_dictionary_entry(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
         defer { xc_dictionary_entry_release(result) }
         return CoreValues.dictionaryEntry(result)
+    }
+    func visitDictionary(tab: UInt64, module: String, key: String) async throws -> RenderedDictionaryEntry {
+        guard ![module, key].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { id in key.withCString { xc_worker_visit_dictionary(handle, tab, id, $0, &request) } }
+        return try await dictionaryValue(status, request)
+    }
+    func navigateDictionaryHistory(tab: UInt64, direction: Int32) async throws -> RenderedDictionaryEntry {
+        guard direction == -1 || direction == 1 else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let status = xc_worker_navigate_dictionary_history(try worker(), tab, direction, &request)
+        return try await dictionaryValue(status, request)
+    }
+    func clearDictionaryHistory(tab: UInt64) async throws {
+        var request: OpaquePointer?
+        let status = xc_worker_clear_dictionary_history(try worker(), tab, &request)
+        xc_request_release(try await wait(status, request))
+    }
+    func dictionaryHistory(tab: UInt64) async throws -> CoreDictionaryHistoryState {
+        var request: OpaquePointer?
+        let status = xc_worker_dictionary_history(try worker(), tab, &request)
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_dictionary_history(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_dictionary_history_release(result) }
+        let entries = (0..<xc_dictionary_history_count(result)).map { index in
+            DictionaryLocation(module: String(cString: xc_dictionary_history_module(result, index)!),
+                               key: String(cString: xc_dictionary_history_key(result, index)!))
+        }
+        return CoreDictionaryHistoryState(entries: entries, cursor: xc_dictionary_history_cursor(result),
+            canBack: xc_dictionary_history_can_back(result) != 0, canForward: xc_dictionary_history_can_forward(result) != 0)
     }
     func readReferenceList(tab: UInt64, module: String, expression: String, context: String) async throws -> RenderedReferenceList {
         var request: OpaquePointer?
@@ -226,12 +272,21 @@ actor CoreWorker {
         return CoreValues.referenceList(result)
     }
     func resolveStudyLinkAt(tab: UInt64, currentModule: String, currentReference: String, uri: String) async throws -> ContextualStudyLink {
+        try await contextualStudyLinkAt(tab: tab, currentModule: currentModule, currentReference: currentReference, uri: uri, record: false)
+    }
+    func followStudyLinkAt(tab: UInt64, currentModule: String, currentReference: String, uri: String) async throws -> ContextualStudyLink {
+        try await contextualStudyLinkAt(tab: tab, currentModule: currentModule, currentReference: currentReference, uri: uri, record: true)
+    }
+    private func contextualStudyLinkAt(tab: UInt64, currentModule: String, currentReference: String, uri: String, record: Bool) async throws -> ContextualStudyLink {
         guard ![currentModule, currentReference, uri].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?
         let handle = try worker()
         let status = currentModule.withCString { id in
             currentReference.withCString { context in
-                uri.withCString { xc_worker_resolve_study_link_at(handle, tab, id, context, $0, &request) }
+                uri.withCString { value in
+                    record ? xc_worker_follow_study_link_at(handle, tab, id, context, value, &request)
+                           : xc_worker_resolve_study_link_at(handle, tab, id, context, value, &request)
+                }
             }
         }
         let completed = try await wait(status, request)

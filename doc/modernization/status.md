@@ -1757,3 +1757,20 @@ lexicon metadata, changed-click forward clearing, failed click retention, owned
 C kinds and passage no-visit behavior. SWORD is uninstrumented. No GitHub builds.
 Next: Swift history values and native history controls, then normalization, key
 chooser and remaining lexical workflows. No full acceptance/retirement; about 6%.
+
+
+## Swift dictionary history adapter: locally checked, native controls next
+
+Implemented 2026-10-11 on `modernization/swift-dictionary-history`. CoreWorker
+exposes copied Sendable history entries/cursor/flags, explicit dictionary/lexical
+visits, history navigation/clear and recorded contextual dispatch. Swift retains
+no history policy or C pointers in snapshots. Preview/recorded paths share owned
+bridges; input NULs and invalid directions reject before submission.
+
+Validation: 29/29 local checks, then focused adapter checks after closed/lifetime
+assertions. Swift checks cover history order/flags, duplicate recording, tab
+isolation, failed-NUL retention, clear, no-record previews/key steps, closed tabs
+and copied values after shutdown. Core sanitizer evidence remains recorded in
+prior milestones. No GitHub builds. Next: native dictionary history controls,
+then normalization, nearby keys and remaining lexical workflows. Full feature
+acceptance/retirement pending; provisional estimate about 6%.

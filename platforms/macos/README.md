@@ -207,3 +207,11 @@ A pending module choice must be looked up before key navigation is enabled.
 Source passage context, Bible history and unfinished Bible reference remain
 unchanged. SDK boundary behavior is retained; these are key steps, not dictionary
 history Back/Forward. Separate history and the nine-key chooser remain pending.
+
+
+CoreWorker now exposes copied Sendable dictionary-history entries/cursor/flags,
+explicit visit, Back/Forward/Clear commands and recorded contextual lexical
+clicks. Preview and recorded paths share their Swift ownership bridge and the
+same C++ parser/renderer. Core snapshots are released after copying and values
+survive engine shutdown. Native history controls follow separately; legacy
+Unicode click normalization remains pending.
