@@ -11,6 +11,8 @@ class StudySession {
 public:
   explicit StudySession(Reader &reader) : reader_(reader) {}
   // Render with this tab's settings without moving or adding history.
+  StudyNote study_note(const std::string &module, const std::string &reference,
+                       const std::string &identifier);
   Entry read_entry(const std::string &module, const std::string &reference);
   Entry visit(const std::string &module, const std::string &reference);
   Entry navigate(int direction);
