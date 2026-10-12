@@ -18,6 +18,7 @@ struct xc_link { xiphos::core::PassageLink value; };
 struct xc_reference_list { xiphos::core::ReferenceList value; };
 struct xc_lexicons { std::optional<xiphos::core::LexiconPreferences> value; };
 struct xc_lexical_entry { xiphos::core::LexicalEntry value; };
+struct xc_dictionary_history { xiphos::core::DictionaryHistorySnapshot value; };
 struct xc_dictionary_entry { xiphos::core::DictionaryEntry value; };
 struct xc_note { xiphos::core::StudyNote value; };
 struct xc_entry { xiphos::core::Entry value; };
@@ -30,6 +31,7 @@ struct xc_request {
   bool options_result = false;
   std::optional<xiphos::core::EngineOptions> options;
   std::unique_ptr<xc_reference_list> references;
+  std::unique_ptr<xc_dictionary_history> dictionary_history;
   std::unique_ptr<xc_dictionary_entry> dictionary;
   std::unique_ptr<xc_lexical_entry> lexical;
   std::unique_ptr<xc_lexicons> lexicons;
@@ -49,6 +51,7 @@ struct xc_request {
   void store(xiphos::core::ReferenceList v) { references = std::make_unique<xc_reference_list>(xc_reference_list{std::move(v)}); }
   void store(std::optional<xiphos::core::LexiconPreferences> v) { lexicons = std::make_unique<xc_lexicons>(xc_lexicons{std::move(v)}); }
   void store(xiphos::core::LexicalEntry v) { lexical = std::make_unique<xc_lexical_entry>(xc_lexical_entry{std::move(v)}); }
+  void store(xiphos::core::DictionaryHistorySnapshot v) { dictionary_history = std::make_unique<xc_dictionary_history>(xc_dictionary_history{std::move(v)}); }
   void store(xiphos::core::DictionaryEntry v) { dictionary = std::make_unique<xc_dictionary_entry>(xc_dictionary_entry{std::move(v)}); }
   void store(xiphos::core::StudyNote v) { note = std::make_unique<xc_note>(xc_note{std::move(v)}); }
   void store(xiphos::core::Entry v) { entry = std::make_unique<xc_entry>(xc_entry{std::move(v)}); }
@@ -268,6 +271,28 @@ xc_status xc_worker_read_lexical(xc_worker *w, uint64_t tab, const char *module,
   }
   return queue_request(w, out, [=](auto &worker) { return worker.read_lexical(tab, module ? module : "", reference ? reference : "", uri, origin); });
 }
+xc_status xc_worker_visit_dictionary(xc_worker *w, uint64_t tab, const char *id, const char *key, xc_request **out) {
+  if (!id || !*id || !key || !*key) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.visit_dictionary(tab, id, key); });
+}
+xc_status xc_worker_navigate_dictionary_history(xc_worker *w, uint64_t tab, int direction, xc_request **out) {
+  if (direction != -1 && direction != 1) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.navigate_dictionary_history(tab, direction); });
+}
+xc_status xc_worker_dictionary_history(xc_worker *w, uint64_t tab, xc_request **out) {
+  return queue_request(w, out, [=](auto &worker) { return worker.dictionary_history(tab); });
+}
+xc_status xc_worker_clear_dictionary_history(xc_worker *w, uint64_t tab, xc_request **out) {
+  return queue_request(w, out, [=](auto &worker) { return worker.clear_dictionary_history(tab); });
+}
+xc_dictionary_history *xc_request_take_dictionary_history(xc_request *r) { return r && r->status == XC_OK ? r->dictionary_history.release() : nullptr; }
+size_t xc_dictionary_history_count(const xc_dictionary_history *h) { return h ? h->value.entries.size() : 0; }
+size_t xc_dictionary_history_cursor(const xc_dictionary_history *h) { return h ? h->value.cursor : 0; }
+int xc_dictionary_history_can_back(const xc_dictionary_history *h) { return h && h->value.can_back; }
+int xc_dictionary_history_can_forward(const xc_dictionary_history *h) { return h && h->value.can_forward; }
+const char *xc_dictionary_history_module(const xc_dictionary_history *h, size_t i) { return h && i < h->value.entries.size() ? h->value.entries[i].module.c_str() : nullptr; }
+const char *xc_dictionary_history_key(const xc_dictionary_history *h, size_t i) { return h && i < h->value.entries.size() ? h->value.entries[i].key.c_str() : nullptr; }
+void xc_dictionary_history_release(xc_dictionary_history *h) { delete h; }
 xc_status xc_worker_navigate_dictionary(xc_worker *w, uint64_t tab, const char *id, const char *key, int direction, xc_request **out) {
   if (!id || !*id || !key || !*key || (direction != -1 && direction != 1)) {
     if (out) *out = nullptr;
