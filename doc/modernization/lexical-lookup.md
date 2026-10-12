@@ -160,3 +160,17 @@ subset, used by both the legacy handler and native Reader. The actual handler
 is extracted into the dictionary harness with entry/presentation stubs, and its
 14 key-step results and two guards agree with the frozen SDK sequence. This
 checks adapter wiring without claiming full GTK UI validation on the Mac.
+
+
+### Dictionary history contract (2026-10-11)
+
+The frozen and actual main_dict_history_add/back/forward handlers are compiled
+with ownership-compatible linked-list and presentation stubs. Their history
+contains module/key pairs, unlike reference-only Bible history. A duplicate of
+the current pair preserves forward entries; a changed visit clears them. Back
+moves the current entry to a forward stack, and Forward pops it; the navigating
+flag suppresses recording during display. Recording evicts oldest above 50.
+A separate C++11 DictionaryHistory agrees with both adapters over 10,287
+transitions, including module changes, Unicode, duplicate-after-back, eviction,
+boundaries and 100 reproducible mixed traces. This is value-state evidence,
+not full GTK UI/profile/error-path acceptance. Native session integration follows.

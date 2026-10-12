@@ -1664,3 +1664,21 @@ and Bible Back/Forward remained disabled. No GitHub builds or installed data
 changes. Next: separate dictionary history, nine-key chooser, click normalization
 and remaining hover/pinning/persistence/composition. No full acceptance or file
 retirement; provisional estimate about 6% (4–8%).
+
+
+## Shared dictionary history state: characterized, integration pending
+
+Implemented 2026-10-11 on `modernization/shared-dictionary-history`. A separate
+C++11 DictionaryHistory in the legacy-compatible subset preserves the current
+module/key deduplication, duplicate forward retention, changed-visit forward
+clearing, 50-entry eviction and navigation order. Owned replacement state is
+built before publishing a visit. Bible history remains a separate contract.
+The legacy source is unchanged; actual and frozen handlers are tested with
+ownership-compatible list/presentation shims.
+
+Validation: 28/28 local checks, 10,287 frozen/actual/shared transitions, strict
+C++11 and the native-disabled legacy subset passed. Address/undefined check
+passed 1/1 with leak detection disabled because macOS ASan does not support it.
+No SWORD instrumentation is relevant to this value-only test; no GitHub builds.
+Next: legacy handler delegation, explicit dictionary visit/navigation commands
+and native history controls. No full feature acceptance/retirement; about 6%.

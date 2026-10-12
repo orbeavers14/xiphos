@@ -248,3 +248,11 @@ The dictionary step helper belongs to the legacy-compatible C++11 CoreRender
 subset and is used by the existing GTK handler as well as native Reader. Its
 owned key prevents SDK pointer lifetime from crossing presentation work. Actual
 legacy handler wiring is compiled into the fixture characterization harness.
+
+
+DictionaryHistory is a separate C++11 value type in CoreHistory. It deduplicates
+only the current module/key pair, retains forward data on a duplicate, clears
+forward data on a different visit and evicts oldest entries above 50. Invalid
+moves reject before mutation; visits build replacement state before publishing.
+The legacy actual/frozen adapters agree over 10,287 tested transitions. Session
+commands, legacy delegation and frontend history controls are not connected yet.
