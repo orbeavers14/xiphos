@@ -1,4 +1,29 @@
 # Modernization status and acceptance
+## Local-only integration checkpoint — 2026-10-11
+
+The repository owner authorized checks and merges without hosted build credits.
+PR #1 foundation and PR #2 asynchronous macOS integration are merged into master.
+PR #3 shared options is integrated with their combined source in this revision;
+the build-file conflict was resolved by retaining all asynchronous UI/test targets
+and linking/depending on CoreOptions in each Swift executable.
+
+Exact isolated checks passed: #1 native build/tests 6/6 and native-disabled C++11
+seams; #2 build/tests 8/8; #3 standalone 8/8 and combined native build/tests 10/10,
+plus native-disabled rendering/history/options seams and strict C++11 options.
+Local deployment target is 26 with the installed SWORD SDK, not a validation of
+the intended macOS 13 minimum. Full GTK app/runtime, Windows/Linux, ICU-enabled
+SDK and representative visual/module/profile checks remain deferred.
+
+Both GitHub build workflows (builds and native-core) are disabled manually and
+remain paused until hosted checks are requested. No hosted build was started
+for this integration. This accepts experimental code integration only: 0/38
+feature groups have full native parity and no legacy files may be retired on
+this evidence. Later locally checked work remains in dependent draft branches;
+their 49-test suite is distinct from master's combined 10-test suite.
+
+The remaining document contains scoped implementation/history evidence; hosted
+checks mentioned there describe the validation plan while workflows are paused.
+
 
 Updated 2026-10-10. Goal: preserve Xiphos functionality, visual composition,
 data and workflows through one shared C++ application core and separate
@@ -66,9 +91,10 @@ inclusion in this public fork.
 
 1. Finish PR #1 checks and review, validate representative module types and
    rendering against the legacy app, then record scoped acceptance on merge.
-2. Extract per-tab reference/navigation/history and full chapter rendering
-   with options into C++; characterize existing behavior first. Screen and
-   workflow comparisons must retain the established study-pane composition.
+2. Review the asynchronous macOS integration separately from the core
+   foundation; broaden startup/shutdown and real-module interaction checks.
+   Expand decorated chapter options and characterize commentary/parallel panes.
+   Screen and workflow comparisons must retain the established study-pane composition.
 3. Evaluate selected SwordKit Swift helpers and BibleUI controls against that
    core API; add only a justified, audited adapter/component in a focused PR.
 4. Implement equivalent reading panes in GTK4 and WinUI 3 with native toolchain
@@ -235,7 +261,7 @@ selectors, synchronized commentary and platform-wide visual parity remain
 pending. The new menus are native preview controls, not accepted design parity.
 Overall planning estimate remains approximately **5% (3–7%)**.
 
-## Shared engine worker: core foundation, UI integration pending
+## Shared engine worker: core foundation (historical checkpoint)
 
 Implemented 2026-10-10: `StudyWorker` owns a reader and independent tab sessions
 on one C++ engine thread. Discovery, reading, chapter/navigation snapshots,
@@ -254,7 +280,8 @@ FIFO visits/Back/history, tab isolation, copied input/results, failed operations
 closed tabs, chapter/options/link/selector results, initialization failures and
 queued work surviving worker destruction.
 
-The macOS preview is not connected to this worker yet. Nonblocking C request handles are implemented in the following slice; next is
+At this checkpoint the macOS preview was not connected to the worker.
+Nonblocking C request handles are implemented in the following slice; next was
 async Swift consumption with stale-result protection and background shutdown,
 then verification of a responsive reading window.
 No cancellation/interruption of an active SWORD call is provided by this first
@@ -263,7 +290,7 @@ instances, global locale switching and legacy global calls cannot run alongside
 it concurrently. Do not wait on futures or destroy a worker on the UI thread.
 The legacy rendering/history path and synchronous C API remain available.
 
-## Nonblocking C worker bridge: local validation, UI integration pending
+## Nonblocking C worker bridge: local validation (historical checkpoint)
 
 Implemented 2026-10-10: opaque worker/request handles for discovery, tab
 lifetime, visits, navigation, history, chapters, reference choices and links.
@@ -283,10 +310,44 @@ initialization failure and requests/transferred results surviving worker close.
 C-header compilation checks the additive declarations and symbols. External
 SWORD remains uninstrumented; unrelated engine/global concurrency is unproven.
 
-The macOS preview still uses the synchronous adapter. Next is async Swift
-consumption, serialized window actions, stale-result guards, background
-shutdown and responsive GUI verification. Active-call cancellation, search
-progress and comprehensive startup/shutdown acceptance remain pending.
+At this checkpoint the macOS preview used the synchronous adapter. The
+following slice connects the worker to the native interface. Active-call
+cancellation, search progress and comprehensive startup/shutdown acceptance
+remain pending.
+
+## Asynchronous macOS reader: locally validated, pending review
+
+Implemented 2026-10-10 on `modernization/async-macos-reader`, stacked on the
+core foundation branch for separate review. The preview shares one C++ engine
+worker across windows; each window has its own core tab/history. A Swift 6
+actor submits and observes nonblocking C requests, copying owned results into
+presentation values. Window controls serialize actions and show loading state.
+Closing a window guards late results and schedules tab cleanup; engine draining
+runs on a background queue. Accepted actions survive Swift task cancellation.
+Unsubmitted reference drafts survive display-option refreshes.
+
+Local macOS build and CTest **8/8 passed**. New tests cover async discovery,
+main-actor progress, concurrent request consumers, tab/history isolation,
+canceled task observation, initialization errors, copied result lifetime and
+background shutdown. Reader-model tests cover initial loading, reading,
+history, chapter display, links, draft preservation, ignored overlapping
+actions, close-during-startup and stale results after closing.
+
+A rebuilt temporary fixture app was visibly checked: original UTF-8 verse,
+John 3:17, Back, whole chapter and verse-number links all worked. A second
+native window opened with independent history; closing it retained the first
+window's passage and history. No Documents prompt appeared in this test.
+This verifies the fixture path, not normal user-library permission behavior.
+No GitHub build was requested. Core sanitizer results from the preceding
+checkpoint remain applicable to unchanged C++ sources; Swift tests are not
+ThreadSanitizer coverage of the GUI.
+
+This is scoped implementation evidence, not full feature acceptance. The
+provisional project estimate remains approximately **5% (3–7%)**, with **0/38**
+feature groups accepted and **0/3** native platforms release-ready. Stable
+signing, real-module equivalence, macOS minimum-version validation, active-call
+cancellation, Windows/Linux frontends and full study-pane composition remain
+pending. No legacy files are retired by this slice.
 
 ## Shared engine option policy: locally characterized, pending review
 
