@@ -5,7 +5,7 @@ Source inventory, not an assertion of runtime parity. Baseline and seams are in
 the legacy GTK3 application remains the behavioral oracle. **No row is fully
 validated for any native platform.** `partial` describes scoped implementation/tests, not accepted parity. `pending` means not implemented/validated. Core fixture tests
 provide scoped evidence linked below and in [status.md](status.md), not a
-representative Bible/module corpus. Updated 2026-10-11; no acceptance status
+representative Bible/module corpus. Updated 2026-10-12; no acceptance status
 changes are implied by these implementation entries.
 
 | ID | Required capability / established workflow | Source evidence | Architectural owner | Acceptance evidence required | Initial core/macOS evidence | WinUI 3 | GTK4 |

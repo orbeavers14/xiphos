@@ -1,31 +1,5 @@
 # Modernization status and acceptance
-## Local-only integration checkpoint — 2026-10-11
-
-The repository owner authorized checks and merges without hosted build credits.
-PR #1 foundation and PR #2 asynchronous macOS integration are merged into master.
-PR #3 shared options is integrated with their combined source in this revision;
-the build-file conflict was resolved by retaining all asynchronous UI/test targets
-and linking/depending on CoreOptions in each Swift executable.
-
-Exact isolated checks passed: #1 native build/tests 6/6 and native-disabled C++11
-seams; #2 build/tests 8/8; #3 standalone 8/8 and combined native build/tests 10/10,
-plus native-disabled rendering/history/options seams and strict C++11 options.
-Local deployment target is 26 with the installed SWORD SDK, not a validation of
-the intended macOS 13 minimum. Full GTK app/runtime, Windows/Linux, ICU-enabled
-SDK and representative visual/module/profile checks remain deferred.
-
-Both GitHub build workflows (builds and native-core) are disabled manually and
-remain paused until hosted checks are requested. No hosted build was started
-for this integration. This accepts experimental code integration only: 0/38
-feature groups have full native parity and no legacy files may be retired on
-this evidence. Later locally checked work remains in dependent draft branches;
-their 49-test suite is distinct from master's combined 10-test suite.
-
-The remaining document contains scoped implementation/history evidence; hosted
-checks mentioned there describe the validation plan while workflows are paused.
-
-
-Updated 2026-10-11. Goal: preserve Xiphos functionality, visual composition,
+Updated 2026-10-12. Goal: preserve Xiphos functionality, visual composition,
 data and workflows through one shared C++ application core and separate
 SwiftUI/AppKit, WinUI 3 and GTK4 frontends. Native enhancements supplement
 that contract. The [parity matrix](parity-matrix.md) defines acceptance evidence;
@@ -53,11 +27,10 @@ not imply complete preference, preview or dictionary parity. These weights and w
 estimates, not completed issue counts. Foundation still needs a representative module corpus,
 Windows native tooling and regression infrastructure. **0 of 38 feature groups
 have full accepted parity across the native platforms; 0 of 3 native apps are
-release-ready.** The stacked draft milestones are implemented and locally checked
-within their documented scope, pending review, platform checks and merge.
-PR #1–3 now have scoped local-only integration acceptance in master; this does
-not accept any full native feature group or authorize legacy retirement. Later
-implementation milestones remain in draft branches.
+release-ready.** PRs #1–80 are merged into `master` after scoped local review
+and integration checks. The owner authorized local-only acceptance with hosted
+platform checks deferred to conserve build credits. This accepts experimental
+implementation integration, not full native feature parity or legacy retirement.
 
 ## Parity coverage snapshot
 
@@ -151,11 +124,11 @@ inclusion in this public fork.
 
 ## Next steps in order
 
-1. Review the stacked draft milestones and validate representative modules
-   against the legacy application. Bundle remote builds at meaningful review
-   checkpoints; keep routine development/testing local to conserve CI usage.
+1. Validate representative modules and profiles against the legacy application,
+   then the main study-pane composition/commentary workflow. Keep routine
+   development/testing local; resume hosted platform checks only when authorized.
 2. Expand hover behavior across notes/references/dialogs and compatible lexicon
-   persistence. The [profile seam audit](hover-workflows.md#lexicon-profile-persistence-seam)
+   persistence. The [profile seam audit](hover-workflows.md#lexicon-xml-profile)
    identifies XML keys, startup defaults, duplicate-node behavior and the locale
    startup boundary; 296 XML helper comparisons/assertions now establish the local profile seam.
    The shared owned reader now matches the characterized getter/default rules;
@@ -323,7 +296,7 @@ also targets 26.0. The preview's requested macOS 13 minimum is not runtime
 validated. GTK3/WebKitGTK are unavailable locally, so full legacy runtime
 validation remains pending. GTK4 and WinUI 3 frontends are not implemented.
 No newer GitHub runner build has been dispatched for these routine milestones.
-Old CI successes do not validate the current stacked revisions.
+Old CI successes do not validate the current integrated revision.
 
 Generated GUI tests copy only the disposable app/fixture under `/private/tmp`
 to avoid repeated Documents access prompts. Installed libraries, user data and
@@ -331,92 +304,63 @@ macOS privacy settings are untouched. See the [macOS development instructions](.
 
 ## Development and CI budget policy
 
-Develop, build and run focused regression checks locally. Batch implementation
-and documentation into reviewable milestones before publishing; do not push
-individual work notes or minor edits to obtain repeated hosted builds.
+Develop, build and run focused regressions locally. Both `builds` and
+`native-core` GitHub workflows are **disabled manually** at the owner's request;
+keep them paused until hosted checks are authorized. Workflow-state and recent-run
+API checks before, during and after this integration confirmed both were paused
+and no new hosted runs started. Merges used reviewed expected head SHAs and
+preserved dependency ancestry; no force-push or release tag was used.
 
-Both build workflows skip runner jobs for draft PRs and do not build feature
-branch pushes. A ready-for-review PR runs CI on opening, reopening, readiness
-and subsequent updates. Master integration and tag pushes remain checked;
-tag release packaging is retained. Documentation-only events that touch only
-Markdown or `doc/modernization/` are filtered. PR path filters evaluate the
-whole PR diff, so a documentation update to a ready code PR may still run CI.
-Concurrency cancels superseded runs of the same workflow/PR or ref.
+The workflow files retain draft/path filters, concurrency cancellation, deliberate
+manual dispatch and integration/release triggers for future authorized use.
+Disabled/skipped jobs are not passes. Local macOS testing cannot establish
+Windows/Linux or the minimum macOS runtime. Relevant platform checks remain
+release/retirement gates; do not run the entire matrix for routine small changes.
 
-Manual workflow dispatch supports deliberate milestone/platform checks once
-the workflow is available on the default branch. Use it only when local
-checks cannot cover a relevant platform or at a review/release gate. Do not
-run the entire matrix for each intermediate fix. Skipped draft jobs are not
-validation evidence; relevant checks must pass on the final reviewed revision
-before acceptance. Local macOS testing cannot establish Linux/Windows parity.
+## Completed default-branch integration
 
+**PRs #1–80 are merged into `master`.** The 77 PRs remaining after #1–3 were
+retargeted and merged in dependency order on 2026-10-12. Each reviewed head/base
+was verified before merging. A clean local projection established the combined
+source; actual master trees were compared with it at batch boundaries and after
+#80. The final #80 integration commit is
+`00dd335d95354dcc97bbd84dc50c8891e03bd918`; its executable/configuration source is
+identical to the checked final snapshot. Subsequent status reconciliation changes
+only documentation. PR discussions retain scoped original evidence and the
+local-only integration review; Git history retains all implementation commits.
 
-## Default-branch integration checkpoint
-
-Merge reviewed, scoped implementation milestones incrementally; do not wait for
-all 38 groups or all three native releases. The fork's default branch is `master`
-(confirmed from connected repository metadata, 2026-10-11). Merging experimental
-opt-in functionality does not accept full functional/visual parity or authorize
-legacy retirement. Keep supported legacy entry points/builds operational.
-
-The current draft stack is too large and needs integration review before further
-broad feature expansion. Start with the earliest foundation rather than merging
-the newest branch with every dependency at once:
-
-| Initial order | Dependency/review scope |
+| Integration checkpoint | Fresh local evidence |
 |---|---|
-| [#1 foundation](https://github.com/orbeavers14/xiphos/pull/1) | Targets master; review shared rendering/history, owned C/worker contracts, opt-in preview and build/dependency changes |
-| [#2 async UI](https://github.com/orbeavers14/xiphos/pull/2) and [#3 options](https://github.com/orbeavers14/xiphos/pull/3) | Both depend on #1; review separately after foundation acceptance |
-| [#4 catalog](https://github.com/orbeavers14/xiphos/pull/4) | Depends on #3 |
-| [#5 combined adapter](https://github.com/orbeavers14/xiphos/pull/5) | Base is #4's branch; local ancestry also includes #2's async branch |
-| [#6 defaults](https://github.com/orbeavers14/xiphos/pull/6), [#7 scoped settings](https://github.com/orbeavers14/xiphos/pull/7), [#8 controls](https://github.com/orbeavers14/xiphos/pull/8) | Continue in dependency order; reassess scope/checks at each reviewed revision |
+| [#1 foundation](https://github.com/orbeavers14/xiphos/pull/1), [#2 async UI](https://github.com/orbeavers14/xiphos/pull/2), [#3 options](https://github.com/orbeavers14/xiphos/pull/3) | Exact native snapshots passed 6/6, 8/8 and 8/8; combined #2/#3 passed 10/10 and native-disabled seams |
+| [#13 preferences/reading controls](https://github.com/orbeavers14/xiphos/pull/13) | Combined native build and 16/16 tests |
+| [#30 study links/rendering controls](https://github.com/orbeavers14/xiphos/pull/30) | Combined native build and 21/21 tests |
+| [#57 dictionaries/locale](https://github.com/orbeavers14/xiphos/pull/57) | Combined native build and 32/32 tests |
+| [#80 final stack](https://github.com/orbeavers14/xiphos/pull/80) | Combined native build and 49/49 tests; core address/undefined 35/35 and thread 35/35; native-disabled rendering/history/options seams |
 
-At the updated checkpoint #1–3 are merged into master under owner-authorized
-local-only integration. #4–8 remain draft dependencies requiring retargeting and
-review against the integrated base. #1's exact revision
-`19f44bf17fceaf410e84edabf47719c55fdc7dbb` was rebuilt from an isolated Git archive:
-its native build and 6/6 local tests passed; its rendering/history seam built with
-native core disabled and passed strict C++11 checks. These checks use the current
-local SDK/dependencies and deployment target 26, not the intended macOS 13 runtime.
-Its latest connected workflow records are skipped, its submitted-review list is
-empty, and combined commit statuses are absent. No hosted validation was started
-for this audit; earlier results or tests on newer branches do not certify this
-exact revision. #2's exact revision passed 8/8; #3's original revision passed
-8/8, and its conflict-resolved integration with #2 passed 10/10, native-disabled
-seam builds and strict C++11 options checks. The integrated tree is identical
-to checked commit `2366f058605bb2848bc5f2b74048ab487c041919` (only documentation
-was added after executable checks). Merged commits: #1 `852bf782`, #2 `c1c40891`,
-#3 `55f73a8b`. The shared build conflict retained all async targets and linked
-CoreOptions into every Swift executable.
+The #3 build conflict retained asynchronous targets while linking CoreOptions.
+GitHub reported an ancestry conflict for #5 despite a clean local merge; an
+explicit merge of checked master ancestry into its head retained the exact
+projected tree and existing commits. No remaining source conflicts required
+resolution. Metadata timeouts were reconciled by reading the applied state;
+no unexpected head/base changes were accepted.
 
-Both builds/native-core workflows are disabled manually to meet the owner's
-no-GitHub-build-credit instruction; API verification showed no new workflow runs
-for this integration. Keep them paused until hosted validation is requested.
-The 49-test feature-branch suite is distinct from master's 10-test combined
-suite. Full legacy GTK, Windows/Linux, older macOS, ICU SDK and representative
-visual/module/runtime checks remain deferred release/retirement gates.
+Strict C++11 helper and C11 public-API checks passed. Local deployment target is
+26 with the installed SWORD/GLib dependencies; the requested macOS 13 minimum is
+not validated. External SWORD, GLib and system libxml2 are not fully instrumented;
+leak detection was disabled for address checks. Full legacy GTK runtime,
+Windows/Linux, ICU-enabled SDK, representative modules/profiles, keyboard,
+translation and visual/design checks remain deferred. No release is certified.
 
-For each merge candidate:
-
-1. Inspect the exact current diff against its intended integrated base and resolve
-   outstanding findings. Recheck reviewed head/base if either changes.
-2. Run appropriate local regression checks. At the integration gate, reserve
-   hosted checks for relevant platform/build gaps that local tooling cannot cover;
-   skipped jobs are not passes. Legacy-touched changes need relevant legacy builds
-   and workflow evidence, without requiring every unrelated native feature first.
-3. Merge only after the specified scope and required checks are accepted. Keep
-   ancestry/dependent PR diffs coherent: retarget/reconcile dependencies after a
-   merge and check their new bases. Do not blindly squash/rebase the entire stack,
-   delete active branches or force-push dependent work.
-4. Record the accepted commit/PR, exact validation and remaining experimental
-   limitations. Update only parity rows actually validated. Follow the separate
-   retirement gates below before removing legacy implementation.
+For future milestones, keep small reviewed PRs, appropriate local regression
+checks, coherent bases and explicit acceptance limits. Recheck changed heads/bases,
+retain tests/licenses, and update only parity rows actually validated. Source/data
+compatibility and full platform checks must precede affected legacy retirement.
 
 ## Official sign-off and file retirement
 
 A scoped milestone is accepted when its specified implementation, regression
 checks, relevant validation and evidence have been reviewed and its PR merged. The owner
-explicitly authorized local-only integration for #1–3 with hosted/platform checks
+explicitly authorized local-only integration for #1–80 with hosted/platform checks
 deferred; record that limitation rather than treating skipped CI as a pass.
 Record the accepted commit/PR and evidence here, and update only the parity
 rows/platforms that were actually validated. A passing test alone does not

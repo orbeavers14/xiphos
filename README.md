@@ -53,9 +53,11 @@ migration. See the [current status and sign-off rules](doc/modernization/status.
 * Native macOS preview and adapter tests: [platforms/macos/README.md](platforms/macos/README.md).
 * Translations: documentation in [doc](doc).
 
-Completed scoped commits are pushed after local checks and kept in draft PRs.
-Next are hover presentation, compatible lexicon persistence and established study-pane
-composition, followed by equivalent reading panes on GTK4 and WinUI 3.
+PRs #1–80 are merged after local review and integration checks. Both hosted build
+workflows remain paused to conserve GitHub credits. New work stays in small,
+reviewable PRs. Next are representative module/profile validation, remaining hover
+and storage behavior, and established study-pane/commentary composition, followed
+by equivalent reading panes on GTK4 and WinUI 3.
 Each milestone needs reviewable changes, regression tests and parity evidence
 before the corresponding legacy files can be retired.
 

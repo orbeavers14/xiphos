@@ -244,7 +244,7 @@ prerequisite for extracting these services. Keep requirements per CMake target.
 The native core additionally requires libxml2 headers/library, an existing
 legacy dependency. The current XML helper characterization uses six complete
 frozen/actual functions with real libxml2 and no GTK or user-profile access.
-The [profile contract](hover-workflows.md#lexicon-profile-persistence-seam)
+The [profile contract](hover-workflows.md#lexicon-xml-profile)
 records duplicate/missing-node and escaping behavior. The owned profile reader now parses
 explicit files/in-memory XML and returns UTF-8 lexicon preferences plus saved
 locale as data. It reuses libxml2 without GTK and preserves the actual getter/
