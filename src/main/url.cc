@@ -65,6 +65,7 @@
 #include "main/xml.h"
 
 #include "backend/sword_main.hh"
+#include "xiphos/core/lexicon.h"
 
 #include "gui/debug_glib_null.h"
 
@@ -297,31 +298,20 @@ static gint show_morph(const char *module_name,
 		       const gchar *svalue,
 		       gboolean clicked)
 {
-	const gchar *modbuf = NULL;
-
-	if (!strcmp(stype, "Greek") ||
-	    strstr(stype, "x-Robinson") ||
-	    strstr(stype, "robinson") ||
-	    strstr(stype, "packard") ||
-	    strstr(stype, "Robinson")) {
-		int testament = backend->get_key_testament(module_name, settings.currentverse);
-		if (testament == 2) {
-            modbuf = settings.morph_greek_lex_nt; // Utilise votre variable NT
-        } else {
-            modbuf = settings.morph_greek_lex_ot; // Utilise votre variable OT
-        }
-        
-        // Sécurité si les réglages sont vides
-        if (!modbuf || !backend->is_module(modbuf)) {
-            modbuf = (testament == 2) ? "Robinson" : "Packard";
-		}
-	}
-
-	if (strstr(stype, "oshm") ){
-		if (backend->is_module("OSHM")) {
-			modbuf=settings.morph_heb_lex;
-		}
-	}
+	const XiphosLexiconPreferences preferences = {settings.lex_greek, settings.lex_hebrew,
+	    settings.morph_greek_lex_nt, settings.morph_greek_lex_ot, settings.morph_heb_lex};
+	struct Context { BackEnd *engine; const char *module; const char *key; };
+	Context source = {backend, module_name, settings.currentverse};
+	const XiphosLexiconContext context = {&source,
+	    [](void *user, const char *module) -> int {
+		return static_cast<Context *>(user)->engine->is_module(module);
+	    },
+	    [](void *user) -> int {
+		auto *source = static_cast<Context *>(user);
+		return source->engine->get_key_testament(source->module, source->key);
+	    }};
+	const gchar *modbuf = xiphos_core_select_lexicon(XIPHOS_LEXICON_MAIN, XIPHOS_LEXICON_MORPHOLOGY,
+	    stype, &preferences, &context);
 
 	if (clicked) {
 		main_display_dictionary(modbuf, (gchar *)svalue);
@@ -360,15 +350,10 @@ static gint show_morph(const char *module_name,
 static gint show_strongs(const gchar *stype, const gchar *svalue,
 			 gboolean clicked)
 {
-	const gchar *modbuf = NULL;
-
-	if (stype && (*stype != '\0')) {
-		if (!strcmp(stype, "Greek"))
-			modbuf = settings.lex_greek;
-		else
-			modbuf = settings.lex_hebrew;
-	} else
-		modbuf = "InvStrongsRealGreek";
+	const XiphosLexiconPreferences preferences = {settings.lex_greek, settings.lex_hebrew,
+	    settings.morph_greek_lex_nt, settings.morph_greek_lex_ot, settings.morph_heb_lex};
+	const gchar *modbuf = xiphos_core_select_lexicon(XIPHOS_LEXICON_MAIN, XIPHOS_LEXICON_STRONGS,
+	    stype, &preferences, NULL);
 
 	if (clicked) {
 		main_display_dictionary(modbuf, (gchar *)svalue);

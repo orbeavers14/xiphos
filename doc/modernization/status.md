@@ -1430,3 +1430,23 @@ main NT fallback name in an ignored temporary copy; the comparison failed at
 the expected morphology divergence. Production/generated source was not
 modified by that control. This confirms the harness detects a real selection
 regression; it does not extend GUI/module-corpus acceptance.
+
+
+## Shared lexicon selection: locally checked, native integration pending
+
+Implemented 2026-10-11 on `modernization/shared-lexicon-selection`, based on
+lexical characterization. Main and detached-dialog legacy selectors delegate
+to one C11-callable C++ helper in CoreOptions. Explicit origin retains their
+different recognition/fallback branches, borrowed/null/empty preferences and
+lazy synchronous source-testament/availability callbacks. Presentation and
+history paths are preserved; no legacy files retired. Invalid null
+morphology/dialog types now safely yield no selection.
+
+Validation: 24/24 local checks passed, followed by final focused selector/C
+boundary checks; 16,968 frozen/actual comparisons preserve selected names and
+callback order/context. Strict C++11/C11 and focused address/undefined checks
+pass; native-disabled C++11 seam libraries build. Full GTK GUI and
+representative lexicon corpus remain unvalidated. No GitHub builds or installed
+user-data changes. Next: copied native lexicon preferences and safe verse-key
+context, shared lexical dispatch and native dictionary/hover presentation.
+Estimate remains about 6%, with 0/38 groups fully accepted.
