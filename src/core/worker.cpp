@@ -86,6 +86,11 @@ std::future<StudyTab> StudyWorker::create_tab() {
 std::future<void> StudyWorker::close_tab(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s) { s.tab(tab); s.tabs.erase(tab); });
 }
+std::future<Entry> StudyWorker::read_entry(StudyTab tab, std::string module, std::string reference) {
+  return impl_->submit([tab, module = std::move(module), reference = std::move(reference)](Impl::State &s) {
+    return s.tab(tab).read_entry(module, reference);
+  });
+}
 std::future<Entry> StudyWorker::visit(StudyTab tab, std::string module, std::string reference) {
   return impl_->submit([tab, module = std::move(module), reference = std::move(reference)](Impl::State &s) {
     return s.tab(tab).visit(module, reference);
@@ -97,6 +102,17 @@ std::future<Entry> StudyWorker::navigate(StudyTab tab, int direction) {
 std::future<Entry> StudyWorker::navigate_chapter(StudyTab tab, std::string module, std::string reference, int direction) {
   return impl_->submit([tab, module = std::move(module), reference = std::move(reference), direction](Impl::State &s) {
     return s.tab(tab).navigate_chapter(module, reference, direction);
+  });
+}
+std::future<void> StudyWorker::set_engine_options(StudyTab tab, EngineOptions options) {
+  return impl_->submit([tab, options](Impl::State &s) { s.tab(tab).set_engine_options(options); });
+}
+std::future<void> StudyWorker::clear_engine_options(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s) { s.tab(tab).clear_engine_options(); });
+}
+std::future<Chapter> StudyWorker::read_chapter(StudyTab tab, std::string module, std::string reference, DisplayOptions options) {
+  return impl_->submit([tab, module = std::move(module), reference = std::move(reference), options](Impl::State &s) {
+    return s.tab(tab).read_chapter(module, reference, options);
   });
 }
 std::future<HistorySnapshot> StudyWorker::history(StudyTab tab) {

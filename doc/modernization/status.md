@@ -1,4 +1,29 @@
 # Modernization status and acceptance
+## Local-only integration checkpoint — 2026-10-11
+
+The repository owner authorized checks and merges without hosted build credits.
+PR #1 foundation and PR #2 asynchronous macOS integration are merged into master.
+PR #3 shared options is integrated with their combined source in this revision;
+the build-file conflict was resolved by retaining all asynchronous UI/test targets
+and linking/depending on CoreOptions in each Swift executable.
+
+Exact isolated checks passed: #1 native build/tests 6/6 and native-disabled C++11
+seams; #2 build/tests 8/8; #3 standalone 8/8 and combined native build/tests 10/10,
+plus native-disabled rendering/history/options seams and strict C++11 options.
+Local deployment target is 26 with the installed SWORD SDK, not a validation of
+the intended macOS 13 minimum. Full GTK app/runtime, Windows/Linux, ICU-enabled
+SDK and representative visual/module/profile checks remain deferred.
+
+Both GitHub build workflows (builds and native-core) are disabled manually and
+remain paused until hosted checks are requested. No hosted build was started
+for this integration. This accepts experimental code integration only: 0/38
+feature groups have full native parity and no legacy files may be retired on
+this evidence. Later locally checked work remains in dependent draft branches;
+their 49-test suite is distinct from master's combined 10-test suite.
+
+The remaining document contains scoped implementation/history evidence; hosted
+checks mentioned there describe the validation plan while workflows are paused.
+
 
 Updated 2026-10-10. Goal: preserve Xiphos functionality, visual composition,
 data and workflows through one shared C++ application core and separate
@@ -323,6 +348,111 @@ feature groups accepted and **0/3** native platforms release-ready. Stable
 signing, real-module equivalence, macOS minimum-version validation, active-call
 cancellation, Windows/Linux frontends and full study-pane composition remain
 pending. No legacy files are retired by this slice.
+
+## Shared engine option policy: locally characterized, pending review
+
+Implemented 2026-10-10 on `modernization/shared-engine-options`, based on the
+core foundation branch for a focused review. `EngineOptions` and the C++11
+`CoreOptions` library now own the existing `main_set_global_options` filter
+policy. The legacy entry point converts its gboolean fields to core values and
+calls that shared policy. The replaced private helper was removed after its
+only caller migrated; exported textual setters, menus and preference storage
+are retained.
+
+The exact legacy order, On/Off values, Latin transliteration, unconditional
+engine headings and Primary/Secondary/All variant precedence are preserved.
+With no variant selected, the engine's existing variant value remains untouched.
+Display headings are still a separate decision; this extraction does not add
+new defaults or reinterpret stored preferences.
+
+Local macOS build and CTest **7/7 passed on this branch**. The new test compiles
+the actual legacy adapter body and compares its SWORD setter calls with a frozen
+pre-extraction baseline across **2,400 states**, including every individual
+boolean filter, mixed states, noncanonical true values, all variant combinations
+and both display-heading flags. The targeted address/undefined-behavior
+sanitizer test passed **1/1**. New policy source passed C++11 warnings-as-errors
+with external SWORD headers treated as system headers. The default legacy seam
+build passed and still does not build the experimental reader/worker.
+
+These checks prove option mapping/call equivalence, not full GTK operation or
+rendered-option parity. Full GTK/WebKit dependencies are unavailable locally;
+that build remains an integration gate. Native request-scoped rendering options,
+module capability discovery, real OSIS/ThML/GBF output comparisons and all native
+controls remain next work. No GitHub build was dispatched. Full acceptance
+remains **0/38**, release-ready platforms **0/3**, estimate approximately **5%**.
+
+The separate [draft PR #2](https://github.com/orbeavers14/xiphos/pull/2) contains
+the asynchronous macOS worker integration, with its own **8/8** local checks and
+fixture GUI evidence. The 7/7 count above belongs to this core-focused branch;
+it does not supersede those tests.
+
+## Scoped native engine options: rendered fixture validation, bridge pending
+
+Implemented 2026-10-10 after the policy extraction on the same focused branch.
+The reader accepts explicit filter options for verse and chapter rendering.
+Core study sessions own copied optional settings; visits, history navigation
+and tab chapter reads use those settings. Worker requests can set/clear tab
+options and read a tab chapter. Settings changes do not add history entries;
+clearing returns to the unconfigured reader behavior. Existing overloads and
+C/Swift callers retain their previous behavior.
+
+Scopes save every actual filter value and restore it after rendering, including
+exception unwinding and nested scopes. An initial output test showed that
+SWORD's name-based global getter can report one of several same-name filters
+with different initial values. Name-based restoration changed subsequent
+unconfigured output. The corrected native manager snapshots individual filter
+objects instead. Builds without ICU can leave the protected transliterator
+pointer uninitialized; it is inspected only when the manager advertises the
+Transliteration option. The inspected SDK does not validate an ICU-enabled
+transliterator configuration; that remains an explicit integration check.
+
+Local macOS build and CTest **8/8 passed on this branch**. An original-prose
+OSIS fixture registers red-letter, Strong's, morphology and note filters.
+All 16 filter combinations match direct original-policy SWORD setter/render
+calls; enabled and disabled output differ as expected. Tests cover unchanged default output, chapter
+options, per-tab opposite settings, history reuse, copied queued settings,
+clearing without history changes, and queue continuation after a closed-tab
+error. Individual filter values restore after exceptions and nested scopes.
+Targeted address/undefined-behavior checks passed **2/2**; targeted ThreadSanitizer
+scoped-option/worker test passed **1/1**. External SWORD is uninstrumented.
+The default legacy seam build and C++11 policy warnings-as-errors check passed.
+Swift static linking now includes CoreOptions because the reader references it.
+
+At this checkpoint native option controls and additive C requests were pending.
+The following checkpoint adds requests; next is module capability discovery,
+native controls, and comparisons of
+broader OSIS/ThML/GBF output and existing Xiphos decorations. This fixture does
+not prove all options or complete study-pane parity. No GitHub build was
+requested; full acceptance and the provisional estimate remain unchanged.
+
+## Nonblocking tab option bridge: locally tested, native controls pending
+
+Implemented 2026-10-10 on the shared-engine-options branch. The experimental
+C API adds 18 named engine-option flag bits, asynchronous tab set/clear,
+configured tab chapter reads and history-free configured entry refreshes.
+Flags are copied before queueing; unknown bits fail immediately and leave the
+output request NULL. Closed-tab errors arrive through normal polling. Zero
+flags apply explicit Off filters with engine headings On; clearing removes the
+tab override and restores unconfigured behavior. Variant precedence remains in
+the shared C++ policy. Existing unconfigured chapter and reader calls remain.
+
+Local macOS CTest **8/8 passed**. The original OSIS fixture tests all 16
+combinations of red-letter/Strong's/morphology/note flags through the C API,
+comparing owned entry HTML to direct SWORD baseline output. Opposite tab options,
+configured chapters, unconfigured chapter compatibility, caller flag mutation,
+invalid engine/display bits, missing observers, closed tabs, dropped clear
+observation and chapter lifetime after worker shutdown are checked. Refresh
+can render a different reference without adding or moving history. The C
+compiler checks new declarations and symbols; C++17 warnings-as-errors passed.
+Focused address/undefined-behavior and ThreadSanitizer selections each passed
+**3/3** (scoped options, async requests and required reader fixture). External
+SWORD remains uninstrumented; ICU-enabled and wider markup behavior remain
+unvalidated. No GitHub build was dispatched.
+
+Next: module-supported option discovery and native controls consuming this
+bridge, with the asynchronous macOS work from PR #2. Preserve Xiphos module
+preferences and broader decorations rather than inventing frontend defaults.
+No feature group is accepted by this checkpoint; estimate remains about **5%**.
 
 ## Verified implementation, pending acceptance
 

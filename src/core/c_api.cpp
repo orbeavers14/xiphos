@@ -119,6 +119,44 @@ xc_status xc_worker_history(xc_worker *w, uint64_t tab, xc_request **out) {
 xc_status xc_worker_clear_history(xc_worker *w, uint64_t tab, xc_request **out) {
   return queue_request(w, out, [=](auto &worker) { return worker.clear_history(tab); });
 }
+xc_status xc_worker_set_engine_options(xc_worker *w, uint64_t tab, unsigned flags, xc_request **out) {
+  constexpr unsigned known = (1u << 18) - 1;
+  if (flags & ~known) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  xiphos::core::EngineOptions options;
+  options.strongs = (flags & XC_ENGINE_STRONGS) != 0;
+  options.morphs = (flags & XC_ENGINE_MORPHOLOGY) != 0;
+  options.footnotes = (flags & XC_ENGINE_FOOTNOTES) != 0;
+  options.greekaccents = (flags & XC_ENGINE_GREEK_ACCENTS) != 0;
+  options.lemmas = (flags & XC_ENGINE_LEMMAS) != 0;
+  options.scripturerefs = (flags & XC_ENGINE_CROSS_REFERENCES) != 0;
+  options.hebrewpoints = (flags & XC_ENGINE_HEBREW_VOWELS) != 0;
+  options.hebrewcant = (flags & XC_ENGINE_HEBREW_CANTILLATION) != 0;
+  options.italic_headings = (flags & XC_ENGINE_ITALIC_HEADINGS) != 0;
+  options.words_in_red = (flags & XC_ENGINE_WORDS_IN_RED) != 0;
+  options.xlit = (flags & XC_ENGINE_TRANSLITERATED_FORMS) != 0;
+  options.enumerated = (flags & XC_ENGINE_ENUMERATIONS) != 0;
+  options.glosses = (flags & XC_ENGINE_GLOSSES) != 0;
+  options.morphseg = (flags & XC_ENGINE_MORPHEME_SEGMENTATION) != 0;
+  options.transliteration = (flags & XC_ENGINE_TRANSLITERATION) != 0;
+  options.variants_primary = (flags & XC_ENGINE_VARIANTS_PRIMARY) != 0;
+  options.variants_secondary = (flags & XC_ENGINE_VARIANTS_SECONDARY) != 0;
+  options.variants_all = (flags & XC_ENGINE_VARIANTS_ALL) != 0;
+  return queue_request(w, out, [=](auto &worker) { return worker.set_engine_options(tab, options); });
+}
+xc_status xc_worker_clear_engine_options(xc_worker *w, uint64_t tab, xc_request **out) {
+  return queue_request(w, out, [=](auto &worker) { return worker.clear_engine_options(tab); });
+}
+xc_status xc_worker_read_tab_entry(xc_worker *w, uint64_t tab, const char *id, const char *ref, xc_request **out) {
+  if (!id || !*id || !ref || !*ref) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.read_entry(tab, id, ref); });
+}
+xc_status xc_worker_read_tab_chapter(xc_worker *w, uint64_t tab, const char *id, const char *ref, unsigned flags, xc_request **out) {
+  if (!id || !*id || !ref || !*ref || (flags & ~(XC_CHAPTER_VERSE_NUMBERS | XC_CHAPTER_HIGHLIGHT_SELECTED))) {
+    if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
+  }
+  const xiphos::core::DisplayOptions options{(flags & XC_CHAPTER_VERSE_NUMBERS) != 0, (flags & XC_CHAPTER_HIGHLIGHT_SELECTED) != 0};
+  return queue_request(w, out, [=](auto &worker) { return worker.read_chapter(tab, id, ref, options); });
+}
 xc_status xc_worker_read_chapter(xc_worker *w, const char *id, const char *ref, unsigned flags, xc_request **out) {
   if (!id || !*id || !ref || !*ref || (flags & ~(XC_CHAPTER_VERSE_NUMBERS | XC_CHAPTER_HIGHLIGHT_SELECTED))) {
     if (out) *out = nullptr; return XC_INVALID_ARGUMENT;

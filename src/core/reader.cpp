@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/reader.hpp"
 #include <markupfiltmgr.h>
+#include "xiphos/core/engine_manager.hpp"
 #include <swmgr.h>
 #include <swmodule.h>
 #include <versekey.h>
@@ -10,7 +11,7 @@
 
 namespace xiphos::core {
 struct Reader::Impl {
-  std::unique_ptr<sword::SWMgr> manager;
+  std::unique_ptr<EngineManager> manager;
   std::vector<Module> modules;
   std::mutex mutex;
   sword::SWModule &verse_module(const std::string &id, const std::string &reference) {
@@ -26,7 +27,7 @@ Reader::Reader(const std::string &root) : impl_(std::make_unique<Impl>()) {
   if (!root.empty() && !std::filesystem::is_directory(root))
     throw std::invalid_argument("Module root must be an existing directory");
   // SWMgr takes ownership of the filter manager, matching the legacy backend.
-  impl_->manager = std::make_unique<sword::SWMgr>(
+  impl_->manager = std::make_unique<EngineManager>(
     root.empty() ? nullptr : root.c_str(), true,
     new sword::MarkupFilterMgr(sword::FMT_XHTML), false, root.empty());
   for (const auto &item : impl_->manager->Modules) {
@@ -49,8 +50,16 @@ PassageLink Reader::resolve_link(const std::string &current_module, const std::s
   return target;
 }
 Entry Reader::read(const std::string &id, const std::string &reference) {
+  return read_impl(id, reference, nullptr);
+}
+Entry Reader::read(const std::string &id, const std::string &reference, const EngineOptions &options) {
+  return read_impl(id, reference, &options);
+}
+Entry Reader::read_impl(const std::string &id, const std::string &reference, const EngineOptions *options) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto *module = &impl_->verse_module(id, reference);
+  std::unique_ptr<ScopedEngineOptions> scope;
+  if (options) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *options);
   // Resolve using the module's own versification and SWORD normalization,
   // never an independent canon/reference parser in a frontend.
   Entry result;
@@ -62,8 +71,18 @@ Entry Reader::read(const std::string &id, const std::string &reference) {
 }
 Chapter Reader::read_chapter(const std::string &id, const std::string &reference,
                              const DisplayOptions &options) {
+  return chapter_impl(id, reference, options, nullptr);
+}
+Chapter Reader::read_chapter(const std::string &id, const std::string &reference,
+                             const DisplayOptions &display, const EngineOptions &engine) {
+  return chapter_impl(id, reference, display, &engine);
+}
+Chapter Reader::chapter_impl(const std::string &id, const std::string &reference,
+                             const DisplayOptions &options, const EngineOptions *engine) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto &module = impl_->verse_module(id, reference);
+  std::unique_ptr<ScopedEngineOptions> scope;
+  if (engine) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *engine);
   // Clone the module key so its own locale/versification drives enumeration.
   // Work on this clone, avoiding persistent changes to the module key flags.
   sword::VerseKey key(*static_cast<sword::VerseKey *>(module.getKey()));
