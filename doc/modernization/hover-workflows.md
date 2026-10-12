@@ -1,10 +1,14 @@
-# Legacy click and hover contracts
+# Click, hover and lexicon-profile contracts
 
-Inspected 2026-10-11 at the modernization source, with frozen main lexical
-handlers from CrossWire baseline `c9976a8`. This separates executable evidence
-from source observations; it is not full GTK/native interaction acceptance.
+Current scoped implementation and evidence, 2026-10-11. Frozen legacy handlers
+come from CrossWire `c9976a8`; executable callback comparisons are distinct from
+complete GTK/native runtime acceptance. No feature group is officially accepted.
+See [status](status.md), [parity matrix](parity-matrix.md),
+[core API](../../src/core/README.md) and [macOS guide](../../platforms/macos/README.md).
+The [prior detailed milestone record](https://github.com/orbeavers14/xiphos/blob/7167bb13c1cd8f46c5454c4d9780568075267b20/doc/modernization/hover-workflows.md)
+is retained in Git history rather than duplicated in the repository.
 
-## Main reader behavior
+## Legacy main-handler contract
 
 | Link/event | Hover | Click | Evidence |
 |---|---|---|---|
@@ -17,80 +21,85 @@ from source observations; it is not full GTK/native interaction acceptance.
 | sword:// non-dictionary reference | Update status text or bookmark tag information | Navigate appropriate pane | Source observation; do not infer that every reference hover should render a passage |
 | Pointer leaves a link | Set in_url to zero, release cached URI, emit URI_SELECTED with null; no information-preview clear in inspected callback | Not applicable | Source observation in webkit/wk-html.c link_handler |
 
-The WebKit callback passes the copied URI to the main or dialog handler with
-clicked=false. Link button press invokes clicked=true; release handles the
-separate double-click selected-text lookup workflow. The information viewer
-retains its last content on pointer leave; a native async implementation must
-characterize stale-result ordering and retain that workflow rather than clearing
-the panel on every leave event. Full modifier/key and click gesture behavior
-still requires runtime validation.
 
-## Main versus detached dialog
+The WebKit callback copies the URI to main/dialog dispatch with clicked=false;
+button press uses clicked=true. Release separately handles double-click text
+lookup. Pointer leave clears active-link/URI transport state but retains the last
+information content. Modifier/key gestures still require runtime validation.
 
-Dialog Strong's/morphology handlers select with the separate dialog policy and
-source key. Their click and hover destinations are information dialog and
-dialog preview, respectively; they do not call the main dictionary display.
-Existing selection-prefix characterization covers the known main/dialog
-differences. Complete dialog presentation callback characterization remains
-pending. The new recorded lexical API therefore normalizes/records main-origin
-clicks only; dialog-origin and raw preview reads do not visit main history.
+Mixed n/x note tags take the reference branch on click and body branch on hover.
+A clicked footnote sets source context without presenting a body in these main
+handlers. Cross-reference list hover invokes the sidebar even for null attributes;
+click does so only for nonnull attributes. Information-link mode always adds Back
+to the committed main verse. These distinctions survive shared-policy extraction.
 
-## Correction to the initial feature inventory
+Detached-dialog Strong's/morphology selection uses its separate policy/source
+key. Click and hover target the information dialog and dialog preview rather
+than main dictionary display. Main-origin lexical clicks normalize/record main
+dictionary history; dialog-origin and raw preview reads do not. Selection-prefix
+characterization covers known differences; full dialog presentation is pending.
 
-No preview-pin command/state was located in the inspected previewer, URL,
-WebKit, settings, GTK/UI definitions or English manual. The original F14
-inventory's pinned-preview requirement was unsupported and has been removed.
-The settings key `misc/pinnedtabs` populates `settings.linkedtabs`, a separate
-tab-synchronization workflow; it is not evidence of preview pinning.
-A future native preview-pin enhancement would require its own product/design
-scope and shared behavior contract. It is not counted as a legacy parity gate.
+No preview-pin command/state was located in previewer, URL, WebKit, settings,
+GTK/UI definitions or the English manual. F14's unsupported initial pin gate was
+removed. `misc/pinnedtabs` populates linked tabs, a separate synchronization
+workflow. A future preview-pin enhancement needs its own design/behavior scope.
 
-## Characterization scope and implementation seam
+## Shared/native implementation
 
-`core_lexical_dispatch` compiles complete actual main handlers extracted from
-main/url.cc and compares return values plus ordered selection/context/render/
-display/preview calls against frozen baseline functions. It covers 64 module
-availability combinations, both testaments, configured/null/empty morphology
-preferences, 11 type strings, four raw keys, click versus hover, successful versus
-failed rendering and null/empty Strong's preferences. Unicode values reach the
-hover render and click delegate unchanged; normalization belongs downstream.
-It uses explicit backend/presentation shims, not a live GTK or real-module run.
+`xiphos_core_note_presentation` is a C++11 CoreOptions policy with a C11 header.
+Legacy delegates only destination/precedence decisions; source setup, nullable
+attributes, retrieval and HTML remain in existing branches. It builds without
+the experimental C++17 native core. Detached-dialog policy remains separate.
 
-## Initial macOS lexical transport
+`StudyWorker::hover_study_link_at` and the C request API return copied body notes,
+ordered reference lists, raw lexical entries or a no-presentation marker. Per-tab
+cross-reference list mode defaults true; typed getter/setter commands do not visit
+histories. Note/list retrieval uses existing shared settings and parsers. Explicit
+showRef and passage hover return no presentation. The parser accepts the strict
+local n/x domain; missing/mismatched notes and invalid context/URLs reject.
 
-The native reader now sends main-frame pointer-over links through a trusted
-WKUserScript in the isolated client world, with module scripts disabled. The
-core's existing no-record lexical API parses/selects/renders the URI using the
-live committed main source context. A separate information sidebar holds copied
-Strong's/morphology results; leaving a link retains content and resets transport
-deduplication so reentry can refresh it. Payload type/frame/size are checked.
+`contextual_hover_link` reuses the URI decoder. Absent/empty or decoded passages
+shorter than five bytes use committed main context; unavailable explicit modules
+fall back to the source module, while installed modules/full passages remain.
+Raw/click parsers keep their stricter original contracts. Native main-handler
+surfaces always supply the live committed main source, including retained older
+information/sidebar views. Explicit URI targets remain authoritative; click
+callbacks retain captured source context.
 
-Hover reads do not mark the reading controls busy or visit either history.
-Only the latest request publishes; reading actions/window close invalidate
-pending publication, and failures retain the previous preview/status. Accepted
-engine actions still drain when a Swift observation is canceled. Dictionary
-click/close operations keep the information preview independent. This transport
-initially handled lexical links. Main-reader/information notes and cross-reference
-destinations now use the shared service below, including semantic links in
-reference-list, note-body and dictionary-definition views. Detached dialogs
-and generic dictionary URI hover remain pending.
-Rapid pointer/keyboard ordering and representative real-module/platform checks
-remain acceptance gates. This is a scoped initial hover implementation.
+Reference-list mode renders owned passage snapshots. Information-link mode uses
+owned `reference_targets`, preserving order, duplicates, normalized context,
+skipped/limited metadata and the 2,000-verse per-range cap without rendering verse
+bodies. Labels are escaped and Back targets committed context. Initial English
+labels/theme styling are not localization or visual acceptance.
 
-The existing worker's no-record lexical snapshots provide the shared lookup
-seam. Native main-handler hover transport supplies the live committed main source,
-leave URI parsing/selection/rendering in C++, and publish copied results to the
-information preview rather than replacing the dictionary click pane. Do not
-claim all-link hover parity from lexical-only transport. Notes, cross-reference
-preference routing, status-only references, detached dialogs, keyboard behavior,
-real modules and all three native frontends remain separate acceptance checks.
+Cross-reference hover retrieves owned note metadata without rendering a discarded
+body. Exact-source entry-attribute generation still occurs. Full-body callers
+retain UTF8HTML/renderText processing. All required values are copied before a
+body render may replace SDK attributes. Embedded NUL module/reference/identifier
+inputs reject. No timing or quantified resource-savings claim is made.
 
-## Lexicon profile persistence seam
+The macOS trusted WKUserScript runs in an isolated client world, with module
+scripts disabled and main-frame/type/size checks. Semantic callbacks cover main,
+information, reference-list, note-body and dictionary-definition content. The
+Swift adapter copies typed results; the model does not parse URI/type policy.
+Body/lexical results share retained Information Preview. Reference results update
+the sidebar while retaining information. Pointer leave retains content and resets
+transport deduplication for reentry. Hover does not mark reading busy or visit
+either history; only the latest live revision publishes. Reading/window actions
+invalidate pending results. No-presentation/errors retain preview/status. Accepted
+engine jobs still drain after observation cancellation. A per-window toggle copies
+core reference mode; it is not yet persisted to the legacy XML profile.
 
-Source audit of the current fork, 2026-10-11, supplemented by executable
-characterization of six complete XML helpers; no native importer is implemented.
-`main/settings.c:load_settings_structure` reads the following XML children
-under `Xiphos/lexicons`; they are separate from the engine-options file.
+Existing native clicked-note body presentation differs from the characterized
+legacy footnote click contract and remains a parity gate. Generic dictionary URI,
+status/bookmark-reference and detached-dialog hover, heading verse zero,
+abbreviations, full nullable/malformed legacy input, keyboard ordering, real
+modules, translation/design and Linux/Windows behavior remain pending.
+
+## Lexicon XML profile
+
+`main/settings.c:load_settings_structure` reads `Xiphos/lexicons`, separately
+from the engine-options file:
 
 | XML child | Shared preference | Startup default |
 |---|---|---|
@@ -100,191 +109,60 @@ under `Xiphos/lexicons`; they are separate from the engine-options file.
 | greek_morph_ot | Greek OT morphology | Packard |
 | hebrew_morph | Hebrew morphology | OSHM |
 
-Strong's defaults apply when `xml_get_value` returns null. Morphology defaults
-apply to null or empty returned values. XML node presence must be characterized
-separately: `xml_get_value` calls `xmlNodeListGetString` on the child list, so
-an empty element may return null even though the node exists. The shared API's
-explicit nullable/empty values do not establish file-level import semantics.
-Nonempty configured names are retained at this loading seam without checking
-whether their modules are installed.
 
-`main/xml.c:xml_set_value` updates an existing node only; it does not create
-missing nodes. `xml_add_new_item_to_section` appends a child only when the
-section already exists, without replacing a duplicate child. The current
-morphology startup default path uses that append operation; the Strong's path
-uses the update-only operation. `xml_find_prop` returns the first matching
-child in traversal order. Do not silently normalize duplicate/missing nodes
-before fixtures establish their observable behavior and a repair policy.
+Strong's defaults apply to null getter results; morphology defaults apply to null
+or empty. Empty/child-element-only XML nodes can yield null. First matching keys
+in traversal order win, including later duplicate sections when earlier sections
+lack the key. Nonempty unavailable module names are retained at loading time.
+The legacy update helper changes existing keys only; appends use the first section
+and can add duplicates. Preference callbacks write these keys; the three
+morphology callbacks explicitly save after valid selection. Adjacent
+`defaultdictionary`/`usedefaultdict` are separate policy and survive lexicon writes.
 
-The preference-dialog callbacks write these exact keys. The three morphology
-callbacks also explicitly save the settings document after a valid selection.
-Adjacent `defaultdictionary` and `usedefaultdict` settings belong to the
-separate default-dictionary policy and must survive lexicon-only updates.
+`parse_study_profile`/`read_study_profile` copy five effective choices and optional
+`Xiphos/locale/special`; XML-declared encodings decode to UTF-8. They do not mutate
+files, discover home profiles, validate installed modules or apply locale.
+Independent parser contexts stop at DTD declarations before resource loading;
+malformed/wrong-root, invalid NUL code units and over-16-MiB sources reject.
+These explicit limits do not establish universal historical-profile compatibility.
 
-Saved locale is `Xiphos/locale/special`. The legacy startup applies a forced
-locale after loading settings, excluding the translated NONE sentinel and
-literal None; it tries the saved name and then its .UTF-8 suffix. The native
-host currently initializes only the environment locale before worker startup.
-Importing this setting requires a startup-order contract; changing process
-locale inside a worker or while other windows are active is not equivalent.
+`serialize_lexicon_profile`/`save_lexicon_profile` update the five effective nodes,
+create missing keys, retain unrelated nodes/attributes/comments outside edited
+values, shadow duplicates and saved locale, and normalize encoding to UTF-8.
+Literal-text serialization corrects the characterized legacy ampersand data-loss
+failure. Null/empty choices that cannot round trip through defaults reject.
+Same-directory staged replacement verifies values/bytes and preserves existing
+permissions; missing files begin with an Xiphos root. Existing malformed/empty
+files, read-only failures and observed external edits remain intact. No
+interprocess lock, crash-durability or Windows replacement validation is claimed.
 
-Next implementation gate: disposable XML fixtures for absent/empty/duplicate
-nodes, escaping, unavailable module names, malformed input and unrelated
-sections; then a shared owned profile snapshot and explicit import/save that
-preserves unrelated data and verifies replacement before publication. Never
-infer XML compatibility from the existing engine-options import/save tests.
+Serialized worker/C/Swift commands and macOS explicit file panels now import/save
+lexicon choices. Import publishes copied live results; save changes status only.
+Draft/passage/history, other windows and unrelated engine preferences stay intact.
+No implicit startup profile access or locale application occurs. Legacy forced
+locale excludes translated NONE/literal None and tries saved name then .UTF-8.
+That saved-locale startup ordering still needs characterization; changing process
+locale in an active worker/window is not equivalent.
 
-`core_xml_profile` now compares six complete current helpers against frozen
-CrossWire `c9976a8` helpers using real libxml2, with 296 comparisons/assertions.
-Fixtures cover all five keys, unavailable names, Unicode, escaped text, CDATA,
-whitespace, child elements, duplicate keys/sections, absent sections/keys and
-malformed documents. The getter returns null for empty elements and for a
-child-element-only value; update-only writes leave absent keys unchanged,
-while appends use the first section. A later section supplies a key only when
-earlier sections lack that key. Serialized documents agree after mutations,
-including unrelated content and comments. Assertions remain active in release
-builds. These checks exercise XML helper semantics, not complete startup/UI.
+## Evidence and open acceptance
 
-The legacy update setter interprets entity references: an unescaped ampersand
-produces a parse diagnostic and clears content in the checked libxml2 build.
-The test records this observed failure rather than expecting literal-text
-round trips from that helper. A new explicit writer must serialize literal
-names safely without reproducing that data-loss behavior; document this scoped
-correction and validate escaping/round-trip preservation independently.
+| Local evidence | Scope and limitation |
+|---|---|
+| core_lexical_dispatch: 135,258 comparisons | Complete frozen/actual main handlers; 64 module availability combinations, testaments, null/empty preferences, 11 tags, four raw keys including Unicode, click/hover and render failures; explicit backend/display shims |
+| core_note_dispatch: 96,792 comparisons | Complete frozen/actual show_note/show_ref; real GLib strings/lists, shim SDK/backend/presentation; guards, source/fallback/heading setup, tag precedence, null/empty attributes, modes, reference order and Back HTML traces |
+| core_note_presentation_header: 20 cases | C boundary/null/empty/Unicode/nonzero-flag precedence; all complete-handler traces still agree after legacy adoption |
+| core_xml_profile: 296 checks | Six frozen/actual helpers with real libxml2; five keys, Unicode/escaping/CDATA, empty/child-only nodes, duplicates, missing/malformed XML, mutation and unrelated-data preservation; release assertions active |
+| core_profile_reader: 367 checks; core_profile_save: 39 checks | Getter/default equivalence, encodings, independent contexts, source/result lifetime, DTD/resource rejection, literal round trips and file failure/preservation cases |
+| core_hover and adapters/model | Real generated SWORD note/dictionary fixtures, both modes, raw lexical/body equality, histories/tab isolation, copied arguments/results, scalar kinds, no-op, errors, shutdown and stale publication |
+| core_reference_targets: 64 generated cases | Equality with full snapshots across module/context/expression, limits/order and owned lifetimes |
+| core_note_metadata: 16 passage/filter cases | Full-path metadata equality, settings, invalid/missing inputs and lifetime after later calls/close |
+| core_hover_source: 12 generated combinations plus boundaries | Explicit/fallback modules/passages, five-byte/UTF-8 thresholds, parser isolation, errors/history/C lifetime |
+| Temporary native GUI fixtures | Profile import/save/error, main body/crossref modes/Back, nested sidebar note hover and pointer-leave retention; draft/main/history isolation |
 
-The shared `parse_study_profile`/`read_study_profile` reader is now implemented
-with 367 local checks, including comparisons with the actual getter/default
-rules. It copies five effective preferences and optional saved locale, decodes
-XML encodings into UTF-8, preserves unavailable names and does not mutate files
-or process locale. Independent parser contexts and owned results support
-concurrent read callers. DTD declarations stop parsing before resource loading;
-malformed/wrong-root input, invalid NUL code units and over-16-MiB sources reject.
-These explicit limits are not evidence of accepting every historical profile.
-The explicit literal-text writer now passes 39 preservation/round-trip/failure
-checks. It retains unrelated XML outside edited values, duplicate keys and saved
-locale, normalizes encoding to UTF-8 and verifies effective values before staged
-file replacement. It corrects the characterized ampersand data-loss behavior.
-Null/empty choices cannot round trip through legacy defaults and reject. Existing
-malformed/empty files and observed external edits remain intact on failure. The
-next gate is worker/native import/save integration and saved-locale startup
-characterization; complete storage/platform acceptance remains pending.
-
-## Complete main note/reference callback characterization
-
-`core_note_dispatch` compares full frozen/current show_note and show_ref handlers
-over 96,792 ordered callback/return comparisons. Backend, module/key and display
-operations are explicit shims; GLib strings/lists are real. Cases cover click/
-hover, active-link/null/empty identifier guards, installed/fallback modules,
-short/current/explicit passages, heading verse-zero setup, overlapping n/x tags,
-null/empty/populated attributes, render success/failure, cross-reference preference
-modes and empty/single/repeated parsed references. It also checks generated
-reference-link and Back-to-current-verse HTML through the presentation trace.
-These comparisons establish dispatch, not real SWORD parser/render output,
-versification, GTK gestures, translation or native full-link parity.
-
-The harness tracks only the handler GString lifecycle and reclaims frozen
-early-return allocations after recording them. The actual handler now allocates
-after the active-link/identifier guard; all traced destinations/arguments remain
-identical and its tracked GString is released or never allocated on every case.
-This corrects the source-visible early-return leak; scoped sanitizer checks are
-not a complete leak audit of GTK, SWORD or uninstrumented GLib.
-
-Note tags containing both n and x dispatch as reference lists on click, but
-use body preview on hover because the n branch comes first. A clicked footnote
-sets source/module context but does not show its body in these handlers.
-Cross-reference hover in list mode calls the sidebar even for a null attribute;
-the click branch calls it only for a nonnull attribute. Information-link mode
-always appends Back to the committed current verse. Preserve these distinctions
-when extracting policy rather than merging apparently similar branches.
-
-The main note presentation decision now lives in the C++11 CoreOptions helper
-`xiphos_core_note_presentation`, with a C11 header. The legacy handler delegates
-only its destination/precedence decisions; source setup, retrieval, nullable
-attribute handling and generated HTML remain in their existing branches. All
-96,792 complete frozen/current traces still agree after adoption. Twenty direct
-C boundary/precedence cases cover null/empty/Unicode tags and nonzero flags.
-The default legacy build includes the helper without the C++17 native core.
-This is the policy seam for native note hover; the native hover transport is
-still lexical-only at this checkpoint. Detached-dialog policy is separate.
-
-## Shared native main-hover service
-
-`StudyWorker::hover_study_link_at` and its C request API now return owned body
-notes, ordered reference lists, raw lexical entries or a copied no-presentation
-marker. Each tab owns the cross-reference list preference with the legacy true
-default; typed setter/getter commands do not visit histories. Notes use existing
-exact-source/settings retrieval and the shared main routing policy. List parsing
-uses committed view context, not unsubmitted input or the hovered note passage.
-Information-link mode returns escaped reference labels plus Back to that context;
-its initial English label/theme styling is not full localization/visual parity.
-
-The service accepts the existing strict local n/x parser domain. Missing/type-
-mismatched notes and invalid context/URLs reject; copied results remain valid
-after later calls and shutdown. It does not reproduce every legacy malformed/
-nullable-attribute case, heading verse-zero setup or abbreviation behavior.
-Regular main-hover short-passage/unavailable-module fallback is now implemented
-as described below; foreign-view/global-main equivalence remains a gate. Explicit showRef and passage links have no
-presentation; status/bookmark/dictionary-URI and detached-dialog hover remain
-pending. The existing raw preview/click APIs and native click behavior are
-unchanged in this service milestone. Native click destination adaptation must
-be validated separately against the characterized note policy.
-
-`core_hover` uses generated real SWORD note/dictionary modules to validate both
-reference modes, note-body equality with the existing service, contextual list
-order/duplicates, raw lexical behavior, tab/history isolation, copied arguments/
-results, scalar/result kinds, no-op markers, failures and shutdown ownership.
-These tests supplement the frozen callback harness; they do not replace full
-GTK/native gesture, representative-module or platform acceptance. The new
-service now has a typed Swift adapter, tested against generated fixtures for
-all result kinds and preference/state/lifetime semantics. It is not yet
-connected to main-reader/information pointer transport through the guarded
-model at the native study-hover checkpoint.
-
-Native `previewStudyLink` publishes typed results without URI/type matching.
-Body notes and lexical entries share the retained information slot; reference
-results update the sidebar while keeping the last information. The core-owned
-mode is copied at startup and exposed through a per-window native toggle.
-Latest/revision/closed guards cover each kind, and actions invalidate pending
-hovers. Explicit no-presentation/failed results retain preview/status. Existing
-click behavior remains as documented. Semantic hover callbacks now also cover
-reference-list, note-body and dictionary-definition content. All use live
-committed main context even when information/sidebar content belongs to an
-older view; explicit module/passage URI targets still override fallback. Click
-callbacks retain their captured source context. Model regression checks cover
-old information, unqualified fallback, explicit targets and retained nested
-reference lists. A temporary GUI run verified sidebar note hover and pointer
-leave retention without main/draft navigation. Detached dialogs, generic
-dictionary URI hover and full keyboard/visual/source acceptance remain pending.
-
-Information-link mode now calls the owned Reader/session reference-target API,
-which reuses the existing parser without rendering full verse bodies. The
-formatter consumes parsed target names/context directly; sidebar mode still
-uses full rendered snapshots. Sixty-four generated module/context/expression
-cases agree with those full snapshots, retaining order, duplicates, normalized
-context, skipped/limited metadata and the 2,000-verse per-range cap. Target
-snapshots survive later rendering and session/reader close. No benchmark or
-quantified savings is claimed; this removes a source-visible unnecessary render
-path without introducing an alternate parser or frontend behavior policy.
-
-Cross-reference hover now uses metadata-only note retrieval as well, avoiding
-the note-body render that was discarded before reference handling. Exact-source
-entry-attribute generation still occurs; copied module/reference/identifier/
-type/label/refList agree with the existing full note path over sixteen
-passage/filter cases. Full body callers retain UTF8HTML/renderText processing.
-Every required value is copied before a body render may replace SDK attributes;
-metadata snapshots survive later calls and close. Embedded NUL module/reference/
-identifier inputs reject rather than silently truncating. This is not a timing
-benchmark or SDK-internal allocation/ownership audit.
-
-`contextual_hover_link` reuses the existing parameter/URI decoder and adds the
-characterized note passage rule: decoded values shorter than five bytes use
-committed context. Empty or absent passage parameters follow that rule. The
-worker falls back to the supplied source module when the explicit module is
-absent from its copied catalog; installed modules and full passages are kept.
-Twelve generated module/passage combinations match the expected rendered note,
-with separate five-byte/UTF-8 boundary, explicit-source, strict-parser isolation,
-malformed input, history and C snapshot-lifetime checks. Independent raw/click
-parsers remain unchanged. The macOS main-handler adapter now supplies live committed main context on
-every semantic-hover surface; older information/sidebar context cannot change
-that fallback. Abbreviations, heading verse zero, detached-dialog policy and
-complete module/platform behavior are not accepted by these tests.
+The current local suite passes 47/47. Scoped address/undefined/thread checks cover
+shared ownership/state changes; strict C++11/C++17/C11 checks cover their seams.
+SWORD, system libxml2 and GLib are not fully instrumented. The note harness tracks
+handler GStrings and reclaims frozen early-return allocations after recording;
+current allocation occurs after guards with identical traces. This is not a full
+GTK/SDK leak audit. Fixture evidence does not replace representative-module,
+legacy/native gesture, full visual/design, packaging or all-platform acceptance.
