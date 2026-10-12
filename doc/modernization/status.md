@@ -745,3 +745,42 @@ Next: bind the validated reading-option controls to this state and ensure
 chapter rendering uses the same tab configuration. GUI comparisons, preference
 import/save, other settings and platform implementations still require their
 own evidence. No GitHub build was dispatched or official parity row accepted.
+
+
+## First native reading-option controls: locally tested, pending acceptance
+
+Implemented on `modernization/macos-reading-controls`, based on the module
+preference slice. The macOS menu binds Words of Christ in Red, Strong's Numbers,
+Morphological Tags and Footnotes when declared by the displayed module. New
+native tabs explicitly use shared legacy defaults; settings and default policy
+remain in C++. Option changes refresh the committed reference without visiting
+history or overwriting an unsubmitted draft. Chapter output now uses configured
+tab rendering, and presentation queries the core's current module settings.
+The red-letter SWORD class uses the existing Xiphos editor/template.h red style.
+Chapter navigation is on a separate row to keep option labels readable.
+
+Validation: full local CTest passed 15/15. After the final CSS/layout adjustment,
+the affected reader model suites and fixture setup passed 5/5. New model checks
+cover shared defaults, options in verse and chapter modes, retained drafts,
+ignored overlapping actions, history-free refreshes, separate windows,
+module-switch state, Back/Forward restoration, unsupported controls and all four
+bindings. Tests explicitly retain legacy reference-only history deduplication.
+Shell syntax and diff checks passed. No core runtime code changed in this slice;
+previous module-settings sanitizer checks apply to that prerequisite.
+
+A rebuilt temporary GUI at `/private/tmp/xiphos-preview.8aulUG` was inspected:
+red-letter text visibly changed from red to ordinary text, Strong's 3056 and
+morphology N-NSM links appeared, disabling footnotes removed the note marker,
+and chapter rendering retained those settings with Back/Forward still disabled.
+Switching to the second generated module showed its independent defaults;
+switching back restored the first module's choices. The launcher now offers an
+opt-in `preview_reading_options_fixture` target using only generated temporary
+modules, without requesting Documents access or launching during ordinary CI.
+
+These checks establish this limited reading-option slice, not complete option
+or design parity. Existing `modops.conf` import/save, original note/Strong's/
+morphology popups, remaining controls and themes, real-module comparisons,
+GTK4/WinUI implementations and release checks remain pending. No GitHub build
+was dispatched, no source retired and no feature group officially accepted.
+Overall provisional completion remains about 5% (3–7%), 0/38 accepted groups,
+and 0/3 release-ready native platforms.

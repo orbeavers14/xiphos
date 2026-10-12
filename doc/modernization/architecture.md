@@ -175,8 +175,8 @@ owned SWMgr; no second engine is introduced. The nonblocking C bridge exposes na
 chapters and history-free entry refreshes. Copied module catalogs now expose exact legacy filter-declaration eligibility,
 separate headings metadata and global SDK transliteration availability. Those
 snapshots do not imply filter/markup support or enabled preferences. Swift copies these values through the async adapter and wraps tab settings and
-history-free configured reads. Native controls and full menu composition are
-pending. Native frontends must not reproduce this
+history-free configured reads. Four native reading controls now bind this state;
+remaining controls and full menu composition are pending. Native frontends must not reproduce this
 policy or mutate engine filter state themselves.
 
 
@@ -195,5 +195,6 @@ Module overrides take precedence over an explicit tab fallback; opt-in legacy
 module defaults follow that, otherwise unconfigured SDK behavior is retained.
 Setting/clearing/querying preferences does not visit or move history. The C
 bridge returns copied flags plus a configured marker, so SDK defaults are never
-mistaken for an explicit all-off mask. Persistence/import and native controls
-remain separate work; frontends bind state through the async adapter.
+mistaken for an explicit all-off mask. Persistence/import remains separate work. The macOS preview now binds four
+reading options and uses configured tab rendering for both verse and chapter
+views; frontends obtain defaults and module state through the async adapter.

@@ -9,7 +9,55 @@ struct ReaderModelSmoke {
             try await Task.sleep(nanoseconds: 1_000_000)
         }
     }
+    @MainActor static func readingOptions(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let first = ReaderModel(worker: worker, startupError: nil)
+        let second = ReaderModel(worker: worker, startupError: nil)
+        try await idle(first); try await idle(second)
+        first.selection = "OptionTest"; first.reference = "John 3:16"; first.read()
+        second.selection = "OptionTest"; second.reference = "John 3:16"; second.read()
+        try await idle(first); try await idle(second)
+        // Legacy history deduplicates references across modules and retains
+        // the first module. Start this restoration scenario with a fresh visit.
+        first.clearHistory(); try await idle(first)
+        first.read(); try await idle(first)
+        guard let initial = first.engineOptions, initial.contains(.wordsInRed), initial.contains(.footnotes),
+              initial.contains(.variantsPrimary), !initial.contains(.strongs) else { fatalError("model uses shared defaults") }
+        first.reference = "John 4:2" // unsubmitted input must survive option refresh
+        first.setReadingOption(.strongs, enabled: true)
+        first.setReadingOption(.wordsInRed, enabled: false) // busy action is ignored
+        try await idle(first)
+        guard first.reference == "John 4:2", first.renderedReference == "John 3:16",
+              first.html.contains("3056"), first.html.contains("wordsOfJesus"),
+              first.engineOptions == initial.union(.strongs), !first.canBack,
+              !second.html.contains("3056"), second.engineOptions == initial else { fatalError("option refresh/draft/history/window isolation") }
+        first.showChapter = true; first.refreshDisplay(); try await idle(first)
+        guard first.html.contains("3056"), first.renderedAnchor == "verse-16", first.reference == "John 4:2" else { fatalError("chapter uses tab preferences") }
+        first.setReadingOption(.strongs, enabled: false); try await idle(first)
+        guard !first.html.contains("3056"), first.reference == "John 4:2", !first.canBack else { fatalError("chapter options refresh without visit") }
+        first.setReadingOption(.strongs, enabled: true); try await idle(first)
+        first.selection = "OptionOther"; first.reference = "John 3:17"; first.read(); try await idle(first)
+        guard first.engineOptions == initial, first.canBack else { fatalError("other module retains defaults") }
+        first.setReadingOption(.wordsInRed, enabled: false); try await idle(first)
+        guard first.engineOptions == initial.subtracting(.wordsInRed), !first.html.contains("wordsOfJesus") else { fatalError("other module option state") }
+        first.navigate(-1); try await idle(first)
+        guard first.selection == "OptionTest", first.engineOptions == initial.union(.strongs), first.html.contains("3056"), first.canForward else { fatalError("Back restores first module preferences") }
+        first.navigate(1); try await idle(first)
+        guard first.selection == "OptionOther", first.engineOptions == initial.subtracting(.wordsInRed) else { fatalError("Forward restores other module preferences") }
+        let unchanged = first.engineOptions
+        first.setReadingOption(.transliteration, enabled: true)
+        guard !first.isBusy, first.engineOptions == unchanged else { fatalError("unsupported control rejected") }
+        first.setReadingOption(.footnotes, enabled: false); try await idle(first)
+        guard first.engineOptions == unchanged?.subtracting(.footnotes) else { fatalError("footnotes control") }
+        first.setReadingOption(.morphology, enabled: true); try await idle(first)
+        guard first.engineOptions?.contains(.morphology) == true else { fatalError("morphology control") }
+        first.close(); second.close(); await worker.shutdown()
+        print("Native reading option model checks passed")
+    }
     @MainActor static func main() async throws {
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--options" {
+            try await readingOptions(root: CommandLine.arguments[2]); return
+        }
         guard CommandLine.arguments.count == 2 else { fatalError("fixture root required") }
         let worker = try CoreWorker(root: CommandLine.arguments[1])
         let model = ReaderModel(worker: worker, startupError: nil)
