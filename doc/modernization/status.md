@@ -204,8 +204,14 @@ inclusion in this public fork.
    families remain next.
    Complete remaining reading controls and
    characterize commentary/parallel panes while retaining study-pane composition.
-3. Implement equivalent GTK4 and WinUI 3 reading panes with native toolchains
-   and interaction checks; retain the legacy app throughout migration.
+3. Bring up small equivalent GTK4 and WinUI 3 reading panes before declaring the
+   core complete. Exercise module loading, passage/commentary rendering and
+   history through the same shared API on each target, with native toolchain and
+   interaction checks. Most frontend expansion can follow the core services, but
+   this early checkpoint must expose dependency, compiler, threading, ownership
+   and embedded-web-view differences before the API hardens. Retain the legacy
+   app throughout migration. Windows can host Linux development through WSL2 or
+   a VM; see the [development host plan](architecture.md#development-hosts-and-platform-acceptance).
 4. Expand compatible storage and restoration beyond the 18 engine fields, then
    extract search, editors, module management and BibleSync with regression evidence.
 5. Reassess audited SwordKit/BibleUI reuse against the shared API when a concrete
