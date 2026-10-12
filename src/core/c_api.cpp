@@ -22,6 +22,8 @@ struct xc_history { xiphos::core::HistorySnapshot value; };
 struct xc_request {
   xc_status status = XC_PENDING;
   uint64_t tab = 0;
+  bool options_result = false;
+  std::optional<xiphos::core::EngineOptions> options;
   std::unique_ptr<xc_entry> entry;
   std::unique_ptr<xc_chapter> chapter;
   std::unique_ptr<xc_choices> choices;
@@ -31,6 +33,7 @@ struct xc_request {
   virtual ~xc_request() = default;
   virtual void update() = 0;
   void store(uint64_t v) { tab = v; }
+  void store(std::optional<xiphos::core::EngineOptions> v) { options = v; options_result = true; }
   void store(xiphos::core::Entry v) { entry = std::make_unique<xc_entry>(xc_entry{std::move(v)}); }
   void store(xiphos::core::Chapter v) { chapter = std::make_unique<xc_chapter>(xc_chapter{std::move(v)}); }
   void store(xiphos::core::ReferenceChoices v) { choices = std::make_unique<xc_choices>(xc_choices{std::move(v)}); }
@@ -39,6 +42,50 @@ struct xc_request {
   void store(xiphos::core::HistorySnapshot v) { history = std::make_unique<xc_history>(xc_history{std::move(v)}); }
 };
 namespace {
+xiphos::core::EngineOptions options_from_flags(unsigned flags) {
+  xiphos::core::EngineOptions options;
+  options.strongs = (flags & XC_ENGINE_STRONGS) != 0;
+  options.morphs = (flags & XC_ENGINE_MORPHOLOGY) != 0;
+  options.footnotes = (flags & XC_ENGINE_FOOTNOTES) != 0;
+  options.greekaccents = (flags & XC_ENGINE_GREEK_ACCENTS) != 0;
+  options.lemmas = (flags & XC_ENGINE_LEMMAS) != 0;
+  options.scripturerefs = (flags & XC_ENGINE_CROSS_REFERENCES) != 0;
+  options.hebrewpoints = (flags & XC_ENGINE_HEBREW_VOWELS) != 0;
+  options.hebrewcant = (flags & XC_ENGINE_HEBREW_CANTILLATION) != 0;
+  options.italic_headings = (flags & XC_ENGINE_ITALIC_HEADINGS) != 0;
+  options.words_in_red = (flags & XC_ENGINE_WORDS_IN_RED) != 0;
+  options.xlit = (flags & XC_ENGINE_TRANSLITERATED_FORMS) != 0;
+  options.enumerated = (flags & XC_ENGINE_ENUMERATIONS) != 0;
+  options.glosses = (flags & XC_ENGINE_GLOSSES) != 0;
+  options.morphseg = (flags & XC_ENGINE_MORPHEME_SEGMENTATION) != 0;
+  options.transliteration = (flags & XC_ENGINE_TRANSLITERATION) != 0;
+  options.variants_primary = (flags & XC_ENGINE_VARIANTS_PRIMARY) != 0;
+  options.variants_secondary = (flags & XC_ENGINE_VARIANTS_SECONDARY) != 0;
+  options.variants_all = (flags & XC_ENGINE_VARIANTS_ALL) != 0;
+  return options;
+}
+unsigned options_to_flags(const xiphos::core::EngineOptions &o) {
+  unsigned flags = 0;
+  if (o.strongs) flags |= XC_ENGINE_STRONGS;
+  if (o.morphs) flags |= XC_ENGINE_MORPHOLOGY;
+  if (o.footnotes) flags |= XC_ENGINE_FOOTNOTES;
+  if (o.greekaccents) flags |= XC_ENGINE_GREEK_ACCENTS;
+  if (o.lemmas) flags |= XC_ENGINE_LEMMAS;
+  if (o.scripturerefs) flags |= XC_ENGINE_CROSS_REFERENCES;
+  if (o.hebrewpoints) flags |= XC_ENGINE_HEBREW_VOWELS;
+  if (o.hebrewcant) flags |= XC_ENGINE_HEBREW_CANTILLATION;
+  if (o.italic_headings) flags |= XC_ENGINE_ITALIC_HEADINGS;
+  if (o.words_in_red) flags |= XC_ENGINE_WORDS_IN_RED;
+  if (o.xlit) flags |= XC_ENGINE_TRANSLITERATED_FORMS;
+  if (o.enumerated) flags |= XC_ENGINE_ENUMERATIONS;
+  if (o.glosses) flags |= XC_ENGINE_GLOSSES;
+  if (o.morphseg) flags |= XC_ENGINE_MORPHEME_SEGMENTATION;
+  if (o.transliteration) flags |= XC_ENGINE_TRANSLITERATION;
+  if (o.variants_primary) flags |= XC_ENGINE_VARIANTS_PRIMARY;
+  if (o.variants_secondary) flags |= XC_ENGINE_VARIANTS_SECONDARY;
+  if (o.variants_all) flags |= XC_ENGINE_VARIANTS_ALL;
+  return flags;
+}
 xc_status failure() noexcept {
   try { throw; }
   catch (const std::out_of_range &) { return XC_MODULE_NOT_FOUND; }
@@ -122,26 +169,33 @@ xc_status xc_worker_clear_history(xc_worker *w, uint64_t tab, xc_request **out) 
 xc_status xc_worker_set_engine_options(xc_worker *w, uint64_t tab, unsigned flags, xc_request **out) {
   constexpr unsigned known = (1u << 18) - 1;
   if (flags & ~known) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
-  xiphos::core::EngineOptions options;
-  options.strongs = (flags & XC_ENGINE_STRONGS) != 0;
-  options.morphs = (flags & XC_ENGINE_MORPHOLOGY) != 0;
-  options.footnotes = (flags & XC_ENGINE_FOOTNOTES) != 0;
-  options.greekaccents = (flags & XC_ENGINE_GREEK_ACCENTS) != 0;
-  options.lemmas = (flags & XC_ENGINE_LEMMAS) != 0;
-  options.scripturerefs = (flags & XC_ENGINE_CROSS_REFERENCES) != 0;
-  options.hebrewpoints = (flags & XC_ENGINE_HEBREW_VOWELS) != 0;
-  options.hebrewcant = (flags & XC_ENGINE_HEBREW_CANTILLATION) != 0;
-  options.italic_headings = (flags & XC_ENGINE_ITALIC_HEADINGS) != 0;
-  options.words_in_red = (flags & XC_ENGINE_WORDS_IN_RED) != 0;
-  options.xlit = (flags & XC_ENGINE_TRANSLITERATED_FORMS) != 0;
-  options.enumerated = (flags & XC_ENGINE_ENUMERATIONS) != 0;
-  options.glosses = (flags & XC_ENGINE_GLOSSES) != 0;
-  options.morphseg = (flags & XC_ENGINE_MORPHEME_SEGMENTATION) != 0;
-  options.transliteration = (flags & XC_ENGINE_TRANSLITERATION) != 0;
-  options.variants_primary = (flags & XC_ENGINE_VARIANTS_PRIMARY) != 0;
-  options.variants_secondary = (flags & XC_ENGINE_VARIANTS_SECONDARY) != 0;
-  options.variants_all = (flags & XC_ENGINE_VARIANTS_ALL) != 0;
+  const auto options = options_from_flags(flags);
   return queue_request(w, out, [=](auto &worker) { return worker.set_engine_options(tab, options); });
+}
+xc_status xc_worker_enable_module_preferences(xc_worker *w, uint64_t tab, xc_request **out) {
+  return queue_request(w, out, [=](auto &worker) { return worker.enable_module_preferences(tab); });
+}
+xc_status xc_worker_set_module_engine_options(xc_worker *w, uint64_t tab, const char *id, unsigned flags, xc_request **out) {
+  if (!id || !*id || (flags & ~((1u << 18) - 1))) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  const auto options = options_from_flags(flags);
+  return queue_request(w, out, [=](auto &worker) { return worker.set_module_engine_options(tab, id, options); });
+}
+xc_status xc_worker_clear_module_engine_options(xc_worker *w, uint64_t tab, const char *id, xc_request **out) {
+  if (!id || !*id) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.clear_module_engine_options(tab, id); });
+}
+xc_status xc_worker_module_engine_options(xc_worker *w, uint64_t tab, const char *id, xc_request **out) {
+  if (!id || !*id) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.module_engine_options(tab, id); });
+}
+xc_status xc_request_engine_options(const xc_request *r, unsigned *flags, int *configured) {
+  if (flags) *flags = 0;
+  if (configured) *configured = 0;
+  if (!r || !flags || !configured) return XC_INVALID_ARGUMENT;
+  if (r->status != XC_OK) return r->status;
+  if (!r->options_result) return XC_INVALID_ARGUMENT;
+  if (r->options) { *flags = options_to_flags(*r->options); *configured = 1; }
+  return XC_OK;
 }
 xc_status xc_worker_clear_engine_options(xc_worker *w, uint64_t tab, xc_request **out) {
   return queue_request(w, out, [=](auto &worker) { return worker.clear_engine_options(tab); });

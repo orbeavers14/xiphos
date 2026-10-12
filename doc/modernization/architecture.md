@@ -188,3 +188,12 @@ locations and storage writes. Native frontends must obtain this policy from the
 core rather than initialize flags independently. Native module preference
 storage/import and controls remain pending; existing unconfigured native
 sessions continue to use their previous SDK defaults until explicitly configured.
+
+
+Native sessions now own in-memory module overrides, serialized by StudyWorker.
+Module overrides take precedence over an explicit tab fallback; opt-in legacy
+module defaults follow that, otherwise unconfigured SDK behavior is retained.
+Setting/clearing/querying preferences does not visit or move history. The C
+bridge returns copied flags plus a configured marker, so SDK defaults are never
+mistaken for an explicit all-off mask. Persistence/import and native controls
+remain separate work; frontends bind state through the async adapter.

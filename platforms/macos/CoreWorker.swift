@@ -100,6 +100,35 @@ actor CoreWorker {
         let status = xc_worker_set_engine_options(try worker(), tab, options.rawValue, &request)
         xc_request_release(try await wait(status, request))
     }
+    func enableModulePreferences(tab: UInt64) async throws {
+        var request: OpaquePointer?
+        let status = xc_worker_enable_module_preferences(try worker(), tab, &request)
+        xc_request_release(try await wait(status, request))
+    }
+    func setModuleEngineOptions(tab: UInt64, module: String, options: EngineOptionFlags) async throws {
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { xc_worker_set_module_engine_options(handle, tab, $0, options.rawValue, &request) }
+        xc_request_release(try await wait(status, request))
+    }
+    func clearModuleEngineOptions(tab: UInt64, module: String) async throws {
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { xc_worker_clear_module_engine_options(handle, tab, $0, &request) }
+        xc_request_release(try await wait(status, request))
+    }
+    func moduleEngineOptions(tab: UInt64, module: String) async throws -> EngineOptionFlags? {
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { xc_worker_module_engine_options(handle, tab, $0, &request) }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        var flags: UInt32 = 0
+        var configured: Int32 = 0
+        let copied = xc_request_engine_options(completed, &flags, &configured)
+        guard copied == XC_OK else { throw CoreError(status: copied) }
+        return configured != 0 ? EngineOptionFlags(rawValue: flags) : nil
+    }
     func clearEngineOptions(tab: UInt64) async throws {
         var request: OpaquePointer?
         let status = xc_worker_clear_engine_options(try worker(), tab, &request)

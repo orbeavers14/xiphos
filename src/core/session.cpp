@@ -1,13 +1,36 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/session.hpp"
+#include <stdexcept>
 namespace xiphos::core {
 Entry StudySession::read_entry(const std::string &module, const std::string &reference) {
-  return options_ ? reader_.read(module, reference, *options_) : reader_.read(module, reference);
+  const auto options = module_engine_options(module);
+  return options ? reader_.read(module, reference, *options) : reader_.read(module, reference);
 }
 Chapter StudySession::read_chapter(const std::string &module, const std::string &reference,
                                   const DisplayOptions &display) {
-  return options_ ? reader_.read_chapter(module, reference, display, *options_)
+  const auto options = module_engine_options(module);
+  return options ? reader_.read_chapter(module, reference, display, *options)
                   : reader_.read_chapter(module, reference, display);
+}
+void StudySession::require_module(const std::string &module) const {
+  for (const auto &installed : reader_.modules()) if (installed.id == module) return;
+  throw std::out_of_range("Module is not installed");
+}
+void StudySession::set_module_engine_options(const std::string &module, const EngineOptions &options) {
+  require_module(module);
+  module_options_[module] = options;
+}
+void StudySession::clear_module_engine_options(const std::string &module) {
+  require_module(module);
+  module_options_.erase(module);
+}
+std::optional<EngineOptions> StudySession::module_engine_options(const std::string &module) const {
+  require_module(module);
+  const auto found = module_options_.find(module);
+  if (found != module_options_.end()) return found->second;
+  if (options_) return options_;
+  if (module_preferences_) return engine_options_from_preferences({});
+  return std::nullopt;
 }
 Entry StudySession::visit(const std::string &module, const std::string &reference) {
   auto entry = read_entry(module, reference);

@@ -34,6 +34,10 @@ public:
   std::future<Entry> navigate_chapter(StudyTab tab, std::string module, std::string reference, int direction);
   std::future<void> set_engine_options(StudyTab tab, EngineOptions options);
   std::future<void> clear_engine_options(StudyTab tab);
+  std::future<void> enable_module_preferences(StudyTab tab);
+  std::future<void> set_module_engine_options(StudyTab tab, std::string module, EngineOptions options);
+  std::future<void> clear_module_engine_options(StudyTab tab, std::string module);
+  std::future<std::optional<EngineOptions>> module_engine_options(StudyTab tab, std::string module);
   std::future<Chapter> read_chapter(StudyTab tab, std::string module, std::string reference, DisplayOptions options = {});
   std::future<HistorySnapshot> history(StudyTab tab);
   std::future<void> clear_history(StudyTab tab);

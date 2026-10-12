@@ -40,6 +40,22 @@ struct OptionAdapterSmoke {
         try await worker.closeTab(other)
         do { _ = try await worker.readTabEntry(tab: other, module: "OptionTest", reference: "John 3:16"); fatalError("closed tab refresh") }
         catch is CoreError { }
+        let unconfigured = try await worker.moduleEngineOptions(tab: tab, module: "OptionTest")
+        guard unconfigured == nil else { fatalError("SDK state distinguished from explicit preferences") }
+        try await worker.enableModulePreferences(tab: tab)
+        let defaults = try await worker.moduleEngineOptions(tab: tab, module: "OptionTest")
+        guard let defaults, defaults.contains(.footnotes), defaults.contains(.wordsInRed),
+              defaults.contains(.variantsPrimary), !defaults.contains(.strongs) else { fatalError("shared legacy defaults") }
+        try await worker.setModuleEngineOptions(tab: tab, module: "OptionTest", options: [.strongs])
+        let changed = try await worker.moduleEngineOptions(tab: tab, module: "OptionTest")
+        guard changed == [.strongs] else { fatalError("module options round trip") }
+        let changedEntry = try await worker.readTabEntry(tab: tab, module: "OptionTest", reference: "John 3:16")
+        guard changedEntry.html.contains("3056"), !changedEntry.html.contains("wordsOfJesus") else { fatalError("module preferences render") }
+        try await worker.clearModuleEngineOptions(tab: tab, module: "OptionTest")
+        let cleared = try await worker.moduleEngineOptions(tab: tab, module: "OptionTest")
+        guard cleared == defaults else { fatalError("module clear restores shared defaults") }
+        let unchangedHistory = try await worker.history(tab)
+        guard unchangedHistory.count == 1 else { fatalError("module settings changed history") }
         try await worker.closeTab(tab)
         await worker.shutdown()
         guard modules[0].options.declared == declared, restored.html == original.html else { fatalError("copied metadata/results lifetime") }

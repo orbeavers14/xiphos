@@ -64,6 +64,18 @@ xc_status xc_worker_clear_history(xc_worker *worker, uint64_t tab, xc_request **
  * Unknown flag bits fail immediately with *out=NULL. Closed tabs fail at poll.
  * Non-tab chapter reads below preserve the unconfigured reader behavior. */
 xc_status xc_worker_set_engine_options(xc_worker *worker, uint64_t tab, unsigned flags, xc_request **out);
+/* Opt-in legacy module defaults; no preference files are read or written.
+ * Precedence: module override, tab-wide override, enabled legacy defaults,
+ * otherwise unconfigured SDK state. Clearing one layer retains other layers.
+ * Installed module and live tab validation happens on the worker at poll time.
+ * Settings and queries do not change history. Arguments/results are copied. */
+xc_status xc_worker_enable_module_preferences(xc_worker *worker, uint64_t tab, xc_request **out);
+xc_status xc_worker_set_module_engine_options(xc_worker *worker, uint64_t tab, const char *module, unsigned flags, xc_request **out);
+xc_status xc_worker_clear_module_engine_options(xc_worker *worker, uint64_t tab, const char *module, xc_request **out);
+xc_status xc_worker_module_engine_options(xc_worker *worker, uint64_t tab, const char *module, xc_request **out);
+/* Call after polling. Copies flags and configured (0 = SDK defaults); returns
+ * pending/error status unchanged. Wrong result kind/NULL outputs are invalid. */
+xc_status xc_request_engine_options(const xc_request *request, unsigned *flags, int *configured);
 xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_request **out);
 /* Refresh with tab settings without adding/moving history. */
 xc_status xc_worker_read_tab_entry(xc_worker *worker, uint64_t tab, const char *module, const char *reference, xc_request **out);
