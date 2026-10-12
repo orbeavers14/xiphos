@@ -295,7 +295,7 @@ copies the keys and restores the preceding dictionary key text. Worker requires
 an open tab and C returns a separate owned choices kind; no history visit occurs.
 Native menu presentation follows separately.
 
-## Read-only legacy XML profile subset
+## Legacy XML lexicon profile subset
 
 The native core requires libxml2 headers/library (the existing legacy XML
 dependency); CMake discovers them with FindLibXml2. `parse_study_profile` accepts
@@ -305,9 +305,21 @@ optional saved locale, with legacy missing/empty/duplicate-node lookup rules.
 Unavailable module names are retained. No home discovery, source-file writes,
 locale changes or preference publication occurs. DTD, malformed/wrong-root,
 invalid NUL and over-16-MiB inputs reject. XML comments/unrelated sections are
-not exposed or modified. These read-only APIs are not a native import/save UI.
+not exposed or modified. These APIs are not a native import/save UI.
 
 `core_xml_profile` compares complete frozen/current XML helpers;
 `core_profile_reader` compares shared results with the actual getter and checks
 owned lifetimes, encoding, file preservation, failure cases and parser isolation.
 Local sanitizer coverage excludes the system libxml2 implementation.
+
+`serialize_lexicon_profile` updates five effective values with safely escaped
+literal text, preserves unrelated XML nodes/attributes/comments outside those
+values and leaves shadowed duplicate keys plus saved locale intact. It verifies
+reload values and normalizes XML serialization to UTF-8. Null/empty choices
+reject because legacy default loading cannot round trip them.
+`save_lexicon_profile` stages and verifies an explicit file before replacement,
+retains existing permissions and symlink aliases, and creates a private new file
+when requested. Existing malformed/empty files reject rather than being replaced.
+It shares replacement/cleanup with engine-preference saving and rejects observed
+external changes. This is not interprocess locking or power-loss durability;
+Windows replacement behavior remains a platform acceptance gate.

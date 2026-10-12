@@ -251,7 +251,16 @@ locale as data. It reuses libxml2 without GTK and preserves the actual getter/
 default rules. DTD documents, malformed/wrong-root input, NUL code units and
 over-16-MiB documents reject. Parser contexts stop at DTD declarations before
 loading resources; process-wide loaders/substitution defaults remain untouched.
-Native import/save and saved-locale startup application are pending. Linux
+The explicit lexicon writer safely encodes literal values and preserves
+unrelated XML outside edited values, shadowed duplicates and saved locale. It
+verifies serialized/reloaded values and stages an explicit same-directory file
+before replacement, sharing permission/symlink/cleanup/change-detection policy
+with the existing engine-preference writer. Empty/null choices reject rather
+than silently reloading defaults. Existing empty/malformed files are preserved
+on error. XML formatting/encoding normalizes to UTF-8. No native XML import/
+save controls or saved-locale startup application are implemented yet.
+Interprocess locking, power-loss durability and Windows replacement acceptance
+remain pending. Linux
 review CI installs libxml2-dev; macOS uses the SDK and explicit Swift link inputs.
 
 The inspected [libxml2 2.9.13 copyright notice](https://raw.githubusercontent.com/GNOME/libxml2/v2.9.13/Copyright)
