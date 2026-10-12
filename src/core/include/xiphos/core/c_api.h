@@ -88,6 +88,7 @@ xc_status xc_request_engine_options(const xc_request *request, unsigned *flags, 
 xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_request **out);
 /* Refresh with tab settings without adding/moving history. */
 /* Explicit note preview uses tab settings without moving/adding history. */
+xc_status xc_worker_study_note_link(xc_worker *worker, uint64_t tab, const char *current_module, const char *uri, xc_request **out);
 xc_status xc_worker_study_note(xc_worker *worker, uint64_t tab, const char *module, const char *reference, const char *identifier, xc_request **out);
 xc_status xc_worker_read_tab_entry(xc_worker *worker, uint64_t tab, const char *module, const char *reference, xc_request **out);
 xc_status xc_worker_read_tab_chapter(xc_worker *worker, uint64_t tab, const char *module, const char *reference, unsigned display_flags, xc_request **out);

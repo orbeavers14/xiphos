@@ -85,6 +85,13 @@ struct OptionAdapterSmoke {
             _ = try await worker.studyNote(tab: tab, module: "OptionTest", reference: "John 3:17", identifier: "1")
             fatalError("Swift stale note accepted")
         } catch is CoreError { }
+        let linkedNote = try await worker.studyNoteLink(tab: tab, currentModule: "OptionTest",
+            uri: "xiphos-preview://study/passagestudy.jsp?action=showNote&type=n&value=1&module=OptionTest&passage=John+3%3A16")
+        guard linkedNote.html == note.html, linkedNote.reference == note.reference else { fatalError("Swift core note link dispatch") }
+        do {
+            _ = try await worker.studyNoteLink(tab: tab, currentModule: "OptionTest", uri: "https://example.invalid/passagestudy.jsp")
+            fatalError("Swift external note link accepted")
+        } catch is CoreError { }
         let noteHistory = try await worker.history(tab)
         guard noteHistory.count == 1 else { fatalError("Swift note preview changed history") }
         try await worker.closeTab(restoredTab)
