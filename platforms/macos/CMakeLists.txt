@@ -103,6 +103,17 @@ if(BUILD_TESTING)
   add_custom_target(macos_dictionary_adapter_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/dictionary_adapter_smoke")
   add_test(NAME swift_dictionary_adapter COMMAND "${CMAKE_CURRENT_BINARY_DIR}/dictionary_adapter_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/dictionary-fixture")
   set_tests_properties(swift_dictionary_adapter PROPERTIES FIXTURES_REQUIRED dictionary_fixture)
+  add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/lexical_adapter_smoke"
+    COMMAND ${SWIFTC} -swift-version 6 -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
+      -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/LexicalAdapterSmoke.swift"
+      "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
+      ${sword_link_flags} -lc++ -o "${CMAKE_CURRENT_BINARY_DIR}/lexical_adapter_smoke"
+    DEPENDS xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift Tests/LexicalAdapterSmoke.swift
+      Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h
+    VERBATIM)
+  add_custom_target(macos_lexical_adapter_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/lexical_adapter_smoke")
+  add_test(NAME swift_lexical_adapter COMMAND "${CMAKE_CURRENT_BINARY_DIR}/lexical_adapter_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/dictionary-fixture")
+  set_tests_properties(swift_lexical_adapter PROPERTIES FIXTURES_REQUIRED dictionary_fixture)
   # Opt-in GUI target, never part of default builds/CI. Generate/verify the
   # fixture before copying it and the app out of protected Documents storage.
   add_custom_target(preview_fixture

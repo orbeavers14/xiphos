@@ -151,3 +151,11 @@ The Swift worker also exposes explicit dictionary previews as copied
 `RenderedDictionaryEntry` values using the shared C API. Original RawLD
 fixtures check settings isolation, Unicode, failure recovery and lifetime;
 the native dictionary pane and Strong's/morphology link dispatch are pending.
+
+
+CoreWorker now supports copied lexicon preferences and typed lexical previews.
+Explicit default enablement obtains the five legacy names from the shared core;
+nullable/empty names remain distinct. The adapter rejects embedded NULs and
+owns source/kind/raw value plus dictionary key/HTML after shutdown. Fixture
+checks cover OT/NT context and separate tabs. Native preference/pane/hover/click
+workflows and lexicon profile persistence are the next integration work.

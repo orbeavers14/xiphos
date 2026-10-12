@@ -42,6 +42,16 @@ struct InstalledModule: Identifiable, Sendable {
         self.id = id; self.description = description; self.type = type; self.language = language; self.options = options
     }
 }
+enum LexiconOrigin: Int32, Sendable { case main = 0, dialog = 1 }
+enum LexicalKind: Int32, Sendable { case strongs = 0, morphology = 1 }
+struct LexiconPreferences: Sendable, Equatable {
+    var greek: String?, hebrew: String?, greekMorphNT: String?, greekMorphOT: String?, hebrewMorph: String?
+}
+struct RenderedLexicalEntry: Sendable {
+    let kind: LexicalKind
+    let module: String, type: String, value: String, passage: String, sourceReference: String
+    let entry: RenderedDictionaryEntry
+}
 struct RenderedDictionaryEntry: Sendable { let module: String; let key: String; let html: String }
 struct RenderedReferenceList: Sendable {
     let module: String
@@ -209,6 +219,40 @@ enum CoreValues {
     static func link(_ result: OpaquePointer) -> PassageTarget {
         PassageTarget(module: String(cString: xc_link_module(result)!),
                       reference: String(cString: xc_link_reference(result)!))
+    }
+    static func withOptionalCString<R>(_ value: String?, _ body: (UnsafePointer<CChar>?) -> R) -> R {
+        guard let value else { return body(nil) }
+        return value.withCString { body($0) }
+    }
+    static func withLexiconNames<R>(_ preferences: LexiconPreferences, _ body: (UnsafePointer<xc_lexicon_names>) -> R) -> R {
+        withOptionalCString(preferences.greek) { greek in
+            withOptionalCString(preferences.hebrew) { hebrew in
+                withOptionalCString(preferences.greekMorphNT) { nt in
+                    withOptionalCString(preferences.greekMorphOT) { ot in
+                        withOptionalCString(preferences.hebrewMorph) { hm in
+                            var names = xc_lexicon_names(greek: greek, hebrew: hebrew, greek_morph_nt: nt, greek_morph_ot: ot, hebrew_morph: hm)
+                            return body(&names)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    static func lexicons(_ result: OpaquePointer) -> LexiconPreferences? {
+        guard xc_lexicons_configured(result) != 0 else { return nil }
+        return LexiconPreferences(greek: xc_lexicons_greek(result).map { String(cString: $0) },
+            hebrew: xc_lexicons_hebrew(result).map { String(cString: $0) },
+            greekMorphNT: xc_lexicons_greek_morph_nt(result).map { String(cString: $0) },
+            greekMorphOT: xc_lexicons_greek_morph_ot(result).map { String(cString: $0) },
+            hebrewMorph: xc_lexicons_hebrew_morph(result).map { String(cString: $0) })
+    }
+    static func lexicalEntry(_ result: OpaquePointer) -> RenderedLexicalEntry {
+        RenderedLexicalEntry(kind: LexicalKind(rawValue: xc_lexical_entry_kind(result))!,
+            module: String(cString: xc_lexical_entry_module(result)!), type: String(cString: xc_lexical_entry_type(result)!),
+            value: String(cString: xc_lexical_entry_value(result)!), passage: String(cString: xc_lexical_entry_passage(result)!),
+            sourceReference: String(cString: xc_lexical_entry_source_reference(result)!),
+            entry: RenderedDictionaryEntry(module: String(cString: xc_lexical_entry_dictionary_module(result)!),
+                key: String(cString: xc_lexical_entry_dictionary_key(result)!), html: String(cString: xc_lexical_entry_dictionary_html(result)!)))
     }
     static func dictionaryEntry(_ result: OpaquePointer) -> RenderedDictionaryEntry {
         RenderedDictionaryEntry(module: String(cString: xc_dictionary_entry_module(result)!),

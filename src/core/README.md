@@ -199,3 +199,19 @@ mutation is introduced. Missing selected modules and wrong module types fail
 through the normal renderer. The worker copies settings/arguments and executes
 selection plus rendering FIFO. C/Swift bindings and native pane/hover/click
 history are pending; existing contextual dispatch is unchanged.
+
+
+## Lexical C/Swift adapters
+
+The worker C API explicitly enables core defaults or copies five nullable
+lexicon names. Its getter transfers an owned configured/unconfigured snapshot;
+name getters borrow strings until release and preserve NULL versus empty.
+Lexical previews transfer owned command/source/dictionary values once. Source
+module/reference may be empty for source-independent Strong's; Greek context
+validation and dictionary errors occur on the worker. URI/origin validation
+happens before submission. Snapshots survive request/worker teardown.
+Swift copies preferences and typed results into Sendable values, checks ABI
+origin/kind constants, and rejects embedded NUL preferences/source/URI before C
+submission. Defaults come from the core rather than a second Swift policy.
+Native preference panels, dictionary presentation, hover/click history and
+legacy-profile persistence remain pending.
