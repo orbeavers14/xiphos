@@ -10,6 +10,7 @@ extern "C" {
 typedef struct xc_reader xc_reader;
 typedef struct xc_entry xc_entry;
 typedef struct xc_note xc_note;
+typedef struct xc_dictionary_entry xc_dictionary_entry;
 typedef struct xc_reference_list xc_reference_list;
 typedef struct xc_session xc_session;
 typedef struct xc_chapter xc_chapter;
@@ -101,6 +102,8 @@ xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_req
 xc_status xc_worker_resolve_study_link_at(xc_worker *worker, uint64_t tab, const char *current_module, const char *current_reference, const char *uri, xc_request **out);
 xc_status xc_worker_resolve_study_link(xc_worker *worker, uint64_t tab, const char *current_module, const char *uri, xc_request **out);
 xc_status xc_worker_study_note_link(xc_worker *worker, uint64_t tab, const char *current_module, const char *uri, xc_request **out);
+/* Explicit dictionary preview with tab settings; module/key nonempty. No visit. */
+xc_status xc_worker_read_dictionary(xc_worker *worker, uint64_t tab, const char *module, const char *key, xc_request **out);
 /* Expression may be empty; context/module must be nonempty. No history visit. */
 xc_status xc_worker_read_reference_list(xc_worker *worker, uint64_t tab, const char *module, const char *expression, const char *context, xc_request **out);
 xc_status xc_worker_study_note(xc_worker *worker, uint64_t tab, const char *module, const char *reference, const char *identifier, xc_request **out);
@@ -116,6 +119,7 @@ void xc_request_release(xc_request *request);
  * Copies survive worker/request close. Tab ID is zero unless ready/tab result. */
 uint64_t xc_request_tab(const xc_request *request);
 xc_reference_list *xc_request_take_reference_list(xc_request *request);
+xc_dictionary_entry *xc_request_take_dictionary_entry(xc_request *request);
 xc_note *xc_request_take_note(xc_request *request);
 xc_entry *xc_request_take_entry(xc_request *request);
 xc_chapter *xc_request_take_chapter(xc_request *request);
@@ -237,6 +241,10 @@ const char *xc_reference_list_entry_html(const xc_reference_list *references, si
 int xc_reference_list_limited(const xc_reference_list *references);
 unsigned xc_reference_list_skipped(const xc_reference_list *references);
 void xc_reference_list_release(xc_reference_list *references);
+const char *xc_dictionary_entry_module(const xc_dictionary_entry *entry);
+const char *xc_dictionary_entry_key(const xc_dictionary_entry *entry);
+const char *xc_dictionary_entry_html(const xc_dictionary_entry *entry);
+void xc_dictionary_entry_release(xc_dictionary_entry *entry);
 const char *xc_note_module(const xc_note *note);
 const char *xc_note_reference(const xc_note *note);
 const char *xc_note_identifier(const xc_note *note);

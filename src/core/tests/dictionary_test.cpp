@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/worker.hpp"
+#include "xiphos/core/c_api.h"
+#include <chrono>
+#include <thread>
 #include "xiphos/core/engine_manager.hpp"
 #include <markupfiltmgr.h>
 #include <rawld.h>
@@ -10,6 +13,15 @@
 #include <stdexcept>
 using namespace xiphos::core;
 void check(bool condition, const char *message) { if (!condition) throw std::runtime_error(message); }
+xc_status wait(xc_request *request) {
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+  xc_status status;
+  while ((status = xc_request_poll(request)) == XC_PENDING) {
+    check(std::chrono::steady_clock::now() < deadline, "C dictionary request deadline");
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+  return status;
+}
 int main(int argc, char **argv) {
   try {
     check(argc == 2, "dictionary fixture root required"); const std::filesystem::path root(argv[1]);
@@ -85,6 +97,51 @@ int main(int argc, char **argv) {
       check(rejected, "closed dictionary tab rejected");
     }
     check(accepted.get().html == owned.html, "copied dictionary request/result survives worker shutdown");
+    xc_dictionary_entry *retained = nullptr;
+    xc_request *acceptedRequest = nullptr;
+    {
+      xc_worker *worker = nullptr; xc_request *request = nullptr;
+      check(xc_worker_open(path.c_str(), &worker) == XC_OK, "C dictionary worker");
+      check(xc_worker_create_tab(worker, &request) == XC_OK && wait(request) == XC_OK, "C dictionary tab");
+      const auto tab = xc_request_tab(request);
+      check(!xc_request_take_dictionary_entry(request), "C tab result cannot be dictionary");
+      xc_request_release(request);
+      check(xc_worker_set_module_engine_options(worker, tab, "DictionaryOne", XC_ENGINE_WORDS_IN_RED, &request) == XC_OK &&
+            wait(request) == XC_OK, "C dictionary settings"); xc_request_release(request);
+      std::string key = "G03056";
+      check(xc_worker_read_dictionary(worker, tab, "DictionaryOne", key.c_str(), &request) == XC_OK, "C dictionary submission"); key.clear();
+      check(!xc_request_take_dictionary_entry(request) && wait(request) == XC_OK && !xc_request_take_entry(request) &&
+            !xc_request_take_note(request), "C dictionary pending/type separation");
+      retained = xc_request_take_dictionary_entry(request);
+      check(retained && !xc_request_take_dictionary_entry(request) && std::string(xc_dictionary_entry_module(retained)) == "DictionaryOne" &&
+            !std::string(xc_dictionary_entry_key(retained)).empty() && std::string(xc_dictionary_entry_html(retained)) == redWord,
+            "C dictionary copied arguments, settings and take-once ownership"); xc_request_release(request);
+      for (const char *id : std::initializer_list<const char *>{nullptr, ""}) {
+        check(xc_worker_read_dictionary(worker, tab, id, "alpha", &request) == XC_INVALID_ARGUMENT && !request, "C invalid dictionary module");
+        check(xc_worker_read_dictionary(worker, tab, "DictionaryOne", id, &request) == XC_INVALID_ARGUMENT && !request, "C invalid dictionary key");
+      }
+      check(xc_worker_read_dictionary(worker, tab, "DictionaryOne", "alpha", nullptr) == XC_INVALID_ARGUMENT, "C missing dictionary output");
+      check(xc_worker_read_dictionary(worker, tab, "Missing", "alpha", &request) == XC_OK && wait(request) == XC_MODULE_NOT_FOUND &&
+            !xc_request_take_dictionary_entry(request), "C missing dictionary status"); xc_request_release(request);
+      check(xc_worker_read_dictionary(worker, tab, "OriginalBible", "John3:16", &request) == XC_OK && wait(request) == XC_INVALID_ARGUMENT,
+            "C verse module type rejected"); xc_request_release(request);
+      check(xc_worker_history(worker, tab, &request) == XC_OK && wait(request) == XC_OK, "C queue continues after dictionary failures");
+      auto *history = xc_request_take_history(request); check(history && xc_history_count(history) == 0, "C dictionary preserves history");
+      xc_history_release(history); xc_request_release(request);
+      check(xc_worker_read_dictionary(worker, tab, "DictionaryOne", "alpha", &acceptedRequest) == XC_OK, "C retained dictionary observer");
+      check(xc_worker_close_tab(worker, tab, &request) == XC_OK && wait(request) == XC_OK, "C dictionary close tab"); xc_request_release(request);
+      check(xc_worker_read_dictionary(worker, tab, "DictionaryOne", "alpha", &request) == XC_OK && wait(request) == XC_INVALID_ARGUMENT,
+            "C closed dictionary tab rejected"); xc_request_release(request);
+      xc_worker_close(worker);
+    }
+    check(wait(acceptedRequest) == XC_OK, "C accepted dictionary observed after worker close");
+    auto *afterClose = xc_request_take_dictionary_entry(acceptedRequest); xc_request_release(acceptedRequest);
+    check(afterClose && std::string(xc_dictionary_entry_html(afterClose)).find("café") != std::string::npos &&
+          std::string(xc_dictionary_entry_html(retained)) == redWord, "C dictionary handles survive worker/request teardown");
+    xc_dictionary_entry_release(afterClose); xc_dictionary_entry_release(retained);
+    check(!xc_request_take_dictionary_entry(nullptr) && !xc_dictionary_entry_module(nullptr) &&
+          !xc_dictionary_entry_key(nullptr) && !xc_dictionary_entry_html(nullptr), "C NULL dictionary handles safe");
+    xc_dictionary_entry_release(nullptr);
     std::cout << "Shared dictionary key/render/context/lifetime checks passed\n";
   } catch (const std::exception &error) { std::cerr << error.what() << '\n'; return 1; }
 }

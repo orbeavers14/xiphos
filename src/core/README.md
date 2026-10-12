@@ -146,6 +146,10 @@ legacy BackEnd::get_render_text. Results own module, post-render key and HTML.
 SWORD controls case handling, padding, Unicode and nearest/missing-key behavior;
 this API does not promise an exact-key search. Session/worker requests apply
 effective module settings and never visit Bible history. Preference/filter
-scopes and worker ownership match the existing reader. C/Swift bindings,
-preferred lexicon selection, Strong's/morphology dispatch and native dictionary
-pane remain pending.
+scopes and worker ownership match the existing reader. The asynchronous C API
+validates nonempty module/key before submission, reports engine/type failures at
+poll time and transfers an owned dictionary handle once. Getters borrow strings
+until handle release; the handle survives request/worker shutdown. Swift copies
+these fields into a Sendable RenderedDictionaryEntry through CoreWorker.
+Preferred lexicon selection, Strong's/morphology dispatch and the native
+dictionary pane remain pending.

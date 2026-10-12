@@ -1354,3 +1354,28 @@ Next: C/Swift binding, shared preferred-lexicon and Strong's/morphology dispatch
 then the established native dictionary pane. General books, dictionary browsing,
 full module corpus and all platform acceptance remain pending. No legacy
 retirement or full feature acceptance; estimate remains about 6%.
+
+## Dictionary adapters: locally checked, pane/dispatch pending
+
+Implemented 2026-10-11 on `modernization/dictionary-adapters`, based on the
+shared dictionary reader. The C API provides asynchronous typed dictionary
+requests and owned results; Swift copies module, post-render key and Unicode
+HTML into Sendable values. Lookup/render/option logic stays in the C++ core.
+Request and result lifetimes follow the existing worker contract; accepted
+requests can be observed after shutdown and transferred results outlive both
+request and worker. This adds bindings, not a completed dictionary UI.
+
+Validation: 23/23 local checks passed, including a new Swift adapter check.
+Focused address/undefined and thread checks passed 1/1 each; strict C++17
+compilation and C11 public-header checks passed. Tests cover real dictionary
+option output, separate tabs/modules, copied Unicode results, pending/wrong-type
+and take-once ownership, empty/missing/wrong-module errors, closed tabs, continued
+queue operation, unchanged history and results retained after shutdown. SWORD
+itself remains an uninstrumented dependency in sanitizer checks. No GitHub
+builds or installed user-data changes.
+
+Next: characterize preferred dictionary and Strong's/morphology dispatch in the
+legacy source, implement those shared policies, then add the native dictionary
+pane. Full dictionary browsing, general books, visual parity and platform
+acceptance remain pending. No legacy files retired; 0/38 feature groups fully
+accepted and the provisional overall estimate remains about 6%.

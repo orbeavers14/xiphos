@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+import Foundation
+@main struct DictionaryAdapterSmoke {
+    static func main() async throws {
+        guard CommandLine.arguments.count == 2 else { fatalError("dictionary fixture root required") }
+        let worker = try CoreWorker(root: CommandLine.arguments[1])
+        let first = try await worker.createTab(), second = try await worker.createTab()
+        try await worker.setModuleEngineOptions(tab: first, module: "DictionaryOne", options: [.wordsInRed])
+        try await worker.setModuleEngineOptions(tab: second, module: "DictionaryOne", options: [])
+        let red = try await worker.readDictionary(tab: first, module: "DictionaryOne", key: "G03056")
+        let plain = try await worker.readDictionary(tab: second, module: "DictionaryOne", key: "G03056")
+        guard red.module == "DictionaryOne", !red.key.isEmpty, red.html.contains("wordsOfJesus"),
+              !plain.html.contains("wordsOfJesus"), plain.html.contains("Original keyed word") else { fatalError("typed dictionary settings/isolation") }
+        let unicode = try await worker.readDictionary(tab: first, module: "DictionaryOne", key: "ALPHA")
+        let other = try await worker.readDictionary(tab: first, module: "DictionaryTwo", key: "alpha")
+        guard unicode.html.contains("café"), other.module == "DictionaryTwo", other.html.contains("DictionaryTwo") else { fatalError("dictionary Unicode/module context") }
+        for (module, key) in [("Missing", "alpha"), ("OriginalBible", "John3:16"), ("DictionaryOne", "")] {
+            do { _ = try await worker.readDictionary(tab: first, module: module, key: key); fatalError("invalid dictionary accepted") }
+            catch is CoreError { }
+        }
+        let history = try await worker.history(first)
+        guard history.count == 0 else { fatalError("dictionary preview changed history") }
+        try await worker.closeTab(first)
+        do { _ = try await worker.readDictionary(tab: first, module: "DictionaryOne", key: "alpha"); fatalError("closed dictionary tab accepted") }
+        catch is CoreError { }
+        try await worker.closeTab(second); await worker.shutdown()
+        guard unicode.html.contains("café"), red.html.contains("wordsOfJesus") else { fatalError("copied dictionary values after shutdown") }
+        print("Swift dictionary adapter checks passed")
+    }
+}
