@@ -113,6 +113,8 @@ if(BUILD_TESTING)
   add_test(NAME reader_model_profile COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --profile
     "${CMAKE_CURRENT_BINARY_DIR}/core/dictionary-fixture" "${CMAKE_CURRENT_BINARY_DIR}/profile-model-fixture")
   set_tests_properties(reader_model_profile PROPERTIES FIXTURES_REQUIRED dictionary_fixture)
+  add_test(NAME reader_model_hover COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --hover "${CMAKE_CURRENT_BINARY_DIR}/core/module-preferences-fixture")
+  set_tests_properties(reader_model_hover PROPERTIES FIXTURES_REQUIRED module_preferences_fixture)
   add_test(NAME reader_model_locale COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --locale "${CMAKE_CURRENT_BINARY_DIR}/core/dictionary-fixture")
   set_tests_properties(reader_model_locale PROPERTIES FIXTURES_REQUIRED dictionary_fixture ENVIRONMENT "LC_ALL=tr_TR.UTF-8")
   add_test(NAME reader_model_invalid_locale COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --invalid-locale "${CMAKE_CURRENT_BINARY_DIR}/core/dictionary-fixture")

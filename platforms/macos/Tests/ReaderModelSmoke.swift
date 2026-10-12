@@ -328,18 +328,18 @@ struct ReaderModelSmoke {
         try await idle(first)
         guard first.lexiconPreferences == changed, first.html == priorHTML, first.reference == "John 4:2" else { fatalError("busy preference action ignored") }
         let beforeHoverMessage = first.message
-        first.previewLexicalLink("xiphos.url?action=showStrongs&type=Greek&value=caf%C3%A9")
+        first.previewStudyLink("xiphos.url?action=showStrongs&type=Greek&value=caf%C3%A9")
         guard !first.isBusy else { fatalError("hover blocks reading actions") }
         try await previewIdle(first)
         guard first.informationPreview?.value == "café", first.informationPreview?.entry.module == "DictionaryOne",
               first.informationPreview?.sourceReference == "John 3:16", first.dictionaryEntry == nil, first.dictionaryHistory == nil,
               first.reference == "John 4:2", first.html == priorHTML, first.canBack == back, first.canForward == forward,
               second.informationPreview == nil else { fatalError("raw information hover preserves Bible/draft/dictionary/tab state") }
-        first.previewLexicalLink("xiphos.url?action=showMorph&type=Greek&value=alpha")
-        first.previewLexicalLink("xiphos.url?action=showStrongs&type=Greek&value=caf%C3%A9")
+        first.previewStudyLink("xiphos.url?action=showMorph&type=Greek&value=alpha")
+        first.previewStudyLink("xiphos.url?action=showStrongs&type=Greek&value=caf%C3%A9")
         try await previewIdle(first)
         guard first.informationPreview?.value == "café", first.informationPreview?.entry.module == "DictionaryOne" else { fatalError("latest hover owns publication") }
-        first.previewLexicalLink("https://example.invalid/xiphos.url?action=showStrongs&type=Greek&value=alpha")
+        first.previewStudyLink("https://example.invalid/xiphos.url?action=showStrongs&type=Greek&value=alpha")
         try await previewIdle(first)
         guard first.informationPreview?.value == "café", first.message == beforeHoverMessage else { fatalError("failed hover retains preview/status") }
         first.followLink("xiphos.url?action=showStrongs&type=Greek&value=alpha")
@@ -410,7 +410,7 @@ struct ReaderModelSmoke {
         first.closeLexicalPreview()
         guard first.dictionarySelection == nil, first.dictionaryEntry == nil, first.dictionaryChoices == nil else { fatalError("close direct dictionary") }
         guard first.informationPreview?.value == "café" else { fatalError("dictionary close retains information preview") }
-        first.previewLexicalLink("xiphos.url?action=showMorph&type=Greek&value=alpha")
+        first.previewStudyLink("xiphos.url?action=showMorph&type=Greek&value=alpha")
         first.close(); try await Task.sleep(nanoseconds: 50_000_000)
         guard first.informationPreview == nil, !first.isPreviewLoading else { fatalError("closed window drops late hover") }
         second.applyLexiconPreferences(changed); second.close()
@@ -467,15 +467,15 @@ struct ReaderModelSmoke {
         first.saveLexiconProfile(path: invalid.path); try await idle(first)
         guard first.message.contains("Unable to save lexicon choices"), try Data(contentsOf: invalid) == malformedBytes,
               first.lexiconPreferences == imported, first.dictionaryHistory == dictionary else { fatalError("friendly save error preserves state/file") }
-        first.previewLexicalLink("xiphos.url?action=showStrongs&type=Greek&value=03056"); try await previewIdle(first)
+        first.previewStudyLink("xiphos.url?action=showStrongs&type=Greek&value=03056"); try await previewIdle(first)
         guard first.informationPreview?.entry.module == "DictionaryOne" else { fatalError("profile drives shared lexical hover") }
         let replacement = original.replacingOccurrences(of: "<greek>DictionaryOne</greek>", with: "<greek>DictionaryTwo</greek>")
         try Data(replacement.utf8).write(to: source)
-        first.previewLexicalLink("xiphos.url?action=showStrongs&type=Greek&value=alpha")
+        first.previewStudyLink("xiphos.url?action=showStrongs&type=Greek&value=alpha")
         first.importLexiconProfile(path: source.path); try await idle(first); try await previewIdle(first)
         guard first.lexiconPreferences?.greek == "DictionaryTwo", first.informationPreview?.value == "03056",
               first.reference == "John 4:2", first.html == html else { fatalError("profile import invalidates late hover publication") }
-        first.previewLexicalLink("xiphos.url?action=showStrongs&type=Greek&value=alpha"); try await previewIdle(first)
+        first.previewStudyLink("xiphos.url?action=showStrongs&type=Greek&value=alpha"); try await previewIdle(first)
         guard first.informationPreview?.entry.module == "DictionaryTwo" else { fatalError("import retains installed names regardless of picker role metadata") }
         let beforeClose = second.lexiconPreferences, beforeMessage = second.message
         second.importLexiconProfile(path: source.path); second.close()
@@ -486,8 +486,64 @@ struct ReaderModelSmoke {
         first.close(); await worker.shutdown()
         print("Native profile controls/state/isolation/failure checks passed")
     }
+    @MainActor static func studyHovers(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let first = ReaderModel(worker: worker, startupError: nil), second = ReaderModel(worker: worker, startupError: nil)
+        try await idle(first); try await idle(second)
+        first.selection = "OptionOther"; first.reference = "John 3:23"; first.read(); try await idle(first)
+        first.reference = "John 4:2"
+        let html = first.html, rendered = first.renderedReference, options = first.engineOptions
+        let back = first.canBack, forward = first.canForward, status = first.message
+        let body = "passagestudy.jsp?action=showNote&type=n&value=1&module=OptionOther&passage=John3%3A19"
+        let xref = "passagestudy.jsp?action=showNote&type=x&value=1&module=OptionOther&passage=John3%3A20"
+        guard first.crossReferencesInVerseList, second.crossReferencesInVerseList else { fatalError("native preview preference comes from core default") }
+        first.previewStudyLink(body)
+        guard !first.isBusy else { fatalError("body hover blocks reading controls") }
+        try await previewIdle(first)
+        guard first.informationNote?.reference == "John 3:19", first.informationNote?.html.contains("Original other note") == true,
+              first.informationPreview == nil, first.studyNote == nil, second.informationNote == nil,
+              first.html == html, first.renderedReference == rendered, first.reference == "John 4:2",
+              first.engineOptions == options, first.canBack == back, first.canForward == forward, first.message == status else { fatalError("native body information destination/source/state/isolation") }
+        let retained = first.informationNote?.html
+        first.previewStudyLink("passagestudy.jsp?action=showRef&type=scripRef&value=16-19&module=OptionOther"); try await previewIdle(first)
+        first.previewStudyLink("https://example.invalid/passagestudy.jsp"); try await previewIdle(first)
+        guard first.informationNote?.html == retained, first.referencePreview == nil, first.message == status else { fatalError("no-presentation/invalid hover retains preview/status") }
+        first.previewStudyLink(xref); try await previewIdle(first)
+        guard first.referencePreview?.entries.count == 5, first.referencePreview?.context == "John 3:23",
+              first.informationNote?.html == retained, first.studyNote == nil, first.reference == "John 4:2",
+              first.html == html, first.canBack == back, first.canForward == forward, second.referencePreview == nil else { fatalError("xref sidebar hover retains last information and committed source") }
+        first.closeStudyNote()
+        first.setCrossReferencesInVerseList(false)
+        first.setCrossReferencesInVerseList(true) // busy toggle is ignored
+        try await idle(first)
+        guard !first.crossReferencesInVerseList, second.crossReferencesInVerseList,
+              first.reference == "John 4:2", first.html == html else { fatalError("per-window core preference/busy/pane isolation") }
+        first.previewStudyLink(xref); try await previewIdle(first)
+        guard first.informationNote?.type == "crossReference", first.informationNote?.html.contains("Back to John 3:23") == true,
+              first.referencePreview == nil, first.reference == "John 4:2", first.html == html else { fatalError("xref information-link preference destination") }
+        let links = first.informationNote?.html
+        first.previewStudyLink(body); first.previewStudyLink(xref); try await previewIdle(first)
+        guard first.informationNote?.html == links else { fatalError("latest note hover owns publication") }
+        first.followLink("sword:///John%203:23", currentModule: first.informationNote?.module)
+        try await idle(first)
+        guard first.reference == "John 3:23", first.selection == "OptionOther" else { fatalError("information return links use note module") }
+        first.reference = "John 4:2"
+        let newHTML = first.html, newRendered = first.renderedReference
+        first.previewStudyLink(body)
+        first.setCrossReferencesInVerseList(true); try await idle(first); try await previewIdle(first)
+        guard first.informationNote?.html == links, first.crossReferencesInVerseList,
+              first.html == newHTML, first.renderedReference == newRendered, first.reference == "John 4:2" else { fatalError("preference action invalidates pending hover publication") }
+        second.previewStudyLink(body); second.close()
+        try await Task.sleep(nanoseconds: 50_000_000)
+        guard second.informationNote == nil, !second.isPreviewLoading else { fatalError("closed window drops body result") }
+        first.close(); await worker.shutdown()
+        print("Native main note/reference hover destinations and guarded preference checks passed")
+    }
     @MainActor static func main() async throws {
         let selectedLocale = initializePreviewLocale()
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--hover" {
+            try await studyHovers(root: CommandLine.arguments[2]); return
+        }
         if CommandLine.arguments.count == 4, CommandLine.arguments[1] == "--profile" {
             try await profiles(root: CommandLine.arguments[2], profileRoot: CommandLine.arguments[3]); return
         }

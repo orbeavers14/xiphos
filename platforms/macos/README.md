@@ -260,9 +260,10 @@ input and both histories, and does not disable reading controls while waiting.
 Late/stale/closed results are discarded; failed/unsupported hovers retain the
 previous preview and status. The trusted event transport runs in WebKit's
 isolated client world, checks main-frame payloads, and keeps module JavaScript
-disabled. Parsing/selection/rendering remain in C++. This currently covers
-lexical links in the main reader/information view; all-link and keyboard/real-
-module/platform acceptance is pending. See [hover contracts](../../doc/modernization/hover-workflows.md).
+disabled. Parsing/selection/rendering remain in C++. This initially covered
+lexical links; main reader/information note and cross-reference hovers are now
+connected as described below. All-link and keyboard/real-module/platform
+acceptance is pending. See [hover contracts](../../doc/modernization/hover-workflows.md).
 
 ## Explicit lexicon profile adapter
 
@@ -292,5 +293,17 @@ note, sidebar-reference-list and lexical results. Cross-reference mode is read/
 updated through the core-owned per-tab preference. `swift_hover_adapter` checks
 the strict regular-verse fixture domain, both destinations, order/duplicates,
 raw lexical values, copied lifetimes, invalid/closed cases and history isolation.
-The existing pointer transport is still lexical-only at this adapter checkpoint;
+The main reader/information pointer transport now calls this typed service;
 no raw link/type parsing or routing policy is added in Swift.
+
+The native Information Preview now holds regular-verse footnote bodies or
+lexical results. Cross-reference hovers follow Preferences > Cross-references
+in verse list: enabled publishes the ordered sidebar list, disabled publishes
+link-only information with Back to the committed source. The preference is
+core-owned and currently in memory per window; general XML settings/restoration
+remain pending. Last information remains on pointer leave and list display;
+no-presentation/failed hovers retain preview/status. Reading/profile/preference
+actions invalidate pending publication; closed windows drop late results.
+`reader_model_hover` and a disposable GUI run validate both destinations and
+state retention. Click behavior, sidebar/dictionary-definition/dialog hover,
+heading/fallback cases, localization and full pane/platform parity remain gates.

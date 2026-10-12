@@ -44,13 +44,14 @@ No milestone has official acceptance yet.
   separate dictionary Back/Forward/Clear controls and nine-key chooser.
   Explicit XML lexicon import/save uses native file pickers while retaining
   unavailable choices, other settings and reading/dictionary state.
-  Strong's/morphology hover results now use a separate information sidebar,
-  retain the last preview and leave reading input/histories unchanged.
+  Strong's/morphology and footnote hover results use a retained information sidebar.
+  Cross-reference hovers follow a core-owned per-window list/information setting.
+  Reading input and histories stay unchanged; full hover/pane parity is pending.
 - Legacy app delegates rendering, selected policy/parser/selection seams,
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
 
-Current local suite: **43 checks**. The shared Unicode click-key utility reuses
+Current local suite: **44 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.
@@ -126,7 +127,7 @@ inclusion in this public fork.
 | Unicode click policy | Shared/actual legacy casing agrees over 4,448,324 comparisons in four locales; native main clicks normalize/record; raw dialog/hover semantics retained | Unicode database/version comparisons, real-module workflows and forced-locale preference import |
 | Native environment locale | 31/31 suite then 3/3 focused fixture/Turkish/invalid-locale checks; 32 checks now defined | Saved locale selection, translation resources and other native host startup |
 
-The full local suite now passes **43/43**. Complete main note/reference callbacks
+The full local suite now passes **44/44**. Complete main note/reference callbacks
 also agree over 96,792 frozen/actual ordered comparisons, including preference
 routing, heading setup and early guards. The legacy handler now avoids its
 early-return GString allocation without changing callback traces. This harness
@@ -140,7 +141,8 @@ explicit no-presentation markers. The per-tab list preference defaults enabled.
 Generated real-module checks cover both destinations, copied/scalar lifetimes,
 history isolation and errors. The typed Swift adapter now copies all four result
 kinds and the core-owned preference, with fixture/lifetime/failure checks.
-Native pointer integration remains next;
+Native main/information pointer transport now publishes note bodies, ordered
+sidebar references or information links with a guarded preference control;
 heading/short-passage/fallback/status/dialog behavior and click routing remain
 separate acceptance gates. Complete main lexical click/hover
 handlers agree over **135,258 frozen/actual callback comparisons**; strict
@@ -179,6 +181,14 @@ choices (including unavailable dictionaries), native save to a new file and a
 visible malformed-file error while John3:16, the John4:2 draft and disabled
 history controls stayed intact. No installed user profile was accessed.
 
+Native note-hover model checks cover both destinations, no-op/failed retention,
+latest-result ownership, per-window preference/busy guards, pending-result
+invalidation, return-link navigation and closed publication. A disposable GUI
+run confirmed footnote body retention, five ordered/repeated references in the
+sidebar, the alternate link-only information mode and Back to the committed
+verse. Reading drafts/panes/history controls stayed intact until explicit
+return-link navigation. No installed profile or privacy setting changed.
+
 Latest code milestones: [shared Unicode helper #54](https://github.com/orbeavers14/xiphos/pull/54),
 [legacy adoption #55](https://github.com/orbeavers14/xiphos/pull/55),
 [native click/origin policy #56](https://github.com/orbeavers14/xiphos/pull/56),
@@ -193,7 +203,8 @@ Latest code milestones: [shared Unicode helper #54](https://github.com/orbeavers
 [native profile controls #67](https://github.com/orbeavers14/xiphos/pull/67),
 [note callback characterization #68](https://github.com/orbeavers14/xiphos/pull/68),
 [shared note policy #69](https://github.com/orbeavers14/xiphos/pull/69),
-[owned main-hover service #70](https://github.com/orbeavers14/xiphos/pull/70).
+[owned main-hover service #70](https://github.com/orbeavers14/xiphos/pull/70),
+[typed hover adapter #71](https://github.com/orbeavers14/xiphos/pull/71).
 Scoped address/undefined and thread checks cover shared ownership/state changes;
 strict C++11/C++17/C11 checks cover the corresponding seams. These are not full
 SDK instrumentation or a leak audit. See each PR for its exact checks and scope.
