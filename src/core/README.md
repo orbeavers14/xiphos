@@ -215,3 +215,12 @@ origin/kind constants, and rejects embedded NUL preferences/source/URI before C
 submission. Defaults come from the core rather than a second Swift policy.
 Native preference panels, dictionary presentation, hover/click history and
 legacy-profile persistence remain pending.
+
+
+The copied catalog now exposes dictionary classification and declared lexicon
+roles. Classification follows the legacy dictionary type and excludes
+DailyDevotion, with SWLD validation; role matching uses the exact first SWORD
+Feature entry (GreekDef/HebrewDef/GreekParse/HebrewParse). It does not union all
+Feature entries or promise effective lookup compatibility. Both synchronous
+and worker Swift adapters expose the same copied values. Native selection
+controls can use these flags without accessing SWORD or duplicating matching.

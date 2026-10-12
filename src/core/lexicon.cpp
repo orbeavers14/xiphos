@@ -42,3 +42,12 @@ const char *xiphos_core_select_lexicon(int origin, int action, const char *type,
   }
   return selected;
 }
+
+unsigned xiphos_core_lexicon_role(const char *feature) {
+  if (!feature) return 0;
+  if (std::strcmp(feature, "GreekDef") == 0) return XIPHOS_LEXICON_GREEK_DEF;
+  if (std::strcmp(feature, "HebrewDef") == 0) return XIPHOS_LEXICON_HEBREW_DEF;
+  if (std::strcmp(feature, "GreekParse") == 0) return XIPHOS_LEXICON_GREEK_PARSE;
+  if (std::strcmp(feature, "HebrewParse") == 0) return XIPHOS_LEXICON_HEBREW_PARSE;
+  return 0;
+}

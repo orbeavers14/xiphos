@@ -73,7 +73,9 @@ actor CoreWorker {
                 language: String(cString: xc_catalog_language(catalog, index)!),
                 options: ModuleOptionInfo(declared: EngineOptionFlags(rawValue: xc_catalog_declared_engine_flags(catalog, index)),
                     hasHeadings: xc_catalog_has_headings(catalog, index) != 0,
-                    transliterationAvailable: xc_catalog_transliteration_available(catalog, index) != 0))
+                    transliterationAvailable: xc_catalog_transliteration_available(catalog, index) != 0),
+                isDictionary: xc_catalog_is_dictionary(catalog, index) != 0,
+                lexiconRoles: LexiconRoles(rawValue: xc_catalog_lexicon_roles(catalog, index)))
         }
     }
     func createTab() async throws -> UInt64 {

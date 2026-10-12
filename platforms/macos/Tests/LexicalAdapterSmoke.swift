@@ -8,7 +8,20 @@ import XiphosCore
               LexiconOrigin.dialog.rawValue == Int32(XIPHOS_LEXICON_DIALOG.rawValue),
               LexicalKind.strongs.rawValue == Int32(XIPHOS_LEXICON_STRONGS.rawValue),
               LexicalKind.morphology.rawValue == Int32(XIPHOS_LEXICON_MORPHOLOGY.rawValue) else { fatalError("lexical ABI constants") }
+        let synchronousModules = try { let reader = try CoreReader(root: CommandLine.arguments[1]); return reader.modules }()
         let worker = try CoreWorker(root: CommandLine.arguments[1])
+        let modules = try await worker.modules()
+        for module in modules {
+            guard let synchronous = synchronousModules.first(where: { $0.id == module.id }),
+                  synchronous.isDictionary == module.isDictionary, synchronous.lexiconRoles == module.lexiconRoles else { fatalError("synchronous/worker catalog metadata") }
+        }
+        let roles: [String: LexiconRoles] = ["DictionaryOne": .greekDefinition, "DictionaryTwo": .hebrewDefinition,
+            "MorphGreek": .greekMorphology, "MorphHebrew": .hebrewMorphology, "GenericDictionary": [], "CaseFeature": []]
+        for (id, role) in roles {
+            guard let module = modules.first(where: { $0.id == id }), module.isDictionary, module.lexiconRoles == role else { fatalError("copied dictionary role metadata") }
+        }
+        guard let devotional = modules.first(where: { $0.id == "OriginalDevotional" }), !devotional.isDictionary, devotional.lexiconRoles.isEmpty,
+              let bible = modules.first(where: { $0.id == "OriginalBible" }), !bible.isDictionary, bible.lexiconRoles.isEmpty else { fatalError("non-dictionary feature filtering") }
         let first = try await worker.createTab(), second = try await worker.createTab()
         guard try await worker.lexiconPreferences(tab: first) == nil else { fatalError("lexicons should start unconfigured") }
         try await worker.enableLexiconPreferences(tab: first)

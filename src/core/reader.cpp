@@ -38,8 +38,12 @@ Reader::Reader(const std::string &root) : impl_(std::make_unique<Impl>()) {
   for (const auto &item : impl_->manager->Modules) {
     auto &m = *item.second;
     const char *language = m.getConfigEntry("Lang");
+    const char *feature = m.getConfigEntry("Feature");
+    const bool dictionary = std::string(m.getType()) == "Lexicons / Dictionaries" && dynamic_cast<sword::SWLD *>(&m) &&
+      (!feature || std::string(feature) != "DailyDevotion");
     impl_->modules.push_back({m.getName(), m.getDescription(), m.getType(),
-                             language ? language : "", module_options(m), transliteration_available});
+                             language ? language : "", module_options(m), transliteration_available, dictionary,
+                             dictionary ? xiphos_core_lexicon_role(feature) : 0});
   }
 }
 Reader::~Reader() = default;

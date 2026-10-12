@@ -4,6 +4,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+typedef enum {
+    XIPHOS_LEXICON_GREEK_DEF = 1u << 0,
+    XIPHOS_LEXICON_HEBREW_DEF = 1u << 1,
+    XIPHOS_LEXICON_GREEK_PARSE = 1u << 2,
+    XIPHOS_LEXICON_HEBREW_PARSE = 1u << 3
+} XiphosLexiconRole;
+/* Exact first Feature entry matching, like the legacy preferences selector.
+ * Does not establish dictionary type or effective lookup compatibility. */
+unsigned xiphos_core_lexicon_role(const char *feature);
 typedef enum { XIPHOS_LEXICON_MAIN = 0, XIPHOS_LEXICON_DIALOG = 1 } XiphosLexiconOrigin;
 typedef enum { XIPHOS_LEXICON_STRONGS = 0, XIPHOS_LEXICON_MORPHOLOGY = 1 } XiphosLexiconAction;
 typedef struct {

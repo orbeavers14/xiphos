@@ -159,3 +159,12 @@ nullable/empty names remain distinct. The adapter rejects embedded NULs and
 owns source/kind/raw value plus dictionary key/HTML after shutdown. Fixture
 checks cover OT/NT context and separate tabs. Native preference/pane/hover/click
 workflows and lexicon profile persistence are the next integration work.
+
+
+The copied catalog now exposes dictionary classification and declared lexicon
+roles. Classification follows the legacy dictionary type and excludes
+DailyDevotion, with SWLD validation; role matching uses the exact first SWORD
+Feature entry (GreekDef/HebrewDef/GreekParse/HebrewParse). It does not union all
+Feature entries or promise effective lookup compatibility. Both synchronous
+and worker Swift adapters expose the same copied values. Native selection
+controls can use these flags without accessing SWORD or duplicating matching.
