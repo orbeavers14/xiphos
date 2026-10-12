@@ -89,3 +89,16 @@ are scoped implementation evidence. The following remain required:
 
 No legacy source is retired by this slice. Tests and source provenance remain
 required even after individual integration milestones are checked off.
+
+## Chapter traversal characterization
+
+`commentary_positions` now copies the main legacy iterator frontier: start at
+verse 1, advance the SWORD module with consecutive-link skipping, and stop at
+the book/chapter/error boundary. It restores the prior key identity, key flags
+and skip-links setting. `core_commentary_positions` compares it with frozen
+CrossWire c9976a8 statements and statements extracted from the current
+`GTKEntryDisp::displayByChapter` source at configure time. Generated linked/sparse
+RawCom data covers missing verses, linked sections, chapter/book boundaries and
+empty OT content. The normal and address/undefined checks pass. This characterizes
+iterator statements only, not the complete renderer/cache/headings or selection
+anchor presentation. The native pane still shows a single commentary verse.

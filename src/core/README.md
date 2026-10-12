@@ -432,3 +432,8 @@ Paired history restoration also supports unpaired standalone commentary entries
 recorded through the older single-entry API. `xc_history_commentary` reports the
 current first-recorded commentary name (empty for an unpaired location, NULL for
 empty history). This does not change the strict types required by paired visits.
+
+`commentary_positions` is a C++11 traversal helper characterized against frozen
+and current main commentary iterator statements. It restores key/skip state
+and returns owned references while skipping consecutive linked entries. It does
+not yet provide commentary chapter rendering, headings or personal-module edits.
