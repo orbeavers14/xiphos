@@ -256,6 +256,31 @@ std::future<Entry> StudyWorker::read_entry(StudyTab tab, std::string module, std
     return s.tab(tab).read_entry(module, reference);
   });
 }
+std::future<StudyPassage> StudyWorker::read_passage(StudyTab tab, std::string module, std::string commentary,
+                                                  std::string reference) {
+  return impl_->submit([tab, module = std::move(module), commentary = std::move(commentary),
+                        reference = std::move(reference)](Impl::State &s) {
+    return s.tab(tab).read_passage(module, commentary, reference);
+  });
+}
+std::future<StudyPassage> StudyWorker::visit_passage(StudyTab tab, std::string module, std::string commentary,
+                                                   std::string reference) {
+  return impl_->submit([tab, module = std::move(module), commentary = std::move(commentary),
+                        reference = std::move(reference)](Impl::State &s) {
+    return s.tab(tab).visit_passage(module, commentary, reference);
+  });
+}
+std::future<StudyPassage> StudyWorker::navigate_passage(StudyTab tab, int direction) {
+  return impl_->submit([tab, direction](Impl::State &s) { return s.tab(tab).navigate_passage(direction); });
+}
+std::future<StudyPassage> StudyWorker::navigate_passage_chapter(StudyTab tab, std::string module,
+                                                            std::string commentary, std::string reference,
+                                                            int direction) {
+  return impl_->submit([tab, module = std::move(module), commentary = std::move(commentary),
+                        reference = std::move(reference), direction](Impl::State &s) {
+    return s.tab(tab).navigate_passage_chapter(module, commentary, reference, direction);
+  });
+}
 std::future<Entry> StudyWorker::visit(StudyTab tab, std::string module, std::string reference) {
   return impl_->submit([tab, module = std::move(module), reference = std::move(reference)](Impl::State &s) {
     return s.tab(tab).visit(module, reference);

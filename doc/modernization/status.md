@@ -56,6 +56,16 @@ study-pane composition/commentary workflow before broader native feature claims.
 
 ## Current locally checked scope
 
+The first commentary synchronization seam now returns an owned Bible/commentary
+pair from `StudySession` and the FIFO worker. Visits record both modules;
+Back/Forward restore the first recorded pair under legacy reference-only history
+rules. A generated original-prose RawCom fixture validates normalized references,
+chapter stepping, optional commentary, failed selection without history changes,
+and tab isolation. The full local suite passes 50/50. This is a core API slice:
+native pane integration, commentary headings/chapter presentation, detached
+windows, companion modules and representative versification acceptance remain
+pending. The engineering estimate and fully accepted parity count stay unchanged.
+
 - Shared C++ module/verse/chapter reading, Bible history, rendering options,
   engine-preference import/save, note and reference-list previews.
 - Shared lexical command parsing, characterized Greek/Hebrew selection and
@@ -73,7 +83,7 @@ study-pane composition/commentary workflow before broader native feature claims.
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
 
-Current local suite: **49 checks**. The shared Unicode click-key utility reuses
+Current local suite: **50 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.

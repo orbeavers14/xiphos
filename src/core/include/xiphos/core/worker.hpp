@@ -69,6 +69,11 @@ public:
   std::future<StudyNote> study_note_link(StudyTab tab, std::string current_module, std::string uri);
   std::future<StudyNote> study_note(StudyTab tab, std::string module, std::string reference, std::string identifier);
   std::future<Entry> read_entry(StudyTab tab, std::string module, std::string reference);
+  std::future<StudyPassage> read_passage(StudyTab tab, std::string module, std::string commentary, std::string reference);
+  std::future<StudyPassage> visit_passage(StudyTab tab, std::string module, std::string commentary, std::string reference);
+  std::future<StudyPassage> navigate_passage(StudyTab tab, int direction);
+  std::future<StudyPassage> navigate_passage_chapter(StudyTab tab, std::string module, std::string commentary,
+                                                  std::string reference, int direction);
   std::future<Entry> visit(StudyTab tab, std::string module, std::string reference);
   std::future<Entry> navigate(StudyTab tab, int direction);
   std::future<Entry> navigate_chapter(StudyTab tab, std::string module, std::string reference, int direction);

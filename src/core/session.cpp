@@ -137,6 +137,38 @@ std::optional<EngineOptions> StudySession::module_engine_options(const std::stri
   if (module_preferences_) return engine_options_from_preferences({});
   return std::nullopt;
 }
+StudyPassage StudySession::read_passage(const std::string &module, const std::string &commentary,
+                                        const std::string &reference) {
+  auto require_type = [&](const std::string &id, const char *type) {
+    require_module(id);
+    for (const auto &installed : reader_.modules())
+      if (installed.id == id && installed.type != type)
+        throw std::invalid_argument("Module has the wrong study-pane type");
+  };
+  require_type(module, "Biblical Texts");
+  if (!commentary.empty()) require_type(commentary, "Commentaries");
+  StudyPassage result{module, commentary, read_entry(module, reference), std::nullopt};
+  if (!commentary.empty()) result.commentary = read_entry(commentary, result.text.reference);
+  return result;
+}
+StudyPassage StudySession::visit_passage(const std::string &module, const std::string &commentary,
+                                         const std::string &reference) {
+  auto result = read_passage(module, commentary, reference);
+  // Render both panes before committing history. Preserve the characterized
+  // reference-only deduplication, including its first recorded module pair.
+  history_.visit({result.text.reference, module, commentary});
+  return result;
+}
+StudyPassage StudySession::navigate_passage(int direction) {
+  const auto &location = history_.destination(direction);
+  auto result = read_passage(location.module, location.commentary, location.reference);
+  history_.move(direction);
+  return result;
+}
+StudyPassage StudySession::navigate_passage_chapter(const std::string &module, const std::string &commentary,
+                                                    const std::string &reference, int direction) {
+  return visit_passage(module, commentary, reader_.adjacent_chapter(module, reference, direction));
+}
 Entry StudySession::visit(const std::string &module, const std::string &reference) {
   auto entry = read_entry(module, reference);
   history_.visit({entry.reference, module, ""});

@@ -8,6 +8,13 @@
 namespace xiphos::core {
 // One instance per study tab/window. Calls and lifetime must be serialized.
 // The reader must outlive this C++ session; C ABI sessions retain their reader.
+// Owned synchronized pane snapshot. Commentary uses the normalized Bible
+// reference; each module still resolves that reference in its own versification.
+struct StudyPassage {
+  std::string module, commentary_module;
+  Entry text;
+  std::optional<Entry> commentary;
+};
 class StudySession {
 public:
   explicit StudySession(Reader &reader) : reader_(reader) {}
@@ -37,6 +44,13 @@ public:
   StudyNote study_note_metadata(const std::string &module, const std::string &reference,
                                  const std::string &identifier);
   Entry read_entry(const std::string &module, const std::string &reference);
+  StudyPassage read_passage(const std::string &module, const std::string &commentary,
+                            const std::string &reference);
+  StudyPassage visit_passage(const std::string &module, const std::string &commentary,
+                             const std::string &reference);
+  StudyPassage navigate_passage(int direction);
+  StudyPassage navigate_passage_chapter(const std::string &module, const std::string &commentary,
+                                        const std::string &reference, int direction);
   Entry visit(const std::string &module, const std::string &reference);
   Entry navigate(int direction);
   Entry navigate_chapter(const std::string &module, const std::string &reference, int direction);

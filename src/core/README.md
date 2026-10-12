@@ -408,3 +408,16 @@ checks pass. This commits previously temporary adapter evidence for repeatable
 CI; full navigation/GTK display/runtime and oversized-invalid legacy input are
 separate gates. Keep the frozen license/attribution and regression harness after
 acceptance.
+
+### Synchronized study passage (initial seam)
+
+`read_passage`, `visit_passage`, `navigate_passage`, and
+`navigate_passage_chapter` return an owned `StudyPassage` containing the Bible
+module, normalized Bible entry and optional commentary module/entry. An empty
+commentary name requests no commentary. Bible/Commentaries types are validated;
+both renders must succeed before visit/navigation changes history. Each render
+uses its module-specific engine preferences. Reference-only history deduplication
+retains the first recorded module pair, matching the characterized legacy rule.
+Existing single-entry APIs retain their behavior; hosts should use the paired
+commands consistently when implementing synchronized panes. No locked-module,
+companion-module, commentary chapter/headings or detached-window parity is claimed.
