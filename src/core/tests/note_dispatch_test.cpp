@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include <glib.h>
+#include "xiphos/core/note_presentation.h"
 #include <cstring>
 #include <iostream>
 #include <map>

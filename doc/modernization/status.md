@@ -75,7 +75,7 @@ No milestone has official acceptance yet.
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
 
-Current local suite: **40 checks**. The shared Unicode click-key utility reuses
+Current local suite: **41 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.
@@ -151,11 +151,15 @@ inclusion in this public fork.
 | Unicode click policy | Shared/actual legacy casing agrees over 4,448,324 comparisons in four locales; native main clicks normalize/record; raw dialog/hover semantics retained | Unicode database/version comparisons, real-module workflows and forced-locale preference import |
 | Native environment locale | 31/31 suite then 3/3 focused fixture/Turkish/invalid-locale checks; 32 checks now defined | Saved locale selection, translation resources and other native host startup |
 
-The full local suite now passes **40/40**. Complete main note/reference callbacks
+The full local suite now passes **41/41**. Complete main note/reference callbacks
 also agree over 96,792 frozen/actual ordered comparisons, including preference
 routing, heading setup and early guards. The legacy handler now avoids its
 early-return GString allocation without changing callback traces. This harness
-uses backend/presentation shims and is not full GTK/SWORD interaction acceptance. Complete main lexical click/hover
+uses backend/presentation shims and is not full GTK/SWORD interaction acceptance.
+The legacy main handler now delegates destination/precedence decisions to a
+C++11 CoreOptions helper with a C11 header. The same 96,792 traces agree after
+adoption, twenty direct C boundary cases pass, and the native-disabled seam
+build passes. Native note-hover integration remains next. Complete main lexical click/hover
 handlers agree over **135,258 frozen/actual callback comparisons**; strict
 C++11 and focused address/undefined checks cover that harness. The
 [hover contract inventory](hover-workflows.md) records destinations, retention

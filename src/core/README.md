@@ -334,3 +334,14 @@ transfers one configured snapshot through `xc_request_take_lexicons`, while
 save completes without a snapshot. Releasing an accepted observer does not
 cancel file work; shutdown drains it. macOS selected-file controls now delegate
 through the typed adapter; full profile/restoration/platform parity is pending.
+
+## Main note presentation policy
+
+`xiphos_core_note_presentation` in CoreOptions preserves main-reader tag
+precedence and returns distinct body-hover, clicked-reference-list, hovered-
+reference-list, hovered-reference-link or no-presentation destinations. It is
+C++11 compatible with a C11 header and is already used by legacy main/url.cc.
+It does not retrieve notes, alter source/module state or implement dialog rules.
+The complete callback oracle retains nullable refList distinctions and heading
+setup; frontends must not merge these branches or reimplement tag matching.
+Native note hover is pending at this extraction checkpoint.

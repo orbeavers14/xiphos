@@ -194,3 +194,13 @@ Cross-reference hover in list mode calls the sidebar even for a null attribute;
 the click branch calls it only for a nonnull attribute. Information-link mode
 always appends Back to the committed current verse. Preserve these distinctions
 when extracting policy rather than merging apparently similar branches.
+
+The main note presentation decision now lives in the C++11 CoreOptions helper
+`xiphos_core_note_presentation`, with a C11 header. The legacy handler delegates
+only its destination/precedence decisions; source setup, retrieval, nullable
+attribute handling and generated HTML remain in their existing branches. All
+96,792 complete frozen/current traces still agree after adoption. Twenty direct
+C boundary/precedence cases cover null/empty/Unicode tags and nonzero flags.
+The default legacy build includes the helper without the C++17 native core.
+This is the policy seam for native note hover; the native hover transport is
+still lexical-only at this checkpoint. Detached-dialog policy is separate.
