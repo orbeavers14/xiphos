@@ -61,7 +61,11 @@ The [image/font cleanup seam](html-cleanup-workflows.md) now uses owned C++11
 helpers shared with the legacy wrappers. Complete frozen/current functions agree
 across 27,648 bounded output/diagnostic comparisons. Strict C++11 and the native-
 disabled helper build pass, as do focused address/undefined and thread checks.
-Native preference/application, remaining cleanup and full GTK runtime are pending.
+Shared tri-state Image Content/Respect Font Faces decoding and combined import/
+save now match the complete frozen/current initializer across 200 combinations.
+Known settings persist; unknown preserves existing target declarations. Focused
+address/undefined and thread checks pass 1/1 each. Native controls/application,
+remaining cleanup and full GTK runtime are pending.
 
 An initial [preverse heading collector](heading-workflows.md) now agrees with
 complete frozen/current collection functions when block/cleanup postprocessors
@@ -83,11 +87,11 @@ classification and default/Off decoding. A combined single-decode import stages
 engine and presentation settings together; verified save preserves unrelated,
 personal and uninstalled settings. Native adapters apply these defaults and
 restore each module setting; explicit import/save round trips preserve drafts
-and history. The full suite passes **59/59**; focused address/undefined and thread
+and history. The full suite passes **60/60**; focused address/undefined and thread
 adapter checks pass **1/1** each, with the external
 SDK instrumentation limits described below. Initial core commentary heading
 snapshots, typed C/Swift adapters and native verse/chapter controls use shared
-Headings import/save and pass 59/59 local checks, with focused address/undefined
+Headings import/save and pass 60/60 local checks, with focused address/undefined
 2/2 and thread 2/2. Draft/history/window isolation and a generated-fixture GUI
 check pass. Complete heading
 transformations, detached windows,
@@ -112,7 +116,7 @@ the fully accepted parity count remains zero.
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
 
-Current local suite: **59 checks**. The shared Unicode click-key utility reuses
+Current local suite: **60 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.

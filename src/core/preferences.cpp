@@ -22,6 +22,14 @@ void save_module_preferences(const std::string &path, const ModuleEnginePreferen
         configuration[module.first.c_str()][preference.first.c_str()] = preference.second.c_str();
     for (const auto &module : presentation) {
       configuration[module.first.c_str()]["Headings"] = module.second.headings ? "On" : "Off";
+      auto write_content = [&](const char *key, ContentPreference value) {
+        if (value == ContentPreference::unknown) return; // No discovery or explicit setting yet.
+        if (value != ContentPreference::on && value != ContentPreference::off)
+          throw std::invalid_argument("Invalid content presentation preference");
+        configuration[module.first.c_str()][key] = value == ContentPreference::on ? "On" : "Off";
+      };
+      write_content("Image Content", module.second.image_content);
+      write_content("Respect Font Faces", module.second.respect_font_faces);
       if (module.second.commentary_chapter_available)
         configuration[module.first.c_str()]["Commentary by Chapter"] = module.second.commentary_by_chapter ? "On" : "Off";
     }

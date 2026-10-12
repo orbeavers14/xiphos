@@ -23,6 +23,7 @@
 #include <config.h>
 #endif
 
+#include "xiphos/core/presentation.hpp"
 #include <gtk/gtk.h>
 #include <string.h>
 #include <swmgr.h>
@@ -181,6 +182,7 @@ GLOBAL_OPS *main_new_globals(const gchar *mod_name)
 	for (const auto &item : module_options[mod_name])
 		preferences.emplace(item.first.c_str(), item.second.c_str());
 	const auto values = xiphos::core::engine_options_from_preferences(preferences);
+	const auto presentation = xiphos::core::presentation_options_from_preferences(preferences, false);
 	ops->strongs = values.strongs;
 	ops->morphs = values.morphs;
 	ops->lemmas = values.lemmas;
@@ -196,8 +198,7 @@ GLOBAL_OPS *main_new_globals(const gchar *mod_name)
 
 	// special case options, default on:
 	ops->words_in_red = values.words_in_red;
-	ops->headings =
-	    (module_options[mod_name]["Headings"] != "Off");
+	ops->headings = presentation.headings;
 	ops->footnotes = values.footnotes;
 	ops->scripturerefs = values.scripturerefs;
 	ops->xrefnotenumbers =
@@ -226,15 +227,8 @@ GLOBAL_OPS *main_new_globals(const gchar *mod_name)
 			       : 0))); // default to paragraph style.
 
 	// options not from configuration: xiphos-specific capability.
-	ops->image_content =
-	    (*(module_options[mod_name]["Image Content"].c_str()) == '\0')
-		? -1 // "unknown"; otherwise, it's like the others.
-		: gui_of2tf(module_options[mod_name]["Image Content"].c_str());
-
-	ops->respect_font_faces =
-	    (*(module_options[mod_name]["Respect Font Faces"].c_str()) == '\0')
-		? -1 // "unknown"; otherwise, it's like the others.
-		: gui_of2tf(module_options[mod_name]["Respect Font Faces"].c_str());
+	ops->image_content = static_cast<int>(presentation.image_content);
+	ops->respect_font_faces = static_cast<int>(presentation.respect_font_faces);
 
 	// special case, xiphos-specific feature: commentary whole chapter.
 	ops->commentary_by_chapter =

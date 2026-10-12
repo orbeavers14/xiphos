@@ -37,11 +37,33 @@ native-disabled legacy helper build pass. External SWORD/GLib instrumentation
 limits still apply; address checks disable leak detection. The full GTK app is
 not locally buildable here, so complete runtime integration remains a gate.
 
+## Shared content preferences
+
+`ContentPreference` explicitly represents unknown (-1), off (0) and on (1).
+Shared decoding matches `main_new_globals`: missing/empty is unknown, exact On
+is on and any other nonempty decoded value is off. Legacy initialization now
+uses the shared decoder for these fields and Headings. Combined native-core
+module import stages these states with engine/presentation settings.
+
+Explicit save writes known states; unknown leaves an existing target declaration
+intact because no discovery/explicit setting is available. Unrelated and
+uninstalled settings remain preserved. Invalid enum values fail before replacing
+the target. An unknown state is therefore not promised to round-trip over a
+preexisting known target declaration.
+
+`core_content_preferences` compares the complete frozen/current initializer
+against shared content decoding over 200 profile combinations, including file
+whitespace, casing, Unicode and both commentary classifications. Paragraph
+capability is stubbed absent; commentary classification is controlled. This
+characterizes the content fields and adjacent settings, not all initialization
+side effects. Import/save, failed import/save, FIFO tab isolation and unchanged
+history pass. The full suite passes 60/60; focused address/undefined and thread
+checks pass 1/1 each, and strict C++11/native-disabled helper builds pass.
+
 ## Next work
 
-- Shared Image Content/Respect Font Faces preference decoding and import/save.
 - Explicit handling of legacy unknown-content discovery and save side effects.
-- Native snapshot application under those settings; heading/body consistency.
+- Native setters/controls and snapshot application under those settings; heading/body consistency.
 - Note/xref numbering, block rendering, CSS/image paths, sizing, fonts/themes and
   representative legacy/native runtime/visual acceptance.
 

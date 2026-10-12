@@ -492,6 +492,10 @@ suffix offset (`npos` when complete). They preserve the exact case-sensitive leg
 operations and byte length, with explicit embedded-NUL rejection. Legacy wrappers
 copy the result into their existing buffer and retain diagnostics/side effects in
 `CleanupContent`. Frozen/current/owned comparisons cover 27,648 bounded cases;
-strict C++11 and native-disabled builds pass. Native application, presentation
-preferences and remaining cleanup require separate work. See
+strict C++11 and native-disabled builds pass. Shared `ContentPreference` retains unknown/off/on decoding for Image Content and
+Respect Font Faces. Combined import stores both; save writes known states and
+leaves target declarations intact for unknown. Invalid enum values reject before
+replacement. The legacy initializer delegates these fields and Headings to the
+same parser; 200 complete frozen/current profile combinations pass. Native
+controls/application and remaining cleanup require separate work. See
 [cleanup scope](../../doc/modernization/html-cleanup-workflows.md).
