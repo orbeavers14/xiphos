@@ -243,6 +243,19 @@ actor CoreWorker {
         let status = xc_worker_clear_dictionary_history(try worker(), tab, &request)
         xc_request_release(try await wait(status, request))
     }
+    func dictionaryChoices(tab: UInt64, module: String, key: String) async throws -> DictionaryChoices {
+        guard ![module, key].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { id in key.withCString { xc_worker_dictionary_choices(handle, tab, id, $0, &request) } }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_dictionary_choices(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_dictionary_choices_release(result) }
+        return DictionaryChoices(module: String(cString: xc_dictionary_choices_module(result)!),
+            key: String(cString: xc_dictionary_choices_key(result)!),
+            keys: (0..<xc_dictionary_choices_count(result)).map { String(cString: xc_dictionary_choices_at(result, $0)!) })
+    }
     func dictionaryHistory(tab: UInt64) async throws -> CoreDictionaryHistoryState {
         var request: OpaquePointer?
         let status = xc_worker_dictionary_history(try worker(), tab, &request)

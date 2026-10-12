@@ -373,8 +373,16 @@ struct ReaderModelSmoke {
         first.clearDictionaryHistory(); try await idle(first)
         guard first.dictionaryHistory?.entries.isEmpty == true, first.dictionaryEntry?.html == displayedDictionary,
               first.html == priorHTML, first.reference == "John 4:2", first.canBack == back, first.canForward == forward else { fatalError("dictionary history clear preserved pane/Bible") }
+        first.dictionarySelection = "DictionaryTwo"
+        guard let nearby = first.dictionaryChoices, nearby.module == "DictionaryTwo", nearby.keys.count == 9,
+              nearby.key == first.dictionaryEntry?.key else { fatalError("native committed nearby dictionary choices") }
+        first.chooseDictionaryKey("not a copied choice")
+        guard !first.isBusy else { fatalError("invalid nearby choice queued") }
+        first.chooseDictionaryKey(nearby.keys[0]); try await idle(first)
+        guard first.dictionaryEntry?.key == nearby.keys[0], first.dictionaryChoices?.key == first.dictionaryEntry?.key,
+              first.dictionaryHistory?.entries.isEmpty == true, first.html == priorHTML, first.reference == "John 4:2" else { fatalError("native nearby selection preserves histories/Bible/draft") }
         first.closeLexicalPreview()
-        guard first.dictionarySelection == nil, first.dictionaryEntry == nil else { fatalError("close direct dictionary") }
+        guard first.dictionarySelection == nil, first.dictionaryEntry == nil, first.dictionaryChoices == nil else { fatalError("close direct dictionary") }
         second.applyLexiconPreferences(changed); second.close()
         try await Task.sleep(nanoseconds: 50_000_000)
         guard second.lexiconPreferences == defaults else { fatalError("closed model does not publish preferences") }

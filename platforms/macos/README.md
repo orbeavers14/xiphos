@@ -225,3 +225,11 @@ and all Bible state, and closing the dictionary retains its history. History
 navigation uses committed current Bible context for nested links. Unicode click
 normalization, nearby-key chooser, detached windows and full pane parity remain
 pending, so dictionary feature acceptance is still partial.
+
+
+The nearby-key menu presents nine copied core choices, retaining boundary repeats
+with distinct row identities. Each successful dictionary result refreshes choices
+through one guarded presentation path; selecting a choice uses direct lookup
+and does not record history. Invalid/stale selections are ignored. The module
+picker now uses the full column width; nearby-key and history icon menus keep
+accessible names and help text while fitting the narrow column.
