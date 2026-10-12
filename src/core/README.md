@@ -89,3 +89,15 @@ commands for one scripture reference. Dispatch validates the module with the
 existing reader, and the eventual visit uses that module's own SWORD key for
 normalization. Native hosts pass the note's source module as the fallback.
 Ranges and multiple-reference lists remain separate pending work.
+
+## Reference-list parser seam
+
+`parse_reference_list` is a C++11-compatible shared helper in CoreRender. It
+uses a clone of the module's own SWORD key to expand lists/ranges, retaining
+the fork's ordering, duplicates, invalid-element skipping and 2000-verse guard
+per range. Owned results report the guard (`limited`) and skipped elements.
+The legacy `BackEnd::parse_verse_list` now delegates to it while preserving its
+current-key mutation and GList result. Characterization compiles both a frozen
+pre-extraction adapter and the actual current adapter without GTK, comparing
+56 cases across KJV/KJVA; full GTK application validation remains a gate.
+Native rendered-list requests and presentation are pending.

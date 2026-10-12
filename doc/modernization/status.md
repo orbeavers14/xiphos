@@ -1059,3 +1059,28 @@ Hover/pin behavior, introductory notes, Strong's/morphology lookup, complete
 layout and other native platforms remain pending. Overall planning estimate is
 now approximately 6% (4–8%), with 0/38 accepted feature groups and 0/3 release-ready
 platforms. No GitHub build dispatched and no legacy file retired.
+
+## Shared reference-list parser and legacy seam: locally checked
+
+Implemented 2026-10-11 on `modernization/shared-reference-list`, based on note
+reference links. The existing fork's verse-list algorithm moves into a shared
+C++11 helper using the module's locale/versification. It retains list ordering,
+duplicates, indexed invalid-element skipping, range expansion and the existing
+2000-verse guard per range. Results own reference strings and explicitly report
+guard truncation/skipped elements. The helper clones the key to preserve its
+position/flags; the legacy adapter preserves its former current-key mutation
+and returns the same GList interface. Missing/null input is handled safely.
+Original attribution and license notices are retained.
+
+Characterization compiles the actual adapter and a frozen copy from f4ff0ca,
+using a minimal ownership-compatible list shim without adding GTK dependencies
+to native tests. All 56 cases across KJV/KJVA match: single/OSIS references,
+relative/list/cross-chapter ranges, duplicates, missing/invalid/empty references,
+whole chapters/books and guarded ranges. KJVA deuterocanonical expansion also
+passes. Full local CTest passed 18/18; focused ASan/UBSan passed 1/1 (external
+SDK uninstrumented). The default CoreRender legacy seam builds in C++11, and
+the helper plus actual adapter pass C++11 warnings-as-errors checks. Full GTK
+application/toolchain testing remains an acceptance gate on this macOS host.
+
+Next: shared rendered-list snapshots and C/Swift/native preview bindings. No
+GitHub build dispatched, accepted feature group or legacy file retirement.
