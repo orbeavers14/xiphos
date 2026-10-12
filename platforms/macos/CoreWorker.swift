@@ -82,6 +82,7 @@ actor CoreWorker {
                     hasHeadings: xc_catalog_has_headings(catalog, index) != 0,
                     transliterationAvailable: xc_catalog_transliteration_available(catalog, index) != 0),
                 isDictionary: xc_catalog_is_dictionary(catalog, index) != 0,
+                isRegularCommentary: xc_catalog_is_regular_commentary(catalog, index) != 0,
                 lexiconRoles: LexiconRoles(rawValue: xc_catalog_lexicon_roles(catalog, index)))
         }
     }
@@ -448,6 +449,24 @@ actor CoreWorker {
         guard let result = xc_request_take_chapter(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
         defer { xc_chapter_release(result) }
         return CoreValues.chapter(result)
+    }
+    func commentaryChapterMode(tab: UInt64, module: String) async throws -> Bool {
+        guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { xc_worker_module_presentation_options(handle, tab, $0, &request) }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        let mode = xc_request_commentary_chapter_mode(completed)
+        guard mode >= 0 else { throw CoreError(status: XC_ENGINE_ERROR) }
+        return mode != 0
+    }
+    func setCommentaryChapterMode(tab: UInt64, module: String, enabled: Bool) async throws {
+        guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { xc_worker_set_commentary_chapter_mode(handle, tab, $0, enabled ? 1 : 0, &request) }
+        xc_request_release(try await wait(status, request))
     }
     func readTabCommentaryChapter(tab: UInt64, module: String, reference: String, verseNumbers: Bool, highlightSelected: Bool) async throws -> RenderedChapter {
         guard ![module, reference].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }

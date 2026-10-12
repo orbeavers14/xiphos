@@ -33,6 +33,7 @@ struct xc_request {
   bool options_result = false;
   bool preview_preference_result = false, preview_preference = true, no_presentation = false;
   std::optional<xiphos::core::EngineOptions> options;
+  std::optional<xiphos::core::ModulePresentationOptions> presentation;
   std::unique_ptr<xc_reference_list> references;
   std::unique_ptr<xc_dictionary_choices> dictionary_choices;
   std::unique_ptr<xc_dictionary_history> dictionary_history;
@@ -50,6 +51,7 @@ struct xc_request {
   virtual ~xc_request() = default;
   virtual void update() = 0;
   void store(xiphos::core::StudyPassage v) { passage = std::make_unique<xc_passage>(xc_passage{std::move(v)}); }
+  void store(xiphos::core::ModulePresentationOptions v) { presentation = v; }
   void store(uint64_t v) { tab = v; }
   void store(bool v) { preview_preference = v; preview_preference_result = true; }
   void store(std::monostate) { no_presentation = true; }
@@ -220,6 +222,17 @@ xc_status xc_worker_history(xc_worker *w, uint64_t tab, xc_request **out) {
 }
 xc_status xc_worker_clear_history(xc_worker *w, uint64_t tab, xc_request **out) {
   return queue_request(w, out, [=](auto &worker) { return worker.clear_history(tab); });
+}
+xc_status xc_worker_module_presentation_options(xc_worker *w, uint64_t tab, const char *id, xc_request **out) {
+  if (!id || !*id) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.module_presentation_options(tab, id); });
+}
+xc_status xc_worker_set_commentary_chapter_mode(xc_worker *w, uint64_t tab, const char *id, int enabled, xc_request **out) {
+  if (!id || !*id || (enabled != 0 && enabled != 1)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.set_commentary_chapter_mode(tab, id, enabled != 0); });
+}
+int xc_request_commentary_chapter_mode(const xc_request *r) {
+  return r && r->status == XC_OK && r->presentation ? (r->presentation->commentary_by_chapter ? 1 : 0) : -1;
 }
 xc_status xc_worker_set_engine_options(xc_worker *w, uint64_t tab, unsigned flags, xc_request **out) {
   constexpr unsigned known = (1u << 18) - 1;
@@ -471,6 +484,7 @@ const char *xc_catalog_id(const xc_catalog *c, size_t i) { auto m = catalog_at(c
 const char *xc_catalog_description(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m ? m->description.c_str() : nullptr; }
 const char *xc_catalog_type(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m ? m->type.c_str() : nullptr; }
 const char *xc_catalog_language(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m ? m->language.c_str() : nullptr; }
+int xc_catalog_is_regular_commentary(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m && m->regular_commentary ? 1 : 0; }
 int xc_catalog_is_dictionary(const xc_catalog *c, size_t i) { return c && i < c->value.size() && c->value[i].dictionary ? 1 : 0; }
 unsigned xc_catalog_lexicon_roles(const xc_catalog *c, size_t i) { return c && i < c->value.size() ? c->value[i].lexicon_roles : 0; }
 unsigned xc_catalog_declared_engine_flags(const xc_catalog *c, size_t i) {
@@ -527,6 +541,7 @@ const char *xc_module_id(const xc_reader *r, size_t i) { auto m = module_at(r, i
 const char *xc_module_description(const xc_reader *r, size_t i) { auto m = module_at(r, i); return m ? m->description.c_str() : nullptr; }
 const char *xc_module_type(const xc_reader *r, size_t i) { auto m = module_at(r, i); return m ? m->type.c_str() : nullptr; }
 const char *xc_module_language(const xc_reader *r, size_t i) { auto m = module_at(r, i); return m ? m->language.c_str() : nullptr; }
+int xc_module_is_regular_commentary(const xc_reader *r, size_t i) { auto m = module_at(r, i); return m && m->regular_commentary ? 1 : 0; }
 int xc_module_is_dictionary(const xc_reader *r, size_t i) { return r && i < r->value->modules().size() && r->value->modules()[i].dictionary ? 1 : 0; }
 unsigned xc_module_lexicon_roles(const xc_reader *r, size_t i) { return r && i < r->value->modules().size() ? r->value->modules()[i].lexicon_roles : 0; }
 xc_status xc_read(xc_reader *r, const char *id, const char *ref, xc_entry **out) {

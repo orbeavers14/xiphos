@@ -87,6 +87,12 @@ xc_status xc_worker_clear_history(xc_worker *worker, uint64_t tab, xc_request **
  * add history; subsequent visits/navigation/tab chapters use those settings.
  * Unknown flag bits fail immediately with *out=NULL. Closed tabs fail at poll.
  * Non-tab chapter reads below preserve the unconfigured reader behavior. */
+/* Core-owned per-module presentation defaults/preferences. Getter returns a
+ * scalar request result; setter accepts exactly 0/1 for regular commentaries. */
+xc_status xc_worker_module_presentation_options(xc_worker *worker, uint64_t tab, const char *module, xc_request **out);
+xc_status xc_worker_set_commentary_chapter_mode(xc_worker *worker, uint64_t tab, const char *module, int enabled, xc_request **out);
+/* Repeated getter: 0/1 when ready/presentation kind; -1 otherwise. */
+int xc_request_commentary_chapter_mode(const xc_request *request);
 xc_status xc_worker_set_engine_options(xc_worker *worker, uint64_t tab, unsigned flags, xc_request **out);
 /* Opt-in legacy module defaults; no preference files are read or written.
  * Precedence: module override, tab-wide override, enabled legacy defaults,
@@ -242,6 +248,7 @@ const char *xc_catalog_language(const xc_catalog *catalog, size_t index);
 /* Copied dictionary classification (excludes DailyDevotion) and declared
  * exact first-Feature roles. Missing catalog/index returns zero. */
 int xc_catalog_is_dictionary(const xc_catalog *catalog, size_t index);
+int xc_catalog_is_regular_commentary(const xc_catalog *catalog, size_t index);
 unsigned xc_catalog_lexicon_roles(const xc_catalog *catalog, size_t index);
 /* Declared module features using the legacy GlobalOptionFilter checks, not
  * effective SDK/markup support or saved settings. Italic headings also require
@@ -272,6 +279,7 @@ const char *xc_module_description(const xc_reader *reader, size_t index);
 const char *xc_module_type(const xc_reader *reader, size_t index);
 const char *xc_module_language(const xc_reader *reader, size_t index);
 int xc_module_is_dictionary(const xc_reader *reader, size_t index);
+int xc_module_is_regular_commentary(const xc_reader *reader, size_t index);
 unsigned xc_module_lexicon_roles(const xc_reader *reader, size_t index);
 /* out is NULL on failure. Entry owns copied strings independently of reader;
  * release exactly once. An empty HTML string is a valid missing-text entry.

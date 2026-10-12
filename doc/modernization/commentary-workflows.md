@@ -1,173 +1,128 @@
-# Synchronized commentary: initial implementation
+# Commentary workflows and acceptance
 
-Updated 2026-10-12. This records a partial F08/F06 slice, not complete commentary
-or visual parity. The GTK3 application remains the behavioral oracle.
+Updated 2026-10-12. This is a partial F08/F06 implementation. The GTK3 application
+remains the behavioral oracle; full functionality/design parity is not accepted.
 
-## Source-backed contract
+## Source-backed contracts
 
-`src/main/tab_history.c:main_change_verse_tab_history` restores the recorded
-`textmod` and `commod` at the reference normalized by the Bible navigation
-controls. The shared history characterization already covers reference-only
-deduplication, first-recorded module metadata, forward retention and the 50-entry
-limit. Changing a commentary at an existing reference does not rewrite that
-reference's first recorded pair.
-
-`src/main/sword.cc:main_display_commentary` gates display on commentary visibility
-and availability, accepts regular/personal commentary types, sets the module key,
-and handles optional `Companion` modules. `src/main/display.cc:GTKEntryDisp`
-has a separate commentary chapter path with linked-entry skipping, headings,
-cache behavior and personal-commentary exceptions. These presentation details
-must be characterized before reusing the Bible chapter renderer for commentary.
-
-The main layout acceptance source is `src/gtk/main_window.c` and
-`help/C/figures/interface.png`: Bible central, commentary upper right and
-dictionary/book/devotional lower right, with sidebar/information panes left.
-The native preview now follows the commentary/dictionary placement and has
-resizable native split views. Exact sizing, hide/show preferences, restored
-layout, fonts, colors, menus and platform accessibility remain unaccepted.
+- `src/main/tab_history.c:main_change_verse_tab_history` restores recorded
+  `textmod`/`commod` at the reference normalized by Bible navigation. Shared
+  history characterization covers reference-only deduplication, first-recorded
+  module metadata, forward retention and the 50-entry limit. Changing commentary
+  at an existing reference does not rewrite its first recorded pair.
+- `src/backend/sword_main.cc:BackEnd::module_type` distinguishes regular
+  Commentaries modules from RawFiles personal commentary. The complete frozen
+  and current function is compared for loaded RawCom, RawFiles and RawText data.
+- `src/main/global_ops.cc:main_new_globals` enables chapter mode only for regular
+  commentary, unless `Commentary by Chapter` is exactly `Off` after SWConfig
+  decoding. Missing/empty values enable it; personal and other module types stay
+  false. Frozen/current assignment comparisons cover defaults, On/Off, case and
+  unexpected values. This is a setting seam, not complete global-preference parity.
+- `src/main/display.cc:GTKEntryDisp::displayByChapter` starts at verse 1, advances
+  the SWORD module with consecutive-link skipping, and stops at the book/chapter/
+  error boundary. Selected/missing/trailing anchor conditions have separate
+  frozen/current statement comparisons. Cache, heading and personal-module
+  renderer branches are not covered by these comparisons.
+- `src/main/url.cc:sword_uri` defaults module-less scripture links to the main
+  Bible, independent of the source pane. Explicit Bible targets replace the
+  Bible; explicit commentary targets replace commentary, retaining the other
+  pane. These branches have source-backed implementation tests; the complete
+  legacy URI handler is not yet characterized.
+- `src/gtk/main_window.c` and `help/C/figures/interface.png` establish central
+  Bible, upper-right commentary, lower-right dictionary/book/devotional and left
+  sidebar/information placement. Native split views follow the implemented pane
+  positions; exact sizing, layout restore, hide/show, fonts, colors, menus and
+  complete accessibility remain unaccepted.
 
 ## Shared core and adapters
 
-- `StudyPassage` owns Bible and optional commentary entries plus their module IDs.
-  The commentary reads the normalized Bible reference, using its own module
-  versification and engine preferences. Empty commentary requests no commentary.
-- `read_passage` does not record history. `visit_passage` records a pair only after
-  both entries render. `navigate_passage` restores that pair before moving the
-  cursor; `navigate_passage_chapter` steps using the Bible's versification.
-- Paired visits require Biblical Texts/Commentaries module types. Restoration
-  also retains old standalone, unpaired commentary history from existing
-  single-entry APIs. Unknown/wrong-type modules and unavailable destinations
-  report errors without committing the paired visit/cursor.
-- The FIFO worker copies commands/results. The C ABI uses an owned passage
-  handle with transfer-once take and borrowed getters. Swift copies the result
-  without introducing a second SWORD engine or passage synchronization policy.
-- Cross-module versification mapping is not implemented: each module interprets
-  the same normalized reference. A representative differing-versification corpus
-  is still needed to validate legacy equivalence and any mapping requirement.
+`StudyPassage` owns the Bible and optional commentary entries and module IDs.
+The commentary uses the normalized Bible reference in its own versification and
+with its own engine preferences. Empty commentary requests no commentary.
+Cross-versification mapping is not implemented; a representative differing-
+versification corpus must validate legacy equivalence or establish a mapping need.
+
+`read_passage` does not record history. `visit_passage` records only after both
+entries render; paired navigation restores both entries before moving the cursor.
+Chapter stepping uses Bible versification. Paired visits validate Bible/Commentary
+types; history restoration also supports older standalone, unpaired commentary
+locations. Failed paired selection/routing leaves history unchanged.
+
+`read_commentary_chapter` returns an owned `Chapter` with sparse iterator entries.
+Its array indices do not identify canonical verse numbers: `selected_verse` is
+an engine ordinal, and `selected_anchor` is `commentary-verse-N`. Hosts consume
+provided HTML/anchors instead of implementing traversal or anchor policy. Module
+engine options apply to each section; chapter reads do not record Bible history.
+
+Sessions own per-module `ModulePresentationOptions`. Module import decodes one
+SWConfig into both staged engine/presentation maps before committing either.
+Failed imports preserve both. Combined save uses the existing verified replacement
+transaction, updating chapter mode only for regular commentary and preserving
+unrelated, unavailable and personal-module values. The old engine-only save helper
+remains compatible. Initial native setters accept regular commentary only;
+personal editors and their complete menu/workflow behavior remain pending.
+
+`follow_pane_link_at` separates default Bible navigation from source note/lexical
+context. `visit_linked_passage` owns module-type routing of explicit targets.
+Other module kinds and abbreviation/range/fragment behavior remain pending.
+
+The FIFO worker copies commands/results. C handles transfer once and retain
+copies after worker/request release. Typed presentation scalar getters require
+ready/presentation kind and may be repeated; dropping observation does not cancel
+accepted edits. Swift copies values without a second SWORD engine or independent
+synchronization/default policy. New paired/chapter/mode commands reject embedded
+NUL strings before the C-string boundary.
 
 ## macOS behavior checked locally
 
-A commentary can be selected from its picker or the installed-module sidebar.
-Selection refreshes the committed passage without submitting draft reference
-text or adding a visit. Bible visits, reference selectors and chapter stepping
-synchronize both entries; Back/Forward restore recorded choices. Commentary
-Close hides its content while retaining the Bible and draft. Whole chapter is
-currently a Bible display option; commentary continues to show the selected
-verse. Dictionary lookup leaves commentary intact in the lower-right pane.
+Commentary selection from the module sidebar/picker refreshes the committed
+passage without submitting draft input or adding history. Bible visits, selectors
+and chapter steps synchronize entries; Back/Forward restore recorded choices.
+Commentary Close retains the Bible/draft. Dictionary lookup leaves commentary
+intact in the lower-right pane.
 
-Model commands serialize through the existing busy/revision/closed guards.
-Results publish together after all required snapshots are available. Failed
-commentary choices retain the committed panes, draft and history. Separate
-windows own separate tab history and selections.
+The independent **Whole commentary chapter** control reads/updates the core's
+per-module preference. Switching modules restores each setting; regular defaults
+apply on selection. The Display menu's number/highlight settings apply when
+either pane shows a chapter. Existing explicit reading-options import/save now
+round-trips commentary mode. Startup profile discovery, saved pane selection and
+visibility/layout restore are still pending.
 
-## Evidence and remaining acceptance
+Commands use busy/revision/closed guards. Required snapshots publish together;
+failed commentary choices retain committed panes, draft and history. Separate
+windows own separate tab preferences and histories. Runtime checks verify two
+synchronized references, recorded Back behavior, dictionary coexistence, chapter
+mode with unsent input, verse-number navigation, source commentary notes,
+selected-row/link contrast, defaults and module-setting restoration.
 
-The generated `core_study_passage` fixture uses original prose in real RawText,
-RawCom and RawLD modules. It checks normalized references, restored module pairs,
-reference-only deduplication, optional commentary, failures, FIFO ownership,
-tab isolation, old standalone commentary history, and C snapshot lifetime.
-`swift_passage_adapter` checks typed copies and paired navigation;
-`reader_model_commentary` checks draft preservation, selection, histories,
-chapter steps, dictionary coexistence, window isolation and closed publication.
+## Verification and remaining acceptance
 
-Local runtime inspection additionally checks sidebar selection, rendered Bible
-and commentary text at two references and recorded Back behavior, plus dictionary lookup in the lower-right
-pane while retaining commentary. Four focused address/undefined checks and four
-thread checks also passed; SWORD/GLib/system libxml2 are not fully instrumented
-and leak detection was disabled. These checks
-are scoped implementation evidence. The following remain required:
+The full local suite passes **55/55**. Core/adapter/model tests include:
 
-| Area | Pending validation/implementation |
+| Test | Evidence |
 |---|---|
-| Commentary chapter mode | Actual legacy linked-entry traversal, heading handling, layout and options |
-| Detached windows | Separate commentary window, navigation/hover origin and synchronization rules |
-| Personal commentary | Editable modules, cache invalidation and editor integration |
+| `core_study_passage` | Real original-prose RawText/RawCom/RawLD pairs, normalization, history, failures, tab/FIFO ownership, link routing and C snapshot lifetime |
+| `core_commentary_positions` | Frozen/current iterator statements; sparse/linked content and chapter/book/empty-content boundaries; key/flag restoration |
+| `core_commentary_chapter` | Sparse rendering, preferences, escaped attributes, frozen/current anchor boundaries, display flags and C transfer after worker shutdown |
+| `core_commentary_preferences` | Complete classification function and mode assignment comparisons; combined import/save; personal/unavailable/unknown preservation; typed scalar/queued edit ownership |
+| `swift_passage_adapter` | Copied pairs/chapters/mode metadata, linked routing, per-module isolation and NUL boundary checks |
+| `reader_model_commentary` | Draft preservation, pane selection/history, independent chapter modes, profile round trip, dictionary coexistence, window isolation and closed publication |
+
+Focused presentation-adapter address/undefined and thread checks pass **1/1**
+each; earlier shared preference checks pass **3/3** and **1/1** respectively.
+SWORD/GLib/system libxml2 are not fully instrumented; leak detection was disabled.
+Local runtime inspection supports the scoped controls above, not full visual or
+corpus acceptance.
+
+| Area | Remaining implementation/validation |
+|---|---|
+| Chapter presentation | Headings, cache behavior, image resizing, locale/number formatting and exact theme/layout |
+| Detached windows | Navigation/hover origin and synchronization rules |
+| Personal commentary | Editing, cache invalidation and complete menu behavior |
 | Companion modules | Prompt, first companion in Bible pane and additional windows |
-| Saved settings | Startup module selection, pane visibility/layout and profile migration |
-| Corpus | Locked/unlocked modules, linked/empty entries, headings, alternate versification and markup |
-| Other platforms | WinUI 3 and GTK4 panes using the same core commands |
+| Saved settings | Startup selections, pane visibility/layout and broader profile migration |
+| Corpus | Locked/unlocked modules, alternate versification, headings and broader markup/modules |
+| Other platforms | WinUI 3 and GTK4 panes using the same core services |
 
-No legacy source is retired by this slice. Tests and source provenance remain
-required even after individual integration milestones are checked off.
-
-## Chapter traversal characterization
-
-`commentary_positions` now copies the main legacy iterator frontier: start at
-verse 1, advance the SWORD module with consecutive-link skipping, and stop at
-the book/chapter/error boundary. It restores the prior key identity, key flags
-and skip-links setting. `core_commentary_positions` compares it with frozen
-CrossWire c9976a8 statements and statements extracted from the current
-`GTKEntryDisp::displayByChapter` source at configure time. Generated linked/sparse
-RawCom data covers missing verses, linked sections, chapter/book boundaries and
-empty OT content. The normal and address/undefined checks pass. This characterizes
-iterator statements only, not the complete renderer/cache/headings or selection
-anchor presentation. The native pane still shows a single commentary verse.
-
-## Initial shared chapter service
-
-`Reader`, `StudySession` and the FIFO worker expose `read_commentary_chapter`.
-The owned `Chapter` snapshot contains sparse iterator entries rather than the
-Bible's dense canonical verse list. `selected_verse` remains the engine verse
-ordinal; `selected_anchor` uses `commentary-verse-N`. Hosts consume the provided
-HTML/anchor and do not infer section ordinals from array indices. The service
-applies module engine preferences and does not record a Bible history visit.
-
-Selected, missing, linked and trailing anchors are checked against the frozen
-and configure-time extracted complete anchor-condition statements from the
-main legacy chapter renderer, with a minimal key/section shim. Numbered and
-unnumbered presentation retain the section boundary for the selected anchor.
-This compares anchor placement semantics, not complete legacy HTML/theme.
-
-The full local suite passes 54/54, including filter preference changes, sparse
-rendering, chapter boundaries, escaped attributes and queued snapshot ownership.
-Four focused address/undefined and three thread checks pass; the same external
-SDK/instrumentation limits apply. Headings, caching, image resizing, personal
-commentary handling and native chapter controls are still pending.
-
-## Native chapter control and passage-link routing
-
-The C ABI and Swift actor expose the no-record sparse chapter snapshot. macOS
-now has an independent **Whole commentary chapter** control; the Display menu's
-number/highlight settings apply when either pane displays a chapter. The preview
-currently holds commentary mode per window; legacy per-module default decoding
-and persistence are not yet connected. Runtime checks verify unsent reference
-preservation, verse-number navigation of both panes, commentary note body display
-and readable selected-row highlighting/link contrast.
-
-`main/url.cc:sword_uri` defaults a module-less scripture URI to
-`settings.MainWindowModule`, regardless of the source pane. Explicit Bible targets
-replace the Bible and keep commentary; explicit commentary targets replace the
-commentary and keep the Bible. The core now exposes separate navigation/source
-contexts for pane links, preserving commentary note/lexical context while routing
-module-less scripture links to the Bible. A paired linked-visit command owns the
-module-type routing; Swift only supplies copied context and displays the result.
-These branches have source-backed implementation tests; the complete legacy URI
-handler, abbreviation/range/fragment behavior and other module kinds remain
-unaccepted. Embedded NUL strings in the new Swift paired/chapter commands reject
-before the C-string boundary.
-
-The full local suite passes 54/54; focused address/undefined and thread suites
-pass 3/3 each, including sparse C chapter transfer after worker shutdown.
-External SDK instrumentation limitations still apply.
-
-## Shared per-module chapter preference
-
-`regular_commentary` matches the legacy backend's Commentaries/RawFiles split.
-`presentation_options_from_preferences` matches the `main_new_globals` assignment:
-regular commentary is in chapter mode unless `Commentary by Chapter` is exactly
-`Off` after SWORD configuration decoding. Missing/empty values enable it;
-personal commentary and other module types remain false.
-
-`core_commentary_preferences` compares the complete frozen/current
-`BackEnd::module_type` function for loaded RawCom, RawFiles and RawText fixtures,
-and the complete commentary-mode assignment for missing/empty, On/Off, case and
-unexpected values. These are classification/default seams, not full global
-preferences or personal-editor workflow acceptance.
-
-Sessions and the FIFO worker now own per-module presentation settings. Import
-decodes one SWConfig into both staged engine/presentation maps before committing
-either; failed imports preserve both. Save uses the existing verified replacement
-transaction and writes chapter mode only for regular commentary modules, keeping
-unrelated, unavailable and personal-module settings. Existing engine-only save
-helpers preserve their behavior. The native toggle is not connected to this seam
-yet; it remains a per-window experimental display option until adapter integration.
+No legacy source is retired by these milestones. Tests, licenses and source
+provenance remain required after individual integration changes are checked off.

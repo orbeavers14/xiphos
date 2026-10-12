@@ -16,6 +16,12 @@ import Foundation
               try await worker.history(tab).count == 2 else { fatalError("no-record hidden commentary") }
         let chapter = try await worker.navigateStudyChapter(tab: tab, module: "Text", commentary: "Notes", reference: "John3:17", direction: 1)
         guard chapter.text.reference == "John 4:1", chapter.commentary?.reference == chapter.text.reference else { fatalError("paired chapter step") }
+        let modules = try await worker.modules()
+        guard modules.first(where: { $0.id == "Notes" })?.isRegularCommentary == true,
+              try await worker.commentaryChapterMode(tab: tab, module: "Notes") else { fatalError("typed regular commentary default") }
+        try await worker.setCommentaryChapterMode(tab: tab, module: "Notes", enabled: false)
+        guard !(try await worker.commentaryChapterMode(tab: tab, module: "Notes")),
+              try await worker.commentaryChapterMode(tab: tab, module: "OtherNotes") else { fatalError("typed per-module mode isolation") }
         let before = try await worker.history(tab).count
         let notesChapter = try await worker.readTabCommentaryChapter(tab: tab, module: "Notes", reference: "John3:17", verseNumbers: true, highlightSelected: true)
         guard notesChapter.verses.count == 3, notesChapter.selectedAnchor == "commentary-verse-17",

@@ -29,14 +29,18 @@ initializes its environment locale before engine startup. Strong's/morphology
 hovers and footnote bodies use a separate information sidebar; cross-reference
 hovers follow a core-owned per-window list/information preference. Explicit lexicon XML import/save uses native file pickers. Other hover families,
 complete persistence and established pane composition remain in progress.
+Synchronized commentary now includes paired history, sparse/linked chapter
+reading, shared pane-link routing and per-module chapter defaults/import/save.
+The native commentary pane sits above dictionary content; headings, detached
+windows and broader visual/corpus acceptance remain pending.
 
-The current local suite has 47 checks, supplemented by scoped sanitizer,
+The current local suite has 55 checks, supplemented by scoped sanitizer,
 strict-language and temporary-fixture GUI checks recorded in the status ledger.
 The legacy app retains its existing UI and delegates selected seams to shared
 helpers. Routine development and testing stay local to conserve GitHub builds;
 platform CI and full acceptance are reserved for meaningful checkpoints.
 
-Overall modernization is estimated at **about 6%** (planning range 4–8%).
+Overall modernization is estimated at **about 7%** (planning range 5–9%).
 **0/38 feature groups** have accepted parity across all native platforms.
 See the status page for the weighted estimate, ordered next steps and
 [source reuse decisions](doc/modernization/status.md#reuse-from-related-projects).

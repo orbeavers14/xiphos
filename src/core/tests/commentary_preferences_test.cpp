@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/worker.hpp"
+#include "xiphos/core/c_api.h"
+#include <chrono>
+#include <thread>
 #include <rawcom.h>
 #include <rawfiles.h>
 #include <rawtext.h>
@@ -79,6 +82,40 @@ int main(int argc, char **argv) {
           worker.module_presentation_options(other, "Notes").get().commentary_by_chapter, "FIFO mode preference isolation");
     worker.import_module_preferences(tab, profile.string()).get();
     check(worker.module_presentation_options(tab, "Notes").get().commentary_by_chapter, "queued combined profile import");
+    xc_worker *bridge = nullptr; xc_request *request = nullptr;
+    auto wait = [](xc_request *r) {
+      const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+      xc_status status;
+      while ((status = xc_request_poll(r)) == XC_PENDING) {
+        check(std::chrono::steady_clock::now() < deadline, "presentation request timeout");
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      }
+      return status;
+    };
+    check(xc_worker_open(root.string().c_str(), &bridge) == XC_OK, "C worker opened");
+    check(xc_worker_modules(bridge, &request) == XC_OK && wait(request) == XC_OK, "C catalog ready");
+    check(xc_request_commentary_chapter_mode(request) == -1, "wrong-kind scalar rejected");
+    auto *catalog = xc_request_take_catalog(request); xc_request_release(request);
+    for (size_t i = 0; i < xc_catalog_count(catalog); ++i)
+      check((xc_catalog_is_regular_commentary(catalog, i) != 0) == (std::string(xc_catalog_id(catalog, i)) == "Notes"), "copied C commentary classification");
+    xc_catalog_release(catalog);
+    check(xc_worker_create_tab(bridge, &request) == XC_OK && wait(request) == XC_OK, "C tab ready");
+    const auto ctab = xc_request_tab(request); xc_request_release(request);
+    check(xc_worker_module_presentation_options(bridge, ctab, "Notes", &request) == XC_OK &&
+          xc_request_commentary_chapter_mode(request) == -1 && wait(request) == XC_OK, "pending scalar requires poll");
+    check(xc_request_commentary_chapter_mode(request) == 1 && xc_request_commentary_chapter_mode(request) == 1, "typed ready scalar repeats");
+    xc_request_release(request);
+    check(xc_worker_set_commentary_chapter_mode(bridge, ctab, "Notes", 2, &request) == XC_INVALID_ARGUMENT && !request, "nonboolean input rejects before queue");
+    check(xc_worker_set_commentary_chapter_mode(bridge, ctab, "Personal", 1, &request) == XC_OK && wait(request) == XC_INVALID_ARGUMENT,
+          "personal commentary mode update rejected asynchronously"); xc_request_release(request);
+    check(xc_worker_set_commentary_chapter_mode(bridge, ctab, "Notes", 0, &request) == XC_OK, "mode mutation queued");
+    xc_request_release(request); // observation does not cancel the accepted edit
+    check(xc_worker_module_presentation_options(bridge, ctab, "Notes", &request) == XC_OK, "FIFO mode snapshot queued");
+    xc_worker_close(bridge);
+    check(wait(request) == XC_OK && xc_request_commentary_chapter_mode(request) == 0, "mode edit survives dropped observer and worker drain");
+    xc_request_release(request);
+    check(xc_request_commentary_chapter_mode(nullptr) == -1 && !xc_catalog_is_regular_commentary(nullptr, 0) &&
+          !xc_module_is_regular_commentary(nullptr, 0), "null presentation guards");
     std::cout << "Commentary module preference characterization checks passed\n";
   } catch (const std::exception &e) { std::cerr << e.what() << '\n'; return 1; }
 }

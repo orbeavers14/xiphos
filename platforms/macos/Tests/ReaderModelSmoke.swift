@@ -30,6 +30,13 @@ struct ReaderModelSmoke {
         guard model.reference == "John 4:2", model.html == main, model.commentarySelection == "Notes",
               model.commentaryEntry?.reference == "John 3:16", model.commentaryEntry?.html.contains("café") == true,
               !model.canBack, other.commentaryEntry == nil else { fatalError("committed passage/draft/window isolation") }
+        guard model.showCommentaryChapter, model.commentaryChapter?.title == "John 3" else { fatalError("legacy regular-commentary default applies on selection") }
+        model.setCommentaryChapterMode(false); try await idle(model)
+        guard !model.showCommentaryChapter, model.commentaryChapter == nil, model.reference == "John 4:2", !model.canBack else { fatalError("core mode update preserves draft/history") }
+        model.chooseCommentary("OtherNotes"); try await idle(model)
+        guard model.showCommentaryChapter else { fatalError("other module keeps its default") }
+        model.chooseCommentary("Notes"); try await idle(model)
+        guard !model.showCommentaryChapter else { fatalError("returning module restores its setting") }
         model.clearHistory(); try await idle(model)
         model.reference = "John 3:16"; model.read(); try await idle(model)
         model.chooseCommentary("OtherNotes"); try await idle(model)
@@ -44,10 +51,23 @@ struct ReaderModelSmoke {
         model.chooseCommentary("Missing"); try await idle(model)
         guard model.commentarySelection == "OtherNotes", model.commentaryEntry?.html == notes,
               model.reference == "John 4:2", model.canBack, !model.canForward else { fatalError("failed commentary preserves panes/draft/history") }
+        let profile = URL(fileURLWithPath: root).appendingPathComponent("commentary-model-modops.conf")
+        try Data("[OtherNotes]\nCommentary by Chapter=Off\nCustom=keep\n[Notes]\nCommentary by Chapter=On\n".utf8).write(to: profile)
+        let historyBack = model.canBack, historyForward = model.canForward
+        model.importReadingOptions(path: profile.path); try await idle(model)
+        guard !model.showCommentaryChapter, model.commentaryChapter == nil, model.reference == "John 4:2",
+              model.canBack == historyBack, model.canForward == historyForward else { fatalError("combined import refreshes commentary mode without submitting draft") }
+        model.saveReadingOptions(path: profile.path); try await idle(model)
+        let reloaded = try await worker.createTab()
+        try await worker.importModulePreferences(tab: reloaded, path: profile.path)
+        guard !(try await worker.commentaryChapterMode(tab: reloaded, module: "OtherNotes")),
+              try await worker.commentaryChapterMode(tab: reloaded, module: "Notes"),
+              try String(contentsOf: profile, encoding: .utf8).contains("Custom=keep") else { fatalError("native mode save round trip preserves other values") }
+        try await worker.closeTab(reloaded)
         model.showChapter = true; model.refreshDisplay(); try await idle(model)
         guard model.renderedReference == "John 3", model.commentaryEntry?.reference == "John 3:17",
               model.reference == "John 4:2" else { fatalError("Bible chapter mode retains synchronized selected commentary verse") }
-        model.showCommentaryChapter = true; model.refreshDisplay(); try await idle(model)
+        model.setCommentaryChapterMode(true); try await idle(model)
         guard model.commentaryChapter?.title == "John 3", model.commentaryChapter?.selectedAnchor == "commentary-verse-17",
               model.reference == "John 4:2", !other.showCommentaryChapter else { fatalError("independent commentary chapter mode preserves draft/window state") }
         model.verseNumbers = false; model.highlightSelected = false; model.refreshDisplay(); try await idle(model)

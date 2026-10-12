@@ -149,7 +149,7 @@ visual/workflow parity. Both hosted workflows remain paused; use local checks an
 platform CI at meaningful review/release checkpoints.
 
 Representative modules, macOS minimum-version validation, complete main-pane
-composition, commentary/parallel/book/devotional views, remaining click/hover
+composition, complete commentary/parallel/book/devotional workflows, remaining click/hover
 families, heading/alias/global-source behavior, keyboard/accessibility,
 localization/styles/images, full settings/session restoration, interprocess
 storage locking/power-loss durability, search/editors/installation/BibleSync and
@@ -168,9 +168,9 @@ to display it at the committed Bible verse. Commentary occupies the upper-right
 resizable pane; dictionary content appears below. Passage changes and Back/Forward
 use shared core module pairs. Changing/closing commentary preserves unsent Bible
 reference input. Bible and commentary have independent whole-chapter controls. The Display menu
-applies verse numbering/highlighting to either chapter view. Saved pane
-settings, per-module chapter defaults/persistence, commentary headings, personal
-editors and detached windows are
+applies verse numbering/highlighting to either chapter view. Core-owned chapter mode follows the legacy per-module default and participates in
+explicit reading-options import/save. Saved pane settings/startup, commentary
+headings, personal editors and detached windows are
 pending; see [scope and acceptance](../../doc/modernization/commentary-workflows.md).
 
 After local fixture checks, `sh platforms/macos/launch-fixture.sh build/macos commentary`

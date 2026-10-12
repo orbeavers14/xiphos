@@ -39,10 +39,11 @@ struct InstalledModule: Identifiable, Sendable {
     let language: String
     let options: ModuleOptionInfo
     let isDictionary: Bool
+    let isRegularCommentary: Bool
     let lexiconRoles: LexiconRoles
-    init(id: String, description: String, type: String, language: String, options: ModuleOptionInfo = .unknown, isDictionary: Bool = false, lexiconRoles: LexiconRoles = []) {
+    init(id: String, description: String, type: String, language: String, options: ModuleOptionInfo = .unknown, isDictionary: Bool = false, isRegularCommentary: Bool = false, lexiconRoles: LexiconRoles = []) {
         self.id = id; self.description = description; self.type = type; self.language = language; self.options = options
-        self.isDictionary = isDictionary; self.lexiconRoles = lexiconRoles
+        self.isDictionary = isDictionary; self.isRegularCommentary = isRegularCommentary; self.lexiconRoles = lexiconRoles
     }
 }
 struct LexiconRoles: OptionSet, Sendable {
@@ -150,6 +151,7 @@ final class CoreReader {
                 type: String(cString: xc_module_type(opened, index)!),
                 language: String(cString: xc_module_language(opened, index)!),
                 isDictionary: xc_module_is_dictionary(opened, index) != 0,
+                isRegularCommentary: xc_module_is_regular_commentary(opened, index) != 0,
                 lexiconRoles: LexiconRoles(rawValue: xc_module_lexicon_roles(opened, index)))
         }
     }

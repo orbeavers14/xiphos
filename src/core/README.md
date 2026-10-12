@@ -464,3 +464,10 @@ save reuses verified same-directory replacement. Only regular-commentary
 presentation sections are written. The old engine-only save helper delegates
 with an empty presentation map and remains compatible. Other display settings
 and the personal-editor workflow are pending.
+
+The C/Swift presentation adapters provide regular-commentary classification and
+per-module chapter-mode getters/setters. `xc_request_commentary_chapter_mode`
+returns 0/1 for a ready presentation result, -1 for pending/failed/wrong-kind; it
+may be repeated. Native selection and refresh read this shared policy, and the
+existing explicit module import/save now persists chapter mode. No independent
+Swift preference/default implementation is needed.

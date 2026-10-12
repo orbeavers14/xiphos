@@ -271,3 +271,15 @@ The inspected [libxml2 2.9.13 copyright notice](https://raw.githubusercontent.co
 grants an MIT-style permission with notice-retention obligations and identifies
 per-file exceptions. No libxml2 source is vendored. Native package/release
 validation must check the actual linked artifact and retain applicable notices.
+
+### Commentary presentation preference seam
+
+Engine filters and Xiphos presentation settings remain separate value types.
+The initial `ModulePresentationOptions` follows the characterized regular/personal
+commentary classification and legacy chapter default. Session/worker commands
+own per-module state; C/Swift adapters only copy results. A single SWConfig decode
+stages engine/presentation import together, and both reuse the existing verified
+replacement transaction for explicit save. The C++11 policy helpers remain
+available to the legacy build; native ownership/persistence stays C++17. See
+[commentary scope and acceptance](commentary-workflows.md) for checked behavior
+and remaining headings, editors, corpus and platform work.

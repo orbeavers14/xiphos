@@ -34,7 +34,7 @@ final class ReaderModel: ObservableObject {
     @Published private(set) var commentarySelection = ""
     @Published private(set) var commentaryEntry: RenderedEntry?
     @Published private(set) var commentaryChapter: RenderedChapter?
-    @Published var showCommentaryChapter = false
+    @Published private(set) var showCommentaryChapter = false
     @Published var dictionarySelection: String?
     @Published var dictionaryKey = ""
     @Published private(set) var dictionaryEntry: RenderedDictionaryEntry?
@@ -251,6 +251,14 @@ final class ReaderModel: ObservableObject {
             try await self.present(pair.text, module: main, token: token, updateInput: false, passage: pair)
         }
     }
+    func setCommentaryChapterMode(_ enabled: Bool) {
+        guard let worker, let tab, let main = displayedModule, let entry = displayedEntry, !commentarySelection.isEmpty else { return }
+        let module = commentarySelection
+        run { token in
+            try await worker.setCommentaryChapterMode(tab: tab, module: module, enabled: enabled)
+            try await self.present(entry, module: main, token: token, updateInput: false)
+        }
+    }
     private func visitAndPresent(module: String, reference: String, token: UInt64) async throws {
         guard let worker, let tab else { return }
         if modules.contains(where: { $0.id == module && $0.type == "Biblical Texts" }) {
@@ -333,8 +341,11 @@ final class ReaderModel: ObservableObject {
         let numbers = verseNumbers, highlight = highlightSelected
         let chapter = chapterMode ? try await worker.readTabChapter(tab: tab, module: module, reference: entry.reference,
                                                                   verseNumbers: numbers, highlightSelected: highlight) : nil
+        let commentaryMode = if let pair, pair.commentary != nil {
+            try await worker.commentaryChapterMode(tab: tab, module: pair.commentaryModule)
+        } else { false }
         let commentaryChapter: RenderedChapter?
-        if showCommentaryChapter, let pair, let commentary = pair.commentary {
+        if commentaryMode, let pair, let commentary = pair.commentary {
             commentaryChapter = try await worker.readTabCommentaryChapter(tab: tab, module: pair.commentaryModule,
                 reference: commentary.reference, verseNumbers: numbers, highlightSelected: highlight)
         } else { commentaryChapter = nil }
@@ -347,6 +358,7 @@ final class ReaderModel: ObservableObject {
         commentarySelection = pair?.commentaryModule ?? ""
         commentaryEntry = pair?.commentary
         self.commentaryChapter = commentaryChapter
+        showCommentaryChapter = commentaryMode
         engineOptions = options
         moduleOptions = modules.first(where: { $0.id == module })?.options ?? .unknown
         if let chapter {
@@ -908,9 +920,10 @@ struct ReaderWindow: View {
                                     Text(module.id).tag(module.id)
                                 }
                             }.padding(8).disabled(model.isBusy)
-                            Toggle("Whole commentary chapter", isOn: $model.showCommentaryChapter)
-                                .onChange(of: model.showCommentaryChapter) { _ in model.refreshDisplay() }
-                                .padding(.horizontal, 8).padding(.bottom, 8).disabled(model.isBusy || model.commentaryEntry == nil)
+                            Toggle("Whole commentary chapter", isOn: Binding(
+                                get: { model.showCommentaryChapter }, set: { model.setCommentaryChapterMode($0) }))
+                                .padding(.horizontal, 8).padding(.bottom, 8).disabled(model.isBusy || model.commentaryEntry == nil ||
+                                    model.modules.first(where: { $0.id == model.commentarySelection })?.isRegularCommentary != true)
                             if let entry = model.commentaryEntry {
                                 Text(model.commentaryChapter?.title ?? entry.reference).font(.caption).padding(8)
                                 PassageView(html: model.commentaryChapter?.html ?? entry.html, anchor: model.commentaryChapter?.selectedAnchor, onScrollFailure: { model.message = $0 },

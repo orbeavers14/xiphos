@@ -7,8 +7,8 @@ that contract. The [parity matrix](parity-matrix.md) defines acceptance evidence
 
 ## Overall completion estimate
 
-Approximately **6% complete** toward a validated native release on all three
-platforms (planning range **4–8%**, not a measured parity score). This counts
+Approximately **7% complete** toward a validated native release on all three
+platforms (planning range **5–9%**, not a measured parity score). This counts
 modernization work, not functionality inherited from the existing GTK app.
 The estimate is deliberately provisional and should change as services and
 platform workflows are characterized. Reassess after each accepted milestone.
@@ -16,13 +16,14 @@ platform workflows are characterized. Reassess after each accepted milestone.
 | Work area | Share of total effort | Estimated work completed | Contribution |
 |---|---:|---:|---:|
 | Inventory, architecture, build/test foundation | 10% | 40% | 4.0% |
-| Shared application services | 35% | 4% | 1.4% |
-| Three native frontends and design/workflow adaptation | 30% | 2% | 0.6% |
+| Shared application services | 35% | 6% | 2.1% |
+| Three native frontends and design/workflow adaptation | 30% | 3% | 0.9% |
 | User-data compatibility and migration | 15% | 1% | 0.15% |
 | Release packaging and comprehensive acceptance | 10% | 0% | 0% |
 
-The estimate includes explicit engine-preference import/save, shared note/reference
-workflows and partial dictionary/lexical services and native controls; it does
+The estimate includes explicit engine/presentation preference import/save, shared
+note/reference workflows, paired/sparse commentary services and partial
+dictionary/lexical services and native controls; it does
 not imply complete preference, preview or dictionary parity. These weights and within-area percentages are engineering
 estimates, not completed issue counts. Foundation still needs a representative module corpus,
 Windows native tooling and regression infrastructure. **0 of 38 feature groups
@@ -66,13 +67,14 @@ note source context and selected-row theme/link contrast.
 Shared per-module chapter preferences now match the legacy regular versus personal
 classification and default/Off decoding. A combined single-decode import stages
 engine and presentation settings together; verified save preserves unrelated,
-personal and uninstalled settings. Native adapters/default application are the
-next integration step. The full suite passes **55/55**; focused preference
-address/undefined checks pass **3/3** and thread checks **1/1**, with the external
+personal and uninstalled settings. Native adapters apply these defaults and
+restore each module setting; explicit import/save round trips preserve drafts
+and history. The full suite passes **55/55**; focused address/undefined and thread
+adapter checks pass **1/1** each, with the external
 SDK instrumentation limits described below. Headings, detached windows,
 companion/personal editing, saved pane startup and broader corpus/visual acceptance
-remain pending. The engineering estimate and fully accepted parity count stay
-unchanged.
+remain pending. The engineering estimate is now about 7% (range 5–9%);
+the fully accepted parity count remains zero.
 
 - Shared C++ module/verse/chapter reading, Bible history, rendering options,
   engine-preference import/save, note and reference-list previews.
