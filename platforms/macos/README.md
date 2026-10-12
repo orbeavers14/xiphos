@@ -169,11 +169,16 @@ resizable pane; dictionary content appears below. Passage changes and Back/Forwa
 use shared core module pairs. Changing/closing commentary preserves unsent Bible
 reference input. Bible and commentary have independent whole-chapter controls. The Display menu
 applies verse numbering/highlighting to either chapter view. Core-owned chapter mode follows the legacy per-module default and participates in
-explicit reading-options import/save. Saved pane settings/startup, commentary
-headings, personal editors and detached windows are
+explicit reading-options import/save. Commentary headings use owned core strings
+and the shared per-module preference in verse/chapter views. The control governs
+preverse headings; interverse titles remain in SDK body output. Saved pane settings/
+startup, complete heading transformations, personal editors and detached windows are
 pending; see [scope and acceptance](../../doc/modernization/commentary-workflows.md).
 
 After local fixture checks, `sh platforms/macos/launch-fixture.sh build/macos commentary`
 opens generated original-prose Bible/commentary/dictionary data outside Documents.
 This avoids repeatedly asking the preview for Documents access; it does not change
 macOS permissions or read the installed user library.
+
+Use fixture kind `headings` to inspect original-prose OSIS headings and heading-only
+entries after the local heading checks pass.

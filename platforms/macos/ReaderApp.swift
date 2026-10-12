@@ -35,6 +35,7 @@ final class ReaderModel: ObservableObject {
     @Published private(set) var commentaryEntry: RenderedEntry?
     @Published private(set) var commentaryChapter: RenderedChapter?
     @Published private(set) var showCommentaryChapter = false
+    @Published private(set) var commentaryHeadings = true
     @Published var dictionarySelection: String?
     @Published var dictionaryKey = ""
     @Published private(set) var dictionaryEntry: RenderedDictionaryEntry?
@@ -259,6 +260,14 @@ final class ReaderModel: ObservableObject {
             try await self.present(entry, module: main, token: token, updateInput: false)
         }
     }
+    func setCommentaryHeadings(_ enabled: Bool) {
+        guard let worker, let tab, let main = displayedModule, let entry = displayedEntry, !commentarySelection.isEmpty else { return }
+        let module = commentarySelection
+        run { token in
+            try await worker.setHeadings(tab: tab, module: module, enabled: enabled)
+            try await self.present(entry, module: main, token: token, updateInput: false)
+        }
+    }
     private func visitAndPresent(module: String, reference: String, token: UInt64) async throws {
         guard let worker, let tab else { return }
         if modules.contains(where: { $0.id == module && $0.type == "Biblical Texts" }) {
@@ -344,6 +353,9 @@ final class ReaderModel: ObservableObject {
         let commentaryMode = if let pair, pair.commentary != nil {
             try await worker.commentaryChapterMode(tab: tab, module: pair.commentaryModule)
         } else { false }
+        let headings = if let pair, pair.commentary != nil {
+            try await worker.headingDisplay(tab: tab, module: pair.commentaryModule)
+        } else { true }
         let commentaryChapter: RenderedChapter?
         if commentaryMode, let pair, let commentary = pair.commentary {
             commentaryChapter = try await worker.readTabCommentaryChapter(tab: tab, module: pair.commentaryModule,
@@ -359,6 +371,7 @@ final class ReaderModel: ObservableObject {
         commentaryEntry = pair?.commentary
         self.commentaryChapter = commentaryChapter
         showCommentaryChapter = commentaryMode
+        commentaryHeadings = headings
         engineOptions = options
         moduleOptions = modules.first(where: { $0.id == module })?.options ?? .unknown
         if let chapter {
@@ -924,12 +937,16 @@ struct ReaderWindow: View {
                                 get: { model.showCommentaryChapter }, set: { model.setCommentaryChapterMode($0) }))
                                 .padding(.horizontal, 8).padding(.bottom, 8).disabled(model.isBusy || model.commentaryEntry == nil ||
                                     model.modules.first(where: { $0.id == model.commentarySelection })?.isRegularCommentary != true)
+                            Toggle("Commentary headings", isOn: Binding(
+                                get: { model.commentaryHeadings }, set: { model.setCommentaryHeadings($0) }))
+                                .padding(.horizontal, 8).padding(.bottom, 8).disabled(model.isBusy || model.commentaryEntry == nil ||
+                                    model.modules.first(where: { $0.id == model.commentarySelection })?.options.hasHeadings != true)
                             if let entry = model.commentaryEntry {
                                 Text(model.commentaryChapter?.title ?? entry.reference).font(.caption).padding(8)
-                                PassageView(html: model.commentaryChapter?.html ?? entry.html, anchor: model.commentaryChapter?.selectedAnchor, onScrollFailure: { model.message = $0 },
+                                PassageView(html: model.commentaryChapter?.html ?? (entry.headingHTML + entry.html), anchor: model.commentaryChapter?.selectedAnchor, onScrollFailure: { model.message = $0 },
                                     onLink: { model.followCommentaryLink($0) },
                                     onLinkHover: { model.previewStudyLink($0) })
-                                if model.commentaryChapter?.verses.allSatisfy({ $0.html.isEmpty }) ?? entry.html.isEmpty {
+                                if model.commentaryChapter?.verses.allSatisfy({ $0.html.isEmpty && $0.headingHTML.isEmpty }) ?? (entry.html.isEmpty && entry.headingHTML.isEmpty) {
                                     Text("This commentary has no text at this reference.").foregroundStyle(.secondary).padding(8)
                                 }
                             } else {

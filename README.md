@@ -32,10 +32,10 @@ complete persistence and established pane composition remain in progress.
 Synchronized commentary now includes paired history, sparse/linked chapter
 reading, shared pane-link routing and per-module chapter defaults/import/save.
 Core commentary snapshots include owned headings and shared display preferences.
-The native commentary pane sits above dictionary content; native heading controls, detached
+The native commentary pane sits above dictionary content; complete heading transformations, detached
 windows and broader visual/corpus acceptance remain pending.
 
-The current local suite has 57 checks, supplemented by scoped sanitizer,
+The current local suite has 58 checks, supplemented by scoped sanitizer,
 strict-language and temporary-fixture GUI checks recorded in the status ledger.
 The legacy app retains its existing UI and delegates selected seams to shared
 helpers. Routine development and testing stay local to conserve GitHub builds;

@@ -468,6 +468,24 @@ actor CoreWorker {
         let status = module.withCString { xc_worker_set_commentary_chapter_mode(handle, tab, $0, enabled ? 1 : 0, &request) }
         xc_request_release(try await wait(status, request))
     }
+    func headingDisplay(tab: UInt64, module: String) async throws -> Bool {
+        guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { xc_worker_module_presentation_options(handle, tab, $0, &request) }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        let mode = xc_request_headings(completed)
+        guard mode >= 0 else { throw CoreError(status: XC_ENGINE_ERROR) }
+        return mode != 0
+    }
+    func setHeadings(tab: UInt64, module: String, enabled: Bool) async throws {
+        guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { xc_worker_set_headings(handle, tab, $0, enabled ? 1 : 0, &request) }
+        xc_request_release(try await wait(status, request))
+    }
     func readTabCommentaryChapter(tab: UInt64, module: String, reference: String, verseNumbers: Bool, highlightSelected: Bool) async throws -> RenderedChapter {
         guard ![module, reference].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?
@@ -515,7 +533,8 @@ actor CoreWorker {
         defer { xc_passage_release(result) }
         let commentary = xc_passage_has_commentary(result) != 0 ? RenderedEntry(
             reference: String(cString: xc_passage_commentary_reference(result)!),
-            html: String(cString: xc_passage_commentary_html(result)!)) : nil
+            html: String(cString: xc_passage_commentary_html(result)!),
+            headingHTML: String(cString: xc_passage_commentary_heading_html(result)!)) : nil
         return RenderedStudyPassage(module: String(cString: xc_passage_module(result)!),
             commentaryModule: String(cString: xc_passage_commentary_module(result)!),
             text: RenderedEntry(reference: String(cString: xc_passage_reference(result)!),

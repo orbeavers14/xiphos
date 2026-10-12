@@ -231,6 +231,13 @@ xc_status xc_worker_set_commentary_chapter_mode(xc_worker *w, uint64_t tab, cons
   if (!id || !*id || (enabled != 0 && enabled != 1)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.set_commentary_chapter_mode(tab, id, enabled != 0); });
 }
+xc_status xc_worker_set_headings(xc_worker *w, uint64_t tab, const char *id, int enabled, xc_request **out) {
+  if (!id || !*id || (enabled != 0 && enabled != 1)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.set_headings(tab, id, enabled != 0); });
+}
+int xc_request_headings(const xc_request *r) {
+  return r && r->status == XC_OK && r->presentation ? (r->presentation->headings ? 1 : 0) : -1;
+}
 int xc_request_commentary_chapter_mode(const xc_request *r) {
   return r && r->status == XC_OK && r->presentation ? (r->presentation->commentary_by_chapter ? 1 : 0) : -1;
 }
@@ -472,6 +479,7 @@ int xc_passage_has_commentary(const xc_passage *p) { return p && p->value.commen
 const char *xc_passage_commentary_module(const xc_passage *p) { return p ? p->value.commentary_module.c_str() : nullptr; }
 const char *xc_passage_commentary_reference(const xc_passage *p) { return p && p->value.commentary ? p->value.commentary->reference.c_str() : nullptr; }
 const char *xc_passage_commentary_html(const xc_passage *p) { return p && p->value.commentary ? p->value.commentary->html.c_str() : nullptr; }
+const char *xc_passage_commentary_heading_html(const xc_passage *p) { return p && p->value.commentary ? p->value.commentary->heading_html.c_str() : nullptr; }
 void xc_passage_release(xc_passage *p) { delete p; }
 xc_entry *xc_request_take_entry(xc_request *r) { return r && r->status == XC_OK ? r->entry.release() : nullptr; }
 xc_chapter *xc_request_take_chapter(xc_request *r) { return r && r->status == XC_OK ? r->chapter.release() : nullptr; }
@@ -648,6 +656,9 @@ const char *xc_chapter_verse_reference(const xc_chapter *c, size_t i) {
 const char *xc_chapter_verse_html(const xc_chapter *c, size_t i) {
   return c && i < c->value.verses.size() ? c->value.verses[i].html.c_str() : nullptr;
 }
+const char *xc_chapter_verse_heading_html(const xc_chapter *c, size_t i) {
+  return c && i < c->value.verses.size() ? c->value.verses[i].heading_html.c_str() : nullptr;
+}
 void xc_chapter_release(xc_chapter *c) { delete c; }
 xc_status xc_session_navigate_chapter(xc_session *s, const char *id, const char *ref,
                                      int direction, xc_entry **out) {
@@ -700,6 +711,7 @@ const char *xc_note_html(const xc_note *n) { return n ? n->value.html.c_str() : 
 const char *xc_note_reference_list(const xc_note *n) { return n ? n->value.reference_list.c_str() : nullptr; }
 void xc_note_release(xc_note *n) { delete n; }
 const char *xc_entry_reference(const xc_entry *e) { return e ? e->value.reference.c_str() : nullptr; }
+const char *xc_entry_heading_html(const xc_entry *e) { return e ? e->value.heading_html.c_str() : nullptr; }
 const char *xc_entry_html(const xc_entry *e) { return e ? e->value.html.c_str() : nullptr; }
 void xc_entry_release(xc_entry *e) { delete e; }
 }

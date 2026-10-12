@@ -93,6 +93,9 @@ xc_status xc_worker_module_presentation_options(xc_worker *worker, uint64_t tab,
 xc_status xc_worker_set_commentary_chapter_mode(xc_worker *worker, uint64_t tab, const char *module, int enabled, xc_request **out);
 /* Repeated getter: 0/1 when ready/presentation kind; -1 otherwise. */
 int xc_request_commentary_chapter_mode(const xc_request *request);
+/* Same typed result rules as chapter mode; setters accept only 0 or 1. */
+int xc_request_headings(const xc_request *request);
+xc_status xc_worker_set_headings(xc_worker *worker, uint64_t tab, const char *module, int enabled, xc_request **out);
 xc_status xc_worker_set_engine_options(xc_worker *worker, uint64_t tab, unsigned flags, xc_request **out);
 /* Opt-in legacy module defaults; no preference files are read or written.
  * Precedence: module override, tab-wide override, enabled legacy defaults,
@@ -234,6 +237,8 @@ int xc_passage_has_commentary(const xc_passage *passage);
 const char *xc_passage_commentary_module(const xc_passage *passage);
 const char *xc_passage_commentary_reference(const xc_passage *passage);
 const char *xc_passage_commentary_html(const xc_passage *passage);
+/* Borrowed from the same owner as body HTML; null for absent/out-of-range. */
+const char *xc_passage_commentary_heading_html(const xc_passage *passage);
 void xc_passage_release(xc_passage *passage);
 xc_chapter *xc_request_take_chapter(xc_request *request);
 xc_choices *xc_request_take_choices(xc_request *request);
@@ -347,6 +352,8 @@ const char *xc_chapter_title(const xc_chapter *chapter);
 size_t xc_chapter_count(const xc_chapter *chapter);
 const char *xc_chapter_verse_reference(const xc_chapter *chapter, size_t index);
 const char *xc_chapter_verse_html(const xc_chapter *chapter, size_t index);
+/* Borrowed from the same owner as body HTML; null for absent/out-of-range. */
+const char *xc_chapter_verse_heading_html(const xc_chapter *chapter, size_t index);
 void xc_chapter_release(xc_chapter *chapter);
 /* Moves to verse 1 of the adjacent chapter, across books/testaments as SWORD
  * permits, and records a successful visit. -1/+1 only; no wrap at Bible ends. */
@@ -398,6 +405,8 @@ const char *xc_note_reference_list(const xc_note *note);
 void xc_note_release(xc_note *note);
 const char *xc_entry_reference(const xc_entry *entry);
 const char *xc_entry_html(const xc_entry *entry);
+/* Borrowed from the same owner as body HTML; null for absent/out-of-range. */
+const char *xc_entry_heading_html(const xc_entry *entry);
 void xc_entry_release(xc_entry *entry);
 #ifdef __cplusplus
 }

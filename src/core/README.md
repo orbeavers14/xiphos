@@ -479,6 +479,8 @@ current complete-function comparisons use disabled block flags and identity
 cleanup. Commentary entries carry separate owned `heading_html`; sparse chapter
 HTML places headings before the selection marker/body. Shared Headings decoding,
 import/save and worker updates apply to these snapshots. Ordinary `read` remains
-body-only. Complete transformations, caching, Bible headings and native controls
-remain pending. See
+body-only. Complete transformations, caching and Bible headings
+remain pending. C/Swift heading getters borrow/copy from existing owned handles,
+and native commentary controls use the shared per-module setting. Extraction
+scopes/restores registered Headings filters even without a module engine profile. See
 [heading scope](../../doc/modernization/heading-workflows.md).

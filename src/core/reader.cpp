@@ -9,6 +9,7 @@
 #include "xiphos/core/engine_manager.hpp"
 #include <swmgr.h>
 #include <swmodule.h>
+#include <swoptfilter.h>
 #include <swld.h>
 #include <versekey.h>
 #include <filesystem>
@@ -16,6 +17,30 @@
 #include <stdexcept>
 
 namespace xiphos::core {
+namespace {
+// Heading extraction must run even when no per-module engine profile is active.
+// Preserve every registered Headings filter, rather than a global getter that
+// may describe only one of several filters with the same option name.
+class ScopedCommentaryHeadings {
+  std::vector<std::pair<sword::SWOptionFilter *, std::string>> saved_;
+public:
+  explicit ScopedCommentaryHeadings(EngineManager &manager) {
+    for (auto *filter : manager.option_filters())
+      if (std::string(filter->getOptionName()) == "Headings") {
+        const auto *value = filter->getOptionValue();
+        if (!value) throw std::runtime_error("Heading filter has no restorable value");
+        saved_.emplace_back(filter, value);
+      }
+    try { manager.setGlobalOption("Headings", "On"); }
+    catch (...) { restore(); throw; }
+  }
+  ~ScopedCommentaryHeadings() { restore(); }
+  void restore() { for (const auto &setting : saved_) setting.first->setOptionValue(setting.second.c_str()); }
+  ScopedCommentaryHeadings(const ScopedCommentaryHeadings &) = delete;
+  ScopedCommentaryHeadings &operator=(const ScopedCommentaryHeadings &) = delete;
+};
+}
+
 struct Reader::Impl {
   std::unique_ptr<EngineManager> manager;
   std::vector<Module> modules;
@@ -228,6 +253,8 @@ Entry Reader::read_impl(const std::string &id, const std::string &reference, con
     throw std::invalid_argument("Commentary entry requires a commentary module");
   std::unique_ptr<ScopedEngineOptions> scope;
   if (options) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *options);
+  std::unique_ptr<ScopedCommentaryHeadings> heading_scope;
+  if (commentary_only) heading_scope = std::make_unique<ScopedCommentaryHeadings>(*impl_->manager);
   // Resolve using the module's own versification and SWORD normalization,
   // never an independent canon/reference parser in a frontend.
   Entry result;
@@ -301,6 +328,7 @@ Chapter Reader::commentary_chapter_impl(const std::string &id, const std::string
   result.title = std::string(key.getBookName()) + " " + std::to_string(key.getChapter());
   std::unique_ptr<ScopedEngineOptions> scope;
   if (engine) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *engine);
+  ScopedCommentaryHeadings heading_scope(*impl_->manager);
   std::vector<unsigned> positions;
   for (const auto &position : references) {
     key.setText(position.c_str());

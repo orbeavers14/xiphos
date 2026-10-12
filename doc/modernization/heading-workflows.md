@@ -2,7 +2,8 @@
 
 Updated 2026-10-12. This supports the F03/F08 heading work but does not establish
 complete rendering, caching or visual parity. Core commentary snapshots now carry
-headings; native heading controls and verse adapters remain pending.
+headings; typed C/Swift adapters and native verse/chapter controls use the shared
+per-module preference. Bible heading integration remains pending.
 
 ## Source and scope
 
@@ -48,13 +49,22 @@ remain compatible. Shared per-module Headings preferences default on, decode
 exact Off, and participate in combined import/save. Commentary chapter capability
 controls selective mode persistence; unrelated and unavailable settings survive.
 
-The full local suite passes 57/57. Focused address/undefined checks pass 3/3
+The full local suite passes 58/58. Focused address/undefined checks pass 2/2
 and thread checks 2/2, including heading-only entries, body exclusion, preference
 round trips, FIFO tab isolation and unchanged history.
 
+The C ABI exposes borrowed heading strings from the existing owned entry, chapter
+and paired-passage handles, with bounds/null guards and unchanged transfer rules.
+Swift copies these strings; native controls fetch/update the shared preference.
+Heading extraction also scopes/restores every SDK Headings filter when no engine
+profile is active, leaving ordinary body-only reads unchanged. Native model tests
+cover busy/closed commands, drafts/history, window isolation, heading-only entries
+and explicit import/save. A temporary preview verified headings above the verse
+body, chapter toggling and retained draft input. The control governs preverse
+attributes; interverse titles remain part of SDK body rendering.
+
 ## Next acceptance work
 
-- C/Swift owned heading adapters and native controls for verse/chapter display.
 - Bible chapter/entry heading integration and complete placement/visual acceptance.
 - ThML and representative module data, numbering gaps, canonical headings,
   linked entries, selected references and heading note/lexical links.

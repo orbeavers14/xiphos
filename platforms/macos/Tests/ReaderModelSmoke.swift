@@ -16,6 +16,50 @@ struct ReaderModelSmoke {
             try await Task.sleep(nanoseconds: 1_000_000)
         }
     }
+    @MainActor static func headings(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let model = ReaderModel(worker: worker, startupError: nil)
+        let other = ReaderModel(worker: worker, startupError: nil)
+        try await idle(model); try await idle(other)
+        model.reference = "John 4:2"
+        model.chooseCommentary("Notes"); try await idle(model)
+        guard model.commentaryHeadings, model.showCommentaryChapter,
+              model.commentaryEntry?.headingHTML.contains("Original heading") == true,
+              model.commentaryEntry?.html.contains("Original heading") == false,
+              model.commentaryChapter?.verses.contains(where: { !$0.headingHTML.isEmpty }) == true else { fatalError("Swift copies owned heading snapshots") }
+        let body = model.commentaryEntry?.html
+        model.setCommentaryHeadings(false); model.setCommentaryHeadings(true)
+        try await idle(model)
+        guard !model.commentaryHeadings, model.commentaryEntry?.headingHTML.isEmpty == true,
+              model.commentaryEntry?.html == body, model.reference == "John 4:2", !model.canBack,
+              model.commentaryChapter?.html.contains("Original heading") == false else { fatalError("heading update preserves body/draft/history and rejects busy edit") }
+        other.chooseCommentary("Notes"); try await idle(other)
+        guard other.commentaryHeadings else { fatalError("heading preferences isolated by window") }
+        model.setCommentaryChapterMode(false); try await idle(model)
+        model.setCommentaryHeadings(true); try await idle(model)
+        guard model.commentaryChapter == nil, model.commentaryEntry?.headingHTML.contains("Original heading") == true,
+              model.reference == "John 4:2" else { fatalError("verse headings use shared preference") }
+        model.reference = "John 3:19"; model.read(); try await idle(model)
+        guard model.commentaryEntry?.html.isEmpty == true,
+              model.commentaryEntry?.headingHTML.contains("Original heading-only") == true else { fatalError("heading-only verse retained") }
+        let profile = URL(fileURLWithPath: root).appendingPathComponent("native-headings.conf")
+        try Data("[Notes]\nHeadings=Off\nCommentary by Chapter=Off\nCustom=keep\n".utf8).write(to: profile)
+        model.reference = "John 4:2"
+        let back = model.canBack
+        model.importReadingOptions(path: profile.path); try await idle(model)
+        guard !model.commentaryHeadings, model.commentaryEntry?.headingHTML.isEmpty == true,
+              model.reference == "John 4:2", model.canBack == back else { fatalError("heading import preserves draft/history") }
+        model.saveReadingOptions(path: profile.path); try await idle(model)
+        let tab = try await worker.createTab()
+        try await worker.importModulePreferences(tab: tab, path: profile.path)
+        guard !(try await worker.headingDisplay(tab: tab, module: "Notes")),
+              try String(contentsOf: profile, encoding: .utf8).contains("Custom=keep") else { fatalError("native heading save round trip") }
+        try await worker.closeTab(tab)
+        model.close(); model.setCommentaryHeadings(true); try await idle(model)
+        guard !model.commentaryHeadings else { fatalError("closed window cannot publish heading changes") }
+        other.close(); await worker.shutdown()
+        print("Native heading model checks passed")
+    }
     @MainActor static func commentary(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let model = ReaderModel(worker: worker, startupError: nil)
@@ -670,6 +714,9 @@ struct ReaderModelSmoke {
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--lexicons" {
             try await lexicons(root: CommandLine.arguments[2]); return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--headings" {
+            try await headings(root: CommandLine.arguments[2]); return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--commentary" {
             try await commentary(root: CommandLine.arguments[2]); return

@@ -92,6 +92,10 @@ struct RenderedStudyPassage: Sendable {
 struct RenderedEntry: Sendable {
     let reference: String
     let html: String
+    let headingHTML: String
+    init(reference: String, html: String, headingHTML: String = "") {
+        self.reference = reference; self.html = html; self.headingHTML = headingHTML
+    }
 }
 struct RenderedChapter: Sendable {
     let reference: String
@@ -242,7 +246,8 @@ final class CoreSession {
 enum CoreValues {
     static func entry(_ result: OpaquePointer) -> RenderedEntry {
         RenderedEntry(reference: String(cString: xc_entry_reference(result)!),
-                      html: String(cString: xc_entry_html(result)!))
+                      html: String(cString: xc_entry_html(result)!),
+                      headingHTML: String(cString: xc_entry_heading_html(result)!))
     }
     static func link(_ result: OpaquePointer) -> PassageTarget {
         PassageTarget(module: String(cString: xc_link_module(result)!),
@@ -300,7 +305,8 @@ enum CoreValues {
             title: String(cString: xc_chapter_title(result)!),
             verses: (0..<xc_chapter_count(result)).map { index in
                 RenderedEntry(reference: String(cString: xc_chapter_verse_reference(result, index)!),
-                              html: String(cString: xc_chapter_verse_html(result, index)!))
+                              html: String(cString: xc_chapter_verse_html(result, index)!),
+                              headingHTML: String(cString: xc_chapter_verse_heading_html(result, index)!))
             }, selectedVerse: xc_chapter_selected_verse(result),
             selectedAnchor: String(cString: xc_chapter_selected_anchor(result)!),
             html: String(cString: xc_chapter_html(result)!))

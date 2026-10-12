@@ -97,7 +97,12 @@ selected-row/link contrast, defaults and module-setting restoration.
 
 ## Verification and remaining acceptance
 
-The full local suite passes **57/57**. Core/adapter/model tests include:
+Preverse headings have owned core snapshots, shared Headings defaults/import/save,
+typed C/Swift adapters and native verse/chapter controls. Heading-only entries
+remain visible; toggles preserve body text, draft input and history. Complete
+heading transformations and corpus/visual parity remain pending.
+
+The full local suite passes **58/58**. Core/adapter/model tests include:
 
 | Test | Evidence |
 |---|---|
@@ -116,7 +121,7 @@ corpus acceptance.
 
 | Area | Remaining implementation/validation |
 |---|---|
-| Chapter presentation | Headings, cache behavior, image resizing, locale/number formatting and exact theme/layout |
+| Chapter presentation | Complete heading transformations/corpus, cache behavior, image resizing, locale/number formatting and exact theme/layout |
 | Detached windows | Navigation/hover origin and synchronization rules |
 | Personal commentary | Editing, cache invalidation and complete menu behavior |
 | Companion modules | Prompt, first companion in Bible pane and additional windows |
