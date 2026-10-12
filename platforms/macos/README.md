@@ -145,7 +145,7 @@ Run the complete local suite after a checked milestone. Current tests include
 core characterization/fixtures, C and Swift ownership, profile/hover adapters,
 and reader model options/lexicons/profile/hover/locale modes. Temporary GUI checks
 cover visible controls and real pointer events; they do not establish whole-app
-visual/workflow parity. Conserve hosted builds through draft milestones and use
+visual/workflow parity. Both hosted workflows remain paused; use local checks and reserve
 platform CI at meaningful review/release checkpoints.
 
 Representative modules, macOS minimum-version validation, complete main-pane
