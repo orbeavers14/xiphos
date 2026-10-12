@@ -2,6 +2,16 @@
 import AppKit
 import SwiftUI
 import WebKit
+import Darwin
+
+// Match legacy main.c before starting SWORD workers. Locale stays host-owned;
+// changing it while engines run is unsupported. Invalid environment retains
+// the process's existing locale, as in the legacy startup call.
+@MainActor
+func initializePreviewLocale() -> String? {
+    guard let locale = setlocale(LC_ALL, "") else { return nil }
+    return String(cString: locale)
+}
 
 private struct ReadingOptionImportError: LocalizedError {
     var errorDescription: String? { "Unable to import reading options. Choose a readable Xiphos modops.conf file." }
@@ -723,6 +733,7 @@ struct XiphosNativePreview: App {
     private let worker: CoreWorker?
     private let startupError: String?
     init() {
+        _ = initializePreviewLocale()
         do {
             worker = try CoreWorker(root: ProcessInfo.processInfo.environment["XIPHOS_MODULE_ROOT"])
             startupError = nil

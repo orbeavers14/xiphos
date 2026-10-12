@@ -28,7 +28,7 @@ nearby-key chooser.
 Hover, pinning, click normalization and full established pane composition remain
 in progress.
 
-The current local suite has 30 checks, supplemented by scoped sanitizer,
+The current local suite has 32 checks, supplemented by scoped sanitizer,
 strict-language and temporary-fixture GUI checks recorded in the status ledger.
 The legacy app retains its existing UI and delegates selected seams to shared
 helpers. Routine development and testing stay local to conserve GitHub builds;

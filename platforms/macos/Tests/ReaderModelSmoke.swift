@@ -394,6 +394,27 @@ struct ReaderModelSmoke {
         print("Native lexicon preference model checks passed")
     }
     @MainActor static func main() async throws {
+        let selectedLocale = initializePreviewLocale()
+        if CommandLine.arguments.count == 3, ["--locale", "--invalid-locale"].contains(CommandLine.arguments[1]) {
+            let invalidEnvironment = CommandLine.arguments[1] == "--invalid-locale"
+            guard invalidEnvironment ? selectedLocale == nil : selectedLocale?.hasPrefix("tr_TR") == true else { fatalError("environment locale startup selection") }
+            let expectedKey = invalidEnvironment ? "I" : "İ"
+            let worker = try CoreWorker(root: CommandLine.arguments[2])
+            let tab = try await worker.createTab()
+            try await worker.setLexiconPreferences(tab: tab, preferences: LexiconPreferences(greek: "DictionaryOne"))
+            let uri = "xiphos.url?action=showStrongs&type=Greek&value=i"
+            let clicked = try await worker.visitLexical(tab: tab, module: "OriginalBible", reference: "John3:16", uri: uri)
+            let recorded = try await worker.dictionaryHistory(tab: tab)
+            guard clicked.value == "i", recorded.entries.last?.key == expectedKey else { fatalError("host locale reaches shared GLib click casing") }
+            _ = try await worker.visitLexical(tab: tab, module: "OriginalBible", reference: "John3:16", uri: uri, origin: .dialog)
+            _ = try await worker.readLexical(tab: tab, module: "OriginalBible", reference: "John3:16", uri: uri)
+            guard try await worker.dictionaryHistory(tab: tab) == recorded,
+                  try await worker.history(tab).count == 0 else { fatalError("locale dialog/hover preserves dictionary and Bible histories") }
+            try await worker.closeTab(tab); await worker.shutdown()
+            guard recorded.entries.last?.key == expectedKey else { fatalError("locale snapshot lifetime") }
+            print("Native environment locale startup/click checks passed")
+            return
+        }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--lexicons" {
             try await lexicons(root: CommandLine.arguments[2]); return
         }

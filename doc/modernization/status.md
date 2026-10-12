@@ -70,7 +70,7 @@ No milestone has official acceptance yet.
 - Legacy app delegates rendering, selected policy/parser/selection seams,
   dictionary key stepping and dictionary history to shared C++ helpers.
 
-Current local suite: **30 checks**. The shared Unicode click-key utility reuses
+Current local suite: **32 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.
@@ -118,7 +118,7 @@ inclusion in this public fork.
 1. Review the stacked draft milestones and validate representative modules
    against the legacy application. Bundle remote builds at meaningful review
    checkpoints; keep routine development/testing local to conserve CI usage.
-2. Characterize click normalization and hover/pinning
+2. Characterize hover/pinning
    and compatible lexicon persistence. Complete remaining reading controls and
    characterize commentary/parallel panes while retaining study-pane composition.
 3. Implement equivalent GTK4 and WinUI 3 reading panes with native toolchains
@@ -1897,3 +1897,21 @@ and thread checks each passed 2/2; strict C++17/C11 passed. Dependencies remain
 uninstrumented; macOS 13 compatibility is not established. Host locale startup,
 hover/pinning/persistence, detached dialogs and full native pane workflows are
 next. No GitHub builds or file retirement; estimate remains about 6% (4–8%).
+
+## macOS environment locale startup: locally checked
+
+Implemented 2026-10-11 on `modernization/macos-locale-startup`. The native app
+uses the legacy main.c environment-locale initialization before creating its
+shared engine worker. The host owns this process-wide setting; no worker or
+per-window code changes locale at runtime. Invalid environment selection keeps
+the existing process locale, matching the legacy startup call.
+
+Validation: the 31-check local suite passed including a new separate-process
+Turkish environment check; a subsequent focused 3/3 run covers the generated
+dictionary fixture, Turkish startup and invalid-locale fallback. Those checks
+exercise a real worker click/history (`i` becomes `İ` in Turkish and `I` in the
+fallback), raw metadata, dialog/hover no-record behavior, no Bible visit and
+copied snapshot lifetime. The suite now has 32 checks. Existing saved
+`settings.special_locale` import/selection, localization resources and other
+native-platform hosts remain pending. No GitHub builds or file retirement;
+overall estimate remains about 6% (4–8%).
