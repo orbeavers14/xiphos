@@ -7,6 +7,7 @@
 #include <variant>
 namespace xiphos::core {
 using StudyTab = std::uint64_t;
+using ContextualStudyLink = std::variant<PassageLink, StudyNote, ReferenceList>;
 using ResolvedStudyLink = std::variant<PassageLink, StudyNote>;
 struct HistorySnapshot {
   std::vector<Location> entries;
@@ -31,6 +32,8 @@ public:
   std::future<StudyTab> create_tab();
   std::future<void> close_tab(StudyTab tab);
   std::future<ReferenceList> read_reference_list(StudyTab tab, std::string module, std::string expression, std::string context);
+  // showRef previews use the supplied source reference and never visit history.
+  std::future<ContextualStudyLink> resolve_study_link_at(StudyTab tab, std::string current_module, std::string current_reference, std::string uri);
   std::future<ResolvedStudyLink> resolve_study_link(StudyTab tab, std::string current_module, std::string uri);
   std::future<StudyNote> study_note_link(StudyTab tab, std::string current_module, std::string uri);
   std::future<StudyNote> study_note(StudyTab tab, std::string module, std::string reference, std::string identifier);

@@ -88,7 +88,14 @@ Shared `study_link` decoding also accepts local `showRef&type=scripRef`
 commands for one scripture reference. Dispatch validates the module with the
 existing reader, and the eventual visit uses that module's own SWORD key for
 normalization. Native hosts pass the note's source module as the fallback.
-Ranges and multiple-reference lists remain separate pending work.
+The existing single-reference API retains its contract. The additive
+`contextual_study_link` parser and `StudyWorker::resolve_study_link_at` accept
+showRef lists/ranges and return a configured `ReferenceList` with explicit
+source reference context. Single showRef commands also return lists, matching
+the legacy clicked sidebar workflow. Passage URIs still return navigation
+targets; notes still return owned bodies. All resolution preserves history.
+Hosts must pass committed source context rather than an unfinished input draft.
+C/Swift contextual request bindings are pending.
 
 ## Reference-list parser seam
 
