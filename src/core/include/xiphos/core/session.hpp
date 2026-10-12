@@ -74,6 +74,8 @@ public:
   void set_module_engine_options(const std::string &module, const EngineOptions &options);
   void clear_module_engine_options(const std::string &module);
   std::optional<EngineOptions> module_engine_options(const std::string &module) const;
+  Chapter read_commentary_chapter(const std::string &module, const std::string &reference,
+                                  const DisplayOptions &display = {});
   Chapter read_chapter(const std::string &module, const std::string &reference,
                        const DisplayOptions &display = {});
   const History &history() const { return history_; }

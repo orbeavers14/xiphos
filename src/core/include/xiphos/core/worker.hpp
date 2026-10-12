@@ -86,6 +86,7 @@ public:
   std::future<void> set_module_engine_options(StudyTab tab, std::string module, EngineOptions options);
   std::future<void> clear_module_engine_options(StudyTab tab, std::string module);
   std::future<std::optional<EngineOptions>> module_engine_options(StudyTab tab, std::string module);
+  std::future<Chapter> read_commentary_chapter(StudyTab tab, std::string module, std::string reference, DisplayOptions options = {});
   std::future<Chapter> read_chapter(StudyTab tab, std::string module, std::string reference, DisplayOptions options = {});
   std::future<HistorySnapshot> history(StudyTab tab);
   std::future<void> clear_history(StudyTab tab);

@@ -24,12 +24,12 @@ int main(int argc, char **argv) {
       writer.setKey("John 3:16"); writer.setEntry("Original linked commentary section.");
       sword::VerseKey source("John 3:16");
       writer.setKey("John 3:17"); writer.linkEntry(&source);
-      writer.setKey("John 3:19"); writer.setEntry("Original second section.");
+      writer.setKey("John 3:19"); writer.setEntry("<q who=\"Jesus\">Original second section.</q><note type=\"study\" n=\"1\">Original commentary note.</note>");
       source.setText("John 3:19"); writer.setKey("John 3:20"); writer.linkEntry(&source);
       writer.setKey("John 4:2"); writer.setEntry("Original next chapter section.");
       writer.setKey("John 21:25"); writer.setEntry("Original last book section.");
       std::ofstream config(root / "mods.d/notes.conf");
-      config << "[Notes]\nDataPath=./data/\nModDrv=RawCom\nEncoding=UTF-8\nVersification=KJV\n";
+      config << "[Notes]\nDataPath=./data/\nModDrv=RawCom\nSourceType=OSIS\nEncoding=UTF-8\nVersification=KJV\nGlobalOptionFilter=OSISFootnotes\nGlobalOptionFilter=OSISRedLetterWords\n";
     }
     std::filesystem::remove(root / "mods.d/modules-conf.cache");
     sword::SWMgr manager(root.string().c_str(), true, nullptr, false, false);

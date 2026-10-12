@@ -325,6 +325,11 @@ std::future<void> StudyWorker::clear_module_engine_options(StudyTab tab, std::st
 std::future<std::optional<EngineOptions>> StudyWorker::module_engine_options(StudyTab tab, std::string module) {
   return impl_->submit([tab, module = std::move(module)](Impl::State &s) { return s.tab(tab).module_engine_options(module); });
 }
+std::future<Chapter> StudyWorker::read_commentary_chapter(StudyTab tab, std::string module, std::string reference, DisplayOptions options) {
+  return impl_->submit([tab, module = std::move(module), reference = std::move(reference), options](Impl::State &s) {
+    return s.tab(tab).read_commentary_chapter(module, reference, options);
+  });
+}
 std::future<Chapter> StudyWorker::read_chapter(StudyTab tab, std::string module, std::string reference, DisplayOptions options) {
   return impl_->submit([tab, module = std::move(module), reference = std::move(reference), options](Impl::State &s) {
     return s.tab(tab).read_chapter(module, reference, options);

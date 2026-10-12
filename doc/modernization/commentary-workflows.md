@@ -102,3 +102,24 @@ RawCom data covers missing verses, linked sections, chapter/book boundaries and
 empty OT content. The normal and address/undefined checks pass. This characterizes
 iterator statements only, not the complete renderer/cache/headings or selection
 anchor presentation. The native pane still shows a single commentary verse.
+
+## Initial shared chapter service
+
+`Reader`, `StudySession` and the FIFO worker expose `read_commentary_chapter`.
+The owned `Chapter` snapshot contains sparse iterator entries rather than the
+Bible's dense canonical verse list. `selected_verse` remains the engine verse
+ordinal; `selected_anchor` uses `commentary-verse-N`. Hosts consume the provided
+HTML/anchor and do not infer section ordinals from array indices. The service
+applies module engine preferences and does not record a Bible history visit.
+
+Selected, missing, linked and trailing anchors are checked against the frozen
+and configure-time extracted complete anchor-condition statements from the
+main legacy chapter renderer, with a minimal key/section shim. Numbered and
+unnumbered presentation retain the section boundary for the selected anchor.
+This compares anchor placement semantics, not complete legacy HTML/theme.
+
+The full local suite passes 54/54, including filter preference changes, sparse
+rendering, chapter boundaries, escaped attributes and queued snapshot ownership.
+Four focused address/undefined and three thread checks pass; the same external
+SDK/instrumentation limits apply. Headings, caching, image resizing, personal
+commentary handling and native chapter controls are still pending.

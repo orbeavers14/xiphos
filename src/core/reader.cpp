@@ -1,4 +1,5 @@
 #include "xiphos/core/dictionary.hpp"
+#include "xiphos/core/commentary.hpp"
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/reader.hpp"
 #include "xiphos/core/reference_list.hpp"
@@ -262,6 +263,41 @@ Chapter Reader::chapter_impl(const std::string &id, const std::string &reference
   // Keep the module at the requested anchor, as with a single-entry read.
   module.setKey(result.reference.c_str());
   result.html = display_chapter(result, options);
+  return result;
+}
+Chapter Reader::read_commentary_chapter(const std::string &id, const std::string &reference,
+                                        const DisplayOptions &display) {
+  return commentary_chapter_impl(id, reference, display, nullptr);
+}
+Chapter Reader::read_commentary_chapter(const std::string &id, const std::string &reference,
+                                        const DisplayOptions &display, const EngineOptions &engine) {
+  return commentary_chapter_impl(id, reference, display, &engine);
+}
+Chapter Reader::commentary_chapter_impl(const std::string &id, const std::string &reference,
+                                         const DisplayOptions &display, const EngineOptions *engine) {
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto &module = impl_->verse_module(id, reference);
+  if (std::string(module.getType()) != "Commentaries")
+    throw std::invalid_argument("Commentary chapter requires a commentary module");
+  const auto references = commentary_positions(module, reference);
+  sword::VerseKey key(*static_cast<sword::VerseKey *>(module.getKey()));
+  key.setAutoNormalize(true); key.setText(reference.c_str());
+  Chapter result;
+  result.reference = key.getText(); result.selected_verse = key.getVerse();
+  result.selected_anchor = "commentary-verse-" + std::to_string(result.selected_verse);
+  result.title = std::string(key.getBookName()) + " " + std::to_string(key.getChapter());
+  std::unique_ptr<ScopedEngineOptions> scope;
+  if (engine) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *engine);
+  std::vector<unsigned> positions;
+  for (const auto &position : references) {
+    key.setText(position.c_str());
+    positions.push_back(static_cast<unsigned>(key.getVerse()));
+    auto html = render_entry(module, position.c_str());
+    if (module.getKey()->getError()) throw std::invalid_argument("SWORD could not render a commentary section");
+    result.verses.push_back({module.getKeyText(), std::move(html)});
+  }
+  module.setKey(result.reference.c_str());
+  result.html = display_commentary_chapter(result, positions, display);
   return result;
 }
 std::string Reader::adjacent_chapter(const std::string &id, const std::string &reference,

@@ -13,6 +13,7 @@ struct DisplayOptions {
 };
 struct Chapter {
   std::string reference, title;
+  // Bible: dense canonical verses. Commentary: legacy module iterator positions.
   std::vector<Entry> verses;
   std::size_t selected_verse = 0;
   std::string selected_anchor, html;
@@ -30,4 +31,7 @@ std::string display_reference_links(const ParsedReferenceList &references);
 // Shared fragment presentation; engine-rendered verse HTML is retained.
 // Reference labels are escaped as attributes. Native hosts supply theme CSS.
 std::string display_chapter(const Chapter &chapter, const DisplayOptions &options);
+// Sparse/linked commentary sections need their engine verse ordinals.
+std::string display_commentary_chapter(const Chapter &chapter, const std::vector<unsigned> &positions,
+                                       const DisplayOptions &options);
 }

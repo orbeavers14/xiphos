@@ -80,6 +80,12 @@ Entry StudySession::read_entry(const std::string &module, const std::string &ref
   const auto options = module_engine_options(module);
   return options ? reader_.read(module, reference, *options) : reader_.read(module, reference);
 }
+Chapter StudySession::read_commentary_chapter(const std::string &module, const std::string &reference,
+                                              const DisplayOptions &display) {
+  const auto options = module_engine_options(module);
+  return options ? reader_.read_commentary_chapter(module, reference, display, *options)
+                 : reader_.read_commentary_chapter(module, reference, display);
+}
 Chapter StudySession::read_chapter(const std::string &module, const std::string &reference,
                                   const DisplayOptions &display) {
   const auto options = module_engine_options(module);

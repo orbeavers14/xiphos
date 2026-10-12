@@ -68,8 +68,12 @@ windows, companion/personal modules, profile startup and representative corpus
 acceptance remain pending. The engineering estimate and fully accepted parity
 count stay unchanged. A separate frozen/current legacy iterator check now
 validates a shared linked/sparse commentary-position helper; normal and
-address/undefined checks pass. The suite contains 53 checks; chapter presentation
-is still pending.
+address/undefined checks pass. The suite now contains 54 checks. A no-record shared commentary chapter
+service renders the characterized sparse/linked positions with module preferences
+and selected/missing anchors; the full suite passes 54/54. Four focused
+address/undefined and three thread checks pass, with SDK instrumentation limits
+as documented. Native chapter controls, headings and broader acceptance remain
+pending.
 
 - Shared C++ module/verse/chapter reading, Bible history, rendering options,
   engine-preference import/save, note and reference-list previews.
@@ -88,7 +92,7 @@ is still pending.
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
 
-Current local suite: **53 checks**. The shared Unicode click-key utility reuses
+Current local suite: **54 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.

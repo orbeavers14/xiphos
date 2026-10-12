@@ -63,6 +63,7 @@ int main(int argc, char **argv) {
     Reader reader(root.string());
     check(reader.read_dictionary("Dictionary", "ALPHA").html.find("dictionary pane fixture") != std::string::npos,
           "generated dictionary path resolves original prose");
+    fails<std::invalid_argument>([&] { reader.read_commentary_chapter("Text", "John 3:16"); }, "Bible rejected by commentary chapter service");
     StudySession session(reader);
     const auto first = session.visit_passage("Text", "Notes", "Jn 3:16");
     check(first.text.reference == "John 3:16" && first.commentary->reference == first.text.reference,

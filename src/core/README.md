@@ -437,3 +437,11 @@ empty history). This does not change the strict types required by paired visits.
 and current main commentary iterator statements. It restores key/skip state
 and returns owned references while skipping consecutive linked entries. It does
 not yet provide commentary chapter rendering, headings or personal-module edits.
+
+`read_commentary_chapter` on Reader/StudySession/StudyWorker now returns an owned
+`Chapter` using those sparse references. Unlike Bible chapters, its `verses`
+array is not indexed by canonical verse number. `selected_verse` is still the
+engine verse ordinal; hosts use the returned HTML and `commentary-verse-N` anchor.
+Module options apply to every rendered section and reads leave history unchanged.
+Selected/missing/trailing anchor placement has frozen/current legacy statement
+characterization; complete headings/cache/theme/personal-module parity is pending.

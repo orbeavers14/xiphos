@@ -65,6 +65,11 @@ public:
                        const DisplayOptions &display, const EngineOptions &engine);
   Chapter read_chapter(const std::string &module, const std::string &reference,
                        const DisplayOptions &options = {});
+  // Sparse/linked main-commentary traversal; headings/cache/editing pending.
+  Chapter read_commentary_chapter(const std::string &module, const std::string &reference,
+                                  const DisplayOptions &display = {});
+  Chapter read_commentary_chapter(const std::string &module, const std::string &reference,
+                                  const DisplayOptions &display, const EngineOptions &engine);
   std::string adjacent_chapter(const std::string &module, const std::string &reference,
                                int direction);
 private:
@@ -76,6 +81,8 @@ private:
   Entry read_impl(const std::string &module, const std::string &reference, const EngineOptions *options);
   Chapter chapter_impl(const std::string &module, const std::string &reference,
                        const DisplayOptions &display, const EngineOptions *engine);
+  Chapter commentary_chapter_impl(const std::string &module, const std::string &reference,
+                                   const DisplayOptions &display, const EngineOptions *engine);
   struct Impl;
   std::unique_ptr<Impl> impl_;
 };
