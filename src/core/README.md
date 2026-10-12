@@ -265,3 +265,11 @@ does not infer click case normalization. Existing dictionary previews and key
 steps retain their no-record behavior. C transfers a distinct owned history
 kind with count/cursor, module/key entries and back/forward flags; bounds return
 null/zero and snapshots survive worker teardown. Native integration follows.
+
+
+Explicit lexical visits render before recording selected dictionary/raw value.
+The worker/C click dispatcher shares the contextual parser/result path with
+preview resolution and records only successful lexical commands. Passage
+targets, notes and reference lists retain their existing no-Bible-visit behavior;
+older preview resolution remains unrecorded. Legacy Unicode click normalization
+is still pending and is not silently replaced by Swift case conversion.

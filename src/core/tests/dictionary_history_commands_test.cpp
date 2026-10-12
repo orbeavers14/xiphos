@@ -50,6 +50,14 @@ int main(int argc,char **argv) {
       second.visit_dictionary("DictionaryOne","G03056");
       check(first.dictionary_history().entries().size()==3 && second.dictionary_history().entries().size()==1 &&
         first.history().entries().size()==1 && second.history().entries().empty(),"separate dictionary/Bible/tab histories");
+      LexiconPreferences lexicons; lexicons.greek="DictionaryOne";
+      first.set_lexicon_preferences(lexicons);
+      const std::string uri="xiphos.url?action=showStrongs&type=Greek&value=alpha";
+      (void)first.read_lexical("OriginalBible","John3:16",uri,XIPHOS_LEXICON_MAIN);
+      check(first.dictionary_history().entries().size()==3,"lexical preview does not record visit");
+      const auto lexical=first.visit_lexical("OriginalBible","John3:16",uri,XIPHOS_LEXICON_MAIN);
+      check(lexical.entry.module=="DictionaryOne" && first.dictionary_history().entries().size()==4 &&
+        first.dictionary_history().entries().back().key=="alpha","explicit lexical visit records selected dictionary/raw value");
       first.clear_dictionary_history();
       check(first.dictionary_history().entries().empty() && first.history().entries().size()==1,
         "dictionary clear leaves Bible history");
@@ -69,6 +77,20 @@ int main(int argc,char **argv) {
       retained=worker.dictionary_history(tab).get();
       check(retained.entries.size()==2 && retained.entries.front().key=="alpha" && retained.cursor==1,
         "history stores requested key and owns snapshot");
+      LexiconPreferences lexicons; lexicons.greek="DictionaryTwo"; worker.set_lexicon_preferences(tab,lexicons).get();
+      const std::string uri="xiphos.url?action=showStrongs&type=Greek&value=alpha";
+      (void)worker.resolve_study_link_at(tab,"OriginalBible","John3:16",uri).get();
+      check(worker.dictionary_history(tab).get().entries.size()==2,"contextual lexical resolution stays unrecorded");
+      const auto click=worker.follow_study_link_at(tab,"OriginalBible","John3:16",uri).get();
+      check(std::holds_alternative<LexicalEntry>(click) && std::get<LexicalEntry>(click).entry.module=="DictionaryTwo" &&
+        worker.dictionary_history(tab).get().entries.size()==3,"contextual click records selected dictionary");
+      const auto passage=worker.follow_study_link_at(tab,"OriginalBible","John3:16","sword:///John3:17").get();
+      check(std::holds_alternative<PassageLink>(passage) && worker.dictionary_history(tab).get().entries.size()==3 &&
+        worker.history(tab).get().entries.empty(),"follow passage target retains no-visit dispatch behavior");
+      lexicons.greek="Missing"; worker.set_lexicon_preferences(tab,lexicons).get();
+      bool missing=false;
+      try { (void)worker.follow_study_link_at(tab,"OriginalBible","John3:16",uri).get(); } catch (const std::out_of_range &) { missing=true; }
+      check(missing && worker.dictionary_history(tab).get().entries.size()==3,"failed lexical click retains dictionary history");
       worker.clear_dictionary_history(tab).get();
       check(worker.dictionary_history(tab).get().entries.empty(),"worker dictionary clear");
       worker.close_tab(tab).get(); invalid([&] { (void)worker.dictionary_history(tab).get(); });
@@ -101,6 +123,18 @@ int main(int argc,char **argv) {
       xc_request_release(request); // unobserved owned entry released with request
       check(xc_worker_navigate_dictionary_history(worker,tab,0,&request)==XC_INVALID_ARGUMENT && !request,
         "C invalid history direction prequeue");
+      const xc_lexicon_names names={"DictionaryTwo",nullptr,nullptr,nullptr,nullptr};
+      check(xc_worker_set_lexicon_preferences(worker,tab,&names,&request)==XC_OK && wait(request)==XC_OK,"C recorded lexical preferences");
+      xc_request_release(request);
+      check(xc_worker_follow_study_link_at(worker,tab,"OriginalBible","John3:16","xiphos.url?action=showStrongs&type=Greek&value=alpha",&request)==XC_OK && wait(request)==XC_OK,"C contextual recorded click");
+      auto *lexical=xc_request_take_lexical_entry(request);
+      check(lexical && std::string(xc_lexical_entry_dictionary_module(lexical))=="DictionaryTwo","C recorded lexical result kind");
+      xc_lexical_entry_release(lexical); xc_request_release(request);
+      check(xc_worker_dictionary_history(worker,tab,&request)==XC_OK && wait(request)==XC_OK,"C recorded lexical history");
+      auto *updated=xc_request_take_dictionary_history(request);
+      check(updated && xc_dictionary_history_count(updated)==2 && !xc_dictionary_history_can_forward(updated) &&
+        std::string(xc_dictionary_history_module(updated,1))=="DictionaryTwo","C changed click clears forward dictionary history");
+      xc_dictionary_history_release(updated); xc_request_release(request);
       check(xc_worker_clear_dictionary_history(worker,tab,&request)==XC_OK && wait(request)==XC_OK,"C dictionary history clear");
       xc_request_release(request); xc_worker_close(worker);
     }

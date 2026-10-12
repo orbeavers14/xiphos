@@ -38,6 +38,7 @@ public:
   std::future<void> close_tab(StudyTab tab);
   std::future<void> set_lexicon_preferences(StudyTab tab, LexiconPreferences preferences);
   std::future<std::optional<LexiconPreferences>> lexicon_preferences(StudyTab tab);
+  std::future<LexicalEntry> visit_lexical(StudyTab tab, std::string module, std::string reference, std::string uri, int origin);
   std::future<LexicalEntry> read_lexical(StudyTab tab, std::string module, std::string reference,
                                       std::string uri, int origin);
   std::future<DictionaryEntry> visit_dictionary(StudyTab tab, std::string module, std::string key);
@@ -48,6 +49,8 @@ public:
   std::future<DictionaryEntry> read_dictionary(StudyTab tab, std::string module, std::string key);
   std::future<ReferenceList> read_reference_list(StudyTab tab, std::string module, std::string expression, std::string context);
   // showRef previews use the supplied source reference and never visit history.
+  // Same dispatch, explicitly recording successful lexical dictionary visits.
+  std::future<ContextualStudyLink> follow_study_link_at(StudyTab tab, std::string current_module, std::string current_reference, std::string uri);
   std::future<ContextualStudyLink> resolve_study_link_at(StudyTab tab, std::string current_module, std::string current_reference, std::string uri);
   std::future<ResolvedStudyLink> resolve_study_link(StudyTab tab, std::string current_module, std::string uri);
   std::future<StudyNote> study_note_link(StudyTab tab, std::string current_module, std::string uri);

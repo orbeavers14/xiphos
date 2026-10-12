@@ -110,6 +110,10 @@ xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_req
  * be nonempty for this contextual API. No Bible history visit.
  * After XC_OK take_reference_list, take_link, take_note or take_lexical_entry
  * identifies the kind. Older resolve_study_link retains its two-kind contract. */
+/* Explicit click dispatch records successful lexical visits in dictionary
+ * history; other command kinds retain preview/target behavior. No Bible visit.
+ * Requested lexical value is recorded; legacy Unicode click case policy pending. */
+xc_status xc_worker_follow_study_link_at(xc_worker *worker, uint64_t tab, const char *current_module, const char *current_reference, const char *uri, xc_request **out);
 xc_status xc_worker_resolve_study_link_at(xc_worker *worker, uint64_t tab, const char *current_module, const char *current_reference, const char *uri, xc_request **out);
 xc_status xc_worker_resolve_study_link(xc_worker *worker, uint64_t tab, const char *current_module, const char *uri, xc_request **out);
 xc_status xc_worker_study_note_link(xc_worker *worker, uint64_t tab, const char *current_module, const char *uri, xc_request **out);
@@ -123,6 +127,8 @@ xc_status xc_worker_lexicon_preferences(xc_worker *worker, uint64_t tab, xc_requ
  * module/reference become empty (valid for source-independent Strong's).
  * Greek morphology validates source on the worker. No Bible history visit.
  * Source reference is authoritative; query passage remains metadata. */
+/* Explicit lexical visit records selected module/raw value after rendering. */
+xc_status xc_worker_visit_lexical(xc_worker *worker, uint64_t tab, const char *module, const char *reference, const char *uri, int origin, xc_request **out);
 xc_status xc_worker_read_lexical(xc_worker *worker, uint64_t tab, const char *module, const char *reference, const char *uri, int origin, xc_request **out);
 /* Explicit dictionary visit records requested module/key after successful read.
  * No case normalization/Bible visit. History navigation commits after rendering.

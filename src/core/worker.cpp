@@ -31,6 +31,19 @@ struct StudyWorker::Impl {
     StudyNote note_link(StudyTab id, const std::string &current_module, const std::string &uri) {
       return note_target(id, xiphos::core::study_note_link(uri, current_module));
     }
+    ContextualStudyLink study_link_at(StudyTab tab, const std::string &current_module,
+                                     const std::string &current_reference, const std::string &uri, bool record_lexical) {
+      auto &session = this->tab(tab);
+      const auto target = xiphos::core::contextual_study_link(uri, current_module);
+      if (const auto *passage = std::get_if<PassageLink>(&target))
+        return reader.resolve_link(passage->module, passage_uri(passage->reference));
+      if (const auto *list = std::get_if<ReferenceListLink>(&target))
+        return session.read_reference_list(list->module, list->expression, current_reference);
+      if (std::holds_alternative<LexicalLink>(target))
+        return record_lexical ? session.visit_lexical(current_module, current_reference, uri, XIPHOS_LEXICON_MAIN)
+                              : session.read_lexical(current_module, current_reference, uri, XIPHOS_LEXICON_MAIN);
+      return note_target(tab, std::get<StudyNoteLink>(target));
+    }
   };
   using Job = std::function<void(State *, std::exception_ptr)>;
   std::mutex mutex;
@@ -103,6 +116,11 @@ std::future<void> StudyWorker::set_lexicon_preferences(StudyTab tab, LexiconPref
 std::future<std::optional<LexiconPreferences>> StudyWorker::lexicon_preferences(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s) { return s.tab(tab).lexicon_preferences(); });
 }
+std::future<LexicalEntry> StudyWorker::visit_lexical(StudyTab tab, std::string module, std::string reference, std::string uri, int origin) {
+  return impl_->submit([tab, module = std::move(module), reference = std::move(reference), uri = std::move(uri), origin](Impl::State &s) {
+    return s.tab(tab).visit_lexical(module, reference, uri, origin);
+  });
+}
 std::future<LexicalEntry> StudyWorker::read_lexical(StudyTab tab, std::string module, std::string reference,
                                                std::string uri, int origin) {
   return impl_->submit([tab, module = std::move(module), reference = std::move(reference), uri = std::move(uri), origin](Impl::State &s) {
@@ -141,18 +159,16 @@ std::future<ReferenceList> StudyWorker::read_reference_list(StudyTab tab, std::s
     return s.tab(tab).read_reference_list(module, expression, context);
   });
 }
+std::future<ContextualStudyLink> StudyWorker::follow_study_link_at(StudyTab tab, std::string current_module, std::string current_reference, std::string uri) {
+  return impl_->submit([tab, current_module = std::move(current_module), current_reference = std::move(current_reference),
+                        uri = std::move(uri)](Impl::State &s) -> ContextualStudyLink {
+    return s.study_link_at(tab, current_module, current_reference, uri, true);
+  });
+}
 std::future<ContextualStudyLink> StudyWorker::resolve_study_link_at(StudyTab tab, std::string current_module, std::string current_reference, std::string uri) {
   return impl_->submit([tab, current_module = std::move(current_module), current_reference = std::move(current_reference),
                         uri = std::move(uri)](Impl::State &s) -> ContextualStudyLink {
-    auto &session = s.tab(tab);
-    const auto target = xiphos::core::contextual_study_link(uri, current_module);
-    if (const auto *passage = std::get_if<PassageLink>(&target))
-      return s.reader.resolve_link(passage->module, passage_uri(passage->reference));
-    if (const auto *list = std::get_if<ReferenceListLink>(&target))
-      return session.read_reference_list(list->module, list->expression, current_reference);
-    if (std::holds_alternative<LexicalLink>(target))
-      return session.read_lexical(current_module, current_reference, uri, XIPHOS_LEXICON_MAIN);
-    return s.note_target(tab, std::get<StudyNoteLink>(target));
+    return s.study_link_at(tab, current_module, current_reference, uri, false);
   });
 }
 std::future<ResolvedStudyLink> StudyWorker::resolve_study_link(StudyTab tab, std::string current_module, std::string uri) {

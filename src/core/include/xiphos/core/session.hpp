@@ -15,6 +15,7 @@ public:
   void set_lexicon_preferences(const LexiconPreferences &preferences);
   const std::optional<LexiconPreferences> &lexicon_preferences() const { return lexicons_; }
   // Reference is the committed source context; URI passage remains metadata.
+  LexicalEntry visit_lexical(const std::string &module, const std::string &reference, const std::string &uri, int origin);
   LexicalEntry read_lexical(const std::string &module, const std::string &reference,
                           const std::string &uri, int origin);
   // Render with this tab's settings without moving or adding history.
