@@ -332,4 +332,5 @@ locale. C APIs `xc_worker_import_lexicon_profile` and
 `xc_worker_save_lexicon_profile` use existing observer lifetimes; import
 transfers one configured snapshot through `xc_request_take_lexicons`, while
 save completes without a snapshot. Releasing an accepted observer does not
-cancel file work; shutdown drains it. Native controls remain separate work.
+cancel file work; shutdown drains it. macOS selected-file controls now delegate
+through the typed adapter; full profile/restoration/platform parity is pending.

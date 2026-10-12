@@ -166,7 +166,7 @@ nullable/empty names remain distinct. The adapter rejects embedded NULs and
 owns source/kind/raw value plus dictionary key/HTML after shutdown. Fixture
 checks cover OT/NT context and separate tabs. Native preference/pane/hover/click
 workflows remain pending. Shared XML persistence and typed Swift commands are
-now implemented; native profile controls remain the next integration work.
+now implemented, including native selected-file import/save controls.
 
 
 The copied catalog now exposes dictionary classification and declared lexicon
@@ -272,5 +272,17 @@ and manages observer/snapshot lifetimes, without an XML schema or file writer.
 `swift_profile_adapter` uses disposable XML files and generated dictionaries to
 check complete defaults, unavailable names, typed round trips, escaping, source
 preservation, failed-import retention, window/history/engine-setting isolation
-and values surviving shutdown. Saved locale is not applied. Native file-picker
-controls and complete profile/platform acceptance remain pending.
+and values surviving shutdown. Saved locale is not applied. Preferences now
+offers Import lexicon choices and Save lexicon choices through native file
+pickers. Import affects this window only; save updates the five effective
+choices and retains other settings in a valid existing file. Invalid input/save
+failures leave existing state/files intact and show a readable status message.
+No installed-profile discovery or automatic save occurs.
+
+`reader_model_profile` checks busy/stale/closed publication, pane/draft/history/
+engine-setting preservation, unavailable choices, round trips and friendly
+errors. A disposable GUI run checked picker import, new-file save and malformed
+input while John3:16 stayed displayed with an unsubmitted John4:2 draft.
+Full-profile migration, forced-locale startup and platform acceptance remain
+pending. Existing macOS-13-compatible onChange calls emit deprecation warnings
+under the newer SDK; minimum-version validation remains a separate gate.

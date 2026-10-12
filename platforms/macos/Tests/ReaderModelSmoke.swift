@@ -419,8 +419,78 @@ struct ReaderModelSmoke {
         first.close(); await worker.shutdown()
         print("Native lexicon preference model checks passed")
     }
+    @MainActor static func profiles(root: String, profileRoot: String) async throws {
+        let directory = URL(fileURLWithPath: profileRoot, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let source = directory.appendingPathComponent("settings-café.xml")
+        let saved = directory.appendingPathComponent("saved.xml")
+        let invalid = directory.appendingPathComponent("malformed.xml")
+        let busy = directory.appendingPathComponent("busy-save.xml")
+        let closedSave = directory.appendingPathComponent("closed-save.xml")
+        for file in [busy, closedSave] where FileManager.default.fileExists(atPath: file.path) { try FileManager.default.removeItem(at: file) }
+        let original = "<Xiphos><!--keep--><lexicons><greek>DictionaryOne</greek><hebrew>UnavailableHebrew</hebrew><greek_morph_nt>MorphGreek</greek_morph_nt><greek_morph_ot>UnavailableOT</greek_morph_ot><hebrew_morph>MorphHebrew</hebrew_morph></lexicons><locale><special>tr_TR.UTF-8</special></locale><other>unchanged</other></Xiphos>"
+        try Data(original.utf8).write(to: source)
+        try Data("<Xiphos>".utf8).write(to: invalid)
+        try Data(original.utf8).write(to: saved)
+        let worker = try CoreWorker(root: root)
+        let first = ReaderModel(worker: worker, startupError: nil), second = ReaderModel(worker: worker, startupError: nil)
+        try await idle(first); try await idle(second)
+        let defaults = second.lexiconPreferences
+        first.selection = "OriginalBible"; first.reference = "John 3:16"; first.read(); try await idle(first)
+        first.setReadingOption(.strongs, enabled: true); try await idle(first)
+        first.dictionarySelection = "DictionaryOne"; first.dictionaryKey = "03056"; first.lookupDictionary(); try await idle(first)
+        first.reference = "John 4:2"
+        let html = first.html, committed = first.renderedReference, engine = first.engineOptions
+        let dictionary = first.dictionaryHistory, entry = first.dictionaryEntry?.html
+        let back = first.canBack, forward = first.canForward
+        first.importLexiconProfile(path: source.path)
+        guard first.isBusy else { fatalError("profile import starts nonblocking busy state") }
+        first.saveLexiconProfile(path: busy.path) // ignore actions while import is active
+        try await idle(first)
+        guard first.lexiconPreferences?.greek == "DictionaryOne", first.lexiconPreferences?.hebrew == "UnavailableHebrew",
+              first.lexiconPreferences?.greekMorphNT == "MorphGreek", first.lexiconPreferences?.greekMorphOT == "UnavailableOT",
+              first.lexiconPreferences?.hebrewMorph == "MorphHebrew", second.lexiconPreferences == defaults,
+              first.message == "Lexicon choices imported for this window.", !FileManager.default.fileExists(atPath: busy.path) else { fatalError("model profile import/isolation/busy action") }
+        guard first.reference == "John 4:2", first.html == html, first.renderedReference == committed,
+              first.engineOptions == engine, first.dictionaryHistory == dictionary, first.dictionaryEntry?.html == entry,
+              first.canBack == back, first.canForward == forward else { fatalError("profile import preserves drafts/content/options/histories") }
+        let imported = first.lexiconPreferences
+        first.importLexiconProfile(path: invalid.path); try await idle(first)
+        guard first.lexiconPreferences == imported, first.message.contains("Unable to import lexicon choices"),
+              first.reference == "John 4:2", first.html == html, first.dictionaryHistory == dictionary else { fatalError("friendly import error preserves prior state") }
+        first.saveLexiconProfile(path: saved.path); try await idle(first)
+        guard first.message == "Lexicon choices saved.", try Data(contentsOf: source) == Data(original.utf8),
+              try String(contentsOf: saved, encoding: .utf8).contains("<other>unchanged</other>") else { fatalError("model save source/unrelated preservation") }
+        second.importLexiconProfile(path: saved.path); try await idle(second)
+        guard second.lexiconPreferences == imported else { fatalError("model save/import round trip") }
+        let malformedBytes = try Data(contentsOf: invalid)
+        first.saveLexiconProfile(path: invalid.path); try await idle(first)
+        guard first.message.contains("Unable to save lexicon choices"), try Data(contentsOf: invalid) == malformedBytes,
+              first.lexiconPreferences == imported, first.dictionaryHistory == dictionary else { fatalError("friendly save error preserves state/file") }
+        first.previewLexicalLink("xiphos.url?action=showStrongs&type=Greek&value=03056"); try await previewIdle(first)
+        guard first.informationPreview?.entry.module == "DictionaryOne" else { fatalError("profile drives shared lexical hover") }
+        let replacement = original.replacingOccurrences(of: "<greek>DictionaryOne</greek>", with: "<greek>DictionaryTwo</greek>")
+        try Data(replacement.utf8).write(to: source)
+        first.previewLexicalLink("xiphos.url?action=showStrongs&type=Greek&value=alpha")
+        first.importLexiconProfile(path: source.path); try await idle(first); try await previewIdle(first)
+        guard first.lexiconPreferences?.greek == "DictionaryTwo", first.informationPreview?.value == "03056",
+              first.reference == "John 4:2", first.html == html else { fatalError("profile import invalidates late hover publication") }
+        first.previewLexicalLink("xiphos.url?action=showStrongs&type=Greek&value=alpha"); try await previewIdle(first)
+        guard first.informationPreview?.entry.module == "DictionaryTwo" else { fatalError("import retains installed names regardless of picker role metadata") }
+        let beforeClose = second.lexiconPreferences, beforeMessage = second.message
+        second.importLexiconProfile(path: source.path); second.close()
+        second.saveLexiconProfile(path: closedSave.path)
+        try await Task.sleep(nanoseconds: 50_000_000)
+        guard second.lexiconPreferences == beforeClose, second.message == beforeMessage,
+              !FileManager.default.fileExists(atPath: closedSave.path) else { fatalError("closed model drops late profile publication and new save") }
+        first.close(); await worker.shutdown()
+        print("Native profile controls/state/isolation/failure checks passed")
+    }
     @MainActor static func main() async throws {
         let selectedLocale = initializePreviewLocale()
+        if CommandLine.arguments.count == 4, CommandLine.arguments[1] == "--profile" {
+            try await profiles(root: CommandLine.arguments[2], profileRoot: CommandLine.arguments[3]); return
+        }
         if CommandLine.arguments.count == 3, ["--locale", "--invalid-locale"].contains(CommandLine.arguments[1]) {
             let invalidEnvironment = CommandLine.arguments[1] == "--invalid-locale"
             guard invalidEnvironment ? selectedLocale == nil : selectedLocale?.hasPrefix("tr_TR") == true else { fatalError("environment locale startup selection") }
