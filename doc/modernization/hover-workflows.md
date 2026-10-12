@@ -82,3 +82,52 @@ information preview rather than replacing the dictionary click pane. Do not
 claim all-link hover parity from lexical-only transport. Notes, cross-reference
 preference routing, status-only references, detached dialogs, keyboard behavior,
 real modules and all three native frontends remain separate acceptance checks.
+
+## Lexicon profile persistence seam
+
+Source audit of the current fork, 2026-10-11; these observations are not an
+executable profile characterization or an implemented native importer.
+`main/settings.c:load_settings_structure` reads the following XML children
+under `Xiphos/lexicons`; they are separate from the engine-options file.
+
+| XML child | Shared preference | Startup default |
+|---|---|---|
+| greek | Greek Strong's | StrongsGreek |
+| hebrew | Hebrew Strong's | StrongsHebrew |
+| greek_morph_nt | Greek NT morphology | Robinson |
+| greek_morph_ot | Greek OT morphology | Packard |
+| hebrew_morph | Hebrew morphology | OSHM |
+
+Strong's defaults apply when `xml_get_value` returns null. Morphology defaults
+apply to null or empty returned values. XML node presence must be characterized
+separately: `xml_get_value` calls `xmlNodeListGetString` on the child list, so
+an empty element may return null even though the node exists. The shared API's
+explicit nullable/empty values do not establish file-level import semantics.
+Nonempty configured names are retained at this loading seam without checking
+whether their modules are installed.
+
+`main/xml.c:xml_set_value` updates an existing node only; it does not create
+missing nodes. `xml_add_new_item_to_section` appends a child only when the
+section already exists, without replacing a duplicate child. The current
+morphology startup default path uses that append operation; the Strong's path
+uses the update-only operation. `xml_find_prop` returns the first matching
+child in traversal order. Do not silently normalize duplicate/missing nodes
+before fixtures establish their observable behavior and a repair policy.
+
+The preference-dialog callbacks write these exact keys. The three morphology
+callbacks also explicitly save the settings document after a valid selection.
+Adjacent `defaultdictionary` and `usedefaultdict` settings belong to the
+separate default-dictionary policy and must survive lexicon-only updates.
+
+Saved locale is `Xiphos/locale/special`. The legacy startup applies a forced
+locale after loading settings, excluding the translated NONE sentinel and
+literal None; it tries the saved name and then its .UTF-8 suffix. The native
+host currently initializes only the environment locale before worker startup.
+Importing this setting requires a startup-order contract; changing process
+locale inside a worker or while other windows are active is not equivalent.
+
+Next implementation gate: disposable XML fixtures for absent/empty/duplicate
+nodes, escaping, unavailable module names, malformed input and unrelated
+sections; then a shared owned profile snapshot and explicit import/save that
+preserves unrelated data and verifies replacement before publication. Never
+infer XML compatibility from the existing engine-options import/save tests.
