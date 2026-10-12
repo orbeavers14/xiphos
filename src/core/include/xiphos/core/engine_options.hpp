@@ -32,6 +32,8 @@ struct EngineOptions {
 };
 // Exact modops.conf engine-setting semantics from legacy main_new_globals.
 // Unknown keys are ignored; this parser does not read or write user files.
+// Select exactly one reading while retaining every unrelated option. Invalid choices reject.
+EngineOptions select_variant_reading(EngineOptions options, int choice);
 using EngineOptionPreferences = std::map<std::string, std::string>;
 EngineOptions engine_options_from_preferences(const EngineOptionPreferences &preferences);
 // Legacy modops.conf encoding; a no-variant selection reloads as primary.

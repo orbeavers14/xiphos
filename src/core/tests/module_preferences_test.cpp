@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
     std::filesystem::create_directories(root / "other-data");
     std::filesystem::copy(root / "data", root / "other-data", std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
     { std::ofstream output(root / "mods.d/other.conf"); output << config
-        << "GlobalOptionFilter=UTF8GreekAccents\nGlobalOptionFilter=OSISScripref\nGlobalOptionFilter=UTF8HebrewPoints\nGlobalOptionFilter=UTF8Cantillation\n"; }
+        << "GlobalOptionFilter=UTF8GreekAccents\nGlobalOptionFilter=OSISScripref\nGlobalOptionFilter=UTF8HebrewPoints\nGlobalOptionFilter=UTF8Cantillation\nGlobalOptionFilter=OSISVariants\n"; }
     {
       sword::RawText writer((root / "other-data").string().c_str());
       writer.setKey("John 3:18");
@@ -46,6 +46,12 @@ int main(int argc, char **argv) {
       writer.setEntry("<verse osisID=\"John.3.19\">Other module entry."
                       "<note type=\"study\" n=\"b\">Original other note café <hi type=\"italic\">body</hi> "
                       "<w lemma=\"strong:G3056\">word</w></note></verse>");
+      // OSIS variant markup follows CrossWire's OSISVariants filter documentation:
+      // https://www.crosswire.org/sword/apiref/classOSISVariants.html
+      writer.setKey("John 3:22");
+      writer.setEntry("<verse osisID=\"John.3.22\">Original shared text. "
+                      "<seg type=\"x-variant\" subType=\"x-1\">Original primary reading.</seg> "
+                      "<seg type=\"x-variant\" subType=\"x-2\">Original secondary reading.</seg></verse>");
       writer.setKey("John 3:21");
       writer.setEntry("<verse osisID=\"John.3.21\">שָׁל֑וֹם</verse>");
       writer.setKey("John 3:20");

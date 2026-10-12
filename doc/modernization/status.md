@@ -1258,3 +1258,24 @@ on this Mac, so this is seam validation, not a full GTK runtime check. No
 GitHub build dispatched or feature group accepted.
 
 Next: shared tab-aware variant selection, C/Swift binding and native controls.
+
+## Tab-aware variant selection: locally checked, native binding pending
+
+Implemented 2026-10-11 on `modernization/tab-variant-selection`, based on
+the legacy selection seam. Shared selection applies one characterized
+primary/secondary/all choice to copied effective module settings, preserving
+every unrelated flag. The session/worker requires configured settings and a
+declared variant filter, commits one module override and never visits history.
+Invalid, undeclared, unconfigured and closed-tab operations reject.
+
+Validation: 21/21 local checks, focused address/undefined and thread checks
+3/3 each, default legacy seam build and strict C++11/C++17 checks passed. A
+generated original OSIS fixture follows CrossWire's
+[OSISVariants filter documentation](https://www.crosswire.org/sword/apiref/classOSISVariants.html);
+all three actual renders equal direct legacy SWORD setter/render calls. Tests
+cover entry/chapter/sidebar output, all eight prior variant-flag combinations,
+unrelated preferences, window settings isolation, backward/forward history,
+failed operations, copied worker submission and save/reload. No GitHub builds.
+
+Next: C/Swift operation bindings and native variant choices. No full variant
+or platform parity is accepted; legacy operation remains available.

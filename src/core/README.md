@@ -129,4 +129,8 @@ CoreOptions. It extracts the legacy reading_selector's primary/secondary/all
 flag mapping. The actual GTK callback delegates to it, retaining option-save,
 dialog/main navigation and invalid-choice behavior. A frozen callback and the
 actual extracted adapter are characterized without requiring GTK libraries.
-Native tab operations and controls follow separately.
+`select_variant_reading` applies the characterized mapping to a copied
+EngineOptions value, retaining every unrelated flag and rejecting invalid
+choices. `StudySession::select_module_variant` and its worker operation require
+configured settings and a declared variant filter, then update one module
+without visiting history. C/Swift controls follow separately.

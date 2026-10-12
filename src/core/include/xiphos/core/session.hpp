@@ -34,6 +34,8 @@ public:
   void import_module_preferences(const std::string &path);
   // Saves explicit effective options, never guesses unconfigured SDK state.
   void save_module_preferences(const std::string &path) const;
+  // Requires configured settings and a declared variant filter; no history visit.
+  void select_module_variant(const std::string &module, int choice);
   void set_module_engine_options(const std::string &module, const EngineOptions &options);
   void clear_module_engine_options(const std::string &module);
   std::optional<EngineOptions> module_engine_options(const std::string &module) const;
