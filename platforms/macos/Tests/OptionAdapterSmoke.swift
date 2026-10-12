@@ -77,10 +77,20 @@ struct OptionAdapterSmoke {
         try await worker.importModulePreferences(tab: restoredTab, path: saveURL.path)
         let savedOptions = try await worker.moduleEngineOptions(tab: restoredTab, module: "OptionTest")
         guard savedOptions == imported else { fatalError("Swift explicit save/reload") }
+        _ = try await worker.readTabChapter(tab: tab, module: "OptionTest", reference: "John 3:16", verseNumbers: true, highlightSelected: true)
+        let note = try await worker.studyNote(tab: tab, module: "OptionTest", reference: "John 3:16", identifier: "1")
+        guard note.reference == "John 3:16", note.identifier == "1", note.type == "study",
+              note.label == "a", note.html.contains("Original note."), note.referenceList.isEmpty else { fatalError("Swift copied study-note metadata/body") }
+        do {
+            _ = try await worker.studyNote(tab: tab, module: "OptionTest", reference: "John 3:17", identifier: "1")
+            fatalError("Swift stale note accepted")
+        } catch is CoreError { }
+        let noteHistory = try await worker.history(tab)
+        guard noteHistory.count == 1 else { fatalError("Swift note preview changed history") }
         try await worker.closeTab(restoredTab)
         try await worker.closeTab(tab)
         await worker.shutdown()
-        guard modules[0].options.declared == declared, restored.html == original.html else { fatalError("copied metadata/results lifetime") }
+        guard note.html.contains("Original note."), modules[0].options.declared == declared, restored.html == original.html else { fatalError("copied metadata/results lifetime") }
         print("Swift tab option/metadata adapter checks passed")
     }
 }

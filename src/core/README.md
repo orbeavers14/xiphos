@@ -65,5 +65,8 @@ existing backend; sessions apply their effective module options without
 visiting or moving history. Missing notes reject rather than inserting empty
 SDK attributes or reusing attributes from the last chapter verse. The helper
 is C++11-compatible in CoreRender; native host lifetime/thread rules still
-apply. Native link handling, hover presentation and expanded reference lists
-remain separate pending work.
+apply. `xc_worker_study_note` returns a polled request whose result transfers once
+through `xc_request_take_note`; note strings survive worker/request close until
+`xc_note_release`. Swift `CoreWorker.studyNote` copies the six result strings
+into a Sendable value. Native link handling, hover presentation and expanded
+reference lists remain separate pending work.

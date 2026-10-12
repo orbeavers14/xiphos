@@ -146,6 +146,23 @@ actor CoreWorker {
         let status = xc_worker_clear_engine_options(try worker(), tab, &request)
         xc_request_release(try await wait(status, request))
     }
+    func studyNote(tab: UInt64, module: String, reference: String, identifier: String) async throws -> RenderedStudyNote {
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { id in
+            reference.withCString { ref in
+                identifier.withCString { xc_worker_study_note(handle, tab, id, ref, $0, &request) }
+            }
+        }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_note(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_note_release(result) }
+        return RenderedStudyNote(reference: String(cString: xc_note_reference(result)!),
+            identifier: String(cString: xc_note_identifier(result)!), type: String(cString: xc_note_type(result)!),
+            label: String(cString: xc_note_label(result)!), html: String(cString: xc_note_html(result)!),
+            referenceList: String(cString: xc_note_reference_list(result)!))
+    }
     func readTabEntry(tab: UInt64, module: String, reference: String) async throws -> RenderedEntry {
         var request: OpaquePointer?
         let handle = try worker()

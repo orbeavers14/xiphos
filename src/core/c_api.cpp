@@ -15,6 +15,7 @@ struct xc_session {
 struct xc_chapter { xiphos::core::Chapter value; };
 struct xc_choices { xiphos::core::ReferenceChoices value; };
 struct xc_link { xiphos::core::PassageLink value; };
+struct xc_note { xiphos::core::StudyNote value; };
 struct xc_entry { xiphos::core::Entry value; };
 struct xc_worker { xiphos::core::StudyWorker value; explicit xc_worker(const char *root) : value(root ? root : "") {} };
 struct xc_catalog { std::vector<xiphos::core::Module> value; };
@@ -24,6 +25,7 @@ struct xc_request {
   uint64_t tab = 0;
   bool options_result = false;
   std::optional<xiphos::core::EngineOptions> options;
+  std::unique_ptr<xc_note> note;
   std::unique_ptr<xc_entry> entry;
   std::unique_ptr<xc_chapter> chapter;
   std::unique_ptr<xc_choices> choices;
@@ -34,6 +36,7 @@ struct xc_request {
   virtual void update() = 0;
   void store(uint64_t v) { tab = v; }
   void store(std::optional<xiphos::core::EngineOptions> v) { options = v; options_result = true; }
+  void store(xiphos::core::StudyNote v) { note = std::make_unique<xc_note>(xc_note{std::move(v)}); }
   void store(xiphos::core::Entry v) { entry = std::make_unique<xc_entry>(xc_entry{std::move(v)}); }
   void store(xiphos::core::Chapter v) { chapter = std::make_unique<xc_chapter>(xc_chapter{std::move(v)}); }
   void store(xiphos::core::ReferenceChoices v) { choices = std::make_unique<xc_choices>(xc_choices{std::move(v)}); }
@@ -208,6 +211,12 @@ xc_status xc_request_engine_options(const xc_request *r, unsigned *flags, int *c
 xc_status xc_worker_clear_engine_options(xc_worker *w, uint64_t tab, xc_request **out) {
   return queue_request(w, out, [=](auto &worker) { return worker.clear_engine_options(tab); });
 }
+xc_status xc_worker_study_note(xc_worker *w, uint64_t tab, const char *id, const char *ref, const char *identifier, xc_request **out) {
+  if (!id || !*id || !ref || !*ref || !identifier || !*identifier) {
+    if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w, out, [=](auto &worker) { return worker.study_note(tab, id, ref, identifier); });
+}
 xc_status xc_worker_read_tab_entry(xc_worker *w, uint64_t tab, const char *id, const char *ref, xc_request **out) {
   if (!id || !*id || !ref || !*ref) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.read_entry(tab, id, ref); });
@@ -241,6 +250,7 @@ xc_status xc_request_poll(xc_request *r) {
 }
 void xc_request_release(xc_request *r) { delete r; }
 uint64_t xc_request_tab(const xc_request *r) { return r && r->status == XC_OK ? r->tab : 0; }
+xc_note *xc_request_take_note(xc_request *r) { return r && r->status == XC_OK ? r->note.release() : nullptr; }
 xc_entry *xc_request_take_entry(xc_request *r) { return r && r->status == XC_OK ? r->entry.release() : nullptr; }
 xc_chapter *xc_request_take_chapter(xc_request *r) { return r && r->status == XC_OK ? r->chapter.release() : nullptr; }
 xc_choices *xc_request_take_choices(xc_request *r) { return r && r->status == XC_OK ? r->choices.release() : nullptr; }
@@ -419,6 +429,13 @@ xc_status xc_session_navigate_chapter(xc_session *s, const char *id, const char 
     *out = result.release(); return XC_OK;
   } catch (...) { return failure(); }
 }
+const char *xc_note_reference(const xc_note *n) { return n ? n->value.reference.c_str() : nullptr; }
+const char *xc_note_identifier(const xc_note *n) { return n ? n->value.identifier.c_str() : nullptr; }
+const char *xc_note_type(const xc_note *n) { return n ? n->value.type.c_str() : nullptr; }
+const char *xc_note_label(const xc_note *n) { return n ? n->value.label.c_str() : nullptr; }
+const char *xc_note_html(const xc_note *n) { return n ? n->value.html.c_str() : nullptr; }
+const char *xc_note_reference_list(const xc_note *n) { return n ? n->value.reference_list.c_str() : nullptr; }
+void xc_note_release(xc_note *n) { delete n; }
 const char *xc_entry_reference(const xc_entry *e) { return e ? e->value.reference.c_str() : nullptr; }
 const char *xc_entry_html(const xc_entry *e) { return e ? e->value.html.c_str() : nullptr; }
 void xc_entry_release(xc_entry *e) { delete e; }

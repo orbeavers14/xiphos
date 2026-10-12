@@ -40,6 +40,14 @@ struct InstalledModule: Identifiable, Sendable {
         self.id = id; self.description = description; self.type = type; self.language = language; self.options = options
     }
 }
+struct RenderedStudyNote: Sendable {
+    let reference: String
+    let identifier: String
+    let type: String
+    let label: String
+    let html: String
+    let referenceList: String
+}
 struct RenderedEntry: Sendable {
     let reference: String
     let html: String

@@ -5,7 +5,12 @@ int c_header_test(void) {
   const char *references[] = {"A", "B"};
   xc_session *session = NULL;
   xc_request *request = NULL;
-  return xc_catalog_declared_engine_flags(NULL, 0) == 0 &&
+  return xc_note_reference(NULL) == NULL && xc_note_identifier(NULL) == NULL &&
+         xc_note_type(NULL) == NULL && xc_note_label(NULL) == NULL &&
+         xc_note_html(NULL) == NULL && xc_note_reference_list(NULL) == NULL &&
+         xc_request_take_note(NULL) == NULL &&
+         xc_worker_study_note(NULL, 0, "M", "John 3:16", "1", &request) == XC_INVALID_ARGUMENT && request == NULL &&
+         xc_catalog_declared_engine_flags(NULL, 0) == 0 &&
          xc_catalog_has_headings(NULL, 0) == 0 && xc_catalog_transliteration_available(NULL, 0) == 0 &&
          xc_worker_set_engine_options(NULL, 0, XC_ENGINE_STRONGS, &request) == XC_INVALID_ARGUMENT && request == NULL &&
          xc_worker_clear_engine_options(NULL, 0, &request) == XC_INVALID_ARGUMENT && request == NULL &&
