@@ -55,7 +55,31 @@ Windows native tooling and regression infrastructure. **0 of 38 feature groups
 have full accepted parity across the native platforms; 0 of 3 native apps are
 release-ready.** The stacked draft milestones are implemented and locally checked
 within their documented scope, pending review, platform checks and merge.
-No milestone has official acceptance yet.
+PR #1–3 now have scoped local-only integration acceptance in master; this does
+not accept any full native feature group or authorize legacy retirement. Later
+implementation milestones remain in draft branches.
+
+## Parity coverage snapshot
+
+The ledger currently has **14 of 38 groups with some initial shared-core/macOS
+implementation evidence**, and **24 pending groups**. None of the 14 is fully
+accepted: groups bundle many capabilities, and reading a verse does not complete
+whole-book rendering, commentary synchronization, tabs/session restore or visual
+composition. This is a count of groups touched, not a parity percentage and not
+a replacement for the weighted engineering estimate above.
+
+| New frontend | Initial evidence in ledger | Fully accepted groups | Main gaps |
+|---|---:|---:|---|
+| macOS/shared-core slice | 14 partial, 24 pending | 0/38 | Full pane layout, commentary, parallel views, search, bookmarks/annotations, editors, installation, complete settings/data migration, accessibility/translation and release packaging |
+| WinUI 3 | 0 initial frontend entries, 38 pending | 0/38 | Native frontend/tooling, shared-core integration, full workflows and validation |
+| GTK4 | 0 initial frontend entries, 38 pending | 0/38 | Native frontend, shared-core integration, full workflows and validation |
+
+The existing GTK3 app is retained as the behavioral oracle; its inherited
+functionality does not count as implemented parity in a new frontend. Fixture
+comparisons and local tests support individual seams, while representative
+modules/profiles and legacy/native visual, keyboard and runtime comparisons
+remain required. Prioritize the integration checkpoint below, then the main
+study-pane composition/commentary workflow before broader native feature claims.
 
 ## Current locally checked scope
 
@@ -76,11 +100,18 @@ No milestone has official acceptance yet.
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
 
-Current local suite: **48 checks**. The shared Unicode click-key utility reuses
+Current local suite: **49 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.
-The dictionary history value/legacy adapters also agree over **10,287 tested transitions**. Sanitizer and strict-language
+The committed `core_tab_history_adapter` harness now compares complete frozen/current
+add/fake tab-history functions over 49,560 bounded state/callback comparisons,
+including all counts through the 50-entry limit, duplicate positions, cursor and
+first-back state, absent/empty/Unicode modules, maximum-sized keys and sequential
+eviction visits. It uses the actual layout/limits header with explicit GUI/type
+shims; a negative control detects changed first-back behavior. The adapted
+functions/helper are unchanged from #1, but this reproducible test is a later
+milestone and does not certify full GTK runtime. The dictionary history value/legacy adapters also agree over **10,287 tested transitions**. Sanitizer and strict-language
 checks are scoped in the evidence table below; they do not instrument SWORD or GLib.
 GTK full-app runtime and native Windows/Linux interaction checks remain pending.
 Routine milestones use local builds; no new GitHub builds were dispatched.
@@ -152,7 +183,7 @@ inclusion in this public fork.
 | Unicode click policy | Shared/actual legacy casing agrees over 4,448,324 comparisons in four locales; native main clicks normalize/record; raw dialog/hover semantics retained | Unicode database/version comparisons, real-module workflows and forced-locale preference import |
 | Native environment locale | 31/31 suite then 3/3 focused fixture/Turkish/invalid-locale checks; 32 checks now defined | Saved locale selection, translation resources and other native host startup |
 
-The full local suite now passes **48/48**. Complete main note/reference callbacks
+The full local suite now passes **49/49**. Complete main note/reference callbacks
 also agree over 96,792 frozen/actual ordered comparisons, including preference
 routing, heading setup and early guards. The legacy handler now avoids its
 early-return GString allocation without changing callback traces. This harness
@@ -272,7 +303,8 @@ Latest code milestones: [shared Unicode helper #54](https://github.com/orbeavers
 [development guide cleanup #76](https://github.com/orbeavers14/xiphos/pull/76),
 [nested study hover #77](https://github.com/orbeavers14/xiphos/pull/77),
 [workflow guide cleanup #78](https://github.com/orbeavers14/xiphos/pull/78),
-[preview profile reader #79](https://github.com/orbeavers14/xiphos/pull/79).
+[preview profile reader #79](https://github.com/orbeavers14/xiphos/pull/79),
+[committed history adapter characterization #80](https://github.com/orbeavers14/xiphos/pull/80).
 Scoped address/undefined and thread checks cover shared ownership/state changes;
 strict C++11/C++17/C11 checks cover the corresponding seams. These are not full
 SDK instrumentation or a leak audit. See each PR for its exact checks and scope.
@@ -339,7 +371,9 @@ the newest branch with every dependency at once:
 | [#5 combined adapter](https://github.com/orbeavers14/xiphos/pull/5) | Base is #4's branch; local ancestry also includes #2's async branch |
 | [#6 defaults](https://github.com/orbeavers14/xiphos/pull/6), [#7 scoped settings](https://github.com/orbeavers14/xiphos/pull/7), [#8 controls](https://github.com/orbeavers14/xiphos/pull/8) | Continue in dependency order; reassess scope/checks at each reviewed revision |
 
-At this checkpoint #1–8 remain open drafts. #1's exact revision
+At the updated checkpoint #1–3 are merged into master under owner-authorized
+local-only integration. #4–8 remain draft dependencies requiring retargeting and
+review against the integrated base. #1's exact revision
 `19f44bf17fceaf410e84edabf47719c55fdc7dbb` was rebuilt from an isolated Git archive:
 its native build and 6/6 local tests passed; its rendering/history seam built with
 native core disabled and passed strict C++11 checks. These checks use the current
@@ -347,7 +381,20 @@ local SDK/dependencies and deployment target 26, not the intended macOS 13 runti
 Its latest connected workflow records are skipped, its submitted-review list is
 empty, and combined commit statuses are absent. No hosted validation was started
 for this audit; earlier results or tests on newer branches do not certify this
-exact revision. Full legacy GTK build/runtime checks remain required.
+exact revision. #2's exact revision passed 8/8; #3's original revision passed
+8/8, and its conflict-resolved integration with #2 passed 10/10, native-disabled
+seam builds and strict C++11 options checks. The integrated tree is identical
+to checked commit `2366f058605bb2848bc5f2b74048ab487c041919` (only documentation
+was added after executable checks). Merged commits: #1 `852bf782`, #2 `c1c40891`,
+#3 `55f73a8b`. The shared build conflict retained all async targets and linked
+CoreOptions into every Swift executable.
+
+Both builds/native-core workflows are disabled manually to meet the owner's
+no-GitHub-build-credit instruction; API verification showed no new workflow runs
+for this integration. Keep them paused until hosted validation is requested.
+The 49-test feature-branch suite is distinct from master's 10-test combined
+suite. Full legacy GTK, Windows/Linux, older macOS, ICU SDK and representative
+visual/module/runtime checks remain deferred release/retirement gates.
 
 For each merge candidate:
 
@@ -368,7 +415,9 @@ For each merge candidate:
 ## Official sign-off and file retirement
 
 A scoped milestone is accepted when its specified implementation, regression
-checks, relevant CI and parity evidence have been reviewed and its PR merged.
+checks, relevant validation and evidence have been reviewed and its PR merged. The owner
+explicitly authorized local-only integration for #1–3 with hosted/platform checks
+deferred; record that limitation rather than treating skipped CI as a pass.
 Record the accepted commit/PR and evidence here, and update only the parity
 rows/platforms that were actually validated. A passing test alone does not
 make every file associated with a milestone obsolete.

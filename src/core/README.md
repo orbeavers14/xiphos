@@ -392,3 +392,19 @@ unavailable explicit note module. Existing strict raw/click parsers are kept;
 installed explicit modules/full passages are not replaced. Malformed/control/
 duplicate parameters still reject. Full foreign-view/global-main, alias and
 heading compatibility remains a separate acceptance gate.
+
+## Legacy tab-history integration evidence
+
+`core_tab_history_adapter` compares complete frozen CrossWire c9976a8 add/fake
+history functions with current functions extracted automatically from
+`main/tab_history.c`. It uses actual history layout/limits and explicit GUI/type
+shims, comparing all history slots, count/cursor/first-back state and ordered
+menu-update callbacks over 49,560 bounded cases. Null/empty/Unicode module names,
+duplicate positions, all counts through capacity, maximum fitting keys and
+sequential eviction are covered. Assertions remain runtime checks in release.
+A temporary negative control deliberately changed first-back behavior and was
+detected, leaving production sources intact. Strict C++11 and address/undefined
+checks pass. This commits previously temporary adapter evidence for repeatable
+CI; full navigation/GTK display/runtime and oversized-invalid legacy input are
+separate gates. Keep the frozen license/attribution and regression harness after
+acceptance.
