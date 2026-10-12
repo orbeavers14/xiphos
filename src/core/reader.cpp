@@ -145,15 +145,32 @@ DictionaryEntry Reader::read_dictionary(const std::string &module, const std::st
 DictionaryEntry Reader::read_dictionary(const std::string &module, const std::string &key, const EngineOptions &options) {
   return dictionary_impl(module, key, &options);
 }
-DictionaryEntry Reader::dictionary_impl(const std::string &id, const std::string &key, const EngineOptions *options) {
+DictionaryEntry Reader::navigate_dictionary(const std::string &module, const std::string &key, int direction) {
+  if (direction != -1 && direction != 1) throw std::invalid_argument("Invalid dictionary direction");
+  return dictionary_impl(module, key, nullptr, direction);
+}
+DictionaryEntry Reader::navigate_dictionary(const std::string &module, const std::string &key, int direction, const EngineOptions &options) {
+  if (direction != -1 && direction != 1) throw std::invalid_argument("Invalid dictionary direction");
+  return dictionary_impl(module, key, &options, direction);
+}
+DictionaryEntry Reader::dictionary_impl(const std::string &id, const std::string &key, const EngineOptions *options, int direction) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
-  if (key.empty()) throw std::invalid_argument("Dictionary key is empty");
+  if (key.empty() || id.empty() || key.find('\0') != std::string::npos || id.find('\0') != std::string::npos)
+    throw std::invalid_argument("Dictionary module/key is empty or contains NUL");
   auto *module = impl_->manager->getModule(id.c_str());
   if (!module) throw std::out_of_range("Module is not installed");
   if (!dynamic_cast<sword::SWLD *>(module)) throw std::invalid_argument("Module is not a dictionary");
   std::unique_ptr<ScopedEngineOptions> scope;
   if (options) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *options);
-  DictionaryEntry result{id, "", render_entry(*module, key.c_str())};
+  std::string target = key;
+  if (direction) {
+    // Legacy main_dictionary_button_clicked: set current key, step, copy key,
+    // then activate the entry. Preserve SDK boundary/matching behavior.
+    module->setKey(key.c_str());
+    if (direction == -1) (*module)--; else (*module)++;
+    target = module->getKeyText();
+  }
+  DictionaryEntry result{id, "", render_entry(*module, target.c_str())};
   result.key = module->getKeyText();
   return result;
 }

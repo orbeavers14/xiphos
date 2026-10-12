@@ -268,6 +268,13 @@ xc_status xc_worker_read_lexical(xc_worker *w, uint64_t tab, const char *module,
   }
   return queue_request(w, out, [=](auto &worker) { return worker.read_lexical(tab, module ? module : "", reference ? reference : "", uri, origin); });
 }
+xc_status xc_worker_navigate_dictionary(xc_worker *w, uint64_t tab, const char *id, const char *key, int direction, xc_request **out) {
+  if (!id || !*id || !key || !*key || (direction != -1 && direction != 1)) {
+    if (out) *out = nullptr;
+    return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w, out, [=](auto &worker) { return worker.navigate_dictionary(tab, id, key, direction); });
+}
 xc_status xc_worker_read_dictionary(xc_worker *w, uint64_t tab, const char *id, const char *key, xc_request **out) {
   if (!id || !*id || !key || !*key) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.read_dictionary(tab, id, key); });

@@ -109,6 +109,11 @@ std::future<LexicalEntry> StudyWorker::read_lexical(StudyTab tab, std::string mo
     return s.tab(tab).read_lexical(module, reference, uri, origin);
   });
 }
+std::future<DictionaryEntry> StudyWorker::navigate_dictionary(StudyTab tab, std::string module, std::string key, int direction) {
+  return impl_->submit([tab, module = std::move(module), key = std::move(key), direction](Impl::State &s) {
+    return s.tab(tab).navigate_dictionary(module, key, direction);
+  });
+}
 std::future<DictionaryEntry> StudyWorker::read_dictionary(StudyTab tab, std::string module, std::string key) {
   return impl_->submit([tab, module = std::move(module), key = std::move(key)](Impl::State &s) {
     return s.tab(tab).read_dictionary(module, key);

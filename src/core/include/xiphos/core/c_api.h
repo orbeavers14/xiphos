@@ -123,6 +123,9 @@ xc_status xc_worker_lexicon_preferences(xc_worker *worker, uint64_t tab, xc_requ
  * Greek morphology validates source on the worker. No Bible history visit.
  * Source reference is authoritative; query passage remains metadata. */
 xc_status xc_worker_read_lexical(xc_worker *worker, uint64_t tab, const char *module, const char *reference, const char *uri, int origin, xc_request **out);
+/* One dictionary key step (-1/+1), preserving SDK boundary behavior and tab
+ * options. Returns the owned dictionary kind; does not visit Bible history. */
+xc_status xc_worker_navigate_dictionary(xc_worker *worker, uint64_t tab, const char *module, const char *key, int direction, xc_request **out);
 /* Explicit dictionary preview with tab settings; module/key nonempty. No visit. */
 xc_status xc_worker_read_dictionary(xc_worker *worker, uint64_t tab, const char *module, const char *key, xc_request **out);
 /* Expression may be empty; context/module must be nonempty. No history visit. */

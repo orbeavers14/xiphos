@@ -139,3 +139,17 @@ NT key context, wrong/missing sources, independent tab preferences and rendering
 settings. This is a preview service with no Bible-history visits. It does not
 implement click uppercasing/dictionary history, hover/pinning or restore/import
 lexicon preferences; those presentation/storage contracts remain pending.
+
+
+### Dictionary navigation extracted (2026-10-11)
+
+`main_dictionary_button_clicked` resets the dictionary module to settings.dictkey,
+then decrements for GTK direction 0 or increments otherwise. It copies the SDK
+key into the entry and activates `main_dictionary_entry_changed`, which resets
+that returned key and displays it. The shared navigation request reproduces this
+SDK sequence with explicit -1/+1 directions and copied results, without GTK/XML
+presentation. A frozen direct-SDK oracle covers seven key inputs in both
+directions, including first/last, nearest-match and normalized numeric keys.
+Per-tab red-letter output, C ownership and no Bible visit are checked separately.
+The existing legacy function is unchanged; a shared legacy-compatible helper
+and actual adapter characterization can follow before replacing its inline step.

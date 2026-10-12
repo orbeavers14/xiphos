@@ -234,3 +234,11 @@ this kind through take_lexical_entry alongside existing takes. Older study_link
 and resolve_study_link APIs retain their two-kind contract. Swift contextual
 dispatch/pane presentation is the next integration step; explicit readLexical
 already exposes copied values.
+
+
+Dictionary key navigation is a shared Reader/session/worker/C request, with
+direction -1/+1 and the existing owned dictionary result. It resets the current
+key, takes one SDK step, copies the returned key and renders it using tab module
+options. SDK boundary/nearest-key behavior remains authoritative. Empty/NUL
+module or key and invalid direction reject; no Bible-history visit is made.
+Native key controls and separate dictionary history follow independently.
