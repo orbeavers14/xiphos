@@ -66,6 +66,7 @@
 
 #include "backend/sword_main.hh"
 #include "xiphos/core/lexicon.h"
+#include "xiphos/core/note_presentation.h"
 
 #include "gui/debug_glib_null.h"
 
@@ -430,7 +431,9 @@ static gint show_note(const gchar *module, const gchar *passage,
 	} else
 		backend->set_module_key((gchar *)module, (gchar *)passage);
 
-	if (strchr(stype, 'x') && clicked) {
+	const XiphosNotePresentation presentation =
+	    xiphos_core_note_presentation(stype, clicked, settings.xrefs_in_verse_list);
+	if (presentation == XIPHOS_NOTE_CLICK_REFERENCES) {
 		tmpbuf = backend->get_entry_attribute("Footnote",
 						      (gchar *)svalue,
 						      "refList");
@@ -440,7 +443,7 @@ static gint show_note(const gchar *module, const gchar *passage,
 							   tmpbuf);
 			g_free(tmpbuf);
 		}
-	} else if (strchr(stype, 'n') && !clicked) {
+	} else if (presentation == XIPHOS_NOTE_HOVER_BODY) {
 		tmpbuf = backend->get_entry_attribute("Footnote",
 						      (gchar *)svalue,
 						      "body");
@@ -458,11 +461,12 @@ static gint show_note(const gchar *module, const gchar *passage,
 			if (buf)
 				g_free(buf);
 		}
-	} else if (strchr(stype, 'x') && !clicked) {
+	} else if (presentation == XIPHOS_NOTE_HOVER_REFERENCES ||
+		   presentation == XIPHOS_NOTE_HOVER_REFERENCE_LINKS) {
 		tmpbuf = backend->get_entry_attribute("Footnote",
 						      (gchar *)svalue,
 						      "refList");
-		if (settings.xrefs_in_verse_list) {
+		if (presentation == XIPHOS_NOTE_HOVER_REFERENCES) {
 			main_display_verse_list_in_sidebar(settings.currentverse,
 							   (gchar *)module,
 							   tmpbuf);
