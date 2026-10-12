@@ -65,7 +65,8 @@ No milestone has official acceptance yet.
   copied dictionary reading/key navigation; separate dictionary history state
   and explicit visit/navigation/snapshot commands.
 - macOS reading controls, note/reference previews, five lexicon choices,
-  Strong's/morphology click dictionary results, direct lookup and key steps.
+  Strong's/morphology click dictionary results, direct lookup/key steps and
+  separate dictionary Back/Forward/Clear controls.
 - Legacy app delegates rendering, selected policy/parser/selection seams,
   dictionary key stepping and dictionary history to shared C++ helpers.
 
@@ -113,8 +114,7 @@ inclusion in this public fork.
 1. Review the stacked draft milestones and validate representative modules
    against the legacy application. Bundle remote builds at meaningful review
    checkpoints; keep routine development/testing local to conserve CI usage.
-2. Connect explicit dictionary history commands to native lexical clicks and
-   controls; characterize click normalization, nearby-key chooser, hover/pinning
+2. Characterize click normalization, nearby-key chooser, hover/pinning
    and compatible lexicon persistence. Complete remaining reading controls and
    characterize commentary/parallel panes while retaining study-pane composition.
 3. Implement equivalent GTK4 and WinUI 3 reading panes with native toolchains
@@ -1774,3 +1774,24 @@ and copied values after shutdown. Core sanitizer evidence remains recorded in
 prior milestones. No GitHub builds. Next: native dictionary history controls,
 then normalization, nearby keys and remaining lexical workflows. Full feature
 acceptance/retirement pending; provisional estimate about 6%.
+
+
+## Native dictionary history: locally checked, remaining lookup parity pending
+
+Implemented 2026-10-11 on `modernization/macos-dictionary-history`. Lexical
+clicks use recorded core dispatch and copied history flags. Separate dictionary
+Back/Forward/Clear controls render core history targets while preserving Bible
+state and using committed current Bible context for nested links. Repeating the
+current click retains Forward; direct lookup and key steps remain unrecorded.
+Clear retains the definition; Close retains dictionary history.
+
+Validation: 29/29 local checks. Model assertions cover recorded click isolation,
+Back/Forward, duplicate forward retention, failed lookup content retention, no
+recording from direct/key steps and clear without changing either reading pane.
+Visible temporary GUI checks clicked actual 03056/N-NSM links, navigated between
+DictionaryOne/MorphGreek, repeated the current click with Forward retained, and
+cleared dictionary history while both definitions/passage and unfinished John4:2
+stayed intact. Bible Back/Forward remained disabled. No GitHub builds or
+installed-data changes. Next: Unicode click normalization, nearby-key chooser,
+hover/pinning, compatible persistence and established pane composition. No full
+feature acceptance/file retirement; about 6% (4–8%).

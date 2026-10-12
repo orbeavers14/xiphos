@@ -18,6 +18,7 @@ final class ReaderModel: ObservableObject {
     @Published var dictionarySelection: String?
     @Published var dictionaryKey = ""
     @Published private(set) var dictionaryEntry: RenderedDictionaryEntry?
+    @Published private(set) var dictionaryHistory: CoreDictionaryHistoryState?
     @Published private(set) var dictionarySource: PassageTarget?
     @Published var showLexiconPreferences = false
     @Published var reference = "John 3:16"
@@ -140,6 +141,28 @@ final class ReaderModel: ObservableObject {
             return
         }
         read()
+    }
+    func navigateDictionaryHistory(_ direction: Int32) {
+        guard !closed, !isBusy, let worker, let tab,
+              (direction == -1 && dictionaryHistory?.canBack == true) || (direction == 1 && dictionaryHistory?.canForward == true) else { return }
+        let source = displayedModule.flatMap { id in displayedEntry.map { PassageTarget(module: id, reference: $0.reference) } }
+        run { token in
+            let entry = try await worker.navigateDictionaryHistory(tab: tab, direction: direction)
+            let history = try await worker.dictionaryHistory(tab: tab)
+            guard token == self.revision && !self.closed else { return }
+            self.dictionaryEntry = entry; self.dictionaryKey = entry.key; self.dictionarySelection = entry.module
+            self.dictionarySource = source; self.dictionaryHistory = history
+            self.lexicalPreview = nil; self.message = ""
+        }
+    }
+    func clearDictionaryHistory() {
+        guard let worker, let tab else { return }
+        run { token in
+            try await worker.clearDictionaryHistory(tab: tab)
+            let history = try await worker.dictionaryHistory(tab: tab)
+            guard token == self.revision && !self.closed else { return }
+            self.dictionaryHistory = history
+        }
     }
     func navigateDictionary(_ direction: Int32) {
         guard !closed, !isBusy, direction == -1 || direction == 1, let worker, let tab,
@@ -279,7 +302,7 @@ final class ReaderModel: ObservableObject {
         let module = currentModule ?? displayedModule
         let context = currentReference ?? displayedEntry.reference
         run { token in
-            switch try await worker.resolveStudyLinkAt(tab: tab, currentModule: module, currentReference: context, uri: uri) {
+            switch try await worker.followStudyLinkAt(tab: tab, currentModule: module, currentReference: context, uri: uri) {
             case .note(let note):
                 guard token == self.revision && !self.closed else { return }
                 self.referencePreview = nil
@@ -289,8 +312,9 @@ final class ReaderModel: ObservableObject {
                 if currentReference == nil { self.studyNote = nil }
                 self.referencePreview = references; self.message = ""
             case .lexical(let lexical):
+                let history = try await worker.dictionaryHistory(tab: tab)
                 guard token == self.revision && !self.closed else { return }
-                self.lexicalPreview = lexical
+                self.lexicalPreview = lexical; self.dictionaryHistory = history
                 self.dictionarySelection = lexical.entry.module; self.dictionaryKey = lexical.entry.key
                 self.dictionaryEntry = lexical.entry
                 self.dictionarySource = PassageTarget(module: lexical.module, reference: lexical.sourceReference)
@@ -640,6 +664,16 @@ struct ReaderWindow: View {
                             .accessibilityLabel("Dictionary word or key")
                         Button("Look up") { model.lookupDictionary() }
                     }.padding(8).disabled(model.isBusy)
+                    HStack {
+                        Button("Back") { model.navigateDictionaryHistory(-1) }
+                            .disabled(model.dictionaryHistory?.canBack != true).accessibilityLabel("Dictionary history Back")
+                        Button("Forward") { model.navigateDictionaryHistory(1) }
+                            .disabled(model.dictionaryHistory?.canForward != true).accessibilityLabel("Dictionary history Forward")
+                        Menu("History") {
+                            Button("Clear dictionary history") { model.clearDictionaryHistory() }
+                                .disabled(model.dictionaryHistory?.entries.isEmpty != false)
+                        }.accessibilityLabel("Dictionary history")
+                    }.padding(.horizontal, 8).padding(.bottom, 8).disabled(model.isBusy)
                     HStack {
                         Button("Previous key") { model.navigateDictionary(-1) }
                         Button("Next key") { model.navigateDictionary(1) }

@@ -329,9 +329,19 @@ struct ReaderModelSmoke {
         first.followLink("xiphos.url?action=showMorph&type=Greek&value=alpha")
         try await idle(first)
         guard first.lexicalPreview?.kind == .morphology, first.lexicalPreview?.entry.module == "MorphGreek" else { fatalError("native morphology preference") }
+        guard first.dictionaryHistory?.entries.count == 2, first.dictionaryHistory?.canBack == true,
+              first.dictionaryHistory?.canForward == false, second.dictionaryHistory == nil else { fatalError("native recorded lexical history/window isolation") }
+        first.navigateDictionaryHistory(-1); try await idle(first)
+        guard first.dictionaryEntry?.module == "DictionaryOne", first.dictionaryHistory?.cursor == 0,
+              first.dictionaryHistory?.canForward == true, first.reference == "John 4:2", first.html == priorHTML,
+              first.canBack == back, first.canForward == forward else { fatalError("native dictionary Back preserves Bible") }
+        first.followLink("xiphos.url?action=showStrongs&type=Greek&value=alpha"); try await idle(first)
+        guard first.dictionaryHistory?.entries.count == 2, first.dictionaryHistory?.canForward == true else { fatalError("duplicate lexical click keeps forward history") }
+        first.navigateDictionaryHistory(1); try await idle(first)
+        guard first.dictionaryEntry?.module == "MorphGreek", first.dictionaryHistory?.cursor == 1 else { fatalError("native dictionary Forward") }
         first.followLink("https://example.invalid/xiphos.url?action=showStrongs&type=Greek&value=alpha")
         try await idle(first)
-        guard first.lexicalPreview?.entry.module == "MorphGreek", !first.message.isEmpty else { fatalError("failed lookup retained dictionary") }
+        guard first.dictionaryEntry?.module == "MorphGreek", !first.message.isEmpty else { fatalError("failed lookup retained dictionary") }
         first.closeLexicalPreview()
         guard first.lexicalPreview == nil, first.html == priorHTML, first.reference == "John 4:2" else { fatalError("close dictionary preserved reading") }
         first.selection = "GenericDictionary"; first.dictionaryKey = ""; first.selectionChanged()
@@ -358,6 +368,11 @@ struct ReaderModelSmoke {
         guard !first.isBusy else { fatalError("invalid native direction queued") }
         first.dictionarySelection = "DictionaryOne"; first.navigateDictionary(1)
         guard !first.isBusy, first.dictionaryEntry?.module == "DictionaryTwo" else { fatalError("uncommitted dictionary switch blocked navigation") }
+        guard first.dictionaryHistory?.entries.count == 2 else { fatalError("direct lookup/key navigation changed recorded history") }
+        let displayedDictionary = first.dictionaryEntry?.html
+        first.clearDictionaryHistory(); try await idle(first)
+        guard first.dictionaryHistory?.entries.isEmpty == true, first.dictionaryEntry?.html == displayedDictionary,
+              first.html == priorHTML, first.reference == "John 4:2", first.canBack == back, first.canForward == forward else { fatalError("dictionary history clear preserved pane/Bible") }
         first.closeLexicalPreview()
         guard first.dictionarySelection == nil, first.dictionaryEntry == nil else { fatalError("close direct dictionary") }
         second.applyLexiconPreferences(changed); second.close()

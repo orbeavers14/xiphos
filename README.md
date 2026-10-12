@@ -23,8 +23,9 @@ The shared core and macOS preview now cover module/verse/chapter reading,
 Bible history, scoped reading options, engine-preference import/save and
 note/reference-list previews. Dictionary work includes characterized lexical
 selection, native preferences and click results, direct lookup, key steps and
-shared separate history commands. Native dictionary history controls, hover,
-pinning and full established pane composition remain in progress.
+shared separate history commands and native dictionary Back/Forward/Clear.
+Hover, pinning, click normalization and full established pane composition remain
+in progress.
 
 The current local suite has 29 checks, supplemented by scoped sanitizer,
 strict-language and temporary-fixture GUI checks recorded in the status ledger.
