@@ -57,25 +57,21 @@ study-pane composition/commentary workflow before broader native feature claims.
 
 ## Current locally checked scope
 
-The [image/font cleanup seam](html-cleanup-workflows.md) now uses owned C++11
-helpers shared with the legacy wrappers. Complete frozen/current functions agree
-across 27,648 bounded output/diagnostic comparisons. Strict C++11 and the native-
-disabled helper build pass, as do focused address/undefined and thread checks.
-Shared tri-state Image Content/Respect Font Faces decoding and combined import/
-save now match the complete frozen/current initializer across 200 combinations.
-Known settings persist; unknown preserves existing target declarations. Focused
-address/undefined and thread checks pass 1/1 each. Native controls/application,
-remaining cleanup and full GTK runtime are pending. Shared content application/
-discovery now agrees with complete frozen/current cleanup over 60,750 cases,
-plus 36 numbering and 144 locale cases. Legacy delegates the shared stage and
-retains save/diagnostic ordering. Core/worker entry/chapter snapshots now apply
-these settings, preserving sparse SDK positions and owned malformed diagnostics.
-Styled fixture, tab isolation, save/import and worker-drain checks pass; focused
-address/undefined and thread checks pass 2/2 each. broader image/font/pane/runtime parity remain pending. Typed C/Swift state
-adapters and native Reading/Commentary options now use discovered core settings,
-with checked unknown visibility, busy/closed guards, draft/history isolation,
-explicit save/import and temporary-preview menu state/pane composition. Diagnostic
-adapters, image resource/link handling and installed-font appearance remain pending.
+The [image/font cleanup slice](html-cleanup-workflows.md) shares owned C++11
+cleanup/discovery and preference decoding with legacy rendering. Core sessions/
+workers apply per-module settings to Bible entry/chapter bodies and commentary
+headings/bodies, retaining copied SDK positions and owned diagnostics. Typed C/Swift
+adapters and native Reading/Commentary options carry these results and discovered
+states. Unknown eligibility, busy/closed guards, draft/history/window isolation,
+explicit save/import and temporary-preview menu states/pane composition are checked.
+
+Evidence includes 27,648 primitive byte/diagnostic comparisons, 200 complete
+initializer profile combinations, 60,750 complete cleanup combinations, 36
+numbering cases and 144 cases across four local locales. Full local suite: 63/63;
+focused address/undefined and thread snapshot/adapter checks: 2/2 each. C++11 and
+native-disabled helper builds pass. Image resources/link handling, installed-font
+appearance, other pane cleanup, remaining transformations and full GTK/platform/
+corpus acceptance remain pending. SDK instrumentation limits still apply.
 
 An initial [preverse heading collector](heading-workflows.md) now agrees with
 complete frozen/current collection functions when block/cleanup postprocessors

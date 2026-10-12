@@ -42,6 +42,8 @@ struct ReaderModelSmoke {
         model.setRespectFontFaces(false, commentary: true); try await idle(model)
         guard model.commentaryEntry?.headingHTML.contains("<img ") == false, model.commentaryEntry?.headingHTML.contains("OriginalHeadingFont") == false,
               model.commentaryChapter?.html.contains("<img ") == false, model.reference == "John 4:2", model.canBack == back else { fatalError("commentary controls clean headings/body/chapter without submitting draft") }
+        guard model.commentaryChapter?.verseOrdinals.contains(21) == true,
+              model.commentaryChapter?.verseOrdinals.contains(17) == false else { fatalError("native sparse chapter copies SDK positions without deriving them") }
         model.setCommentaryChapterMode(false); try await idle(model)
         guard model.commentaryChapter == nil, model.commentaryEntry?.html.contains("OriginalBodyFont") == false else { fatalError("content preferences retained in verse mode") }
         let profile = URL(fileURLWithPath: root).appendingPathComponent("native-content.conf")
@@ -52,10 +54,23 @@ struct ReaderModelSmoke {
         model.importReadingOptions(path: profile.path); try await idle(model)
         guard model.contentOptions.images == false, model.contentOptions.fontFaces == false, model.commentaryContentOptions.images == false,
               model.reference == "John 4:2", model.canBack == back, try String(contentsOf: profile, encoding: .utf8).contains("Custom=keep") else { fatalError("native content save/import preserves draft/history/other values") }
+        let diagnosticTab = try await worker.createTab()
+        try await worker.setRespectFontFaces(tab: diagnosticTab, module: "Text", enabled: false)
+        let diagnosticEntry = try await worker.readTabEntry(tab: diagnosticTab, module: "Text", reference: "John 3:22")
+        let diagnosticPair = try await worker.studyPassage(tab: diagnosticTab, module: "Text", commentary: "ThMLNotes", reference: "John 3:22", record: false)
+        let diagnosticChapter = try await worker.readTabChapter(tab: diagnosticTab, module: "Text", reference: "John 3:22", verseNumbers: false, highlightSelected: false)
+        guard diagnosticEntry.cleanupDiagnostics.first?.kind == .fontFace,
+              diagnosticEntry.cleanupDiagnostics.first?.suffix.contains("unfinished") == true,
+              diagnosticPair.text.cleanupDiagnostics.first?.suffix == diagnosticEntry.cleanupDiagnostics.first?.suffix,
+              diagnosticChapter.verseOrdinals[21] == 22,
+              diagnosticChapter.verses[21].cleanupDiagnostics.first?.suffix == diagnosticEntry.cleanupDiagnostics.first?.suffix else { fatalError("Swift copies diagnostic kinds/suffixes and SDK positions across result families") }
+        try await worker.closeTab(diagnosticTab)
         let snapshot = model.html
         model.close(); model.setImageContent(true); try await idle(model)
         guard model.html == snapshot else { fatalError("closed model cannot publish content changes") }
         other.close(); await worker.shutdown()
+        guard diagnosticEntry.cleanupDiagnostics.first?.suffix.contains("unfinished") == true,
+              diagnosticPair.text.cleanupDiagnostics.first?.suffix == diagnosticChapter.verses[21].cleanupDiagnostics.first?.suffix else { fatalError("copied Swift metadata survives worker shutdown") }
         print("Native content control checks passed")
     }
     @MainActor static func headings(root: String) async throws {

@@ -95,11 +95,35 @@ int main(int argc, char **argv) {
     xc_request *presentation = nullptr;
     check(xc_worker_module_presentation_options(bridge, ctab, "Text", &presentation) == XC_OK &&
           xc_worker_read_tab_entry(bridge, ctab, "Text", "John 3:21", &request) == XC_OK, "C FIFO content refresh accepted");
+    xc_request *diagnostic_request = nullptr, *chapter_request = nullptr, *pair_request = nullptr;
+    check(xc_worker_read_tab_entry(bridge, ctab, "Text", "John 3:22", &diagnostic_request) == XC_OK &&
+          xc_worker_read_tab_chapter(bridge, ctab, "Text", "John 3:22", 0, &chapter_request) == XC_OK &&
+          xc_worker_read_passage(bridge, ctab, "Text", "ThMLNotes", "John 3:22", &pair_request) == XC_OK, "owned diagnostic/position snapshots queued");
     xc_worker_close(bridge);
     check(wait(presentation) == XC_OK && xc_request_content_options(presentation, &images, &fonts) == XC_OK && images == 0 && fonts == 0 &&
           wait(request) == XC_OK, "dropped setters and typed snapshot survive worker drain");
     auto *copy = xc_request_take_entry(request); xc_request_release(request); xc_request_release(presentation);
     check(copy && std::string(xc_entry_html(copy)) == hidden.html, "owned C cleaned HTML matches core after request/worker release"); xc_entry_release(copy);
+    check(wait(diagnostic_request) == XC_OK && wait(chapter_request) == XC_OK && wait(pair_request) == XC_OK, "diagnostic snapshots survive worker drain");
+    auto *diagnostic_entry = xc_request_take_entry(diagnostic_request); xc_request_release(diagnostic_request);
+    auto *diagnostic_chapter = xc_request_take_chapter(chapter_request); xc_request_release(chapter_request);
+    auto *diagnostic_pair = xc_request_take_passage(pair_request); xc_request_release(pair_request);
+    check(xc_entry_cleanup_count(diagnostic_entry) == 1 && xc_entry_cleanup_kind(diagnostic_entry, 0) == 1 &&
+          std::string(xc_entry_cleanup_suffix(diagnostic_entry, 0)) == malformed.cleanup_diagnostics.front().suffix &&
+          xc_entry_cleanup_kind(diagnostic_entry, 1) == -1 && !xc_entry_cleanup_suffix(diagnostic_entry, 1), "C entry diagnostic content and bounds");
+    const auto retained = std::string(xc_entry_cleanup_suffix(diagnostic_entry, 0)); xc_entry_release(diagnostic_entry);
+    check(xc_chapter_verse_ordinal(diagnostic_chapter, 21) == 22 && xc_chapter_verse_cleanup_count(diagnostic_chapter, 21) == 1 &&
+          xc_chapter_verse_cleanup_kind(diagnostic_chapter, 21, 0) == 1 && std::string(xc_chapter_verse_cleanup_suffix(diagnostic_chapter, 21, 0)) == retained,
+          "C chapter copies SDK ordinal and per-entry diagnostic");
+    check(xc_chapter_verse_ordinal(diagnostic_chapter, xc_chapter_count(diagnostic_chapter)) == 0 &&
+          !xc_chapter_verse_cleanup_suffix(diagnostic_chapter, 21, 1), "C chapter metadata/diagnostic bounds");
+    check(xc_passage_cleanup_count(diagnostic_pair) == 1 && xc_passage_cleanup_kind(diagnostic_pair, 0) == 1 &&
+          std::string(xc_passage_cleanup_suffix(diagnostic_pair, 0)) == retained && xc_passage_commentary_cleanup_count(diagnostic_pair) == 0 &&
+          xc_passage_commentary_cleanup_kind(diagnostic_pair, 0) == -1 && !xc_passage_commentary_cleanup_suffix(diagnostic_pair, 0), "paired diagnostics retain correct pane ownership");
+    xc_chapter_release(diagnostic_chapter); xc_passage_release(diagnostic_pair);
+    check(!xc_entry_cleanup_count(nullptr) && xc_entry_cleanup_kind(nullptr, 0) == -1 && !xc_entry_cleanup_suffix(nullptr, 0) &&
+          !xc_passage_cleanup_count(nullptr) && !xc_passage_cleanup_suffix(nullptr, 0) && !xc_passage_commentary_cleanup_count(nullptr) &&
+          !xc_chapter_verse_ordinal(nullptr, 0) && xc_chapter_verse_cleanup_kind(nullptr, 0, 0) == -1 && !xc_chapter_verse_cleanup_suffix(nullptr, 0, 0), "null copied metadata guards");
     check(xc_request_content_options(nullptr, &images, &fonts) == XC_INVALID_ARGUMENT && images == -1 && fonts == -1, "null typed content guard");
     std::cout << "Content snapshot/discovery checks passed\n";
   } catch (const std::exception &e) { std::cerr << e.what() << '\n'; return 1; }

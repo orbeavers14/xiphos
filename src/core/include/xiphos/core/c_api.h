@@ -245,6 +245,23 @@ const char *xc_passage_commentary_reference(const xc_passage *passage);
 const char *xc_passage_commentary_html(const xc_passage *passage);
 /* Borrowed from the same owner as body HTML; null for absent/out-of-range. */
 const char *xc_passage_commentary_heading_html(const xc_passage *passage);
+/* Copied core cleanup diagnostics: kind 0=image, 1=font face; -1 out of range.
+ * Counts are zero for absent/null owners. Suffix strings are borrowed from the
+ * same owned entry/passage/chapter; null for absent/out-of-range. */
+size_t xc_entry_cleanup_count(const xc_entry *entry);
+int xc_entry_cleanup_kind(const xc_entry *entry, size_t index);
+const char *xc_entry_cleanup_suffix(const xc_entry *entry, size_t index);
+size_t xc_passage_cleanup_count(const xc_passage *passage);
+int xc_passage_cleanup_kind(const xc_passage *passage, size_t index);
+const char *xc_passage_cleanup_suffix(const xc_passage *passage, size_t index);
+size_t xc_passage_commentary_cleanup_count(const xc_passage *passage);
+int xc_passage_commentary_cleanup_kind(const xc_passage *passage, size_t index);
+const char *xc_passage_commentary_cleanup_suffix(const xc_passage *passage, size_t index);
+size_t xc_chapter_verse_cleanup_count(const xc_chapter *chapter, size_t verse);
+int xc_chapter_verse_cleanup_kind(const xc_chapter *chapter, size_t verse, size_t index);
+const char *xc_chapter_verse_cleanup_suffix(const xc_chapter *chapter, size_t verse, size_t index);
+/* Copied SDK verse ordinal; zero for absent/out-of-range metadata. */
+unsigned xc_chapter_verse_ordinal(const xc_chapter *chapter, size_t verse);
 void xc_passage_release(xc_passage *passage);
 xc_chapter *xc_request_take_chapter(xc_request *request);
 xc_choices *xc_request_take_choices(xc_request *request);

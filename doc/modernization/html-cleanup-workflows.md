@@ -1,131 +1,93 @@
-# Image and font cleanup: shared seam
+# Image and font cleanup: current shared slice
 
-Updated 2026-10-12. Supports F03/F08 rendering modernization; complete cleanup,
-module preference side effects and visual parity remain pending.
+Updated 2026-10-12. Supports F03/F08 modernization; complete rendering, automatic
+profile/startup behavior and visual/platform parity remain pending.
 
 ## Source contract
 
-`src/main/display.cc:ClearImages` replaces bytes from exact lowercase `<img `
-through the first following `>` with spaces. It does not parse quoted attributes,
-uppercase tags or alternate whitespace. On a missing end it stops and reports
-the remaining suffix, retaining earlier changes.
+`src/main/display.cc:ClearImages` blanks exact lowercase `<img ` through the first
+following `>` with spaces. It does not parse quoted delimiters, uppercase tags or
+alternate whitespace. A missing end stops and reports the remaining suffix.
+`ClearFontFaces` masks face-name bytes in exact `<font face="` with dots through
+the next double quote, retaining quotes, other attributes and byte length. It does
+not recognize uppercase, single-quoted or reordered attributes. A missing quote
+stops and reports the remaining suffix. Earlier changes remain on malformed input.
 
-`ClearFontFaces` finds exact `<font face="` and replaces face-name bytes through
-the next double quote with dots. It keeps the quote, other attributes and byte
-length. It does not recognize uppercase, single-quoted or reordered attributes.
-A missing quote stops and reports the remaining suffix.
+`CleanupContent` applies these under off preferences. Unknown content is discovered
+with case-insensitive detection, changing the field to on and saving that module
+option. Image cleanup comes first, so font detection sees its resulting text.
+Note/xref numbering follows this stage. The legacy save function reads/writes only
+module configuration and does not consume the HTML buffer.
 
-The C++11 `blank_images` and `blank_font_faces` helpers return owned HTML and a
-malformed-suffix offset. They preserve these deliberately narrow transformations.
-Owned strings reject embedded NUL; legacy callers already pass null-terminated
-SDK text. Legacy wrappers copy the same-length result into the existing buffer
-and keep the existing diagnostic text. `CleanupContent` still invokes them under
-its existing preference conditions, including the existing unknown-content
-state/save behavior. No renderer or source file is retired.
+## Shared implementation and persistence
+
+The C++11 `blank_images`/`blank_font_faces` return owned HTML and malformed offsets.
+`cleanup_html_content` owns HTML, effective states, discovery events and diagnostic
+suffixes captured when each stage runs. It validates states and embedded NUL, does
+not perform file I/O, and shares the image/font stage with legacy `CleanupContent`.
+Legacy callers retain diagnostic/save ordering and subsequent numbering. Existing
+renderer source files and licensing remain; no source-file retirement is implied.
+
+`ContentPreference` has unknown (-1), off (0), on (1). Shared decoding matches
+`main_new_globals`: missing/empty is unknown, exact On is on, other nonempty decoded
+values are off. Legacy initialization delegates these fields and Headings to the
+shared parser. Combined core import stages content with engine/presentation fields.
+Explicit save writes known states, preserves unrelated/uninstalled settings, and
+leaves an existing target declaration intact for unknown. Unknown therefore is not
+promised to round-trip over a preexisting known target declaration. Invalid enum
+values fail before replacing the target.
+
+Core sessions/workers apply cleanup to Bible entry/chapter bodies and commentary
+entry/chapter headings and bodies. Discovery updates copied per-module state; image/
+font setters do not visit history. Copied `Chapter.verse_ordinals` retain SDK sparse
+positions for rebuilt HTML and linked/selected/missing anchors. Ordinary Reader
+output stays unchanged. Entries own malformed cleanup diagnostics. Native reads
+perform no automatic profile writes; explicit save persists known/discovered states.
+Image blanking retains SWORD's surrounding image link, matching legacy behavior.
+
+## C/Swift adapters and native controls
+
+`xc_request_content_options` returns status and two tri-state outputs; pending,
+failed, wrong-kind and invalid-pointer calls reset outputs to unknown. Ready unknown
+is valid and getters may repeat. Setters validate exact 0/1 before queueing.
+Diagnostic getters expose count, kind (image/font) and borrowed suffix from owned
+entry, paired-passage pane or chapter entry handles, with null/bounds guards.
+`xc_chapter_verse_ordinal` returns copied SDK metadata. Swift copies diagnostics and
+positions into values that remain valid after handle/worker closure.
+
+Swift carries unknown as nil and fetches state after rendering, including later
+chapter entries. Reading options and Commentary options show toggles only when
+core state is known, matching legacy menu visibility. Main changes refresh the
+committed passage; commentary changes refresh headings/body/chapter. Draft input,
+history and other windows/modules remain isolated. A temporary generated preview
+verified menu checkmarks, independent pane settings, retained draft and composition.
+Resource/font names are synthetic: image loading and installed-font appearance
+require separate validation. Diagnostic data is carried without new visible controls.
 
 ## Evidence and limits
 
-Complete frozen functions from CrossWire c9976a8 retain their GPL notices.
-Configure-time extraction tests the complete adapted current functions as well.
-`core_html_cleanup` compares frozen/current/owned results and diagnostics over
-27,648 bounded cases: valid/repeated/malformed tags, quoted delimiters, casing,
-whitespace, attributes, Unicode and links. Byte lengths and malformed offsets
-are checked; embedded-NUL rejection is separate from the legacy contract.
+| Local evidence | Scope |
+|---|---|
+| 27,648 comparisons | Complete frozen/current primitive functions, owned bytes/length/diagnostic offsets |
+| 200 profile combinations | Complete frozen/current initializer, tri-state content decoding, casing/whitespace/Unicode; paragraph capability stubbed absent and classification controlled |
+| 60,750 combinations | Complete frozen/current cleanup versus owned content stage, state/reset/diagnostic/discovery events |
+| 36 numbering cases | Subsequent reported/unreported labels, counters and callback order; full SDK/cache/chapter numbering still pending |
+| 144 locale cases | Discovery matches local libc in available C/English/German/Turkish locales |
+| Styled module fixtures | SDK output, heading/body consistency, sparse positions/anchors, tab isolation, explicit save/import, worker drain and copied C/Swift metadata |
+| Native model/preview | Unknown visibility, busy/closed guards, draft/history preservation, per-window/module settings and explicit save/import |
 
-Normal, address/undefined and thread checks pass. Strict C++11 syntax and the
-native-disabled legacy helper build pass. External SWORD/GLib instrumentation
-limits still apply; address checks disable leak detection. The full GTK app is
-not locally buildable here, so complete runtime integration remains a gate.
+Complete frozen functions from CrossWire c9976a8 retain GPL notices. Current functions
+are extracted at configure time. Full local suite: 63/63; focused address/undefined
+and thread snapshot/adapter checks: 2/2 each. Strict C++11 and native-disabled helper
+builds pass. External SWORD/GLib are not fully instrumented; leak detection is disabled.
+Full GTK runtime, other libc/SDK versions and Linux/Windows remain acceptance gates.
+Host locale must be initialized before concurrent engine work.
 
-## Shared content preferences
+## Remaining work
 
-`ContentPreference` explicitly represents unknown (-1), off (0) and on (1).
-Shared decoding matches `main_new_globals`: missing/empty is unknown, exact On
-is on and any other nonempty decoded value is off. Legacy initialization now
-uses the shared decoder for these fields and Headings. Combined native-core
-module import stages these states with engine/presentation settings.
+- Native automatic save/startup/discovery persistence policy.
+- Note/dictionary/reference-preview cleanup and complete SDK note/xref numbering.
+- Block rendering, image resources/link routing, sizing, module CSS/fonts/themes.
+- Representative corpus and legacy/native runtime, keyboard and visual acceptance.
 
-Explicit save writes known states; unknown leaves an existing target declaration
-intact because no discovery/explicit setting is available. Unrelated and
-uninstalled settings remain preserved. Invalid enum values fail before replacing
-the target. An unknown state is therefore not promised to round-trip over a
-preexisting known target declaration.
-
-`core_content_preferences` compares the complete frozen/current initializer
-against shared content decoding over 200 profile combinations, including file
-whitespace, casing, Unicode and both commentary classifications. Paragraph
-capability is stubbed absent; commentary classification is controlled. This
-characterizes the content fields and adjacent settings, not all initialization
-side effects. Import/save, failed import/save, FIFO tab isolation and unchanged
-history pass. The full suite passes 63/63; focused address/undefined and thread
-checks pass 1/1 each, and strict C++11/native-disabled helper builds pass.
-
-## Shared content application/discovery stage
-
-`cleanup_html_content` applies off preferences and discovers unknown image/font
-content using legacy case-insensitive detection. Image cleanup precedes font
-handling, so font discovery sees the changed text. The result owns HTML, effective
-states, discovery events and malformed diagnostic suffixes captured at the time
-of each stage. It validates states/embedded NUL and does not perform file I/O.
-
-Legacy `CleanupContent` now delegates this stage, retaining its file-save callbacks,
-diagnostic ordering and subsequent note/xref numbering. The legacy save function
-only reads/writes the module configuration; it does not consume the HTML buffer.
-Current/frozen complete functions agree over 60,750 bounded content/state/reset
-combinations. Additional 36 numbering cases compare reported/unreported note
-labels, counters and callback order; these do not establish complete SDK/cache/
-chapter numbering parity. Case-insensitive discovery also agrees in 144 cases
-across C, English, German and Turkish locales available on this host. Host locale
-must be initialized before concurrent engine work, as elsewhere in the core.
-
-The full local suite passes 63/63. Updated focused normal/address/undefined/thread
-checks pass 1/1 each. Strict C++11 and the native-disabled legacy helper build
-pass. Full GTK runtime and other platform/libc behavior remain acceptance gates.
-Core sessions/workers now apply the stage to Bible entry/chapter bodies and
-commentary entry/chapter headings and bodies. Unknown discovery updates copied
-per-module state; typed C++ setters update image/font display without visiting
-history. Sparse chapters retain copied SDK verse ordinals so rebuilt HTML keeps
-linked sections and selected/missing anchors. Ordinary `Reader` output stays
-unchanged. No native automatic file save is implied by discovery events.
-
-`core_content_snapshots` uses original styled ThML Bible/commentary data to check
-cleanup against SDK output, header/body consistency, byte lengths, copied SDK
-positions, sparse linked anchors, tab isolation, explicit import/save and worker
-drain ownership. Owned C++ entries retain malformed cleanup diagnostics. Focused
-address/undefined and thread checks pass 2/2 each (fixture plus service). The full
-local suite passes 63/63. Native state adapters/controls are connected; diagnostic
-adapters remain pending.
-Image blanking intentionally retains SWORD's surrounding image link, matching
-legacy behavior; image-link routing/resource loading is separate acceptance work.
-
-## Native controls and typed state adapters
-
-`xc_request_content_options` returns status plus two tri-state outputs. Pending,
-failed, wrong-kind and invalid-pointer calls reset outputs to unknown; ready
-unknown is a valid result. Getter calls may repeat. Setters validate exact 0/1
-before queueing. C tests cover dropped observers, FIFO updates, invalid inputs,
-ready unknown, worker drain and copied cleaned HTML after handle release.
-
-Swift carries unknown as nil and reads states after entry/chapter rendering,
-including discovery from later chapter entries. Native Reading options and
-Commentary options show image/font toggles only when the core state is known,
-matching legacy menu visibility. Main changes refresh the committed entry rather
-than submitting a draft; commentary changes refresh shared headings/body/chapter.
-Model checks cover busy/closed guards, per-window/module isolation, verse/chapter
-mode, unknown eligibility and explicit save/import. A temporary generated preview
-verified menu checks, independent Bible/commentary states, retained draft and pane
-composition. This does not validate image resource loading or installed-font
-appearance; fixture resource names/fonts are original synthetic data.
-
-Full local suite: 63/63. Updated focused normal/address/undefined/thread adapter
-checks: 2/2 each including fixture. External SDK instrumentation and full runtime/
-platform limits remain as described above.
-
-## Next work
-
-- Native handling of discovery state and explicit save; automatic save/startup policy.
-- C/Swift diagnostic adapters and note/dictionary/reference-preview cleanup.
-- Note/xref numbering, block rendering, CSS/image paths, sizing, fonts/themes and
-  representative legacy/native runtime/visual acceptance.
-
-The helpers alone do not establish native image/font cleanup parity.
+These scoped checks do not establish complete image/font rendering parity.

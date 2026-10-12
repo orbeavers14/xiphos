@@ -94,18 +94,26 @@ struct RenderedStudyPassage: Sendable {
     let text: RenderedEntry
     let commentary: RenderedEntry?
 }
+struct RenderedCleanupDiagnostic: Sendable {
+    enum Kind: Int32, Sendable { case image = 0, fontFace = 1 }
+    let kind: Kind
+    let suffix: String
+}
 struct RenderedEntry: Sendable {
     let reference: String
     let html: String
     let headingHTML: String
-    init(reference: String, html: String, headingHTML: String = "") {
+    let cleanupDiagnostics: [RenderedCleanupDiagnostic]
+    init(reference: String, html: String, headingHTML: String = "", cleanupDiagnostics: [RenderedCleanupDiagnostic] = []) {
         self.reference = reference; self.html = html; self.headingHTML = headingHTML
+        self.cleanupDiagnostics = cleanupDiagnostics
     }
 }
 struct RenderedChapter: Sendable {
     let reference: String
     let title: String
     let verses: [RenderedEntry]
+    let verseOrdinals: [Int]
     let selectedVerse: Int
     let selectedAnchor: String
     let html: String
@@ -249,10 +257,18 @@ final class CoreSession {
 // Shared copying helpers for synchronous and asynchronous adapters. They add
 // no canon, display, navigation or history policy to either Swift interface.
 enum CoreValues {
+    static func cleanupDiagnostics(count: Int, kind: (Int) -> Int32, suffix: (Int) -> UnsafePointer<CChar>?) -> [RenderedCleanupDiagnostic] {
+        (0..<count).map { index in
+            RenderedCleanupDiagnostic(kind: .init(rawValue: kind(index))!, suffix: String(cString: suffix(index)!))
+        }
+    }
+
     static func entry(_ result: OpaquePointer) -> RenderedEntry {
         RenderedEntry(reference: String(cString: xc_entry_reference(result)!),
                       html: String(cString: xc_entry_html(result)!),
-                      headingHTML: String(cString: xc_entry_heading_html(result)!))
+                      headingHTML: String(cString: xc_entry_heading_html(result)!),
+                      cleanupDiagnostics: cleanupDiagnostics(count: xc_entry_cleanup_count(result),
+                          kind: { xc_entry_cleanup_kind(result, $0) }, suffix: { xc_entry_cleanup_suffix(result, $0) }))
     }
     static func link(_ result: OpaquePointer) -> PassageTarget {
         PassageTarget(module: String(cString: xc_link_module(result)!),
@@ -311,8 +327,11 @@ enum CoreValues {
             verses: (0..<xc_chapter_count(result)).map { index in
                 RenderedEntry(reference: String(cString: xc_chapter_verse_reference(result, index)!),
                               html: String(cString: xc_chapter_verse_html(result, index)!),
-                              headingHTML: String(cString: xc_chapter_verse_heading_html(result, index)!))
-            }, selectedVerse: xc_chapter_selected_verse(result),
+                              headingHTML: String(cString: xc_chapter_verse_heading_html(result, index)!),
+                              cleanupDiagnostics: cleanupDiagnostics(count: xc_chapter_verse_cleanup_count(result, index),
+                                  kind: { xc_chapter_verse_cleanup_kind(result, index, $0) }, suffix: { xc_chapter_verse_cleanup_suffix(result, index, $0) }))
+            }, verseOrdinals: (0..<xc_chapter_count(result)).map { Int(xc_chapter_verse_ordinal(result, $0)) },
+            selectedVerse: xc_chapter_selected_verse(result),
             selectedAnchor: String(cString: xc_chapter_selected_anchor(result)!),
             html: String(cString: xc_chapter_html(result)!))
     }

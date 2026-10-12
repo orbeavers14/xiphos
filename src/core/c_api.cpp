@@ -498,6 +498,41 @@ const char *xc_passage_commentary_module(const xc_passage *p) { return p ? p->va
 const char *xc_passage_commentary_reference(const xc_passage *p) { return p && p->value.commentary ? p->value.commentary->reference.c_str() : nullptr; }
 const char *xc_passage_commentary_html(const xc_passage *p) { return p && p->value.commentary ? p->value.commentary->html.c_str() : nullptr; }
 const char *xc_passage_commentary_heading_html(const xc_passage *p) { return p && p->value.commentary ? p->value.commentary->heading_html.c_str() : nullptr; }
+size_t xc_entry_cleanup_count(const xc_entry *e) { return e ? e->value.cleanup_diagnostics.size() : 0; }
+int xc_entry_cleanup_kind(const xc_entry *e, size_t index) {
+  if (!(e) || index >= e->value.cleanup_diagnostics.size()) return -1;
+  return e->value.cleanup_diagnostics[index].kind == xiphos::core::ContentCleanupKind::image ? 0 : 1;
+}
+const char *xc_entry_cleanup_suffix(const xc_entry *e, size_t index) {
+  return e && index < e->value.cleanup_diagnostics.size() ? e->value.cleanup_diagnostics[index].suffix.c_str() : nullptr;
+}
+size_t xc_passage_cleanup_count(const xc_passage *p) { return p ? p->value.text.cleanup_diagnostics.size() : 0; }
+int xc_passage_cleanup_kind(const xc_passage *p, size_t index) {
+  if (!(p) || index >= p->value.text.cleanup_diagnostics.size()) return -1;
+  return p->value.text.cleanup_diagnostics[index].kind == xiphos::core::ContentCleanupKind::image ? 0 : 1;
+}
+const char *xc_passage_cleanup_suffix(const xc_passage *p, size_t index) {
+  return p && index < p->value.text.cleanup_diagnostics.size() ? p->value.text.cleanup_diagnostics[index].suffix.c_str() : nullptr;
+}
+size_t xc_passage_commentary_cleanup_count(const xc_passage *p) { return p && p->value.commentary ? (*p->value.commentary).cleanup_diagnostics.size() : 0; }
+int xc_passage_commentary_cleanup_kind(const xc_passage *p, size_t index) {
+  if (!(p && p->value.commentary) || index >= (*p->value.commentary).cleanup_diagnostics.size()) return -1;
+  return (*p->value.commentary).cleanup_diagnostics[index].kind == xiphos::core::ContentCleanupKind::image ? 0 : 1;
+}
+const char *xc_passage_commentary_cleanup_suffix(const xc_passage *p, size_t index) {
+  return p && p->value.commentary && index < (*p->value.commentary).cleanup_diagnostics.size() ? (*p->value.commentary).cleanup_diagnostics[index].suffix.c_str() : nullptr;
+}
+size_t xc_chapter_verse_cleanup_count(const xc_chapter *c, size_t verse) { return c && verse < c->value.verses.size() ? c->value.verses[verse].cleanup_diagnostics.size() : 0; }
+int xc_chapter_verse_cleanup_kind(const xc_chapter *c, size_t verse, size_t index) {
+  if (!(c && verse < c->value.verses.size()) || index >= c->value.verses[verse].cleanup_diagnostics.size()) return -1;
+  return c->value.verses[verse].cleanup_diagnostics[index].kind == xiphos::core::ContentCleanupKind::image ? 0 : 1;
+}
+const char *xc_chapter_verse_cleanup_suffix(const xc_chapter *c, size_t verse, size_t index) {
+  return c && verse < c->value.verses.size() && index < c->value.verses[verse].cleanup_diagnostics.size() ? c->value.verses[verse].cleanup_diagnostics[index].suffix.c_str() : nullptr;
+}
+unsigned xc_chapter_verse_ordinal(const xc_chapter *c, size_t verse) {
+  return c && verse < c->value.verse_ordinals.size() ? c->value.verse_ordinals[verse] : 0;
+}
 void xc_passage_release(xc_passage *p) { delete p; }
 xc_entry *xc_request_take_entry(xc_request *r) { return r && r->status == XC_OK ? r->entry.release() : nullptr; }
 xc_chapter *xc_request_take_chapter(xc_request *r) { return r && r->status == XC_OK ? r->chapter.release() : nullptr; }

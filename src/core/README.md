@@ -509,5 +509,7 @@ rebuilding sparse HTML; `Entry.cleanup_diagnostics` owns malformed suffixes.
 Ordinary Reader output stays compatible. `xc_request_content_options` returns
 status and unknown/off/on fields, while C setters validate 0/1. Swift/native
 controls carry core state and fetch after discovery, preserving drafts/history.
-Diagnostic adapters, other pane families and broader rendering remain pending. See
+C/Swift diagnostic getters copy kind/suffix data and chapter SDK ordinals into
+owned values with null/bounds/lifetime checks. Other pane families and broader
+rendering remain pending. See
 [cleanup scope](../../doc/modernization/html-cleanup-workflows.md).

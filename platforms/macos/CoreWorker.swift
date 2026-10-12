@@ -561,11 +561,15 @@ actor CoreWorker {
         let commentary = xc_passage_has_commentary(result) != 0 ? RenderedEntry(
             reference: String(cString: xc_passage_commentary_reference(result)!),
             html: String(cString: xc_passage_commentary_html(result)!),
-            headingHTML: String(cString: xc_passage_commentary_heading_html(result)!)) : nil
+            headingHTML: String(cString: xc_passage_commentary_heading_html(result)!),
+            cleanupDiagnostics: CoreValues.cleanupDiagnostics(count: xc_passage_commentary_cleanup_count(result),
+                kind: { xc_passage_commentary_cleanup_kind(result, $0) }, suffix: { xc_passage_commentary_cleanup_suffix(result, $0) })) : nil
         return RenderedStudyPassage(module: String(cString: xc_passage_module(result)!),
             commentaryModule: String(cString: xc_passage_commentary_module(result)!),
             text: RenderedEntry(reference: String(cString: xc_passage_reference(result)!),
-                                html: String(cString: xc_passage_html(result)!)), commentary: commentary)
+                                html: String(cString: xc_passage_html(result)!),
+                                cleanupDiagnostics: CoreValues.cleanupDiagnostics(count: xc_passage_cleanup_count(result),
+                                    kind: { xc_passage_cleanup_kind(result, $0) }, suffix: { xc_passage_cleanup_suffix(result, $0) })), commentary: commentary)
     }
     func studyPassage(tab: UInt64, module: String, commentary: String, reference: String, record: Bool = true) async throws -> RenderedStudyPassage {
         guard ![module, commentary, reference].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
