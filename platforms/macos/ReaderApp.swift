@@ -15,6 +15,10 @@ private struct ReadingOptionSaveError: LocalizedError {
 final class ReaderModel: ObservableObject {
     @Published var modules: [InstalledModule] = []
     @Published var selection: String?
+    @Published var dictionarySelection: String?
+    @Published var dictionaryKey = ""
+    @Published private(set) var dictionaryEntry: RenderedDictionaryEntry?
+    @Published private(set) var dictionarySource: PassageTarget?
     @Published var showLexiconPreferences = false
     @Published var reference = "John 3:16"
     @Published var renderedReference = ""
@@ -128,8 +132,27 @@ final class ReaderModel: ObservableObject {
         }
     }
     func selectionChanged() {
-        guard selection != displayedModule else { return }
+        guard !closed, !isBusy, selection != displayedModule else { return }
+        if let chosen = selection, modules.contains(where: { $0.id == chosen && $0.isDictionary }) {
+            selection = displayedModule
+            dictionarySelection = chosen
+            if !dictionaryKey.isEmpty { lookupDictionary() }
+            return
+        }
         read()
+    }
+    func lookupDictionary() {
+        guard !closed, !isBusy, let worker, let tab, let module = dictionarySelection,
+              modules.contains(where: { $0.id == module && $0.isDictionary }) else { return }
+        let key = dictionaryKey
+        guard !key.isEmpty else { message = "Enter a dictionary word or key."; return }
+        let source = displayedModule.flatMap { id in displayedEntry.map { PassageTarget(module: id, reference: $0.reference) } }
+        run { token in
+            let entry = try await worker.readDictionary(tab: tab, module: module, key: key)
+            guard token == self.revision && !self.closed else { return }
+            self.dictionaryEntry = entry; self.dictionaryKey = entry.key; self.dictionarySource = source
+            self.lexicalPreview = nil; self.message = ""
+        }
     }
     func read() {
         guard let worker, let tab, let selection else { return }
@@ -257,7 +280,11 @@ final class ReaderModel: ObservableObject {
                 self.referencePreview = references; self.message = ""
             case .lexical(let lexical):
                 guard token == self.revision && !self.closed else { return }
-                self.lexicalPreview = lexical; self.message = ""
+                self.lexicalPreview = lexical
+                self.dictionarySelection = lexical.entry.module; self.dictionaryKey = lexical.entry.key
+                self.dictionaryEntry = lexical.entry
+                self.dictionarySource = PassageTarget(module: lexical.module, reference: lexical.sourceReference)
+                self.message = ""
             case .passage(let target):
                 let entry = try await worker.visit(tab: tab, module: target.module, reference: target.reference)
                 try await self.present(entry, module: target.module, token: token)
@@ -274,7 +301,7 @@ final class ReaderModel: ObservableObject {
         }
     }
     func showStudyNoteBody() { referencePreview = nil }
-    func closeLexicalPreview() { guard !closed, !isBusy else { return }; lexicalPreview = nil }
+    func closeLexicalPreview() { guard !closed, !isBusy else { return }; lexicalPreview = nil; dictionaryEntry = nil; dictionarySource = nil; dictionarySelection = nil }
     func closeStudyNote() { referencePreview = nil; studyNote = nil }
     func clearHistory() {
         guard let worker, let tab else { return }
@@ -586,17 +613,32 @@ struct ReaderWindow: View {
                 Divider()
                 Text("Xiphos native preview • Chapter reading and history slice").font(.caption).foregroundStyle(.secondary).padding(8)
             }.frame(minWidth: 450)
-            if let lexical = model.lexicalPreview {
+            if model.dictionarySelection != nil {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack {
                         Text("Dictionary").font(.headline)
                         Spacer()
                         Button("Close") { model.closeLexicalPreview() }.disabled(model.isBusy)
                     }.padding(8)
-                    Text("\(lexical.entry.module) • \(lexical.entry.key)").font(.caption).padding(.horizontal, 8)
-                    Divider().padding(.top, 8)
-                    PassageView(html: lexical.entry.html, anchor: nil, onScrollFailure: { model.message = $0 },
-                                onLink: { model.followLink($0, currentModule: lexical.module, currentReference: lexical.sourceReference) })
+                    Picker("Dictionary module", selection: $model.dictionarySelection) {
+                        ForEach(model.modules.filter(\.isDictionary)) { module in
+                            Text(module.id).tag(Optional(module.id))
+                        }
+                    }.padding(8).disabled(model.isBusy)
+                    HStack {
+                        TextField("Dictionary word or key", text: $model.dictionaryKey).onSubmit { model.lookupDictionary() }
+                            .accessibilityLabel("Dictionary word or key")
+                        Button("Look up") { model.lookupDictionary() }
+                    }.padding(8).disabled(model.isBusy)
+                    Divider()
+                    if let entry = model.dictionaryEntry {
+                        Text("\(entry.module) • \(entry.key)").font(.caption).padding(8)
+                        PassageView(html: entry.html, anchor: nil, onScrollFailure: { model.message = $0 },
+                                    onLink: { model.followLink($0, currentModule: model.dictionarySource?.module, currentReference: model.dictionarySource?.reference) })
+                    } else {
+                        Text("Enter a word or key to look up.").foregroundStyle(.secondary).padding()
+                        Spacer()
+                    }
                 }.frame(minWidth: 230, idealWidth: 300)
             }
         }.frame(minWidth: 700, minHeight: 450)

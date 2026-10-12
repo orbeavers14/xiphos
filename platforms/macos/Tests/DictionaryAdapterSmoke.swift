@@ -14,7 +14,7 @@ import Foundation
         let unicode = try await worker.readDictionary(tab: first, module: "DictionaryOne", key: "ALPHA")
         let other = try await worker.readDictionary(tab: first, module: "DictionaryTwo", key: "alpha")
         guard unicode.html.contains("café"), other.module == "DictionaryTwo", other.html.contains("DictionaryTwo") else { fatalError("dictionary Unicode/module context") }
-        for (module, key) in [("Missing", "alpha"), ("OriginalBible", "John3:16"), ("DictionaryOne", "")] {
+        for (module, key) in [("Missing", "alpha"), ("OriginalBible", "John3:16"), ("DictionaryOne", ""), ("DictionaryOne", "alpha\0ignored"), ("DictionaryOne\0ignored", "alpha")] {
             do { _ = try await worker.readDictionary(tab: first, module: module, key: key); fatalError("invalid dictionary accepted") }
             catch is CoreError { }
         }

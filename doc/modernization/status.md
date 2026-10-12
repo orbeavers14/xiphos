@@ -1586,3 +1586,26 @@ lookup history, then hover/pinning/profile persistence and the full established
 right-side composition. No full feature acceptance/file retirement; provisional
 estimate stays about 6% (4–8%), with 0/38 full groups accepted and 0/3 platforms
 release-ready.
+
+
+## Native direct dictionary lookup: locally checked, key navigation next
+
+Implemented 2026-10-11 on `modernization/macos-direct-dictionary`. Classified
+dictionary selection opens a separate word/key column and restores the committed
+Bible selection. A filtered dictionary picker and direct lookup use owned core
+results; successful reads publish the SDK-resolved key and capture source Bible
+context for nested links. Empty/invalid lookup preserves the previous result.
+The Swift dictionary adapter rejects embedded NUL values before C submission.
+
+Validation: 27/27 local checks passed, followed by 3/3 focused checks after the
+resolved-key presentation adjustment. Native model checks cover selection,
+Unicode input, dictionary switching, source/draft/Bible-history preservation,
+error retention and Close. Visible temporary GUI checks confirmed café resolves
+to CAFÉ with its original definition, empty lookup retains it, switching to
+DictionaryTwo/alpha displays its definition, and Close retains John3:16 and the
+unfinished John4:2 draft. No GitHub builds or installed-data changes.
+
+Next: characterize and extract legacy dictionary key navigation, separate
+history and click normalization. Full dictionary/right-pane workflows, hover,
+pinning, persistence and all-platform acceptance remain pending. No retirement;
+provisional overall estimate remains about 6% (4–8%).

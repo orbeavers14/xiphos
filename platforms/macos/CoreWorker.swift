@@ -190,6 +190,7 @@ actor CoreWorker {
         return CoreValues.lexicalEntry(result)
     }
     func readDictionary(tab: UInt64, module: String, key: String) async throws -> RenderedDictionaryEntry {
+        guard ![module, key].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?
         let handle = try worker()
         let status = module.withCString { id in key.withCString { xc_worker_read_dictionary(handle, tab, id, $0, &request) } }
