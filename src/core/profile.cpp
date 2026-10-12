@@ -9,6 +9,9 @@
 #include <mutex>
 #include <stdexcept>
 #include <array>
+#include <cerrno>
+#include <cstdlib>
+#include <limits>
 namespace xiphos::core {
 namespace {
 constexpr std::size_t maximum_profile_bytes = 16 * 1024 * 1024;
@@ -77,6 +80,14 @@ std::optional<std::string> value(xmlDoc *document, const char *section, const ch
   std::unique_ptr<xmlChar, decltype(xmlFree)> owned(text, xmlFree);
   return std::string(reinterpret_cast<const char *>(text));
 }
+std::string read_profile_source(const std::string &path) {
+  if (path.empty() || path.find('\0') != std::string::npos)
+    throw std::invalid_argument("Xiphos profile path is invalid");
+  const auto file = std::filesystem::u8path(path);
+  if (!std::filesystem::is_regular_file(file))
+    throw std::invalid_argument("Xiphos profile must be a regular file");
+  return detail::read_preference_file(file, maximum_profile_bytes);
+}
 }
 StudyProfile parse_study_profile(const std::string &source) {
   auto document = parse_document(source);
@@ -95,12 +106,25 @@ StudyProfile parse_study_profile(const std::string &source) {
   return result;
 }
 StudyProfile read_study_profile(const std::string &path) {
-  if (path.empty() || path.find('\0') != std::string::npos)
-    throw std::invalid_argument("Xiphos profile path is invalid");
-  const auto file = std::filesystem::u8path(path);
-  if (!std::filesystem::is_regular_file(file))
-    throw std::invalid_argument("Xiphos profile must be a regular file");
-  return parse_study_profile(detail::read_preference_file(file, maximum_profile_bytes));
+  return parse_study_profile(read_profile_source(path));
+}
+StudyPreviewPreferences parse_study_preview_preferences(const std::string &source) {
+  auto document = parse_document(source);
+  StudyPreviewPreferences result;
+  const auto configured = value(document.get(), "misc", "xrefsinverselist");
+  if (configured) {
+    // Match defined atoi prefix behavior without integer overflow. Do not
+    // enforce a new true/false grammar or normalize unrelated XML values.
+    errno = 0;
+    const auto number = std::strtol(configured->c_str(), nullptr, 10);
+    if (errno == ERANGE || number < std::numeric_limits<int>::min() || number > std::numeric_limits<int>::max())
+      throw std::invalid_argument("Xiphos preview preference integer is out of range");
+    result.cross_references_in_verse_list = number != 0;
+  }
+  return result;
+}
+StudyPreviewPreferences read_study_preview_preferences(const std::string &path) {
+  return parse_study_preview_preferences(read_profile_source(path));
 }
 std::string serialize_lexicon_profile(const std::string &source, const LexiconPreferences &preferences) {
   auto document = parse_document(source);

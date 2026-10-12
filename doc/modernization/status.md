@@ -51,7 +51,7 @@ No milestone has official acceptance yet.
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
 
-Current local suite: **47 checks**. The shared Unicode click-key utility reuses
+Current local suite: **48 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.
@@ -127,7 +127,7 @@ inclusion in this public fork.
 | Unicode click policy | Shared/actual legacy casing agrees over 4,448,324 comparisons in four locales; native main clicks normalize/record; raw dialog/hover semantics retained | Unicode database/version comparisons, real-module workflows and forced-locale preference import |
 | Native environment locale | 31/31 suite then 3/3 focused fixture/Turkish/invalid-locale checks; 32 checks now defined | Saved locale selection, translation resources and other native host startup |
 
-The full local suite now passes **47/47**. Complete main note/reference callbacks
+The full local suite now passes **48/48**. Complete main note/reference callbacks
 also agree over 96,792 frozen/actual ordered comparisons, including preference
 routing, heading setup and early guards. The legacy handler now avoids its
 early-return GString allocation without changing callback traces. This harness
@@ -216,6 +216,14 @@ dictionary URI hover, heading, aliases and representative modules remain
 acceptance gates; dictionary semantic callback wiring is not full keyed-module
 hover validation.
 
+A separate owned preview-profile reader now reads `misc/xrefsinverselist`
+without changing tabs/files or lexicon import. Seventy-seven checks compare the
+actual XML getter with the observed legacy bounded atoi/default rule, including
+missing/empty/duplicate nodes, signed/zero/non-numeric prefixes, UTF-16, file
+preservation and concurrent copied results. Out-of-int-range prefixes reject
+instead of inheriting integer overflow. This does not execute the complete
+legacy startup or implement preview XML saving/native restoration.
+
 Latest code milestones: [shared Unicode helper #54](https://github.com/orbeavers14/xiphos/pull/54),
 [legacy adoption #55](https://github.com/orbeavers14/xiphos/pull/55),
 [native click/origin policy #56](https://github.com/orbeavers14/xiphos/pull/56),
@@ -237,7 +245,9 @@ Latest code milestones: [shared Unicode helper #54](https://github.com/orbeavers
 [metadata-only notes #74](https://github.com/orbeavers14/xiphos/pull/74),
 [note source fallback #75](https://github.com/orbeavers14/xiphos/pull/75),
 [development guide cleanup #76](https://github.com/orbeavers14/xiphos/pull/76),
-[nested study hover #77](https://github.com/orbeavers14/xiphos/pull/77).
+[nested study hover #77](https://github.com/orbeavers14/xiphos/pull/77),
+[workflow guide cleanup #78](https://github.com/orbeavers14/xiphos/pull/78),
+[preview profile reader #79](https://github.com/orbeavers14/xiphos/pull/79).
 Scoped address/undefined and thread checks cover shared ownership/state changes;
 strict C++11/C++17/C11 checks cover the corresponding seams. These are not full
 SDK instrumentation or a leak audit. See each PR for its exact checks and scope.

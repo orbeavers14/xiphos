@@ -144,6 +144,13 @@ locale excludes translated NONE/literal None and tries saved name then .UTF-8.
 That saved-locale startup ordering still needs characterization; changing process
 locale in an active worker/window is not equivalent.
 
+`parse_study_preview_preferences`/`read_study_preview_preferences` separately
+read `misc/xrefsinverselist`. Missing/null getter results default true; bounded
+legacy atoi prefixes yield false only for zero (non-numeric prefixes also yield
+zero). Out-of-int-range prefixes reject instead of inheriting integer overflow.
+Lexicon-only import ignores this unrelated setting even when it is invalid.
+No native startup application, tab mutation or XML preview-mode save occurs.
+
 ## Evidence and open acceptance
 
 | Local evidence | Scope and limitation |
@@ -153,13 +160,14 @@ locale in an active worker/window is not equivalent.
 | core_note_presentation_header: 20 cases | C boundary/null/empty/Unicode/nonzero-flag precedence; all complete-handler traces still agree after legacy adoption |
 | core_xml_profile: 296 checks | Six frozen/actual helpers with real libxml2; five keys, Unicode/escaping/CDATA, empty/child-only nodes, duplicates, missing/malformed XML, mutation and unrelated-data preservation; release assertions active |
 | core_profile_reader: 367 checks; core_profile_save: 39 checks | Getter/default equivalence, encodings, independent contexts, source/result lifetime, DTD/resource rejection, literal round trips and file failure/preservation cases |
+| core_preview_profile: 77 checks | Actual XML getter plus observed bounded atoi/default expression; empty/duplicate nodes, signed/non-numeric prefixes, bounds, encodings, file preservation and independent copied results; not complete startup execution |
 | core_hover and adapters/model | Real generated SWORD note/dictionary fixtures, both modes, raw lexical/body equality, histories/tab isolation, copied arguments/results, scalar kinds, no-op, errors, shutdown and stale publication |
 | core_reference_targets: 64 generated cases | Equality with full snapshots across module/context/expression, limits/order and owned lifetimes |
 | core_note_metadata: 16 passage/filter cases | Full-path metadata equality, settings, invalid/missing inputs and lifetime after later calls/close |
 | core_hover_source: 12 generated combinations plus boundaries | Explicit/fallback modules/passages, five-byte/UTF-8 thresholds, parser isolation, errors/history/C lifetime |
 | Temporary native GUI fixtures | Profile import/save/error, main body/crossref modes/Back, nested sidebar note hover and pointer-leave retention; draft/main/history isolation |
 
-The current local suite passes 47/47. Scoped address/undefined/thread checks cover
+The current local suite passes 48/48. Scoped address/undefined/thread checks cover
 shared ownership/state changes; strict C++11/C++17/C11 checks cover their seams.
 SWORD, system libxml2 and GLib are not fully instrumented. The note harness tracks
 handler GStrings and reclaims frozen early-return allocations after recording;

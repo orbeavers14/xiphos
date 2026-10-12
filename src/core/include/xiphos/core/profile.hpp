@@ -13,6 +13,15 @@ struct StudyProfile {
 // No external resources, home/profile discovery, module validation or writes.
 StudyProfile parse_study_profile(const std::string &xml);
 StudyProfile read_study_profile(const std::string &path);
+// Separately selected preview settings: lexicon import does not apply these.
+struct StudyPreviewPreferences {
+  bool cross_references_in_verse_list = true;
+};
+// Legacy misc/xrefsinverselist: missing/null defaults true; a bounded atoi
+// prefix is false only when zero. Out-of-int-range prefixes reject safely.
+// No file writes, implicit startup application or mutation of active tabs.
+StudyPreviewPreferences parse_study_preview_preferences(const std::string &xml);
+StudyPreviewPreferences read_study_preview_preferences(const std::string &path);
 // Explicitly update the five effective lexicon values; retain unrelated XML
 // nodes/attributes/comments outside updated values and shadowed duplicate keys.
 // XML formatting/encoding normalizes to UTF-8. Null/empty choices cannot round
