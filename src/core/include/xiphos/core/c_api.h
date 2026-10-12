@@ -124,6 +124,14 @@ xc_status xc_worker_study_note_link(xc_worker *worker, uint64_t tab, const char 
 xc_status xc_worker_enable_lexicon_preferences(xc_worker *worker, uint64_t tab, xc_request **out);
 xc_status xc_worker_set_lexicon_preferences(xc_worker *worker, uint64_t tab, const xc_lexicon_names *names, xc_request **out);
 xc_status xc_worker_lexicon_preferences(xc_worker *worker, uint64_t tab, xc_request **out);
+/* Explicit selected XML file only. Import returns a configured snapshot via
+ * xc_request_take_lexicons, preserves unavailable names and publishes all five
+ * choices after successful parsing. Saved locale is not applied. Save requires
+ * configured, nonempty choices and returns a void completion. Neither operation
+ * visits/moves Bible or dictionary history. Dropping an observer does not cancel
+ * an accepted operation; no automatic user-profile reads/writes occur. */
+xc_status xc_worker_import_lexicon_profile(xc_worker *worker, uint64_t tab, const char *path, xc_request **out);
+xc_status xc_worker_save_lexicon_profile(xc_worker *worker, uint64_t tab, const char *path, xc_request **out);
 /* URI must be nonempty; origin is XIPHOS_LEXICON_MAIN/DIALOG. Nullable source
  * module/reference become empty (valid for source-independent Strong's).
  * Greek morphology validates source on the worker. No Bible history visit.

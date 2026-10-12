@@ -323,3 +323,13 @@ when requested. Existing malformed/empty files reject rather than being replaced
 It shares replacement/cleanup with engine-preference saving and rejects observed
 external changes. This is not interprocess locking or power-loss durability;
 Windows replacement behavior remains a platform acceptance gate.
+
+`StudyWorker::import_lexicon_profile` prepares all choices before per-tab
+publication and returns copied preferences. Save requires a configured tab and
+uses the existing shared profile writer. Both execute FIFO on the worker, leave
+Bible/dictionary history and engine options unchanged, and never apply saved
+locale. C APIs `xc_worker_import_lexicon_profile` and
+`xc_worker_save_lexicon_profile` use existing observer lifetimes; import
+transfers one configured snapshot through `xc_request_take_lexicons`, while
+save completes without a snapshot. Releasing an accepted observer does not
+cancel file work; shutdown drains it. Native controls remain separate work.
