@@ -513,3 +513,12 @@ C/Swift diagnostic getters copy kind/suffix data and chapter SDK ordinals into
 owned values with null/bounds/lifetime checks. Other pane families and broader
 rendering remain pending. See
 [cleanup scope](../../doc/modernization/html-cleanup-workflows.md).
+
+### Word block characterization
+
+`core_word_blocks` compares complete frozen/current block helpers and entry over
+1,457 valid cases, with original Greek/Hebrew SDK data. It preserves displayed-code
+versus hyperlink distinctions and records input mutation/static recursion defects.
+This is sequential source characterization, not a safe concurrent/native block
+service. Owned bounded parsing, CSS selection, integration and visual acceptance
+remain pending. See [scope](../../doc/modernization/word-block-workflows.md).
