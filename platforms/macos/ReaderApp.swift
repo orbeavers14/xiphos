@@ -183,7 +183,7 @@ final class ReaderModel: ObservableObject {
         }
     }
     func setReadingOption(_ flag: EngineOptionFlags, enabled: Bool) {
-        let supported: EngineOptionFlags = [.wordsInRed, .strongs, .morphology, .footnotes, .greekAccents, .crossReferences, .hebrewVowels, .hebrewCantillation]
+        let supported: EngineOptionFlags = [.wordsInRed, .strongs, .morphology, .footnotes, .greekAccents, .crossReferences, .hebrewVowels, .hebrewCantillation, .lemmas, .transliteratedForms, .glosses, .morphemeSegmentation]
         guard supported.contains(flag), flag.rawValue.nonzeroBitCount == 1,
               moduleOptions.declared.contains(flag), var options = engineOptions,
               let worker, let tab, let module = displayedModule, let entry = displayedEntry else { return }
@@ -470,6 +470,10 @@ struct ReaderWindow: View {
                         readingOption("Greek Accents", flag: .greekAccents)
                         readingOption("Hebrew Vowel Points", flag: .hebrewVowels)
                         readingOption("Hebrew Cantillation", flag: .hebrewCantillation)
+                        readingOption("Lemmas", flag: .lemmas)
+                        readingOption("Transliterated Forms", flag: .transliteratedForms)
+                        readingOption("Glosses", flag: .glosses)
+                        readingOption("Morpheme Segmentation", flag: .morphemeSegmentation)
                         if model.moduleOptions.declared.contains(.variantsPrimary) {
                             Menu("Textual Variants") {
                                 variantOption("Primary Reading", flag: .variantsPrimary, reading: .primary)
@@ -478,7 +482,7 @@ struct ReaderWindow: View {
                             }
                         }
                     }.disabled(model.engineOptions == nil || model.moduleOptions.declared.intersection(
-                        [.wordsInRed, .strongs, .morphology, .footnotes, .greekAccents, .crossReferences, .hebrewVowels, .hebrewCantillation, .variantsPrimary]).isEmpty)
+                        [.wordsInRed, .strongs, .morphology, .footnotes, .greekAccents, .crossReferences, .hebrewVowels, .hebrewCantillation, .lemmas, .transliteratedForms, .glosses, .morphemeSegmentation, .variantsPrimary]).isEmpty)
                 }.padding(.horizontal, 12).padding(.bottom, 8).disabled(model.isBusy)
                 HStack {
                     Menu("Preferences") {

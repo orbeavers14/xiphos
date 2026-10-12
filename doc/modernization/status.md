@@ -1302,3 +1302,32 @@ build was dispatched.
 Next: remaining word-annotation/display controls and lexicon interactions.
 Full variant-module corpus, visual/workflow and platform acceptance remain
 pending. Overall estimate remains about 6%; 0/38 accepted feature groups.
+
+## Native word-annotation controls: locally checked
+
+Implemented 2026-10-11 on `modernization/macos-word-annotation-options`, based
+on variant controls. Native Reading options now binds declared Lemmas,
+Transliterated Forms, Glosses and Morpheme Segmentation through existing shared
+settings. No filter or rendering policy moved into Swift. Original generated
+word markup follows CrossWire's filter/render implementation, including the
+lemma.* namespace recognized by OSISLemma.
+
+Validation: 21/21 local checks, 2/2 focused address/undefined checks and strict
+C++17 fixture compilation passed. All 16 actual core renders equal direct
+legacy SWORD setter/render calls and every individual filter changes output.
+Native model covers undeclared rejection, individual enable/restore, window
+isolation, draft/history preservation, chapter output and save/reload. Visible
+temporary GUI checks confirmed lemma links, encoded transliteration, gloss
+removal, preserved unfinished input and hidden controls on an undeclared
+module. Morpheme span output is validated by model/core tests; full segmentation
+color/style and lookup interactions remain pending. No GitHub builds.
+
+Filter references: [OSISLemma source](https://www.crosswire.org/ftpmirror/pub/sword/source/sword-1.9.0/src/modules/filters/osislemma.cpp),
+[OSISXlit](https://www.crosswire.org/sword/apiref/osisxlit_8cpp_source.html),
+[OSISGlosses](https://www.crosswire.org/sword/apiref/classOSISGlosses.html),
+[OSISMorphSegmentation](https://www.crosswire.org/sword/apiref/classOSISMorphSegmentation.html)
+and [OSISXHTML](https://crosswire.org/sword/apiref/osisxhtml_8cpp_source.html).
+
+Next: lexicon/dictionary service and interactions, remaining enumerations,
+headings and global transliteration controls. Full visual/platform parity and
+acceptance remain pending; no legacy file retirement.
