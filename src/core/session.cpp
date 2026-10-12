@@ -145,6 +145,8 @@ std::optional<EngineOptions> StudySession::module_engine_options(const std::stri
 }
 StudyPassage StudySession::read_passage(const std::string &module, const std::string &commentary,
                                         const std::string &reference) {
+  if (reference.empty() || reference.find('\0') != std::string::npos)
+    throw std::invalid_argument("Study passage requires a nonempty reference without NUL");
   auto require_type = [&](const std::string &id, const char *type) {
     require_module(id);
     for (const auto &installed : reader_.modules())
@@ -164,6 +166,16 @@ StudyPassage StudySession::visit_passage(const std::string &module, const std::s
   // reference-only deduplication, including its first recorded module pair.
   history_.visit({result.text.reference, module, commentary});
   return result;
+}
+StudyPassage StudySession::visit_linked_passage(const std::string &bible, const std::string &commentary,
+                                                const PassageLink &target) {
+  require_module(target.module);
+  for (const auto &module : reader_.modules()) {
+    if (module.id != target.module) continue;
+    if (module.type == "Biblical Texts") return visit_passage(target.module, commentary, target.reference);
+    if (module.type == "Commentaries") return visit_passage(bible, target.module, target.reference);
+  }
+  throw std::invalid_argument("Link target is not a Bible or commentary");
 }
 StudyPassage StudySession::navigate_passage(int direction) {
   const auto &location = history_.destination(direction);

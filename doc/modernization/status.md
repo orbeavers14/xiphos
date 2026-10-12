@@ -72,8 +72,12 @@ address/undefined checks pass. The suite now contains 54 checks. A no-record sha
 service renders the characterized sparse/linked positions with module preferences
 and selected/missing anchors; the full suite passes 54/54. Four focused
 address/undefined and three thread checks pass, with SDK instrumentation limits
-as documented. Native chapter controls, headings and broader acceptance remain
-pending.
+as documented. Native independent commentary chapter controls and shared passage-link pane
+routing are now implemented and pass the 54-check suite. Three focused
+address/undefined and three thread checks also pass. Runtime inspection verifies
+chapter mode with unsent input, passage/notes links and selected-row theme/link
+contrast. Headings, per-module chapter-mode defaults/persistence and broader
+acceptance remain pending.
 
 - Shared C++ module/verse/chapter reading, Bible history, rendering options,
   engine-preference import/save, note and reference-list previews.

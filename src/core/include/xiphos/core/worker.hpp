@@ -63,6 +63,8 @@ public:
   std::future<ReferenceList> read_reference_list(StudyTab tab, std::string module, std::string expression, std::string context);
   // showRef previews use the supplied source reference and never visit history.
   // Same dispatch, explicitly recording successful lexical dictionary visits.
+  std::future<ContextualStudyLink> follow_pane_link_at(StudyTab tab, std::string navigation_module, std::string source_module,
+                                                    std::string current_reference, std::string uri);
   std::future<ContextualStudyLink> follow_study_link_at(StudyTab tab, std::string current_module, std::string current_reference, std::string uri);
   std::future<ContextualStudyLink> resolve_study_link_at(StudyTab tab, std::string current_module, std::string current_reference, std::string uri);
   std::future<ResolvedStudyLink> resolve_study_link(StudyTab tab, std::string current_module, std::string uri);
@@ -71,6 +73,7 @@ public:
   std::future<Entry> read_entry(StudyTab tab, std::string module, std::string reference);
   std::future<StudyPassage> read_passage(StudyTab tab, std::string module, std::string commentary, std::string reference);
   std::future<StudyPassage> visit_passage(StudyTab tab, std::string module, std::string commentary, std::string reference);
+  std::future<StudyPassage> visit_linked_passage(StudyTab tab, std::string bible, std::string commentary, PassageLink target);
   std::future<StudyPassage> navigate_passage(StudyTab tab, int direction);
   std::future<StudyPassage> navigate_passage_chapter(StudyTab tab, std::string module, std::string commentary,
                                                   std::string reference, int direction);

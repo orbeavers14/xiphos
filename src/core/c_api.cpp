@@ -200,6 +200,13 @@ xc_status xc_worker_visit_passage(xc_worker *w, uint64_t tab, const char *id, co
   if (!id || !*id || !commentary || !ref || !*ref) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.visit_passage(tab, id, commentary, ref); });
 }
+xc_status xc_worker_visit_linked_passage(xc_worker *w, uint64_t tab, const char *bible, const char *commentary,
+                                        const char *target, const char *ref, xc_request **out) {
+  if (!bible || !*bible || !commentary || !target || !*target || !ref || !*ref) {
+    if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w, out, [=](auto &worker) { return worker.visit_linked_passage(tab, bible, commentary, {target, ref}); });
+}
 xc_status xc_worker_navigate_passage(xc_worker *w, uint64_t tab, int direction, xc_request **out) {
   return queue_request(w, out, [=](auto &worker) { return worker.navigate_passage(tab, direction); });
 }
@@ -259,6 +266,13 @@ xc_status xc_request_engine_options(const xc_request *r, unsigned *flags, int *c
 }
 xc_status xc_worker_clear_engine_options(xc_worker *w, uint64_t tab, xc_request **out) {
   return queue_request(w, out, [=](auto &worker) { return worker.clear_engine_options(tab); });
+}
+xc_status xc_worker_follow_pane_link_at(xc_worker *w, uint64_t tab, const char *navigation, const char *source,
+                                       const char *ref, const char *uri, xc_request **out) {
+  if (!navigation || !*navigation || !source || !*source || !ref || !*ref || !uri || !*uri) {
+    if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w, out, [=](auto &worker) { return worker.follow_pane_link_at(tab, navigation, source, ref, uri); });
 }
 xc_status xc_worker_follow_study_link_at(xc_worker *w, uint64_t tab, const char *id, const char *context, const char *uri, xc_request **out) {
   if (!context || !*context || !uri || !*uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
@@ -395,6 +409,13 @@ xc_status xc_worker_study_note(xc_worker *w, uint64_t tab, const char *id, const
 xc_status xc_worker_read_tab_entry(xc_worker *w, uint64_t tab, const char *id, const char *ref, xc_request **out) {
   if (!id || !*id || !ref || !*ref) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.read_entry(tab, id, ref); });
+}
+xc_status xc_worker_read_tab_commentary_chapter(xc_worker *w, uint64_t tab, const char *id, const char *ref, unsigned flags, xc_request **out) {
+  if (!id || !*id || !ref || !*ref || (flags & ~(XC_CHAPTER_VERSE_NUMBERS | XC_CHAPTER_HIGHLIGHT_SELECTED))) {
+    if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
+  }
+  const xiphos::core::DisplayOptions options{(flags & XC_CHAPTER_VERSE_NUMBERS) != 0, (flags & XC_CHAPTER_HIGHLIGHT_SELECTED) != 0};
+  return queue_request(w, out, [=](auto &worker) { return worker.read_commentary_chapter(tab, id, ref, options); });
 }
 xc_status xc_worker_read_tab_chapter(xc_worker *w, uint64_t tab, const char *id, const char *ref, unsigned flags, xc_request **out) {
   if (!id || !*id || !ref || !*ref || (flags & ~(XC_CHAPTER_VERSE_NUMBERS | XC_CHAPTER_HIGHLIGHT_SELECTED))) {

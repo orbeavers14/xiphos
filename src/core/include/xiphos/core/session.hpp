@@ -48,6 +48,8 @@ public:
                             const std::string &reference);
   StudyPassage visit_passage(const std::string &module, const std::string &commentary,
                              const std::string &reference);
+  StudyPassage visit_linked_passage(const std::string &bible, const std::string &commentary,
+                                    const PassageLink &target);
   StudyPassage navigate_passage(int direction);
   StudyPassage navigate_passage_chapter(const std::string &module, const std::string &commentary,
                                         const std::string &reference, int direction);

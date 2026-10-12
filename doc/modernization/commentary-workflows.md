@@ -123,3 +123,29 @@ rendering, chapter boundaries, escaped attributes and queued snapshot ownership.
 Four focused address/undefined and three thread checks pass; the same external
 SDK/instrumentation limits apply. Headings, caching, image resizing, personal
 commentary handling and native chapter controls are still pending.
+
+## Native chapter control and passage-link routing
+
+The C ABI and Swift actor expose the no-record sparse chapter snapshot. macOS
+now has an independent **Whole commentary chapter** control; the Display menu's
+number/highlight settings apply when either pane displays a chapter. The preview
+currently holds commentary mode per window; legacy per-module default decoding
+and persistence are not yet connected. Runtime checks verify unsent reference
+preservation, verse-number navigation of both panes, commentary note body display
+and readable selected-row highlighting/link contrast.
+
+`main/url.cc:sword_uri` defaults a module-less scripture URI to
+`settings.MainWindowModule`, regardless of the source pane. Explicit Bible targets
+replace the Bible and keep commentary; explicit commentary targets replace the
+commentary and keep the Bible. The core now exposes separate navigation/source
+contexts for pane links, preserving commentary note/lexical context while routing
+module-less scripture links to the Bible. A paired linked-visit command owns the
+module-type routing; Swift only supplies copied context and displays the result.
+These branches have source-backed implementation tests; the complete legacy URI
+handler, abbreviation/range/fragment behavior and other module kinds remain
+unaccepted. Embedded NUL strings in the new Swift paired/chapter commands reject
+before the C-string boundary.
+
+The full local suite passes 54/54; focused address/undefined and thread suites
+pass 3/3 each, including sparse C chapter transfer after worker shutdown.
+External SDK instrumentation limitations still apply.

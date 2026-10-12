@@ -33,6 +33,8 @@ final class ReaderModel: ObservableObject {
     @Published var selection: String?
     @Published private(set) var commentarySelection = ""
     @Published private(set) var commentaryEntry: RenderedEntry?
+    @Published private(set) var commentaryChapter: RenderedChapter?
+    @Published var showCommentaryChapter = false
     @Published var dictionarySelection: String?
     @Published var dictionaryKey = ""
     @Published private(set) var dictionaryEntry: RenderedDictionaryEntry?
@@ -331,6 +333,11 @@ final class ReaderModel: ObservableObject {
         let numbers = verseNumbers, highlight = highlightSelected
         let chapter = chapterMode ? try await worker.readTabChapter(tab: tab, module: module, reference: entry.reference,
                                                                   verseNumbers: numbers, highlightSelected: highlight) : nil
+        let commentaryChapter: RenderedChapter?
+        if showCommentaryChapter, let pair, let commentary = pair.commentary {
+            commentaryChapter = try await worker.readTabCommentaryChapter(tab: tab, module: pair.commentaryModule,
+                reference: commentary.reference, verseNumbers: numbers, highlightSelected: highlight)
+        } else { commentaryChapter = nil }
         let selectors = try await worker.referenceChoices(module: module, reference: entry.reference)
         let history = try await worker.history(tab)
         let options = try await worker.moduleEngineOptions(tab: tab, module: module)
@@ -339,6 +346,7 @@ final class ReaderModel: ObservableObject {
         studyNote = nil
         commentarySelection = pair?.commentaryModule ?? ""
         commentaryEntry = pair?.commentary
+        self.commentaryChapter = commentaryChapter
         engineOptions = options
         moduleOptions = modules.first(where: { $0.id == module })?.options ?? .unknown
         if let chapter {
@@ -433,12 +441,16 @@ final class ReaderModel: ObservableObject {
             try await self.visitAndPresent(module: module, reference: target, token: token)
         }
     }
-    func followLink(_ uri: String, currentModule: String? = nil, currentReference: String? = nil) {
+    func followCommentaryLink(_ uri: String) {
+        guard let displayedModule, let entry = commentaryEntry else { return }
+        followLink(uri, currentModule: commentarySelection, currentReference: entry.reference, navigationModule: displayedModule)
+    }
+    func followLink(_ uri: String, currentModule: String? = nil, currentReference: String? = nil, navigationModule: String? = nil) {
         guard let worker, let tab, let displayedModule, let displayedEntry else { return }
         let module = currentModule ?? displayedModule
         let context = currentReference ?? displayedEntry.reference
         run { token in
-            switch try await worker.followStudyLinkAt(tab: tab, currentModule: module, currentReference: context, uri: uri) {
+            switch try await worker.followStudyLinkAt(tab: tab, currentModule: module, currentReference: context, uri: uri, navigationModule: navigationModule) {
             case .note(let note):
                 guard token == self.revision && !self.closed else { return }
                 self.referencePreview = nil
@@ -453,7 +465,11 @@ final class ReaderModel: ObservableObject {
                     source: PassageTarget(module: lexical.module, reference: lexical.sourceReference),
                     lexical: lexical, history: history, token: token)
             case .passage(let target):
-                try await self.visitAndPresent(module: target.module, reference: target.reference, token: token)
+                if self.modules.contains(where: { $0.id == displayedModule && $0.type == "Biblical Texts" }) {
+                    let pair = try await worker.visitLinkedStudyPassage(tab: tab, bible: displayedModule,
+                        commentary: self.commentarySelection, target: target)
+                    try await self.present(pair.text, module: pair.module, token: token, passage: pair)
+                } else { try await self.visitAndPresent(module: target.module, reference: target.reference, token: token) }
             }
         }
     }
@@ -571,8 +587,9 @@ struct PassageView: NSViewRepresentable {
             /* Existing Xiphos editor/template.h styles this SWORD class red. */
             span.wordsOfJesus { color: red; }
             .xc-reference { margin-bottom: 20px; } .xc-reference header { font-weight: bold; }
-            .xc-verse { scroll-margin-top: 12px; }
-            .xc-verse.xc-current { background: Highlight; color: HighlightText; }
+            .xc-verse, .xc-commentary-section { scroll-margin-top: 12px; }
+            .xc-verse.xc-current, .xc-commentary-section.xc-current { background: Highlight; color: HighlightText; }
+            .xc-current a { color: inherit; }
             .xc-verse sup { font-size: 0.7em; padding-right: 4px; }
             </style>
             </head><body>\(html)</body></html>
@@ -816,7 +833,7 @@ struct ReaderWindow: View {
                     Menu("Display") {
                         Toggle("Verse numbers", isOn: $model.verseNumbers)
                         Toggle("Highlight selected verse", isOn: $model.highlightSelected)
-                    }.disabled(!model.showChapter)
+                    }.disabled(!model.showChapter && !model.showCommentaryChapter)
                     Menu("Reading options") {
                         readingOption("Words of Christ in Red", flag: .wordsInRed)
                         readingOption("Strong's Numbers", flag: .strongs)
@@ -891,12 +908,15 @@ struct ReaderWindow: View {
                                     Text(module.id).tag(module.id)
                                 }
                             }.padding(8).disabled(model.isBusy)
+                            Toggle("Whole commentary chapter", isOn: $model.showCommentaryChapter)
+                                .onChange(of: model.showCommentaryChapter) { _ in model.refreshDisplay() }
+                                .padding(.horizontal, 8).padding(.bottom, 8).disabled(model.isBusy || model.commentaryEntry == nil)
                             if let entry = model.commentaryEntry {
-                                Text(entry.reference).font(.caption).padding(8)
-                                PassageView(html: entry.html, anchor: nil, onScrollFailure: { model.message = $0 },
-                                    onLink: { model.followLink($0, currentModule: model.commentarySelection, currentReference: entry.reference) },
+                                Text(model.commentaryChapter?.title ?? entry.reference).font(.caption).padding(8)
+                                PassageView(html: model.commentaryChapter?.html ?? entry.html, anchor: model.commentaryChapter?.selectedAnchor, onScrollFailure: { model.message = $0 },
+                                    onLink: { model.followCommentaryLink($0) },
                                     onLinkHover: { model.previewStudyLink($0) })
-                                if entry.html.isEmpty {
+                                if model.commentaryChapter?.verses.allSatisfy({ $0.html.isEmpty }) ?? entry.html.isEmpty {
                                     Text("This commentary has no text at this reference.").foregroundStyle(.secondary).padding(8)
                                 }
                             } else {

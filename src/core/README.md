@@ -445,3 +445,10 @@ engine verse ordinal; hosts use the returned HTML and `commentary-verse-N` ancho
 Module options apply to every rendered section and reads leave history unchanged.
 Selected/missing/trailing anchor placement has frozen/current legacy statement
 characterization; complete headings/cache/theme/personal-module parity is pending.
+
+The async C/Swift adapters now expose commentary chapter reads through the
+normal owned chapter snapshot type. `follow_pane_link_at` separates navigation
+Bible context from the source pane's note/lexical context. `visit_linked_passage`
+selects the Bible/commentary pair centrally according to the explicit target's
+module type. Other module kinds, abbreviations/ranges/fragments and complete
+legacy URI-handler characterization remain pending.

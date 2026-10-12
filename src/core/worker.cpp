@@ -37,9 +37,11 @@ struct StudyWorker::Impl {
       return note_target(id, xiphos::core::study_note_link(uri, current_module));
     }
     ContextualStudyLink study_link_at(StudyTab tab, const std::string &current_module,
-                                     const std::string &current_reference, const std::string &uri, bool record_lexical) {
+                                     const std::string &current_reference, const std::string &uri, bool record_lexical,
+                                     const std::string &navigation_module = "") {
       auto &session = this->tab(tab);
-      const auto target = xiphos::core::contextual_study_link(uri, current_module);
+      const auto target = navigation_module.empty() ? xiphos::core::contextual_study_link(uri, current_module)
+          : xiphos::core::contextual_study_link(uri, current_module, navigation_module);
       if (const auto *passage = std::get_if<PassageLink>(&target))
         return reader.resolve_link(passage->module, passage_uri(passage->reference));
       if (const auto *list = std::get_if<ReferenceListLink>(&target))
@@ -219,6 +221,14 @@ std::future<ReferenceList> StudyWorker::read_reference_list(StudyTab tab, std::s
     return s.tab(tab).read_reference_list(module, expression, context);
   });
 }
+std::future<ContextualStudyLink> StudyWorker::follow_pane_link_at(StudyTab tab, std::string navigation_module,
+                                                                std::string source_module, std::string current_reference,
+                                                                std::string uri) {
+  return impl_->submit([tab, navigation_module = std::move(navigation_module), source_module = std::move(source_module),
+                        current_reference = std::move(current_reference), uri = std::move(uri)](Impl::State &s) {
+    return s.study_link_at(tab, source_module, current_reference, uri, true, navigation_module);
+  });
+}
 std::future<ContextualStudyLink> StudyWorker::follow_study_link_at(StudyTab tab, std::string current_module, std::string current_reference, std::string uri) {
   return impl_->submit([tab, current_module = std::move(current_module), current_reference = std::move(current_reference),
                         uri = std::move(uri)](Impl::State &s) -> ContextualStudyLink {
@@ -268,6 +278,12 @@ std::future<StudyPassage> StudyWorker::visit_passage(StudyTab tab, std::string m
   return impl_->submit([tab, module = std::move(module), commentary = std::move(commentary),
                         reference = std::move(reference)](Impl::State &s) {
     return s.tab(tab).visit_passage(module, commentary, reference);
+  });
+}
+std::future<StudyPassage> StudyWorker::visit_linked_passage(StudyTab tab, std::string bible, std::string commentary,
+                                                          PassageLink target) {
+  return impl_->submit([tab, bible = std::move(bible), commentary = std::move(commentary), target = std::move(target)](Impl::State &s) {
+    return s.tab(tab).visit_linked_passage(bible, commentary, target);
   });
 }
 std::future<StudyPassage> StudyWorker::navigate_passage(StudyTab tab, int direction) {

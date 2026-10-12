@@ -39,6 +39,7 @@ int main(int argc, char **argv) {
       std::ofstream config(root / "mods.d" / (std::string(id) + ".conf"));
       config << '[' << id << "]\nDataPath=./" << id << "/\nModDrv=" << (text ? "RawText" : "RawCom")
              << "\nSourceType=OSIS\nEncoding=UTF-8\nVersification=KJV\nDescription=Original study pane fixture\n";
+      if (!text) config << "GlobalOptionFilter=OSISFootnotes\n";
       if (text) {
         sword::RawText writer(path.string().c_str());
         writer.setKey("John 3:16"); writer.setEntry("Original Bible fixture café.");
@@ -46,7 +47,7 @@ int main(int argc, char **argv) {
       } else {
         sword::RawCom writer(path.string().c_str());
         writer.setKey("John 3:16"); writer.setEntry((std::string(id) + " original commentary café.").c_str());
-        writer.setKey("John 3:17"); writer.setEntry((std::string(id) + " second commentary.").c_str());
+        writer.setKey("John 3:17"); writer.setEntry((std::string(id) + " second commentary.<note type=\"study\" n=\"1\">Original pane note.</note>").c_str());
       }
     }
     const auto dictionary = root / "Dictionary";
@@ -94,6 +95,18 @@ int main(int argc, char **argv) {
     session.navigate_passage(-1);
     const auto standalone = session.navigate_passage(1);
     check(standalone.module == "Notes" && !standalone.commentary, "old standalone commentary history remains restorable");
+    StudySession routed(reader);
+    const auto commentary_link = routed.visit_linked_passage("Text", "OtherNotes", {"Notes", "John 3:16"});
+    check(commentary_link.module == "Text" && commentary_link.commentary_module == "Notes", "commentary link replaces commentary, retaining Bible");
+    const auto bible_link = routed.visit_linked_passage("Text", "Notes", {"Text", "John 3:17"});
+    check(bible_link.module == "Text" && bible_link.commentary_module == "Notes", "Bible link retains commentary");
+    fails<std::invalid_argument>([&] { routed.visit_linked_passage("Text", "Notes", {"Dictionary", "ALPHA"}); }, "nonverse link target rejected by paired routing");
+    fails<std::invalid_argument>([&] { routed.visit_passage("Text", "Notes", std::string("John 3:16\0ignored", 17)); }, "embedded NUL cannot truncate a paired visit");
+    check(routed.history().entries().size() == 2 && routed.history().cursor() == 1, "failed routing preserves history");
+    const auto default_link = contextual_study_link("sword:///John3:17", "Notes", "Text");
+    check(std::get<PassageLink>(default_link).module == "Text", "module-less commentary passage uses main Bible");
+    const auto explicit_link = contextual_study_link("sword://Notes/John3:17", "Notes", "Text");
+    check(std::get<PassageLink>(explicit_link).module == "Notes", "explicit commentary URI module retained");
     StudyWorker worker(root.string());
     const auto tab = worker.create_tab().get(), other = worker.create_tab().get();
     std::string notes = "Notes";
@@ -109,6 +122,12 @@ int main(int argc, char **argv) {
     check(worker.navigate_passage(tab, 1).get().commentary_module == "OtherNotes", "queue recovers after failed pair");
     const auto next = worker.navigate_passage_chapter(tab, "Text", "Notes", "John 3:17", 1).get();
     check(next.text.reference == "John 4:1" && next.commentary->reference == "John 4:1", "both panes follow chapter navigation");
+    const auto pane_target = worker.follow_pane_link_at(tab, "Text", "Notes", "John 3:17", "sword:///John3:16").get();
+    check(std::get<PassageLink>(pane_target).module == "Text", "queued pane passage defaults to Bible");
+    const auto pane_note = worker.follow_pane_link_at(tab, "Text", "Notes", "John 3:17",
+        "passagestudy.jsp?action=showNote&type=n&value=1&passage=John3:17").get();
+    check(std::get<StudyNote>(pane_note).module == "Notes" && std::get<StudyNote>(pane_note).html.find("Original pane note") != std::string::npos,
+          "queued note retains commentary source context");
     xc_worker *bridge = nullptr;
     xc_request *request = nullptr;
     check(xc_worker_open(root.string().c_str(), &bridge) == XC_OK, "C worker opened");

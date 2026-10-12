@@ -76,6 +76,9 @@ xc_status xc_worker_navigate_chapter(xc_worker *worker, uint64_t tab, const char
  * Visits and navigation commit history only after both renders succeed. */
 xc_status xc_worker_read_passage(xc_worker *worker, uint64_t tab, const char *module, const char *commentary, const char *reference, xc_request **out);
 xc_status xc_worker_visit_passage(xc_worker *worker, uint64_t tab, const char *module, const char *commentary, const char *reference, xc_request **out);
+/* Explicit Bible links replace the Bible; commentary links replace commentary,
+ * retaining the other pane. Returns the owned paired passage after recording. */
+xc_status xc_worker_visit_linked_passage(xc_worker *worker, uint64_t tab, const char *bible, const char *commentary, const char *target_module, const char *reference, xc_request **out);
 xc_status xc_worker_navigate_passage(xc_worker *worker, uint64_t tab, int direction, xc_request **out);
 xc_status xc_worker_navigate_passage_chapter(xc_worker *worker, uint64_t tab, const char *module, const char *commentary, const char *reference, int direction, xc_request **out);
 xc_status xc_worker_history(xc_worker *worker, uint64_t tab, xc_request **out);
@@ -122,6 +125,9 @@ xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_req
 /* Explicit click dispatch records successful lexical visits in dictionary
  * history; other command kinds retain preview/target behavior. No Bible visit.
  * Legacy Unicode-uppercase requested key is recorded; raw command metadata is retained. */
+/* Main study panes distinguish default Bible navigation from note/lexical
+ * source context. Same result kinds/lexical recording as follow_study_link_at. */
+xc_status xc_worker_follow_pane_link_at(xc_worker *worker, uint64_t tab, const char *navigation_module, const char *source_module, const char *reference, const char *uri, xc_request **out);
 xc_status xc_worker_follow_study_link_at(xc_worker *worker, uint64_t tab, const char *current_module, const char *current_reference, const char *uri, xc_request **out);
 xc_status xc_worker_resolve_study_link_at(xc_worker *worker, uint64_t tab, const char *current_module, const char *current_reference, const char *uri, xc_request **out);
 /* Main hover only; use existing note/reference-list/lexical snapshot takes.
@@ -193,6 +199,9 @@ xc_status xc_worker_read_dictionary(xc_worker *worker, uint64_t tab, const char 
 xc_status xc_worker_read_reference_list(xc_worker *worker, uint64_t tab, const char *module, const char *expression, const char *context, xc_request **out);
 xc_status xc_worker_study_note(xc_worker *worker, uint64_t tab, const char *module, const char *reference, const char *identifier, xc_request **out);
 xc_status xc_worker_read_tab_entry(xc_worker *worker, uint64_t tab, const char *module, const char *reference, xc_request **out);
+/* Commentary chapter uses sparse/linked entries in the owned xc_chapter;
+ * selected verse is an engine ordinal, not a sparse-array index. No history. */
+xc_status xc_worker_read_tab_commentary_chapter(xc_worker *worker, uint64_t tab, const char *module, const char *reference, unsigned display_flags, xc_request **out);
 xc_status xc_worker_read_tab_chapter(xc_worker *worker, uint64_t tab, const char *module, const char *reference, unsigned display_flags, xc_request **out);
 xc_status xc_worker_read_chapter(xc_worker *worker, const char *module, const char *reference, unsigned flags, xc_request **out);
 xc_status xc_worker_reference_choices(xc_worker *worker, const char *module, const char *reference, xc_request **out);

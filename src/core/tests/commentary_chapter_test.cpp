@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/worker.hpp"
+#include "xiphos/core/c_api.h"
+#include <chrono>
+#include <thread>
 #include <swbuf.h>
 #include <glib.h>
 #include "legacy_commentary_anchors.inc"
@@ -60,6 +63,30 @@ int main(int argc, char **argv) {
     auto queued = worker.read_commentary_chapter(tab, "Notes", "John 3:17");
     auto after = worker.history(tab);
     check(queued.get().selected_anchor == "commentary-verse-17" && after.get().entries.empty(), "FIFO no-record commentary chapter snapshot");
+    xc_worker *bridge = nullptr; xc_request *request = nullptr;
+    auto wait = [](xc_request *r) {
+      const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+      xc_status status;
+      while ((status = xc_request_poll(r)) == XC_PENDING) {
+        check(std::chrono::steady_clock::now() < deadline, "C commentary request timeout");
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      }
+      return status;
+    };
+    check(xc_worker_open(argv[1], &bridge) == XC_OK && xc_worker_create_tab(bridge, &request) == XC_OK && wait(request) == XC_OK,
+          "C commentary tab ready");
+    const auto ctab = xc_request_tab(request); xc_request_release(request);
+    check(xc_worker_read_tab_commentary_chapter(bridge, ctab, "Notes", "John 3:17", 128, &request) == XC_INVALID_ARGUMENT && !request,
+          "unknown display flags reject before queue");
+    check(xc_worker_read_tab_commentary_chapter(bridge, ctab, "Notes", "John 3:17", XC_CHAPTER_VERSE_NUMBERS, &request) == XC_OK,
+          "C sparse commentary chapter accepted");
+    xc_worker_close(bridge); // queued snapshot survives draining worker shutdown
+    check(wait(request) == XC_OK && !xc_request_take_entry(request), "distinct chapter result kind");
+    auto *copied = xc_request_take_chapter(request);
+    check(copied && !xc_request_take_chapter(request), "chapter transfers once"); xc_request_release(request);
+    check(xc_chapter_count(copied) == 3 && xc_chapter_selected_verse(copied) == 17 &&
+          std::string(xc_chapter_selected_anchor(copied)) == "commentary-verse-17", "sparse ABI count differs from selected engine ordinal");
+    xc_chapter_release(copied);
     std::cout << "Commentary chapter service checks passed\n";
   } catch (const std::exception &e) { std::cerr << e.what() << '\n'; return 1; }
 }

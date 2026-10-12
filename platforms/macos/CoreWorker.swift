@@ -346,18 +346,24 @@ actor CoreWorker {
         defer { xc_lexical_entry_release(result) }
         return .lexical(CoreValues.lexicalEntry(result))
     }
-    func followStudyLinkAt(tab: UInt64, currentModule: String, currentReference: String, uri: String) async throws -> ContextualStudyLink {
-        try await contextualStudyLinkAt(tab: tab, currentModule: currentModule, currentReference: currentReference, uri: uri, record: true)
+    func followStudyLinkAt(tab: UInt64, currentModule: String, currentReference: String, uri: String, navigationModule: String? = nil) async throws -> ContextualStudyLink {
+        try await contextualStudyLinkAt(tab: tab, currentModule: currentModule, currentReference: currentReference, uri: uri, record: true, navigationModule: navigationModule)
     }
-    private func contextualStudyLinkAt(tab: UInt64, currentModule: String, currentReference: String, uri: String, record: Bool) async throws -> ContextualStudyLink {
+    private func contextualStudyLinkAt(tab: UInt64, currentModule: String, currentReference: String, uri: String, record: Bool, navigationModule: String? = nil) async throws -> ContextualStudyLink {
         guard ![currentModule, currentReference, uri].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        guard navigationModule?.utf8.contains(0) != true else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?
         let handle = try worker()
         let status = currentModule.withCString { id in
             currentReference.withCString { context in
                 uri.withCString { value in
-                    record ? xc_worker_follow_study_link_at(handle, tab, id, context, value, &request)
-                           : xc_worker_resolve_study_link_at(handle, tab, id, context, value, &request)
+                    if let navigationModule {
+                        return navigationModule.withCString { navigation in
+                            xc_worker_follow_pane_link_at(handle, tab, navigation, id, context, value, &request)
+                        }
+                    }
+                    return record ? xc_worker_follow_study_link_at(handle, tab, id, context, value, &request)
+                                  : xc_worker_resolve_study_link_at(handle, tab, id, context, value, &request)
                 }
             }
         }
@@ -436,6 +442,24 @@ actor CoreWorker {
         }
         return try await entry(status, request)
     }
+    private func chapter(_ status: xc_status, _ request: OpaquePointer?) async throws -> RenderedChapter {
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_chapter(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_chapter_release(result) }
+        return CoreValues.chapter(result)
+    }
+    func readTabCommentaryChapter(tab: UInt64, module: String, reference: String, verseNumbers: Bool, highlightSelected: Bool) async throws -> RenderedChapter {
+        guard ![module, reference].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let flags = (verseNumbers ? UInt32(XC_CHAPTER_VERSE_NUMBERS) : 0) |
+                    (highlightSelected ? UInt32(XC_CHAPTER_HIGHLIGHT_SELECTED) : 0)
+        let status = module.withCString { id in
+            reference.withCString { xc_worker_read_tab_commentary_chapter(handle, tab, id, $0, flags, &request) }
+        }
+        return try await chapter(status, request)
+    }
     func readTabChapter(tab: UInt64, module: String, reference: String, verseNumbers: Bool, highlightSelected: Bool) async throws -> RenderedChapter {
         var request: OpaquePointer?
         let handle = try worker()
@@ -444,11 +468,7 @@ actor CoreWorker {
         let status = module.withCString { id in
             reference.withCString { xc_worker_read_tab_chapter(handle, tab, id, $0, flags, &request) }
         }
-        let completed = try await wait(status, request)
-        defer { xc_request_release(completed) }
-        guard let result = xc_request_take_chapter(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
-        defer { xc_chapter_release(result) }
-        return CoreValues.chapter(result)
+        return try await chapter(status, request)
     }
     func history(_ tab: UInt64) async throws -> CoreHistoryState {
         var request: OpaquePointer?
@@ -483,6 +503,7 @@ actor CoreWorker {
                                 html: String(cString: xc_passage_html(result)!)), commentary: commentary)
     }
     func studyPassage(tab: UInt64, module: String, commentary: String, reference: String, record: Bool = true) async throws -> RenderedStudyPassage {
+        guard ![module, commentary, reference].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?
         let handle = try worker()
         let status = module.withCString { id in commentary.withCString { notes in reference.withCString { ref in
@@ -491,12 +512,22 @@ actor CoreWorker {
         } } }
         return try await passage(status, request)
     }
+    func visitLinkedStudyPassage(tab: UInt64, bible: String, commentary: String, target: PassageTarget) async throws -> RenderedStudyPassage {
+        guard ![bible, commentary, target.module, target.reference].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = bible.withCString { main in commentary.withCString { notes in target.module.withCString { module in target.reference.withCString { reference in
+            xc_worker_visit_linked_passage(handle, tab, main, notes, module, reference, &request)
+        } } } }
+        return try await passage(status, request)
+    }
     func navigateStudyPassage(tab: UInt64, direction: Int32) async throws -> RenderedStudyPassage {
         var request: OpaquePointer?
         let status = xc_worker_navigate_passage(try worker(), tab, direction, &request)
         return try await passage(status, request)
     }
     func navigateStudyChapter(tab: UInt64, module: String, commentary: String, reference: String, direction: Int32) async throws -> RenderedStudyPassage {
+        guard ![module, commentary, reference].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?
         let handle = try worker()
         let status = module.withCString { id in commentary.withCString { notes in reference.withCString { ref in
@@ -533,11 +564,7 @@ actor CoreWorker {
         let status = module.withCString { id in
             reference.withCString { xc_worker_read_chapter(handle, id, $0, flags, &request) }
         }
-        let completed = try await wait(status, request)
-        defer { xc_request_release(completed) }
-        guard let result = xc_request_take_chapter(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
-        defer { xc_chapter_release(result) }
-        return CoreValues.chapter(result)
+        return try await chapter(status, request)
     }
     func referenceChoices(module: String, reference: String) async throws -> ReferenceChoices {
         var request: OpaquePointer?

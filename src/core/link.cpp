@@ -152,6 +152,12 @@ ContextualStudyCommandLink contextual_link(const std::string &url, const std::st
 ContextualStudyCommandLink contextual_study_link(const std::string &url, const std::string &current_module) {
   return contextual_link(url, current_module, {});
 }
+ContextualStudyCommandLink contextual_study_link(const std::string &url, const std::string &source_module,
+                                                 const std::string &navigation_module) {
+  if (url.compare(0, 8, "sword://") == 0 || url.compare(0, 8, "bible://") == 0)
+    return passage_link(url, navigation_module);
+  return contextual_study_link(url, source_module);
+}
 ContextualStudyCommandLink contextual_hover_link(const std::string &url, const std::string &current_module,
                                                  const std::string &current_reference) {
   if (current_reference.empty() || current_reference.find('\0') != std::string::npos || current_module.find('\0') != std::string::npos)

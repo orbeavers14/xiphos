@@ -47,8 +47,15 @@ struct ReaderModelSmoke {
         model.showChapter = true; model.refreshDisplay(); try await idle(model)
         guard model.renderedReference == "John 3", model.commentaryEntry?.reference == "John 3:17",
               model.reference == "John 4:2" else { fatalError("Bible chapter mode retains synchronized selected commentary verse") }
+        model.showCommentaryChapter = true; model.refreshDisplay(); try await idle(model)
+        guard model.commentaryChapter?.title == "John 3", model.commentaryChapter?.selectedAnchor == "commentary-verse-17",
+              model.reference == "John 4:2", !other.showCommentaryChapter else { fatalError("independent commentary chapter mode preserves draft/window state") }
+        model.verseNumbers = false; model.highlightSelected = false; model.refreshDisplay(); try await idle(model)
+        guard model.commentaryChapter?.html.contains("<table") == false, model.commentaryChapter?.html.contains("xc-current") == false else { fatalError("commentary display flags use shared presentation") }
+        model.showChapter = false; model.refreshDisplay(); try await idle(model)
+        guard model.renderedReference == "John 3:17", model.commentaryChapter?.title == "John 3", model.reference == "John 4:2" else { fatalError("Bible and commentary chapter modes independent") }
         model.chooseCommentary(""); try await idle(model)
-        guard model.commentaryEntry == nil, model.commentarySelection.isEmpty, model.reference == "John 4:2" else { fatalError("close commentary preserves Bible draft") }
+        guard model.commentaryEntry == nil, model.commentaryChapter == nil, model.commentarySelection.isEmpty, model.reference == "John 4:2" else { fatalError("close commentary preserves Bible draft") }
         model.selection = "Notes"; model.selectionChanged(); try await idle(model)
         guard model.selection == "Text", model.commentarySelection == "Notes" else { fatalError("sidebar commentary opens correct pane") }
         model.dictionarySelection = "Dictionary"; model.dictionaryKey = "ALPHA"; model.lookupDictionary(); try await idle(model)
@@ -58,6 +65,15 @@ struct ReaderModelSmoke {
         guard model.reference == "John 4:1", model.commentaryEntry?.reference == "John 4:1" else { fatalError("paired model chapter navigation") }
         model.chooseReference("John 3:16"); try await idle(model)
         guard model.commentaryEntry?.reference == "John 3:16" else { fatalError("selector synchronizes commentary") }
+        model.followCommentaryLink("sword:///John3:17"); try await idle(model)
+        guard model.selection == "Text", model.reference == "John 3:17", model.commentarySelection == "Notes",
+              model.commentaryChapter?.selectedAnchor == "commentary-verse-17" else { fatalError("module-less commentary section link navigates Bible pair") }
+        model.followLink("sword://OtherNotes/John3:16"); try await idle(model)
+        guard model.selection == "Text", model.commentarySelection == "OtherNotes", model.reference == "John 3:16" else { fatalError("explicit commentary link retains Bible") }
+        model.followCommentaryLink("sword:///John3:17"); try await idle(model)
+        model.followCommentaryLink("passagestudy.jsp?action=showNote&type=n&value=1&passage=John3:17"); try await idle(model)
+        guard model.studyNote?.module == "OtherNotes", model.studyNote?.html.contains("Original pane note") == true,
+              model.selection == "Text", model.commentaryEntry?.reference == "John 3:17" else { fatalError("commentary note keeps source module and synchronized panes") }
         let last = model.commentaryEntry?.html
         model.chooseCommentary("OtherNotes"); model.close()
         try await Task.sleep(nanoseconds: 50_000_000)
