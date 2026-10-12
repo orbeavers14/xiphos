@@ -31,6 +31,8 @@ private struct LexiconProfileSaveError: LocalizedError {
 final class ReaderModel: ObservableObject {
     @Published var modules: [InstalledModule] = []
     @Published var selection: String?
+    @Published private(set) var commentarySelection = ""
+    @Published private(set) var commentaryEntry: RenderedEntry?
     @Published var dictionarySelection: String?
     @Published var dictionaryKey = ""
     @Published private(set) var dictionaryEntry: RenderedDictionaryEntry?
@@ -112,8 +114,7 @@ final class ReaderModel: ObservableObject {
             selection = modules.first(where: { $0.type == "Biblical Texts" })?.id
             if modules.isEmpty { message = "No installed SWORD modules found. Install modules with the existing Xiphos application, then reopen this preview." }
             else if let selection {
-                let entry = try await worker.visit(tab: opened, module: selection, reference: reference)
-                try await present(entry, module: selection, token: revision)
+                try await visitAndPresent(module: selection, reference: reference, token: revision)
             } else { message = "Select a Bible or commentary module to read a verse." }
         } catch { if !closed { message = error.localizedDescription } }
     }
@@ -231,7 +232,32 @@ final class ReaderModel: ObservableObject {
             if !dictionaryKey.isEmpty { lookupDictionary() }
             return
         }
+        if let chosen = selection, modules.contains(where: { $0.id == chosen && $0.type == "Commentaries" }),
+           let displayedModule, modules.contains(where: { $0.id == displayedModule && $0.type == "Biblical Texts" }) {
+            selection = displayedModule
+            chooseCommentary(chosen)
+            return
+        }
         read()
+    }
+    func chooseCommentary(_ module: String) {
+        guard let worker, let tab, let main = displayedModule, let entry = displayedEntry,
+              modules.contains(where: { $0.id == main && $0.type == "Biblical Texts" }) else { return }
+        run { token in
+            let pair = try await worker.studyPassage(tab: tab, module: main, commentary: module,
+                reference: entry.reference, record: false)
+            try await self.present(pair.text, module: main, token: token, updateInput: false, passage: pair)
+        }
+    }
+    private func visitAndPresent(module: String, reference: String, token: UInt64) async throws {
+        guard let worker, let tab else { return }
+        if modules.contains(where: { $0.id == module && $0.type == "Biblical Texts" }) {
+            let pair = try await worker.studyPassage(tab: tab, module: module, commentary: commentarySelection, reference: reference)
+            try await present(pair.text, module: module, token: token, passage: pair)
+        } else {
+            let entry = try await worker.visit(tab: tab, module: module, reference: reference)
+            try await present(entry, module: module, token: token)
+        }
     }
     private func presentDictionary(_ entry: RenderedDictionaryEntry, source: PassageTarget?,
                                    lexical: RenderedLexicalEntry? = nil, history: CoreDictionaryHistoryState? = nil, token: UInt64) async throws {
@@ -287,15 +313,20 @@ final class ReaderModel: ObservableObject {
         }
     }
     func read() {
-        guard let worker, let tab, let selection else { return }
+        guard worker != nil, tab != nil, let selection else { return }
         let submitted = reference
         run { token in
-            let entry = try await worker.visit(tab: tab, module: selection, reference: submitted)
-            try await self.present(entry, module: selection, token: token)
+            try await self.visitAndPresent(module: selection, reference: submitted, token: token)
         }
     }
-    private func present(_ entry: RenderedEntry, module: String, token: UInt64, updateInput: Bool = true) async throws {
+    private func present(_ entry: RenderedEntry, module: String, token: UInt64, updateInput: Bool = true, passage: RenderedStudyPassage? = nil) async throws {
         guard let worker, let tab else { return }
+        let pair: RenderedStudyPassage?
+        if let passage { pair = passage }
+        else if modules.contains(where: { $0.id == module && $0.type == "Biblical Texts" }) {
+            pair = try await worker.studyPassage(tab: tab, module: module, commentary: commentarySelection,
+                                                reference: entry.reference, record: false)
+        } else { pair = nil }
         let chapterMode = showChapter
         let numbers = verseNumbers, highlight = highlightSelected
         let chapter = chapterMode ? try await worker.readTabChapter(tab: tab, module: module, reference: entry.reference,
@@ -306,6 +337,8 @@ final class ReaderModel: ObservableObject {
         guard token == revision && !closed else { return }
         referencePreview = nil
         studyNote = nil
+        commentarySelection = pair?.commentaryModule ?? ""
+        commentaryEntry = pair?.commentary
         engineOptions = options
         moduleOptions = modules.first(where: { $0.id == module })?.options ?? .unknown
         if let chapter {
@@ -323,9 +356,8 @@ final class ReaderModel: ObservableObject {
     func navigate(_ direction: Int32) {
         guard let worker, let tab else { return }
         run { token in
-            let entry = try await worker.navigate(tab: tab, direction: direction)
-            let history = try await worker.history(tab)
-            try await self.present(entry, module: history.module ?? "", token: token)
+            let pair = try await worker.navigateStudyPassage(tab: tab, direction: direction)
+            try await self.present(pair.text, module: pair.module, token: token, passage: pair)
         }
     }
     func refreshDisplay() {
@@ -385,15 +417,20 @@ final class ReaderModel: ObservableObject {
     func navigateChapter(_ direction: Int32) {
         guard let worker, let tab, let module = displayedModule, let entry = displayedEntry else { return }
         run { token in
-            let next = try await worker.navigateChapter(tab: tab, module: module, reference: entry.reference, direction: direction)
-            try await self.present(next, module: module, token: token)
+            if self.modules.contains(where: { $0.id == module && $0.type == "Biblical Texts" }) {
+                let pair = try await worker.navigateStudyChapter(tab: tab, module: module, commentary: self.commentarySelection,
+                                                               reference: entry.reference, direction: direction)
+                try await self.present(pair.text, module: module, token: token, passage: pair)
+            } else {
+                let next = try await worker.navigateChapter(tab: tab, module: module, reference: entry.reference, direction: direction)
+                try await self.present(next, module: module, token: token)
+            }
         }
     }
     func chooseReference(_ target: String) {
-        guard let worker, let tab, let module = displayedModule else { return }
+        guard worker != nil, tab != nil, let module = displayedModule else { return }
         run { token in
-            let entry = try await worker.visit(tab: tab, module: module, reference: target)
-            try await self.present(entry, module: module, token: token)
+            try await self.visitAndPresent(module: module, reference: target, token: token)
         }
     }
     func followLink(_ uri: String, currentModule: String? = nil, currentReference: String? = nil) {
@@ -416,8 +453,7 @@ final class ReaderModel: ObservableObject {
                     source: PassageTarget(module: lexical.module, reference: lexical.sourceReference),
                     lexical: lexical, history: history, token: token)
             case .passage(let target):
-                let entry = try await worker.visit(tab: tab, module: target.module, reference: target.reference)
-                try await self.present(entry, module: target.module, token: token)
+                try await self.visitAndPresent(module: target.module, reference: target.reference, token: token)
             }
         }
     }
@@ -837,6 +873,38 @@ struct ReaderWindow: View {
                 Divider()
                 Text("Xiphos native preview • Chapter reading and history slice").font(.caption).foregroundStyle(.secondary).padding(8)
             }.frame(minWidth: 450)
+            if model.modules.contains(where: { $0.type == "Commentaries" }) || model.dictionarySelection != nil {
+                VSplitView {
+                    if model.modules.contains(where: { $0.type == "Commentaries" }) {
+                        VStack(alignment: .leading, spacing: 0) {
+                            HStack {
+                                Text("Commentary").font(.headline)
+                                Spacer()
+                                if !model.commentarySelection.isEmpty {
+                                    Button("Close") { model.chooseCommentary("") }.disabled(model.isBusy)
+                                }
+                            }.padding(8)
+                            Picker("Commentary module", selection: Binding(
+                                get: { model.commentarySelection }, set: { model.chooseCommentary($0) })) {
+                                Text("Select a commentary").tag("")
+                                ForEach(model.modules.filter { $0.type == "Commentaries" }) { module in
+                                    Text(module.id).tag(module.id)
+                                }
+                            }.padding(8).disabled(model.isBusy)
+                            if let entry = model.commentaryEntry {
+                                Text(entry.reference).font(.caption).padding(8)
+                                PassageView(html: entry.html, anchor: nil, onScrollFailure: { model.message = $0 },
+                                    onLink: { model.followLink($0, currentModule: model.commentarySelection, currentReference: entry.reference) },
+                                    onLinkHover: { model.previewStudyLink($0) })
+                                if entry.html.isEmpty {
+                                    Text("This commentary has no text at this reference.").foregroundStyle(.secondary).padding(8)
+                                }
+                            } else {
+                                Text("Select a commentary to follow the Bible passage.").foregroundStyle(.secondary).padding(8)
+                                Spacer()
+                            }
+                        }.frame(minHeight: 140)
+                    }
             if model.dictionarySelection != nil {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack {
@@ -889,6 +957,8 @@ struct ReaderWindow: View {
                         Text("Enter a word or key to look up.").foregroundStyle(.secondary).padding()
                         Spacer()
                     }
+                }.frame(minWidth: 230, idealWidth: 300)
+            }
                 }.frame(minWidth: 230, idealWidth: 300)
             }
         }.frame(minWidth: 700, minHeight: 450)

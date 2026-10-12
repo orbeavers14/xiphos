@@ -490,6 +490,9 @@ size_t xc_history_count(const xc_history *h) { return h ? h->value.entries.size(
 const char *xc_history_module(const xc_history *h) {
   return h && h->value.cursor < h->value.entries.size() ? h->value.entries[h->value.cursor].module.c_str() : nullptr;
 }
+const char *xc_history_commentary(const xc_history *h) {
+  return h && h->value.cursor < h->value.entries.size() ? h->value.entries[h->value.cursor].commentary.c_str() : nullptr;
+}
 void xc_history_release(xc_history *h) { delete h; }
 unsigned xc_api_version(void) { return 1; }
 xc_status xc_open(const char *root, xc_reader **out) {

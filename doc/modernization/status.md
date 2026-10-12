@@ -34,8 +34,8 @@ implementation integration, not full native feature parity or legacy retirement.
 
 ## Parity coverage snapshot
 
-The ledger currently has **14 of 38 groups with some initial shared-core/macOS
-implementation evidence**, and **24 pending groups**. None of the 14 is fully
+The ledger currently has **15 of 38 groups with some initial shared-core/macOS
+implementation evidence**, and **23 pending groups**. None of the 15 is fully
 accepted: groups bundle many capabilities, and reading a verse does not complete
 whole-book rendering, commentary synchronization, tabs/session restore or visual
 composition. This is a count of groups touched, not a parity percentage and not
@@ -43,7 +43,7 @@ a replacement for the weighted engineering estimate above.
 
 | New frontend | Initial evidence in ledger | Fully accepted groups | Main gaps |
 |---|---:|---:|---|
-| macOS/shared-core slice | 14 partial, 24 pending | 0/38 | Full pane layout, commentary, parallel views, search, bookmarks/annotations, editors, installation, complete settings/data migration, accessibility/translation and release packaging |
+| macOS/shared-core slice | 15 partial, 23 pending | 0/38 | Full pane layout, commentary, parallel views, search, bookmarks/annotations, editors, installation, complete settings/data migration, accessibility/translation and release packaging |
 | WinUI 3 | 0 initial frontend entries, 38 pending | 0/38 | Native frontend/tooling, shared-core integration, full workflows and validation |
 | GTK4 | 0 initial frontend entries, 38 pending | 0/38 | Native frontend, shared-core integration, full workflows and validation |
 
@@ -56,18 +56,17 @@ study-pane composition/commentary workflow before broader native feature claims.
 
 ## Current locally checked scope
 
-The first commentary synchronization seam now returns an owned Bible/commentary
-pair from `StudySession` and the FIFO worker. Visits record both modules;
-Back/Forward restore the first recorded pair under legacy reference-only history
-rules. A generated original-prose RawCom fixture validates normalized references,
-chapter stepping, optional commentary, failed selection without history changes,
-and tab isolation. The full local suite passed 50/50 before adapter integration. Typed asynchronous
-C and Swift adapters now expose the paired commands; five focused checks pass,
-including transfer-once ownership, absent commentary, and copies surviving worker
-shutdown. The suite now contains 51 checks. This is a core/adapter API slice:
-native pane integration, commentary headings/chapter presentation, detached
-windows, companion modules and representative versification acceptance remain
-pending. The engineering estimate and fully accepted parity count stay unchanged.
+The initial [commentary synchronization slice](commentary-workflows.md) now
+includes the core/worker, typed C/Swift adapters and a resizable macOS upper-right
+commentary pane above dictionary content. Bible visits, selectors and chapter
+steps update the paired verse; Back/Forward restore recorded module choices.
+Changing commentary preserves the committed passage and unsent draft. The full
+local suite passes 52/52, including generated RawCom fixtures and native model
+checks. A running generated preview confirms sidebar selection, two synchronized
+references and recorded Back behavior. Commentary chapter/headings, detached
+windows, companion/personal modules, profile startup and representative corpus
+acceptance remain pending. The engineering estimate and fully accepted parity
+count stay unchanged.
 
 - Shared C++ module/verse/chapter reading, Bible history, rendering options,
   engine-preference import/save, note and reference-list previews.
@@ -86,7 +85,7 @@ pending. The engineering estimate and fully accepted parity count stay unchanged
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
 
-Current local suite: **51 checks**. The shared Unicode click-key utility reuses
+Current local suite: **52 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.

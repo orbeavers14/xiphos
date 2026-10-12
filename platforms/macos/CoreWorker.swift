@@ -13,6 +13,7 @@ struct CoreHistoryState: Sendable {
     let canForward: Bool
     let count: Int
     let module: String?
+    let commentary: String?
 }
 // Only transfers a uniquely owned handle into background shutdown. All API
 // submissions/polls otherwise stay actor-isolated; the C++ core owns scheduling.
@@ -458,7 +459,8 @@ actor CoreWorker {
         defer { xc_history_release(result) }
         return CoreHistoryState(canBack: xc_history_can_back(result) != 0,
             canForward: xc_history_can_forward(result) != 0, count: xc_history_count(result),
-            module: xc_history_module(result).map { String(cString: $0) })
+            module: xc_history_module(result).map { String(cString: $0) },
+            commentary: xc_history_commentary(result).map { String(cString: $0) })
     }
     private func entry(_ status: xc_status, _ request: OpaquePointer?) async throws -> RenderedEntry {
         let completed = try await wait(status, request)

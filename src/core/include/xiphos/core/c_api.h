@@ -246,6 +246,8 @@ int xc_history_can_back(const xc_history *history);
 int xc_history_can_forward(const xc_history *history);
 size_t xc_history_count(const xc_history *history);
 const char *xc_history_module(const xc_history *history);
+/* Current recorded pair; NULL for empty history, empty string for no commentary. */
+const char *xc_history_commentary(const xc_history *history);
 void xc_history_release(xc_history *history);
 /* Version of this experimental ABI, not a parity or stability guarantee. */
 unsigned xc_api_version(void);

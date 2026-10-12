@@ -8,6 +8,7 @@ kind="${2:-reader}"
 case "$kind" in
   reader) fixture="$build_dir/core/fixture"; config="test.conf" ;;
   lexicons) fixture="$build_dir/core/dictionary-fixture"; config="bible.conf" ;;
+  commentary) fixture="$build_dir/core/study-passage-fixture"; config="Text.conf" ;;
   reading-options) fixture="$build_dir/core/module-preferences-fixture"; config="options.conf" ;;
   *) printf '%s\n' 'Unknown generated fixture kind.' >&2; exit 1 ;;
 esac

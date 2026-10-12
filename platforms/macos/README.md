@@ -160,3 +160,18 @@ of required legacy source, regression tests or license material.
 The [prior guide at an immutable pushed commit](https://github.com/orbeavers14/xiphos/blob/c2937a40a1e297bdd2e74907fe5f7af2be6ef688/platforms/macos/README.md)
 retains chronological slice notes/evidence. Use this guide and current status
 for today's scope; older pending statements describe earlier checkpoints.
+
+## Initial synchronized commentary pane
+
+Select a commentary from the installed-module sidebar or the commentary picker
+to display it at the committed Bible verse. Commentary occupies the upper-right
+resizable pane; dictionary content appears below. Passage changes and Back/Forward
+use shared core module pairs. Changing/closing commentary preserves unsent Bible
+reference input. Whole chapter currently affects the Bible pane only. Saved pane
+settings, commentary chapter/headings, personal editors and detached windows are
+pending; see [scope and acceptance](../../doc/modernization/commentary-workflows.md).
+
+After local fixture checks, `sh platforms/macos/launch-fixture.sh build/macos commentary`
+opens generated original-prose Bible/commentary/dictionary data outside Documents.
+This avoids repeatedly asking the preview for Documents access; it does not change
+macOS permissions or read the installed user library.

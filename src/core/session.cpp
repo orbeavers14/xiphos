@@ -161,7 +161,16 @@ StudyPassage StudySession::visit_passage(const std::string &module, const std::s
 }
 StudyPassage StudySession::navigate_passage(int direction) {
   const auto &location = history_.destination(direction);
-  auto result = read_passage(location.module, location.commentary, location.reference);
+  // Old single-entry clients can have standalone commentary locations. They
+  // have no paired commentary; retain that history compatibility in the core.
+  const bool bible = [&] {
+    for (const auto &module : reader_.modules())
+      if (module.id == location.module) return module.type == "Biblical Texts";
+    return false;
+  }();
+  auto result = !bible && location.commentary.empty()
+      ? StudyPassage{location.module, "", read_entry(location.module, location.reference), std::nullopt}
+      : read_passage(location.module, location.commentary, location.reference);
   history_.move(direction);
   return result;
 }

@@ -427,3 +427,8 @@ The async C ABI exposes these commands through `xc_worker_*_passage*` and
 and an explicit commentary-present flag; strings survive worker/request release
 until `xc_passage_release`. A wrong-kind or second take returns NULL. The Swift
 actor copies this into `RenderedStudyPassage`, without calling SWORD directly.
+
+Paired history restoration also supports unpaired standalone commentary entries
+recorded through the older single-entry API. `xc_history_commentary` reports the
+current first-recorded commentary name (empty for an unpaired location, NULL for
+empty history). This does not change the strict types required by paired visits.

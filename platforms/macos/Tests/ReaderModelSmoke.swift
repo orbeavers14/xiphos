@@ -16,6 +16,55 @@ struct ReaderModelSmoke {
             try await Task.sleep(nanoseconds: 1_000_000)
         }
     }
+    @MainActor static func commentary(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let model = ReaderModel(worker: worker, startupError: nil)
+        let other = ReaderModel(worker: worker, startupError: nil)
+        try await idle(model); try await idle(other)
+        guard model.selection == "Text", model.commentaryEntry == nil else { fatalError("Bible startup remains unchanged") }
+        model.reference = "John 4:2"
+        let main = model.html
+        model.chooseCommentary("Notes")
+        model.chooseCommentary("OtherNotes") // busy selection must not race
+        try await idle(model)
+        guard model.reference == "John 4:2", model.html == main, model.commentarySelection == "Notes",
+              model.commentaryEntry?.reference == "John 3:16", model.commentaryEntry?.html.contains("café") == true,
+              !model.canBack, other.commentaryEntry == nil else { fatalError("committed passage/draft/window isolation") }
+        model.clearHistory(); try await idle(model)
+        model.reference = "John 3:16"; model.read(); try await idle(model)
+        model.chooseCommentary("OtherNotes"); try await idle(model)
+        model.reference = "John 3:17"; model.read(); try await idle(model)
+        guard model.commentaryEntry?.reference == "John 3:17", model.commentaryEntry?.html.contains("OtherNotes second") == true else { fatalError("paired passage visit") }
+        model.navigate(-1); try await idle(model)
+        guard model.commentarySelection == "Notes", model.commentaryEntry?.reference == "John 3:16", model.canForward else { fatalError("paired Back restores modules") }
+        model.navigate(1); try await idle(model)
+        guard model.commentarySelection == "OtherNotes", model.commentaryEntry?.reference == "John 3:17" else { fatalError("paired Forward restores modules") }
+        model.reference = "John 4:2"
+        let notes = model.commentaryEntry?.html
+        model.chooseCommentary("Missing"); try await idle(model)
+        guard model.commentarySelection == "OtherNotes", model.commentaryEntry?.html == notes,
+              model.reference == "John 4:2", model.canBack, !model.canForward else { fatalError("failed commentary preserves panes/draft/history") }
+        model.showChapter = true; model.refreshDisplay(); try await idle(model)
+        guard model.renderedReference == "John 3", model.commentaryEntry?.reference == "John 3:17",
+              model.reference == "John 4:2" else { fatalError("Bible chapter mode retains synchronized selected commentary verse") }
+        model.chooseCommentary(""); try await idle(model)
+        guard model.commentaryEntry == nil, model.commentarySelection.isEmpty, model.reference == "John 4:2" else { fatalError("close commentary preserves Bible draft") }
+        model.selection = "Notes"; model.selectionChanged(); try await idle(model)
+        guard model.selection == "Text", model.commentarySelection == "Notes" else { fatalError("sidebar commentary opens correct pane") }
+        model.dictionarySelection = "Dictionary"; model.dictionaryKey = "ALPHA"; model.lookupDictionary(); try await idle(model)
+        guard model.dictionaryEntry?.html.contains("dictionary pane fixture") == true,
+              model.commentarySelection == "Notes", model.commentaryEntry?.reference == "John 3:17" else { fatalError("dictionary lookup preserves synchronized commentary") }
+        model.navigateChapter(1); try await idle(model)
+        guard model.reference == "John 4:1", model.commentaryEntry?.reference == "John 4:1" else { fatalError("paired model chapter navigation") }
+        model.chooseReference("John 3:16"); try await idle(model)
+        guard model.commentaryEntry?.reference == "John 3:16" else { fatalError("selector synchronizes commentary") }
+        let last = model.commentaryEntry?.html
+        model.chooseCommentary("OtherNotes"); model.close()
+        try await Task.sleep(nanoseconds: 50_000_000)
+        guard model.commentaryEntry?.html == last else { fatalError("closed model cannot publish commentary") }
+        other.close(); await worker.shutdown()
+        print("Native commentary model checks passed")
+    }
     @MainActor static func readingOptions(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let first = ReaderModel(worker: worker, startupError: nil)
@@ -585,6 +634,9 @@ struct ReaderModelSmoke {
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--lexicons" {
             try await lexicons(root: CommandLine.arguments[2]); return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--commentary" {
+            try await commentary(root: CommandLine.arguments[2]); return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--options" {
             try await readingOptions(root: CommandLine.arguments[2]); return

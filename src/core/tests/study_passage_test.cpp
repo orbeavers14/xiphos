@@ -5,6 +5,7 @@
 #include <thread>
 #include <rawtext.h>
 #include <rawcom.h>
+#include <rawld.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -48,7 +49,20 @@ int main(int argc, char **argv) {
         writer.setKey("John 3:17"); writer.setEntry((std::string(id) + " second commentary.").c_str());
       }
     }
+    const auto dictionary = root / "Dictionary";
+    std::filesystem::create_directories(dictionary);
+    check(sword::RawLD::createModule((dictionary / "lexicon").string().c_str()) == 0, "create pane dictionary fixture");
+    {
+      sword::RawLD writer((dictionary / "lexicon").string().c_str());
+      writer.setKey("ALPHA"); writer.setEntry("Original dictionary pane fixture café.");
+      std::ofstream config(root / "mods.d/Dictionary.conf");
+      config << "[Dictionary]\nDataPath=./Dictionary/lexicon\nModDrv=RawLD\nEncoding=UTF-8\nDescription=Original dictionary pane fixture\n";
+    }
+    // Fixture configuration can change between incremental local runs.
+    std::filesystem::remove(root / "mods.d/modules-conf.cache");
     Reader reader(root.string());
+    check(reader.read_dictionary("Dictionary", "ALPHA").html.find("dictionary pane fixture") != std::string::npos,
+          "generated dictionary path resolves original prose");
     StudySession session(reader);
     const auto first = session.visit_passage("Text", "Notes", "Jn 3:16");
     check(first.text.reference == "John 3:16" && first.commentary->reference == first.text.reference,
@@ -75,6 +89,10 @@ int main(int argc, char **argv) {
     check(session.history().cursor() == cursor, "read-only refresh leaves history unchanged");
     session.visit("Text", "John 3:18");
     check(session.history().entries().back().commentary.empty(), "existing visit remains compatible");
+    session.visit("Notes", "John 3:19");
+    session.navigate_passage(-1);
+    const auto standalone = session.navigate_passage(1);
+    check(standalone.module == "Notes" && !standalone.commentary, "old standalone commentary history remains restorable");
     StudyWorker worker(root.string());
     const auto tab = worker.create_tab().get(), other = worker.create_tab().get();
     std::string notes = "Notes";
@@ -86,7 +104,7 @@ int main(int argc, char **argv) {
     check(restored.get().commentary_module == "Notes", "FIFO paired navigation");
     check(worker.history(other).get().entries.empty(), "paired tab history isolation");
     auto failed = worker.visit_passage(tab, "Text", "Missing", "John 3:18");
-    fails<std::out_of_range>([&] { failed.get(); }, "queued failure propagated");
+    fails<std::out_of_range>([&] { (void)failed.get(); }, "queued failure propagated");
     check(worker.navigate_passage(tab, 1).get().commentary_module == "OtherNotes", "queue recovers after failed pair");
     const auto next = worker.navigate_passage_chapter(tab, "Text", "Notes", "John 3:17", 1).get();
     check(next.text.reference == "John 4:1" && next.commentary->reference == "John 4:1", "both panes follow chapter navigation");
