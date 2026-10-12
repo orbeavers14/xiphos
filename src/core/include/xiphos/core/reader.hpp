@@ -45,6 +45,10 @@ public:
                        const std::string &identifier);
   StudyNote study_note(const std::string &module, const std::string &reference,
                        const std::string &identifier, const EngineOptions &options);
+  StudyNote study_note_metadata(const std::string &module, const std::string &reference,
+                                 const std::string &identifier);
+  StudyNote study_note_metadata(const std::string &module, const std::string &reference,
+                                 const std::string &identifier, const EngineOptions &options);
   // Selection uses a cloned source key; returns an owned selected module name.
   std::string select_lexicon(const LexicalLink &command, const std::string &source_reference,
                             int origin, const LexiconPreferences &preferences);
@@ -68,7 +72,7 @@ private:
   ReferenceList reference_list_impl(const std::string &module, const std::string &expression,
                                     const std::string &context, const EngineOptions *options);
   StudyNote note_impl(const std::string &module, const std::string &reference,
-                      const std::string &identifier, const EngineOptions *options);
+                       const std::string &identifier, const EngineOptions *options, bool render_body = true);
   Entry read_impl(const std::string &module, const std::string &reference, const EngineOptions *options);
   Chapter chapter_impl(const std::string &module, const std::string &reference,
                        const DisplayOptions &display, const EngineOptions *engine);

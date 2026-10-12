@@ -34,6 +34,8 @@ public:
                                          const std::string &context);
   StudyNote study_note(const std::string &module, const std::string &reference,
                        const std::string &identifier);
+  StudyNote study_note_metadata(const std::string &module, const std::string &reference,
+                                 const std::string &identifier);
   Entry read_entry(const std::string &module, const std::string &reference);
   Entry visit(const std::string &module, const std::string &reference);
   Entry navigate(int direction);

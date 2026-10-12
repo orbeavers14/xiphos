@@ -256,3 +256,13 @@ context, skipped/limited metadata and the 2,000-verse per-range cap. Target
 snapshots survive later rendering and session/reader close. No benchmark or
 quantified savings is claimed; this removes a source-visible unnecessary render
 path without introducing an alternate parser or frontend behavior policy.
+
+Cross-reference hover now uses metadata-only note retrieval as well, avoiding
+the note-body render that was discarded before reference handling. Exact-source
+entry-attribute generation still occurs; copied module/reference/identifier/
+type/label/refList agree with the existing full note path over sixteen
+passage/filter cases. Full body callers retain UTF8HTML/renderText processing.
+Every required value is copied before a body render may replace SDK attributes;
+metadata snapshots survive later calls and close. Embedded NUL module/reference/
+identifier inputs reject rather than silently truncating. This is not a timing
+benchmark or SDK-internal allocation/ownership audit.

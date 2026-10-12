@@ -76,7 +76,7 @@ No milestone has official acceptance yet.
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
 
-Current local suite: **45 checks**. The shared Unicode click-key utility reuses
+Current local suite: **46 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.
@@ -152,7 +152,7 @@ inclusion in this public fork.
 | Unicode click policy | Shared/actual legacy casing agrees over 4,448,324 comparisons in four locales; native main clicks normalize/record; raw dialog/hover semantics retained | Unicode database/version comparisons, real-module workflows and forced-locale preference import |
 | Native environment locale | 31/31 suite then 3/3 focused fixture/Turkish/invalid-locale checks; 32 checks now defined | Saved locale selection, translation resources and other native host startup |
 
-The full local suite now passes **45/45**. Complete main note/reference callbacks
+The full local suite now passes **46/46**. Complete main note/reference callbacks
 also agree over 96,792 frozen/actual ordered comparisons, including preference
 routing, heading setup and early guards. The legacy handler now avoids its
 early-return GString allocation without changing callback traces. This harness
@@ -218,7 +218,12 @@ Information-link mode now obtains owned reference targets from the existing
 shared parser without rendering verse bodies. The target-only API agrees with
 existing full snapshots across 64 module/context/expression cases, including
 order/duplicates and the 2,000-verse per-range guard. It retains parser metadata
-and copied lifetime semantics; no timing or resource-savings percentage is claimed.
+and copied lifetime semantics. Cross-reference hover additionally retrieves
+owned exact-source note metadata without rendering a discarded note body.
+Sixteen passage/filter cases match the existing full metadata, with scoped
+settings, missing/invalid inputs and lifetime checks. Required values are copied
+before a body render can replace SDK attributes. No timing or resource-savings
+percentage is claimed.
 
 Latest code milestones: [shared Unicode helper #54](https://github.com/orbeavers14/xiphos/pull/54),
 [legacy adoption #55](https://github.com/orbeavers14/xiphos/pull/55),
@@ -236,7 +241,8 @@ Latest code milestones: [shared Unicode helper #54](https://github.com/orbeavers
 [shared note policy #69](https://github.com/orbeavers14/xiphos/pull/69),
 [owned main-hover service #70](https://github.com/orbeavers14/xiphos/pull/70),
 [typed hover adapter #71](https://github.com/orbeavers14/xiphos/pull/71),
-[native study hover #72](https://github.com/orbeavers14/xiphos/pull/72).
+[native study hover #72](https://github.com/orbeavers14/xiphos/pull/72),
+[reference targets #73](https://github.com/orbeavers14/xiphos/pull/73).
 Scoped address/undefined and thread checks cover shared ownership/state changes;
 strict C++11/C++17/C11 checks cover the corresponding seams. These are not full
 SDK instrumentation or a leak audit. See each PR for its exact checks and scope.

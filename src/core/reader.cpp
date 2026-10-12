@@ -107,12 +107,22 @@ StudyNote Reader::study_note(const std::string &id, const std::string &reference
   return note_impl(id, reference, identifier, &options);
 }
 StudyNote Reader::note_impl(const std::string &id, const std::string &reference,
-                            const std::string &identifier, const EngineOptions *options) {
+                            const std::string &identifier, const EngineOptions *options, bool render_body) {
+  if (id.find('\0') != std::string::npos) throw std::invalid_argument("Note module name contains NUL");
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto &module = impl_->verse_module(id, reference);
   std::unique_ptr<ScopedEngineOptions> scope;
   if (options) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *options);
-  return render_study_note(module, reference, identifier);
+  return render_body ? render_study_note(module, reference, identifier)
+                     : read_study_note_metadata(module, reference, identifier);
+}
+StudyNote Reader::study_note_metadata(const std::string &id, const std::string &reference,
+                                       const std::string &identifier) {
+  return note_impl(id, reference, identifier, nullptr, false);
+}
+StudyNote Reader::study_note_metadata(const std::string &id, const std::string &reference,
+                                       const std::string &identifier, const EngineOptions &options) {
+  return note_impl(id, reference, identifier, &options, false);
 }
 std::string Reader::select_lexicon(const LexicalLink &command, const std::string &source_reference,
                                   int origin, const LexiconPreferences &preferences) {

@@ -362,3 +362,11 @@ key/filter changes. They reuse the existing characterized parser; embedded NUL
 arguments reject. Information-link hover uses these targets directly, while
 sidebar hover retains rendered ReferenceList snapshots. The target-only API is
 C++ internal-facing at this milestone; no new frontend schema/parser is added.
+
+`read_study_note_metadata` in CoreRender is C++11 compatible and performs the
+existing exact-verse attribute generation without a second note-body render;
+its owned StudyNote has empty html. Reader/session wrappers apply the same
+effective rendering options. Cross-reference hover uses this metadata path;
+regular footnote/body callers retain the full renderer. Metadata fields are
+copied before SDK attributes can change, and NUL module/reference/id arguments
+reject. No frontend schema or XML parser is duplicated.

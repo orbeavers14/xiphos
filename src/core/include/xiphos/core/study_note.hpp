@@ -11,4 +11,8 @@ struct StudyNote {
 // Caller owns the module and serializes access, including its key mutation.
 StudyNote render_study_note(sword::SWModule &module, const std::string &reference,
                             const std::string &identifier);
+// Same exact-source attribute generation and copied metadata, without a second
+// note-body render. html is empty. Caller lifetime/key-serialization rules match.
+StudyNote read_study_note_metadata(sword::SWModule &module, const std::string &reference,
+                                   const std::string &identifier);
 }}
