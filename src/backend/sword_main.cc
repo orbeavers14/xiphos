@@ -40,6 +40,7 @@
 #include <url.h>
 
 #include "backend/sword_main.hh"
+#include "xiphos/core/render.hpp"
 
 #include "main/mod_mgr.h"
 #include "main/settings.h"
@@ -340,8 +341,7 @@ char *BackEnd::get_render_text(const char *module_name, const char *key)
 	SWModule *mod = get_SWModule(module_name);
 
 	if (mod) {
-		mod->setKey(key);
-		return strdup(mod->renderText().c_str());
+		return strdup(xiphos::core::render_entry(*mod, key).c_str());
 	}
 	return NULL;
 }

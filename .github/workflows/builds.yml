@@ -1,11 +1,27 @@
 name: builds
 
+# Develop and test locally; reserve runners for review, integration and releases.
 "on":
-  push: {}
-  pull_request: {}
+  workflow_dispatch:
+  push:
+    branches: [master]
+    tags: ['*']
+    paths-ignore:
+      - 'doc/modernization/**'
+      - '**/*.md'
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore:
+      - 'doc/modernization/**'
+      - '**/*.md'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   windows:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -35,6 +51,7 @@ jobs:
           path: "*.exe"
 
   arch_gtk3_wk2_libsoup3:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     container:
       image: archlinux:latest
@@ -76,6 +93,7 @@ jobs:
           make -C build mhelp package_source
 
   fedora_gtk3_wk2_libsoup3:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     container:
       image: fedora:latest
@@ -116,6 +134,7 @@ jobs:
           make -C build mhelp package_source
 
   debian_gtk3_wk2_libsoup3:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     container:
       image: debian:latest
@@ -161,6 +180,7 @@ jobs:
           make -C build mhelp package_source
 
   ubuntu_gtk3_wk2_libsoup3:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     container:
       image: ubuntu:latest

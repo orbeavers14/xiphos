@@ -1,0 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+module XiphosCore {
+  header "../../../src/core/include/xiphos/core/c_api.h"
+  export *
+}

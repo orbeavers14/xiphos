@@ -106,6 +106,7 @@ include (XiphosFlags)
 include (XiphosConfig_h)
 
 # build xiphos
+add_subdirectory(src/core)
 add_subdirectory(win32)
 add_subdirectory(src/backend)
 add_subdirectory(src/editor)

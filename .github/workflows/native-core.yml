@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+name: native-core
+# Develop and test locally; reserve runners for review, integration and releases.
+"on":
+  workflow_dispatch:
+  push:
+    branches: [master]
+    tags: ['*']
+    paths-ignore:
+      - 'doc/modernization/**'
+      - '**/*.md'
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore:
+      - 'doc/modernization/**'
+      - '**/*.md'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  linux-core:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install engine dependency
+        run: sudo apt-get update && sudo apt-get install -y libsword-dev
+      - name: Build and test standalone core
+        run: |
+          cmake -S src/core -B build/core -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/core --parallel
+          ctest --test-dir build/core --output-on-failure
+      - name: Check core under address and undefined behavior sanitizers
+        run: |
+          cmake -S src/core -B build/sanitized -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+          cmake --build build/sanitized --parallel
+          ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/sanitized --output-on-failure
+  macos-reader:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install SWORD
+        run: brew install sword pkg-config
+      - name: Build native preview and test adapter
+        run: |
+          cmake -S platforms/macos -B build/macos -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/macos --parallel
+          ctest --test-dir build/macos --output-on-failure
+      - name: Upload unsigned development preview
+        uses: actions/upload-artifact@v7
+        with:
+          name: macos-native-reader-preview
+          path: build/macos/XiphosNativePreview.app

@@ -1,59 +1,76 @@
-[![Build Status](https://travis-ci.org/crosswire/xiphos.svg?branch=master)](https://travis-ci.org/crosswire/xiphos)
+# Xiphos native modernization
 
-# Xiphos
+This fork of [CrossWire Xiphos](https://github.com/crosswire/xiphos) is building
+a true 1:1 functional and design adaptation with a shared, platform-independent
+C++ application core and native frontends:
 
-Xiphos is a Bible study application for Linux, UNIX, and Windows operating
-systems. It uses Sword to display Bibles, commentaries, dictionary, and other
-texts and images. Xiphos includes features such as, searching, biblesync,
-bookmarks, parallel study, and original language study.
+| Platform | Target frontend | Current implementation |
+|---|---|---|
+| macOS | SwiftUI / AppKit | Module/verse/chapter preview with shared history |
+| Windows | WinUI 3 | Planned; legacy GTK application retained |
+| Linux | GTK4 | Planned; legacy GTK3 application retained |
 
-To install Xiphos, search in your package manager for xiphos and install the
-package. If you are using Windows, please download the exe from here:
+The goal is to preserve all existing Bible-study functionality, pane layout,
+module behavior, data and established workflows while adding appropriate
+native menus, accessibility, keyboard controls, appearance and platform
+integration. Shared application behavior belongs in C++; platform adapters
+must not develop independent engines. SwordKit may become a Swift adapter
+through an audited adapter to the shared core.
 
-http://xiphos.org/download/
+## Status
 
-## Building Xiphos
+The first slice adds installed-module discovery, verse rendering, an
+experimental C API and a macOS reading window. The legacy rendering call uses
+the same shared function. Local engine, adapter, sanitizer and visible reading
+checks passed. The new Linux/macOS CI and legacy Linux PR builds passed at the
+recorded implementation commit. Windows cross-builds were still running when
+checked. [PR #1](https://github.com/orbeavers14/xiphos/pull/1) remains a draft.
 
-Please see the `INSTALL.md` file.
+Overall modernization is estimated at **about 5%** (planning range 3–7%).
+**0/38 feature groups** have accepted parity across all native platforms.
+See the status page for the weighted estimate, ordered next steps and
+[source reuse decisions](doc/modernization/status.md#reuse-from-related-projects).
+No native platform has full functional, visual or workflow parity yet.
+The existing GTK application remains the complete implementation during the
+migration. See the [current status and sign-off rules](doc/modernization/status.md),
+[feature parity matrix](doc/modernization/parity-matrix.md), and
+[architecture and dependency/license audit](doc/modernization/architecture.md).
 
-## Translating Xiphos
+## Build and development
 
-Please see files in the `doc` directory.
+* Existing GTK application: [INSTALL.md](INSTALL.md).
+* Shared core and engine tests: [src/core/README.md](src/core/README.md).
+* Native macOS preview and adapter tests: [platforms/macos/README.md](platforms/macos/README.md).
+* Translations: documentation in [doc](doc).
 
-## History and Acknowledgements
+Locally tested follow-up slices add shared session history, chapter snapshots
+and previous/next chapter navigation with thin macOS controls. Completed
+commits are pushed to the draft branch after local checks; acceptance remains
+pending. Next are chapter options/decorations and the established study-pane
+composition, followed by equivalent reading panes on GTK4 and WinUI 3.
+Each milestone needs reviewable changes, regression tests and parity evidence
+before the corresponding legacy files can be retired.
 
-Xiphos started life as the Sword Project's Cheatah program.
+Use the repository's `.clang-format` when editing C/C++ source. The upstream
+user manual and screenshots remain reference material until replacement
+behavior and documentation are validated.
 
-Over the course of Xiphos development many ideas and some pieces of code have
-come from the Bibletime program and the Sword Project's BibleCS program.
+## Repository cleanup
 
-We wish to thank the folks who have put so much time and work into the Sword
-Project and then giving it to the world! God Bless you!
+Generated inventories and build outputs belong under the ignored `build/`
+directory. Keep their generators, regression tests, current architecture,
+parity requirements and compact acceptance evidence. After an accepted
+replacement has no remaining legacy callers, remove obsolete code and
+associated build/dependency references in the same reviewed cleanup change.
+Git history and PRs retain the detailed implementation record.
 
+## License and acknowledgments
 
-## Developing Xiphos
+Preserve [COPYING](COPYING), [AUTHORS](AUTHORS) and existing source notices.
+Inspected Xiphos source grants GPL v2 or later; dependency and module licenses
+have their own requirements. See the dependency/license audit before packaging.
 
-
-If you want to help develop Xiphos your help will be very appreciated!
-
-The first steps would be to make yourself familiar with the Xiphos build
-process, so go read the INSTALL file.
-
-If you are looking for things to do, the best place to find out is to jump into
-the #xiphos channel of irc.libera.chat
-
-If you make changes to C or C++ files, please make sure they are cleaned up to
-follow our style of coding. The best way to make sure of it is to run this:
-
-	$ clang-format -i -style=file /path/to/edited.c
-
-Where /path/to/edited.c, the C or C++ file you edited. The option '-style=file'
-uses a predefined style file called .clang-format in the source tree.
-
-
-## Thank you!
-
-
-We hope that your Bible study will be enhanced by Xiphos!
-
-The Xiphos Development Team
+Xiphos started as the SWORD Project's Cheatah program. Its development includes
+ideas and code from BibleTime and the SWORD Project's BibleCS program. Credit
+remains with the Xiphos Development Team, CrossWire, and all contributors whose
+work this fork builds upon.

@@ -41,6 +41,7 @@ target_include_directories(backend
 # specify libraries or flags to use when linking
 target_link_libraries(backend
   PRIVATE
+  Xiphos::CoreRender
   Threads::Threads
   PkgConfig::Core
   PkgConfig::Gtk
