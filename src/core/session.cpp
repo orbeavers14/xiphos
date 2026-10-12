@@ -76,6 +76,12 @@ StudyNote StudySession::study_note_metadata(const std::string &module, const std
   return options ? reader_.study_note_metadata(module, reference, identifier, *options)
                  : reader_.study_note_metadata(module, reference, identifier);
 }
+Entry StudySession::read_commentary_entry(const std::string &module, const std::string &reference) {
+  const auto options = module_engine_options(module);
+  const auto headings = module_presentation_options(module).headings;
+  return options ? reader_.read_commentary_entry(module, reference, headings, *options)
+                 : reader_.read_commentary_entry(module, reference, headings);
+}
 Entry StudySession::read_entry(const std::string &module, const std::string &reference) {
   const auto options = module_engine_options(module);
   return options ? reader_.read(module, reference, *options) : reader_.read(module, reference);
@@ -87,6 +93,11 @@ ModulePresentationOptions StudySession::module_presentation_options(const std::s
   for (const auto &module : reader_.modules())
     if (module.id == id) return presentation_options_from_preferences({}, module.regular_commentary);
   throw std::out_of_range("Module is not installed");
+}
+void StudySession::set_headings(const std::string &id, bool enabled) {
+  auto options = module_presentation_options(id);
+  options.headings = enabled;
+  presentation_options_[id] = options;
 }
 void StudySession::set_commentary_chapter_mode(const std::string &id, bool enabled) {
   require_module(id);
@@ -102,8 +113,9 @@ void StudySession::set_commentary_chapter_mode(const std::string &id, bool enabl
 Chapter StudySession::read_commentary_chapter(const std::string &module, const std::string &reference,
                                               const DisplayOptions &display) {
   const auto options = module_engine_options(module);
-  return options ? reader_.read_commentary_chapter(module, reference, display, *options)
-                 : reader_.read_commentary_chapter(module, reference, display);
+  const auto headings = module_presentation_options(module).headings;
+  return options ? reader_.read_commentary_chapter(module, reference, display, *options, headings)
+                 : reader_.read_commentary_chapter(module, reference, display, headings);
 }
 Chapter StudySession::read_chapter(const std::string &module, const std::string &reference,
                                   const DisplayOptions &display) {
@@ -122,7 +134,7 @@ void StudySession::save_module_preferences(const std::string &path) const {
     const auto options = module_engine_options(module.id);
     if (!options) throw std::invalid_argument("Enable module preferences before saving");
     settings.emplace(module.id, *options);
-    if (module.regular_commentary) presentation.emplace(module.id, module_presentation_options(module.id));
+    presentation.emplace(module.id, module_presentation_options(module.id));
   }
   xiphos::core::save_module_preferences(path, settings, presentation);
 }
@@ -180,7 +192,7 @@ StudyPassage StudySession::read_passage(const std::string &module, const std::st
   require_type(module, "Biblical Texts");
   if (!commentary.empty()) require_type(commentary, "Commentaries");
   StudyPassage result{module, commentary, read_entry(module, reference), std::nullopt};
-  if (!commentary.empty()) result.commentary = read_entry(commentary, result.text.reference);
+  if (!commentary.empty()) result.commentary = read_commentary_entry(commentary, result.text.reference);
   return result;
 }
 StudyPassage StudySession::visit_passage(const std::string &module, const std::string &commentary,

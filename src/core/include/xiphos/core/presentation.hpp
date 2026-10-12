@@ -2,7 +2,11 @@
 #pragma once
 #include "engine_options.hpp"
 namespace xiphos { namespace core {
-struct ModulePresentationOptions { bool commentary_by_chapter = false; };
+struct ModulePresentationOptions {
+  bool commentary_by_chapter = false;
+  bool headings = true;
+  bool commentary_chapter_available = false; // Copied classification for selective persistence.
+};
 using ModulePresentationPreferences = std::map<std::string, ModulePresentationOptions>;
 // Legacy backend distinguishes RawFiles personal commentary from regular
 // commentary even though both have SWORD's Commentaries type.

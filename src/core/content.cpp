@@ -64,11 +64,15 @@ std::string display_commentary_chapter(const Chapter &chapter, const std::vector
   };
   for (size_t i = 0; i < positions.size(); ++i) {
     const auto verse = positions[i];
+    const auto &entry = chapter.verses[i];
+    if (!entry.heading_html.empty()) {
+      html += options.verse_numbers ? "<tr class=\"xc-heading\"><td colspan=\"2\">" + entry.heading_html + "</td></tr>"
+                                    : "<div class=\"xc-heading\">" + entry.heading_html + "</div>";
+    }
     if (selected != 1 && (selected == verse || (before && verse > selected))) {
       const auto anchor = before && verse > selected ? missing_anchor() : "";
       html += options.verse_numbers ? "<tr><td>" + anchor + "<hr/></td><td><hr/></td></tr>" : anchor + "<hr/>";
     }
-    const auto &entry = chapter.verses[i];
     const auto anchor = "commentary-verse-" + std::to_string(verse);
     const auto link = "<a href=\"" + attribute(passage_uri(entry.reference)) + "\">" + std::to_string(verse) + "</a>";
     const auto current = verse == selected;

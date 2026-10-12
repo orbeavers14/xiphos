@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/engine_options.hpp"
+#include "xiphos/core/presentation.hpp"
 #include <swconfig.h>
 #include <filesystem>
 #include <iostream>
@@ -93,6 +94,8 @@ int main(int argc, char **argv) {
       if (expected->variants_primary != actual->variants_primary || bool(expected->variants_primary) != core.variants_primary || bool(expected->variants_primary) != from_file.variants_primary) throw std::runtime_error("Preference diverged: variants_primary");
       if (expected->variants_secondary != actual->variants_secondary || bool(expected->variants_secondary) != core.variants_secondary || bool(expected->variants_secondary) != from_file.variants_secondary) throw std::runtime_error("Preference diverged: variants_secondary");
       if (expected->variants_all != actual->variants_all || bool(expected->variants_all) != core.variants_all || bool(expected->variants_all) != from_file.variants_all) throw std::runtime_error("Preference diverged: variants_all");
+      if (bool(expected->headings) != xiphos::core::presentation_options_from_preferences(copied, true).headings)
+        throw std::runtime_error("Shared display preference diverged: headings");
       if (expected->headings != actual->headings) throw std::runtime_error("Display policy changed: headings");
       if (expected->xrefnotenumbers != actual->xrefnotenumbers) throw std::runtime_error("Display policy changed: xrefnotenumbers");
       if (expected->display_chapter_N != actual->display_chapter_N) throw std::runtime_error("Display policy changed: display_chapter_N");

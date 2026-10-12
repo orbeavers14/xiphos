@@ -20,8 +20,11 @@ void save_module_preferences(const std::string &path, const ModuleEnginePreferen
     for (const auto &module : settings)
       for (const auto &preference : engine_options_to_preferences(module.second))
         configuration[module.first.c_str()][preference.first.c_str()] = preference.second.c_str();
-    for (const auto &module : presentation)
-      configuration[module.first.c_str()]["Commentary by Chapter"] = module.second.commentary_by_chapter ? "On" : "Off";
+    for (const auto &module : presentation) {
+      configuration[module.first.c_str()]["Headings"] = module.second.headings ? "On" : "Off";
+      if (module.second.commentary_chapter_available)
+        configuration[module.first.c_str()]["Commentary by Chapter"] = module.second.commentary_by_chapter ? "On" : "Off";
+    }
     configuration.save();
     // SWORD save has no failure result. Verify actual written bytes and decoding
     // before replacing the user's file, rather than treating save() as success.

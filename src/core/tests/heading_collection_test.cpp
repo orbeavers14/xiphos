@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/headings.hpp"
 #include <rawcom.h>
+#include <rawtext.h>
 #include <swmgr.h>
 #include <swmodule.h>
 #include <markupfiltmgr.h>
@@ -41,8 +42,18 @@ int main(int argc, char **argv) {
       writer.setEntry("<div subType=\"x-preverse\"><title type=\"section\">Original heading café.</title><title type=\"section\">Second heading.</title></div>Original entry body.");
       writer.setKey("John 3:17"); writer.setEntry("Original entry without headings.");
       writer.setKey("John 3:18"); writer.setEntry("<title type=\"section\">Interverse title.</title><div subType=\"x-preverse\"><title>Later preverse title.</title></div>Original gap fixture.");
+      writer.setKey("John 3:19"); writer.setEntry("<div subType=\"x-preverse\"><title>Original heading-only entry.</title></div>");
       std::ofstream config(root / "mods.d/notes.conf");
       config << "[Notes]\nDataPath=./data/\nModDrv=RawCom\nSourceType=OSIS\nEncoding=UTF-8\nGlobalOptionFilter=OSISHeadings\n";
+    }
+    std::filesystem::create_directories(root / "text");
+    check(RawText::createModule((root / "text").string().c_str()) == 0, "create original heading preview Bible");
+    {
+      RawText writer((root / "text").string().c_str());
+      writer.setKey("John 3:16"); writer.setEntry("Original heading preview Bible.");
+      writer.setKey("John 3:17"); writer.setEntry("Original second preview Bible entry.");
+      std::ofstream config(root / "mods.d/text.conf");
+      config << "[Text]\nDataPath=./text/\nModDrv=RawText\nEncoding=UTF-8\n";
     }
     std::filesystem::remove(root / "mods.d/modules-conf.cache");
     SWMgr manager(root.string().c_str(), true, new MarkupFilterMgr(FMT_XHTML), false, false);

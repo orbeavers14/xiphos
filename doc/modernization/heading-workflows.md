@@ -1,7 +1,8 @@
 # Preverse heading collection: initial seam
 
 Updated 2026-10-12. This supports the F03/F08 heading work but does not establish
-complete rendering, caching or visual parity. Native heading display is pending.
+complete rendering, caching or visual parity. Core commentary snapshots now carry
+headings; native heading controls and verse adapters remain pending.
 
 ## Source and scope
 
@@ -41,14 +42,20 @@ assume that every OSIS title becomes a separate preverse attribute on every SDK.
 
 Normal and address/undefined checks pass; strict C++11 syntax also passes. SWORD
 and GLib are not fully instrumented, and leak detection is disabled. The shared
-helper is available to the legacy-compatible library but is not yet adopted by
-legacy or native render paths.
+helper supplies owned commentary entry/chapter snapshots. Chapter HTML places
+headings before the selection separator and verse body. Ordinary body-only reads
+remain compatible. Shared per-module Headings preferences default on, decode
+exact Off, and participate in combined import/save. Commentary chapter capability
+controls selective mode persistence; unrelated and unavailable settings survive.
+
+The full local suite passes 57/57. Focused address/undefined checks pass 3/3
+and thread checks 2/2, including heading-only entries, body exclusion, preference
+round trips, FIFO tab isolation and unchanged history.
 
 ## Next acceptance work
 
-- Shared Headings preference decoding, import/save and native controls.
-- Owned headings in chapter snapshots and source-equivalent placement relative
-  to commentary section/selections, then Bible chapter/entry integration.
+- C/Swift owned heading adapters and native controls for verse/chapter display.
+- Bible chapter/entry heading integration and complete placement/visual acceptance.
 - ThML and representative module data, numbering gaps, canonical headings,
   linked entries, selected references and heading note/lexical links.
 - Block/cleanup transformations, cache invalidation, personal commentaries,

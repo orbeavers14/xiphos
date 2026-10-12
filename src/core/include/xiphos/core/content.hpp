@@ -6,7 +6,7 @@
 namespace xiphos::core {
 struct ParsedReferenceList;
 struct DictionaryEntry { std::string module, key, html; };
-struct Entry { std::string reference, html; };
+struct Entry { std::string reference, html, heading_html; };
 struct DisplayOptions {
   bool verse_numbers = true;
   bool highlight_selected = true;

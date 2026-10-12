@@ -460,8 +460,8 @@ Presentation settings remain separate from SWORD engine flags. The first
 legacy regular/personal module distinction and missing/default/Off decoding.
 Sessions/workers own getters and regular-commentary updates. Combined module
 import stages both maps from one `read_module_option_values` decode; combined
-save reuses verified same-directory replacement. Only regular-commentary
-presentation sections are written. The old engine-only save helper delegates
+save reuses verified same-directory replacement. Headings are written for supplied installed modules; commentary chapter mode is
+written only when the copied regular-commentary capability allows it. The old engine-only save helper delegates
 with an empty presentation map and remains compatible. Other display settings
 and the personal-editor workflow are pending.
 
@@ -476,5 +476,9 @@ Swift preference/default implementation is needed.
 legacy sequential attributes, UTF8HTML conversion and SDK rendering. It refreshes
 entry attributes before each lookup and stops at the first empty index. Frozen/
 current complete-function comparisons use disabled block flags and identity
-cleanup; those transformations, caching and native display remain pending. See
+cleanup. Commentary entries carry separate owned `heading_html`; sparse chapter
+HTML places headings before the selection marker/body. Shared Headings decoding,
+import/save and worker updates apply to these snapshots. Ordinary `read` remains
+body-only. Complete transformations, caching, Bible headings and native controls
+remain pending. See
 [heading scope](../../doc/modernization/heading-workflows.md).

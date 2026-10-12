@@ -60,6 +60,8 @@ public:
   DictionaryChoices dictionary_choices(const std::string &module, const std::string &key);
   DictionaryEntry navigate_dictionary(const std::string &module, const std::string &key, int direction);
   DictionaryEntry navigate_dictionary(const std::string &module, const std::string &key, int direction, const EngineOptions &options);
+  Entry read_commentary_entry(const std::string &module, const std::string &reference, bool headings = true);
+  Entry read_commentary_entry(const std::string &module, const std::string &reference, bool headings, const EngineOptions &options);
   Entry read(const std::string &module, const std::string &reference);
   Entry read(const std::string &module, const std::string &reference, const EngineOptions &options);
   Chapter read_chapter(const std::string &module, const std::string &reference,
@@ -68,9 +70,9 @@ public:
                        const DisplayOptions &options = {});
   // Sparse/linked main-commentary traversal; headings/cache/editing pending.
   Chapter read_commentary_chapter(const std::string &module, const std::string &reference,
-                                  const DisplayOptions &display = {});
+                                  const DisplayOptions &display = {}, bool headings = true);
   Chapter read_commentary_chapter(const std::string &module, const std::string &reference,
-                                  const DisplayOptions &display, const EngineOptions &engine);
+                                  const DisplayOptions &display, const EngineOptions &engine, bool headings = true);
   std::string adjacent_chapter(const std::string &module, const std::string &reference,
                                int direction);
 private:
@@ -79,11 +81,12 @@ private:
                                     const std::string &context, const EngineOptions *options);
   StudyNote note_impl(const std::string &module, const std::string &reference,
                        const std::string &identifier, const EngineOptions *options, bool render_body = true);
-  Entry read_impl(const std::string &module, const std::string &reference, const EngineOptions *options);
+  Entry read_impl(const std::string &module, const std::string &reference, const EngineOptions *options,
+                  bool headings = false, bool commentary_only = false);
   Chapter chapter_impl(const std::string &module, const std::string &reference,
                        const DisplayOptions &display, const EngineOptions *engine);
   Chapter commentary_chapter_impl(const std::string &module, const std::string &reference,
-                                   const DisplayOptions &display, const EngineOptions *engine);
+                                   const DisplayOptions &display, const EngineOptions *engine, bool headings);
   struct Impl;
   std::unique_ptr<Impl> impl_;
 };

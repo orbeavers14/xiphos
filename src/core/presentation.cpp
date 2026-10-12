@@ -8,6 +8,9 @@ bool regular_commentary(const char *type, const char *driver) {
 ModulePresentationOptions presentation_options_from_preferences(const EngineOptionPreferences &values, bool regular) {
   const auto found = values.find("Commentary by Chapter");
   ModulePresentationOptions result;
+  const auto heading = values.find("Headings");
+  result.headings = heading == values.end() || heading->second != "Off";
+  result.commentary_chapter_available = regular;
   result.commentary_by_chapter = regular && (found == values.end() || found->second != "Off");
   return result;
 }

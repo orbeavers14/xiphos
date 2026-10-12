@@ -1,5 +1,6 @@
 #include "xiphos/core/dictionary.hpp"
 #include "xiphos/core/commentary.hpp"
+#include "xiphos/core/headings.hpp"
 #include "xiphos/core/presentation.hpp"
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/reader.hpp"
@@ -207,15 +208,24 @@ DictionaryEntry Reader::dictionary_impl(const std::string &id, const std::string
   result.key = module->getKeyText();
   return result;
 }
+Entry Reader::read_commentary_entry(const std::string &id, const std::string &reference, bool headings) {
+  return read_impl(id, reference, nullptr, headings, true);
+}
+Entry Reader::read_commentary_entry(const std::string &id, const std::string &reference, bool headings, const EngineOptions &options) {
+  return read_impl(id, reference, &options, headings, true);
+}
 Entry Reader::read(const std::string &id, const std::string &reference) {
   return read_impl(id, reference, nullptr);
 }
 Entry Reader::read(const std::string &id, const std::string &reference, const EngineOptions &options) {
   return read_impl(id, reference, &options);
 }
-Entry Reader::read_impl(const std::string &id, const std::string &reference, const EngineOptions *options) {
+Entry Reader::read_impl(const std::string &id, const std::string &reference, const EngineOptions *options,
+                        bool headings, bool commentary_only) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto *module = &impl_->verse_module(id, reference);
+  if (commentary_only && std::string(module->getType()) != "Commentaries")
+    throw std::invalid_argument("Commentary entry requires a commentary module");
   std::unique_ptr<ScopedEngineOptions> scope;
   if (options) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *options);
   // Resolve using the module's own versification and SWORD normalization,
@@ -225,6 +235,7 @@ Entry Reader::read_impl(const std::string &id, const std::string &reference, con
   if (module->getKey()->getError())
     throw std::invalid_argument("SWORD could not resolve the reference");
   result.reference = module->getKeyText();
+  if (headings) for (const auto &heading : render_preverse_headings(*module)) result.heading_html += heading;
   return result;
 }
 Chapter Reader::read_chapter(const std::string &id, const std::string &reference,
@@ -268,15 +279,15 @@ Chapter Reader::chapter_impl(const std::string &id, const std::string &reference
   return result;
 }
 Chapter Reader::read_commentary_chapter(const std::string &id, const std::string &reference,
-                                        const DisplayOptions &display) {
-  return commentary_chapter_impl(id, reference, display, nullptr);
+                                        const DisplayOptions &display, bool headings) {
+  return commentary_chapter_impl(id, reference, display, nullptr, headings);
 }
 Chapter Reader::read_commentary_chapter(const std::string &id, const std::string &reference,
-                                        const DisplayOptions &display, const EngineOptions &engine) {
-  return commentary_chapter_impl(id, reference, display, &engine);
+                                        const DisplayOptions &display, const EngineOptions &engine, bool headings) {
+  return commentary_chapter_impl(id, reference, display, &engine, headings);
 }
 Chapter Reader::commentary_chapter_impl(const std::string &id, const std::string &reference,
-                                         const DisplayOptions &display, const EngineOptions *engine) {
+                                         const DisplayOptions &display, const EngineOptions *engine, bool headings) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto &module = impl_->verse_module(id, reference);
   if (std::string(module.getType()) != "Commentaries")
@@ -296,7 +307,9 @@ Chapter Reader::commentary_chapter_impl(const std::string &id, const std::string
     positions.push_back(static_cast<unsigned>(key.getVerse()));
     auto html = render_entry(module, position.c_str());
     if (module.getKey()->getError()) throw std::invalid_argument("SWORD could not render a commentary section");
-    result.verses.push_back({module.getKeyText(), std::move(html)});
+    std::string header;
+    if (headings) for (const auto &heading : render_preverse_headings(module)) header += heading;
+    result.verses.push_back({module.getKeyText(), std::move(html), std::move(header)});
   }
   module.setKey(result.reference.c_str());
   result.html = display_commentary_chapter(result, positions, display);

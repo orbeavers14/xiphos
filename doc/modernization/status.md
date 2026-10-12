@@ -75,9 +75,12 @@ classification and default/Off decoding. A combined single-decode import stages
 engine and presentation settings together; verified save preserves unrelated,
 personal and uninstalled settings. Native adapters apply these defaults and
 restore each module setting; explicit import/save round trips preserve drafts
-and history. The full suite passes **56/56**; focused address/undefined and thread
+and history. The full suite passes **57/57**; focused address/undefined and thread
 adapter checks pass **1/1** each, with the external
-SDK instrumentation limits described below. Headings, detached windows,
+SDK instrumentation limits described below. Initial core commentary heading
+snapshots and shared Headings import/save pass 57/57 local checks, with focused
+address/undefined 3/3 and thread 2/2. Native heading controls, complete heading
+transformations, detached windows,
 companion/personal editing, saved pane startup and broader corpus/visual acceptance
 remain pending. The engineering estimate is now about 7% (range 5–9%);
 the fully accepted parity count remains zero.
@@ -99,7 +102,7 @@ the fully accepted parity count remains zero.
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
 
-Current local suite: **56 checks**. The shared Unicode click-key utility reuses
+Current local suite: **57 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.

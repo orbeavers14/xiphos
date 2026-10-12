@@ -344,6 +344,9 @@ std::future<std::optional<EngineOptions>> StudyWorker::module_engine_options(Stu
 std::future<ModulePresentationOptions> StudyWorker::module_presentation_options(StudyTab tab, std::string module) {
   return impl_->submit([tab, module = std::move(module)](Impl::State &s) { return s.tab(tab).module_presentation_options(module); });
 }
+std::future<void> StudyWorker::set_headings(StudyTab tab, std::string module, bool enabled) {
+  return impl_->submit([tab, module = std::move(module), enabled](Impl::State &s) { s.tab(tab).set_headings(module, enabled); });
+}
 std::future<void> StudyWorker::set_commentary_chapter_mode(StudyTab tab, std::string module, bool enabled) {
   return impl_->submit([tab, module = std::move(module), enabled](Impl::State &s) { s.tab(tab).set_commentary_chapter_mode(module, enabled); });
 }

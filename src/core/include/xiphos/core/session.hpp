@@ -44,6 +44,7 @@ public:
                        const std::string &identifier);
   StudyNote study_note_metadata(const std::string &module, const std::string &reference,
                                  const std::string &identifier);
+  Entry read_commentary_entry(const std::string &module, const std::string &reference);
   Entry read_entry(const std::string &module, const std::string &reference);
   StudyPassage read_passage(const std::string &module, const std::string &commentary,
                             const std::string &reference);
@@ -78,6 +79,7 @@ public:
   void clear_module_engine_options(const std::string &module);
   std::optional<EngineOptions> module_engine_options(const std::string &module) const;
   ModulePresentationOptions module_presentation_options(const std::string &module) const;
+  void set_headings(const std::string &module, bool enabled);
   void set_commentary_chapter_mode(const std::string &module, bool enabled);
   Chapter read_commentary_chapter(const std::string &module, const std::string &reference,
                                   const DisplayOptions &display = {});
