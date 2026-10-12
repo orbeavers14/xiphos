@@ -286,3 +286,11 @@ input while John3:16 stayed displayed with an unsubmitted John4:2 draft.
 Full-profile migration, forced-locale startup and platform acceptance remain
 pending. Existing macOS-13-compatible onChange calls emit deprecation warnings
 under the newer SDK; minimum-version validation remains a separate gate.
+
+`CoreWorker.hoverStudyLinkAt` now exposes copied no-presentation, body/link-only
+note, sidebar-reference-list and lexical results. Cross-reference mode is read/
+updated through the core-owned per-tab preference. `swift_hover_adapter` checks
+the strict regular-verse fixture domain, both destinations, order/duplicates,
+raw lexical values, copied lifetimes, invalid/closed cases and history isolation.
+The existing pointer transport is still lexical-only at this adapter checkpoint;
+no raw link/type parsing or routing policy is added in Swift.
