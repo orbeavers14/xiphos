@@ -81,13 +81,15 @@ std::string parameter(const CommandParameters &parameters, const char *name) {
   const auto found = parameters.find(name);
   return found == parameters.end() ? std::string() : found->second;
 }
-StudyNoteLink note_target(const CommandParameters &parameters, const std::string &current_module) {
+StudyNoteLink note_target(const CommandParameters &parameters, const std::string &current_module,
+                          const std::string &current_reference = {}) {
   const auto get = [&parameters](const char *name) {
     const auto found = parameters.find(name);
     return found == parameters.end() ? std::string() : found->second;
   };
   StudyNoteLink result{get("module"), get("passage"), get("value"), get("type")};
   if (result.module.empty()) result.module = current_module;
+  if (!current_reference.empty() && result.reference.size() < 5) result.reference = current_reference;
   if (get("action") != "showNote" || (result.type != "n" && result.type != "x") ||
       result.module.empty() || result.reference.empty() || result.identifier.empty() ||
       result.reference.find_first_of("#?!-;,/") != std::string::npos)
@@ -135,14 +137,26 @@ StudyCommandLink study_link(const std::string &url, const std::string &current_m
   if (parameter(parameters, "action") == "showRef") return reference_target(parameters, current_module);
   return note_target(parameters, current_module);
 }
-ContextualStudyCommandLink contextual_study_link(const std::string &url, const std::string &current_module) {
+namespace {
+ContextualStudyCommandLink contextual_link(const std::string &url, const std::string &current_module,
+                                           const std::string &current_reference) {
   if (url.compare(0, 8, "sword://") == 0 || url.compare(0, 8, "bible://") == 0)
     return passage_link(url, current_module);
   const auto parameters = command_parameters(url);
   if (parameter(parameters, "action") == "showRef") return reference_list_target(parameters, current_module);
   if (parameter(parameters, "action") == "showStrongs" || parameter(parameters, "action") == "showMorph")
     return lexical_target(parameters, current_module);
-  return note_target(parameters, current_module);
+  return note_target(parameters, current_module, current_reference);
+}
+}
+ContextualStudyCommandLink contextual_study_link(const std::string &url, const std::string &current_module) {
+  return contextual_link(url, current_module, {});
+}
+ContextualStudyCommandLink contextual_hover_link(const std::string &url, const std::string &current_module,
+                                                 const std::string &current_reference) {
+  if (current_reference.empty() || current_reference.find('\0') != std::string::npos || current_module.find('\0') != std::string::npos)
+    throw std::invalid_argument("Hover source context is invalid");
+  return contextual_link(url, current_module, current_reference);
 }
 std::string passage_uri(const std::string &reference) {
   static const char digits[] = "0123456789ABCDEF";

@@ -370,3 +370,11 @@ effective rendering options. Cross-reference hover uses this metadata path;
 regular footnote/body callers retain the full renderer. Metadata fields are
 copied before SDK attributes can change, and NUL module/reference/id arguments
 reject. No frontend schema or XML parser is duplicated.
+
+Main-hover note source parsing now uses `contextual_hover_link`, sharing the
+existing decoder while substituting committed context for decoded note passages
+shorter than five bytes. The worker uses the supplied source module for an
+unavailable explicit note module. Existing strict raw/click parsers are kept;
+installed explicit modules/full passages are not replaced. Malformed/control/
+duplicate parameters still reject. Full foreign-view/global-main, alias and
+heading compatibility remains a separate acceptance gate.

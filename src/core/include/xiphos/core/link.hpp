@@ -13,6 +13,10 @@ struct ReferenceListLink { std::string module, expression; };
 using ContextualStudyCommandLink = std::variant<PassageLink, StudyNoteLink, ReferenceListLink, LexicalLink>;
 // showRef commands retain lists/ranges for rendering with explicit source context.
 ContextualStudyCommandLink contextual_study_link(const std::string &url, const std::string &current_module);
+// Main-hover note parsing adds the characterized short/missing passage fallback
+// (<5 decoded bytes) to committed source context. Other parsers remain strict.
+ContextualStudyCommandLink contextual_hover_link(const std::string &url, const std::string &current_module,
+                                                 const std::string &current_reference);
 using StudyCommandLink = std::variant<PassageLink, StudyNoteLink>;
 StudyCommandLink study_link(const std::string &url, const std::string &current_module);
 StudyNoteLink study_note_link(const std::string &url, const std::string &current_module);
