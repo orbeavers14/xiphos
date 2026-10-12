@@ -138,7 +138,7 @@ core, keeping order, duplicates, module settings and source context. It leaves
 the main passage, draft and history unchanged. Back to note restores the body;
 a passage heading navigates the main reader. Empty results and the existing
 2000-verse range limit are reported.
-Hover/pin behavior, legacy unknown-module fallback, Strong's/morphology
+Hover behavior, legacy unknown-module fallback, Strong's/morphology
 lookup, remaining option menus, full display-preference
 migration and visual/workflow parity remain pending.
 
@@ -195,7 +195,7 @@ source testament and rendering stay in C++; Swift only presents the returned
 module/key/HTML. Nested links use the captured source passage. Closing or
 replacing the result preserves Bible history and unfinished reference input.
 The right column is an initial composition: commentary above it, pane toggles,
-manual lookup, dictionary key navigation/history, hover and pinning remain
+manual lookup, dictionary key navigation/history, hover presentation remain
 pending. This is not full dictionary or visual parity. Generated dictionary
 fixtures now include original word/morphology markup for real WebKit click checks.
 
@@ -231,7 +231,7 @@ the current click preserves Forward. Direct input and previous/next key steps
 retain the existing no-record workflow. Clear retains the displayed definition
 and all Bible state, and closing the dictionary retains its history. History
 navigation uses committed current Bible context for nested links. Detached
-windows, hover/pinning, persistence and full pane parity remain pending, so
+windows, hover presentation, persistence and full pane parity remain pending, so
 dictionary feature acceptance is still partial.
 
 

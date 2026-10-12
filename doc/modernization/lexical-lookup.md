@@ -74,7 +74,7 @@ behavior before claiming equivalent selection.
    Keep rendering through the existing worker and SWLD service.
 3. Add C/Swift bindings and native dictionary/preview presentation. Preserve
    source context, clicked versus hovered behavior, independent dictionary
-   history, selected module, navigation, labels, pinning and keyboard behavior.
+   history, selected module, navigation, labels, keyboard behavior.
 4. Validate representative Greek/Hebrew lexicons, morphology modules and custom
    namespaces against the legacy app, then repeat on GTK4 and WinUI 3.
 
@@ -137,7 +137,7 @@ Native source selection avoids the legacy cast/mutation through a cloned key.
 Original RawLD/Bible fixtures verify actual OT/NT selection, retained relative
 NT key context, wrong/missing sources, independent tab preferences and rendering
 settings. This is a preview service with no Bible-history visits. It does not
-implement click uppercasing/dictionary history, hover/pinning or restore/import
+implement click uppercasing/dictionary history, hover presentation or restore/import
 lexicon preferences; those presentation/storage contracts remain pending.
 
 
