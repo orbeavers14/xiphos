@@ -3,6 +3,10 @@
 #include <string>
 #include <variant>
 namespace xiphos::core {
+enum class LexicalLinkKind { strongs, morphology };
+// Parsed source context, not a selected dictionary. Selection is a separate policy.
+struct LexicalLink { LexicalLinkKind kind; std::string module, type, value, passage; };
+LexicalLink lexical_link(const std::string &url, const std::string &current_module);
 struct PassageLink { std::string module, reference; };
 struct StudyNoteLink { std::string module, reference, identifier, type; };
 struct ReferenceListLink { std::string module, expression; };

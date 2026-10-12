@@ -153,3 +153,13 @@ until handle release; the handle survives request/worker shutdown. Swift copies
 these fields into a Sendable RenderedDictionaryEntry through CoreWorker.
 Preferred lexicon selection, Strong's/morphology dispatch and the native
 dictionary pane remain pending.
+
+
+## Lexical command parsing
+
+`lexical_link` returns an owned typed Strong's/morphology command with source
+module, raw key/type and optional passage. It shares strict local-origin and
+query decoding with note/reference parsing. It does not select a lexicon,
+normalize a key or change existing contextual dispatch. The main/dialog
+selection differences and subsequent gates are recorded in
+[lexical-lookup.md](../../doc/modernization/lexical-lookup.md).

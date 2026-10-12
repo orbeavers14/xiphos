@@ -75,6 +75,33 @@ int main() {
       try { contextual_study_link(bad, "Other"); } catch (const std::invalid_argument &) { rejected = true; }
       require(rejected, "contextual range links retain origin/query validation");
     }
+    const auto strongs = lexical_link("passagestudy.jsp?action=showStrongs&type=Greek&value=03056", "Current");
+    require(strongs.kind == LexicalLinkKind::strongs && strongs.type == "Greek" && strongs.value == "03056" &&
+            strongs.module == "Current" && strongs.passage.empty(), "engine Strong's links retain raw key and source context");
+    const auto morph = lexical_link("xiphos-preview://study/xiphos.url?value=N%2BASM&type=robinson&action=showMorph&module=Other%26Greek&passage=John+3%3A16", "Current");
+    require(morph.kind == LexicalLinkKind::morphology && morph.value == "N+ASM" && morph.type == "robinson" &&
+            morph.module == "Other&Greek" && morph.passage == "John 3:16", "morphology decodes encoded separators and explicit context");
+    const auto lemma = lexical_link("xiphos.url?action=showStrongs&type=lemma.fixture&value=caf%C3%A9", "");
+    require(lemma.value == "café" && lemma.type == "lemma.fixture" && lemma.module.empty(), "custom lemma namespaces are data, not dictionary policy");
+    require(lexical_link("passagestudy.jsp?action=showStrongs&value=42", "Current").type.empty(), "legacy untyped Strong's command retained");
+    require(lexical_link("passagestudy.jsp?action=showMorph&type=Hebrew&value=H%26G&module=", "Current").value == "H&G", "encoded ampersand stays in key");
+    for (const auto bad : {"https://example/passagestudy.jsp?action=showStrongs&value=1",
+                          "xiphos-preview://other/xiphos.url?action=showMorph&type=Greek&value=N",
+                          "passagestudy.jsp?action=showStrongs&value=1#fragment",
+                          "passagestudy.jsp?action=showStrongs&value=", "passagestudy.jsp?action=showMorph&value=N",
+                          "passagestudy.jsp?action=showMorph&type=&value=N", "passagestudy.jsp?action=showRef&type=Greek&value=N",
+                          "passagestudy.jsp?action=showStrongs&value=1&value=2", "passagestudy.jsp?action=showStrongs&value=%00",
+                          "passagestudy.jsp?action=showStrongs&value=%GG", "passagestudy.jsp?action=showStrongs&value=%2",
+                          "passagestudy.jsp?action=showStrongs&value=1&other=2", "passagestudy.jsp?action=showStrongs&value=1&",
+                          "passagestudy.jsp?action=showStrongsMorph&type=Greek&value=1"}) {
+      bool rejected = false; try { (void)lexical_link(bad, "Current"); } catch (const std::invalid_argument &) { rejected = true; }
+      require(rejected, "lexical command origin/escape/duplicate/action validation");
+    }
+    // Existing dispatch remains unchanged until preferred dictionary policy is characterized.
+    bool lexicalDispatchRejected = false;
+    try { (void)contextual_study_link("passagestudy.jsp?action=showStrongs&type=Greek&value=03056", "Current"); }
+    catch (const std::invalid_argument &) { lexicalDispatchRejected = true; }
+    require(lexicalDispatchRejected, "lexical parser does not silently change existing native dispatch");
     Chapter chapter;
     chapter.selected_verse = 2;
     chapter.verses = {{"A \"<&'", "<em>Original text</em>"}, {"B", ""}};
