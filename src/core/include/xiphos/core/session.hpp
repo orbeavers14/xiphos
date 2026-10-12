@@ -14,6 +14,8 @@ public:
   // Explicit copied lexicons; existing tabs remain unconfigured until set.
   void set_lexicon_preferences(const LexiconPreferences &preferences);
   const std::optional<LexiconPreferences> &lexicon_preferences() const { return lexicons_; }
+  void set_cross_reference_preview_list(bool enabled) { xrefs_in_verse_list_ = enabled; }
+  bool cross_reference_preview_list() const { return xrefs_in_verse_list_; }
   // Reference is the committed source context; URI passage remains metadata.
   LexicalEntry visit_lexical(const std::string &module, const std::string &reference, const std::string &uri, int origin);
   LexicalEntry read_lexical(const std::string &module, const std::string &reference,
@@ -63,6 +65,7 @@ private:
   std::optional<LexiconPreferences> lexicons_;
   std::optional<EngineOptions> options_;
   bool module_preferences_ = false;
+  bool xrefs_in_verse_list_ = true; // Legacy misc/xrefsinverselist default.
   std::map<std::string, EngineOptions> module_options_;
   void require_module(const std::string &module) const;
   LexicalEntry lookup_lexical(const std::string &module, const std::string &reference,

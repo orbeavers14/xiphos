@@ -204,3 +204,32 @@ C boundary/precedence cases cover null/empty/Unicode tags and nonzero flags.
 The default legacy build includes the helper without the C++17 native core.
 This is the policy seam for native note hover; the native hover transport is
 still lexical-only at this checkpoint. Detached-dialog policy is separate.
+
+## Shared native main-hover service
+
+`StudyWorker::hover_study_link_at` and its C request API now return owned body
+notes, ordered reference lists, raw lexical entries or a copied no-presentation
+marker. Each tab owns the cross-reference list preference with the legacy true
+default; typed setter/getter commands do not visit histories. Notes use existing
+exact-source/settings retrieval and the shared main routing policy. List parsing
+uses committed view context, not unsubmitted input or the hovered note passage.
+Information-link mode returns escaped reference labels plus Back to that context;
+its initial English label/theme styling is not full localization/visual parity.
+
+The service accepts the existing strict local n/x parser domain. Missing/type-
+mismatched notes and invalid context/URLs reject; copied results remain valid
+after later calls and shutdown. It does not reproduce every legacy malformed/
+nullable-attribute case, heading verse-zero setup, abbreviation/module fallback
+or short-passage substitution. Explicit showRef and passage links have no
+presentation; status/bookmark/dictionary-URI and detached-dialog hover remain
+pending. The existing raw preview/click APIs and native click behavior are
+unchanged in this service milestone. Native click destination adaptation must
+be validated separately against the characterized note policy.
+
+`core_hover` uses generated real SWORD note/dictionary modules to validate both
+reference modes, note-body equality with the existing service, contextual list
+order/duplicates, raw lexical behavior, tab/history isolation, copied arguments/
+results, scalar/result kinds, no-op markers, failures and shutdown ownership.
+These tests supplement the frozen callback harness; they do not replace full
+GTK/native gesture, representative-module or platform acceptance. The new
+service is not yet connected to the Swift/native pointer transport here.

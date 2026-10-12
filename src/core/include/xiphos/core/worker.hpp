@@ -9,6 +9,7 @@ namespace xiphos::core {
 using StudyTab = std::uint64_t;
 using ContextualStudyLink = std::variant<PassageLink, StudyNote, ReferenceList, LexicalEntry>;
 using ResolvedStudyLink = std::variant<PassageLink, StudyNote>;
+using StudyHoverLink = std::variant<std::monostate, StudyNote, ReferenceList, LexicalEntry>;
 struct DictionaryHistorySnapshot {
   std::vector<DictionaryLocation> entries;
   std::size_t cursor = 0;
@@ -38,6 +39,13 @@ public:
   std::future<void> close_tab(StudyTab tab);
   std::future<void> set_lexicon_preferences(StudyTab tab, LexiconPreferences preferences);
   std::future<std::optional<LexiconPreferences>> lexicon_preferences(StudyTab tab);
+  std::future<void> set_cross_reference_preview_list(StudyTab tab, bool enabled);
+  std::future<bool> cross_reference_preview_list(StudyTab tab);
+  // Main-reader no-record hover: shared note policy, committed list context,
+  // lexical raw-value snapshots, or explicit no-presentation for showRef/
+  // passage links. Status/dictionary-URI/dialog hover remains separate work.
+  std::future<StudyHoverLink> hover_study_link_at(StudyTab tab, std::string current_module,
+                                               std::string current_reference, std::string uri);
   // Explicit XML profile operations; import publishes a prepared replacement
   // to one tab and returns copied choices. Saved locale is not applied.
   std::future<std::optional<LexiconPreferences>> import_lexicon_profile(StudyTab tab, std::string path);

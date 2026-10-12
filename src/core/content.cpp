@@ -28,6 +28,15 @@ std::string display_reference_list(const ReferenceList &references) {
   }
   return html;
 }
+std::string display_reference_links(const ReferenceList &references) {
+  std::string html;
+  for (const auto &entry : references.entries)
+    html += "<a href=\"" + attribute(passage_uri(entry.reference)) + "\">" +
+        attribute(entry.reference) + ",</a><br/>";
+  html += "<a href=\"" + attribute(passage_uri(references.context)) + "\">Back to " +
+      attribute(references.context) + "</a><br/>";
+  return html;
+}
 std::string display_chapter(const Chapter &chapter, const DisplayOptions &options) {
   std::string html;
   for (std::size_t i = 0; i < chapter.verses.size(); ++i) {

@@ -23,6 +23,9 @@ struct ReferenceList {
   unsigned skipped = 0;
 };
 std::string display_reference_list(const ReferenceList &references);
+// Link-only information preview plus a return link to the committed context.
+// Native hosts provide theme CSS; the initial label is the English baseline.
+std::string display_reference_links(const ReferenceList &references);
 // Shared fragment presentation; engine-rendered verse HTML is retained.
 // Reference labels are escaped as attributes. Native hosts supply theme CSS.
 std::string display_chapter(const Chapter &chapter, const DisplayOptions &options);

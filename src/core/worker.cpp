@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/worker.hpp"
 #include "xiphos/core/profile.hpp"
+#include "xiphos/core/note_presentation.h"
 #include <condition_variable>
 #include <deque>
 #include <functional>
@@ -116,6 +117,36 @@ std::future<void> StudyWorker::set_lexicon_preferences(StudyTab tab, LexiconPref
 }
 std::future<std::optional<LexiconPreferences>> StudyWorker::lexicon_preferences(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s) { return s.tab(tab).lexicon_preferences(); });
+}
+std::future<void> StudyWorker::set_cross_reference_preview_list(StudyTab tab, bool enabled) {
+  return impl_->submit([tab, enabled](Impl::State &s) { s.tab(tab).set_cross_reference_preview_list(enabled); });
+}
+std::future<bool> StudyWorker::cross_reference_preview_list(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s) { return s.tab(tab).cross_reference_preview_list(); });
+}
+std::future<StudyHoverLink> StudyWorker::hover_study_link_at(StudyTab tab, std::string current_module,
+                                                         std::string current_reference, std::string uri) {
+  return impl_->submit([tab, current_module = std::move(current_module), current_reference = std::move(current_reference),
+                        uri = std::move(uri)](Impl::State &s) -> StudyHoverLink {
+    auto &session = s.tab(tab);
+    if (current_reference.empty() || uri.empty() || current_module.find('\0') != std::string::npos ||
+        current_reference.find('\0') != std::string::npos || uri.find('\0') != std::string::npos)
+      throw std::invalid_argument("Hover requires copied source context and a valid URI");
+    const auto target = xiphos::core::contextual_study_link(uri, current_module);
+    if (std::holds_alternative<PassageLink>(target) || std::holds_alternative<ReferenceListLink>(target))
+      return std::monostate{};
+    if (std::holds_alternative<LexicalLink>(target))
+      return session.read_lexical(current_module, current_reference, uri, XIPHOS_LEXICON_MAIN);
+    const auto &link = std::get<StudyNoteLink>(target);
+    const auto destination = xiphos_core_note_presentation(link.type.c_str(), 0, session.cross_reference_preview_list());
+    if (destination == XIPHOS_NOTE_NO_PRESENTATION) return std::monostate{};
+    auto note = s.note_target(tab, link);
+    if (destination == XIPHOS_NOTE_HOVER_BODY) return note;
+    auto references = session.read_reference_list(note.module, note.reference_list, current_reference);
+    if (destination == XIPHOS_NOTE_HOVER_REFERENCES) return references;
+    note.html = display_reference_links(references);
+    return note;
+  });
 }
 std::future<std::optional<LexiconPreferences>> StudyWorker::import_lexicon_profile(StudyTab tab, std::string path) {
   return impl_->submit([tab, path = std::move(path)](Impl::State &s) {
