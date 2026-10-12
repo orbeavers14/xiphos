@@ -467,6 +467,41 @@ actor CoreWorker {
         defer { xc_entry_release(result) }
         return CoreValues.entry(result)
     }
+    private func passage(_ status: xc_status, _ request: OpaquePointer?) async throws -> RenderedStudyPassage {
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_passage(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_passage_release(result) }
+        let commentary = xc_passage_has_commentary(result) != 0 ? RenderedEntry(
+            reference: String(cString: xc_passage_commentary_reference(result)!),
+            html: String(cString: xc_passage_commentary_html(result)!)) : nil
+        return RenderedStudyPassage(module: String(cString: xc_passage_module(result)!),
+            commentaryModule: String(cString: xc_passage_commentary_module(result)!),
+            text: RenderedEntry(reference: String(cString: xc_passage_reference(result)!),
+                                html: String(cString: xc_passage_html(result)!)), commentary: commentary)
+    }
+    func studyPassage(tab: UInt64, module: String, commentary: String, reference: String, record: Bool = true) async throws -> RenderedStudyPassage {
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { id in commentary.withCString { notes in reference.withCString { ref in
+            record ? xc_worker_visit_passage(handle, tab, id, notes, ref, &request)
+                   : xc_worker_read_passage(handle, tab, id, notes, ref, &request)
+        } } }
+        return try await passage(status, request)
+    }
+    func navigateStudyPassage(tab: UInt64, direction: Int32) async throws -> RenderedStudyPassage {
+        var request: OpaquePointer?
+        let status = xc_worker_navigate_passage(try worker(), tab, direction, &request)
+        return try await passage(status, request)
+    }
+    func navigateStudyChapter(tab: UInt64, module: String, commentary: String, reference: String, direction: Int32) async throws -> RenderedStudyPassage {
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { id in commentary.withCString { notes in reference.withCString { ref in
+            xc_worker_navigate_passage_chapter(handle, tab, id, notes, ref, direction, &request)
+        } } }
+        return try await passage(status, request)
+    }
     func visit(tab: UInt64, module: String, reference: String) async throws -> RenderedEntry {
         var request: OpaquePointer?
         let handle = try worker()

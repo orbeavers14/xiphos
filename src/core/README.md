@@ -421,3 +421,9 @@ retains the first recorded module pair, matching the characterized legacy rule.
 Existing single-entry APIs retain their behavior; hosts should use the paired
 commands consistently when implementing synchronized panes. No locked-module,
 companion-module, commentary chapter/headings or detached-window parity is claimed.
+
+The async C ABI exposes these commands through `xc_worker_*_passage*` and
+`xc_request_take_passage`. The owned passage handle has borrowed string getters
+and an explicit commentary-present flag; strings survive worker/request release
+until `xc_passage_release`. A wrong-kind or second take returns NULL. The Swift
+actor copies this into `RenderedStudyPassage`, without calling SWORD directly.

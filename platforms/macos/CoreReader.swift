@@ -82,6 +82,12 @@ struct RenderedStudyNote: Sendable {
     let html: String
     let referenceList: String
 }
+struct RenderedStudyPassage: Sendable {
+    let module: String
+    let commentaryModule: String
+    let text: RenderedEntry
+    let commentary: RenderedEntry?
+}
 struct RenderedEntry: Sendable {
     let reference: String
     let html: String

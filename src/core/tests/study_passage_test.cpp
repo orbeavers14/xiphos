@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/worker.hpp"
+#include "xiphos/core/c_api.h"
+#include <chrono>
+#include <thread>
 #include <rawtext.h>
 #include <rawcom.h>
 #include <filesystem>
@@ -11,6 +14,15 @@ void check(bool ok, const char *message) { if (!ok) throw std::runtime_error(mes
 template<class Error, class F> void fails(F action, const char *message) {
   try { action(); } catch (const Error &) { return; }
   throw std::runtime_error(message);
+}
+xc_status wait(xc_request *request) {
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+  xc_status status;
+  while ((status = xc_request_poll(request)) == XC_PENDING) {
+    check(std::chrono::steady_clock::now() < deadline, "request timeout");
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+  return status;
 }
 int main(int argc, char **argv) {
   try {
@@ -78,6 +90,31 @@ int main(int argc, char **argv) {
     check(worker.navigate_passage(tab, 1).get().commentary_module == "OtherNotes", "queue recovers after failed pair");
     const auto next = worker.navigate_passage_chapter(tab, "Text", "Notes", "John 3:17", 1).get();
     check(next.text.reference == "John 4:1" && next.commentary->reference == "John 4:1", "both panes follow chapter navigation");
+    xc_worker *bridge = nullptr;
+    xc_request *request = nullptr;
+    check(xc_worker_open(root.string().c_str(), &bridge) == XC_OK, "C worker opened");
+    check(xc_worker_create_tab(bridge, &request) == XC_OK && wait(request) == XC_OK, "C tab created");
+    const auto ctab = xc_request_tab(request); xc_request_release(request);
+    check(xc_worker_visit_passage(bridge, ctab, "Text", nullptr, "John 3:16", &request) == XC_INVALID_ARGUMENT && !request,
+          "null commentary rejected before submission");
+    check(xc_worker_visit_passage(bridge, ctab, "Text", "Notes", "John 3:16", &request) == XC_OK, "C pair accepted");
+    check(xc_request_take_passage(request) == nullptr, "pending pair cannot transfer before poll");
+    check(wait(request) == XC_OK && xc_request_take_entry(request) == nullptr, "pair ready with distinct type");
+    auto *owned = xc_request_take_passage(request);
+    check(owned && !xc_request_take_passage(request), "pair transfers exactly once");
+    xc_request_release(request);
+    check(xc_worker_read_passage(bridge, ctab, "Text", "", "John 3:17", &request) == XC_OK && wait(request) == XC_OK,
+          "C optional commentary read");
+    auto *hidden = xc_request_take_passage(request); xc_request_release(request);
+    check(!xc_passage_has_commentary(hidden) && !xc_passage_commentary_reference(hidden) &&
+          !xc_passage_commentary_html(hidden) && std::string(xc_passage_commentary_module(hidden)).empty(), "absence is explicit");
+    xc_passage_release(hidden);
+    xc_worker_close(bridge);
+    check(std::string(xc_passage_module(owned)) == "Text" && std::string(xc_passage_reference(owned)) == "John 3:16" &&
+          std::string(xc_passage_commentary_html(owned)).find("café") != std::string::npos, "pair survives worker/request release");
+    xc_passage_release(owned);
+    check(!xc_passage_has_commentary(nullptr) && !xc_passage_html(nullptr) && !xc_request_take_passage(nullptr), "null snapshot guards");
+    xc_passage_release(nullptr);
     std::cout << "Synchronized study passage checks passed\n";
   } catch (const std::exception &e) { std::cerr << e.what() << '\n'; return 1; }
 }

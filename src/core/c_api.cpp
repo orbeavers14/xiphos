@@ -22,6 +22,7 @@ struct xc_dictionary_choices { xiphos::core::DictionaryChoices value; };
 struct xc_dictionary_history { xiphos::core::DictionaryHistorySnapshot value; };
 struct xc_dictionary_entry { xiphos::core::DictionaryEntry value; };
 struct xc_note { xiphos::core::StudyNote value; };
+struct xc_passage { xiphos::core::StudyPassage value; };
 struct xc_entry { xiphos::core::Entry value; };
 struct xc_worker { xiphos::core::StudyWorker value; explicit xc_worker(const char *root) : value(root ? root : "") {} };
 struct xc_catalog { std::vector<xiphos::core::Module> value; };
@@ -40,6 +41,7 @@ struct xc_request {
   std::unique_ptr<xc_lexicons> lexicons;
   std::unique_ptr<xc_note> note;
   std::unique_ptr<xc_entry> entry;
+  std::unique_ptr<xc_passage> passage;
   std::unique_ptr<xc_chapter> chapter;
   std::unique_ptr<xc_choices> choices;
   std::unique_ptr<xc_link> link;
@@ -47,6 +49,7 @@ struct xc_request {
   std::unique_ptr<xc_history> history;
   virtual ~xc_request() = default;
   virtual void update() = 0;
+  void store(xiphos::core::StudyPassage v) { passage = std::make_unique<xc_passage>(xc_passage{std::move(v)}); }
   void store(uint64_t v) { tab = v; }
   void store(bool v) { preview_preference = v; preview_preference_result = true; }
   void store(std::monostate) { no_presentation = true; }
@@ -186,6 +189,24 @@ xc_status xc_worker_navigate(xc_worker *w, uint64_t tab, int direction, xc_reque
 xc_status xc_worker_navigate_chapter(xc_worker *w, uint64_t tab, const char *id, const char *ref, int direction, xc_request **out) {
   if (!id || !*id || !ref || !*ref) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.navigate_chapter(tab, id, ref, direction); });
+}
+xc_status xc_worker_read_passage(xc_worker *w, uint64_t tab, const char *id, const char *commentary,
+                                  const char *ref, xc_request **out) {
+  if (!id || !*id || !commentary || !ref || !*ref) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.read_passage(tab, id, commentary, ref); });
+}
+xc_status xc_worker_visit_passage(xc_worker *w, uint64_t tab, const char *id, const char *commentary,
+                                   const char *ref, xc_request **out) {
+  if (!id || !*id || !commentary || !ref || !*ref) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.visit_passage(tab, id, commentary, ref); });
+}
+xc_status xc_worker_navigate_passage(xc_worker *w, uint64_t tab, int direction, xc_request **out) {
+  return queue_request(w, out, [=](auto &worker) { return worker.navigate_passage(tab, direction); });
+}
+xc_status xc_worker_navigate_passage_chapter(xc_worker *w, uint64_t tab, const char *id, const char *commentary,
+                                            const char *ref, int direction, xc_request **out) {
+  if (!id || !*id || !commentary || !ref || !*ref) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.navigate_passage_chapter(tab, id, commentary, ref, direction); });
 }
 xc_status xc_worker_history(xc_worker *w, uint64_t tab, xc_request **out) {
   return queue_request(w, out, [=](auto &worker) { return worker.history(tab); });
@@ -409,6 +430,15 @@ xc_lexical_entry *xc_request_take_lexical_entry(xc_request *r) { return r && r->
 xc_lexicons *xc_request_take_lexicons(xc_request *r) { return r && r->status == XC_OK ? r->lexicons.release() : nullptr; }
 xc_dictionary_entry *xc_request_take_dictionary_entry(xc_request *r) { return r && r->status == XC_OK ? r->dictionary.release() : nullptr; }
 xc_note *xc_request_take_note(xc_request *r) { return r && r->status == XC_OK ? r->note.release() : nullptr; }
+xc_passage *xc_request_take_passage(xc_request *r) { return r && r->status == XC_OK ? r->passage.release() : nullptr; }
+const char *xc_passage_module(const xc_passage *p) { return p ? p->value.module.c_str() : nullptr; }
+const char *xc_passage_reference(const xc_passage *p) { return p ? p->value.text.reference.c_str() : nullptr; }
+const char *xc_passage_html(const xc_passage *p) { return p ? p->value.text.html.c_str() : nullptr; }
+int xc_passage_has_commentary(const xc_passage *p) { return p && p->value.commentary ? 1 : 0; }
+const char *xc_passage_commentary_module(const xc_passage *p) { return p ? p->value.commentary_module.c_str() : nullptr; }
+const char *xc_passage_commentary_reference(const xc_passage *p) { return p && p->value.commentary ? p->value.commentary->reference.c_str() : nullptr; }
+const char *xc_passage_commentary_html(const xc_passage *p) { return p && p->value.commentary ? p->value.commentary->html.c_str() : nullptr; }
+void xc_passage_release(xc_passage *p) { delete p; }
 xc_entry *xc_request_take_entry(xc_request *r) { return r && r->status == XC_OK ? r->entry.release() : nullptr; }
 xc_chapter *xc_request_take_chapter(xc_request *r) { return r && r->status == XC_OK ? r->chapter.release() : nullptr; }
 xc_choices *xc_request_take_choices(xc_request *r) { return r && r->status == XC_OK ? r->choices.release() : nullptr; }

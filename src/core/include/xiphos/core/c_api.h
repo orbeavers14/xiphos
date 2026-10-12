@@ -10,6 +10,7 @@ extern "C" {
 #endif
 typedef struct xc_reader xc_reader;
 typedef struct xc_entry xc_entry;
+typedef struct xc_passage xc_passage;
 typedef struct xc_note xc_note;
 typedef struct xc_dictionary_choices xc_dictionary_choices;
 typedef struct xc_dictionary_history xc_dictionary_history;
@@ -70,6 +71,13 @@ xc_status xc_worker_close_tab(xc_worker *worker, uint64_t tab, xc_request **out)
 xc_status xc_worker_visit(xc_worker *worker, uint64_t tab, const char *module, const char *reference, xc_request **out);
 xc_status xc_worker_navigate(xc_worker *worker, uint64_t tab, int direction, xc_request **out);
 xc_status xc_worker_navigate_chapter(xc_worker *worker, uint64_t tab, const char *module, const char *reference, int direction, xc_request **out);
+/* Synchronized Bible/optional commentary snapshots. commentary must be non-NULL;
+ * empty requests no commentary. Selection/type errors arrive through poll.
+ * Visits and navigation commit history only after both renders succeed. */
+xc_status xc_worker_read_passage(xc_worker *worker, uint64_t tab, const char *module, const char *commentary, const char *reference, xc_request **out);
+xc_status xc_worker_visit_passage(xc_worker *worker, uint64_t tab, const char *module, const char *commentary, const char *reference, xc_request **out);
+xc_status xc_worker_navigate_passage(xc_worker *worker, uint64_t tab, int direction, xc_request **out);
+xc_status xc_worker_navigate_passage_chapter(xc_worker *worker, uint64_t tab, const char *module, const char *commentary, const char *reference, int direction, xc_request **out);
 xc_status xc_worker_history(xc_worker *worker, uint64_t tab, xc_request **out);
 xc_status xc_worker_clear_history(xc_worker *worker, uint64_t tab, xc_request **out);
 /* Settings belong to one tab and are copied on submission. Set/clear do not
@@ -201,6 +209,17 @@ xc_lexical_entry *xc_request_take_lexical_entry(xc_request *request);
 xc_lexicons *xc_request_take_lexicons(xc_request *request);
 xc_note *xc_request_take_note(xc_request *request);
 xc_entry *xc_request_take_entry(xc_request *request);
+xc_passage *xc_request_take_passage(xc_request *request);
+/* Borrowed strings valid until passage release; NULL handle -> NULL/zero.
+ * Absent commentary -> empty module string and NULL commentary reference/HTML. */
+const char *xc_passage_module(const xc_passage *passage);
+const char *xc_passage_reference(const xc_passage *passage);
+const char *xc_passage_html(const xc_passage *passage);
+int xc_passage_has_commentary(const xc_passage *passage);
+const char *xc_passage_commentary_module(const xc_passage *passage);
+const char *xc_passage_commentary_reference(const xc_passage *passage);
+const char *xc_passage_commentary_html(const xc_passage *passage);
+void xc_passage_release(xc_passage *passage);
 xc_chapter *xc_request_take_chapter(xc_request *request);
 xc_choices *xc_request_take_choices(xc_request *request);
 xc_link *xc_request_take_link(xc_request *request);

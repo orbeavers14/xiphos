@@ -61,7 +61,10 @@ pair from `StudySession` and the FIFO worker. Visits record both modules;
 Back/Forward restore the first recorded pair under legacy reference-only history
 rules. A generated original-prose RawCom fixture validates normalized references,
 chapter stepping, optional commentary, failed selection without history changes,
-and tab isolation. The full local suite passes 50/50. This is a core API slice:
+and tab isolation. The full local suite passed 50/50 before adapter integration. Typed asynchronous
+C and Swift adapters now expose the paired commands; five focused checks pass,
+including transfer-once ownership, absent commentary, and copies surviving worker
+shutdown. The suite now contains 51 checks. This is a core/adapter API slice:
 native pane integration, commentary headings/chapter presentation, detached
 windows, companion modules and representative versification acceptance remain
 pending. The engineering estimate and fully accepted parity count stay unchanged.
@@ -83,7 +86,7 @@ pending. The engineering estimate and fully accepted parity count stay unchanged
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
 
-Current local suite: **50 checks**. The shared Unicode click-key utility reuses
+Current local suite: **51 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.
