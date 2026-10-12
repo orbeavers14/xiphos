@@ -1682,3 +1682,21 @@ passed 1/1 with leak detection disabled because macOS ASan does not support it.
 No SWORD instrumentation is relevant to this value-only test; no GitHub builds.
 Next: legacy handler delegation, explicit dictionary visit/navigation commands
 and native history controls. No full feature acceptance/retirement; about 6%.
+
+
+## Legacy dictionary history delegation: locally checked, GTK runtime pending
+
+Implemented 2026-10-11 on `modernization/legacy-dictionary-history`. Existing
+legacy dictionary history add/back/forward now delegate to the shared C++11
+value type. The adapter retains navigating suppression, copied display targets,
+button updates and boundary no-ops. Obsolete hand-managed GList allocation/free
+code was replaced after its behavior was characterized; the frozen GPL baseline
+remains as regression evidence. No legacy files were retired.
+
+Validation: 28/28 local checks and all 10,287 frozen/actual/shared transitions
+passed after replacing the actual handler. Strict C++11, the native-disabled
+subset and focused address/undefined check passed. The full GTK app runtime
+still requires its platform build environment; the harness validates state and
+adapter callbacks. No GitHub builds. Next: explicit shared dictionary visit/
+history-navigation commands and native history controls. Full feature acceptance
+remains pending; provisional estimate about 6%.

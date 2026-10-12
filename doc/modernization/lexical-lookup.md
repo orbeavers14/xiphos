@@ -174,3 +174,11 @@ A separate C++11 DictionaryHistory agrees with both adapters over 10,287
 transitions, including module changes, Unicode, duplicate-after-back, eviction,
 boundaries and 100 reproducible mixed traces. This is value-state evidence,
 not full GTK UI/profile/error-path acceptance. Native session integration follows.
+
+
+Legacy add/back/forward now use DictionaryHistory; the unchanged frozen baseline
+continues to check the actual adapter over the same traces. The shared visit
+reports whether it changed state, preserving the legacy early return on an
+identical current pair. Navigation copies the destination, moves the cursor and
+uses the existing navigating flag during display. Hand-managed GList ownership
+was removed from this adapter, while GTK presentation behavior remains intact.

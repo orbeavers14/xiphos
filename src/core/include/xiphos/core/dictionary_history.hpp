@@ -8,7 +8,8 @@ struct DictionaryLocation { std::string module, key; };
 // module/key pair, clear forward entries on a changed visit, retain at most 50.
 class DictionaryHistory {
 public:
-  void visit(const DictionaryLocation &location);
+  // Returns false for an unchanged current pair.
+  bool visit(const DictionaryLocation &location);
   void clear();
   bool can_back() const;
   bool can_forward() const;
