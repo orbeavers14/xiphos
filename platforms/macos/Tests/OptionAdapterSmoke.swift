@@ -92,12 +92,23 @@ struct OptionAdapterSmoke {
             _ = try await worker.studyNoteLink(tab: tab, currentModule: "OptionTest", uri: "https://example.invalid/passagestudy.jsp")
             fatalError("Swift external note link accepted")
         } catch is CoreError { }
+        let references = try await worker.readReferenceList(tab: tab, module: "OptionTest", expression: "16-17;16", context: "John.3.16")
+        guard references.module == "OptionTest", references.context == "John 3:16", references.expression == "16-17;16",
+              references.entries.count == 3, references.entries[0].reference == "John 3:16",
+              references.entries[2].reference == "John 3:16", references.entries[0].html.contains("3056"),
+              references.html.contains("reference-3"), !references.limited else { fatalError("Swift reference-list metadata/options/order") }
+        let emptyReferences = try await worker.readReferenceList(tab: tab, module: "OptionTest", expression: "", context: "John3:16")
+        guard emptyReferences.entries.isEmpty, emptyReferences.html.isEmpty else { fatalError("Swift empty reference list") }
+        do {
+            _ = try await worker.readReferenceList(tab: tab, module: "OptionTest", expression: "16", context: "")
+            fatalError("Swift missing reference-list context accepted")
+        } catch is CoreError { }
         let noteHistory = try await worker.history(tab)
         guard noteHistory.count == 1 else { fatalError("Swift note preview changed history") }
         try await worker.closeTab(restoredTab)
         try await worker.closeTab(tab)
         await worker.shutdown()
-        guard note.html.contains("Original note."), modules[0].options.declared == declared, restored.html == original.html else { fatalError("copied metadata/results lifetime") }
+        guard references.entries[0].html.contains("3056"), note.html.contains("Original note."), modules[0].options.declared == declared, restored.html == original.html else { fatalError("copied metadata/results lifetime") }
         print("Swift tab option/metadata adapter checks passed")
     }
 }
