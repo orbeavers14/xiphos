@@ -56,28 +56,23 @@ study-pane composition/commentary workflow before broader native feature claims.
 
 ## Current locally checked scope
 
-The initial [commentary synchronization slice](commentary-workflows.md) now
-includes the core/worker, typed C/Swift adapters and a resizable macOS upper-right
-commentary pane above dictionary content. Bible visits, selectors and chapter
-steps update the paired verse; Back/Forward restore recorded module choices.
-Changing commentary preserves the committed passage and unsent draft. The full
-local suite passes 52/52, including generated RawCom fixtures and native model
-checks. A running generated preview confirms sidebar selection, two synchronized
-references and recorded Back behavior. Commentary chapter/headings, detached
-windows, companion/personal modules, profile startup and representative corpus
-acceptance remain pending. The engineering estimate and fully accepted parity
-count stay unchanged. A separate frozen/current legacy iterator check now
-validates a shared linked/sparse commentary-position helper; normal and
-address/undefined checks pass. The suite now contains 54 checks. A no-record shared commentary chapter
-service renders the characterized sparse/linked positions with module preferences
-and selected/missing anchors; the full suite passes 54/54. Four focused
-address/undefined and three thread checks pass, with SDK instrumentation limits
-as documented. Native independent commentary chapter controls and shared passage-link pane
-routing are now implemented and pass the 54-check suite. Three focused
-address/undefined and three thread checks also pass. Runtime inspection verifies
-chapter mode with unsent input, passage/notes links and selected-row theme/link
-contrast. Headings, per-module chapter-mode defaults/persistence and broader
-acceptance remain pending.
+The [commentary synchronization slice](commentary-workflows.md) includes shared
+paired visits/history, typed C/Swift adapters and native upper-right commentary
+above dictionary content. Sparse/linked chapter traversal and selected/missing
+anchors have frozen/current legacy characterization. Independent native chapter
+controls and passage-link pane routing are checked, including unsent input,
+note source context and selected-row theme/link contrast.
+
+Shared per-module chapter preferences now match the legacy regular versus personal
+classification and default/Off decoding. A combined single-decode import stages
+engine and presentation settings together; verified save preserves unrelated,
+personal and uninstalled settings. Native adapters/default application are the
+next integration step. The full suite passes **55/55**; focused preference
+address/undefined checks pass **3/3** and thread checks **1/1**, with the external
+SDK instrumentation limits described below. Headings, detached windows,
+companion/personal editing, saved pane startup and broader corpus/visual acceptance
+remain pending. The engineering estimate and fully accepted parity count stay
+unchanged.
 
 - Shared C++ module/verse/chapter reading, Bible history, rendering options,
   engine-preference import/save, note and reference-list previews.
@@ -96,7 +91,7 @@ acceptance remain pending.
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
 
-Current local suite: **54 checks**. The shared Unicode click-key utility reuses
+Current local suite: **55 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.

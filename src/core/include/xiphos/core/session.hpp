@@ -3,6 +3,7 @@
 #include "history.hpp"
 #include "dictionary_history.hpp"
 #include "reader.hpp"
+#include "presentation.hpp"
 #include <optional>
 #include <map>
 namespace xiphos::core {
@@ -76,6 +77,8 @@ public:
   void set_module_engine_options(const std::string &module, const EngineOptions &options);
   void clear_module_engine_options(const std::string &module);
   std::optional<EngineOptions> module_engine_options(const std::string &module) const;
+  ModulePresentationOptions module_presentation_options(const std::string &module) const;
+  void set_commentary_chapter_mode(const std::string &module, bool enabled);
   Chapter read_commentary_chapter(const std::string &module, const std::string &reference,
                                   const DisplayOptions &display = {});
   Chapter read_chapter(const std::string &module, const std::string &reference,
@@ -89,6 +92,7 @@ private:
   bool module_preferences_ = false;
   bool xrefs_in_verse_list_ = true; // Legacy misc/xrefsinverselist default.
   std::map<std::string, EngineOptions> module_options_;
+  ModulePresentationPreferences presentation_options_;
   void require_module(const std::string &module) const;
   LexicalEntry lookup_lexical(const std::string &module, const std::string &reference,
                             const std::string &uri, int origin, bool click);

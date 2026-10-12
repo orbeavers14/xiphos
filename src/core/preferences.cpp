@@ -5,7 +5,8 @@
 #include <fstream>
 #include <stdexcept>
 namespace xiphos::core {
-void save_module_engine_preferences(const std::string &path, const ModuleEnginePreferences &settings) {
+void save_module_preferences(const std::string &path, const ModuleEnginePreferences &settings,
+                              const ModulePresentationPreferences &presentation) {
   detail::replace_preference_file(path, [&](const std::filesystem::path &file, const std::string &original, bool) {
     {
       std::ofstream snapshot(file, std::ios::binary);
@@ -19,6 +20,8 @@ void save_module_engine_preferences(const std::string &path, const ModuleEngineP
     for (const auto &module : settings)
       for (const auto &preference : engine_options_to_preferences(module.second))
         configuration[module.first.c_str()][preference.first.c_str()] = preference.second.c_str();
+    for (const auto &module : presentation)
+      configuration[module.first.c_str()]["Commentary by Chapter"] = module.second.commentary_by_chapter ? "On" : "Off";
     configuration.save();
     // SWORD save has no failure result. Verify actual written bytes and decoding
     // before replacing the user's file, rather than treating save() as success.
@@ -35,4 +38,8 @@ void save_module_engine_preferences(const std::string &path, const ModuleEngineP
       throw std::runtime_error("Written preference configuration failed verification");
   });
 }
+void save_module_engine_preferences(const std::string &path, const ModuleEnginePreferences &settings) {
+  save_module_preferences(path, settings, {});
+}
+
 }

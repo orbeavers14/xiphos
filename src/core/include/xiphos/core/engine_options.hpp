@@ -41,6 +41,9 @@ EngineOptionPreferences engine_options_to_preferences(const EngineOptions &optio
 // Read-only legacy SWORD configuration decoding. No home-directory discovery,
 // file creation, preference writes or installed-module filtering.
 using ModuleEnginePreferences = std::map<std::string, EngineOptions>;
+using ModuleOptionValues = std::map<std::string, EngineOptionPreferences>;
+// One legacy SWConfig decode shared by engine and presentation imports.
+ModuleOptionValues read_module_option_values(const std::string &path);
 ModuleEnginePreferences read_module_engine_preferences(const std::string &path);
 struct ModuleOptions {
   EngineOptions declared;

@@ -27,7 +27,7 @@ EngineOptionPreferences engine_options_to_preferences(const EngineOptions &optio
     {"All Readings", options.variants_all ? "On" : "Off"}
   };
 }
-ModuleEnginePreferences read_module_engine_preferences(const std::string &path) {
+ModuleOptionValues read_module_option_values(const std::string &path) {
   if (path.empty()) throw std::invalid_argument("Preference file path is empty");
 #ifdef _WIN32
   struct _stat64 info;
@@ -46,15 +46,22 @@ ModuleEnginePreferences read_module_engine_preferences(const std::string &path) 
   if (input.bad()) throw std::invalid_argument("Preference file cannot be read");
   sword::SWConfig configuration(path.c_str());
   configuration.load();
-  ModuleEnginePreferences result;
+  ModuleOptionValues result;
   for (const auto &section : configuration.getSections()) {
     if (section.first == "_ConfOrder" || section.first == "_ConfComments")
       continue; // Reserved SDK bookkeeping, not module preferences.
     EngineOptionPreferences values;
     for (const auto &item : section.second)
       values.emplace(item.first.c_str(), item.second.c_str());
-    result.emplace(section.first.c_str(), engine_options_from_preferences(values));
+    result.emplace(section.first.c_str(), std::move(values));
   }
   return result;
 }
+ModuleEnginePreferences read_module_engine_preferences(const std::string &path) {
+  ModuleEnginePreferences result;
+  for (const auto &module : read_module_option_values(path))
+    result.emplace(module.first, engine_options_from_preferences(module.second));
+  return result;
+}
+
 } }

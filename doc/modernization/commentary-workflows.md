@@ -149,3 +149,25 @@ before the C-string boundary.
 The full local suite passes 54/54; focused address/undefined and thread suites
 pass 3/3 each, including sparse C chapter transfer after worker shutdown.
 External SDK instrumentation limitations still apply.
+
+## Shared per-module chapter preference
+
+`regular_commentary` matches the legacy backend's Commentaries/RawFiles split.
+`presentation_options_from_preferences` matches the `main_new_globals` assignment:
+regular commentary is in chapter mode unless `Commentary by Chapter` is exactly
+`Off` after SWORD configuration decoding. Missing/empty values enable it;
+personal commentary and other module types remain false.
+
+`core_commentary_preferences` compares the complete frozen/current
+`BackEnd::module_type` function for loaded RawCom, RawFiles and RawText fixtures,
+and the complete commentary-mode assignment for missing/empty, On/Off, case and
+unexpected values. These are classification/default seams, not full global
+preferences or personal-editor workflow acceptance.
+
+Sessions and the FIFO worker now own per-module presentation settings. Import
+decodes one SWConfig into both staged engine/presentation maps before committing
+either; failed imports preserve both. Save uses the existing verified replacement
+transaction and writes chapter mode only for regular commentary modules, keeping
+unrelated, unavailable and personal-module settings. Existing engine-only save
+helpers preserve their behavior. The native toggle is not connected to this seam
+yet; it remains a per-window experimental display option until adapter integration.

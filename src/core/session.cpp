@@ -80,6 +80,25 @@ Entry StudySession::read_entry(const std::string &module, const std::string &ref
   const auto options = module_engine_options(module);
   return options ? reader_.read(module, reference, *options) : reader_.read(module, reference);
 }
+ModulePresentationOptions StudySession::module_presentation_options(const std::string &id) const {
+  require_module(id);
+  const auto found = presentation_options_.find(id);
+  if (found != presentation_options_.end()) return found->second;
+  for (const auto &module : reader_.modules())
+    if (module.id == id) return presentation_options_from_preferences({}, module.regular_commentary);
+  throw std::out_of_range("Module is not installed");
+}
+void StudySession::set_commentary_chapter_mode(const std::string &id, bool enabled) {
+  require_module(id);
+  for (const auto &module : reader_.modules()) {
+    if (module.id != id) continue;
+    if (!module.regular_commentary) throw std::invalid_argument("Chapter mode requires a regular commentary");
+    auto options = module_presentation_options(id);
+    options.commentary_by_chapter = enabled;
+    presentation_options_[id] = options;
+    return;
+  }
+}
 Chapter StudySession::read_commentary_chapter(const std::string &module, const std::string &reference,
                                               const DisplayOptions &display) {
   const auto options = module_engine_options(module);
@@ -98,23 +117,28 @@ void StudySession::require_module(const std::string &module) const {
 }
 void StudySession::save_module_preferences(const std::string &path) const {
   ModuleEnginePreferences settings;
+  ModulePresentationPreferences presentation;
   for (const auto &module : reader_.modules()) {
     const auto options = module_engine_options(module.id);
     if (!options) throw std::invalid_argument("Enable module preferences before saving");
     settings.emplace(module.id, *options);
+    if (module.regular_commentary) presentation.emplace(module.id, module_presentation_options(module.id));
   }
-  save_module_engine_preferences(path, settings);
+  xiphos::core::save_module_preferences(path, settings, presentation);
 }
 void StudySession::import_module_preferences(const std::string &path) {
-  const auto loaded = read_module_engine_preferences(path);
+  const auto loaded = read_module_option_values(path);
   ModuleEnginePreferences replacement;
+  ModulePresentationPreferences presentation;
   for (const auto &module : reader_.modules()) {
     const auto found = loaded.find(module.id);
-    replacement.emplace(module.id, found == loaded.end()
-        ? engine_options_from_preferences({}) : found->second);
+    const auto values = found == loaded.end() ? EngineOptionPreferences{} : found->second;
+    replacement.emplace(module.id, engine_options_from_preferences(values));
+    presentation.emplace(module.id, presentation_options_from_preferences(values, module.regular_commentary));
   }
   // Commit only after all file reads, decoding and allocations succeed.
   module_options_.swap(replacement);
+  presentation_options_.swap(presentation);
   options_.reset();
   module_preferences_ = true;
 }

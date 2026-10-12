@@ -452,3 +452,15 @@ Bible context from the source pane's note/lexical context. `visit_linked_passage
 selects the Bible/commentary pair centrally according to the explicit target's
 module type. Other module kinds, abbreviations/ranges/fragments and complete
 legacy URI-handler characterization remain pending.
+
+### Module presentation preferences
+
+Presentation settings remain separate from SWORD engine flags. The first
+`ModulePresentationOptions` field is commentary chapter mode, with the exact
+legacy regular/personal module distinction and missing/default/Off decoding.
+Sessions/workers own getters and regular-commentary updates. Combined module
+import stages both maps from one `read_module_option_values` decode; combined
+save reuses verified same-directory replacement. Only regular-commentary
+presentation sections are written. The old engine-only save helper delegates
+with an empty presentation map and remains compatible. Other display settings
+and the personal-editor workflow are pending.

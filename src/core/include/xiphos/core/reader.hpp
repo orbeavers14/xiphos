@@ -18,6 +18,7 @@ struct Module {
   bool transliteration_available = false;
   bool dictionary = false;
   unsigned lexicon_roles = 0;
+  bool regular_commentary = false;
 };
 
 
