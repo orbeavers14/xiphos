@@ -18,6 +18,13 @@ import Foundation
             do { _ = try await worker.readDictionary(tab: first, module: module, key: key); fatalError("invalid dictionary accepted") }
             catch is CoreError { }
         }
+        let next = try await worker.navigateDictionary(tab: first, module: "DictionaryOne", key: "ALPHA", direction: 1)
+        let previous = try await worker.navigateDictionary(tab: first, module: "DictionaryOne", key: next.key, direction: -1)
+        guard next.html.contains("Unicode"), previous.key == unicode.key, previous.html == unicode.html else { fatalError("typed dictionary key navigation") }
+        for (key, direction) in [("ALPHA", Int32(0)), ("ALPHA\0ignored", Int32(1))] {
+            do { _ = try await worker.navigateDictionary(tab: first, module: "DictionaryOne", key: key, direction: direction); fatalError("invalid dictionary navigation accepted") }
+            catch is CoreError { }
+        }
         let history = try await worker.history(first)
         guard history.count == 0 else { fatalError("dictionary preview changed history") }
         try await worker.closeTab(first)

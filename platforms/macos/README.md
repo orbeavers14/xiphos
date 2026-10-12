@@ -199,3 +199,11 @@ picker and word/key field, and uses the shared dictionary reader. A successful
 lookup copies the SDK-resolved key into the dictionary field; errors retain the
 previous definition. This does not implement legacy click Unicode normalization,
 key browsing or dictionary history. Devotional classification remains separate.
+
+
+Previous key / Next key call the shared navigation request with the committed
+dictionary module/key, replacing unfinished dictionary input only after success.
+A pending module choice must be looked up before key navigation is enabled.
+Source passage context, Bible history and unfinished Bible reference remain
+unchanged. SDK boundary behavior is retained; these are key steps, not dictionary
+history Back/Forward. Separate history and the nine-key chooser remain pending.

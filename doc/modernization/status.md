@@ -1645,3 +1645,22 @@ each passed 1/1. Full GTK app build/runtime remains unavailable on this Mac;
 SWORD is uninstrumented. No GitHub builds. Next: native previous/next controls,
 then dictionary history and remaining workflows. No full acceptance/retirement;
 estimate about 6%.
+
+
+## Native dictionary key controls: locally checked, separate history next
+
+Implemented 2026-10-11 on `modernization/macos-dictionary-navigation`. Swift owns
+shared navigation results and the native column has previous/next key controls.
+They use committed dictionary module/key and retain source context, rather than
+using unfinished dictionary input. Pending module choices require a lookup first;
+invalid directions do not queue. Bible passage/draft/history remain untouched.
+
+Validation: 27/27 local checks passed, including Swift navigation round trip,
+invalid/NUL requests, committed-key handling, unchanged source/Bible/draft/history
+and pending-module guard. Visible temporary GUI checks looked up ALPHA, entered
+unfinished key text, clicked Next to CAFÉ and Previous to ALPHA with correct
+original definitions while John3:16 remained displayed, John4:2 stayed unfinished
+and Bible Back/Forward remained disabled. No GitHub builds or installed data
+changes. Next: separate dictionary history, nine-key chooser, click normalization
+and remaining hover/pinning/persistence/composition. No full acceptance or file
+retirement; provisional estimate about 6% (4–8%).
