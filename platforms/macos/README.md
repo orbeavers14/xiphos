@@ -165,7 +165,8 @@ Explicit default enablement obtains the five legacy names from the shared core;
 nullable/empty names remain distinct. The adapter rejects embedded NULs and
 owns source/kind/raw value plus dictionary key/HTML after shutdown. Fixture
 checks cover OT/NT context and separate tabs. Native preference/pane/hover/click
-workflows and lexicon profile persistence are the next integration work.
+workflows remain pending. Shared XML persistence and typed Swift commands are
+now implemented; native profile controls remain the next integration work.
 
 
 The copied catalog now exposes dictionary classification and declared lexicon
@@ -262,3 +263,14 @@ isolated client world, checks main-frame payloads, and keeps module JavaScript
 disabled. Parsing/selection/rendering remain in C++. This currently covers
 lexical links in the main reader/information view; all-link and keyboard/real-
 module/platform acceptance is pending. See [hover contracts](../../doc/modernization/hover-workflows.md).
+
+## Explicit lexicon profile adapter
+
+`CoreWorker.importLexiconProfile` returns copied choices from the shared C++
+XML reader; `saveLexiconProfile` uses its verified writer. Swift validates paths
+and manages observer/snapshot lifetimes, without an XML schema or file writer.
+`swift_profile_adapter` uses disposable XML files and generated dictionaries to
+check complete defaults, unavailable names, typed round trips, escaping, source
+preservation, failed-import retention, window/history/engine-setting isolation
+and values surviving shutdown. Saved locale is not applied. Native file-picker
+controls and complete profile/platform acceptance remain pending.

@@ -182,6 +182,25 @@ actor CoreWorker {
         defer { xc_lexicons_release(result) }
         return CoreValues.lexicons(result)
     }
+    func importLexiconProfile(tab: UInt64, path: String) async throws -> LexiconPreferences {
+        guard !path.isEmpty, !path.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = path.withCString { xc_worker_import_lexicon_profile(handle, tab, $0, &request) }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_lexicons(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_lexicons_release(result) }
+        guard let copied = CoreValues.lexicons(result) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        return copied
+    }
+    func saveLexiconProfile(tab: UInt64, path: String) async throws {
+        guard !path.isEmpty, !path.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = path.withCString { xc_worker_save_lexicon_profile(handle, tab, $0, &request) }
+        xc_request_release(try await wait(status, request))
+    }
     func readLexical(tab: UInt64, module: String, reference: String, uri: String, origin: LexiconOrigin = .main) async throws -> RenderedLexicalEntry {
         try await lexicalLookup(tab: tab, module: module, reference: reference, uri: uri, origin: origin, record: false)
     }
