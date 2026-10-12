@@ -53,8 +53,10 @@ int main(int argc, char **argv) {
       RawText writer((root / "text").string().c_str());
       writer.setKey("John 3:16"); writer.setEntry("Original heading preview Bible.");
       writer.setKey("John 3:17"); writer.setEntry("Original second preview Bible entry.");
+      writer.setKey("John 3:21"); writer.setEntry("<font face=\"OriginalBibleFont\">Original styled Bible body.</font><img src=\"original-bible.png\" />");
+      writer.setKey("John 3:22"); writer.setEntry("Original malformed Bible font <font face=\"unfinished>");
       std::ofstream config(root / "mods.d/text.conf");
-      config << "[Text]\nDataPath=./text/\nModDrv=RawText\nEncoding=UTF-8\n";
+      config << "[Text]\nDataPath=./text/\nModDrv=RawText\nSourceType=ThML\nEncoding=UTF-8\n";
     }
     std::filesystem::create_directories(root / "thml");
     check(RawCom::createModule((root / "thml").string().c_str()) == 0, "create original ThML heading fixture");
@@ -66,6 +68,9 @@ int main(int argc, char **argv) {
       writer.setKey("John 3:18"); writer.setEntry("Original ThML entry without headings.");
       writer.setKey("John 3:19"); writer.setEntry("<div class=\"sechead\">Original ThML heading-only entry.</div>");
       writer.setKey("John 3:20"); writer.setEntry("<div class=\"sechead\">Original heading with <scripRef passage=\"John 3:17\">original passage link</scripRef>.</div>Original linked-heading body.");
+      writer.setKey("John 3:21");
+      writer.setEntry("<div class=\"sechead\"><font face=\"OriginalHeadingFont\">Original styled heading.</font><img src=\"original-heading.png\" /></div><font face=\"OriginalBodyFont\">Original styled body.</font><img src=\"original-body.png\" />");
+      writer.setKey("John 3:22"); writer.setEntry("Original malformed image <img src=\"unfinished");
       std::ofstream config(root / "mods.d/thml.conf");
       config << "[ThMLNotes]\nDataPath=./thml/\nModDrv=RawCom\nSourceType=ThML\nEncoding=UTF-8\nGlobalOptionFilter=ThMLHeadings\nGlobalOptionFilter=ThMLScripref\n";
     }

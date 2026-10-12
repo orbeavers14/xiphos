@@ -4,6 +4,33 @@
 #include "xiphos/core/preferences.hpp"
 #include "xiphos/core/dictionary.hpp"
 namespace xiphos::core {
+namespace {
+void clean_content(Entry &entry, ModulePresentationOptions &options) {
+  auto clean = [&](std::string &html) {
+    auto result = cleanup_html_content(std::move(html), options.image_content, options.respect_font_faces);
+    html = std::move(result.html);
+    options.image_content = result.image_content;
+    options.respect_font_faces = result.respect_font_faces;
+    for (auto &diagnostic : result.diagnostics) entry.cleanup_diagnostics.push_back(std::move(diagnostic));
+  };
+  clean(entry.heading_html); // Legacy collects/cleans headers before body content.
+  clean(entry.html);
+}
+}
+Entry StudySession::present_content(const std::string &module, Entry entry) {
+  auto options = module_presentation_options(module);
+  clean_content(entry, options);
+  presentation_options_[module] = options;
+  return entry;
+}
+Chapter StudySession::present_content(const std::string &module, Chapter chapter, const DisplayOptions &display, bool commentary) {
+  auto options = module_presentation_options(module);
+  for (auto &entry : chapter.verses) clean_content(entry, options);
+  chapter.html = commentary ? display_commentary_chapter(chapter, chapter.verse_ordinals, display) : display_chapter(chapter, display);
+  presentation_options_[module] = options;
+  return chapter;
+}
+
 void StudySession::set_lexicon_preferences(const LexiconPreferences &preferences) {
   (void)borrow_lexicon_preferences(preferences);
   auto replacement = std::make_optional(preferences);
@@ -79,12 +106,12 @@ StudyNote StudySession::study_note_metadata(const std::string &module, const std
 Entry StudySession::read_commentary_entry(const std::string &module, const std::string &reference) {
   const auto options = module_engine_options(module);
   const auto headings = module_presentation_options(module).headings;
-  return options ? reader_.read_commentary_entry(module, reference, headings, *options)
-                 : reader_.read_commentary_entry(module, reference, headings);
+  return present_content(module, options ? reader_.read_commentary_entry(module, reference, headings, *options)
+                                        : reader_.read_commentary_entry(module, reference, headings));
 }
 Entry StudySession::read_entry(const std::string &module, const std::string &reference) {
   const auto options = module_engine_options(module);
-  return options ? reader_.read(module, reference, *options) : reader_.read(module, reference);
+  return present_content(module, options ? reader_.read(module, reference, *options) : reader_.read(module, reference));
 }
 ModulePresentationOptions StudySession::module_presentation_options(const std::string &id) const {
   require_module(id);
@@ -93,6 +120,16 @@ ModulePresentationOptions StudySession::module_presentation_options(const std::s
   for (const auto &module : reader_.modules())
     if (module.id == id) return presentation_options_from_preferences({}, module.regular_commentary);
   throw std::out_of_range("Module is not installed");
+}
+void StudySession::set_image_content(const std::string &id, bool enabled) {
+  auto options = module_presentation_options(id);
+  options.image_content = enabled ? ContentPreference::on : ContentPreference::off;
+  presentation_options_[id] = options;
+}
+void StudySession::set_respect_font_faces(const std::string &id, bool enabled) {
+  auto options = module_presentation_options(id);
+  options.respect_font_faces = enabled ? ContentPreference::on : ContentPreference::off;
+  presentation_options_[id] = options;
 }
 void StudySession::set_headings(const std::string &id, bool enabled) {
   auto options = module_presentation_options(id);
@@ -114,14 +151,14 @@ Chapter StudySession::read_commentary_chapter(const std::string &module, const s
                                               const DisplayOptions &display) {
   const auto options = module_engine_options(module);
   const auto headings = module_presentation_options(module).headings;
-  return options ? reader_.read_commentary_chapter(module, reference, display, *options, headings)
-                 : reader_.read_commentary_chapter(module, reference, display, headings);
+  return present_content(module, options ? reader_.read_commentary_chapter(module, reference, display, *options, headings)
+                                        : reader_.read_commentary_chapter(module, reference, display, headings), display, true);
 }
 Chapter StudySession::read_chapter(const std::string &module, const std::string &reference,
                                   const DisplayOptions &display) {
   const auto options = module_engine_options(module);
-  return options ? reader_.read_chapter(module, reference, display, *options)
-                  : reader_.read_chapter(module, reference, display);
+  return present_content(module, options ? reader_.read_chapter(module, reference, display, *options)
+                                        : reader_.read_chapter(module, reference, display), display, false);
 }
 void StudySession::require_module(const std::string &module) const {
   for (const auto &installed : reader_.modules()) if (installed.id == module) return;

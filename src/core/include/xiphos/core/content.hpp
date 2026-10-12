@@ -3,10 +3,14 @@
 #include <cstddef>
 #include <string>
 #include <vector>
+#include "html_cleanup.hpp"
 namespace xiphos::core {
 struct ParsedReferenceList;
 struct DictionaryEntry { std::string module, key, html; };
-struct Entry { std::string reference, html, heading_html; };
+struct Entry {
+  std::string reference, html, heading_html;
+  std::vector<ContentCleanupDiagnostic> cleanup_diagnostics;
+};
 struct DisplayOptions {
   bool verse_numbers = true;
   bool highlight_selected = true;
@@ -17,6 +21,7 @@ struct Chapter {
   std::vector<Entry> verses;
   std::size_t selected_verse = 0;
   std::string selected_anchor, html;
+  std::vector<unsigned> verse_ordinals; // Copied SDK ordinals, including sparse commentary positions.
 };
 struct ReferenceList {
   std::string module, context, expression, html;

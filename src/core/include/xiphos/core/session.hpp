@@ -80,6 +80,8 @@ public:
   std::optional<EngineOptions> module_engine_options(const std::string &module) const;
   ModulePresentationOptions module_presentation_options(const std::string &module) const;
   void set_headings(const std::string &module, bool enabled);
+  void set_image_content(const std::string &module, bool enabled);
+  void set_respect_font_faces(const std::string &module, bool enabled);
   void set_commentary_chapter_mode(const std::string &module, bool enabled);
   Chapter read_commentary_chapter(const std::string &module, const std::string &reference,
                                   const DisplayOptions &display = {});
@@ -96,6 +98,8 @@ private:
   std::map<std::string, EngineOptions> module_options_;
   ModulePresentationPreferences presentation_options_;
   void require_module(const std::string &module) const;
+  Entry present_content(const std::string &module, Entry entry);
+  Chapter present_content(const std::string &module, Chapter chapter, const DisplayOptions &display, bool commentary);
   LexicalEntry lookup_lexical(const std::string &module, const std::string &reference,
                             const std::string &uri, int origin, bool click);
   History history_;

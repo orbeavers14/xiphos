@@ -57,7 +57,7 @@ whitespace, casing, Unicode and both commentary classifications. Paragraph
 capability is stubbed absent; commentary classification is controlled. This
 characterizes the content fields and adjacent settings, not all initialization
 side effects. Import/save, failed import/save, FIFO tab isolation and unchanged
-history pass. The full suite passes 61/61; focused address/undefined and thread
+history pass. The full suite passes 62/62; focused address/undefined and thread
 checks pass 1/1 each, and strict C++11/native-disabled helper builds pass.
 
 ## Shared content application/discovery stage
@@ -78,16 +78,29 @@ chapter numbering parity. Case-insensitive discovery also agrees in 144 cases
 across C, English, German and Turkish locales available on this host. Host locale
 must be initialized before concurrent engine work, as elsewhere in the core.
 
-The full local suite passes 61/61. Updated focused normal/address/undefined/thread
+The full local suite passes 62/62. Updated focused normal/address/undefined/thread
 checks pass 1/1 each. Strict C++11 and the native-disabled legacy helper build
 pass. Full GTK runtime and other platform/libc behavior remain acceptance gates.
-The shared stage is ready for native snapshot integration; no native automatic
-file-save behavior is implied by its discovery events.
+Core sessions/workers now apply the stage to Bible entry/chapter bodies and
+commentary entry/chapter headings and bodies. Unknown discovery updates copied
+per-module state; typed C++ setters update image/font display without visiting
+history. Sparse chapters retain copied SDK verse ordinals so rebuilt HTML keeps
+linked sections and selected/missing anchors. Ordinary `Reader` output stays
+unchanged. No native automatic file save is implied by discovery events.
+
+`core_content_snapshots` uses original styled ThML Bible/commentary data to check
+cleanup against SDK output, header/body consistency, byte lengths, copied SDK
+positions, sparse linked anchors, tab isolation, explicit import/save and worker
+drain ownership. Owned C++ entries retain malformed cleanup diagnostics. Focused
+address/undefined and thread checks pass 2/2 each (fixture plus service). The full
+local suite passes 62/62; native state/diagnostic adapters and controls are pending.
+Image blanking intentionally retains SWORD's surrounding image link, matching
+legacy behavior; image-link routing/resource loading is separate acceptance work.
 
 ## Next work
 
 - Native handling of discovery state and explicit save; automatic save/startup policy.
-- Native setters/controls and snapshot application under those settings; heading/body consistency.
+- C/Swift state/diagnostic adapters and native controls; note/dictionary/reference-preview cleanup.
 - Note/xref numbering, block rendering, CSS/image paths, sizing, fonts/themes and
   representative legacy/native runtime/visual acceptance.
 

@@ -344,6 +344,12 @@ std::future<std::optional<EngineOptions>> StudyWorker::module_engine_options(Stu
 std::future<ModulePresentationOptions> StudyWorker::module_presentation_options(StudyTab tab, std::string module) {
   return impl_->submit([tab, module = std::move(module)](Impl::State &s) { return s.tab(tab).module_presentation_options(module); });
 }
+std::future<void> StudyWorker::set_image_content(StudyTab tab, std::string module, bool enabled) {
+  return impl_->submit([tab, module = std::move(module), enabled](Impl::State &s) { s.tab(tab).set_image_content(module, enabled); });
+}
+std::future<void> StudyWorker::set_respect_font_faces(StudyTab tab, std::string module, bool enabled) {
+  return impl_->submit([tab, module = std::move(module), enabled](Impl::State &s) { s.tab(tab).set_respect_font_faces(module, enabled); });
+}
 std::future<void> StudyWorker::set_headings(StudyTab tab, std::string module, bool enabled) {
   return impl_->submit([tab, module = std::move(module), enabled](Impl::State &s) { s.tab(tab).set_headings(module, enabled); });
 }

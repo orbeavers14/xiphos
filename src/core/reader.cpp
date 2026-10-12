@@ -299,6 +299,7 @@ Chapter Reader::chapter_impl(const std::string &id, const std::string &reference
     key.setVerse(verse);
     const std::string resolved = key.getText();
     result.verses.push_back({resolved, render_entry(module, resolved.c_str())});
+    result.verse_ordinals.push_back(static_cast<unsigned>(verse));
   }
   // Keep the module at the requested anchor, as with a single-entry read.
   module.setKey(result.reference.c_str());
@@ -340,7 +341,8 @@ Chapter Reader::commentary_chapter_impl(const std::string &id, const std::string
     result.verses.push_back({module.getKeyText(), std::move(html), std::move(header)});
   }
   module.setKey(result.reference.c_str());
-  result.html = display_commentary_chapter(result, positions, display);
+  result.verse_ordinals = std::move(positions);
+  result.html = display_commentary_chapter(result, result.verse_ordinals, display);
   return result;
 }
 std::string Reader::adjacent_chapter(const std::string &id, const std::string &reference,

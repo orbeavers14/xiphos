@@ -502,6 +502,10 @@ controls/application and remaining cleanup require separate work.
 legacy `CleanupContent`, returning owned HTML, effective states, discovery events
 and diagnostic suffixes. It preserves image-before-font order and avoids file I/O.
 Complete frozen/current comparisons cover 60,750 content combinations plus 36
-numbering and 144 locale cases; native integration and broader rendering remain
-pending. See
+numbering and 144 locale cases. Sessions/workers apply it to entry/chapter bodies
+and commentary headings, record discovered states without file I/O, and offer
+image/font setters. `Chapter.verse_ordinals` retains copied SDK positions for
+rebuilding sparse HTML; `Entry.cleanup_diagnostics` owns malformed suffixes.
+Ordinary Reader output stays compatible. State/diagnostic C/Swift adapters, native
+controls, other pane families and broader rendering remain pending. See
 [cleanup scope](../../doc/modernization/html-cleanup-workflows.md).
