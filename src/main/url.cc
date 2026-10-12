@@ -397,11 +397,13 @@ static gint show_note(const gchar *module, const gchar *passage,
 	gchar *tmpbuf = NULL;
 	gchar *buf = NULL;
 	gchar *work_buf = NULL;
-	GString *str = g_string_new(NULL);
+	GString *str = NULL;
 	GList *vlist = NULL, *chaser = NULL;
 
 	if (!in_url || !svalue || !*svalue)
 		return 1;
+
+	str = g_string_new(NULL);
 
 	if (!backend->is_module((gchar *)module))
 		module = settings.MainWindowModule;

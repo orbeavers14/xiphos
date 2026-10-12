@@ -10,9 +10,9 @@ from source observations; it is not full GTK/native interaction acceptance.
 |---|---|---|---|
 | Strong's | Select main Greek/Hebrew preference, render raw value into information viewer | Delegate raw value to dictionary display, which normalizes and records its own history | Complete frozen/actual handlers: 135,258 combined lexical comparisons |
 | Morphology | Select using committed main source/testament; render raw value into information viewer | Delegate to dictionary display | Same complete-handler characterization, including missing modules/settings, overlapping type tags and rendering failure |
-| Footnote (`showNote`, type containing n) | Render Footnote body into information viewer | No corresponding body-display branch in inspected main handler | Source observation in main/url.cc show_note; full callback characterization pending |
-| Cross-reference note (type containing x) | If xrefs_in_verse_list is enabled, display sidebar list; otherwise information viewer contains reference links and Back to current verse | Display the sidebar verse list | Source observation; default setting is enabled in main/settings.c; native preference/hover routing pending |
-| Explicit reference list (`showRef`) | No action in inspected show_ref | Display sidebar verse list | Source observation; current native click list service is partial workflow evidence |
+| Footnote (`showNote`, type containing n) | Render Footnote body into information viewer | No corresponding body-display branch in inspected main handler | Complete frozen/actual show_note callback characterization; SDK output/runtime acceptance pending |
+| Cross-reference note (type containing x) | If xrefs_in_verse_list is enabled, display sidebar list; otherwise information viewer contains reference links and Back to current verse | Display the sidebar verse list | Complete frozen/actual show_note callback characterization; default setting is enabled; native preference/hover routing pending |
+| Explicit reference list (`showRef`) | No action in inspected show_ref | Display sidebar verse list | Complete frozen/actual show_ref characterization; current native click list service is partial workflow evidence |
 | sword:// dictionary entry | Render dictionary text in information viewer | Module-type routing determines display | Source observation in sword_uri/show_in_previewer; abbreviations/general keyed modules require separate characterization |
 | sword:// non-dictionary reference | Update status text or bookmark tag information | Navigate appropriate pane | Source observation; do not infer that every reference hover should render a passage |
 | Pointer leaves a link | Set in_url to zero, release cached URI, emit URI_SELECTED with null; no information-preview clear in inspected callback | Not applicable | Source observation in webkit/wk-html.c link_handler |
@@ -166,3 +166,31 @@ Null/empty choices cannot round trip through legacy defaults and reject. Existin
 malformed/empty files and observed external edits remain intact on failure. The
 next gate is worker/native import/save integration and saved-locale startup
 characterization; complete storage/platform acceptance remains pending.
+
+## Complete main note/reference callback characterization
+
+`core_note_dispatch` compares full frozen/current show_note and show_ref handlers
+over 96,792 ordered callback/return comparisons. Backend, module/key and display
+operations are explicit shims; GLib strings/lists are real. Cases cover click/
+hover, active-link/null/empty identifier guards, installed/fallback modules,
+short/current/explicit passages, heading verse-zero setup, overlapping n/x tags,
+null/empty/populated attributes, render success/failure, cross-reference preference
+modes and empty/single/repeated parsed references. It also checks generated
+reference-link and Back-to-current-verse HTML through the presentation trace.
+These comparisons establish dispatch, not real SWORD parser/render output,
+versification, GTK gestures, translation or native full-link parity.
+
+The harness tracks only the handler GString lifecycle and reclaims frozen
+early-return allocations after recording them. The actual handler now allocates
+after the active-link/identifier guard; all traced destinations/arguments remain
+identical and its tracked GString is released or never allocated on every case.
+This corrects the source-visible early-return leak; scoped sanitizer checks are
+not a complete leak audit of GTK, SWORD or uninstrumented GLib.
+
+Note tags containing both n and x dispatch as reference lists on click, but
+use body preview on hover because the n branch comes first. A clicked footnote
+sets source/module context but does not show its body in these handlers.
+Cross-reference hover in list mode calls the sidebar even for a null attribute;
+the click branch calls it only for a nonnull attribute. Information-link mode
+always appends Back to the committed current verse. Preserve these distinctions
+when extracting policy rather than merging apparently similar branches.
