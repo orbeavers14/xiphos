@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/worker.hpp"
+#include "xiphos/core/profile.hpp"
 #include <condition_variable>
 #include <deque>
 #include <functional>
@@ -115,6 +116,22 @@ std::future<void> StudyWorker::set_lexicon_preferences(StudyTab tab, LexiconPref
 }
 std::future<std::optional<LexiconPreferences>> StudyWorker::lexicon_preferences(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s) { return s.tab(tab).lexicon_preferences(); });
+}
+std::future<std::optional<LexiconPreferences>> StudyWorker::import_lexicon_profile(StudyTab tab, std::string path) {
+  return impl_->submit([tab, path = std::move(path)](Impl::State &s) {
+    auto &session = s.tab(tab);
+    const auto profile = read_study_profile(path);
+    auto copied = std::make_optional(profile.lexicons);
+    session.set_lexicon_preferences(profile.lexicons);
+    return copied;
+  });
+}
+std::future<void> StudyWorker::save_lexicon_profile(StudyTab tab, std::string path) {
+  return impl_->submit([tab, path = std::move(path)](Impl::State &s) {
+    const auto &preferences = s.tab(tab).lexicon_preferences();
+    if (!preferences) throw std::invalid_argument("Configure lexicons before saving a profile");
+    xiphos::core::save_lexicon_profile(path, *preferences);
+  });
 }
 std::future<LexicalEntry> StudyWorker::visit_lexical(StudyTab tab, std::string module, std::string reference, std::string uri, int origin) {
   return impl_->submit([tab, module = std::move(module), reference = std::move(reference), uri = std::move(uri), origin](Impl::State &s) {

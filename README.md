@@ -28,7 +28,7 @@ nearby-key chooser. Main clicks use shared Unicode casing; the macOS host
 initializes its environment locale before engine startup. Strong's/morphology
 hovers use a separate information sidebar. Other hover families, persistence and full established pane composition remain in progress.
 
-The current local suite has 36 checks, supplemented by scoped sanitizer,
+The current local suite has 37 checks, supplemented by scoped sanitizer,
 strict-language and temporary-fixture GUI checks recorded in the status ledger.
 The legacy app retains its existing UI and delegates selected seams to shared
 helpers. Routine development and testing stay local to conserve GitHub builds;

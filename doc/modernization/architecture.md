@@ -259,6 +259,9 @@ with the existing engine-preference writer. Empty/null choices reject rather
 than silently reloading defaults. Existing empty/malformed files are preserved
 on error. XML formatting/encoding normalizes to UTF-8. No native XML import/
 save controls or saved-locale startup application are implemented yet.
+The serialized worker and C API now expose explicit selected-file import/save:
+import prepares copied preferences before tab publication; save rejects an
+unconfigured tab before file work. Existing history/engine settings are retained.
 Interprocess locking, power-loss durability and Windows replacement acceptance
 remain pending. Linux
 review CI installs libxml2-dev; macOS uses the SDK and explicit Swift link inputs.

@@ -270,6 +270,14 @@ xc_status xc_worker_set_lexicon_preferences(xc_worker *w, uint64_t tab, const xc
 xc_status xc_worker_lexicon_preferences(xc_worker *w, uint64_t tab, xc_request **out) {
   return queue_request(w, out, [=](auto &worker) { return worker.lexicon_preferences(tab); });
 }
+xc_status xc_worker_import_lexicon_profile(xc_worker *w, uint64_t tab, const char *path, xc_request **out) {
+  if (!path || !*path) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.import_lexicon_profile(tab, path); });
+}
+xc_status xc_worker_save_lexicon_profile(xc_worker *w, uint64_t tab, const char *path, xc_request **out) {
+  if (!path || !*path) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.save_lexicon_profile(tab, path); });
+}
 xc_status xc_worker_visit_lexical(xc_worker *w, uint64_t tab, const char *module, const char *reference,
                                const char *uri, int origin, xc_request **out) {
   if (!uri || !*uri || (origin != XIPHOS_LEXICON_MAIN && origin != XIPHOS_LEXICON_DIALOG)) {

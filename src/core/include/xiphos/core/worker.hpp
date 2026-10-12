@@ -38,6 +38,10 @@ public:
   std::future<void> close_tab(StudyTab tab);
   std::future<void> set_lexicon_preferences(StudyTab tab, LexiconPreferences preferences);
   std::future<std::optional<LexiconPreferences>> lexicon_preferences(StudyTab tab);
+  // Explicit XML profile operations; import publishes a prepared replacement
+  // to one tab and returns copied choices. Saved locale is not applied.
+  std::future<std::optional<LexiconPreferences>> import_lexicon_profile(StudyTab tab, std::string path);
+  std::future<void> save_lexicon_profile(StudyTab tab, std::string path);
   std::future<LexicalEntry> visit_lexical(StudyTab tab, std::string module, std::string reference, std::string uri, int origin);
   std::future<LexicalEntry> read_lexical(StudyTab tab, std::string module, std::string reference,
                                       std::string uri, int origin);
