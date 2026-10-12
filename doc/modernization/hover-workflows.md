@@ -158,5 +158,11 @@ or process locale. Independent parser contexts and owned results support
 concurrent read callers. DTD declarations stop parsing before resource loading;
 malformed/wrong-root input, invalid NUL code units and over-16-MiB sources reject.
 These explicit limits are not evidence of accepting every historical profile.
-The next gate is a safe literal-text writer preserving unrelated settings, then
-worker/native import/save integration and saved-locale startup characterization.
+The explicit literal-text writer now passes 39 preservation/round-trip/failure
+checks. It retains unrelated XML outside edited values, duplicate keys and saved
+locale, normalizes encoding to UTF-8 and verifies effective values before staged
+file replacement. It corrects the characterized ampersand data-loss behavior.
+Null/empty choices cannot round trip through legacy defaults and reject. Existing
+malformed/empty files and observed external edits remain intact on failure. The
+next gate is worker/native import/save integration and saved-locale startup
+characterization; complete storage/platform acceptance remains pending.

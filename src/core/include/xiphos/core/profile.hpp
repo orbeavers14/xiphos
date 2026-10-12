@@ -13,4 +13,12 @@ struct StudyProfile {
 // No external resources, home/profile discovery, module validation or writes.
 StudyProfile parse_study_profile(const std::string &xml);
 StudyProfile read_study_profile(const std::string &path);
+// Explicitly update the five effective lexicon values; retain unrelated XML
+// nodes/attributes/comments outside updated values and shadowed duplicate keys.
+// XML formatting/encoding normalizes to UTF-8. Null/empty choices cannot round
+// trip through legacy defaults and reject. Saved locale is never modified.
+std::string serialize_lexicon_profile(const std::string &xml, const LexiconPreferences &preferences);
+// Verify a same-directory staged file before replacing the selected file.
+// Missing files start with an Xiphos root. No implicit profile/home writes.
+void save_lexicon_profile(const std::string &path, const LexiconPreferences &preferences);
 }
