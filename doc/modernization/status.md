@@ -76,7 +76,7 @@ No milestone has official acceptance yet.
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
 
-Current local suite: **47 checks**. The shared Unicode click-key utility reuses
+Current local suite: **48 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.
@@ -152,7 +152,7 @@ inclusion in this public fork.
 | Unicode click policy | Shared/actual legacy casing agrees over 4,448,324 comparisons in four locales; native main clicks normalize/record; raw dialog/hover semantics retained | Unicode database/version comparisons, real-module workflows and forced-locale preference import |
 | Native environment locale | 31/31 suite then 3/3 focused fixture/Turkish/invalid-locale checks; 32 checks now defined | Saved locale selection, translation resources and other native host startup |
 
-The full local suite now passes **47/47**. Complete main note/reference callbacks
+The full local suite now passes **48/48**. Complete main note/reference callbacks
 also agree over 96,792 frozen/actual ordered comparisons, including preference
 routing, heading setup and early guards. The legacy handler now avoids its
 early-return GString allocation without changing callback traces. This harness
@@ -241,6 +241,14 @@ dictionary URI hover, heading, aliases and representative modules remain
 acceptance gates; dictionary semantic callback wiring is not full keyed-module
 hover validation.
 
+A separate owned preview-profile reader now reads `misc/xrefsinverselist`
+without changing tabs/files or lexicon import. Seventy-seven checks compare the
+actual XML getter with the observed legacy bounded atoi/default rule, including
+missing/empty/duplicate nodes, signed/zero/non-numeric prefixes, UTF-16, file
+preservation and concurrent copied results. Out-of-int-range prefixes reject
+instead of inheriting integer overflow. This does not execute the complete
+legacy startup or implement preview XML saving/native restoration.
+
 Latest code milestones: [shared Unicode helper #54](https://github.com/orbeavers14/xiphos/pull/54),
 [legacy adoption #55](https://github.com/orbeavers14/xiphos/pull/55),
 [native click/origin policy #56](https://github.com/orbeavers14/xiphos/pull/56),
@@ -262,7 +270,9 @@ Latest code milestones: [shared Unicode helper #54](https://github.com/orbeavers
 [metadata-only notes #74](https://github.com/orbeavers14/xiphos/pull/74),
 [note source fallback #75](https://github.com/orbeavers14/xiphos/pull/75),
 [development guide cleanup #76](https://github.com/orbeavers14/xiphos/pull/76),
-[nested study hover #77](https://github.com/orbeavers14/xiphos/pull/77).
+[nested study hover #77](https://github.com/orbeavers14/xiphos/pull/77),
+[workflow guide cleanup #78](https://github.com/orbeavers14/xiphos/pull/78),
+[preview profile reader #79](https://github.com/orbeavers14/xiphos/pull/79).
 Scoped address/undefined and thread checks cover shared ownership/state changes;
 strict C++11/C++17/C11 checks cover the corresponding seams. These are not full
 SDK instrumentation or a leak audit. See each PR for its exact checks and scope.
@@ -308,6 +318,52 @@ run the entire matrix for each intermediate fix. Skipped draft jobs are not
 validation evidence; relevant checks must pass on the final reviewed revision
 before acceptance. Local macOS testing cannot establish Linux/Windows parity.
 
+
+## Default-branch integration checkpoint
+
+Merge reviewed, scoped implementation milestones incrementally; do not wait for
+all 38 groups or all three native releases. The fork's default branch is `master`
+(confirmed from connected repository metadata, 2026-10-11). Merging experimental
+opt-in functionality does not accept full functional/visual parity or authorize
+legacy retirement. Keep supported legacy entry points/builds operational.
+
+The current draft stack is too large and needs integration review before further
+broad feature expansion. Start with the earliest foundation rather than merging
+the newest branch with every dependency at once:
+
+| Initial order | Dependency/review scope |
+|---|---|
+| [#1 foundation](https://github.com/orbeavers14/xiphos/pull/1) | Targets master; review shared rendering/history, owned C/worker contracts, opt-in preview and build/dependency changes |
+| [#2 async UI](https://github.com/orbeavers14/xiphos/pull/2) and [#3 options](https://github.com/orbeavers14/xiphos/pull/3) | Both depend on #1; review separately after foundation acceptance |
+| [#4 catalog](https://github.com/orbeavers14/xiphos/pull/4) | Depends on #3 |
+| [#5 combined adapter](https://github.com/orbeavers14/xiphos/pull/5) | Base is #4's branch; local ancestry also includes #2's async branch |
+| [#6 defaults](https://github.com/orbeavers14/xiphos/pull/6), [#7 scoped settings](https://github.com/orbeavers14/xiphos/pull/7), [#8 controls](https://github.com/orbeavers14/xiphos/pull/8) | Continue in dependency order; reassess scope/checks at each reviewed revision |
+
+At this checkpoint #1–8 remain open drafts. #1's exact revision
+`19f44bf17fceaf410e84edabf47719c55fdc7dbb` was rebuilt from an isolated Git archive:
+its native build and 6/6 local tests passed; its rendering/history seam built with
+native core disabled and passed strict C++11 checks. These checks use the current
+local SDK/dependencies and deployment target 26, not the intended macOS 13 runtime.
+Its latest connected workflow records are skipped, its submitted-review list is
+empty, and combined commit statuses are absent. No hosted validation was started
+for this audit; earlier results or tests on newer branches do not certify this
+exact revision. Full legacy GTK build/runtime checks remain required.
+
+For each merge candidate:
+
+1. Inspect the exact current diff against its intended integrated base and resolve
+   outstanding findings. Recheck reviewed head/base if either changes.
+2. Run appropriate local regression checks. At the integration gate, reserve
+   hosted checks for relevant platform/build gaps that local tooling cannot cover;
+   skipped jobs are not passes. Legacy-touched changes need relevant legacy builds
+   and workflow evidence, without requiring every unrelated native feature first.
+3. Merge only after the specified scope and required checks are accepted. Keep
+   ancestry/dependent PR diffs coherent: retarget/reconcile dependencies after a
+   merge and check their new bases. Do not blindly squash/rebase the entire stack,
+   delete active branches or force-push dependent work.
+4. Record the accepted commit/PR, exact validation and remaining experimental
+   limitations. Update only parity rows actually validated. Follow the separate
+   retirement gates below before removing legacy implementation.
 
 ## Official sign-off and file retirement
 

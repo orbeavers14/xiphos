@@ -338,6 +338,17 @@ save completes without a snapshot. Releasing an accepted observer does not
 cancel file work; shutdown drains it. macOS selected-file controls now delegate
 through the typed adapter; full profile/restoration/platform parity is pending.
 
+Preview settings are read separately through
+`parse_study_preview_preferences`/`read_study_preview_preferences`, returning
+owned `StudyPreviewPreferences`. `misc/xrefsinverselist` uses actual getter
+traversal with the observed legacy null/default-true and bounded atoi-prefix
+semantics; zero/non-numeric prefixes disable, nonzero signed prefixes enable.
+Out-of-int-range prefixes reject safely. The same bounded XML/file reader is
+reused. This API does not apply settings to tabs, save them or modify the
+lexicon-only importer. `core_preview_profile` checks 77 compatibility, failure,
+encoding, file-preservation and independent-result cases; full startup/native
+restoration remains pending.
+
 ## Main note presentation policy
 
 `xiphos_core_note_presentation` in CoreOptions preserves main-reader tag
