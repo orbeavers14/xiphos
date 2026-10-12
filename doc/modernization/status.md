@@ -250,7 +250,8 @@ Latest code milestones: [shared Unicode helper #54](https://github.com/orbeavers
 [typed hover adapter #71](https://github.com/orbeavers14/xiphos/pull/71),
 [native study hover #72](https://github.com/orbeavers14/xiphos/pull/72),
 [reference targets #73](https://github.com/orbeavers14/xiphos/pull/73),
-[metadata-only notes #74](https://github.com/orbeavers14/xiphos/pull/74).
+[metadata-only notes #74](https://github.com/orbeavers14/xiphos/pull/74),
+[note source fallback #75](https://github.com/orbeavers14/xiphos/pull/75).
 Scoped address/undefined and thread checks cover shared ownership/state changes;
 strict C++11/C++17/C11 checks cover the corresponding seams. These are not full
 SDK instrumentation or a leak audit. See each PR for its exact checks and scope.
