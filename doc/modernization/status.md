@@ -1,4 +1,29 @@
 # Modernization status and acceptance
+## Local-only integration checkpoint — 2026-10-11
+
+The repository owner authorized checks and merges without hosted build credits.
+PR #1 foundation and PR #2 asynchronous macOS integration are merged into master.
+PR #3 shared options is integrated with their combined source in this revision;
+the build-file conflict was resolved by retaining all asynchronous UI/test targets
+and linking/depending on CoreOptions in each Swift executable.
+
+Exact isolated checks passed: #1 native build/tests 6/6 and native-disabled C++11
+seams; #2 build/tests 8/8; #3 standalone 8/8 and combined native build/tests 10/10,
+plus native-disabled rendering/history/options seams and strict C++11 options.
+Local deployment target is 26 with the installed SWORD SDK, not a validation of
+the intended macOS 13 minimum. Full GTK app/runtime, Windows/Linux, ICU-enabled
+SDK and representative visual/module/profile checks remain deferred.
+
+Both GitHub build workflows (builds and native-core) are disabled manually and
+remain paused until hosted checks are requested. No hosted build was started
+for this integration. This accepts experimental code integration only: 0/38
+feature groups have full native parity and no legacy files may be retired on
+this evidence. Later locally checked work remains in dependent draft branches;
+their 49-test suite is distinct from master's combined 10-test suite.
+
+The remaining document contains scoped implementation/history evidence; hosted
+checks mentioned there describe the validation plan while workflows are paused.
+
 
 Updated 2026-10-10. Goal: preserve Xiphos functionality, visual composition,
 data and workflows through one shared C++ application core and separate
