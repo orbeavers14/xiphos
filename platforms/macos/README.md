@@ -93,3 +93,11 @@ installation and BibleSync are pending. JavaScript and network content are
 disabled in this development pane. The app is unsigned, unnotarized and linked
 against the installed SDK; it is not a redistributable standalone package.
 See [parity ledger](../../doc/modernization/parity-matrix.md).
+
+The async adapter also exposes copied module option eligibility and typed core
+tab filter settings, configured chapter reads and history-free refreshes.
+`swift_option_adapter` exercises these bindings against the isolated original
+OSIS fixture, prepared automatically by CTest. These bindings are not yet
+connected to native option controls or preference persistence. Declared module
+features do not guarantee effective SDK/markup support; headings eligibility
+and global transliteration availability are separate values.

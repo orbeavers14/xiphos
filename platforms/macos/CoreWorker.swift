@@ -70,7 +70,10 @@ actor CoreWorker {
             InstalledModule(id: String(cString: xc_catalog_id(catalog, index)!),
                 description: String(cString: xc_catalog_description(catalog, index)!),
                 type: String(cString: xc_catalog_type(catalog, index)!),
-                language: String(cString: xc_catalog_language(catalog, index)!))
+                language: String(cString: xc_catalog_language(catalog, index)!),
+                options: ModuleOptionInfo(declared: EngineOptionFlags(rawValue: xc_catalog_declared_engine_flags(catalog, index)),
+                    hasHeadings: xc_catalog_has_headings(catalog, index) != 0,
+                    transliterationAvailable: xc_catalog_transliteration_available(catalog, index) != 0))
         }
     }
     func createTab() async throws -> UInt64 {
@@ -91,6 +94,38 @@ actor CoreWorker {
         var request: OpaquePointer?
         let status = xc_worker_clear_history(try worker(), tab, &request)
         xc_request_release(try await wait(status, request))
+    }
+    func setEngineOptions(tab: UInt64, options: EngineOptionFlags) async throws {
+        var request: OpaquePointer?
+        let status = xc_worker_set_engine_options(try worker(), tab, options.rawValue, &request)
+        xc_request_release(try await wait(status, request))
+    }
+    func clearEngineOptions(tab: UInt64) async throws {
+        var request: OpaquePointer?
+        let status = xc_worker_clear_engine_options(try worker(), tab, &request)
+        xc_request_release(try await wait(status, request))
+    }
+    func readTabEntry(tab: UInt64, module: String, reference: String) async throws -> RenderedEntry {
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { id in
+            reference.withCString { xc_worker_read_tab_entry(handle, tab, id, $0, &request) }
+        }
+        return try await entry(status, request)
+    }
+    func readTabChapter(tab: UInt64, module: String, reference: String, verseNumbers: Bool, highlightSelected: Bool) async throws -> RenderedChapter {
+        var request: OpaquePointer?
+        let handle = try worker()
+        let flags = (verseNumbers ? UInt32(XC_CHAPTER_VERSE_NUMBERS) : 0) |
+                    (highlightSelected ? UInt32(XC_CHAPTER_HIGHLIGHT_SELECTED) : 0)
+        let status = module.withCString { id in
+            reference.withCString { xc_worker_read_tab_chapter(handle, tab, id, $0, flags, &request) }
+        }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_chapter(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_chapter_release(result) }
+        return CoreValues.chapter(result)
     }
     func history(_ tab: UInt64) async throws -> CoreHistoryState {
         var request: OpaquePointer?

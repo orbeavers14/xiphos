@@ -174,6 +174,7 @@ different initial values. The native EngineManager remains the reader's single
 owned SWMgr; no second engine is introduced. The nonblocking C bridge exposes named flags, tab set/clear, configured tab
 chapters and history-free entry refreshes. Copied module catalogs now expose exact legacy filter-declaration eligibility,
 separate headings metadata and global SDK transliteration availability. Those
-snapshots do not imply filter/markup support or enabled preferences. Swift
-controls and full menu composition are pending. Native frontends must not reproduce this
+snapshots do not imply filter/markup support or enabled preferences. Swift copies these values through the async adapter and wraps tab settings and
+history-free configured reads. Native controls and full menu composition are
+pending. Native frontends must not reproduce this
 policy or mutate engine filter state themselves.

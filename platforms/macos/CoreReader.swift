@@ -2,11 +2,43 @@
 import Foundation
 import XiphosCore
 
+// Typed C ABI values only; eligibility and render policy remain in C++.
+struct EngineOptionFlags: OptionSet, Sendable {
+    let rawValue: UInt32
+    static let strongs = Self(rawValue: UInt32(XC_ENGINE_STRONGS.rawValue))
+    static let morphology = Self(rawValue: UInt32(XC_ENGINE_MORPHOLOGY.rawValue))
+    static let footnotes = Self(rawValue: UInt32(XC_ENGINE_FOOTNOTES.rawValue))
+    static let greekAccents = Self(rawValue: UInt32(XC_ENGINE_GREEK_ACCENTS.rawValue))
+    static let lemmas = Self(rawValue: UInt32(XC_ENGINE_LEMMAS.rawValue))
+    static let crossReferences = Self(rawValue: UInt32(XC_ENGINE_CROSS_REFERENCES.rawValue))
+    static let hebrewVowels = Self(rawValue: UInt32(XC_ENGINE_HEBREW_VOWELS.rawValue))
+    static let hebrewCantillation = Self(rawValue: UInt32(XC_ENGINE_HEBREW_CANTILLATION.rawValue))
+    static let italicHeadings = Self(rawValue: UInt32(XC_ENGINE_ITALIC_HEADINGS.rawValue))
+    static let wordsInRed = Self(rawValue: UInt32(XC_ENGINE_WORDS_IN_RED.rawValue))
+    static let transliteratedForms = Self(rawValue: UInt32(XC_ENGINE_TRANSLITERATED_FORMS.rawValue))
+    static let enumerations = Self(rawValue: UInt32(XC_ENGINE_ENUMERATIONS.rawValue))
+    static let glosses = Self(rawValue: UInt32(XC_ENGINE_GLOSSES.rawValue))
+    static let morphemeSegmentation = Self(rawValue: UInt32(XC_ENGINE_MORPHEME_SEGMENTATION.rawValue))
+    static let transliteration = Self(rawValue: UInt32(XC_ENGINE_TRANSLITERATION.rawValue))
+    static let variantsPrimary = Self(rawValue: UInt32(XC_ENGINE_VARIANTS_PRIMARY.rawValue))
+    static let variantsSecondary = Self(rawValue: UInt32(XC_ENGINE_VARIANTS_SECONDARY.rawValue))
+    static let variantsAll = Self(rawValue: UInt32(XC_ENGINE_VARIANTS_ALL.rawValue))
+}
+struct ModuleOptionInfo: Sendable {
+    let declared: EngineOptionFlags
+    let hasHeadings: Bool
+    let transliterationAvailable: Bool
+    static let unknown = Self(declared: [], hasHeadings: false, transliterationAvailable: false)
+}
 struct InstalledModule: Identifiable, Sendable {
     let id: String
     let description: String
     let type: String
     let language: String
+    let options: ModuleOptionInfo
+    init(id: String, description: String, type: String, language: String, options: ModuleOptionInfo = .unknown) {
+        self.id = id; self.description = description; self.type = type; self.language = language; self.options = options
+    }
 }
 struct RenderedEntry: Sendable {
     let reference: String
