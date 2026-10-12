@@ -66,12 +66,14 @@ int main(int argc, char **argv) {
     on.words_in_red = on.strongs = on.morphs = on.footnotes = true;
     std::string expected_off, expected_on, default_text;
     std::array<std::string, 16> expected;
+    bool expected_transliteration = false;
     {
       // Only one active engine at a time: unrelated SWMgr concurrency is unproven.
       EngineManager baseline(path.c_str(), true, new sword::MarkupFilterMgr(sword::FMT_XHTML), false, false);
       auto *module = baseline.getModule("OptionTest");
       check(module != nullptr, "load option fixture");
       const auto initial = values(baseline);
+      expected_transliteration = initial.count("Transliteration") != 0;
       check(initial.count("Words of Christ in Red") && initial.count("Strong's Numbers") &&
             initial.count("Morphological Tags") && initial.count("Footnotes"), "fixture registers all filters");
       default_text = render_entry(*module, "John 3:16");
@@ -152,6 +154,14 @@ int main(int argc, char **argv) {
       xc_worker *worker = nullptr;
       check(xc_worker_open(path.c_str(), &worker) == XC_OK, "C option worker");
       xc_request *request = nullptr;
+      check(xc_worker_modules(worker, &request) == XC_OK && wait(request) == XC_OK, "C module features request");
+      auto *catalog = xc_request_take_catalog(request);
+      check(catalog && xc_catalog_declared_engine_flags(catalog, 0) ==
+            (XC_ENGINE_WORDS_IN_RED | XC_ENGINE_STRONGS | XC_ENGINE_MORPHOLOGY | XC_ENGINE_FOOTNOTES), "C OSIS module feature mask");
+      check((xc_catalog_transliteration_available(catalog, 0) != 0) == expected_transliteration, "C SDK transliteration capability matches manager");
+      check(!xc_catalog_has_headings(catalog, 0) && !xc_catalog_declared_engine_flags(catalog, 100) &&
+            !xc_catalog_transliteration_available(nullptr, 0), "C feature bounds/missing headings");
+      xc_request_release(request);
       check(xc_worker_create_tab(worker, &request) == XC_OK && wait(request) == XC_OK, "C first tab");
       const auto first = xc_request_tab(request); xc_request_release(request);
       check(xc_worker_create_tab(worker, &request) == XC_OK && wait(request) == XC_OK, "C second tab");
@@ -209,6 +219,8 @@ int main(int argc, char **argv) {
       check(xc_worker_set_engine_options(worker, first, 0, &request) == XC_OK && wait(request) == XC_INVALID_ARGUMENT, "C closed tab failure at poll");
       xc_request_release(request);
       xc_worker_close(worker);
+      check(xc_catalog_declared_engine_flags(catalog, 0) & XC_ENGINE_STRONGS, "C feature snapshot survives worker close");
+      xc_catalog_release(catalog);
       check(xc_chapter_verse_html(chapter, 15) == expected_on, "C chapter survives worker close");
       xc_chapter_release(chapter);
     }

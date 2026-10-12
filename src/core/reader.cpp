@@ -30,11 +30,14 @@ Reader::Reader(const std::string &root) : impl_(std::make_unique<Impl>()) {
   impl_->manager = std::make_unique<EngineManager>(
     root.empty() ? nullptr : root.c_str(), true,
     new sword::MarkupFilterMgr(sword::FMT_XHTML), false, root.empty());
+  bool transliteration_available = false;
+  for (const auto &name : impl_->manager->getGlobalOptions())
+    if (name == "Transliteration") transliteration_available = true;
   for (const auto &item : impl_->manager->Modules) {
     auto &m = *item.second;
     const char *language = m.getConfigEntry("Lang");
     impl_->modules.push_back({m.getName(), m.getDescription(), m.getType(),
-                             language ? language : ""});
+                             language ? language : "", module_options(m), transliteration_available});
   }
 }
 Reader::~Reader() = default;

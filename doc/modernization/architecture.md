@@ -172,6 +172,8 @@ chapter reads execute on the engine thread. Reader rendering scopes snapshot
 and restore individual filters, because same-name SWORD filters can have
 different initial values. The native EngineManager remains the reader's single
 owned SWMgr; no second engine is introduced. The nonblocking C bridge exposes named flags, tab set/clear, configured tab
-chapters and history-free entry refreshes. Swift controls and module capability
-discovery are pending. Native frontends must not reproduce this
+chapters and history-free entry refreshes. Copied module catalogs now expose exact legacy filter-declaration eligibility,
+separate headings metadata and global SDK transliteration availability. Those
+snapshots do not imply filter/markup support or enabled preferences. Swift
+controls and full menu composition are pending. Native frontends must not reproduce this
 policy or mutate engine filter state themselves.

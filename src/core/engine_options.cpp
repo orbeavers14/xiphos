@@ -3,9 +3,34 @@
 #include "xiphos/core/engine_options.hpp"
 #include "xiphos/core/engine_manager.hpp"
 #include <swoptfilter.h>
+#include <swmodule.h>
 #include <set>
 #include <stdexcept>
 namespace xiphos { namespace core {
+ModuleOptions module_options(const sword::SWModule &module) {
+  const auto &config = module.getConfig();
+  auto has = [&](const char *filter) { return config.has("GlobalOptionFilter", filter); };
+  ModuleOptions result;
+  auto &o = result.declared;
+  o.words_in_red = has("GBFRedLetterWords") || has("OSISRedLetterWords");
+  o.strongs = has("GBFStrongs") || has("ThMLStrongs") || has("OSISStrongs");
+  o.morphs = has("GBFMorph") || has("ThMLMorph") || has("OSISMorph");
+  o.footnotes = has("GBFFootnotes") || has("ThMLFootnotes") || has("OSISFootnotes");
+  o.greekaccents = has("UTF8GreekAccents");
+  o.lemmas = has("ThMLLemma") || has("OSISLemma");
+  o.scripturerefs = has("ThMLScripref") || has("OSISScripref");
+  o.hebrewpoints = has("UTF8HebrewPoints");
+  o.hebrewcant = has("UTF8Cantillation");
+  result.headings = has("ThMLHeadings") || has("OSISHeadings");
+  o.italic_headings = result.headings;
+  const bool variants = has("ThMLVariants") || has("OSISVariants");
+  o.variants_primary = o.variants_secondary = o.variants_all = variants;
+  o.xlit = has("OSISXlit");
+  o.enumerated = has("OSISEnum");
+  o.glosses = has("OSISGlosses") || has("OSISRuby");
+  o.morphseg = has("OSISMorphSegmentation");
+  return result;
+}
 void apply_engine_options(sword::SWMgr &manager, const EngineOptions &options) {
   manager.setGlobalOption("Strong's Numbers", options.strongs ? "On" : "Off");
   manager.setGlobalOption("Morphological Tags", options.morphs ? "On" : "Off");

@@ -190,6 +190,37 @@ const char *xc_catalog_id(const xc_catalog *c, size_t i) { auto m = catalog_at(c
 const char *xc_catalog_description(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m ? m->description.c_str() : nullptr; }
 const char *xc_catalog_type(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m ? m->type.c_str() : nullptr; }
 const char *xc_catalog_language(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m ? m->language.c_str() : nullptr; }
+unsigned xc_catalog_declared_engine_flags(const xc_catalog *c, size_t i) {
+  const auto *module = catalog_at(c, i);
+  if (!module) return 0;
+  const auto &o = module->options.declared;
+  unsigned flags = 0;
+  if (o.strongs) flags |= XC_ENGINE_STRONGS;
+  if (o.morphs) flags |= XC_ENGINE_MORPHOLOGY;
+  if (o.footnotes) flags |= XC_ENGINE_FOOTNOTES;
+  if (o.greekaccents) flags |= XC_ENGINE_GREEK_ACCENTS;
+  if (o.lemmas) flags |= XC_ENGINE_LEMMAS;
+  if (o.scripturerefs) flags |= XC_ENGINE_CROSS_REFERENCES;
+  if (o.hebrewpoints) flags |= XC_ENGINE_HEBREW_VOWELS;
+  if (o.hebrewcant) flags |= XC_ENGINE_HEBREW_CANTILLATION;
+  if (o.italic_headings) flags |= XC_ENGINE_ITALIC_HEADINGS;
+  if (o.words_in_red) flags |= XC_ENGINE_WORDS_IN_RED;
+  if (o.xlit) flags |= XC_ENGINE_TRANSLITERATED_FORMS;
+  if (o.enumerated) flags |= XC_ENGINE_ENUMERATIONS;
+  if (o.glosses) flags |= XC_ENGINE_GLOSSES;
+  if (o.morphseg) flags |= XC_ENGINE_MORPHEME_SEGMENTATION;
+  if (o.transliteration) flags |= XC_ENGINE_TRANSLITERATION;
+  if (o.variants_primary) flags |= XC_ENGINE_VARIANTS_PRIMARY;
+  if (o.variants_secondary) flags |= XC_ENGINE_VARIANTS_SECONDARY;
+  if (o.variants_all) flags |= XC_ENGINE_VARIANTS_ALL;
+  return flags;
+}
+int xc_catalog_has_headings(const xc_catalog *c, size_t i) {
+  const auto *module = catalog_at(c, i); return module && module->options.headings;
+}
+int xc_catalog_transliteration_available(const xc_catalog *c, size_t i) {
+  const auto *module = catalog_at(c, i); return module && module->transliteration_available;
+}
 void xc_catalog_release(xc_catalog *c) { delete c; }
 int xc_history_can_back(const xc_history *h) { return h && h->value.can_back; }
 int xc_history_can_forward(const xc_history *h) { return h && h->value.can_forward; }

@@ -9,7 +9,11 @@
 #include <string>
 #include <vector>
 namespace xiphos::core {
-struct Module { std::string id, description, type, language; };
+struct Module {
+  std::string id, description, type, language;
+  ModuleOptions options;
+  bool transliteration_available = false;
+};
 
 
 class Reader {
