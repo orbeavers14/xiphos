@@ -2,8 +2,9 @@
 
 Baseline: `orbeavers14/xiphos`, `master` at
 `c9976a873bf77630af67ec8df84642225e33f6b3` (2026-10-10 inspection).
-GitHub metadata confirms parent `crosswire/xiphos`. Work is on a new fork branch;
-existing files and user data are preserved. This is an incremental migration,
+GitHub metadata confirms parent `crosswire/xiphos`. Initial slices used fork
+branches; the owner now authorizes locally checked commits directly to the fork's
+`master`. Existing files and user data are preserved. This is an incremental migration,
 not a claim that native Xiphos has full parity.
 
 ## Build and dependency audit
@@ -35,6 +36,29 @@ Local SDK: AppleClang 21, SWORD 1.9.0.3916; its static sword.pc omits zlib,
 bzip2 and lzma link requirements, so explicit extra libraries are needed.
 That SDK was built for macOS 26.0; local preview validation uses that target,
 not evidence of compatibility on macOS 13.
+
+### Development hosts and platform acceptance
+
+Three target operating systems do not require three physical computers. A Windows
+host can develop WinUI 3 directly and build/test Linux code in WSL2 or a Linux VM.
+[Microsoft documents Linux GUI support in WSL2](https://learn.microsoft.com/en-us/windows/wsl/tutorials/gui-apps)
+on Windows 10 build 19044 or later and Windows 11, including X11 and Wayland apps.
+WSLg can support iterative GTK4 interaction checks, but it does not provide a full
+Linux desktop. Distribution packaging, desktop integration and release acceptance
+still need a representative Linux desktop, which can run in a VM.
+
+The SwiftUI/AppKit frontend requires access to a Mac for native builds and testing;
+[Xcode's supported host systems are macOS](https://developer.apple.com/xcode/system-requirements).
+A Mac plus a Windows host with Linux virtualization can therefore cover the three
+development targets. Shared core changes should be checked with each target's
+compiler and dependencies before claiming cross-platform acceptance. Separate
+platform branches are optional; frontend directories and the shared core remain
+part of the same repository and implementation.
+
+This is a supported development plan, not evidence that Windows or Linux checks
+have run. The current connected environment is macOS; WinUI 3 and GTK4 runtime
+validation remain pending. Routine builds stay local and hosted Actions remain
+paused to conserve the owner's GitHub allowance.
 
 ## License and attribution audit
 
