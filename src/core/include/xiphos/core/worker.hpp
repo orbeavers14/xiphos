@@ -31,6 +31,10 @@ public:
   std::future<std::vector<Module>> modules();
   std::future<StudyTab> create_tab();
   std::future<void> close_tab(StudyTab tab);
+  std::future<void> set_lexicon_preferences(StudyTab tab, LexiconPreferences preferences);
+  std::future<std::optional<LexiconPreferences>> lexicon_preferences(StudyTab tab);
+  std::future<LexicalEntry> read_lexical(StudyTab tab, std::string module, std::string reference,
+                                      std::string uri, int origin);
   std::future<DictionaryEntry> read_dictionary(StudyTab tab, std::string module, std::string key);
   std::future<ReferenceList> read_reference_list(StudyTab tab, std::string module, std::string expression, std::string context);
   // showRef previews use the supplied source reference and never visit history.

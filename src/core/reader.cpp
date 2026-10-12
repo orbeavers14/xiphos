@@ -102,6 +102,39 @@ StudyNote Reader::note_impl(const std::string &id, const std::string &reference,
   if (options) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *options);
   return render_study_note(module, reference, identifier);
 }
+std::string Reader::select_lexicon(const LexicalLink &command, const std::string &source_reference,
+                                  int origin, const LexiconPreferences &preferences) {
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  if (origin != XIPHOS_LEXICON_MAIN && origin != XIPHOS_LEXICON_DIALOG)
+    throw std::invalid_argument("Invalid lexicon origin");
+  if (command.kind != LexicalLinkKind::strongs && command.kind != LexicalLinkKind::morphology)
+    throw std::invalid_argument("Invalid lexical kind");
+  if (command.type.find('\0') != std::string::npos || command.module.find('\0') != std::string::npos ||
+      source_reference.find('\0') != std::string::npos)
+    throw std::invalid_argument("Lexical source context contains NUL");
+  const auto borrowed = borrow_lexicon_preferences(preferences);
+  struct Context { Impl *impl; const LexicalLink *command; const std::string *reference; };
+  Context source{impl_.get(), &command, &source_reference};
+  const XiphosLexiconContext context{&source,
+    [](void *user, const char *id) -> int {
+      return static_cast<Context *>(user)->impl->manager->getModule(id) != nullptr;
+    },
+    [](void *user) -> int {
+      auto &source = *static_cast<Context *>(user);
+      auto &module = source.impl->verse_module(source.command->module, *source.reference);
+      sword::VerseKey key(*static_cast<sword::VerseKey *>(module.getKey()));
+      key.setAutoNormalize(true);
+      key.setText(source.reference->c_str());
+      if (key.getError() || key.getChapter() < 1 || key.getVerse() < 1)
+        throw std::invalid_argument("SWORD could not resolve lexical source context");
+      return key.getTestament();
+    }};
+  const auto *selected = xiphos_core_select_lexicon(origin,
+    command.kind == LexicalLinkKind::strongs ? XIPHOS_LEXICON_STRONGS : XIPHOS_LEXICON_MORPHOLOGY,
+    command.type.c_str(), &borrowed, &context);
+  if (!selected || !*selected) throw std::invalid_argument("No lexicon selected for this command");
+  return selected;
+}
 DictionaryEntry Reader::read_dictionary(const std::string &module, const std::string &key) {
   return dictionary_impl(module, key, nullptr);
 }

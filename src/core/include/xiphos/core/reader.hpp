@@ -6,6 +6,7 @@
 #include "content.hpp"
 #include "link.hpp"
 #include "navigation.hpp"
+#include "lexical.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -36,6 +37,9 @@ public:
                        const std::string &identifier);
   StudyNote study_note(const std::string &module, const std::string &reference,
                        const std::string &identifier, const EngineOptions &options);
+  // Selection uses a cloned source key; returns an owned selected module name.
+  std::string select_lexicon(const LexicalLink &command, const std::string &source_reference,
+                            int origin, const LexiconPreferences &preferences);
   // Explicit dictionary module/key. SWORD owns matching/normalization semantics.
   DictionaryEntry read_dictionary(const std::string &module, const std::string &key);
   DictionaryEntry read_dictionary(const std::string &module, const std::string &key, const EngineOptions &options);

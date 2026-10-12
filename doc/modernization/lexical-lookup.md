@@ -124,3 +124,18 @@ and checks borrowed-pointer identity. The 24-test local suite, final focused
 checks, strict C++11/C11 checks and focused address/undefined instrumentation
 pass. Legacy C++11 seam libraries build. Full GTK/UI validation is still not
 available here; native preference/dispatch integration is pending.
+
+
+## Native core reader/session seam added 2026-10-11
+
+The worker now accepts copied per-tab LexiconPreferences and explicit lexical
+preview requests. The session uses the same selection helper and dictionary
+renderer. Caller reference is authoritative; query passage remains metadata.
+Only branches that require Greek testament validate/clone a source VerseKey;
+Strong's and Hebrew-only paths do not acquire an unrelated Bible dependency.
+Native source selection avoids the legacy cast/mutation through a cloned key.
+Original RawLD/Bible fixtures verify actual OT/NT selection, retained relative
+NT key context, wrong/missing sources, independent tab preferences and rendering
+settings. This is a preview service with no Bible-history visits. It does not
+implement click uppercasing/dictionary history, hover/pinning or restore/import
+lexicon preferences; those presentation/storage contracts remain pending.

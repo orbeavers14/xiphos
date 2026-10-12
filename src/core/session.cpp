@@ -3,6 +3,22 @@
 #include <stdexcept>
 #include "xiphos/core/preferences.hpp"
 namespace xiphos::core {
+void StudySession::set_lexicon_preferences(const LexiconPreferences &preferences) {
+  (void)borrow_lexicon_preferences(preferences);
+  auto replacement = std::make_optional(preferences);
+  lexicons_.swap(replacement);
+}
+LexicalEntry StudySession::read_lexical(const std::string &module, const std::string &reference,
+                                     const std::string &uri, int origin) {
+  if (!lexicons_) throw std::invalid_argument("Configure lexicons before lexical lookup");
+  auto command = lexical_link(uri, module);
+  // Legacy morphology uses the caller's committed source context; a query
+  // passage is retained as metadata rather than replacing that context.
+  const auto &context = reference;
+  const auto selected = reader_.select_lexicon(command, context, origin, *lexicons_);
+  auto entry = read_dictionary(selected, command.value);
+  return {std::move(command), context, std::move(entry)};
+}
 DictionaryEntry StudySession::read_dictionary(const std::string &module, const std::string &key) {
   const auto options = module_engine_options(module);
   return options ? reader_.read_dictionary(module, key, *options) : reader_.read_dictionary(module, key);
