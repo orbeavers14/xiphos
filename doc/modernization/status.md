@@ -60,7 +60,10 @@ study-pane composition/commentary workflow before broader native feature claims.
 [Word block characterization](word-block-workflows.md) compares complete frozen/
 current functions over 1,457 valid cases, including original Greek/Hebrew SDK
 output. It records inherited input-buffer mutation and recursive static-tag defects;
-owned/bounded native block rendering is still pending. Focused normal/address/
+owned/bounded native block rendering is still pending. Shared owned lexical CSS
+now matches frozen selection and three actual legacy call sites over 768 cases,
+plus 2,048 concurrent selections. Strict C++11/native-disabled builds pass. Native
+CSS/parser integration and pixel acceptance remain pending. Focused normal/address/
 undefined/thread checks pass, with sequential scope and SDK instrumentation limits.
 
 The [image/font cleanup slice](html-cleanup-workflows.md) shares owned C++11
@@ -73,7 +76,7 @@ explicit save/import and temporary-preview menu states/pane composition are chec
 
 Evidence includes 27,648 primitive byte/diagnostic comparisons, 200 complete
 initializer profile combinations, 60,750 complete cleanup combinations, 36
-numbering cases and 144 cases across four local locales. Full local suite: 64/64;
+numbering cases and 144 cases across four local locales. Full local suite: 65/65;
 focused address/undefined and thread snapshot/adapter checks: 2/2 each. C++11 and
 native-disabled helper builds pass. Image resources/link handling, installed-font
 appearance, other pane cleanup, remaining transformations and full GTK/platform/
@@ -99,11 +102,11 @@ classification and default/Off decoding. A combined single-decode import stages
 engine and presentation settings together; verified save preserves unrelated,
 personal and uninstalled settings. Native adapters apply these defaults and
 restore each module setting; explicit import/save round trips preserve drafts
-and history. The full suite passes **64/64**; focused address/undefined and thread
+and history. The full suite passes **65/65**; focused address/undefined and thread
 adapter checks pass **1/1** each, with the external
 SDK instrumentation limits described below. Initial core commentary heading
 snapshots, typed C/Swift adapters and native verse/chapter controls use shared
-Headings import/save and pass 64/64 local checks, with focused address/undefined
+Headings import/save and pass 65/65 local checks, with focused address/undefined
 2/2 and thread 2/2. Draft/history/window isolation and a generated-fixture GUI
 check pass. Complete heading
 transformations, detached windows,
@@ -128,7 +131,7 @@ the fully accepted parity count remains zero.
   dictionary key stepping, dictionary history and Unicode click casing to shared
   C++ helpers. The native host initializes locale before starting the worker.
 
-Current local suite: **64 checks**. The shared Unicode click-key utility reuses
+Current local suite: **65 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
 four local locales** including the actual adapted legacy casing block. Main
 native click commands use the same helper; hover/dialog reads keep raw keys.

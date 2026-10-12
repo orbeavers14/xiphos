@@ -23,6 +23,7 @@
 #endif
 
 #include "xiphos/core/html_cleanup.hpp"
+#include "xiphos/core/lexical_style.hpp"
 #include <glib.h>
 #include <treekeyidx.h>
 
@@ -110,24 +111,8 @@ h3 { font-style: %s } --> \
 // BOTH is when the user wants to see both types of markup.
 // ONE is when he wants one or the other, so we can use a single
 // specification which overlays both on top of one another.
-#define CSS_BLOCK_BOTH                                                                            \
-	" *        { line-height: 3.5em; }"                                                       \
-	" .word    { position: relative; top:  0.0em; left: 0; }"                                 \
-	" .strongs { position: absolute; top:  0.4em; left: 0; white-space: nowrap; z-index: 2 }" \
-	" .morph   { position: absolute; top:  0.9em; left: 0; white-space: nowrap; z-index: 1 }" \
-	" *[dir=rtl] .word { padding-left: 0.8em; }"                               \
-	" *[dir=rtl] .strongs { top: 0.4em; left: auto; right: 0; }"                             \
-	" *[dir=rtl] .morph { left: auto; right: 0; }"
-#define CSS_BLOCK_ONE                                                                  \
-	" *        { line-height: 2.7em; }"                                            \
-	" .word    { position: relative; top:  0.0em; left: 0; }"                      \
-	" .strongs { position: absolute; top:  0.4em; left: 0; white-space: nowrap; }" \
-	" .morph   { position: absolute; top:  0.4em; left: 0; white-space: nowrap; }" \
-	" *[dir=rtl] .word { padding-left: 0.8em; }"                               \
-	" *[dir=rtl] .strongs { left: auto; right: 0; }"                               \
-	" *[dir=rtl] .morph { left: auto; right: 0; }"
+// Annotation layout and double-spacing selection share the core CSS helper.
 
-#define DOUBLE_SPACE " * { line-height: 2em ! important; }"
 
 #define MAX_COLUMNS	8
 #define CURRENT_COLUMNS	(((mf->columns_value >= 1) && (mf->columns_value <= MAX_COLUMNS)) ? mf->columns_value : settings.display_columns)
@@ -362,7 +347,7 @@ const gchar *get_css_references(SWModule &module)
 //
 // utility function for block_render() below.
 // having a word + annotation in hand, stuff them into the buffer.
-// span class names are from CSS_BLOCK macros.
+// Span class names match the shared lexical block style.
 // we garbage-collect here so block_render doesn't have to.
 //
 
@@ -1035,13 +1020,8 @@ GTKEntryDisp::display(SWModule &imodule)
 			      settings.display_columns,
 			      JUSTIFY_SELECT, JUSTIFY_SELECT,
 			      settings.link_color,
-			      (strongs_and_morph // both
-				   ? CSS_BLOCK_BOTH
-				   : (strongs_or_morph // either
-					  ? CSS_BLOCK_ONE
-					  : (ops->doublespace // neither
-						 ? DOUBLE_SPACE
-						 : ""))),
+			      xiphos::core::lexical_block_style(
+			          ops->strongs, ops->lemmas, ops->morphs, ops->doublespace).c_str(),
 			      imodule.getRenderHeader(),
 			      ITALIC_SELECT,
 			      (mod_column_count ? mod_column_count : ""),
@@ -1830,13 +1810,8 @@ GTKChapDisp::display(SWModule &imodule)
 			      JUSTIFY_SELECT, JUSTIFY_SELECT,
 			      settings.link_color,
 			      // strongs & morph specs win over dblspc.
-			      (strongs_and_morph // both
-				   ? CSS_BLOCK_BOTH
-				   : (strongs_or_morph // either
-					  ? CSS_BLOCK_ONE
-					  : (ops->doublespace // neither
-						 ? DOUBLE_SPACE
-						 : ""))),
+			      xiphos::core::lexical_block_style(
+			          ops->strongs, ops->lemmas, ops->morphs, ops->doublespace).c_str(),
 			      imodule.getRenderHeader(),
 			      ITALIC_SELECT,
 			      (mod_column_count ? mod_column_count : ""),
@@ -2165,13 +2140,8 @@ DialogChapDisp::display(SWModule &imodule)
 			      settings.display_columns,
 			      JUSTIFY_SELECT, JUSTIFY_SELECT,
 			      settings.link_color,
-			      (strongs_and_morph
-				   ? CSS_BLOCK_BOTH
-				   : (strongs_or_morph
-					  ? CSS_BLOCK_ONE
-					  : (ops->doublespace
-						 ? DOUBLE_SPACE
-						 : ""))),
+			      xiphos::core::lexical_block_style(
+			          ops->strongs, ops->lemmas, ops->morphs, ops->doublespace).c_str(),
 			      imodule.getRenderHeader(),
 			      (mod_column_count ? mod_column_count : ""),
 			      ITALIC_SELECT,

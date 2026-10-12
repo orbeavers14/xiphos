@@ -520,5 +520,8 @@ rendering remain pending. See
 1,457 valid cases, with original Greek/Hebrew SDK data. It preserves displayed-code
 versus hyperlink distinctions and records input mutation/static recursion defects.
 This is sequential source characterization, not a safe concurrent/native block
-service. Owned bounded parsing, CSS selection, integration and visual acceptance
+service. `lexical_block_style` provides owned C++11 CSS and replaces selection in
+three legacy renderer call sites. Frozen/current/helper comparisons cover 768
+call-site cases plus 2,048 concurrent selections; strict C++11/native-disabled
+builds pass. Owned bounded parsing, native integration and visual acceptance
 remain pending. See [scope](../../doc/modernization/word-block-workflows.md).

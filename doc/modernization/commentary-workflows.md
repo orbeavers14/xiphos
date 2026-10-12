@@ -103,7 +103,7 @@ remain visible; toggles preserve body text, draft input and history. OSIS/ThML
 fixtures include multiple/linked headings and source-context reference previews. Complete
 heading transformations and corpus/visual parity remain pending.
 
-The full local suite passes **64/64**. Core/adapter/model tests include:
+The full local suite passes **65/65**. Core/adapter/model tests include:
 
 | Test | Evidence |
 |---|---|

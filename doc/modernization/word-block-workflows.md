@@ -26,12 +26,26 @@ owned input and compare valid bounded shapes. Malformed/unsupported small/anchor
 markup, non-ASCII morphology labels and concurrent calls are not accepted by this
 harness. Legacy static output/tag buffers are not a thread-safe public interface.
 
-Full local suite: 64/64. Focused address/undefined and thread checks: 1/1 each;
+Full local suite: 65/65. Focused address/undefined and thread checks: 1/1 each;
 thread checks here are sequential characterization, not proof of concurrent safety.
 External SWORD/GLib instrumentation limits still apply; leak detection is disabled.
 
+The C++11 `lexical_block_style` helper now returns owned CSS for two annotation
+rows, one annotation row, double spacing or no additional styles. Strong's/lemmas
+share one row; annotation rows override double spacing. Declarations retain the
+baseline spacing/RTL rules. All three legacy renderer call sites delegate to the
+helper and keep their other font/theme/module CSS handling. Temporary owned CSS
+remains valid through the immediate formatter call.
+
+`core_lexical_style` compares frozen declarations/selection, the owned helper and
+all three extracted actual call expressions over 768 call-site cases, including
+nonzero integer-to-bool conversion. Another 2,048 concurrent selections check the
+owned constant data, independently of the unsafe legacy block parser. Strict C++11
+and native-disabled helper builds pass; focused address/undefined/thread checks
+pass 1/1 each. This establishes CSS data/selection, not RTL/font pixel layout or
+native application. The native block parser remains pending.
+
 Next: an owned, bounded block implementation with explicit supported/fallback
-behavior, local recursion state, preserved valid lexical links and characterized
-CSS selection. Integrate heading/body snapshots only after those contracts pass;
+behavior, local recursion state and preserved valid lexical links. Integrate heading/body snapshots only after those contracts pass;
 representative SDK/module, RTL/font, note/paragraph and runtime/visual acceptance
 remain gates. No existing block-render source is retired by this characterization.

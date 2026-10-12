@@ -77,7 +77,7 @@ require separate validation. Diagnostic data is carried without new visible cont
 | Native model/preview | Unknown visibility, busy/closed guards, draft/history preservation, per-window/module settings and explicit save/import |
 
 Complete frozen functions from CrossWire c9976a8 retain GPL notices. Current functions
-are extracted at configure time. Full local suite: 64/64; focused address/undefined
+are extracted at configure time. Full local suite: 65/65; focused address/undefined
 and thread snapshot/adapter checks: 2/2 each. Strict C++11 and native-disabled helper
 builds pass. External SWORD/GLib are not fully instrumented; leak detection is disabled.
 Full GTK runtime, other libc/SDK versions and Linux/Windows remain acceptance gates.
