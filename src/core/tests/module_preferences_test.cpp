@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/worker.hpp"
 #include "xiphos/core/c_api.h"
+#include <rawtext.h>
+#include <markupfiltmgr.h>
+#include "xiphos/core/engine_manager.hpp"
+#include <array>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -31,7 +35,14 @@ int main(int argc, char **argv) {
     config.replace(config.find("./data/"), 7, "./other-data/");
     std::filesystem::create_directories(root / "other-data");
     std::filesystem::copy(root / "data", root / "other-data", std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
-    { std::ofstream output(root / "mods.d/other.conf"); output << config; }
+    { std::ofstream output(root / "mods.d/other.conf"); output << config
+        << "GlobalOptionFilter=UTF8GreekAccents\nGlobalOptionFilter=OSISScripref\n"; }
+    {
+      sword::RawText writer((root / "other-data").string().c_str());
+      writer.setKey("John 3:18");
+      writer.setEntry("<verse osisID=\"John.3.18\">λόγος"
+                      "<note type=\"crossReference\" n=\"x\"><reference osisRef=\"John.3.16\">John 3:16</reference></note></verse>");
+    }
     // A copied SWORD catalog cache predates the new module configuration.
     std::filesystem::remove(root / "mods.d/modules-conf.cache");
     const auto path = root.string();
@@ -41,8 +52,30 @@ int main(int argc, char **argv) {
     EngineOptions on, off;
     on.words_in_red = on.strongs = on.morphs = on.footnotes = true;
     const auto defaults = engine_options_from_preferences({});
+    std::array<std::string, 4> language_reference_output;
+    {
+      EngineManager baseline(path.c_str(), true, new sword::MarkupFilterMgr(sword::FMT_XHTML), false, false);
+      auto *module = baseline.getModule("OptionOther");
+      check(module != nullptr, "load language/reference fixture");
+      baseline.setGlobalOption("Footnotes", "On");
+      for (unsigned bits = 0; bits < language_reference_output.size(); ++bits) {
+        // Direct legacy setters provide the rendered oracle, independent of the shared helper.
+        baseline.setGlobalOption("Greek Accents", bits & 1 ? "On" : "Off");
+        baseline.setGlobalOption("Cross-references", bits & 2 ? "On" : "Off");
+        language_reference_output[bits] = render_entry(*module, "John 3:18");
+      }
+      check(language_reference_output[3].find("λόγος") != std::string::npos &&
+            language_reference_output[0].find("λογος") != std::string::npos &&
+            language_reference_output[1] != language_reference_output[3], "both filters change actual rendered output");
+    }
     {
       Reader reader(path);
+      for (unsigned bits = 0; bits < language_reference_output.size(); ++bits) {
+        auto options = defaults;
+        options.greekaccents = bits & 1; options.scripturerefs = bits & 2;
+        check(reader.read("OptionOther", "John 3:18", options).html == language_reference_output[bits],
+              "all language/reference combinations match legacy engine calls");
+      }
       const auto expected_on = reader.read("OptionTest", "John 3:16", on).html;
       const auto expected_off = reader.read("OptionTest", "John 3:16", off).html;
       const auto expected_defaults = reader.read("OptionTest", "John 3:16", defaults).html;
