@@ -41,6 +41,7 @@
 #include <minizip/zip.h>
 
 #include "gui/utilities.h"
+#include "xiphos/core/variant.h"
 #include "gui/preferences_dialog.h"
 #include "gui/xiphos.h"
 #include "gui/mod_mgr.h"
@@ -476,6 +477,7 @@ static void add_module_to_prayerlist_folder(GtkTreeModel *model,
  *
  * Synopsis
  *   #include "gui/utilities.h"
+#include "xiphos/core/variant.h"
  *
  *   void add_module_to_language_folder(GtkTreeModel * model,
  *		      GtkTreeIter iter, gchar * language, gchar * module_name)
@@ -542,6 +544,7 @@ static void add_module_to_language_folder(GtkTreeModel *model,
  *
  * Synopsis
  *   #include "gui/utilities.h"
+#include "xiphos/core/variant.h"
  *
  *   void load_module_tree(GtkWidget * tree)
  *
@@ -871,6 +874,7 @@ void free_font(MOD_FONT *mf)
  *
  * Synopsis
  *   #include "gui/utilities.h"
+#include "xiphos/core/variant.h"
  *
  *   void add_mods_2_gtk_menu(gchar * mod_type, GtkMenu * menu,
 				GCallback callback)
@@ -913,27 +917,15 @@ void reading_selector(char *modname,
 	gboolean primary = 0, secondary = 0, all = 0;
 	gboolean is_dialog = (dialog ? 1 : 0);
 
-	switch ((int)GPOINTER_TO_INT(user_data)) {
-	case 0:
-		primary = TRUE;
-		secondary = FALSE;
-		all = FALSE;
-		break;
-	case 1:
-		primary = FALSE;
-		secondary = TRUE;
-		all = FALSE;
-		break;
-	case 2:
-		primary = FALSE;
-		secondary = FALSE;
-		all = TRUE;
-		break;
-	default:
+	const XiphosVariantSelection selection =
+	    xiphos_core_variant_selection((int)GPOINTER_TO_INT(user_data));
+	primary = selection.primary;
+	secondary = selection.secondary;
+	all = selection.all;
+	if (!selection.valid) {
 		g_message("invalid variant %d\n",
 			  (int)GPOINTER_TO_INT(user_data));
 		gui_generic_warning("Xiphos: invalid internal variant");
-		break;
 	}
 
 	url = g_strdup_printf("sword://%s/%s", modname, key);

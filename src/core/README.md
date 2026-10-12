@@ -121,3 +121,12 @@ rendering. Missing text positions and duplicate entries remain present.
 expressions are valid; module and context are required. Swift's async
 `CoreWorker.readReferenceList` copies the result into a Sendable snapshot.
 Native preview presentation remains pending.
+
+## Variant-selection legacy seam
+
+`xiphos_core_variant_selection` is a C-callable, C++11-compatible policy in
+CoreOptions. It extracts the legacy reading_selector's primary/secondary/all
+flag mapping. The actual GTK callback delegates to it, retaining option-save,
+dialog/main navigation and invalid-choice behavior. A frozen callback and the
+actual extracted adapter are characterized without requiring GTK libraries.
+Native tab operations and controls follow separately.
