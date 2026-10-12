@@ -85,8 +85,8 @@ real modules and all three native frontends remain separate acceptance checks.
 
 ## Lexicon profile persistence seam
 
-Source audit of the current fork, 2026-10-11; these observations are not an
-executable profile characterization or an implemented native importer.
+Source audit of the current fork, 2026-10-11, supplemented by executable
+characterization of six complete XML helpers; no native importer is implemented.
 `main/settings.c:load_settings_structure` reads the following XML children
 under `Xiphos/lexicons`; they are separate from the engine-options file.
 
@@ -131,3 +131,21 @@ nodes, escaping, unavailable module names, malformed input and unrelated
 sections; then a shared owned profile snapshot and explicit import/save that
 preserves unrelated data and verifies replacement before publication. Never
 infer XML compatibility from the existing engine-options import/save tests.
+
+`core_xml_profile` now compares six complete current helpers against frozen
+CrossWire `c9976a8` helpers using real libxml2, with 296 comparisons/assertions.
+Fixtures cover all five keys, unavailable names, Unicode, escaped text, CDATA,
+whitespace, child elements, duplicate keys/sections, absent sections/keys and
+malformed documents. The getter returns null for empty elements and for a
+child-element-only value; update-only writes leave absent keys unchanged,
+while appends use the first section. A later section supplies a key only when
+earlier sections lack that key. Serialized documents agree after mutations,
+including unrelated content and comments. Assertions remain active in release
+builds. These checks exercise XML helper semantics, not complete startup/UI.
+
+The legacy update setter interprets entity references: an unescaped ampersand
+produces a parse diagnostic and clears content in the checked libxml2 build.
+The test records this observed failure rather than expecting literal-text
+round trips from that helper. A new explicit writer must serialize literal
+names safely without reproducing that data-loss behavior; document this scoped
+correction and validate escaping/round-trip preservation independently.

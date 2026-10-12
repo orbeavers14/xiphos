@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install engine dependency
-        run: sudo apt-get update && sudo apt-get install -y libsword-dev libglib2.0-dev
+        run: sudo apt-get update && sudo apt-get install -y libsword-dev libglib2.0-dev libxml2-dev
       - name: Build and test standalone core
         run: |
           cmake -S src/core -B build/core -DCMAKE_BUILD_TYPE=Release
