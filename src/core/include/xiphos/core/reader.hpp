@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
+#include "reference_list.hpp"
 #include "render.hpp"
 #include "study_note.hpp"
 #include "engine_options.hpp"
@@ -32,6 +33,10 @@ public:
   const std::vector<Module> &modules() const;
   ReferenceChoices reference_choices(const std::string &module, const std::string &reference);
   PassageLink resolve_link(const std::string &current_module, const std::string &url);
+  // Owned targets/guard metadata from the existing parser, without rendering
+  // verse bodies or changing the module key/filter state.
+  ParsedReferenceList reference_targets(const std::string &module, const std::string &expression,
+                                         const std::string &context);
   ReferenceList read_reference_list(const std::string &module, const std::string &expression,
                                     const std::string &context);
   ReferenceList read_reference_list(const std::string &module, const std::string &expression,
