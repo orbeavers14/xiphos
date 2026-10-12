@@ -95,6 +95,11 @@ int main(int argc, char **argv) {
    worker.set_lexicon_preferences(second,preferences).get();
    const std::string strongs="xiphos.url?action=showStrongs&type=Greek&value=alpha";
    check(worker.read_lexical(second,"","",strongs,XIPHOS_LEXICON_MAIN).get().entry.module=="DictionaryTwo", "worker separate tab settings");
+   const auto dispatched=worker.resolve_study_link_at(first,"OriginalBible","John3:16",strongs).get();
+   check(std::holds_alternative<LexicalEntry>(dispatched) && std::get<LexicalEntry>(dispatched).entry.module=="DictionaryOne" &&
+         std::get<LexicalEntry>(dispatched).source_reference=="John3:16","worker contextual Strong's dispatch");
+   const auto morphDispatch=worker.resolve_study_link_at(first,"OriginalBible","Gen1:1","xiphos.url?action=showMorph&type=Greek&value=alpha").get();
+   check(std::holds_alternative<LexicalEntry>(morphDispatch) && std::get<LexicalEntry>(morphDispatch).entry.module=="DictionaryTwo","worker contextual morphology uses committed source");
    std::string uri=strongs; accepted=worker.read_lexical(first,"OriginalBible","John3:16",uri,XIPHOS_LEXICON_MAIN); uri.clear();
    rejects<std::out_of_range>([&] { (void)worker.read_lexical(first,"Missing","John3:16","xiphos.url?action=showMorph&type=Greek&value=alpha",XIPHOS_LEXICON_MAIN).get(); }, "worker error returned");
    check(worker.history(first).get().entries.empty() && worker.lexicon_preferences(first).get()->greek=="DictionaryOne", "worker queue/preferences/history survive failure");
@@ -135,6 +140,12 @@ int main(int argc, char **argv) {
          std::string(xc_lexical_entry_source_reference(lexical))=="Gen1:1" && std::string(xc_lexical_entry_dictionary_module(lexical))=="DictionaryTwo" &&
          !std::string(xc_lexical_entry_dictionary_key(lexical)).empty() && std::string(xc_lexical_entry_dictionary_html(lexical)).find("café")!=std::string::npos,"C lexical owned metadata/dictionary");
    xc_request_release(request); xc_lexical_entry_release(lexical);
+   check(xc_worker_resolve_study_link_at(worker,tab,"OriginalBible","John3:16",uri,&request)==XC_OK && wait(request)==XC_OK &&
+         !xc_request_take_link(request) && !xc_request_take_note(request) && !xc_request_take_reference_list(request),"C contextual lexical dispatch kind");
+   lexical=xc_request_take_lexical_entry(request);
+   check(lexical && xc_lexical_entry_kind(lexical)==XIPHOS_LEXICON_STRONGS && std::string(xc_lexical_entry_dictionary_module(lexical))=="DictionaryOne", "C contextual shared dictionary selection");
+   xc_lexical_entry_release(lexical); xc_request_release(request);
+   check(xc_worker_resolve_study_link(worker,tab,"OriginalBible",uri,&request)==XC_OK && wait(request)==XC_INVALID_ARGUMENT,"C older dispatcher remains two-kind"); xc_request_release(request);
    check(xc_worker_set_lexicon_preferences(worker,tab,nullptr,&request)==XC_INVALID_ARGUMENT && !request,"C null names reject");
    check(xc_worker_set_lexicon_preferences(worker,tab,&names,nullptr)==XC_INVALID_ARGUMENT,"C null settings output reject");
    for (const char *bad : std::initializer_list<const char *>{nullptr,""})

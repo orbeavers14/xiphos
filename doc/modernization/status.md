@@ -1542,3 +1542,22 @@ Next: lexical dispatch and native dictionary/preview composition, followed by
 click navigation/history, hover/pinning and compatible profile persistence.
 Default general dictionary and full legacy/global settings are not implemented.
 No full feature/platform acceptance or file retirement; estimate about 6%.
+
+
+## Contextual lexical dispatch: locally checked, native presentation next
+
+Implemented 2026-10-11 on `modernization/contextual-lexical-dispatch`, based on
+native lexicon preferences. Core contextual command parsing/worker dispatch
+now includes owned lexical previews for Strong's and morphology. Existing note,
+reference-list and passage kinds remain in place; old two-kind APIs continue
+to reject lexical actions. C observes the fourth result via take_lexical_entry.
+Native Swift contextual presentation is the next milestone, not part of this
+core change; its explicit lexical adapter already works.
+
+Validation: 27/27 local checks, focused address/undefined checks 3/3, focused
+thread checks 2/2 and strict C++17/C11 checks passed. Worker/C assertions cover
+Strong's and actual OT morphology selection, source context, typed result
+separation and retained older dispatch behavior; the full suite covers existing
+note/list/passage/native workflows. SWORD itself is uninstrumented. No GitHub
+builds or user-data changes. Full lexical UI/feature acceptance remains pending;
+no retirement, estimate about 6%.

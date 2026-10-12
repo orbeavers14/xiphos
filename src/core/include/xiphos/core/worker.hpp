@@ -7,7 +7,7 @@
 #include <variant>
 namespace xiphos::core {
 using StudyTab = std::uint64_t;
-using ContextualStudyLink = std::variant<PassageLink, StudyNote, ReferenceList>;
+using ContextualStudyLink = std::variant<PassageLink, StudyNote, ReferenceList, LexicalEntry>;
 using ResolvedStudyLink = std::variant<PassageLink, StudyNote>;
 struct HistorySnapshot {
   std::vector<Location> entries;

@@ -128,6 +128,8 @@ std::future<ContextualStudyLink> StudyWorker::resolve_study_link_at(StudyTab tab
       return s.reader.resolve_link(passage->module, passage_uri(passage->reference));
     if (const auto *list = std::get_if<ReferenceListLink>(&target))
       return session.read_reference_list(list->module, list->expression, current_reference);
+    if (std::holds_alternative<LexicalLink>(target))
+      return session.read_lexical(current_module, current_reference, uri, XIPHOS_LEXICON_MAIN);
     return s.note_target(tab, std::get<StudyNoteLink>(target));
   });
 }
