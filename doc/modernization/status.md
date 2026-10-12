@@ -93,7 +93,9 @@ inclusion in this public fork.
    rendering against the legacy app, then record scoped acceptance on merge.
 2. Review the asynchronous macOS integration separately from the core
    foundation; broaden startup/shutdown and real-module interaction checks.
-   Expand decorated chapter options and characterize commentary/parallel panes.
+   Bind native option controls after shared preference defaults and module-scoped
+   state are characterized; then expand decorated chapter options and
+   characterize commentary/parallel panes.
    Screen and workflow comparisons must retain the established study-pane composition.
 3. Evaluate selected SwordKit Swift helpers and BibleUI controls against that
    core API; add only a justified, audited adapter/component in a focused PR.
@@ -684,3 +686,33 @@ Launcher validation: shell syntax passed; `preview_fixture` built successfully,
 its core fixture test passed (1/1), and the newly copied app showed the original
 John 3:16 fixture text in a fresh GUI inspection. This launch read temporary
 fixture storage rather than the repository's protected Documents folder.
+
+
+## Shared engine preference defaults: locally characterized, pending review
+
+Implemented 2026-10-10 on `modernization/shared-option-preferences`, based on
+`modernization/macos-option-adapter`. `CoreOptions` now parses the engine subset
+of Xiphos's `modops.conf` preferences. The legacy `main_new_globals` still owns
+file loading and its display/layout settings, but calls the shared parser for
+all 18 engine fields. Exact `On`/`Off` comparisons, default-on red-letter,
+footnote, cross-reference, accent/vowel/cantillation and gloss options, and the
+primary-reading fallback remain unchanged. Unknown preferences are ignored.
+The parser accepts copied values, reads no files and saves no preferences.
+
+Validation: the original initialization at `c9976a8` is frozen in a test oracle;
+the actual current legacy initialization prefix is extracted at configure time.
+Both reload generated SWORD configuration files and are compared with the
+shared parser in 263 cases: empty defaults, each field with seven values, all
+eight variant combinations, unknown keys and mixed settings. The existing
+2,400-state engine setter characterization still passes. Full local macOS CTest
+passed 13/13; focused AddressSanitizer/UndefinedBehaviorSanitizer checks passed
+2/2 with leak detection disabled for the external SDK. The default C++11 legacy
+seam build and warnings-as-errors core syntax check passed. Full legacy GTK GUI
+compilation and interaction remain unvalidated on this machine.
+
+Native controls are still pending: preserve separate module preferences and
+history-free refreshes before exposing them. Native import/save of existing
+`modops.conf`, display settings, original menus and wider SDK validation remain
+separate gates. No GitHub build was dispatched, no legacy implementation was
+retired and no feature-group acceptance changed. The provisional overall
+estimate stays about 5% (3–7%); 0/38 groups accepted and 0/3 release-ready platforms.

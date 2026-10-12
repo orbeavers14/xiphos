@@ -178,3 +178,13 @@ snapshots do not imply filter/markup support or enabled preferences. Swift copie
 history-free configured reads. Native controls and full menu composition are
 pending. Native frontends must not reproduce this
 policy or mutate engine filter state themselves.
+
+
+`CoreOptions::engine_options_from_preferences` also owns the legacy engine
+preference defaults and exact value interpretation. The existing GTK loader
+copies its SWORD configuration section into this parser; all display/layout
+preferences stay on their existing path. Parsing is independent of filesystem
+locations and storage writes. Native frontends must obtain this policy from the
+core rather than initialize flags independently. Native module preference
+storage/import and controls remain pending; existing unconfigured native
+sessions continue to use their previous SDK defaults until explicitly configured.
