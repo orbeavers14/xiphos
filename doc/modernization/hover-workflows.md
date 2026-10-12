@@ -11,7 +11,7 @@ from source observations; it is not full GTK/native interaction acceptance.
 | Strong's | Select main Greek/Hebrew preference, render raw value into information viewer | Delegate raw value to dictionary display, which normalizes and records its own history | Complete frozen/actual handlers: 135,258 combined lexical comparisons |
 | Morphology | Select using committed main source/testament; render raw value into information viewer | Delegate to dictionary display | Same complete-handler characterization, including missing modules/settings, overlapping type tags and rendering failure |
 | Footnote (`showNote`, type containing n) | Render Footnote body into information viewer | No corresponding body-display branch in inspected main handler | Complete frozen/actual show_note callback characterization; SDK output/runtime acceptance pending |
-| Cross-reference note (type containing x) | If xrefs_in_verse_list is enabled, display sidebar list; otherwise information viewer contains reference links and Back to current verse | Display the sidebar verse list | Complete frozen/actual show_note callback characterization; default setting is enabled; native preference/hover routing pending |
+| Cross-reference note (type containing x) | If xrefs_in_verse_list is enabled, display sidebar list; otherwise information viewer contains reference links and Back to current verse | Display the sidebar verse list | Complete frozen/actual show_note callback characterization; default setting is enabled; scoped native preference/hover routing implemented, full acceptance pending |
 | Explicit reference list (`showRef`) | No action in inspected show_ref | Display sidebar verse list | Complete frozen/actual show_ref characterization; current native click list service is partial workflow evidence |
 | sword:// dictionary entry | Render dictionary text in information viewer | Module-type routing determines display | Source observation in sword_uri/show_in_previewer; abbreviations/general keyed modules require separate characterization |
 | sword:// non-dictionary reference | Update status text or bookmark tag information | Navigate appropriate pane | Source observation; do not infer that every reference hover should render a passage |
@@ -61,7 +61,7 @@ It uses explicit backend/presentation shims, not a live GTK or real-module run.
 The native reader now sends main-frame pointer-over links through a trusted
 WKUserScript in the isolated client world, with module scripts disabled. The
 core's existing no-record lexical API parses/selects/renders the URI using the
-view's committed source context. A separate information sidebar holds copied
+live committed main source context. A separate information sidebar holds copied
 Strong's/morphology results; leaving a link retains content and resets transport
 deduplication so reentry can refresh it. Payload type/frame/size are checked.
 
@@ -71,13 +71,14 @@ pending publication, and failures retain the previous preview/status. Accepted
 engine actions still drain when a Swift observation is canceled. Dictionary
 click/close operations keep the information preview independent. This transport
 initially handled lexical links. Main-reader/information notes and cross-reference
-destinations now use the shared service below; sidebar, dictionary-definition
-hover and detached dialogs remain pending.
+destinations now use the shared service below, including semantic links in
+reference-list, note-body and dictionary-definition views. Detached dialogs
+and generic dictionary URI hover remain pending.
 Rapid pointer/keyboard ordering and representative real-module/platform checks
 remain acceptance gates. This is a scoped initial hover implementation.
 
 The existing worker's no-record lexical snapshots provide the shared lookup
-seam. Native hover transport should supply the committed source from its view,
+seam. Native main-handler hover transport supplies the live committed main source,
 leave URI parsing/selection/rendering in C++, and publish copied results to the
 information preview rather than replacing the dictionary click pane. Do not
 claim all-link hover parity from lexical-only transport. Notes, cross-reference
@@ -245,8 +246,15 @@ results update the sidebar while keeping the last information. The core-owned
 mode is copied at startup and exposed through a per-window native toggle.
 Latest/revision/closed guards cover each kind, and actions invalidate pending
 hovers. Explicit no-presentation/failed results retain preview/status. Existing
-click behavior remains as documented; sidebar/dictionary-definition/detached
-hover and complete source/fallback/heading/keyboard/visual parity remain pending.
+click behavior remains as documented. Semantic hover callbacks now also cover
+reference-list, note-body and dictionary-definition content. All use live
+committed main context even when information/sidebar content belongs to an
+older view; explicit module/passage URI targets still override fallback. Click
+callbacks retain their captured source context. Model regression checks cover
+old information, unqualified fallback, explicit targets and retained nested
+reference lists. A temporary GUI run verified sidebar note hover and pointer
+leave retention without main/draft navigation. Detached dialogs, generic
+dictionary URI hover and full keyboard/visual/source acceptance remain pending.
 
 Information-link mode now calls the owned Reader/session reference-target API,
 which reuses the existing parser without rendering full verse bodies. The
@@ -276,6 +284,7 @@ absent from its copied catalog; installed modules and full passages are kept.
 Twelve generated module/passage combinations match the expected rendered note,
 with separate five-byte/UTF-8 boundary, explicit-source, strict-parser isolation,
 malformed input, history and C snapshot-lifetime checks. Independent raw/click
-parsers remain unchanged. Fallback is scoped to the caller’s committed view;
-foreign-information/global-main context equivalence, abbreviations, heading
-verse zero and complete module/platform behavior are not accepted by this test.
+parsers remain unchanged. The macOS main-handler adapter now supplies live committed main context on
+every semantic-hover surface; older information/sidebar context cannot change
+that fallback. Abbreviations, heading verse zero, detached-dialog policy and
+complete module/platform behavior are not accepted by these tests.

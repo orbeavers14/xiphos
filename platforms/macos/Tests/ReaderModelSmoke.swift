@@ -533,6 +533,22 @@ struct ReaderModelSmoke {
         first.setCrossReferencesInVerseList(true); try await idle(first); try await previewIdle(first)
         guard first.informationNote?.html == links, first.crossReferencesInVerseList,
               first.html == newHTML, first.renderedReference == newRendered, first.reference == "John 4:2" else { fatalError("preference action invalidates pending hover publication") }
+        // An older information preview must not become the main hover context.
+        first.previewStudyLink(body); try await previewIdle(first)
+        guard first.informationNote?.reference == "John 3:19" else { fatalError("older information source fixture") }
+        first.reference = "John 3:16"; first.read(); try await idle(first)
+        first.reference = "John 4:2"
+        let currentHTML = first.html, currentHistoryBack = first.canBack, currentHistoryForward = first.canForward
+        guard first.informationNote?.reference == "John 3:19" else { fatalError("reading retains previous information") }
+        first.previewStudyLink("passagestudy.jsp?action=showNote&type=n&value=1")
+        try await previewIdle(first)
+        guard first.informationNote?.reference == "John 3:16", first.reference == "John 4:2",
+              first.html == currentHTML, first.canBack == currentHistoryBack, first.canForward == currentHistoryForward else { fatalError("main hover fallback uses live committed context rather than old preview/draft") }
+        first.followLink("passagestudy.jsp?action=showRef&type=scripRef&value=19-20&module=OptionOther"); try await idle(first)
+        let nestedList = first.referencePreview?.html
+        first.previewStudyLink(body); try await previewIdle(first)
+        guard first.informationNote?.reference == "John 3:19", first.referencePreview?.html == nestedList,
+              first.reference == "John 4:2", first.html == currentHTML else { fatalError("nested note hover preserves existing reference list and main state") }
         second.previewStudyLink(body); second.close()
         try await Task.sleep(nanoseconds: 50_000_000)
         guard second.informationNote == nil, !second.isPreviewLoading else { fatalError("closed window drops body result") }
