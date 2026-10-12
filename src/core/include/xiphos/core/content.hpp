@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 namespace xiphos::core {
+struct DictionaryEntry { std::string module, key, html; };
 struct Entry { std::string reference, html; };
 struct DisplayOptions {
   bool verse_numbers = true;

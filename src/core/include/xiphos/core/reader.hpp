@@ -36,6 +36,9 @@ public:
                        const std::string &identifier);
   StudyNote study_note(const std::string &module, const std::string &reference,
                        const std::string &identifier, const EngineOptions &options);
+  // Explicit dictionary module/key. SWORD owns matching/normalization semantics.
+  DictionaryEntry read_dictionary(const std::string &module, const std::string &key);
+  DictionaryEntry read_dictionary(const std::string &module, const std::string &key, const EngineOptions &options);
   Entry read(const std::string &module, const std::string &reference);
   Entry read(const std::string &module, const std::string &reference, const EngineOptions &options);
   Chapter read_chapter(const std::string &module, const std::string &reference,
@@ -45,6 +48,7 @@ public:
   std::string adjacent_chapter(const std::string &module, const std::string &reference,
                                int direction);
 private:
+  DictionaryEntry dictionary_impl(const std::string &module, const std::string &key, const EngineOptions *options);
   ReferenceList reference_list_impl(const std::string &module, const std::string &expression,
                                     const std::string &context, const EngineOptions *options);
   StudyNote note_impl(const std::string &module, const std::string &reference,

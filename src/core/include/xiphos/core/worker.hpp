@@ -31,6 +31,7 @@ public:
   std::future<std::vector<Module>> modules();
   std::future<StudyTab> create_tab();
   std::future<void> close_tab(StudyTab tab);
+  std::future<DictionaryEntry> read_dictionary(StudyTab tab, std::string module, std::string key);
   std::future<ReferenceList> read_reference_list(StudyTab tab, std::string module, std::string expression, std::string context);
   // showRef previews use the supplied source reference and never visit history.
   std::future<ContextualStudyLink> resolve_study_link_at(StudyTab tab, std::string current_module, std::string current_reference, std::string uri);

@@ -3,6 +3,10 @@
 #include <stdexcept>
 #include "xiphos/core/preferences.hpp"
 namespace xiphos::core {
+DictionaryEntry StudySession::read_dictionary(const std::string &module, const std::string &key) {
+  const auto options = module_engine_options(module);
+  return options ? reader_.read_dictionary(module, key, *options) : reader_.read_dictionary(module, key);
+}
 ReferenceList StudySession::read_reference_list(const std::string &module, const std::string &expression,
                                               const std::string &context) {
   const auto options = module_engine_options(module);
