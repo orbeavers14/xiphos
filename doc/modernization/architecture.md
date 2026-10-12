@@ -205,6 +205,6 @@ SWORD's configuration parser on the serialized worker. A session first prepares
 settings for every installed module, then commits them as one replacement;
 missing sections receive shared legacy defaults. Import resets previous engine
 overrides for that tab without visiting history. Unknown/uninstalled sections
-are ignored for rendering, and the original file is never rewritten. Native
-picker integration, full display preferences and compatible save/export remain
-separate gates.
+are ignored for rendering, and the original file is never rewritten. The macOS picker now binds this import and refreshes the committed passage
+without visiting history. Full display preferences, automatic restoration and
+compatible save/export remain separate gates.

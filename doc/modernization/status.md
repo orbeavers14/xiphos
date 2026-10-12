@@ -812,3 +812,35 @@ Next: expose an explicit native import picker and then compatible preference
 export/save with round-trip and failure checks. This is the 18-field engine
 subset, not full preference migration or persistent setting parity. No GitHub
 build was dispatched and no feature group was accepted or legacy file retired.
+
+
+## Native reading-preference import: picker and refresh checked
+
+Implemented 2026-10-11 on `modernization/macos-preference-import`, based on the
+read-only core importer. Preferences → Import reading options opens a native
+single-file picker. An explicit selection queues the core import and refreshes
+the committed passage without submitting reference drafts or adding history.
+An unreadable selection reports a contextual message and preserves current
+settings/passage; cancellation queues no action. No preference path is silently
+discovered, remembered or overwritten.
+
+The expanded reader model suite passed with both windows and both generated
+modules, imported settings, retained drafts/history, subsequent Back restoration
+and failed import/source preservation. A local Swift 6 build and the affected
+model/fixture suites passed 5/5. Previous full core/adapter regression baseline
+was 15/15, with the importer sanitizer evidence recorded above; no core runtime
+code changed here. Shell syntax/diff checks passed. The generated fixture
+launcher copies its original `modops.conf` sample into the temporary GUI root.
+
+End-to-end GUI inspection of `/private/tmp/xiphos-preview.XLtWN8` verified the
+Preferences action, native picker, explicit generated-file selection and import:
+Strong's 3056 appeared while red-letter styling and the footnote marker were
+removed, and Back/Forward remained disabled. Reopening/canceling the picker
+preserved that passage. The copied preference sample still matched the generated
+source byte for byte. No Documents access prompt appeared in this fixture check.
+
+Next is compatible explicit preference export/save and round-trip/failure
+checks, then remaining options and study popups. Full display/preference
+migration, automatic restore, other platforms and full parity are still pending.
+No GitHub build was dispatched, no official acceptance was recorded and no
+legacy file retired. The overall estimate remains approximately 5% (3–7%).

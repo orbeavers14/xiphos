@@ -98,8 +98,11 @@ The async adapter exposes copied module option eligibility, typed engine flags,
 and module-specific settings from the shared core. The native Reading options
 menu currently binds Words of Christ in Red, Strong's Numbers, Morphological
 Tags and Footnotes when the displayed module declares those options. New native
-tabs opt in to the shared legacy defaults; existing preference files are not
-imported or written yet. Settings remain separate for each module and window.
+tabs opt in to the shared legacy defaults. Preferences → Import reading options
+opens a native picker for an existing Xiphos `modops.conf`; its engine settings
+replace this window's options without changing the file. Other windows keep
+their settings. Canceling the picker does nothing. Preference writes and
+automatic restoration on launch remain pending. Settings remain separate for each module and window.
 Changing an option refreshes the committed passage without adding history or
 replacing unsubmitted reference input. Verse and chapter views use the same
 configured tab. The SWORD red-letter class uses the existing Xiphos editor's
@@ -109,7 +112,8 @@ red style; user-defined colors and full theme parity remain pending.
 modules and two model windows. `swift_option_adapter` also exercises the typed
 bindings. Declared eligibility does not prove filter/markup support across all
 SWORD versions. Note/Strong's/morphology popup interaction, the remaining option
-menus, persistent settings and full visual/workflow parity are pending.
+menus, full display-preference migration, persistent settings and full
+visual/workflow parity are pending.
 
 For a local GUI check with those generated modules, run:
 

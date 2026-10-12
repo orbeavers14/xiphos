@@ -24,6 +24,10 @@ if [ "$kind" = reader ]; then
 else
   /usr/bin/ditto "$fixture/data" "$preview_dir/fixture/data"
   /usr/bin/ditto "$fixture/other-data" "$preview_dir/fixture/other-data"
+  # The generated legacy preference sample enables native picker checks.
+  if [ -f "$fixture/modops.conf" ]; then
+    /usr/bin/ditto "$fixture/modops.conf" "$preview_dir/fixture/modops.conf"
+  fi
   # Rediscover this generated fixture instead of carrying its SDK catalog cache.
   rm -f "$preview_dir/fixture/mods.d/modules-conf.cache"
 fi

@@ -3,6 +3,10 @@ import AppKit
 import SwiftUI
 import WebKit
 
+private struct ReadingOptionImportError: LocalizedError {
+    var errorDescription: String? { "Unable to import reading options. Choose a readable Xiphos modops.conf file." }
+}
+
 @MainActor
 final class ReaderModel: ObservableObject {
     @Published var modules: [InstalledModule] = []
@@ -134,6 +138,20 @@ final class ReaderModel: ObservableObject {
     func refreshDisplay() {
         guard let entry = displayedEntry, let module = displayedModule else { return }
         run { token in try await self.present(entry, module: module, token: token, updateInput: false) }
+    }
+    func importReadingOptions(path: String) {
+        guard let worker, let tab else { return }
+        let module = displayedModule, committed = displayedEntry
+        run { token in
+            do { try await worker.importModulePreferences(tab: tab, path: path) }
+            catch { throw ReadingOptionImportError() }
+            guard token == self.revision && !self.closed else { return }
+            if let module, let committed {
+                self.engineOptions = try await worker.moduleEngineOptions(tab: tab, module: module)
+                let refreshed = try await worker.readTabEntry(tab: tab, module: module, reference: committed.reference)
+                try await self.present(refreshed, module: module, token: token, updateInput: false)
+            } else { self.message = "Reading options imported." }
+        }
     }
     func setReadingOption(_ flag: EngineOptionFlags, enabled: Bool) {
         let supported: EngineOptionFlags = [.wordsInRed, .strongs, .morphology, .footnotes]
@@ -273,6 +291,19 @@ struct ReaderWindow: View {
     init(worker: CoreWorker?, startupError: String?) {
         _model = StateObject(wrappedValue: ReaderModel(worker: worker, startupError: startupError))
     }
+    private func choosePreferenceFile() {
+        let panel = NSOpenPanel()
+        panel.title = "Import Xiphos reading options"
+        panel.message = "Choose Xiphos's modops.conf to load your reading options."
+        panel.prompt = "Import"
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            model.importReadingOptions(path: url.path)
+        }
+    }
     @ViewBuilder private func readingOption(_ title: String, flag: EngineOptionFlags) -> some View {
         if model.moduleOptions.declared.contains(flag) {
             Toggle(title, isOn: Binding(
@@ -330,6 +361,9 @@ struct ReaderWindow: View {
                         [.wordsInRed, .strongs, .morphology, .footnotes]).isEmpty)
                 }.padding(.horizontal, 12).padding(.bottom, 8).disabled(model.isBusy)
                 HStack {
+                    Menu("Preferences") {
+                        Button("Import reading options…") { choosePreferenceFile() }
+                    }.disabled(model.modules.isEmpty)
                     Button("Previous chapter") { model.navigateChapter(-1) }.disabled(model.selection == nil)
                     Button("Next chapter") { model.navigateChapter(1) }.disabled(model.selection == nil)
                 }.padding(.horizontal, 12).padding(.bottom, 8).disabled(model.isBusy)
