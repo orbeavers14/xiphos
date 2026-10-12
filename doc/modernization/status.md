@@ -72,8 +72,8 @@ No milestone has official acceptance yet.
 
 Current local suite: **30 checks**. The shared Unicode click-key utility reuses
 GLib and agrees with the frozen legacy call over **4,448,324 comparisons in
-four local locales** including the actual adapted legacy casing block; native
-click adoption is the next milestone.
+four local locales** including the actual adapted legacy casing block. Main
+native click commands use the same helper; hover/dialog reads keep raw keys.
 The dictionary history value/legacy adapters
 also agree over **10,287 tested transitions**. Sanitizer and strict-language
 checks are scoped per ledger entry below; they do not instrument the SWORD SDK.
@@ -1877,3 +1877,23 @@ locales; its malformed-input guard, strict C++11 and address/undefined check
 Full GTK runtime remains unavailable locally and pending. No GitHub builds or
 legacy file retirement. Next: native main-click normalization and origin-specific
 history, then hover/pinning/persistence and pane composition.
+
+## Native main-click Unicode policy: locally checked
+
+Implemented 2026-10-11 on `modernization/native-dictionary-click-policy`.
+StudySession shares one lexical preparation path for previews/clicks. Main
+clicks normalize before rendering and record the normalized requested key;
+dialog clicks and previews retain raw keys without main dictionary history.
+Raw command metadata stays copied. This completes the casing/origin part of
+the previously partial recorded API, without introducing Swift engine logic.
+Swift build outputs also track SDK library files so changed SDKs cause relinking.
+
+Validation: 30/30 local checks after rebuilding local GLib for the preview's
+26.0 deployment target and relinking C++/Swift outputs. Session/worker/C/Swift/
+model checks cover accented keys, uppercase expansion versus SDK nearest-key
+resolution, raw metadata, no-record dialog/hover, invalid Unicode history
+retention, tab isolation and Bible/draft preservation. Focused address/undefined
+and thread checks each passed 2/2; strict C++17/C11 passed. Dependencies remain
+uninstrumented; macOS 13 compatibility is not established. Host locale startup,
+hover/pinning/persistence, detached dialogs and full native pane workflows are
+next. No GitHub builds or file retirement; estimate remains about 6% (4–8%).

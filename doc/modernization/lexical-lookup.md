@@ -194,3 +194,16 @@ action keys against a frozen direct-SDK sequence. The native Reader returns
 copied choices and restores previous dictionary key text; worker/C requests are
 explicit, require an open tab and do not record history. Full GTK interaction
 and native menu presentation are separate validation gates.
+
+### Main-click casing and origin policy (2026-10-11)
+
+Main-origin recorded lexical commands use the shared GLib-uppercase requested
+key before reading and history publication, with raw command metadata retained.
+History retains that normalized request even when SDK nearest-entry lookup
+returns a different key. Raw previews and dialog-origin clicks do not normalize
+or visit main dictionary history, matching their separate legacy display paths.
+This corrects the earlier partial native recorded API's raw-key/main-history
+policy. Failed casing/rendering leaves history unchanged. The actual legacy
+casing block also uses the same C++11 helper; no Swift casing rules are added.
+Host locale initialization, dialog presentation and representative-module
+acceptance remain pending; this does not close F09/F16.

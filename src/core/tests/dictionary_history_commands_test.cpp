@@ -57,7 +57,23 @@ int main(int argc,char **argv) {
       check(first.dictionary_history().entries().size()==3,"lexical preview does not record visit");
       const auto lexical=first.visit_lexical("OriginalBible","John3:16",uri,XIPHOS_LEXICON_MAIN);
       check(lexical.entry.module=="DictionaryOne" && first.dictionary_history().entries().size()==4 &&
-        first.dictionary_history().entries().back().key=="alpha","explicit lexical visit records selected dictionary/raw value");
+        first.dictionary_history().entries().back().key=="ALPHA" && lexical.command.value=="alpha",
+        "main click records uppercase requested key and preserves command metadata");
+      const auto unicode=first.visit_lexical("OriginalBible","John3:16",
+        "xiphos.url?action=showStrongs&type=Greek&value=caf%C3%A9",XIPHOS_LEXICON_MAIN);
+      check(unicode.entry.key=="CAFÉ" && first.dictionary_history().entries().back().key=="CAFÉ" &&
+        unicode.entry.html.find("Unicode")!=std::string::npos,"Unicode main click renders and records normalized key");
+      const auto expanded=first.visit_lexical("OriginalBible","John3:16",
+        "xiphos.url?action=showStrongs&type=Greek&value=stra%C3%9Fe",XIPHOS_LEXICON_MAIN);
+      check(expanded.command.value=="straße" && first.dictionary_history().entries().back().key=="STRASSE",
+        "click history retains uppercase expansion even when SDK resolves another key");
+      const auto retained_count=first.dictionary_history().entries().size();
+      (void)first.visit_lexical("OriginalBible","John3:16",uri,XIPHOS_LEXICON_DIALOG);
+      (void)first.read_lexical("OriginalBible","John3:16",uri,XIPHOS_LEXICON_MAIN);
+      check(first.dictionary_history().entries().size()==retained_count,"dialog clicks and hover previews do not record");
+      invalid([&] { (void)first.visit_lexical("OriginalBible","John3:16",
+        "xiphos.url?action=showStrongs&type=Greek&value=%FF",XIPHOS_LEXICON_MAIN); });
+      check(first.dictionary_history().entries().size()==retained_count,"invalid Unicode click preserves history");
       first.clear_dictionary_history();
       check(first.dictionary_history().entries().empty() && first.history().entries().size()==1,
         "dictionary clear leaves Bible history");
@@ -83,7 +99,8 @@ int main(int argc,char **argv) {
       check(worker.dictionary_history(tab).get().entries.size()==2,"contextual lexical resolution stays unrecorded");
       const auto click=worker.follow_study_link_at(tab,"OriginalBible","John3:16",uri).get();
       check(std::holds_alternative<LexicalEntry>(click) && std::get<LexicalEntry>(click).entry.module=="DictionaryTwo" &&
-        worker.dictionary_history(tab).get().entries.size()==3,"contextual click records selected dictionary");
+        worker.dictionary_history(tab).get().entries.size()==3 &&
+        worker.dictionary_history(tab).get().entries.back().key=="ALPHA","contextual click records selected dictionary/normalized requested key");
       const auto passage=worker.follow_study_link_at(tab,"OriginalBible","John3:16","sword:///John3:17").get();
       check(std::holds_alternative<PassageLink>(passage) && worker.dictionary_history(tab).get().entries.size()==3 &&
         worker.history(tab).get().entries.empty(),"follow passage target retains no-visit dispatch behavior");
@@ -128,7 +145,8 @@ int main(int argc,char **argv) {
       xc_request_release(request);
       check(xc_worker_follow_study_link_at(worker,tab,"OriginalBible","John3:16","xiphos.url?action=showStrongs&type=Greek&value=alpha",&request)==XC_OK && wait(request)==XC_OK,"C contextual recorded click");
       auto *lexical=xc_request_take_lexical_entry(request);
-      check(lexical && std::string(xc_lexical_entry_dictionary_module(lexical))=="DictionaryTwo","C recorded lexical result kind");
+      check(lexical && std::string(xc_lexical_entry_dictionary_module(lexical))=="DictionaryTwo" &&
+        std::string(xc_lexical_entry_value(lexical))=="alpha","C recorded lexical result kind/raw metadata");
       xc_lexical_entry_release(lexical); xc_request_release(request);
       check(xc_worker_dictionary_history(worker,tab,&request)==XC_OK && wait(request)==XC_OK,"C recorded lexical history");
       auto *updated=xc_request_take_dictionary_history(request);

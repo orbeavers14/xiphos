@@ -213,15 +213,16 @@ dictionary module/key, replacing unfinished dictionary input only after success.
 A pending module choice must be looked up before key navigation is enabled.
 Source passage context, Bible history and unfinished Bible reference remain
 unchanged. SDK boundary behavior is retained; these are key steps, not dictionary
-history Back/Forward. Separate history and the nine-key chooser remain pending.
+history Back/Forward. Separate history and the nine-key chooser are available
+as described below.
 
 
 CoreWorker now exposes copied Sendable dictionary-history entries/cursor/flags,
 explicit visit, Back/Forward/Clear commands and recorded contextual lexical
 clicks. Preview and recorded paths share their Swift ownership bridge and the
 same C++ parser/renderer. Core snapshots are released after copying and values
-survive engine shutdown. Native history controls follow separately; legacy
-Unicode click normalization remains pending.
+survive engine shutdown. Native history controls and shared main-click Unicode
+normalization are described below.
 
 
 The native dictionary column now has its own Back/Forward/History menu. Lexical
@@ -229,9 +230,9 @@ clicks use recorded core dispatch and refresh copied history flags; repeating
 the current click preserves Forward. Direct input and previous/next key steps
 retain the existing no-record workflow. Clear retains the displayed definition
 and all Bible state, and closing the dictionary retains its history. History
-navigation uses committed current Bible context for nested links. Unicode click
-normalization, nearby-key chooser, detached windows and full pane parity remain
-pending, so dictionary feature acceptance is still partial.
+navigation uses committed current Bible context for nested links. Detached
+windows, hover/pinning, persistence and full pane parity remain pending, so
+dictionary feature acceptance is still partial.
 
 
 The nearby-key menu presents nine copied core choices, retaining boundary repeats
@@ -240,3 +241,9 @@ through one guarded presentation path; selecting a choice uses direct lookup
 and does not record history. Invalid/stale selections are ignored. The module
 picker now uses the full column width; nearby-key and history icon menus keep
 accessible names and help text while fitting the narrow column.
+
+Main-pane lexical clicks now use the shared GLib Unicode-uppercase requested
+key for reading/history while retaining raw link metadata. Hover/preview reads
+and dialog-origin clicks use raw keys and leave main dictionary history alone.
+Swift contains no duplicate casing implementation. Host process-locale setup,
+representative real modules and cross-platform acceptance remain separate gates.

@@ -48,8 +48,14 @@ import XiphosCore
               clicked.entry.module == "DictionaryOne" else { fatalError("Swift recorded contextual lexical click") }
         _ = try await worker.visitLexical(tab: first, module: "OriginalBible", reference: "John3:16", uri: strongs)
         let lexicalHistory = try await worker.dictionaryHistory(tab: first)
-        guard lexicalHistory.entries == [DictionaryLocation(module: "DictionaryOne", key: "alpha")], !lexicalHistory.canBack,
+        guard lexicalHistory.entries == [DictionaryLocation(module: "DictionaryOne", key: "ALPHA")], !lexicalHistory.canBack,
               try await worker.dictionaryHistory(tab: second).entries.isEmpty else { fatalError("Swift recorded lexical dedup/history isolation") }
+        _ = try await worker.visitLexical(tab: first, module: "OriginalBible", reference: "John3:16", uri: strongs, origin: .dialog)
+        guard try await worker.dictionaryHistory(tab: first) == lexicalHistory else { fatalError("dialog click changed main dictionary history") }
+        let unicode = try await worker.visitLexical(tab: first, module: "OriginalBible", reference: "John3:16",
+            uri: "xiphos.url?action=showStrongs&type=Greek&value=caf%C3%A9")
+        guard unicode.value == "café", unicode.entry.key == "CAFÉ", unicode.entry.html.contains("Unicode"),
+              try await worker.dictionaryHistory(tab: first).entries.last?.key == "CAFÉ" else { fatalError("Swift Unicode click metadata/history") }
         let secondEntry = try await worker.readLexical(tab: second, module: "", reference: "", uri: strongs)
         guard firstEntry.kind == .strongs, firstEntry.entry.module == "DictionaryOne", firstEntry.entry.html.contains("café"),
               firstEntry.module == "OriginalBible", firstEntry.sourceReference == "John3:16", firstEntry.type == "Greek", firstEntry.value == "alpha",

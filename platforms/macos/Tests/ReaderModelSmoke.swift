@@ -381,6 +381,10 @@ struct ReaderModelSmoke {
         first.chooseDictionaryKey(nearby.keys[0]); try await idle(first)
         guard first.dictionaryEntry?.key == nearby.keys[0], first.dictionaryChoices?.key == first.dictionaryEntry?.key,
               first.dictionaryHistory?.entries.isEmpty == true, first.html == priorHTML, first.reference == "John 4:2" else { fatalError("native nearby selection preserves histories/Bible/draft") }
+        first.followLink("xiphos.url?action=showStrongs&type=Greek&value=caf%C3%A9"); try await idle(first)
+        guard first.lexicalPreview?.value == "café", first.dictionaryEntry?.key == "CAFÉ",
+              first.dictionaryEntry?.html.contains("Unicode") == true, first.dictionaryHistory?.entries.last?.key == "CAFÉ",
+              first.reference == "John 4:2", first.html == priorHTML, first.canBack == back, first.canForward == forward else { fatalError("native Unicode click key/history/raw metadata and Bible preservation") }
         first.closeLexicalPreview()
         guard first.dictionarySelection == nil, first.dictionaryEntry == nil, first.dictionaryChoices == nil else { fatalError("close direct dictionary") }
         second.applyLexiconPreferences(changed); second.close()
