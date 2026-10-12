@@ -232,4 +232,6 @@ order/duplicates, raw lexical behavior, tab/history isolation, copied arguments/
 results, scalar/result kinds, no-op markers, failures and shutdown ownership.
 These tests supplement the frozen callback harness; they do not replace full
 GTK/native gesture, representative-module or platform acceptance. The new
-service is not yet connected to the Swift/native pointer transport here.
+service now has a typed Swift adapter, tested against generated fixtures for
+all result kinds and preference/state/lifetime semantics. It is not yet
+connected to native pointer transport at this adapter checkpoint.

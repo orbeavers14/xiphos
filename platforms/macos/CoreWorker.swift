@@ -306,6 +306,45 @@ actor CoreWorker {
     func resolveStudyLinkAt(tab: UInt64, currentModule: String, currentReference: String, uri: String) async throws -> ContextualStudyLink {
         try await contextualStudyLinkAt(tab: tab, currentModule: currentModule, currentReference: currentReference, uri: uri, record: false)
     }
+    func crossReferencePreviewList(tab: UInt64) async throws -> Bool {
+        var request: OpaquePointer?
+        let status = xc_worker_cross_reference_preview_list(try worker(), tab, &request)
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        var enabled: Int32 = 0
+        let copied = xc_request_cross_reference_preview_list(completed, &enabled)
+        guard copied == XC_OK else { throw CoreError(status: copied) }
+        return enabled != 0
+    }
+    func setCrossReferencePreviewList(tab: UInt64, enabled: Bool) async throws {
+        var request: OpaquePointer?
+        let status = xc_worker_set_cross_reference_preview_list(try worker(), tab, enabled ? 1 : 0, &request)
+        xc_request_release(try await wait(status, request))
+    }
+    func hoverStudyLinkAt(tab: UInt64, currentModule: String, currentReference: String, uri: String) async throws -> HoveredStudyLink {
+        guard ![currentModule, currentReference, uri].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = currentModule.withCString { module in
+            currentReference.withCString { reference in
+                uri.withCString { xc_worker_hover_study_link_at(handle, tab, module, reference, $0, &request) }
+            }
+        }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        if xc_request_no_presentation(completed) != 0 { return .noPresentation }
+        if let result = xc_request_take_reference_list(completed) {
+            defer { xc_reference_list_release(result) }
+            return .references(CoreValues.referenceList(result))
+        }
+        if let result = xc_request_take_note(completed) {
+            defer { xc_note_release(result) }
+            return .note(noteValue(result))
+        }
+        guard let result = xc_request_take_lexical_entry(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_lexical_entry_release(result) }
+        return .lexical(CoreValues.lexicalEntry(result))
+    }
     func followStudyLinkAt(tab: UInt64, currentModule: String, currentReference: String, uri: String) async throws -> ContextualStudyLink {
         try await contextualStudyLinkAt(tab: tab, currentModule: currentModule, currentReference: currentReference, uri: uri, record: true)
     }
