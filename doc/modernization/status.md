@@ -1517,3 +1517,28 @@ build. SWORD itself is uninstrumented. No GitHub builds or user-data changes.
 Next: native lexicon preference selectors and dictionary presentation; full
 module corpus, effective capability, persistence and platform parity pending.
 No retirement/accepted groups; estimate remains about 6%.
+
+
+## Native lexicon preferences: locally checked, persistence/lookup UI pending
+
+Implemented 2026-10-11 on `modernization/macos-lexicon-preferences`, based on the
+copied catalog. The native sheet has five legacy dictionary choices filtered
+by shared roles. It retains unavailable current names, applies explicit window
+settings, discards Cancel drafts and preserves existing choices when the legacy
+-- Select -- placeholder is selected. Presentation state uses the existing
+StateObject mechanism after the local SDK State macro failed to expand; the
+macOS 13 build target is retained, not claimed runtime-validated.
+
+Validation: 27/27 local checks passed. New model tests cover shared defaults,
+role/availability rejection, copied per-window changes, unchanged rendered
+passage/history/draft, placeholder preservation, busy actions and closed-model
+publication. Visible temporary GUI checks confirmed all five role-filtered
+selectors, Cancel/reopen, Apply/reopen and placeholder/reopen while John3:16
+remained displayed and unfinished John4:2 remained in the field. All data was
+original generated fixtures copied under /private/tmp; no installed libraries
+or protected Documents access were requested by the preview. No GitHub builds.
+
+Next: lexical dispatch and native dictionary/preview composition, followed by
+click navigation/history, hover/pinning and compatible profile persistence.
+Default general dictionary and full legacy/global settings are not implemented.
+No full feature/platform acceptance or file retirement; estimate about 6%.

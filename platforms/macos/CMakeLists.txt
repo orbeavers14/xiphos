@@ -81,6 +81,8 @@ if(BUILD_TESTING)
   set_tests_properties(reader_model PROPERTIES FIXTURES_REQUIRED sword_fixture)
   add_test(NAME reader_model_options COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --options "${CMAKE_CURRENT_BINARY_DIR}/core/module-preferences-fixture")
   set_tests_properties(reader_model_options PROPERTIES FIXTURES_REQUIRED module_preferences_fixture)
+  add_test(NAME reader_model_lexicons COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --lexicons "${CMAKE_CURRENT_BINARY_DIR}/core/dictionary-fixture")
+  set_tests_properties(reader_model_lexicons PROPERTIES FIXTURES_REQUIRED dictionary_fixture)
   add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/option_adapter_smoke"
     COMMAND ${SWIFTC} -swift-version 6 -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
       -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/OptionAdapterSmoke.swift"

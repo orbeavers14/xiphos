@@ -291,7 +291,45 @@ struct ReaderModelSmoke {
         first.close(); second.close(); await worker.shutdown()
         print("Native reading option model checks passed")
     }
+    @MainActor static func lexicons(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let first = ReaderModel(worker: worker, startupError: nil), second = ReaderModel(worker: worker, startupError: nil)
+        try await idle(first); try await idle(second)
+        guard let defaults = first.lexiconPreferences, second.lexiconPreferences == defaults,
+              defaults.greek == "StrongsGreek", defaults.greekMorphNT == "Robinson" else { fatalError("native shared defaults") }
+        let priorHTML = first.html, priorRendered = first.renderedReference
+        let back = first.canBack, forward = first.canForward
+        first.reference = "John 4:2"
+        let changed = LexiconPreferences(greek: "DictionaryOne", hebrew: "DictionaryTwo", greekMorphNT: "MorphGreek", greekMorphOT: "MorphGreek", hebrewMorph: "MorphHebrew")
+        first.applyLexiconPreferences(changed)
+        second.applyLexiconPreferences(defaults)
+        try await idle(first); try await idle(second)
+        guard first.lexiconPreferences == changed, second.lexiconPreferences == defaults,
+              first.reference == "John 4:2", first.html == priorHTML, first.renderedReference == priorRendered,
+              first.canBack == back, first.canForward == forward else { fatalError("native preference isolation/draft/pane/history") }
+        var wrong = changed; wrong.greek = "DictionaryTwo"
+        first.applyLexiconPreferences(wrong)
+        guard !first.isBusy, first.lexiconPreferences == changed, first.message.contains("corresponding") else { fatalError("wrong role not accepted") }
+        wrong = changed; wrong.greek = "Missing"
+        first.applyLexiconPreferences(wrong)
+        guard !first.isBusy, first.lexiconPreferences == changed else { fatalError("unavailable changed choice not accepted") }
+        first.applyLexiconPreferences(LexiconPreferences(greek: nil, hebrew: nil, greekMorphNT: nil, greekMorphOT: nil, hebrewMorph: nil))
+        try await idle(first)
+        guard first.lexiconPreferences == changed else { fatalError("legacy placeholder preserves current names") }
+        first.applyLexiconPreferences(changed)
+        first.applyLexiconPreferences(defaults) // busy action must be ignored
+        try await idle(first)
+        guard first.lexiconPreferences == changed, first.html == priorHTML, first.reference == "John 4:2" else { fatalError("busy preference action ignored") }
+        second.applyLexiconPreferences(changed); second.close()
+        try await Task.sleep(nanoseconds: 50_000_000)
+        guard second.lexiconPreferences == defaults else { fatalError("closed model does not publish preferences") }
+        first.close(); await worker.shutdown()
+        print("Native lexicon preference model checks passed")
+    }
     @MainActor static func main() async throws {
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--lexicons" {
+            try await lexicons(root: CommandLine.arguments[2]); return
+        }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--options" {
             try await readingOptions(root: CommandLine.arguments[2]); return
         }

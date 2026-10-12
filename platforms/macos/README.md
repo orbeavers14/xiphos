@@ -168,3 +168,15 @@ Feature entry (GreekDef/HebrewDef/GreekParse/HebrewParse). It does not union all
 Feature entries or promise effective lookup compatibility. Both synchronous
 and worker Swift adapters expose the same copied values. Native selection
 controls can use these flags without accessing SWORD or duplicating matching.
+
+
+The Preferences menu now opens a native Lexicon dictionaries sheet with Greek
+and Hebrew lexicons, Greek NT/OT morphology and Hebrew morphology. Choices use
+core catalog roles; unavailable current names are retained until a valid choice
+is applied. Cancel discards the draft, and the legacy -- Select -- placeholder
+preserves the current choice. Apply changes only this window's copied settings,
+without changing Bible passage/history or unfinished reference input. Profile
+persistence, default general dictionary and lookup-pane interactions are pending.
+For disposable UI checks, run the local fixture tests and launch
+`sh platforms/macos/launch-fixture.sh build/macos lexicons`; this copies only
+original generated data and the preview into temporary storage.
