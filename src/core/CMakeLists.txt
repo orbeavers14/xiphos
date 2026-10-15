@@ -2,6 +2,12 @@
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   cmake_minimum_required(VERSION 3.16)
   project(xiphos_core LANGUAGES C CXX)
+  # GCC 16 defaults to C++20; filesystem::u8string then uses char8_t,
+  # while the SWORD boundary expects C++17 UTF-8 char strings.
+  if(NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 17)
+  endif()
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
   include(CTest)
   set(XIPHOS_BUILD_NATIVE_CORE ON)
 else()
