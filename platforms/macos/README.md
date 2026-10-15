@@ -212,3 +212,9 @@ checks covered Strong's enablement, its positioning beneath the word, chapter
 selection/scroll and readable raw fallback. Model checks cover paired commentary,
 drafts/history, cleanup and window/closed-state isolation. Representative module,
 RTL/font, accessibility, minimum-OS and full visual parity remain unaccepted.
+
+The later [double-spacing checkpoint](../../doc/modernization/double-space-workflows.md)
+adds separate main/commentary controls through the shared preference command.
+The current suite passes 70/70; a temporary-window check confirms visible on/off
+chapter spacing refresh with unchanged passage/selection. CSS may contain only
+spacing while annotation requested/applied flags are false; views use copied CSS.

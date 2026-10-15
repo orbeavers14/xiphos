@@ -13,6 +13,35 @@ shared content/session/worker/C API, their tests, native adapter integration and
 associated evidence. Other chats should avoid overlapping shared API edits while
 this task is active; platform-local acceptance can proceed independently.
 
+## Latest checked follow-up: double spacing
+
+`25cf291` adds exact legacy double-spacing defaults/persistence and queued
+session/worker/C ABI support; `68562af` connects Mac controls and `420ae13` Linux
+controls. Current source passes 70/70 Mac CTests and 54/54 portable Linux/core
+CTests on this Mac. Focused ASan/UBSan checks pass 4/4 core/preference and 3/3 Linux
+model including fixture prerequisites. Strict C++11 presentation/C11 header checks
+and native-disabled helper build pass. Actual Mac GUI on/off chapter spacing
+refresh retains passage/selection. Full commands/contracts and limits are in
+[double-spacing workflows](double-space-workflows.md).
+
+Additional commands used (same configured local SDKs):
+
+```sh
+cmake --build build/macos --parallel 4
+ctest --test-dir build/macos --no-tests=error --output-on-failure
+cmake --build build/linux-models --parallel 2
+ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
+cmake --build build/linux-models-sanitized --target core_double_space_test core_content_preferences_test core_lexical_snapshots_test core_heading_collection_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^(core_double_space|core_content_preferences)$' --no-tests=error --output-on-failure
+cmake --build build/linux-models-sanitized --target linux_lexical_model_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^linux_lexical_model$' --no-tests=error --output-on-failure
+```
+
+Next bounded shared task: characterize note-number rendering (saved
+`XrefNoteNumbers`, SDK setters, user-supplied labels, legacy counters and restore
+behavior) before altering shared render paths. The active core task continues.
+No GitHub build allowance or reset was used; GTK/Fedora/MSVC gates remain pending.
+
 ## Current checked checkpoint
 
 Implementation commits: `1393edd` shared nesting guard/captured heading wrappers,
@@ -51,8 +80,7 @@ linking. New GTK application source is not compiled here; Fedora and MSVC/native
 Windows remain separate gates. Full corpus/RTL/font/accessibility/visual parity
 and original-parser retirement remain unaccepted.
 
-Next shared-core seam: characterize legacy `Doublespace` preference default,
-import/save and CSS precedence before adding compatible presentation commands.
+The double-spacing follow-up above completes that bounded implementation; broader presentation and corpus gates remain.
 The active task claim remains in force while this Mac chat continues shared work.
 
 ## Previous checked milestones
@@ -148,8 +176,8 @@ platform README and tests before rebuilding any of this independently.
 
 ## Next bounded work
 
-1. Characterize remaining presentation preferences, starting with legacy
-   `Doublespace` defaults/import/save and precedence with lexical styles.
+1. Characterize note-number rendering, SDK filter state, explicit labels and
+   legacy chapter counters before adding the next shared presentation command.
 2. Broaden SDK/RTL/font/note/paragraph layout and fallback evidence. New native
    views consume shared snapshots; Fedora must validate its GTK source/runtime.
    See [word block workflows](word-block-workflows.md). The old parser stays.

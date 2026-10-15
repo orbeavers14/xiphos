@@ -172,8 +172,8 @@ inside the shared core, then carry copied HTML/CSS through the adapters together
 consumer capability for a tab. This migration opt-in is separate from saved
 module preferences and is off for existing consumers until they can consume HTML
 and CSS together. Configured Strong's/lemma/morphology flags select layout through
-the shared policy; unconfigured engine state is never guessed. Double-spacing
-preference adoption is a later, separate compatibility seam.
+the shared policy; unconfigured engine state is never guessed. Double-spacing preference adoption is recorded in
+[the later shared workflow](double-space-workflows.md).
 
 `Entry.lexical` owns CSS and requested/applied state for its body and heading;
 `Chapter.lexical` reports one document-wide decision. Header/body layout is staged
@@ -217,9 +217,7 @@ states, per-tab isolation, history neutrality, closed-tab errors and values held
 after all handles/worker are released. Its focused run passes 3/3 including the
 two core fixture prerequisites. Later checkpoints below connect native view consumption without a second Swift formatting policy or SWORD engine.
 
-Next: validate broader SDK/lemma/note/paragraph shapes and fallback policy, then
-adopt owned rendering/styles in heading/body snapshots with native controls and
-visual evidence. Representative RTL/font/module, keyboard/runtime and full GTK/
+Next at that checkpoint was snapshot/native adoption; the later sections below record its scoped implementation. Broader SDK/lemma/note/paragraph shapes and fallback policy still require validation. Representative RTL/font/module, keyboard/runtime and full GTK/
 other-platform acceptance remain gates. No block-render source file is retired.
 
 ## Native consumption and browser-nesting guard

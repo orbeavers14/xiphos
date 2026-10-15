@@ -246,3 +246,9 @@ runtime compatibility. The lexical checkpoint passed 53/53 portable/core checks
 on macOS and 4/4 focused ASan/UBSan checks including fixture prerequisites. Fedora
 must rebuild the ON target and repeat desktop/physical-input checks before this
 new view integration receives native Linux acceptance.
+
+The subsequent shared double-spacing checkpoint adds separate Bible/commentary
+controls, copied preference state and queued commands. Current portable/core
+checks pass 54/54 on Mac; focused model ASan/UBSan checks pass 3/3 including
+fixtures. Current GTK controls require Fedora compilation and desktop checks.
+See [double-spacing contracts/evidence](../../doc/modernization/double-space-workflows.md).

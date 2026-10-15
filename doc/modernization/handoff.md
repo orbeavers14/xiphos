@@ -39,6 +39,13 @@ view consumption and `0b40574` Linux adapter/headless model support. Mac passes
 4/4 focused ASan/UBSan checks. New GTK view source still needs native Fedora
 build/runtime checks; the earlier 51-test Fedora result does not cover it.
 
+Double-spacing follow-up: `25cf291` shared decoder/persistence/session/worker/C ABI,
+`68562af` Mac controls, `420ae13` Linux controls. Current local results: 70/70 Mac,
+54/54 portable Linux/core on Mac, focused ASan/UBSan 4/4 core and 3/3 Linux model.
+See [workflow evidence](double-space-workflows.md). Fedora must rebuild current
+GTK source; previous native counts are historical. Next shared presentation seam:
+characterize note-number rendering and its SDK filter/state boundaries.
+
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |

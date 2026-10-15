@@ -3,6 +3,19 @@
 Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the [shared handoff](handoff.md),
 [status](status.md), [architecture](architecture.md) and [parity ledger](parity-matrix.md).
 
+## Incoming double-spacing controls — native validation pending
+
+`25cf291` adds shared `Doublespace` decoding/persistence and a typed queued
+command/scalar getter. `420ae13` adds separate main/commentary GTK controls and
+model copying; Mac controls are `68562af`. The portable Linux/core suite passes
+54/54 **on macOS** and focused Linux lexical model ASan/UBSan checks pass 3/3
+including fixtures. Focused shared preference/core sanitizer checks pass 4/4.
+The actual GTK controls have only received static review here. Rebuild default-ON
+GTK target on Fedora, run all current tests and desktop smoke modes, then inspect
+both spacing controls and CSS-only refresh. The expected suite count at this
+checkpoint is 54; do not use the older 51/53 counts as current acceptance.
+See [exact workflow/limits](double-space-workflows.md).
+
 ## Incoming shared lexical adapter checkpoint — Fedora validation pending
 
 `0b40574` follows core `1393edd` and Mac view `d953adc`. The Linux model opts its
