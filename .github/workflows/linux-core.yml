@@ -1,12 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 name: linux-core
 "on":
+  # Routine checks run locally; hosted builds require an authorized manual run.
   workflow_dispatch:
-  push:
-    branches: [master]
-    paths: ['src/core/**', 'src/main/**', 'src/backend/**', 'platforms/linux/**', '.github/workflows/linux-core.yml']
-  pull_request:
-    paths: ['src/core/**', 'src/main/**', 'src/backend/**', 'platforms/linux/**', '.github/workflows/linux-core.yml']
 permissions:
   contents: read
 concurrency:

@@ -26,12 +26,13 @@ calling directory. Use a different directory when changing compiler or mode.
 CMake honors `CC`, `CXX`, and standard dependency discovery variables.
 Generated modules never require an installed Bible corpus or user profile.
 
-The `linux-core` GitHub Actions workflow runs both modes on Ubuntu 22.04 and
-24.04 for relevant pushes and pull requests, and supports manual dispatch.
+The `linux-core` GitHub Actions workflow is manual-only to conserve hosted build
+allowance. Pushes and pull requests do not start it. An authorized manual dispatch
+runs both modes on Ubuntu 22.04 and 24.04 (four jobs).
 It preserves CTest diagnostics for seven days, including failed runs.
 It is independent of the existing paused native-core/macOS and legacy workflows.
-Repository administrators must allow GitHub Actions; branch protection can
-require its four matrix checks after the workflow has run.
+Repository administrators must allow GitHub Actions for manual runs. Do not
+require these checks on every change while routine acceptance stays local.
 
 This validates the shared core's existing contracts. It does not establish full
 feature parity or complete the shared engine. See the modernization status and
