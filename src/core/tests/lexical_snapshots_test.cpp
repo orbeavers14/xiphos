@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/worker.hpp"
 #include "xiphos/core/word_blocks.hpp"
+#include "xiphos/core/c_api.h"
+#include <chrono>
+#include <thread>
+#include <memory>
+#include <utility>
 #include <rawtext.h>
 #include <rawcom.h>
 #include <filesystem>
@@ -136,6 +141,80 @@ int main(int argc, char **argv) {
     const auto drained = accepted.get();
     check(drained.html == held.html && drained.lexical.css == held.lexical.css && drained.lexical.applied,
           "copied HTML and matching CSS survive worker drain and reader destruction");
+    {
+      xc_worker *opened = nullptr;
+      check(xc_worker_open(root.string().c_str(), &opened) == XC_OK, "open C worker");
+      std::unique_ptr<xc_worker, decltype(&xc_worker_close)> worker(opened, xc_worker_close);
+      xc_request *request = nullptr;
+      auto complete = [&](xc_status status) {
+        std::unique_ptr<xc_request, decltype(&xc_request_release)> result(std::exchange(request, nullptr), xc_request_release);
+        check(status == XC_OK && result, "accept C request");
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+        while (xc_request_poll(result.get()) == XC_PENDING) {
+          check(std::chrono::steady_clock::now() < deadline, "C request deadline");
+          std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        check(xc_request_poll(result.get()) == XC_OK, "complete C request");
+        return result;
+      };
+      auto done = complete(xc_worker_create_tab(worker.get(), &request));
+      const auto tab = xc_request_tab(done.get());
+      done = complete(xc_worker_set_module_engine_options(worker.get(), tab, "Text", XC_ENGINE_STRONGS, &request));
+      done = complete(xc_worker_set_module_engine_options(worker.get(), tab, "ThMLNotes", XC_ENGINE_STRONGS, &request));
+      check(xc_worker_set_lexical_layout_enabled(worker.get(), tab, 2, &request) == XC_INVALID_ARGUMENT && !request &&
+            xc_worker_set_lexical_layout_enabled(worker.get(), tab, 1, nullptr) == XC_INVALID_ARGUMENT,
+            "C layout setter rejects nonboolean and missing result before queueing");
+      done = complete(xc_worker_read_tab_entry(worker.get(), tab, "Text", "John 4:1", &request));
+      std::unique_ptr<xc_entry, decltype(&xc_entry_release)> plain(xc_request_take_entry(done.get()), xc_entry_release);
+      xc_lexical_presentation layout{"stale", 1, 1};
+      check(xc_entry_lexical_layout(plain.get(), &layout) == XC_OK && layout.css && !*layout.css && !layout.requested && !layout.applied,
+            "C disabled presentation is a successful typed result, not an error");
+      done = complete(xc_worker_set_lexical_layout_enabled(worker.get(), tab, 1, &request));
+      check(!xc_request_take_entry(done.get()), "layout command is a void request result");
+      done = complete(xc_worker_read_tab_entry(worker.get(), tab, "Text", "John 4:1", &request));
+      std::unique_ptr<xc_entry, decltype(&xc_entry_release)> entry(xc_request_take_entry(done.get()), xc_entry_release);
+      check(xc_entry_lexical_layout(entry.get(), &layout) == XC_OK && layout.requested && layout.applied &&
+            std::string(layout.css) == held.lexical.css && xc_entry_lexical_layout(entry.get(), &layout) == XC_OK,
+            "C entry metadata repeats with the owned CSS that matches this exact HTML");
+      const std::string copied_css(layout.css), copied_html(xc_entry_html(entry.get()));
+      done = complete(xc_worker_read_tab_chapter(worker.get(), tab, "Text", "John 4:1", 0, &request));
+      std::unique_ptr<xc_chapter, decltype(&xc_chapter_release)> chapter(xc_request_take_chapter(done.get()), xc_chapter_release);
+      check(xc_chapter_lexical_layout(chapter.get(), &layout) == XC_OK && layout.applied && std::string(layout.css) == copied_css &&
+            xc_chapter_verse_lexical_layout(chapter.get(), 0, &layout) == XC_OK && layout.applied && std::string(layout.css) == copied_css,
+            "C chapter and verse expose the same document-wide layout decision");
+      layout = {"stale", 1, 1};
+      check(xc_chapter_verse_lexical_layout(chapter.get(), static_cast<size_t>(-1), &layout) == XC_INVALID_ARGUMENT &&
+            !layout.css && !layout.requested && !layout.applied, "C bounds failure clears borrowed output and flags");
+      done = complete(xc_worker_read_passage(worker.get(), tab, "Text", "ThMLNotes", "John 4:1", &request));
+      std::unique_ptr<xc_passage, decltype(&xc_passage_release)> passage(xc_request_take_passage(done.get()), xc_passage_release);
+      check(xc_passage_lexical_layout(passage.get(), &layout) == XC_OK && layout.applied && std::string(layout.css) == copied_css &&
+            xc_passage_commentary_lexical_layout(passage.get(), &layout) == XC_OK && layout.applied && std::string(layout.css) == copied_css,
+            "C paired panes expose independently owned matching CSS");
+      done = complete(xc_worker_read_passage(worker.get(), tab, "Text", "", "John 4:1", &request));
+      std::unique_ptr<xc_passage, decltype(&xc_passage_release)> no_commentary(xc_request_take_passage(done.get()), xc_passage_release);
+      layout = {"stale", 1, 1};
+      check(xc_passage_commentary_lexical_layout(no_commentary.get(), &layout) == XC_INVALID_ARGUMENT && !layout.css && !layout.requested && !layout.applied,
+            "absent commentary cannot expose another pane's CSS");
+      done = complete(xc_worker_read_tab_chapter(worker.get(), tab, "Text", "John 5:1", 0, &request));
+      std::unique_ptr<xc_chapter, decltype(&xc_chapter_release)> fallback(xc_request_take_chapter(done.get()), xc_chapter_release);
+      check(xc_chapter_lexical_layout(fallback.get(), &layout) == XC_OK && layout.requested && !layout.applied && layout.css && !*layout.css,
+            "C fallback retains the requested state without positioning CSS");
+      check(xc_entry_lexical_layout(nullptr, &layout) == XC_INVALID_ARGUMENT && !layout.css &&
+            xc_entry_lexical_layout(entry.get(), nullptr) == XC_INVALID_ARGUMENT &&
+            xc_passage_lexical_layout(nullptr, &layout) == XC_INVALID_ARGUMENT &&
+            xc_chapter_lexical_layout(nullptr, &layout) == XC_INVALID_ARGUMENT,
+            "C metadata getters reject null handles and output pointers");
+      done = complete(xc_worker_close_tab(worker.get(), tab, &request));
+      check(xc_worker_set_lexical_layout_enabled(worker.get(), tab, 0, &request) == XC_OK, "closed C tab rejects at poll after accepted submission");
+      while (xc_request_poll(request) == XC_PENDING) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      check(xc_request_poll(request) == XC_INVALID_ARGUMENT, "closed C tab command reports invalid argument");
+      xc_request_release(request); request = nullptr;
+      worker.reset();
+      check(xc_entry_lexical_layout(entry.get(), &layout) == XC_OK && std::string(layout.css) == copied_css &&
+            std::string(xc_entry_html(entry.get())) == copied_html &&
+            xc_passage_commentary_lexical_layout(passage.get(), &layout) == XC_OK && layout.applied,
+            "C HTML/CSS snapshots survive request release, tab close, later reads and worker destruction");
+    }
     std::cout << "Shared lexical entry/chapter/paired snapshots, cleanup order, fallback and worker ownership passed\n";
   } catch (const std::exception &error) { std::cerr << error.what() << '\n'; return 1; }
 }

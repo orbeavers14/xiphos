@@ -532,7 +532,9 @@ combined calls. Unsupported HTML never receives annotation positioning CSS witho
 word spans. Opt-in session/worker entry and chapter snapshots now carry owned
 `lexical` CSS/status and format before cleanup, with whole-document raw fallback
 on unsupported markup. Existing consumers stay compatible until explicitly opting
-in; C/native adapter consumption and visual checks remain pending. The legacy
+in. Typed C snapshot metadata getters borrow CSS until snapshot release and reset
+invalid outputs; the queued consumer capability setter accepts exactly 0/1.
+Swift/Linux consumption and visual checks remain pending. The legacy
 parser remains intact. `lexical_block_style` provides owned C++11 CSS and replaces selection in
 three legacy renderer call sites. Frozen/current/helper comparisons cover 768
 call-site cases plus 2,048 concurrent selections; strict C++11/native-disabled

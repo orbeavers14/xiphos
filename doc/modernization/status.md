@@ -89,7 +89,8 @@ Tests add 8,000 noise inputs, 3,039 structured mutations and 400 concurrent rend
 Opt-in session/worker snapshots now stage lexical heading/body layout before cleanup,
 carry owned CSS/status and roll unsupported documents back as a whole. The new
 private-fixture snapshot test covers chapters, paired history, tab isolation,
-save/import and worker lifetime. C/native adapter consumption and broader
+save/import and worker lifetime. Typed C metadata and the queued consumer opt-in
+now expose the same owned snapshot contract; native adapter consumption and broader
 corpus/visual acceptance remain pending. Shared owned lexical CSS
 and HTML are now available through one layout decision, including explicit
 unsupported-content CSS fallback (48 policy cases and 400 concurrent combined calls).

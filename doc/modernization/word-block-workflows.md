@@ -199,6 +199,16 @@ The full local macOS suite passes 66/66; focused normal, ASan/UBSan and TSan
 snapshot runs each pass 2/2 including the heading fixture prerequisite. External
 SDK instrumentation and disabled leak-detection limits remain as above.
 
+The C ABI now adds `xc_worker_set_lexical_layout_enabled` (strict 0/1, queued,
+tab-local and history-neutral) and typed `xc_lexical_presentation` metadata for
+entries, paired panes, chapters and chapter verses. Getters return `XC_OK` for
+disabled and fallback snapshots, with separate requested/applied flags; CSS is
+borrowed until its snapshot is released. Invalid/absent/bounds outputs reset to
+`{NULL,0,0}` and return `XC_INVALID_ARGUMENT`. Valid output pointers never retain
+stale CSS from another owner. C11 header consumption and C ownership tests cover
+repeat access, absent commentary, invalid setters, closed tabs, later reads and
+HTML/CSS lifetime after request/tab/worker destruction. Adapters must copy CSS.
+
 Next: validate broader SDK/lemma/note/paragraph shapes and fallback policy, then
 adopt owned rendering/styles in heading/body snapshots with native controls and
 visual evidence. Representative RTL/font/module, keyboard/runtime and full GTK/

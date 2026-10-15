@@ -74,6 +74,14 @@ struct xc_request {
   void store(xiphos::core::HistorySnapshot v) { history = std::make_unique<xc_history>(xc_history{std::move(v)}); }
 };
 namespace {
+xc_status borrow_lexical_presentation(const xiphos::core::LexicalPresentation *value,
+                                      xc_lexical_presentation *out) {
+  if (!out) return XC_INVALID_ARGUMENT;
+  *out = {nullptr, 0, 0};
+  if (!value) return XC_INVALID_ARGUMENT;
+  *out = {value->css.c_str(), value->requested ? 1 : 0, value->applied ? 1 : 0};
+  return XC_OK;
+}
 xiphos::core::EngineOptions options_from_flags(unsigned flags) {
   xiphos::core::EngineOptions options;
   options.strongs = (flags & XC_ENGINE_STRONGS) != 0;
@@ -234,6 +242,10 @@ xc_status xc_worker_set_commentary_chapter_mode(xc_worker *w, uint64_t tab, cons
 xc_status xc_worker_set_headings(xc_worker *w, uint64_t tab, const char *id, int enabled, xc_request **out) {
   if (!id || !*id || (enabled != 0 && enabled != 1)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.set_headings(tab, id, enabled != 0); });
+}
+xc_status xc_worker_set_lexical_layout_enabled(xc_worker *w, uint64_t tab, int enabled, xc_request **out) {
+  if (enabled != 0 && enabled != 1) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.set_lexical_layout_enabled(tab, enabled != 0); });
 }
 xc_status xc_worker_set_image_content(xc_worker *w, uint64_t tab, const char *id, int enabled, xc_request **out) {
   if (!id || !*id || (enabled != 0 && enabled != 1)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
@@ -498,6 +510,21 @@ const char *xc_passage_commentary_module(const xc_passage *p) { return p ? p->va
 const char *xc_passage_commentary_reference(const xc_passage *p) { return p && p->value.commentary ? p->value.commentary->reference.c_str() : nullptr; }
 const char *xc_passage_commentary_html(const xc_passage *p) { return p && p->value.commentary ? p->value.commentary->html.c_str() : nullptr; }
 const char *xc_passage_commentary_heading_html(const xc_passage *p) { return p && p->value.commentary ? p->value.commentary->heading_html.c_str() : nullptr; }
+xc_status xc_entry_lexical_layout(const xc_entry *entry, xc_lexical_presentation *out) {
+  return borrow_lexical_presentation(entry ? &entry->value.lexical : nullptr, out);
+}
+xc_status xc_passage_lexical_layout(const xc_passage *passage, xc_lexical_presentation *out) {
+  return borrow_lexical_presentation(passage ? &passage->value.text.lexical : nullptr, out);
+}
+xc_status xc_passage_commentary_lexical_layout(const xc_passage *passage, xc_lexical_presentation *out) {
+  return borrow_lexical_presentation(passage && passage->value.commentary ? &passage->value.commentary->lexical : nullptr, out);
+}
+xc_status xc_chapter_lexical_layout(const xc_chapter *chapter, xc_lexical_presentation *out) {
+  return borrow_lexical_presentation(chapter ? &chapter->value.lexical : nullptr, out);
+}
+xc_status xc_chapter_verse_lexical_layout(const xc_chapter *chapter, size_t verse, xc_lexical_presentation *out) {
+  return borrow_lexical_presentation(chapter && verse < chapter->value.verses.size() ? &chapter->value.verses[verse].lexical : nullptr, out);
+}
 size_t xc_entry_cleanup_count(const xc_entry *e) { return e ? e->value.cleanup_diagnostics.size() : 0; }
 int xc_entry_cleanup_kind(const xc_entry *e, size_t index) {
   if (!(e) || index >= e->value.cleanup_diagnostics.size()) return -1;

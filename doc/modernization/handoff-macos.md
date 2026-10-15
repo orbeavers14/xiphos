@@ -15,6 +15,13 @@ this task is active; platform-local acceptance can proceed independently.
 
 ## Previous checked milestones
 
+Current-run core checkpoint: `7fd1bce`. Opt-in session/worker entry/chapter/paired
+snapshots carry matching lexical CSS/status, stage formatting before cleanup and
+roll unsupported panes back as whole documents. Full local suite 66/66; focused
+normal/ASan/UBSan/TSan runs 2/2 including the private fixture setup. Existing
+consumers stay on the compatible plain path. C ABI consumption is the active next
+checkpoint; frontend layout/visual adoption is not yet claimed.
+
 The macOS chat completed the shared lexical corpus/ownership/layout checkpoints
 below on `master`, starting from `74a4190`. No file claim remains after this
 handoff; the next chat must fetch and announce its bounded shared-core task before

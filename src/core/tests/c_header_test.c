@@ -5,7 +5,14 @@ int c_header_test(void) {
   const char *references[] = {"A", "B"};
   xc_session *session = NULL;
   xc_request *request = NULL;
+  xc_lexical_presentation layout = {"stale", 1, 1};
   return xc_reference_list_count(NULL) == 0 && xc_reference_list_module(NULL) == NULL &&
+         xc_entry_lexical_layout(NULL, &layout) == XC_INVALID_ARGUMENT && layout.css == NULL && !layout.requested && !layout.applied &&
+         xc_passage_lexical_layout(NULL, &layout) == XC_INVALID_ARGUMENT &&
+         xc_passage_commentary_lexical_layout(NULL, &layout) == XC_INVALID_ARGUMENT &&
+         xc_chapter_lexical_layout(NULL, &layout) == XC_INVALID_ARGUMENT &&
+         xc_chapter_verse_lexical_layout(NULL, 0, &layout) == XC_INVALID_ARGUMENT &&
+         xc_worker_set_lexical_layout_enabled(NULL, 0, 1, &request) == XC_INVALID_ARGUMENT && request == NULL &&
          xc_reference_list_context(NULL) == NULL && xc_reference_list_expression(NULL) == NULL &&
          xc_reference_list_html(NULL) == NULL && xc_reference_list_entry_reference(NULL, 0) == NULL &&
          xc_reference_list_entry_html(NULL, 0) == NULL && xc_reference_list_limited(NULL) == 0 &&

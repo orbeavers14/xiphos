@@ -32,6 +32,9 @@ typedef struct xc_catalog xc_catalog;
 typedef struct xc_history xc_history;
 typedef enum xc_status { XC_OK = 0, XC_INVALID_ARGUMENT = 1,
   XC_MODULE_NOT_FOUND = 2, XC_ENGINE_ERROR = 3, XC_PENDING = 4 } xc_status;
+/* Copied flags and borrowed CSS from an owned HTML snapshot. CSS remains valid
+ * until that snapshot is released. Disabled and fallback are distinct states. */
+typedef struct { const char *css; int requested, applied; } xc_lexical_presentation;
 /* Explicit SWORD filter settings, not saved-preference defaults. All-zero
  * means Off filters with engine headings On; clear restores unconfigured reads.
  * Variant flags retain legacy Primary > Secondary > All precedence; no variant
@@ -68,6 +71,10 @@ void xc_worker_close(xc_worker *worker);
 xc_status xc_worker_modules(xc_worker *worker, xc_request **out);
 xc_status xc_worker_create_tab(xc_worker *worker, xc_request **out);
 xc_status xc_worker_close_tab(xc_worker *worker, uint64_t tab, xc_request **out);
+/* Consumer migration capability, not a saved module preference. Accepts exactly
+ * 0/1; default off. Enable only when consuming HTML and matching CSS together.
+ * FIFO, tab-local, history-neutral; invalid/closed tab errors arrive at poll. */
+xc_status xc_worker_set_lexical_layout_enabled(xc_worker *worker, uint64_t tab, int enabled, xc_request **out);
 xc_status xc_worker_visit(xc_worker *worker, uint64_t tab, const char *module, const char *reference, xc_request **out);
 xc_status xc_worker_navigate(xc_worker *worker, uint64_t tab, int direction, xc_request **out);
 xc_status xc_worker_navigate_chapter(xc_worker *worker, uint64_t tab, const char *module, const char *reference, int direction, xc_request **out);
@@ -245,6 +252,15 @@ const char *xc_passage_commentary_reference(const xc_passage *passage);
 const char *xc_passage_commentary_html(const xc_passage *passage);
 /* Borrowed from the same owner as body HTML; null for absent/out-of-range. */
 const char *xc_passage_commentary_heading_html(const xc_passage *passage);
+/* Repeatable snapshot metadata getters. XC_OK includes disabled/fallback states.
+ * Null/absent/out-of-range owner or null output -> XC_INVALID_ARGUMENT; nonnull
+ * outputs reset to {NULL,0,0} on error. Copy CSS before releasing its owner.
+ * Chapter and verse metadata share the same document-wide fallback decision. */
+xc_status xc_entry_lexical_layout(const xc_entry *entry, xc_lexical_presentation *out);
+xc_status xc_passage_lexical_layout(const xc_passage *passage, xc_lexical_presentation *out);
+xc_status xc_passage_commentary_lexical_layout(const xc_passage *passage, xc_lexical_presentation *out);
+xc_status xc_chapter_lexical_layout(const xc_chapter *chapter, xc_lexical_presentation *out);
+xc_status xc_chapter_verse_lexical_layout(const xc_chapter *chapter, size_t verse, xc_lexical_presentation *out);
 /* Copied core cleanup diagnostics: kind 0=image, 1=font face; -1 out of range.
  * Counts are zero for absent/null owners. Suffix strings are borrowed from the
  * same owned entry/passage/chapter; null for absent/out-of-range. */
