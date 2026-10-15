@@ -24,6 +24,7 @@
 
 #include "xiphos/core/html_cleanup.hpp"
 #include "xiphos/core/note_markers.hpp"
+#include "xiphos/core/note_rendering.hpp"
 #include "xiphos/core/lexical_style.hpp"
 #include <glib.h>
 #include <treekeyidx.h>
@@ -759,27 +760,8 @@ set_morph_order(SWModule &imodule)
 void
 set_render_numbers(SWModule &imodule, GLOBAL_OPS *ops)
 {
-	// if we have not yet determined options, don't bother.
-	if (!ops)
-		return;
-
-	for (FilterList::const_iterator it =
-		 imodule.getRenderFilters().begin();
-	     it != imodule.getRenderFilters().end();
-	     ++it) {
-		OSISXHTML *f1 = dynamic_cast<OSISXHTML *>(*it);
-		if (f1)
-			f1->setRenderNoteNumbers((ops->xrefnotenumbers != 0));
-		ThMLXHTML *f2 = dynamic_cast<ThMLXHTML *>(*it);
-		if (f2)
-			f2->setRenderNoteNumbers((ops->xrefnotenumbers != 0));
-		GBFXHTML *f3 = dynamic_cast<GBFXHTML *>(*it);
-		if (f3)
-			f3->setRenderNoteNumbers((ops->xrefnotenumbers != 0));
-		TEIXHTML *f4 = dynamic_cast<TEIXHTML *>(*it);
-		if (f4)
-			f4->setRenderNoteNumbers((ops->xrefnotenumbers != 0));
-	}
+    if (!ops) return;
+    xiphos::core::set_render_note_numbers(imodule, ops->xrefnotenumbers != 0);
 }
 
 //
