@@ -194,3 +194,31 @@ The window smoke checks actual two-window publication, independent passages and
 chapter modes, successful Bible anchor lookup/scroll, pending close and continued
 use of the remaining window. It does not certify manual visual/accessibility
 parity or accelerated rendering in this VM.
+
+### Current macOS preview scope
+
+The Linux preview now exposes the current macOS preview's implemented reading,
+commentary, dictionary, options/profile, contextual preview, lexicon and
+multiwindow capabilities through the same core. Normal startup reads the first
+Bible at John 3:16. Module descriptions, types and languages are visible beside
+selectors. Reading-module changes read immediately; choosing a commentary while
+a Bible is displayed updates its paired pane without a history visit. Dictionary
+views retain their original source context across key steps and later Bible
+navigation. Close window is Ctrl+W; Quit is Ctrl+Q.
+
+WebKit views use ephemeral network sessions, matching macOS's nonpersistent
+store. Content scripts/resources remain blocked; fixed isolated host code is
+used only for selected-anchor scrolling. Red-letter/reference/selected styling
+mirrors the existing macOS host's semantic classes.
+
+Final startup/selection check:
+
+```sh
+build/gtk4/xiphos-linux-preview --smoke-startup-test build/gtk4/core/study-passage-fixture
+```
+
+This is implementation-scope equivalence with an experimental macOS preview,
+not accepted 1:1 desktop parity or a complete Xiphos replacement. Real keyboard,
+pointer/hover, file-picker, screen-reader, visual/RTL/font and accelerated-rendering
+acceptance, licensed representative modules/profiles and release packaging
+remain explicit gates. The legacy GTK3 application stays intact.
