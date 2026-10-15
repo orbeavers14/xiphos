@@ -1,6 +1,6 @@
 # Linux / Fedora / WSL2 chat handoff
 
-Updated 2026-10-14. Read [AGENTS.md](../../AGENTS.md) and the
+Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md) and the
 [shared handoff](handoff.md) first. Active work: bring Linux to the existing macOS preview scope in locally checked,
 automatically merged milestones, authorized by the owner. Current branch:
 `linux/macos-reading-parity`; shared API changes are not currently needed.
@@ -198,10 +198,10 @@ standalone 47/47 core suites were executed for this checkpoint.
 | Reading filters/variants and presentation preferences | Options checkpoint below |
 | Engine preference import/save | Options checkpoint below; picker manual acceptance pending |
 | Dictionary lookup, key steps/chooser/history | Dictionary checkpoint below; contextual lexical feeds follow |
-| Lexicon preferences and XML import/save | Pending |
-| Note/reference-list/lexical click results | Pending |
-| Semantic hover and retained information | Pending |
-| Cross-reference list/information setting | Pending |
+| Lexicon preferences and XML import/save | Contextual checkpoint below |
+| Note/reference-list/lexical click results | Contextual checkpoint below |
+| Semantic hover and retained information | Contextual checkpoint below; manual pointer acceptance pending |
+| Cross-reference list/information setting | Contextual checkpoint below |
 | Per-window isolation on one process worker | Single-window host; pending |
 | Native selected-anchor scrolling | Pending |
 
@@ -262,3 +262,37 @@ Keep remaining gaps explicit; no feature group has complete accepted parity.
   Diff checks pass. Next: lexicon preferences and explicit XML import/save,
   contextual note/reference/lexical clicks/hover, selected-anchor scrolling and
   per-window isolation through one process worker.
+
+
+## macOS scope catch-up: contextual previews/lexicons (2026-10-15)
+
+- Implementation `49348037e1e15e3a9f29d8bd5cd9fa150e07f97e`, branch
+  `linux/contextual-preview-parity`, following merged options/profile PR #87.
+- Same Fedora ARM64 environment. Added copied note/reference/lexical results,
+  contextual pane links, expanded note references/back-to-note, limit/skipped
+  metadata, retained information, native WebKit hit-test hover and per-tab
+  cross-reference list/information routing. Hover observers are independent of
+  main actions and invalidate on navigation; underlying engine work stays FIFO.
+- Five nullable lexicon preferences now expose role-filtered installed choices,
+  unavailable-name editing, Apply and native explicit XML Import/Save. Unset vs
+  empty survives copying; XML save rejects unroundtrippable values without writes.
+  Main lexical clicks use core Unicode casing and separate dictionary history;
+  hovers never record visits. No platform URI or reference parser was added.
+- Built preview, three Linux model tests and `core_dictionary_test`.
+  `ctest --test-dir build/gtk4 -R '^linux_.*model$' --output-on-failure`
+  passes 7/7 including fixtures after correcting the generated XML test root to
+  the documented case-sensitive `Xiphos` spelling.
+- Sanitized `preview_model_test.cpp` compiled/run with the adapter command above,
+  substituting the source/output name and passing module-preferences fixture,
+  dictionary fixture and disposable lexicon-profile scratch directory: passes.
+  Checks cover note/list/lexical ownership, five repeated references, failed and
+  late hover retention, navigation invalidation, nullable preferences, unrelated
+  XML preservation/read-only import and failed save/import state preservation.
+- Native `--smoke-preview-test build/gtk4/core/module-preferences-fixture` and
+  `--smoke-lexical-test build/gtk4/core/dictionary-fixture` both pass widget
+  publication/signal flows. These are not physical pointer events or native
+  picker/screen-reader/visual acceptance. SDK instrumentation limits and VMware
+  EGL/DRI/WebKit D-Bus shutdown warnings remain as before.
+- Core/GTK3/macOS/workflows unchanged; no hosted builds. Diff checks pass.
+  Next: selected-anchor host scrolling and multiple windows sharing one worker;
+  final scope audit against the macOS preview and explicit manual acceptance gaps.

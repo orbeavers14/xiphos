@@ -29,6 +29,11 @@ struct App {
   GtkWidget *reading_checks[12] = {}, *variants = nullptr, *headings = nullptr;
   GtkWidget *content_checks[4] = {}, *profile_import = nullptr, *profile_save = nullptr;
   GtkNativeDialog *file_dialog = nullptr;
+  WebKitWebView *sidebar_view = nullptr, *information_view = nullptr;
+  GtkWidget *reference_list = nullptr, *preview_close = nullptr, *show_references = nullptr, *show_note = nullptr, *preview_metadata = nullptr;
+  GtkWidget *lexicon_entries[5] = {}, *lexicon_unset[5] = {}, *lexicon_apply = nullptr, *lexicon_import = nullptr, *lexicon_save = nullptr;
+  GtkWidget *lexicon_candidates[5] = {}; std::vector<std::string> lexicon_candidate_ids[5];
+  std::string sidebar_identity, information_identity, hover_uri;
   WebKitWebView *dictionary_view = nullptr;
   std::vector<std::string> dictionaries;
   std::string dictionary_identity, dictionary_choices_identity, dictionary_submitted;
@@ -37,7 +42,7 @@ struct App {
   std::vector<std::string> bibles, commentaries{""};
   std::string root, rendered, submitted_draft;
   guint timer = 0;
-  bool options_smoke = false; unsigned initial_flags = 0; std::string initial_html;
+  bool options_smoke = false, preview_smoke = false, lexical_smoke = false; unsigned initial_flags = 0; std::string initial_html;
   bool populated = false, closing = false, smoke = false, smoke_failed = false, software = false;
   unsigned smoke_stage = 0, loaded = 0;
 };
@@ -50,18 +55,23 @@ void select(GtkWidget *dropdown, const std::vector<std::string> &ids, const std:
     if (ids[i] == id) { gtk_drop_down_set_selected(GTK_DROP_DOWN(dropdown), i); return; }
 }
 void shutdown(App *app);
-void choose_profile(App *app, bool save) {
+void choose_profile(App *app, bool save, bool lexicon = false) {
   if (app->closing || app->file_dialog || !app->model || app->model->busy()) return;
-  auto *dialog = gtk_file_chooser_native_new(save ? "Save reading options" : "Import reading options", GTK_WINDOW(app->window),
+  auto *dialog = gtk_file_chooser_native_new(lexicon ? (save ? "Save lexicon choices" : "Import lexicon choices") : (save ? "Save reading options" : "Import reading options"), GTK_WINDOW(app->window),
     save ? GTK_FILE_CHOOSER_ACTION_SAVE : GTK_FILE_CHOOSER_ACTION_OPEN, save ? "Save" : "Import", "Cancel");
   app->file_dialog = GTK_NATIVE_DIALOG(dialog);
+  g_object_set_data(G_OBJECT(dialog), "lexicon-profile", GINT_TO_POINTER(lexicon));
   g_object_set_data(G_OBJECT(dialog), "save-profile", GINT_TO_POINTER(save));
   g_signal_connect(dialog, "response", G_CALLBACK(+[](GtkNativeDialog *dialog, int response, gpointer data) {
     auto *app = static_cast<App *>(data);
     if (!app->closing && response == GTK_RESPONSE_ACCEPT) {
       auto *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
       char *path = file ? g_file_get_path(file) : nullptr;
-      if (path) app->model->reading_profile(path, GPOINTER_TO_INT(g_object_get_data(G_OBJECT(dialog), "save-profile")) != 0);
+      if (path) {
+        const bool save = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(dialog), "save-profile")) != 0;
+        if (GPOINTER_TO_INT(g_object_get_data(G_OBJECT(dialog), "lexicon-profile"))) app->model->lexicon_profile(path, save);
+        else app->model->reading_profile(path, save);
+      }
       g_free(path); if (file) g_object_unref(file);
     }
     app->file_dialog = nullptr; gtk_native_dialog_hide(dialog); g_object_unref(dialog);
@@ -88,7 +98,14 @@ gboolean policy(WebKitWebView *view, WebKitPolicyDecision *decision, WebKitPolic
         const char *uri = webkit_uri_request_get_uri(request);
         const auto &passage = app->model->passage();
         app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference));
-        app->model->follow(view == app->commentary_view ? passage.commentary : passage.bible, uri ? uri : "");
+        std::string module = view == app->commentary_view ? passage.commentary : passage.bible, context = passage.reference;
+        if (view == app->sidebar_view) {
+          const auto &preview = app->model->showing_references() ? app->model->references() : app->model->note();
+          module = preview.module; context = preview.reference;
+        } else if (view == app->information_view) {
+          module = app->model->information().module; context = app->model->information().reference;
+        }
+        app->model->follow(module, uri ? uri : "", context);
       }
       return TRUE;
     }
@@ -107,6 +124,13 @@ GtkWidget *pane(App *app, const char *title, WebKitWebView **view) {
   webkit_settings_set_enable_javascript(webkit_web_view_get_settings(*view), FALSE);
   if (app->software) webkit_settings_set_hardware_acceleration_policy(webkit_web_view_get_settings(*view), WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
   g_signal_connect(*view, "decide-policy", G_CALLBACK(policy), app);
+  g_signal_connect(*view, "mouse-target-changed", G_CALLBACK(+[](WebKitWebView *, WebKitHitTestResult *target, guint, gpointer data) {
+    auto *app = static_cast<App *>(data);
+    if (app->closing || !app->model) return;
+    const char *uri = webkit_hit_test_result_context_is_link(target) ? webkit_hit_test_result_get_link_uri(target) : nullptr;
+    if (!uri) { app->hover_uri.clear(); return; }
+    if (app->hover_uri != uri) { app->hover_uri = uri; app->model->hover(uri); }
+  }), app);
   g_signal_connect(*view, "load-changed", G_CALLBACK(+[](WebKitWebView *, WebKitLoadEvent event, gpointer data) {
     if (event == WEBKIT_LOAD_FINISHED) ++static_cast<App *>(data)->loaded;
   }), app);
@@ -123,13 +147,22 @@ gboolean tick(gpointer data) {
     auto *bibles = gtk_string_list_new(nullptr), *commentaries = gtk_string_list_new(nullptr), *dictionaries = gtk_string_list_new(nullptr);
     gtk_string_list_append(commentaries, "No commentary");
     for (const auto &module : app->model->modules()) {
-      const auto label = module.id + " — " + module.description;
+      const auto label = module.id;
       if (module.type == "Biblical Texts") { app->bibles.push_back(module.id); gtk_string_list_append(bibles, label.c_str()); }
       if (module.dictionary) { app->dictionaries.push_back(module.id); gtk_string_list_append(dictionaries, label.c_str()); }
       if (module.type == "Commentaries") { app->commentaries.push_back(module.id); gtk_string_list_append(commentaries, label.c_str()); }
     }
     gtk_drop_down_set_model(GTK_DROP_DOWN(app->bible), G_LIST_MODEL(bibles));
     gtk_drop_down_set_model(GTK_DROP_DOWN(app->commentary), G_LIST_MODEL(commentaries));
+    const unsigned roles[] = {XIPHOS_LEXICON_GREEK_DEF, XIPHOS_LEXICON_HEBREW_DEF, XIPHOS_LEXICON_GREEK_PARSE, XIPHOS_LEXICON_GREEK_PARSE, XIPHOS_LEXICON_HEBREW_PARSE};
+    for (int i = 0; i < 5; ++i) {
+      auto *choices = gtk_string_list_new(nullptr);
+      for (const auto &module : app->model->modules()) if (module.dictionary && (module.lexicon_roles & roles[i])) {
+        app->lexicon_candidate_ids[i].push_back(module.id); gtk_string_list_append(choices, module.id.c_str());
+      }
+      gtk_drop_down_set_model(GTK_DROP_DOWN(app->lexicon_candidates[i]), G_LIST_MODEL(choices)); g_object_unref(choices);
+      gtk_drop_down_set_selected(GTK_DROP_DOWN(app->lexicon_candidates[i]), GTK_INVALID_LIST_POSITION);
+    }
     gtk_drop_down_set_model(GTK_DROP_DOWN(app->dictionary_module), G_LIST_MODEL(dictionaries)); g_object_unref(dictionaries);
     g_object_unref(bibles); g_object_unref(commentaries); app->populated = true;
   }
@@ -235,12 +268,89 @@ gboolean tick(gpointer data) {
   }
   gtk_widget_set_sensitive(app->profile_import, enabled && !app->model->modules().empty());
   gtk_widget_set_sensitive(app->profile_save, enabled && !app->model->modules().empty());
+  gtk_check_button_set_active(GTK_CHECK_BUTTON(app->reference_list), app->model->cross_reference_list());
+  gtk_widget_set_sensitive(app->reference_list, enabled);
+  const auto &sidebar = app->model->showing_references() ? app->model->references() : app->model->note();
+  const auto sidebar_identity = sidebar.module + sidebar.reference + sidebar.html;
+  if (sidebar_identity != app->sidebar_identity) {
+    app->sidebar_identity = sidebar_identity;
+    webkit_web_view_load_html(app->sidebar_view, document(sidebar.html).c_str(), "xiphos-preview://study/");
+    const auto metadata = app->model->showing_references() ? std::to_string(sidebar.count) + " passages" + (sidebar.limited ? " (range limit reached)" : "") + (sidebar.skipped ? " — unresolved: " + std::to_string(sidebar.skipped) : "") : sidebar.reference;
+    gtk_label_set_text(GTK_LABEL(app->preview_metadata), metadata.c_str());
+  }
+  const auto &information = app->model->information(); const auto information_identity = information.module + information.reference + information.html;
+  if (information_identity != app->information_identity) {
+    app->information_identity = information_identity;
+    webkit_web_view_load_html(app->information_view, document(information.html).c_str(), "xiphos-preview://study/");
+  }
+  gtk_widget_set_sensitive(app->preview_close, enabled && !sidebar.module.empty());
+  gtk_widget_set_sensitive(app->show_references, enabled && !app->model->note().expression.empty());
+  gtk_widget_set_sensitive(app->show_note, enabled && !app->model->note().module.empty());
+  for (int i = 0; i < 5; ++i) { gtk_widget_set_sensitive(app->lexicon_entries[i], enabled); gtk_widget_set_sensitive(app->lexicon_unset[i], enabled); gtk_widget_set_sensitive(app->lexicon_candidates[i], enabled); }
+  gtk_widget_set_sensitive(app->lexicon_apply, enabled); gtk_widget_set_sensitive(app->lexicon_import, enabled); gtk_widget_set_sensitive(app->lexicon_save, enabled);
+  // Preserve an in-progress editor draft. Only core preference changes replace it.
+  std::string preference_identity;
+  for (const auto &name : app->model->lexicons()) preference_identity += name ? "set:" + *name + "\n" : "unset\n";
+  auto *old_identity = static_cast<char *>(g_object_get_data(G_OBJECT(app->lexicon_apply), "preferences"));
+  if (!old_identity || preference_identity != old_identity) {
+    g_object_set_data_full(G_OBJECT(app->lexicon_apply), "preferences", g_strdup(preference_identity.c_str()), g_free);
+    for (int i = 0; i < 5; ++i) {
+      const auto &name = app->model->lexicons()[i];
+      gtk_check_button_set_active(GTK_CHECK_BUTTON(app->lexicon_unset[i]), !name);
+      gtk_editable_set_text(GTK_EDITABLE(app->lexicon_entries[i]), name ? name->c_str() : "");
+    }
+  }
   app->updating = false;
   const auto &error = app->model->error();
   gtk_label_set_text(GTK_LABEL(app->status), !error.empty() ? error.c_str() : app->model->busy() ? "Loading…" : app->populated && app->bibles.empty() ? "No Bible modules found. Open a SWORD library with --root DIRECTORY." : !app->model->notice().empty() ? app->model->notice().c_str() : "Ready");
   if (app->smoke && enabled) {
     if (!error.empty()) {
       app->smoke_failed = true; std::cerr << error << "\n"; gtk_window_close(GTK_WINDOW(app->window)); return G_SOURCE_REMOVE;
+    }
+    if (app->preview_smoke) {
+      const char *body = "passagestudy.jsp?action=showNote&type=n&value=1&module=OptionOther&passage=John3%3A19";
+      const char *xref = "passagestudy.jsp?action=showNote&type=x&value=1&module=OptionOther&passage=John3%3A20";
+      if (app->model->preview_busy()) return G_SOURCE_CONTINUE;
+      switch (app->smoke_stage) {
+      case 0:
+        select(app->bible, app->bibles, "OptionOther"); gtk_editable_set_text(GTK_EDITABLE(app->reference), "John 3:23");
+        g_signal_emit_by_name(app->reference, "activate"); ++app->smoke_stage; break;
+      case 1: app->model->follow("OptionOther", xref); ++app->smoke_stage; break;
+      case 2:
+        if (app->model->note().expression.empty()) app->smoke_failed = true;
+        g_signal_emit_by_name(app->show_references, "clicked"); ++app->smoke_stage; break;
+      case 3:
+        if (app->model->references().count != 5) app->smoke_failed = true;
+        g_signal_emit_by_name(app->show_note, "clicked"); app->model->hover(body); ++app->smoke_stage; break;
+      case 4:
+        if (app->model->information().html.find("Original other note") == std::string::npos) app->smoke_failed = true;
+        gtk_check_button_set_active(GTK_CHECK_BUTTON(app->reference_list), FALSE); ++app->smoke_stage; break;
+      case 5: app->model->hover(xref); ++app->smoke_stage; break;
+      case 6:
+        if (app->model->information().html.find("Back to John 3:23") == std::string::npos || app->model->can_back()) app->smoke_failed = true;
+        g_signal_emit_by_name(app->preview_close, "clicked"); ++app->smoke_stage;
+        gtk_window_close(GTK_WINDOW(app->window)); return G_SOURCE_REMOVE;
+      }
+      return G_SOURCE_CONTINUE;
+    }
+    if (app->lexical_smoke) {
+      if (app->model->preview_busy()) return G_SOURCE_CONTINUE;
+      switch (app->smoke_stage) {
+      case 0:
+        for (int i = 0; i < 5; ++i) { gtk_editable_set_text(GTK_EDITABLE(app->lexicon_entries[i]), "DictionaryOne"); gtk_check_button_set_active(GTK_CHECK_BUTTON(app->lexicon_unset[i]), FALSE); }
+        g_signal_emit_by_name(app->lexicon_apply, "clicked"); ++app->smoke_stage; break;
+      case 1:
+        select(app->bible, app->bibles, "OriginalBible"); gtk_editable_set_text(GTK_EDITABLE(app->reference), "John 3:16");
+        g_signal_emit_by_name(app->reference, "activate"); ++app->smoke_stage; break;
+      case 2: app->model->hover("xiphos.url?action=showStrongs&type=Greek&value=alpha"); ++app->smoke_stage; break;
+      case 3:
+        if (app->model->information().html.find("DictionaryOne") == std::string::npos) app->smoke_failed = true;
+        app->model->follow("OriginalBible", "xiphos.url?action=showStrongs&type=Greek&value=alpha"); ++app->smoke_stage; break;
+      case 4:
+        if (app->model->dictionary().module != "DictionaryOne" || app->model->dictionary_history_count() != 1) app->smoke_failed = true;
+        ++app->smoke_stage; gtk_window_close(GTK_WINDOW(app->window)); return G_SOURCE_REMOVE;
+      }
+      return G_SOURCE_CONTINUE;
     }
     if (app->options_smoke) {
       switch (app->smoke_stage) {
@@ -445,6 +555,41 @@ void activate(GtkApplication *application, gpointer data) {
   for (auto *button : {app->profile_import, app->profile_save}) g_signal_connect(button, "clicked", G_CALLBACK(+[](GtkButton *button, gpointer data) {
     auto *app = static_cast<App *>(data); choose_profile(app, GTK_WIDGET(button) == app->profile_save);
   }), app);
+  app->reference_list = gtk_check_button_new_with_label("Cross-references in verse list"); gtk_box_append(GTK_BOX(options_box), app->reference_list);
+  g_signal_connect(app->reference_list, "toggled", G_CALLBACK(+[](GtkCheckButton *button, gpointer data) {
+    auto *app = static_cast<App *>(data); if (!app->updating && app->model) app->model->set_cross_reference_list(gtk_check_button_get_active(button));
+  }), app);
+  auto *lexicon_button = gtk_menu_button_new(); gtk_menu_button_set_label(GTK_MENU_BUTTON(lexicon_button), "Lexicon dictionaries"); gtk_box_append(GTK_BOX(reading_bar), lexicon_button);
+  auto *lexicon_popover = gtk_popover_new(); auto *lexicon_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+  auto *lexicon_scroll = gtk_scrolled_window_new(); gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(lexicon_scroll), lexicon_box); gtk_widget_set_size_request(lexicon_scroll, 340, 480); gtk_popover_set_child(GTK_POPOVER(lexicon_popover), lexicon_scroll); gtk_menu_button_set_popover(GTK_MENU_BUTTON(lexicon_button), lexicon_popover);
+  const char *lexicon_labels[] = {"Greek Strong's", "Hebrew Strong's", "Greek morphology (NT)", "Greek morphology (OT)", "Hebrew morphology"};
+  for (int i = 0; i < 5; ++i) {
+    gtk_box_append(GTK_BOX(lexicon_box), gtk_label_new(lexicon_labels[i]));
+    app->lexicon_entries[i] = gtk_entry_new(); gtk_box_append(GTK_BOX(lexicon_box), app->lexicon_entries[i]);
+    gtk_accessible_update_property(GTK_ACCESSIBLE(app->lexicon_entries[i]), GTK_ACCESSIBLE_PROPERTY_LABEL, lexicon_labels[i], -1);
+    app->lexicon_unset[i] = gtk_check_button_new_with_label("Unset preference"); gtk_box_append(GTK_BOX(lexicon_box), app->lexicon_unset[i]);
+    app->lexicon_candidates[i] = gtk_drop_down_new(nullptr, nullptr); gtk_box_append(GTK_BOX(lexicon_box), app->lexicon_candidates[i]);
+    gtk_accessible_update_property(GTK_ACCESSIBLE(app->lexicon_candidates[i]), GTK_ACCESSIBLE_PROPERTY_LABEL, lexicon_labels[i], -1);
+    g_object_set_data(G_OBJECT(app->lexicon_candidates[i]), "lexicon-kind", GINT_TO_POINTER(i));
+    g_signal_connect(app->lexicon_candidates[i], "notify::selected", G_CALLBACK(+[](GObject *object, GParamSpec *, gpointer data) {
+      auto *app = static_cast<App *>(data); if (app->updating) return;
+      const int i = GPOINTER_TO_INT(g_object_get_data(object, "lexicon-kind")); const auto index = gtk_drop_down_get_selected(GTK_DROP_DOWN(object));
+      if (index >= app->lexicon_candidate_ids[i].size()) return;
+      gtk_editable_set_text(GTK_EDITABLE(app->lexicon_entries[i]), app->lexicon_candidate_ids[i][index].c_str());
+      gtk_check_button_set_active(GTK_CHECK_BUTTON(app->lexicon_unset[i]), FALSE);
+    }), app);
+  }
+  app->lexicon_apply = gtk_button_new_with_label("Apply lexicon choices"); gtk_box_append(GTK_BOX(lexicon_box), app->lexicon_apply);
+  g_signal_connect(app->lexicon_apply, "clicked", G_CALLBACK(+[](GtkButton *, gpointer data) {
+    auto *app = static_cast<App *>(data); xiphos::linux_preview::Lexicons names;
+    for (int i = 0; i < 5; ++i) if (!gtk_check_button_get_active(GTK_CHECK_BUTTON(app->lexicon_unset[i]))) names[i] = gtk_editable_get_text(GTK_EDITABLE(app->lexicon_entries[i]));
+    app->model->set_lexicons(names);
+  }), app);
+  app->lexicon_import = gtk_button_new_with_label("Import lexicon choices…"); app->lexicon_save = gtk_button_new_with_label("Save lexicon choices…");
+  gtk_box_append(GTK_BOX(lexicon_box), app->lexicon_import); gtk_box_append(GTK_BOX(lexicon_box), app->lexicon_save);
+  for (auto *button : {app->lexicon_import, app->lexicon_save}) g_signal_connect(button, "clicked", G_CALLBACK(+[](GtkButton *button, gpointer data) {
+    auto *app = static_cast<App *>(data); choose_profile(app, GTK_WIDGET(button) == app->lexicon_save, true);
+  }), app);
   auto *panes = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL); gtk_widget_set_vexpand(panes, TRUE);
   gtk_box_append(GTK_BOX(box), panes);
   auto *library = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
@@ -459,6 +604,19 @@ void activate(GtkApplication *application, gpointer data) {
   gtk_accessible_update_property(GTK_ACCESSIBLE(app->bible), GTK_ACCESSIBLE_PROPERTY_LABEL, "Bible module", -1);
   gtk_accessible_update_property(GTK_ACCESSIBLE(app->commentary), GTK_ACCESSIBLE_PROPERTY_LABEL, "Commentary module", -1);
   gtk_accessible_update_property(GTK_ACCESSIBLE(app->reference), GTK_ACCESSIBLE_PROPERTY_LABEL, "Passage reference", -1);
+  app->preview_metadata = gtk_label_new(""); gtk_box_append(GTK_BOX(library), app->preview_metadata);
+  auto *preview_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2); gtk_box_append(GTK_BOX(library), preview_bar);
+  app->show_references = gtk_button_new_with_label("Passages"); app->show_note = gtk_button_new_with_label("Note"); app->preview_close = gtk_button_new_with_label("Close");
+  for (auto *button : {app->show_references, app->show_note, app->preview_close}) {
+    gtk_box_append(GTK_BOX(preview_bar), button);
+    g_signal_connect(button, "clicked", G_CALLBACK(+[](GtkButton *button, gpointer data) {
+      auto *app = static_cast<App *>(data);
+      if (GTK_WIDGET(button) == app->show_references) app->model->show_references();
+      else if (GTK_WIDGET(button) == app->show_note) app->model->show_note(); else app->model->close_preview();
+    }), app);
+  }
+  gtk_box_append(GTK_BOX(library), pane(app, "Study preview", &app->sidebar_view));
+  gtk_box_append(GTK_BOX(library), pane(app, "Information", &app->information_view));
   gtk_widget_set_size_request(library, 220, -1); gtk_paned_set_start_child(GTK_PANED(panes), library);
   auto *study = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
   gtk_paned_set_end_child(GTK_PANED(panes), study); gtk_paned_set_position(GTK_PANED(panes), 240);
@@ -546,10 +704,12 @@ int main(int argc, char **argv) {
   for (int i = 1; i < argc; ++i) {
     const std::string argument = argv[i];
     if (argument == "--software-rendering") state.software = true;
-    else if ((argument == "--root" || argument == "--smoke-test" || argument == "--smoke-options-test") && i + 1 < argc) {
+    else if ((argument == "--root" || argument == "--smoke-test" || argument == "--smoke-options-test" || argument == "--smoke-preview-test" || argument == "--smoke-lexical-test") && i + 1 < argc) {
       state.root = argv[++i];
       if (argument != "--root") state.smoke = state.software = true;
       if (argument == "--smoke-options-test") state.options_smoke = true;
+      if (argument == "--smoke-preview-test") state.preview_smoke = true;
+      if (argument == "--smoke-lexical-test") state.lexical_smoke = true;
     } else {
       std::cerr << "Usage: xiphos-linux-preview [--software-rendering] [--root SWORD_LIBRARY]\n";
       return argument == "--help" ? 0 : 2;
@@ -571,7 +731,8 @@ int main(int argc, char **argv) {
   if (deadline && !state.smoke_failed) g_source_remove(deadline);
   shutdown(&state); g_object_unref(app);
   if (state.smoke) {
-    if (state.smoke_failed || state.smoke_stage != (state.options_smoke ? 4u : 13u)) { std::cerr << "GTK4 smoke failed\n"; return 1; }
+    if (state.smoke_failed || state.smoke_stage != (state.options_smoke ? 4u : state.preview_smoke ? 7u : state.lexical_smoke ? 5u : 13u)) { std::cerr << "GTK4 smoke failed\n"; return 1; }
+    if (state.preview_smoke || state.lexical_smoke) { std::cout << "GTK4 contextual preview smoke passed\n"; return result; }
     if (state.options_smoke) { std::cout << "GTK4 options smoke passed: filters, variants and history isolation\n"; return result; }
     std::cout << "GTK4 smoke passed: focus action, module selection, draft retention, paired panes, navigation actions, chapters, selectors, clear history, dictionary lookup/keys/close and pending close\n";
   }
