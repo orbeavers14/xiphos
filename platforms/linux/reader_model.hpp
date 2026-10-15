@@ -21,12 +21,15 @@ struct Passage { std::string bible, commentary, reference, bible_html, commentar
 class ReaderModel {
 public:
   explicit ReaderModel(const char *root);
+  // Borrow the process worker; the host outlives all models and owns shutdown.
+  explicit ReaderModel(xc_worker &shared_worker);
   ~ReaderModel();
   ReaderModel(const ReaderModel &) = delete;
   ReaderModel &operator=(const ReaderModel &) = delete;
   void tick();
   bool visit(const std::string &bible, const std::string &commentary, const std::string &reference);
   bool navigate(int direction);
+  bool choose_commentary(const std::string &module);
   bool set_lexicons(const Lexicons &names);
   bool lexicon_profile(const std::string &path, bool save);
   const Lexicons &lexicons() const { return lexicons_; }
@@ -86,7 +89,7 @@ public:
   const std::string &error() const { return error_; }
   unsigned revision() const { return revision_; }
 private:
-  enum class Operation { catalog, tab, preferences, passage, history, link, refresh, clear, presentation, bible_chapter, commentary_chapter, choices, dictionary, dictionary_choices, dictionary_history, dictionary_clear, engine_options, bible_options, commentary_options, saved, enable_lexicons, lexicons, lexicon_changed, reference_preference, reference_preference_changed, references };
+  enum class Operation { catalog, tab, preferences, passage, history, link, refresh, clear, presentation, bible_chapter, commentary_chapter, choices, dictionary, dictionary_choices, dictionary_history, dictionary_clear, engine_options, bible_options, commentary_options, saved, enable_lexicons, lexicons, lexicon_changed, reference_preference, reference_preference_changed, references, entry };
   bool accept(xc_status status, xc_request *request, Operation operation);
   void history();
   bool take_preview(xc_request *request, bool hover);
@@ -94,6 +97,7 @@ private:
   void load_chapters(bool commentary = false);
   void load_choices();
   xc_worker *worker_ = nullptr;
+  bool owns_worker_ = true;
   xc_request *request_ = nullptr;
   uint64_t tab_ = 0;
   Operation operation_ = Operation::catalog;
@@ -107,7 +111,7 @@ private:
   unsigned engine_flags_ = 0;
   bool engine_configured_ = false;
   Presentation presentations_[2];
-  std::string notice_;
+  std::string notice_, pending_module_;
   Dictionary dictionary_;
   std::vector<std::string> dictionary_keys_;
   bool dictionary_back_ = false, dictionary_forward_ = false;

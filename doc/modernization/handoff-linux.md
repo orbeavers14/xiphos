@@ -202,8 +202,8 @@ standalone 47/47 core suites were executed for this checkpoint.
 | Note/reference-list/lexical click results | Contextual checkpoint below |
 | Semantic hover and retained information | Contextual checkpoint below; manual pointer acceptance pending |
 | Cross-reference list/information setting | Contextual checkpoint below |
-| Per-window isolation on one process worker | Single-window host; pending |
-| Native selected-anchor scrolling | Pending |
+| Per-window isolation on one process worker | Window checkpoint below |
+| Native selected-anchor scrolling | Window checkpoint below |
 
 Keep remaining gaps explicit; no feature group has complete accepted parity.
 
@@ -296,3 +296,32 @@ Keep remaining gaps explicit; no feature group has complete accepted parity.
 - Core/GTK3/macOS/workflows unchanged; no hosted builds. Diff checks pass.
   Next: selected-anchor host scrolling and multiple windows sharing one worker;
   final scope audit against the macOS preview and explicit manual acceptance gaps.
+
+
+## macOS scope catch-up: windows/scrolling (2026-10-15)
+
+- Implementation `a12c3508d85631927fe3f6f880582200193bce36`, branch
+  `linux/window-scroll-parity`, following merged contextual PR #88.
+- Same Fedora ARM64 environment. Normal host opens one process worker; Ctrl+N /
+  New window creates borrowed-worker models with separate core tabs. Window close
+  drops observers and queues tab cleanup; host closes/drains the worker on a
+  background thread after the GTK window loop ends. Pending accepted work still
+  drains. Window application holds protect asynchronous scroll callbacks.
+- Trusted host scrolling uses copied/escaped core chapter anchors and an isolated
+  named WebKit world; module scripts remain disabled. Expanded smoke requires a
+  successful Bible-anchor scroll, not merely a document-load count.
+- Added standalone commentary reading/chapter navigation and history-free paired
+  commentary changes, matching macOS selection semantics. No core API changes.
+- `cmake --build build/gtk4 --parallel 2` succeeds; full integrated
+  `ctest --test-dir build/gtk4 --parallel 2 --timeout 120 --output-on-failure`
+  passes **51/51** (47 core + four Linux model tests). Focused fixture/model pass
+  is 8/8. Sanitized `window_model_test.cpp`, built with the adapter command above
+  and module-preferences fixture, passes filters/history/display/lexicon/preview
+  isolation and closing one pending window while the other remains usable.
+- Both study-passage `--smoke-test` and `--smoke-window-test` pass on the desktop.
+  Two real windows share the same worker; navigation, selected-anchor scroll,
+  independent state and pending close are checked. The prior VMware/WebKit
+  warning and manual visual/pointer/key/accessibility limitations remain.
+- No hosted builds; GTK3/macOS/core/workflows unchanged. Diff checks pass.
+  Next: final macOS scope audit (startup selection, module metadata and retained
+  dictionary-source context), then consolidate this handoff and acceptance gaps.

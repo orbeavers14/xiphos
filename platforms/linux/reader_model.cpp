@@ -21,6 +21,10 @@ ReaderModel::ReaderModel(const char *root) {
   status = xc_worker_modules(worker_, &request);
   accept(status, request, Operation::catalog);
 }
+ReaderModel::ReaderModel(xc_worker &worker) : worker_(&worker), owns_worker_(false) {
+  xc_request *request = nullptr; auto status = xc_worker_modules(worker_, &request);
+  accept(status, request, Operation::catalog);
+}
 ReaderModel::~ReaderModel() {
   // Fallback for non-UI callers. GTK explicitly transfers ownership to GTask.
   if (auto *worker = detach()) std::thread([worker] { xc_worker_close(worker); }).join();
@@ -30,6 +34,12 @@ xc_worker *ReaderModel::detach() {
   xc_request_release(hover_request_); hover_request_ = nullptr;
   xc_request_release(request_); request_ = nullptr;
   auto *worker = worker_; worker_ = nullptr;
+  if (!owns_worker_) {
+    if (worker && tab_) {
+      xc_request *request = nullptr; xc_worker_close_tab(worker, tab_, &request); xc_request_release(request);
+    }
+    return nullptr;
+  }
   return worker;
 }
 bool ReaderModel::accept(xc_status status, xc_request *request, Operation operation) {
@@ -42,7 +52,20 @@ bool ReaderModel::accept(xc_status status, xc_request *request, Operation operat
 bool ReaderModel::visit(const std::string &bible, const std::string &commentary, const std::string &reference) {
   if (!ready() || busy()) return false;
   xc_request *request = nullptr;
+  const auto *selected = module(bible);
+  if (selected && selected->type == "Commentaries") {
+    pending_module_ = bible;
+    auto status = xc_worker_visit(worker_, tab_, bible.c_str(), reference.c_str(), &request);
+    return accept(status, request, Operation::entry);
+  }
   auto status = xc_worker_visit_passage(worker_, tab_, bible.c_str(), commentary.c_str(), reference.c_str(), &request);
+  return accept(status, request, Operation::passage);
+}
+bool ReaderModel::choose_commentary(const std::string &module) {
+  const auto *main = this->module(passage_.bible);
+  if (!ready() || busy() || !main || main->type != "Biblical Texts") return false;
+  xc_request *request = nullptr;
+  auto status = xc_worker_read_passage(worker_, tab_, passage_.bible.c_str(), module.c_str(), passage_.reference.c_str(), &request);
   return accept(status, request, Operation::passage);
 }
 bool ReaderModel::navigate(int direction) {
@@ -194,6 +217,12 @@ bool ReaderModel::close_dictionary() {
 bool ReaderModel::navigate_chapter(int direction) {
   if (!ready() || busy() || passage_.bible.empty()) return false;
   xc_request *request = nullptr;
+  const auto *selected = module(passage_.bible);
+  if (selected && selected->type == "Commentaries") {
+    pending_module_ = passage_.bible;
+    auto status = xc_worker_navigate_chapter(worker_, tab_, passage_.bible.c_str(), passage_.reference.c_str(), direction, &request);
+    return accept(status, request, Operation::entry);
+  }
   auto status = xc_worker_navigate_passage_chapter(worker_, tab_, passage_.bible.c_str(), passage_.commentary.c_str(), passage_.reference.c_str(), direction, &request);
   return accept(status, request, Operation::passage);
 }
@@ -205,6 +234,12 @@ bool ReaderModel::clear_history() {
 bool ReaderModel::refresh() {
   if (!ready() || busy() || passage_.bible.empty()) return false;
   xc_request *request = nullptr;
+  const auto *selected = module(passage_.bible);
+  if (selected && selected->type == "Commentaries") {
+    pending_module_ = passage_.bible;
+    auto status = xc_worker_read_tab_entry(worker_, tab_, passage_.bible.c_str(), passage_.reference.c_str(), &request);
+    return accept(status, request, Operation::entry);
+  }
   auto status = xc_worker_read_passage(worker_, tab_, passage_.bible.c_str(), passage_.commentary.c_str(), passage_.reference.c_str(), &request);
   return accept(status, request, Operation::passage);
 }
@@ -295,6 +330,13 @@ void ReaderModel::tick() {
     cross_reference_list_ = enabled != 0; ready_ = true; break;
   }
   case Operation::references: take_preview(completed.get(), false); break;
+  case Operation::entry: {
+    std::unique_ptr<xc_entry, decltype(&xc_entry_release)> result(xc_request_take_entry(completed.get()), xc_entry_release);
+    if (!result) { error_ = "Missing entry snapshot."; break; }
+    passage_ = {pending_module_, "", copy(xc_entry_reference(result.get())), copy(xc_entry_html(result.get())), ""};
+    bible_chapter_ = {}; commentary_chapter_ = {}; note_ = {}; references_ = {}; showing_references_ = false;
+    history(); break;
+  }
   case Operation::passage: {
     std::unique_ptr<xc_passage, decltype(&xc_passage_release)> result(xc_request_take_passage(completed.get()), xc_passage_release);
     if (!result) { error_ = "Missing passage snapshot."; return; }
