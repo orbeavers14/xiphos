@@ -99,6 +99,8 @@ int main(int argc, char **argv) {
     const auto suffix = compare("Original " + morph("HR/Ncmsc/Sp2mp", true));
     check(suffix.html.find("hr/ncmsc</a>") != std::string::npos && suffix.html.find("value=HR/Ncmsc/Sp2mp") != std::string::npos,
           "Hebrew display suffix truncates while original link retains full code");
+    for (const auto *code : {"", "S", "N/", "N/S", "N/Sp", "N/Sd", "N/SP", "N/SD", "N/Other", "N/Other/Third", "N//", "/Sp2mp", "V (IMP) AAI", "N\tNSM"})
+      for (bool classes : {false, true}) compare("Original " + morph(code, classes));
     const auto duplicate = compare("<i><i>Original</i></i>");
     check(duplicate.input != "<i><i>Original</i></i>", "characterize inherited duplicate-style caller-buffer mutation");
     const auto nested = compare("<i><b>Original</b></i>");

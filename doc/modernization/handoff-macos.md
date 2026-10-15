@@ -12,6 +12,14 @@ planned for the first checkpoint. Other platform chats should avoid overlapping
 edits to these files; platform-local acceptance work can continue independently.
 Owner request: continue shared-core work using local checks until usage is exhausted.
 
+Completed/pushed implementation checkpoint: `f2a2c61`, 2026-10-15. Owned lexical
+layout now accepts opaque SWORD note markers, preserves their links/labels, checks
+OSIS/ThML paragraph and multi-anchor data, and guards uppercase lexical anchors
+before unsafe inherited searches. 1,502 legacy-output comparisons; 65/65 macOS
+suite, focused ASan/UBSan 1/1 and TSan 1/1, strict C++11 and native-disabled helper
+builds passed. No public API/frontend adoption changed. Current follow-up replaces
+annotation buffer edits with checked owned strings and expands morphology edges.
+
 ## Existing evidence and boundaries
 
 At `9e288b3`, the macOS preview/shared-core suite had 65/65 passing local checks.

@@ -76,13 +76,15 @@ study-pane composition/commentary workflow before broader native feature claims.
 ## Current locally checked scope
 
 [Word block characterization](word-block-workflows.md) compares complete frozen/
-current functions over 1,502 valid cases, including original Greek/Hebrew SDK
+current functions over 1,530 valid cases, including original Greek/Hebrew SDK
 output. It records inherited input-buffer mutation and recursive static-tag defects;
 an initial owned/bounded C++11 block renderer now preserves supported layout,
 fixes local recursion/input ownership and retains original HTML on unsupported
 markup. It now preserves opaque SWORD footnote markers while formatting surrounding
 words, checks OSIS/ThML paragraphs and multiple lexical anchors, and safely falls
-back on uppercase lexical annotations before unsafe inherited searches. Tests add
+back on uppercase lexical annotations before unsafe inherited searches. Checked
+owned-string annotation edits/RAII keep legacy spacing and link values
+retained; the surrounding scanner still needs further modernization. Tests add
 8,000 malformed samples and 400 concurrent renders. Native
 snapshot adoption and broader corpus/visual acceptance remain pending. Shared owned lexical CSS
 now matches frozen selection and three actual legacy call sites over 768 cases,

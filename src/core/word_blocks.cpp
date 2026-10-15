@@ -25,6 +25,7 @@
 #include <cassert>
 #include <cctype>
 #include <cstring>
+#include <memory>
 #include <stdexcept>
 #include <vector>
 namespace xiphos { namespace core {
@@ -34,139 +35,102 @@ using std::max;
 #define XI_warning(args) (supported = false)
 #define ALIGN_WORD "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
 
-void
-block_dump(SWBuf &rendered,
-	   const char **word,
-	   const char **strongs,
-	   const char **morph)
-{
-	int wlen, min_length, slen, mlen;
-	char *s, *s0, *t;
+// Keep legacy spacing and displayed-code rules, but edit owned strings using
+// checked offsets instead of mutating buffers through unchecked pointer searches.
+bool format_annotation(std::string &html, bool strong, std::size_t &width) {
+  const auto close = html.rfind("</a>");
+  if (close == std::string::npos || close == 0) return false;
+  const auto open = html.rfind('>', close - 1);
+  if (open == std::string::npos || open >= close) return false;
+  width = close - open - 1; // Legacy layout deliberately measures UTF-8 bytes.
 
-	// unannotated words need no help.
-	if (*word && (*strongs == NULL) && (*morph == NULL)) {
-		rendered += "<span class=\"word\">";
-		rendered += *word;
-		rendered += "</span>";
-		g_free((char *)*word);
-		*word = NULL;
-		rendered += " ";
-		return;
-	}
+  if (strong) {
+    const auto bang = html.find('!');
+    if (bang != std::string::npos && bang < close) {
+      const auto quote = html.find('"', bang);
+      if (quote == std::string::npos || quote >= close) return false;
+      // NASB correction removes ! while retaining byte length and href spelling.
+      std::rotate(html.begin() + bang, html.begin() + bang + 1, html.begin() + quote + 1);
+      html[quote] = ' ';
+    }
+    const auto left = html.find("&lt;"), right = html.find("&gt;");
+    if (left == std::string::npos || right == std::string::npos) return false;
+    html.replace(left, 4, 4, ' ');
+    html.replace(right, 4, 4, ' ');
+  } else {
+    const auto label = html.rfind("\">");
+    if (label == std::string::npos) return false;
+    const auto end = html.find('<', label + 2);
+    if (end == std::string::npos) return false;
+    for (auto i = label + 2; i < end; ++i) {
+      const auto byte = static_cast<unsigned char>(html[i]);
+      if (std::isupper(byte)) html[i] = static_cast<char>(std::tolower(byte));
+      if (html[i] == ' ') html[i] = '-';
+    }
+    const auto left = html.find('('), right = html.rfind(')');
+    if (left == std::string::npos || right == std::string::npos) return false;
+    html[left] = html[right] = ' ';
+  }
 
-	if (*word == NULL) {
-		// we need to cobble up something to take the place of
-		// a word, in order that the strongs/morph not overlay.
-		*word = g_strdup(ALIGN_WORD);
-	}
+  const std::string marker = strong ? " class=\"strongs\">" : " class=\"morph\">";
+  std::size_t from = 0;
+  for (unsigned n = 0; n < 2; ++n) {
+    const auto found = html.find(marker, from);
+    if (found == std::string::npos) break;
+    html.replace(found, marker.size(), ">" + std::string(marker.size() - 1, ' '));
+    from = found;
+  }
 
-	rendered += "<span class=\"word\">";
-	if (*strongs) {
-		s = g_strrstr(*strongs, "</a>");
-		*s = '\0';
-		t = (char *)strrchr(*strongs, '>') + 1;
-		// correct weird NASB lexicon references.
-		if ((s0 = (char *)strchr(*strongs, '!'))) {
-			do {
-				*s0 = *(s0 + 1);
-				++s0;
-			} while (*s0 != '"');
-			*s0 = ' ';
-		}
-		*s = '<';
-		slen = s - t;
-		s = (char *)strstr(*strongs, "&lt;");
-		*s = *(s + 1) = *(s + 2) = *(s + 3) = ' ';
-		s = strstr(s, "&gt;");
-		*s = *(s + 1) = *(s + 2) = *(s + 3) = ' ';
+  if (!strong) {
+    const auto label = html.rfind("\">");
+    if (label == std::string::npos) return false;
+    const auto end = html.find("</a>", label + 2);
+    if (end == std::string::npos) return false;
+    const auto slash = html.find('/', label + 2);
+    if (slash != std::string::npos && slash < end) {
+      const auto second = html.find('/', slash + 1);
+      if (second != std::string::npos && second < end) html.erase(second, end - second);
+      else if (html.compare(slash + 1, 2, "sp") == 0 || html.compare(slash + 1, 2, "sd") == 0 ||
+               html.compare(slash + 1, 2, "Sp") == 0 || html.compare(slash + 1, 2, "Sd") == 0)
+        html.erase(slash, end - slash);
+    }
+  }
+  return true;
+}
 
-		// gross hack needed to handle new class="..." in sword -r2512.
-		if ((s = (char *)strstr(*strongs, " class=\"strongs\">"))) {
-			memcpy(s, ">                ", 17);
-			if ((s = (char *)strstr(s, " class=\"strongs\">")))
-				memcpy(s, ">                ", 17);
-		}
-	} else
-		slen = 0;
-
-	if (*morph) {
-		s = s0 = (char *)g_strrstr(*morph, "\">") + 2;
-		t = strchr(s, '<');
-		for (/* */; s < t; ++s)
-			if (isupper(*s))
-				*s = tolower(*s);
-		for (s = strchr(s0, ' '); s && (s < t); s = strchr(s, ' '))
-			*s = '-';
-		s = g_strrstr(*morph, "</a>");
-		*s = '\0';
-		t = (char *)strrchr(*morph, '>') + 1;
-		*s = '<';
-		mlen = s - t;
-		s = (char *)strchr(*morph, '(');
-		*s = ' ';
-		s = strrchr(s, ')');
-		*s = ' ';
-
-		// gross hack needed to handle new class="..." in sword -r2512.
-		if ((s = (char *)strstr(*morph, " class=\"morph\">"))) {
-			memcpy(s, ">              ", 15);
-			if ((s = (char *)strstr(s, " class=\"morph\">")))
-				memcpy(s, ">              ", 15);
-		}
-	} else
-		mlen = 0;
-
-	min_length = 2 + max(slen, mlen);
-
-	rendered += *word;
-
-	for (wlen = strlen(*word); wlen <= min_length; ++wlen)
-		rendered += "&nbsp;";
-
-	g_free((char *)*word);
-	*word = NULL;
-
-	rendered += "<span class=\"strongs\"><sup>";
-	rendered += (*strongs ? *strongs : "&nbsp;");
-	rendered += "</sup></span>";
-	if (*strongs)
-		g_free((char *)*strongs);
-	*strongs = NULL;
-
-/* truncate long Hebrew morph codes: remove pronominal suffix segment */
-	if (*morph) {
-		char *anchor_start = (char *)g_strrstr(*morph, "\">") + 2;
-		char *anchor_end = (char *)strstr(anchor_start, "</a>");
-		if (anchor_start && anchor_end) {
-			/* count slashes */
-			char *first_slash = strchr(anchor_start, '/');
-			if (first_slash && first_slash < anchor_end) {
-				char *second_slash = strchr(first_slash + 1, '/');
-				if (second_slash && second_slash < anchor_end) {
-					/* 2 segments: hr/ncmsc/sp2mp → truncate at second slash */
-					memmove(second_slash, anchor_end,
-						strlen(anchor_end) + 1);
-				} else {
-					/* 1 segment: check if suffix is pronominal (sp/sd) */
-					char *seg = first_slash + 1;
-					if ((seg[0] == 's' && (seg[1] == 'p' || seg[1] == 'd'))
-					    || (seg[0] == 'S' && (seg[1] == 'p' || seg[1] == 'd'))) {
-						memmove(first_slash, anchor_end,
-							strlen(anchor_end) + 1);
-					}
-				}
-			}
-		}
-	}
-
-	rendered += "<span class=\"morph\"><sup>";
-	rendered += (*morph ? *morph : "&nbsp;");
-	rendered += "</sup></span>";
-	if (*morph)
-		g_free((char *)*morph);
-	*morph = NULL;
-
-	rendered += "</span> <span class=\"word\">&nbsp;</span>";
+struct FreeString {
+  void operator()(const char *value) const { g_free(const_cast<char *>(value)); }
+};
+void block_dump(SWBuf &rendered, const char **word, const char **strongs,
+                const char **morph, bool &supported) {
+  // Adopt all scanner allocations before any potentially throwing string copy.
+  // Clear the caller's pointers so each allocation has exactly one owner.
+  const std::unique_ptr<const char, FreeString> owned_word(*word), owned_strongs(*strongs), owned_morph(*morph);
+  *word = *strongs = *morph = nullptr;
+  const std::string word_html = owned_word ? owned_word.get() : ALIGN_WORD;
+  if (owned_word && !owned_strongs && !owned_morph) {
+    rendered += "<span class=\"word\">";
+    rendered += word_html.c_str();
+    rendered += "</span> ";
+    return;
+  }
+  std::string strong_html = owned_strongs ? owned_strongs.get() : "";
+  std::string morph_html = owned_morph ? owned_morph.get() : "";
+  std::size_t strong_width = 0, morph_width = 0;
+  if ((owned_strongs && !format_annotation(strong_html, true, strong_width)) ||
+      (owned_morph && !format_annotation(morph_html, false, morph_width))) {
+    supported = false;
+    return;
+  }
+  rendered += "<span class=\"word\">";
+  rendered += word_html.c_str();
+  for (auto width = word_html.size(); width <= 2 + std::max(strong_width, morph_width); ++width)
+    rendered += "&nbsp;";
+  rendered += "<span class=\"strongs\"><sup>";
+  rendered += owned_strongs ? strong_html.c_str() : "&nbsp;";
+  rendered += "</sup></span><span class=\"morph\"><sup>";
+  rendered += owned_morph ? morph_html.c_str() : "&nbsp;";
+  rendered += "</sup></span></span> <span class=\"word\">&nbsp;</span>";
 }
 
 //
@@ -209,7 +173,7 @@ block_render_secondary(const char *text,
 			      (*(s + 1) == 'u') || (*(s + 1) == 'U')) &&
 			     (*(s + 2) == '>'))) {
 				if (word)
-					block_dump(rendered, &word, &strongs, &morph);
+					block_dump(rendered, &word, &strongs, &morph, supported);
 
 				char end[5] = "</X>";
 				end[2] = *(s + 1);
@@ -272,13 +236,13 @@ block_render_secondary(const char *text,
 					++u; // it has to be one or the other.
 				if (*u == '(') {
 					if (morph) {
-						block_dump(rendered, &word, &strongs, &morph);
+						block_dump(rendered, &word, &strongs, &morph, supported);
 						word = g_strdup(EMPTY_WORD);
 					}
 					morph = g_strndup(s, t - s);
 				} else {
 					if (strongs) {
-						block_dump(rendered, &word, &strongs, &morph);
+						block_dump(rendered, &word, &strongs, &morph, supported);
 						word = g_strdup(EMPTY_WORD);
 					}
 					strongs = g_strndup(s, t - s);
@@ -291,7 +255,7 @@ block_render_secondary(const char *text,
 
 		default:
 			if (word)
-				block_dump(rendered, &word, &strongs, &morph);
+				block_dump(rendered, &word, &strongs, &morph, supported);
 
 			// here's an unfortunate problem.  consider:
 			// L<font size="-1">ORD</font> followed by strongs.
@@ -326,7 +290,7 @@ block_render_secondary(const char *text,
 		}
 	}
 	if (word || strongs || morph)
-		block_dump(rendered, &word, &strongs, &morph);
+		block_dump(rendered, &word, &strongs, &morph, supported);
 }
 
 

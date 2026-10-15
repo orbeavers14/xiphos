@@ -13,7 +13,7 @@ participate in layout. CSS then places annotations under each word.
 
 Complete frozen helper/entry functions from CrossWire c9976a8 retain GPL notices.
 Current complete functions are extracted at configure time. `core_word_blocks`
-compares owned copies of output, warnings and mutated input over 1,502 bounded
+compares owned copies of output, warnings and mutated input over 1,530 bounded
 valid cases: Unicode words, casing/classes, numeric codes, NASB-style exclamation
 values, repeated annotations, styled text and original Greek/Hebrew SWORD output.
 The fixture uses original prose, not a redistributed Bible module.
@@ -63,7 +63,7 @@ inherited ASCII morphology case conversion; unsupported morphology stays raw. In
 legacy-compatible GLib string operations remain behind this owned boundary and
 still need later modernization; no unsafe API is exposed for unchecked input.
 
-The updated harness compares owned results alongside the 1,502 valid baseline
+The updated harness compares owned results alongside the 1,530 valid baseline
 cases, checks 8,000 bounded malformed samples, fallback/depth/size/NUL contracts
 and 400 concurrent owned renders. Normal, address/undefined and thread checks
 pass 1/1 each; strict C++11 and native-disabled helper builds pass. External SDK/
@@ -99,6 +99,23 @@ Expanded checks pass normally and under address/undefined and thread sanitizers;
 strict C++11 and native-disabled helper builds also pass. SDK instrumentation and
 leak-detection limitations above still apply. No public ABI or native consumer
 source changes are required for this helper extension.
+
+## Owned annotation formatting internals
+
+The owned helper's annotation formatter now uses checked string offsets and
+owned `std::string` edits for NASB exclamation correction, class-marker spacing,
+display case/hyphens and Hebrew suffix removal. The scanner's allocations are
+adopted with RAII before copying, so those formatting temporaries have one owner
+even if string construction throws. Missing structural matches return through
+the original-HTML fallback instead of being dereferenced.
+
+The byte-based padding rule, full lexical hrefs, display-only truncation and
+two-occurrence legacy class shim are preserved. Additional complete-oracle
+comparisons cover empty morphology, short/trailing slash segments, pronominal
+and non-pronominal suffixes, mixed case, parentheses and tabs. The corpus total
+is 1,530. The surrounding scanner still uses legacy-compatible GLib operations
+on its private working copy; this is a bounded internal modernization, not a
+claim that the whole parser has been rewritten or adopted by native snapshots.
 
 Next: validate broader SDK/lemma/note/paragraph shapes and fallback policy, then
 adopt owned rendering/styles in heading/body snapshots with native controls and
