@@ -35,7 +35,7 @@ bool ReaderModel::accept(xc_status status, xc_request *request, Operation operat
   if (status != XC_OK || !request) {
     xc_request_release(request); error_ = message(status); ++revision_; return false;
   }
-  request_ = request; operation_ = operation; error_.clear(); ++revision_; return true;
+  request_ = request; operation_ = operation; error_.clear(); notice_.clear(); ++revision_; return true;
 }
 bool ReaderModel::visit(const std::string &bible, const std::string &commentary, const std::string &reference) {
   if (!ready() || busy()) return false;
@@ -48,6 +48,46 @@ bool ReaderModel::navigate(int direction) {
   xc_request *request = nullptr;
   auto status = xc_worker_navigate_passage(worker_, tab_, direction, &request);
   return accept(status, request, Operation::passage);
+}
+const Module *ReaderModel::module(const std::string &id) const {
+  for (const auto &value : modules_) if (value.id == id) return &value;
+  return nullptr;
+}
+bool ReaderModel::set_filter(unsigned flag, bool enabled) {
+  const auto *selected = module(passage_.bible);
+  if (!ready() || busy() || !engine_configured_ || !selected || !flag || (flag & (flag - 1)) || !(selected->declared_flags & flag)) return false;
+  xc_request *request = nullptr;
+  const auto flags = enabled ? engine_flags_ | flag : engine_flags_ & ~flag;
+  auto status = xc_worker_set_module_engine_options(worker_, tab_, passage_.bible.c_str(), flags, &request);
+  return accept(status, request, Operation::refresh);
+}
+bool ReaderModel::select_variant(int choice) {
+  if (!ready() || busy() || passage_.bible.empty()) return false;
+  xc_request *request = nullptr;
+  auto status = xc_worker_select_module_variant(worker_, tab_, passage_.bible.c_str(), choice, &request);
+  return accept(status, request, Operation::refresh);
+}
+bool ReaderModel::set_content(bool commentary, bool font_faces, bool enabled) {
+  const auto &module = commentary ? passage_.commentary : passage_.bible;
+  const auto &options = presentation(commentary);
+  if (!ready() || busy() || module.empty() || (font_faces ? options.font_faces : options.images) < 0) return false;
+  xc_request *request = nullptr;
+  auto status = font_faces ? xc_worker_set_respect_font_faces(worker_, tab_, module.c_str(), enabled, &request)
+    : xc_worker_set_image_content(worker_, tab_, module.c_str(), enabled, &request);
+  return accept(status, request, Operation::refresh);
+}
+bool ReaderModel::set_commentary_headings(bool enabled) {
+  if (!ready() || busy() || passage_.commentary.empty()) return false;
+  xc_request *request = nullptr;
+  auto status = xc_worker_set_headings(worker_, tab_, passage_.commentary.c_str(), enabled, &request);
+  return accept(status, request, Operation::refresh);
+}
+bool ReaderModel::reading_profile(const std::string &path, bool save) {
+  if (!ready() || busy()) return false;
+  xc_request *request = nullptr;
+  auto status = save ? xc_worker_save_module_preferences(worker_, tab_, path.c_str(), &request)
+    : xc_worker_import_module_preferences(worker_, tab_, path.c_str(), &request);
+  return accept(status, request, save ? Operation::saved : Operation::refresh);
 }
 bool ReaderModel::lookup_dictionary(const std::string &module, const std::string &key, bool record) {
   if (!ready() || busy()) return false;
@@ -144,7 +184,7 @@ void ReaderModel::tick() {
     std::unique_ptr<xc_catalog, decltype(&xc_catalog_release)> catalog(xc_request_take_catalog(completed.get()), xc_catalog_release);
     if (!catalog) { error_ = "Missing module catalog."; return; }
     for (size_t i = 0; i < xc_catalog_count(catalog.get()); ++i)
-      modules_.push_back({copy(xc_catalog_id(catalog.get(), i)), copy(xc_catalog_description(catalog.get(), i)), copy(xc_catalog_type(catalog.get(), i)), xc_catalog_is_dictionary(catalog.get(), i) != 0});
+      modules_.push_back({copy(xc_catalog_id(catalog.get(), i)), copy(xc_catalog_description(catalog.get(), i)), copy(xc_catalog_type(catalog.get(), i)), xc_catalog_is_dictionary(catalog.get(), i) != 0, xc_catalog_declared_engine_flags(catalog.get(), i), xc_catalog_is_regular_commentary(catalog.get(), i) != 0, xc_catalog_has_headings(catalog.get(), i) != 0, xc_catalog_lexicon_roles(catalog.get(), i)});
     auto submitted = xc_worker_create_tab(worker_, &next); accept(submitted, next, Operation::tab); break;
   }
   case Operation::tab: {
@@ -198,7 +238,8 @@ void ReaderModel::tick() {
     dictionary_back_ = xc_dictionary_history_can_back(result.get()); dictionary_forward_ = xc_dictionary_history_can_forward(result.get());
     dictionary_history_count_ = xc_dictionary_history_count(result.get()); break;
   }
-  case Operation::refresh: refresh(); break;
+  case Operation::saved: notice_ = "Preferences saved."; break;
+  case Operation::refresh: if (!refresh()) notice_ = "Preferences updated."; break;
   case Operation::clear: history(); break;
   case Operation::presentation:
     show_commentary_chapter_ = xc_request_commentary_chapter_mode(completed.get()) == 1;
@@ -220,6 +261,26 @@ void ReaderModel::tick() {
       for (size_t i = 0; i < xc_choices_count(choices.get(), kind); ++i)
         choices_[k].push_back({copy(xc_choices_label(choices.get(), kind, i)), copy(xc_choices_reference(choices.get(), kind, i))});
       choice_labels_[k] = copy(xc_choices_current_label(choices.get(), kind));
+    }
+    auto submitted = xc_worker_module_engine_options(worker_, tab_, passage_.bible.c_str(), &next);
+    accept(submitted, next, Operation::engine_options); break;
+  }
+  case Operation::engine_options: {
+    int configured = 0;
+    if (xc_request_engine_options(completed.get(), &engine_flags_, &configured) != XC_OK) { error_ = "Missing engine preferences."; break; }
+    engine_configured_ = configured != 0;
+    auto submitted = xc_worker_module_presentation_options(worker_, tab_, passage_.bible.c_str(), &next);
+    accept(submitted, next, Operation::bible_options); break;
+  }
+  case Operation::bible_options:
+  case Operation::commentary_options: {
+    const int index = operation_ == Operation::bible_options ? 0 : 1;
+    presentations_[index].chapter = xc_request_commentary_chapter_mode(completed.get()) == 1;
+    presentations_[index].headings = xc_request_headings(completed.get()) == 1;
+    if (xc_request_content_options(completed.get(), &presentations_[index].images, &presentations_[index].font_faces) != XC_OK) { error_ = "Missing presentation preferences."; break; }
+    if (index == 0 && !passage_.commentary.empty()) {
+      auto submitted = xc_worker_module_presentation_options(worker_, tab_, passage_.commentary.c_str(), &next);
+      accept(submitted, next, Operation::commentary_options);
     }
     break;
   }
