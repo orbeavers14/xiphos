@@ -222,3 +222,27 @@ not accepted 1:1 desktop parity or a complete Xiphos replacement. Real keyboard,
 pointer/hover, file-picker, screen-reader, visual/RTL/font and accelerated-rendering
 acceptance, licensed representative modules/profiles and release packaging
 remain explicit gates. The legacy GTK3 application stays intact.
+
+### Shared lexical presentation and headless model checks
+
+The reader model copies core-owned HTML, lexical CSS and requested/applied state
+before releasing each C snapshot. Main/commentary/chapter views consume matching
+pairs, including whole-pane raw fallback. CSS participates in refresh identity.
+No annotation parser or layout policy is implemented in GTK. The extracted host
+document helper retains the existing resource/script restrictions.
+
+For a machine with the core SDK but no GTK4/WebKitGTK, the portable model tests
+can be built separately (normal SDK discovery settings still apply):
+
+```sh
+cmake -S platforms/linux -B build/linux-models -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
+cmake --build build/linux-models --parallel 2
+ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2
+```
+
+The option defaults ON, preserving the regular desktop build above. OFF builds
+no GTK executable and cannot validate GTK compilation, desktop behavior or Linux
+runtime compatibility. The lexical checkpoint passed 53/53 portable/core checks
+on macOS and 4/4 focused ASan/UBSan checks including fixture prerequisites. Fedora
+must rebuild the ON target and repeat desktop/physical-input checks before this
+new view integration receives native Linux acceptance.

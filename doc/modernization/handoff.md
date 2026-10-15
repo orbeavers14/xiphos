@@ -26,18 +26,25 @@ Known pushed checkpoints:
 - `7986d20` concludes the current shared lexical helper checkpoints: owned scanner/
   annotation state, SWORD note-marker preservation, combined HTML/CSS policy and
   real note/reference URL integration evidence. See the Mac handoff for exact
-  tests and commits. Native snapshot adoption remains next; no UI parity is implied.
+  tests and commits. Later snapshot/adapter checkpoints below add scoped native consumption; no full UI parity is implied.
 - Linux catch-up PRs #83–89 and the final scope audit expose the existing macOS
   preview capability set. Fedora ARM64 passes 51 integrated tests, four sanitized
   model executables and six software-rendered desktop smoke modes. Exact source,
   environment, commands and unaccepted manual gates are in the Linux handoff.
 
+Latest lexical checkpoints: `7fd1bce` core snapshots, `8c0f4f2` C metadata,
+`0af3689` Swift copies, `1393edd` nesting guard/captured headings, `d953adc` Mac
+view consumption and `0b40574` Linux adapter/headless model support. Mac passes
+68/68 plus scoped GUI checks; Linux portable/core checks pass 53/53 on Mac with
+4/4 focused ASan/UBSan checks. New GTK view source still needs native Fedora
+build/runtime checks; the earlier 51-test Fedora result does not cover it.
+
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Integrate shared lexical HTML/CSS into snapshots before cleanup, then compatible adapters and visual checks; preserve existing preview behavior | [Mac instructions](handoff-macos.md) |
-| Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Validate physical-input, picker, accessibility, visual/corpus and accelerated-rendering gates after the macOS preview scope catch-up | [Linux instructions](handoff-linux.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Characterize remaining presentation preferences and broader lexical corpus; preserve shared HTML/CSS and existing preview behavior | [Mac instructions](handoff-macos.md) |
+| Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 
 These are task lanes, not claims that sessions are running or leases are held.

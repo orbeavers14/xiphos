@@ -215,10 +215,28 @@ capability command uses the same async worker without UI-thread waits. The new
 `swift_lexical_snapshots` private-fixture check covers disabled/applied/fallback
 states, per-tab isolation, history neutrality, closed-tab errors and values held
 after all handles/worker are released. Its focused run passes 3/3 including the
-two core fixture prerequisites. Native view consumption remains a separate step;
-no second Swift formatting policy or SWORD engine is introduced.
+two core fixture prerequisites. Later checkpoints below connect native view consumption without a second Swift formatting policy or SWORD engine.
 
 Next: validate broader SDK/lemma/note/paragraph shapes and fallback policy, then
 adopt owned rendering/styles in heading/body snapshots with native controls and
 visual evidence. Representative RTL/font/module, keyboard/runtime and full GTK/
 other-platform acceptance remain gates. No block-render source file is retired.
+
+## Native consumption and browser-nesting guard
+
+`1393edd` preserves captured h1–h6 wrappers outside the inline scanner and rejects
+structurally unbalanced generated output in the combined layout API. A real Mac
+window exposed a multiword font crossing word spans and displacing its annotation.
+That case now returns the original HTML with no annotation CSS; SDK snapshot and
+unit tests retain it. The low-level legacy-compatible formatter remains unchanged.
+This conservative guard is not a complete HTML content-model validator: additional
+same-tag/paragraph/font/corpus shapes still require characterization.
+
+`d953adc` connects copied HTML/CSS to Mac main/commentary entry/chapter views;
+CSS-only changes reload the document. The 68-test suite and scoped actual Strong's,
+chapter and raw-fallback window checks pass. `0b40574` adds equivalent Linux model
+copying and host document consumption; its 53 portable/core checks pass on Mac,
+plus 4 focused ASan/UBSan checks with fixture prerequisites. Its GTK source still
+requires Fedora compilation and desktop acceptance. Both document hosts retain
+resource restrictions. Note/reference/dictionary preview snapshots retain their
+previous presentation path; those families need their own scoped adoption.

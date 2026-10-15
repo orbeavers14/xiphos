@@ -5,7 +5,7 @@ Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md) and the
 
 ## Active shared-core snapshot task
 
-The macOS chat has resumed from `fff8740` on `master`: shared lexical snapshot
+The macOS chat has resumed from `74a4190` on `master`: shared lexical snapshot
 integration, format-before-cleanup, document-wide fallback, copied CSS/status,
 worker/C ABI and compatible native adapter consumption. Existing consumers stay
 compatible until they explicitly opt in to the new presentation path. Scope:
@@ -13,25 +13,64 @@ shared content/session/worker/C API, their tests, native adapter integration and
 associated evidence. Other chats should avoid overlapping shared API edits while
 this task is active; platform-local acceptance can proceed independently.
 
+## Current checked checkpoint
+
+Implementation commits: `1393edd` shared nesting guard/captured heading wrappers,
+`d953adc` Mac HTML/CSS view integration, `0b40574` portable Linux adapter. Swift
+value copying was checked at `0af3689` (67/67 before the added native model test).
+The combined current source passes 68/68 Mac CTests and 53/53 portable Linux/core
+CTests on this Mac. Focused ASan/UBSan runs pass 4/4 (heading fixture, lexical
+snapshot, Linux lexical model, word blocks); leak checks off, external SDKs not
+fully instrumented. Strict C++11 syntax and native-disabled legacy helper builds
+pass. No hosted checks, resets or installed module/profile changes were used.
+
+Actual disposable Mac window checks: read John 4:1, enable Strong's, verify 3056
+beneath its word, switch to chapter and select John 4:2, then read John 6:1 and
+verify unsupported font nesting retains readable inline annotations without
+positioning CSS. Quit the temporary app afterward. Paired commentary and draft/
+history/window isolation were checked by models, not manually claimed here.
+
+Commands (configured local SDK/deployment settings retained):
+
+```sh
+cmake --build build/macos --parallel 4
+ctest --test-dir build/macos --no-tests=error --output-on-failure
+cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
+cmake --build build/linux-models --parallel 2
+ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
+cmake --build build/linux-models-sanitized --target linux_lexical_model_test core_lexical_snapshots_test core_heading_collection_test core_word_blocks_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^(linux_lexical_model|core_word_blocks)$' --no-tests=error --output-on-failure
+clang++ -std=c++11 -fsyntax-only -Isrc/core/include -I/usr/local/include/sword src/core/word_blocks.cpp
+cmake --build build/legacy-seam-build --parallel 2
+sh platforms/macos/launch-fixture.sh build/macos lexical
+```
+
+The ignored SDK seed is copied from this Mac's configured dependency cache, not a
+portable SDK. Sanitizer build uses Debug and address/undefined flags on C/C++ and
+linking. New GTK application source is not compiled here; Fedora and MSVC/native
+Windows remain separate gates. Full corpus/RTL/font/accessibility/visual parity
+and original-parser retirement remain unaccepted.
+
+Next shared-core seam: characterize legacy `Doublespace` preference default,
+import/save and CSS precedence before adding compatible presentation commands.
+The active task claim remains in force while this Mac chat continues shared work.
+
 ## Previous checked milestones
 
 Current-run core checkpoint: `7fd1bce`. Opt-in session/worker entry/chapter/paired
 snapshots carry matching lexical CSS/status, stage formatting before cleanup and
 roll unsupported panes back as whole documents. Full local suite 66/66; focused
 normal/ASan/UBSan/TSan runs 2/2 including the private fixture setup. Existing
-consumers stay on the compatible plain path. C ABI consumption is the active next
-checkpoint; frontend layout/visual adoption is not yet claimed.
+consumers stay on the compatible plain path. Later current-run checkpoints above add C/Swift/native consumption.
 
 Current-run C ABI checkpoint: `8c0f4f2`. Strict queued opt-in plus typed borrowed
 CSS/status getters for entry, paired panes, chapter and verses; C11 and owned C
 snapshot/null/bounds/lifetime tests pass. Full local suite 66/66; ASan/UBSan and
-TSan snapshot runs each 2/2. Swift value copying is the active next checkpoint;
-native view consumption stays off until matching CSS is connected.
+TSan snapshot runs each 2/2. Later checkpoints above add Swift value copying and matching native view CSS.
 
 The macOS chat completed the shared lexical corpus/ownership/layout checkpoints
-below on `master`, starting from `74a4190`. No file claim remains after this
-handoff; the next chat must fetch and announce its bounded shared-core task before
-overlapping work. The owner requested local development until the usage allowance
+below on `master`, starting from `74a4190`. These older completed checkpoints do not supersede the active claim above;
+other chats must fetch before overlapping shared-core work. The owner requested local development until the usage allowance
 is reached. No reset credit or hosted build allowance was consumed.
 
 Completed/pushed implementation checkpoint: `f2a2c61`, 2026-10-15. Owned lexical
@@ -109,15 +148,11 @@ platform README and tests before rebuilding any of this independently.
 
 ## Next bounded work
 
-1. Integrate the owned HTML/CSS decision into shared heading/body snapshots,
-   preserving the legacy lexical-formatting-before-content-cleanup order. Do not
-   simply apply it in Swift/GTK after receiving an already-cleaned snapshot.
-   Carry matching copied CSS and layout status with the HTML, covering fallback,
-   entry/chapter/paired/heading paths, per-module options and saved-state behavior.
-2. Add compatible C/Swift/Linux consumption and native visual/interaction evidence
-   together; no UI should receive positioned annotation HTML without matching CSS.
-   Keep broader SDK/RTL/font/corpus and unsupported-grammar gates explicit; see
-   [word block workflows](word-block-workflows.md). The old parser is not retired.
+1. Characterize remaining presentation preferences, starting with legacy
+   `Doublespace` defaults/import/save and precedence with lexical styles.
+2. Broaden SDK/RTL/font/note/paragraph layout and fallback evidence. New native
+   views consume shared snapshots; Fedora must validate its GTK source/runtime.
+   See [word block workflows](word-block-workflows.md). The old parser stays.
 3. Preserve main/commentary/dictionary pane composition, draft input, histories,
    unknown option eligibility, busy/closed/stale-result guards and window isolation.
 4. Review Linux/Windows requests for shared API adjustments before changing those

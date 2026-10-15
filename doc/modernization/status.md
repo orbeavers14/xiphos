@@ -92,15 +92,24 @@ private-fixture snapshot test covers chapters, paired history, tab isolation,
 save/import and worker lifetime. Typed C metadata and the queued consumer opt-in
 now expose the same owned snapshot contract. Swift copies matching HTML/CSS/status
 into immutable values, with a new async ownership/fallback check; full macOS suite
-67/67. Native view consumption and broader
-corpus/visual acceptance remain pending. Shared owned lexical CSS
+68/68 after native view integration (`d953adc`). Main/commentary entry/chapter
+views consume the core HTML/CSS together; CSS-only changes reload. A window check
+found inherited cross-word font nesting that displaced annotations. The shared
+layout now rejects structurally broken output, retains raw content without
+annotation CSS, and preserves captured h1–h6 wrappers around formatted words
+(`1393edd`). Low-level frozen-oracle behavior remains available. Mac GUI checks
+covered positioned Strong's, chapter selection and readable raw fallback.
+The Linux adapter (`0b40574`) copies the same metadata; portable/core checks pass
+53/53 on this Mac and focused ASan/UBSan checks pass 4/4. Its GTK source has not
+been compiled or run here: native Fedora rebuild/desktop checks remain required.
+Broader corpus/visual acceptance remains pending. Shared owned lexical CSS
 and HTML are now available through one layout decision, including explicit
 unsupported-content CSS fallback (48 policy cases and 400 concurrent combined calls).
 Worker note/ranged-reference fixtures verify that formatted URLs still resolve
 through the existing shared services (normal/ASan/UBSan/TSan focused runs 3/3 each).
 The CSS matches frozen selection and three actual legacy call sites over 768 cases,
 plus 2,048 concurrent selections. Strict C++11/native-disabled builds pass. Native
-CSS/parser integration and pixel acceptance remain pending. Focused normal/address/
+broader CSS/parser and pixel acceptance remain pending. Focused normal/address/
 undefined/thread checks pass, with sequential scope and SDK instrumentation limits.
 
 The [image/font cleanup slice](html-cleanup-workflows.md) shares owned C++11

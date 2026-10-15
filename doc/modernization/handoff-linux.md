@@ -3,6 +3,28 @@
 Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the [shared handoff](handoff.md),
 [status](status.md), [architecture](architecture.md) and [parity ledger](parity-matrix.md).
 
+## Incoming shared lexical adapter checkpoint — Fedora validation pending
+
+`0b40574` follows core `1393edd` and Mac view `d953adc`. The Linux model opts its
+tab into shared lexical snapshots, copies CSS/status before C handle release and
+feeds matching CSS to the GTK host document. CSS joins refresh identity. A new
+`linux_lexical_model` check covers entry/chapter/paired copies, cleanup, failure
+retention, raw fallback and lifetime. `XIPHOS_BUILD_GTK4_PREVIEW=OFF` permits
+portable adapter testing without GTK; it defaults ON for the normal desktop.
+
+These changes were tested **on macOS**, not Fedora: 53/53 portable/core CTests;
+4/4 focused ASan/UBSan checks (two fixture prerequisites, lexical model, word
+blocks), with leak detection off for uninstrumented SDK dependencies. The GTK
+application source received static review only; macOS has no GTK4/WebKitGTK SDK.
+The older Fedora evidence below remains historical, not validation of this commit.
+
+Next Fedora task: fetch current master, configure/build with the default ON
+option, run the integrated suite (expected 53 tests at this checkpoint), repeat
+the existing six desktop smoke modes, and inspect real Strong's/morphology and
+heading/whole-chapter fallback with actual pointer/keyboard and representative
+licensed modules. Record compiler/runtime evidence and any new shared-core defect
+before claiming native acceptance. Preserve manual-only hosted CI.
+
 ## Current checkpoint and authority
 
 The owner authorized implementing and automatically merging locally checked Linux

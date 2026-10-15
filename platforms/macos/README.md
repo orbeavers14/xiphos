@@ -65,6 +65,7 @@ They are excluded from normal builds/CI. For an already checked build/fixture:
 sh platforms/macos/launch-fixture.sh build/macos reader
 sh platforms/macos/launch-fixture.sh build/macos reading-options
 sh platforms/macos/launch-fixture.sh build/macos lexicons
+sh platforms/macos/launch-fixture.sh build/macos lexical
 ```
 
 Each launch copies the app and selected generated fixture to a unique
@@ -196,3 +197,18 @@ persists known states. The `headings` fixture includes original styled Bible and
 commentary data; its resource/font names are synthetic, so resource loading and
 installed-font appearance require separate validation. See
 [scope and acceptance](../../doc/modernization/html-cleanup-workflows.md).
+
+## Shared lexical layout checkpoint
+
+The reader opts its core tab into copied lexical presentation. Main/commentary
+entry and chapter views publish matching HTML/CSS; CSS-only changes reload the
+view. Layout, whole-document fallback and format-before-cleanup decisions remain
+in C++. Disabled options or unsupported documents remove annotation CSS. The
+private `lexical` fixture exercises real declared SWORD filters, headings, safe
+word layout and unsupported cross-word font nesting without installed modules.
+
+At `d953adc`, the integrated local suite passes 68/68. Actual temporary-window
+checks covered Strong's enablement, its positioning beneath the word, chapter
+selection/scroll and readable raw fallback. Model checks cover paired commentary,
+drafts/history, cleanup and window/closed-state isolation. Representative module,
+RTL/font, accessibility, minimum-OS and full visual parity remain unaccepted.
