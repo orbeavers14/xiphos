@@ -66,12 +66,39 @@ int main(int argc, char **argv) {
             "adapted initializer retains adjacent rendering preferences");
       std::free(old); std::free(current); ++comparisons;
     }
+    unsigned note_preference_checks = 0;
+    for (const auto &value : values) for (bool regular : {false, true}) {
+      {
+        std::ofstream file(profile); file << "[Text]\nHeadings=On\nCustom=retain\n";
+        if (value != "<missing>") file << "XrefNoteNumbers=" << value << '\n';
+      }
+      backend_value.type = regular ? COMMENTARY_TYPE : 0;
+      auto *old = frozen_content_globals("Text"), *current = current_content_globals("Text");
+      const auto loaded = read_module_option_values(profile.string());
+      check(old->xrefnotenumbers == current->xrefnotenumbers &&
+            (old->xrefnotenumbers != 0) == note_numbers_from_preferences(loaded.at("Text")) &&
+            old->headings == current->headings && old->footnotes == current->footnotes &&
+            old->commentary_by_chapter == current->commentary_by_chapter,
+            "note-number defaults match full frozen/current initializers after SDK file decoding");
+      std::free(old); std::free(current); ++note_preference_checks;
+      EngineOptionPreferences direct;
+      if (value != "<missing>") direct.emplace("XrefNoteNumbers", value);
+      check(note_numbers_from_preferences(direct) == (value != "Off"), "pure note preference decoder adds no case/whitespace normalization");
+    }
+    for (const auto *declarations : {"XrefNoteNumbers=Off\nXrefNoteNumbers=On\n", "XrefNoteNumbers=On\nXrefNoteNumbers=Off\n"}) {
+      { std::ofstream file(profile); file << "[Text]\n" << declarations; }
+      auto *old = frozen_content_globals("Text"), *current = current_content_globals("Text");
+      check(old->xrefnotenumbers == current->xrefnotenumbers &&
+            (old->xrefnotenumbers != 0) == note_numbers_from_preferences(read_module_option_values(profile.string()).at("Text")),
+            "duplicate declarations follow the existing SDK lookup order without a second parser");
+      std::free(old); std::free(current); ++note_preference_checks;
+    }
     std::filesystem::create_directories(root / "data");
     check(RawText::createModule((root / "data").string().c_str()) == 0, "create original content profile module");
     { RawText writer((root / "data").string().c_str()); writer.setKey("John 3:16"); writer.setEntry("Original content preference body.");
       std::ofstream file(root / "mods.d/text.conf"); file << "[Text]\nDataPath=./data/\nModDrv=RawText\nEncoding=UTF-8\n"; }
     std::filesystem::remove(root / "mods.d/modules-conf.cache");
-    { std::ofstream file(profile); file << "[Text]\nImage Content=On\nRespect Font Faces=Off\nDoublespace=On\nCustom=café\n[Uninstalled]\nImage Content=Off\nRespect Font Faces=On\nDoublespace=On\nKeep=value\n"; }
+    { std::ofstream file(profile); file << "[Text]\nImage Content=On\nRespect Font Faces=Off\nDoublespace=On\nXrefNoteNumbers=Off\nCustom=café\n[Uninstalled]\nImage Content=Off\nRespect Font Faces=On\nDoublespace=On\nXrefNoteNumbers=On\nKeep=value\n"; }
     Reader reader(root.string()); StudySession session(reader);
     session.import_module_preferences(profile.string());
     auto options = session.module_presentation_options("Text");
@@ -81,8 +108,14 @@ int main(int argc, char **argv) {
     const auto saved = read_module_option_values(profile.string());
     check(saved.at("Text").at("Image Content") == "On" && saved.at("Text").at("Respect Font Faces") == "Off" &&
           saved.at("Text").at("Doublespace") == "On" && saved.at("Uninstalled").at("Doublespace") == "On" &&
+          saved.at("Text").at("XrefNoteNumbers") == "Off" && saved.at("Uninstalled").at("XrefNoteNumbers") == "On" &&
           saved.at("Text").at("Custom") == "café" && saved.at("Uninstalled").at("Respect Font Faces") == "On",
           "explicit known settings round trip with unrelated/unavailable values intact");
+    const auto unsupported_target = root / "note-unhandled-target.conf";
+    { std::ofstream file(unsupported_target); file << "[Text]\nXrefNoteNumbers=On\n"; }
+    session.save_module_preferences(unsupported_target.string());
+    check(read_module_option_values(unsupported_target.string()).at("Text").at("XrefNoteNumbers") == "On",
+          "native save preserves target settings it does not yet apply, even after importing another file");
     ModulePresentationPreferences unknown; unknown.emplace("Text", ModulePresentationOptions{});
     save_module_preferences(profile.string(), {}, unknown);
     check(read_module_option_values(profile.string()).at("Text").at("Image Content") == "On",
@@ -100,6 +133,6 @@ int main(int argc, char **argv) {
     try { worker.import_module_preferences(first, (root / "missing.conf").string()).get(); } catch (const std::invalid_argument &) { failed = true; }
     check(failed && worker.module_presentation_options(first, "Text").get().respect_font_faces == ContentPreference::off,
           "failed combined import retains content settings");
-    std::cout << "Content preference frozen/current checks passed: " << comparisons << " combinations\n";
+    std::cout << "Content preference frozen/current checks passed: " << comparisons << " combinations + " << note_preference_checks << " note-number preference cases\n";
   } catch (const std::exception &e) { std::cerr << e.what() << '\n'; return 1; }
 }

@@ -201,8 +201,7 @@ GLOBAL_OPS *main_new_globals(const gchar *mod_name)
 	ops->headings = presentation.headings;
 	ops->footnotes = values.footnotes;
 	ops->scripturerefs = values.scripturerefs;
-	ops->xrefnotenumbers =
-	    (module_options[mod_name]["XrefNoteNumbers"] != "Off");
+	ops->xrefnotenumbers = xiphos::core::note_numbers_from_preferences(preferences);
 	ops->display_chapter_N =
 	    (module_options[mod_name]["Display Chapter N"] != "Off");
 

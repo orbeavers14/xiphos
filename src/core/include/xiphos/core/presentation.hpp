@@ -15,6 +15,10 @@ using ModulePresentationPreferences = std::map<std::string, ModulePresentationOp
 // Legacy backend distinguishes RawFiles personal commentary from regular
 // commentary even though both have SWORD's Commentaries type.
 bool regular_commentary(const char *type, const char *driver);
+// Legacy XrefNoteNumbers is On unless the decoded value is exactly Off.
+// Pure decoder reused by the retained adapter; native automatic numbering and
+// persistence remain separate work, so existing unhandled keys stay untouched.
+bool note_numbers_from_preferences(const EngineOptionPreferences &values);
 // main_new_globals: chapter mode only for regular commentary; Headings/chapter
 // default on except exact Off. Content fields default unknown for missing/empty,
 // otherwise on only for exact On. Unknown does not overwrite saved declarations.
