@@ -5,18 +5,21 @@ SwiftUI/AppKit, WinUI 3 and GTK4 frontends. Native enhancements supplement
 that contract. The [parity matrix](parity-matrix.md) defines acceptance evidence;
 [architecture.md](architecture.md) describes boundaries and dependencies.
 
-For work across computers/chats, start with [the shared handoff](handoff.md) and
-its per-OS instructions. PR #82 (`f190c49`) adds Fedora-capable local core setup,
-release/sanitizer commands and compiler/CMake compatibility fixes. The owner
-reports Fedora passes; exact environment, tested revision, count and logs still
-need recording in [the Linux handoff](handoff-linux.md). This does not establish
-GTK4 or native Windows acceptance. `cf9c853` makes Linux hosted checks manual-only;
-routine builds remain local. The engineering estimate/parity totals below are
-unchanged by this coordination/documentation checkpoint.
+For work across computers/chats, start with [the shared handoff](handoff.md).
+The Linux GTK4/WebKitGTK preview now exposes the existing macOS preview's
+implemented reading/options/dictionary/contextual-preview/profile/window scope.
+Fedora ARM64 validation passes 51/51 integrated tests, four sanitized model
+executables and six software-rendered desktop smoke modes. See the
+[Linux handoff](handoff-linux.md) for tested revisions, commands and limits.
+Manual physical-input, picker, screen-reader, visual/corpus and accelerated
+rendering acceptance remains pending; no complete parity row is accepted.
+Hosted Linux checks remain manual-only (`cf9c853`); no catch-up runner jobs ran.
+The weighted planning estimate below predates Linux catch-up and has not been
+recomputed. It must not be read as a new measured parity score.
 
 ## Overall completion estimate
 
-Approximately **8% complete** toward a validated native release on all three
+Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three
 platforms (planning range **6–10%**, not a measured parity score). This counts
 modernization work, not functionality inherited from the existing GTK app.
 The estimate is deliberately provisional and should change as services and
@@ -61,7 +64,7 @@ a replacement for the weighted engineering estimate above.
 |---|---:|---:|---|
 | macOS/shared-core slice | 15 partial, 23 pending | 0/38 | Full pane layout, commentary, parallel views, search, bookmarks/annotations, editors, installation, complete settings/data migration, accessibility/translation and release packaging |
 | WinUI 3 | 0 initial frontend entries, 38 pending | 0/38 | Native frontend/tooling, shared-core integration, full workflows and validation |
-| GTK4 | 0 initial frontend entries, 38 pending | 0/38 | Native frontend, shared-core integration, full workflows and validation |
+| GTK4 | Scoped existing macOS-preview capability set; see Linux handoff | 0/38 | Manual visual/input/accessibility/corpus validation, accelerated rendering and full workflows beyond both previews |
 
 The existing GTK3 app is retained as the behavioral oracle; its inherited
 functionality does not count as implemented parity in a new frontend. Fixture
@@ -376,7 +379,7 @@ Local runtime checks use Apple Silicon, Swift 6 and SWORD 1.9.0.3916. The
 installed SWORD SDK requires macOS 26.0; the current local GLib 2.86.5 build
 also targets 26.0. The preview's requested macOS 13 minimum is not runtime
 validated. GTK3/WebKitGTK are unavailable locally, so full legacy runtime
-validation remains pending. GTK4 and WinUI 3 frontends are not implemented.
+validation remains pending. GTK4 now has the scoped Linux implementation documented above; WinUI 3 remains unimplemented.
 No newer GitHub runner build has been dispatched for these routine milestones.
 Old CI successes do not validate the current integrated revision.
 
