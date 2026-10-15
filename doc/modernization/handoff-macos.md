@@ -3,14 +3,15 @@
 Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the
 [shared handoff](handoff.md), [status](status.md) and relevant parity rows first.
 
-## Current bounded checkpoint and ownership
+## Active session-numbering task and ownership
 
-Branch: `master` on `orbeavers14/xiphos`. This bounded presentation/note-source
-checkpoint is checked; its shared-edit claim is released. The project is not
-complete. The next chat must fetch and announce the session-numbering task below
-before overlapping core/worker/C ABI work. Platform-only acceptance can proceed.
-Sequential checked master commits/pushes remain authorized; preserve unrelated
-changes and never force-push.
+Branch: `master` on `orbeavers14/xiphos`. The Mac chat has started the next
+bounded task: opt-in session note-numbering snapshots, saved presentation state,
+worker/C commands and compatible native adapter consumption after core checks.
+Shared render/session/presentation/worker/C ABI APIs and related tests are claimed
+while this task is active; platform-only acceptance can proceed independently.
+Fetch before overlapping shared work. Sequential checked master commits/pushes
+remain authorized; preserve unrelated changes and never force-push.
 
 ## Latest checked implementation
 

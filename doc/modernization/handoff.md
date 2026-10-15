@@ -31,9 +31,10 @@ checkpoint passed 51 tests and six desktop smokes on its recorded older revision
 | Earlier Fedora preview scope catch-up | PRs #82–89, `a80409b` | [Native Fedora evidence](handoff-linux.md); retain manual/corpus/renderer gates |
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
-The bounded Mac checkpoint is checked and its shared-edit claim is released.
-Next shared task: opted-in session numbering using the checked Reader metadata
-and preference decoder. Fetch/read the current ownership note before editing. These results are scoped implementation evidence, not complete
+The Mac chat has started opted-in session numbering using checked Reader metadata
+and the preference decoder. Shared presentation/session/worker/C ABI edits are
+claimed during this bounded task; fetch/read the current ownership note before
+overlapping work. Platform-only acceptance can proceed independently. These results are scoped implementation evidence, not complete
 functional/design parity or permission to retire the reference application.
 
 ## Platform responsibilities and immediate next tasks
