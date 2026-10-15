@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/headings.hpp"
+#include "xiphos/core/entry_attribute.hpp"
+#include <array>
+#include <cstdlib>
 #include <rawcom.h>
 #include <rawtext.h>
 #include <versekey.h>
@@ -81,6 +84,37 @@ int main(int argc, char **argv) {
     check(module != nullptr, "load heading fixture");
     GLOBAL_OPS options;
     FrozenHeadingBackend frozen{module}; CurrentHeadingBackend actual{module};
+    unsigned attribute_checks = 0;
+    const std::vector<std::array<std::string, 3>> paths = {{"Footnote", "1", "n"}, {"Heading", "Preverse", "0"},
+      {"Original", "item", "field"}, {"", "", ""}, {"Original café", "α", "value"}};
+    for (const auto &path : paths) for (const auto *value : {"", "a", "12", "α", "Original café", "<b>Original</b>", "&amp;", "Original\nline"})
+      for (bool refresh : {false, true}) {
+        module->setKey("John3:16"); module->renderText();
+        module->getEntryAttributes()[path[0].c_str()][path[1].c_str()][path[2].c_str()] = value;
+        char *old = frozen.get_entry_attribute(path[0].c_str(), path[1].c_str(), path[2].c_str(), refresh);
+        char *current = actual.get_entry_attribute(path[0].c_str(), path[1].c_str(), path[2].c_str(), refresh);
+        const auto owned = xiphos::core::entry_attribute(*module, path[0], path[1], path[2], refresh);
+        check((old ? std::string(old) : "") == owned && (current ? std::string(current) : "") == owned &&
+              (old != nullptr) == !owned.empty() && (current != nullptr) == !owned.empty(),
+              "owned UTF8HTML attribute lookup matches complete frozen/current null, value and refresh semantics");
+        std::free(old); std::free(current); ++attribute_checks;
+      }
+    module->setKey("John3:16"); module->renderText();
+    const auto copied_attribute = xiphos::core::entry_attribute(*module, "Heading", "Preverse", "0", false);
+    module->setKey("John3:17");
+    check(!copied_attribute.empty() && xiphos::core::entry_attribute(*module, "Heading", "Preverse", "0", false) == copied_attribute,
+          "nonrefresh lookup deliberately retains last rendered source attributes after key selection");
+    check(xiphos::core::entry_attribute(*module, "Heading", "Preverse", "0", true).empty() && !copied_attribute.empty(),
+          "refresh invalidates source attributes while previously copied value survives");
+    for (std::size_t field = 0; field < 3; ++field) {
+      std::array<std::string, 3> invalid{{"Footnote", "1", "n"}};
+      invalid[field].append(1, '\0'); invalid[field] += "suffix";
+      module->getEntryAttributes()["Original"]["sentinel"]["value"] = "retain";
+      bool rejected = false;
+      try { xiphos::core::entry_attribute(*module, invalid[0], invalid[1], invalid[2], true); } catch (const std::invalid_argument &) { rejected = true; }
+      check(rejected && std::string(module->getEntryAttributes()["Original"]["sentinel"]["value"].c_str()) == "retain",
+            "invalid owned path fails before rendering and replacing live attributes");
+    }
     for (const auto &reference : {"John 3:16", "John 3:17", "John 3:18", "John 3:16"}) {
       module->setKey(reference); ModuleCache::CacheVerse old;
       frozen_cache_header(old, *module, &options, &frozen);
@@ -126,6 +160,6 @@ int main(int argc, char **argv) {
       else if (std::string(reference) == "John 3:19") check(joined.find("Original ThML heading-only") != std::string::npos, "ThML heading-only data retained");
       else { check(joined.find("href=") != std::string::npos, "SDK renders passage links inside ThML headings"); }
     }
-    std::cout << "Preverse heading collection characterization checks passed\n";
+    std::cout << "Preverse heading collection and owned attribute checks passed: " << attribute_checks << " attribute combinations\n";
   } catch (const std::exception &e) { std::cerr << e.what() << '\n'; return 1; }
 }

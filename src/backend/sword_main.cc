@@ -21,6 +21,7 @@
 #include <config.h>
 #endif
 
+#include "xiphos/core/entry_attribute.hpp"
 #include <set>
 
 #include <swmgr.h>
@@ -713,17 +714,8 @@ char *BackEnd::get_entry_attribute(const char *level1,
 				   const char *level3,
 				   bool render)
 {
-	UTF8HTML u2html;
-	if (render)
-		display_mod->renderText();
-	SWBuf attribute2 = display_mod->getEntryAttributes()[level1][level2][level3].c_str();
-
-	u2html.processText(attribute2);
-
-	if (attribute2.length()) {
-		return strdup(attribute2.c_str());
-	}
-	return NULL;
+    const auto value = xiphos::core::entry_attribute(*display_mod, level1, level2, level3, render);
+    return value.empty() ? NULL : strdup(value.c_str());
 }
 
 int BackEnd::set_module(const char *module_name)
