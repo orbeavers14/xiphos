@@ -22,6 +22,9 @@ public:
   // Migration opt-in for consumers that copy/apply snapshot HTML and CSS together.
   // Not a saved study preference. Existing consumers retain plain snapshots.
   void set_lexical_layout_enabled(bool enabled) { lexical_layout_enabled_ = enabled; }
+  // Separate migration opt-in: applies SDK labels and owned per-document note
+  // counters only for configured module engine state. Not a saved preference.
+  void set_note_numbering_enabled(bool enabled) { note_numbering_enabled_ = enabled; }
   // Explicit copied lexicons; existing tabs remain unconfigured until set.
   void set_lexicon_preferences(const LexiconPreferences &preferences);
   const std::optional<LexiconPreferences> &lexicon_preferences() const { return lexicons_; }
@@ -83,6 +86,7 @@ public:
   std::optional<EngineOptions> module_engine_options(const std::string &module) const;
   ModulePresentationOptions module_presentation_options(const std::string &module) const;
   void set_headings(const std::string &module, bool enabled);
+  void set_note_numbers(const std::string &module, bool enabled);
   void set_double_space(const std::string &module, bool enabled);
   void set_image_content(const std::string &module, bool enabled);
   void set_respect_font_faces(const std::string &module, bool enabled);
@@ -99,6 +103,7 @@ private:
   std::optional<EngineOptions> options_;
   bool module_preferences_ = false;
   bool lexical_layout_enabled_ = false;
+  bool note_numbering_enabled_ = false;
   bool xrefs_in_verse_list_ = true; // Legacy misc/xrefsinverselist default.
   std::map<std::string, EngineOptions> module_options_;
   ModulePresentationPreferences presentation_options_;

@@ -8,6 +8,8 @@ struct ModulePresentationOptions {
   bool headings = true;
   ContentPreference image_content = ContentPreference::unknown;
   ContentPreference respect_font_faces = ContentPreference::unknown;
+  bool note_numbers = true; // Legacy XrefNoteNumbers default, separate from consumer capability.
+  bool note_numbering_available = false; // Only configured opt-in native sessions persist/apply it.
   bool double_space = false; // Exact legacy Doublespace=On; missing/empty is off.
   bool commentary_chapter_available = false; // Copied classification for selective persistence.
 };
@@ -16,8 +18,8 @@ using ModulePresentationPreferences = std::map<std::string, ModulePresentationOp
 // commentary even though both have SWORD's Commentaries type.
 bool regular_commentary(const char *type, const char *driver);
 // Legacy XrefNoteNumbers is On unless the decoded value is exactly Off.
-// Pure decoder reused by the retained adapter; native automatic numbering and
-// persistence remain separate work, so existing unhandled keys stay untouched.
+// Pure decoder reused by the retained adapter and opted-in sessions. Only
+// available consumers persist it; existing unhandled target keys stay untouched.
 bool note_numbers_from_preferences(const EngineOptionPreferences &values);
 // main_new_globals: chapter mode only for regular commentary; Headings/chapter
 // default on except exact Off. Content fields default unknown for missing/empty,

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/session.hpp"
 #include <stdexcept>
+#include <functional>
+#include "xiphos/core/note_markers.hpp"
 #include "xiphos/core/preferences.hpp"
 #include "xiphos/core/dictionary.hpp"
 #include "xiphos/core/word_blocks.hpp"
@@ -20,7 +22,8 @@ void clean_content(Entry &entry, ModulePresentationOptions &options) {
 }
 LexicalPresentation present_document(const std::vector<Entry *> &entries,
                                     ModulePresentationOptions &options,
-                                    const std::optional<EngineOptions> &engine, bool enabled) {
+                                    const std::optional<EngineOptions> &engine, bool enabled,
+                                    const std::function<void(Entry &)> &after_cleanup = {}) {
   LexicalPresentation presentation;
   if (enabled) presentation.css = lexical_block_style(false, false, false, options.double_space);
   presentation.requested = enabled && engine && (engine->strongs || engine->lemmas || engine->morphs);
@@ -47,13 +50,63 @@ LexicalPresentation present_document(const std::vector<Entry *> &entries,
   for (auto *entry : entries) {
     entry->lexical = presentation;
     clean_content(*entry, options); // Legacy order: format, then heading/body cleanup.
+    if (after_cleanup) after_cleanup(*entry);
+  }
+  return presentation;
+}
+// Flatten SDK heading fragments and bodies into one document for the existing
+// atomic lexical stage. Each piece is then cleaned/numbered in legacy order;
+// the raw copied Reader sources remain unchanged in the published snapshot.
+LexicalPresentation present_numbered_document(const std::vector<Entry *> &entries,
+    ModulePresentationOptions &options, const std::optional<EngineOptions> &engine, bool lexical) {
+  struct Span { Entry *entry; std::size_t first, body; };
+  std::vector<Entry> pieces;
+  std::vector<Span> spans;
+  for (auto *entry : entries) {
+    if (!entry->note_source.captured) throw std::logic_error("Note numbering requires captured Reader sources");
+    const auto first = pieces.size(); std::size_t offset = 0;
+    for (const auto &fragment : entry->note_source.headings) {
+      if (offset > entry->heading_html.size() || fragment.html.size() > entry->heading_html.size() - offset ||
+          entry->heading_html.compare(offset, fragment.html.size(), fragment.html) != 0)
+        throw std::logic_error("Note heading sources do not match the Reader snapshot");
+      offset += fragment.html.size();
+      pieces.push_back({{}, fragment.html});
+      pieces.back().note_source.captured = true;
+      pieces.back().note_source.reported_label = fragment.reported_note_label;
+    }
+    if (offset != entry->heading_html.size()) throw std::logic_error("Missing note heading sources");
+    const auto body = pieces.size();
+    pieces.push_back({entry->reference, entry->html});
+    pieces.back().note_source.captured = true;
+    pieces.back().note_source.reported_label = entry->note_source.reported_label;
+    spans.push_back({entry, first, body});
+  }
+  std::vector<Entry *> document;
+  for (auto &piece : pieces) document.push_back(&piece);
+  NoteNumberingState counters;
+  const auto presentation = present_document(document, options, engine, lexical, [&](Entry &piece) {
+    auto numbered = number_note_markers(std::move(piece.html), options.note_numbers,
+                                        !piece.note_source.reported_label.empty(), counters);
+    piece.html = std::move(numbered.html); counters = numbered.counters;
+  });
+  for (const auto &span : spans) {
+    span.entry->heading_html.clear();
+    for (auto index = span.first; index <= span.body; ++index) {
+      auto &piece = pieces[index];
+      if (index == span.body) span.entry->html = std::move(piece.html);
+      else span.entry->heading_html += piece.html;
+      for (auto &issue : piece.cleanup_diagnostics) span.entry->cleanup_diagnostics.push_back(std::move(issue));
+    }
+    span.entry->lexical = presentation;
   }
   return presentation;
 }
 }
 Entry StudySession::present_content(const std::string &module, Entry entry) {
   auto options = module_presentation_options(module);
-  present_document({&entry}, options, module_engine_options(module), lexical_layout_enabled_);
+  const auto engine = module_engine_options(module);
+  if (options.note_numbering_available) present_numbered_document({&entry}, options, engine, lexical_layout_enabled_);
+  else present_document({&entry}, options, engine, lexical_layout_enabled_);
   presentation_options_[module] = options;
   return entry;
 }
@@ -61,7 +114,9 @@ Chapter StudySession::present_content(const std::string &module, Chapter chapter
   auto options = module_presentation_options(module);
   std::vector<Entry *> entries;
   for (auto &entry : chapter.verses) entries.push_back(&entry);
-  chapter.lexical = present_document(entries, options, module_engine_options(module), lexical_layout_enabled_);
+  const auto engine = module_engine_options(module);
+  chapter.lexical = options.note_numbering_available ? present_numbered_document(entries, options, engine, lexical_layout_enabled_)
+      : present_document(entries, options, engine, lexical_layout_enabled_);
   chapter.html = commentary ? display_commentary_chapter(chapter, chapter.verse_ordinals, display) : display_chapter(chapter, display);
   presentation_options_[module] = options;
   return chapter;
@@ -141,21 +196,37 @@ StudyNote StudySession::study_note_metadata(const std::string &module, const std
 }
 Entry StudySession::read_commentary_entry(const std::string &module, const std::string &reference) {
   const auto options = module_engine_options(module);
-  const auto headings = module_presentation_options(module).headings;
-  return present_content(module, options ? reader_.read_commentary_entry(module, reference, headings, *options)
-                                        : reader_.read_commentary_entry(module, reference, headings));
+  const auto presentation = module_presentation_options(module);
+  auto entry = presentation.note_numbering_available
+      ? reader_.read_commentary_entry(module, reference, presentation.headings, *options, presentation.note_numbers)
+      : options ? reader_.read_commentary_entry(module, reference, presentation.headings, *options)
+                : reader_.read_commentary_entry(module, reference, presentation.headings);
+  return present_content(module, std::move(entry));
 }
 Entry StudySession::read_entry(const std::string &module, const std::string &reference) {
   const auto options = module_engine_options(module);
-  return present_content(module, options ? reader_.read(module, reference, *options) : reader_.read(module, reference));
+  const auto presentation = module_presentation_options(module);
+  auto entry = presentation.note_numbering_available ? reader_.read(module, reference, *options, presentation.note_numbers)
+      : options ? reader_.read(module, reference, *options) : reader_.read(module, reference);
+  return present_content(module, std::move(entry));
 }
 ModulePresentationOptions StudySession::module_presentation_options(const std::string &id) const {
   require_module(id);
   const auto found = presentation_options_.find(id);
-  if (found != presentation_options_.end()) return found->second;
-  for (const auto &module : reader_.modules())
-    if (module.id == id) return presentation_options_from_preferences({}, module.regular_commentary);
-  throw std::out_of_range("Module is not installed");
+  auto result = [&]() -> ModulePresentationOptions {
+    if (found != presentation_options_.end()) return found->second;
+    for (const auto &module : reader_.modules())
+      if (module.id == id) return presentation_options_from_preferences({}, module.regular_commentary);
+    throw std::out_of_range("Module is not installed");
+  }();
+  result.note_numbering_available = note_numbering_enabled_ && module_engine_options(id).has_value();
+  return result;
+}
+void StudySession::set_note_numbers(const std::string &id, bool enabled) {
+  auto options = module_presentation_options(id);
+  if (!options.note_numbering_available) throw std::invalid_argument("Enable note numbering and configure module engine options first");
+  options.note_numbers = enabled;
+  presentation_options_[id] = options;
 }
 void StudySession::set_double_space(const std::string &id, bool enabled) {
   auto options = module_presentation_options(id);
@@ -191,15 +262,20 @@ void StudySession::set_commentary_chapter_mode(const std::string &id, bool enabl
 Chapter StudySession::read_commentary_chapter(const std::string &module, const std::string &reference,
                                               const DisplayOptions &display) {
   const auto options = module_engine_options(module);
-  const auto headings = module_presentation_options(module).headings;
-  return present_content(module, options ? reader_.read_commentary_chapter(module, reference, display, *options, headings)
-                                        : reader_.read_commentary_chapter(module, reference, display, headings), display, true);
+  const auto presentation = module_presentation_options(module);
+  auto chapter = presentation.note_numbering_available
+      ? reader_.read_commentary_chapter(module, reference, display, *options, presentation.headings, presentation.note_numbers)
+      : options ? reader_.read_commentary_chapter(module, reference, display, *options, presentation.headings)
+                : reader_.read_commentary_chapter(module, reference, display, presentation.headings);
+  return present_content(module, std::move(chapter), display, true);
 }
 Chapter StudySession::read_chapter(const std::string &module, const std::string &reference,
                                   const DisplayOptions &display) {
   const auto options = module_engine_options(module);
-  return present_content(module, options ? reader_.read_chapter(module, reference, display, *options)
-                                        : reader_.read_chapter(module, reference, display), display, false);
+  const auto presentation = module_presentation_options(module);
+  auto chapter = presentation.note_numbering_available ? reader_.read_chapter(module, reference, display, *options, presentation.note_numbers)
+      : options ? reader_.read_chapter(module, reference, display, *options) : reader_.read_chapter(module, reference, display);
+  return present_content(module, std::move(chapter), display, false);
 }
 void StudySession::require_module(const std::string &module) const {
   for (const auto &installed : reader_.modules()) if (installed.id == module) return;

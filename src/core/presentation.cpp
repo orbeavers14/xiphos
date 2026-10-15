@@ -12,6 +12,7 @@ bool note_numbers_from_preferences(const EngineOptionPreferences &values) {
 ModulePresentationOptions presentation_options_from_preferences(const EngineOptionPreferences &values, bool regular) {
   const auto found = values.find("Commentary by Chapter");
   ModulePresentationOptions result;
+  result.note_numbers = note_numbers_from_preferences(values);
   auto content = [&](const char *name) {
     const auto value = values.find(name);
     if (value == values.end() || value->second.empty()) return ContentPreference::unknown;
