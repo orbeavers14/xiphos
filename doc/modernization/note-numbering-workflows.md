@@ -131,18 +131,51 @@ Bible/commentary renderer restoration check. Focused normal 2/2 and ASan/UBSan
 2/2 pass including the heading fixture. This adds coverage without changing
 production behavior; no additional GUI/native Fedora/MSVC acceptance is implied.
 
+## Opt-in shared session presentation checkpoint
+
+Implementation `1bd924c` applies numbering inside C++ `StudySession`.
+`set_note_numbering_enabled` is a consumer capability, default false and never
+persisted. It requires configured engine options; unknown engine state stays on
+the existing Reader path. `set_note_numbers` is a per-module preference, decoded
+On unless exactly Off. Only available consumers write `XrefNoteNumbers`; older
+consumers preserve the target file's unhandled value. Import does not enable the
+capability, and failed imports preserve the current session.
+
+The session consumes copied Reader sources, retaining each SDK heading fragment
+and its cleanup-point label. One document-wide lexical decision precedes image/
+font cleanup and numbering of each heading fragment, then its body. Counters
+reset for an entry or chapter, continue across chapter source order, and remain
+independent between paired panes. Raw metadata remains unchanged; published HTML,
+diagnostics and matching CSS are owned. History records only navigation and
+rerenders the current preference. No global numbering state is added.
+
+The new `core_note_snapshots` test compares session output against the complete
+frozen legacy postprocessor on original-prose private fixtures. It covers supplied,
+empty and linked labels; multi-fragment headings; independent cross-reference and
+footnote counters; dense/sparse ordinals and selection; entry reset, paired panes,
+tab isolation, SDK restoration, failed imports, selective saves, lifetime, cleanup
+order and whole-document lexical fallback with spacing-only CSS. Legacy literal
+marker counting includes surviving SDK image-link URLs: removing the image tag
+does not remove its wrapping link. This behavior is preserved, not silently fixed.
+
+Checked locally: 73/73 Mac/core tests, 57/57 portable Linux/core tests on this Mac,
+and focused ASan/UBSan 3/3 including both fixture prerequisites. Strict C++11
+presentation syntax and native-disabled legacy helper build pass. External SDKs
+are not fully instrumented; leak detection is off. No new GUI, native Fedora or
+MSVC acceptance is claimed. Unsupported WORD footnote lexical markup still uses
+the established readable fallback; this checkpoint does not expand that grammar.
+
 ## Next integration boundaries
 
-1. Use the checked saved-setting decoder while adding native session state.
-   Apply the setting before expanding persistence; retain unhandled target values
-   until the new behavior is implemented and checked.
-2. Integrate opted-in session numbering using owned Reader sources. Preserve
-   per-fragment heading cleanup before body cleanup, document counter reset/
-   continuation, diagnostic ordering, whole-pane lexical fallback and paired panes.
-3. Add queued worker/C commands and compatible native controls after shared
-   presentation tests pass. Keep existing consumers compatible and histories neutral.
-4. Expand real module/TEI/RTL/corpus and platform acceptance. The direct-filter TEI
+1. Add queued worker/C capability and per-module settings commands, with typed
+   copied state and compatible Swift/GTK consumption. Keep all numbering policy in
+   the shared core and preserve nonblocking FIFO ownership and neutral history.
+2. Add native controls only after those adapter contracts pass local checks.
+   Current C/native consumers remain on the default compatible path.
+3. Expand real module/TEI/RTL/corpus and platform acceptance. The direct-filter TEI
    empty identifier remains a recorded narrow limitation, not an accepted note workflow.
 
+The owner requested finishing this checkpoint, pushing it and stopping. Shared
+ownership is released; no follow-on worker/C/frontend task is active.
 Legacy source is not eligible for retirement. Passing these helpers does not
 check off whole F14/F17 parity or enable automatic GitHub builds.

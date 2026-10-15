@@ -17,7 +17,10 @@ Hosted Linux checks remain manual-only (`cf9c853`); no catch-up runner jobs ran.
 The weighted planning estimate below predates Linux catch-up and has not been
 recomputed. It must not be read as a new measured parity score.
 
-Latest scoped presentation checkpoint: [shared double spacing](double-space-workflows.md)
+The following earlier checkpoints retain their original test counts and limits;
+the latest session checkpoint follows them.
+
+Earlier scoped presentation checkpoint: [shared double spacing](double-space-workflows.md)
 adds exact legacy defaults, per-module persistence and queued C/native commands
 (`25cf291`, `68562af`, `420ae13`). Mac regression checks pass 70/70; portable
 Linux/core checks pass 54/54 on Mac. Focused ASan/UBSan core and Linux model runs
@@ -25,7 +28,7 @@ pass 4/4 and 3/3 respectively. A real Mac window check confirms CSS-only chapter
 spacing refresh on/off. Current GTK controls still need native Fedora validation.
 No full parity row or release gate changes status.
 
-The [note-numbering seam](note-numbering-workflows.md) now has owned explicit
+Earlier stages of the [note-numbering seam](note-numbering-workflows.md) added owned explicit
 counters reused by legacy cleanup (`c39b024`) and a shared SDK label switch
 (`8572594`). Frozen/current comparisons and 40 OSIS/ThML/GBF/TEI filter cases pass;
 that checkpoint passed 71/71 Mac and 55/55 portable Linux/core on Mac. Native
@@ -52,8 +55,16 @@ unhandled native target values and avoid an extra marker-free text copy. Full
 local suites pass 72/72 Mac and 56/56 portable Linux/core on Mac; focused
 ASan/UBSan 2/2 and counter TSan 1/1 pass. Final extra dense/linked coverage
 `084fdde` passes normal/sanitized 2/2 each with production source unchanged.
-The bounded shared-edit claim is released; the next task is session-numbering
-integration. Automatic native numbering/settings and full parity remain pending.
+Latest implementation `1bd924c` adds opted-in C++ session numbering,
+per-module settings and selective persistence with owned Reader fragment metadata.
+Full local suites pass 73/73 Mac and 57/57 portable Linux/core on Mac; focused
+session ASan/UBSan 3/3, strict C++11 and native-disabled helper checks pass. Dense/
+sparse counter ordering, paired-pane resets, complete frozen cleanup comparisons,
+SDK restoration, history, fallback, imports/saves and ownership are checked.
+Existing worker/C/native consumers remain compatible; their numbering commands,
+adapters and controls are the next boundary. Unsupported WORD lexical note markup
+still falls back. No whole parity row or release gate is accepted. The owner
+requested push and stop; shared ownership is released after this checkpoint.
 
 ## Overall completion estimate
 

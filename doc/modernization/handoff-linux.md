@@ -5,27 +5,28 @@ Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the [shared handoff](hand
 
 ## Current incoming changes — native Fedora rerun required
 
-Fetch current master. Latest production follow-ups are `d1175af` / `5da4a7a`,
-with final added dense/linked coverage `084fdde`. Reader `c499324` adds owned
-per-filter note-label scopes and opt-in C++ Reader metadata. Existing session/C/
-native numbering behavior remains compatible; automatic native numbering is not
-enabled. Earlier changes add matching lexical HTML/CSS consumption (`0b40574`)
-and separate main/commentary double-spacing controls (`420ae13`). Their portable
-models were tested on Mac; current GTK source has not been compiled/run here.
+Fetch current master. Latest implementation `1bd924c` adds opt-in C++
+session note numbering and selective persistence, using owned Reader sources.
+The capability is default false and requires configured engine state. Existing
+worker/C/native consumers retain their current numbering behavior. Their queued
+commands and native adapter adoption are the next shared boundary. Earlier changes
+add matching lexical HTML/CSS consumption (`0b40574`) and main/commentary spacing
+controls (`420ae13`); current GTK source has not been compiled/run on this Mac.
 
-Current local results: **56/56 portable Linux/core checks on macOS**, 72/72 Mac,
-and 3/3 focused note/Reader ASan/UBSan checks including the heading prerequisite.
-The headless option `XIPHOS_BUILD_GTK4_PREVIEW=OFF` builds no GTK executable and
-cannot validate Fedora runtime behavior. Earlier counts below are historical.
+Current local results: **57/57 portable Linux/core checks on macOS**, 73/73 Mac,
+and focused session ASan/UBSan 3/3 including both fixture prerequisites.
+`XIPHOS_BUILD_GTK4_PREVIEW=OFF` builds no GTK executable and cannot validate Fedora
+runtime behavior. The earlier native Fedora results below remain historical.
 See [layout](word-block-workflows.md), [spacing](double-space-workflows.md) and
 [note-numbering](note-numbering-workflows.md) contracts for scope and limits.
 
 Next Fedora task: build the current default-ON GTK target, run the integrated
-suite (56 tests at this checkpoint), repeat the existing six desktop smoke modes,
-then inspect actual lexical positioning/fallback and both spacing controls with
-keyboard/pointer. Retain picker, accessibility, RTL/font/corpus and accelerated
-rendering gates. Preserve manual-only hosted CI. The bounded Mac shared-edit claim is released; the next chat should announce
-session-numbering ownership before overlapping shared API work.
+suite (57 tests at this checkpoint), repeat the existing six desktop smoke modes,
+then inspect lexical positioning/fallback and spacing controls with keyboard/
+pointer. Retain picker, accessibility, RTL/font/corpus and accelerated-rendering
+gates. Preserve manual-only hosted CI. The owner requested this Mac checkpoint
+be pushed and work stopped; no shared-edit claim remains active. Announce the
+next bounded task before overlapping shared APIs.
 
 ## Recorded native Fedora checkpoint and authority
 

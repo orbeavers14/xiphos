@@ -16,32 +16,33 @@ The [status ledger](status.md) is the detailed scope/evidence record; the
 about 8% (range 6–10%), with 0/38 feature groups fully accepted and 0/3 native
 release-ready applications. Do not turn passed build counts into parity scores.
 
-Latest production follow-ups: `d1175af` / `5da4a7a`, following Reader `c499324`;
-final added dense/linked regression coverage: `084fdde`. Local suites pass **72/72 on
-Mac** and **56/56 portable Linux/core checks on Mac**; focused note/Reader
-ASan/UBSan checks pass 3/3. Current GTK source still requires Fedora compilation
-and desktop checks; MSVC/WinUI remain unvalidated. The previous native Fedora
+Latest implementation: `1bd924c`, opt-in C++ session note numbering and
+selective persistence using checked Reader metadata. Local suites pass **73/73 on
+Mac** and **57/57 portable Linux/core checks on Mac**; focused session ASan/UBSan
+checks pass 3/3 including fixtures. Existing worker/C/native consumers retain
+their default path. Current GTK source still requires Fedora compilation and
+desktop checks; MSVC/WinUI remain unvalidated. The previous native Fedora
 checkpoint passed 51 tests and six desktop smokes on its recorded older revision.
 
 | Implemented area | Checkpoints | Contract / limits |
 |---|---|---|
 | Matching lexical HTML/CSS snapshots and native adapters | `7fd1bce` through `0b40574` | [Layout evidence](word-block-workflows.md); Mac window checked, GTK recheck pending |
 | Shared double-spacing preferences and native controls | `25cf291`, `68562af`, `420ae13` | [Spacing evidence](double-space-workflows.md); Mac window checked, GTK recheck pending |
-| Owned note counters, SDK scopes and Reader source metadata | `c39b024` through `c499324` | [Note seam](note-numbering-workflows.md); automatic native numbering/settings still pending |
+| Owned note counters, SDK scopes and session presentation | `c39b024` through `1bd924c` | [Note seam](note-numbering-workflows.md); session presentation checked; worker/C/native adoption pending |
 | Earlier Fedora preview scope catch-up | PRs #82–89, `a80409b` | [Native Fedora evidence](handoff-linux.md); retain manual/corpus/renderer gates |
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
-The Mac chat has started opted-in session numbering using checked Reader metadata
-and the preference decoder. Shared presentation/session/worker/C ABI edits are
-claimed during this bounded task; fetch/read the current ownership note before
-overlapping work. Platform-only acceptance can proceed independently. These results are scoped implementation evidence, not complete
-functional/design parity or permission to retire the reference application.
+The session-numbering checkpoint is complete and handed off. The owner requested
+push and stop; there is no active Mac shared-edit claim. Fetch/read the current
+handoff before claiming the next worker/C/native adapter task. These results are
+scoped implementation evidence, not complete functional/design parity or
+permission to retire the reference application.
 
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Integrate owned numbering in shared sessions using checked metadata/setting decoder before native commands/controls | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Add queued worker/C numbering settings and copied native adapter state after the checked session checkpoint | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

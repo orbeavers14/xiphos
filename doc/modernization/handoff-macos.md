@@ -3,34 +3,32 @@
 Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the
 [shared handoff](handoff.md), [status](status.md) and relevant parity rows first.
 
-## Active session-numbering task and ownership
+## Handed-off checkpoint and ownership
 
-Branch: `master` on `orbeavers14/xiphos`. The Mac chat has started the next
-bounded task: opt-in session note-numbering snapshots, saved presentation state,
-worker/C commands and compatible native adapter consumption after core checks.
-Shared render/session/presentation/worker/C ABI APIs and related tests are claimed
-while this task is active; platform-only acceptance can proceed independently.
-Fetch before overlapping shared work. Sequential checked master commits/pushes
-remain authorized; preserve unrelated changes and never force-push.
+Branch: `master` on `orbeavers14/xiphos`. Implementation `1bd924c`
+finishes the bounded C++ session-numbering slice. The owner requested finishing,
+pushing and stopping here; **no shared-edit claim or follow-on task is active**.
+Worker/C commands and native controls were deliberately left for the next task.
+Fetch before claiming overlapping shared work. Preserve unrelated changes and
+never force-push. The unrelated untracked `.DS_Store` was left untouched.
 
 ## Latest checked implementation
 
-Latest test checkpoint: `084fdde`; production follow-ups `d1175af` (legacy
-note-setting decoder) and `5da4a7a` (marker-free allocation). The full suites
-passed 72/72 Mac and 56/56 portable Linux/core at `5da4a7a`; additional distinct,
-empty and linked dense-note cases at `084fdde` passed focused normal 2/2 and
-ASan/UBSan 2/2 including the heading fixture. Production source is unchanged by
-that final test addition. Preference/counter ASan/UBSan 2/2 and counter TSan 1/1
-also pass, with strict C++11 and native-disabled helper builds.
+`1bd924c` adds default-off consumer capability, configured per-module
+note settings, selective persistence and owned document counters in `StudySession`.
+The existing Reader, worker/C and native paths remain compatible. Copied SDK
+heading fragments retain legacy cleanup/label order before each body; chapter
+counters continue in source order, paired panes reset independently, and raw
+metadata remains owned and unchanged. Whole-document lexical fallback and CSS,
+cleanup diagnostics, tab isolation and navigation-only history are preserved.
 
-`c499324`: owned per-filter note-label restoration and opt-in C++ Reader sources.
-The private Reader establishes an explicit Off baseline, matching the checked SDK
-default, then scopes configured entry/dense/sparse commentary reads. Real SDK
-renderer aliases, nested/exceptional scopes, mixed baselines and partial-owner
-failure are tested. Raw `Entry.note_source` distinguishes unavailable metadata
-from captured empty labels and owns body/heading cleanup-point values after SDK
-teardown. Existing Reader overloads and native consumers retain their current
-presentation behavior. Automatic native numbering/settings/controls are not enabled.
+The new private original-prose test compares complete frozen legacy cleanup with
+entry/dense/sparse session output, labels and linked sources, heading fragments,
+independent cross-reference/footnote counters, resets, panes, SDK restoration,
+cleanup order, persistence/failure isolation, fallback and lifetime. Literal
+markers in surviving SDK image-link URLs retain the legacy counting quirk.
+Unsupported WORD lexical note markup still falls back; this does not expand the
+lexical grammar or claim a full note workflow.
 
 Earlier current-run milestones:
 
@@ -47,12 +45,12 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At `c499324`: **72/72 Mac/core CTests**, **56/56 portable Linux/core CTests on
-this Mac**, focused **ASan/UBSan 3/3** (SDK scope test, heading fixture and Reader
-metadata test), strict C++11 note-rendering syntax and native-disabled helper
-build pass. Prior counter extraction also passed focused TSan 1/1. External
-SWORD/GLib/libxml2 libraries are not fully instrumented; leak detection is off.
-No complete legacy GTK runtime, current Fedora GTK or native MSVC test is claimed.
+At `1bd924c`: **73/73 Mac/core CTests**, **57/57 portable Linux/core
+CTests on this Mac**, and focused **ASan/UBSan 3/3** (session test and both heading
+fixture prerequisites). Strict C++11 presentation syntax and native-disabled
+legacy helper build pass. External SWORD/GLib/libxml2 libraries are not fully
+instrumented; sanitizer leak detection is off. No full GTK3 runtime, current
+Fedora GTK or native MSVC test is claimed. No hosted build credits were used.
 
 Environment: macOS 27.0.1 (26A434), ARM64; AppleClang 21.0.0; Swift 6.4 toolchain
 in Swift 6 language mode; SWORD 1.9.0.3916; GLib 2.86.5; configured libxml2 SDK.
@@ -66,17 +64,20 @@ ctest --test-dir build/macos --no-tests=error --output-on-failure
 cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
 cmake --build build/linux-models --parallel 2
 ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
-cmake --build build/linux-models-sanitized --target core_heading_note_metadata_test core_heading_collection_test core_sdk_note_numbers_test --parallel 2
-ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^(core_heading_note_metadata|core_sdk_note_numbers)$' --no-tests=error --output-on-failure
-clang++ -std=c++11 -fsyntax-only -Isrc/core/include -I/usr/local/include/sword src/core/note_rendering.cpp
+cmake -S platforms/linux -B build/linux-models-sanitized -C build/linux-model-sdk.cmake -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
+cmake --build build/linux-models-sanitized --target core_note_snapshots_test core_heading_note_metadata_test core_heading_collection_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_note_snapshots$' --no-tests=error --output-on-failure
+clang++ -std=c++11 -fsyntax-only -Isrc/core/include -I/usr/local/include/sword src/core/presentation.cpp
 cmake --build build/legacy-seam-build --parallel 2
 ```
 
-The ignored SDK seed is copied from this Mac's configured cache, not a portable
-file. Sanitizer build uses Debug and address/undefined flags on C/C++ and linking;
-configure/reconfigure it before a new target. OFF builds no GTK executable. Fedora
-uses its normal default-ON build with local SDK discovery. Do not repeat full
-checks without a change/failure or an unresolved concern that warrants them.
+The ignored SDK seed is copied from this Mac's cache, not a portable file. The
+sanitizer cache uses Debug, C/C++ `-fsanitize=address,undefined -fno-omit-frame-pointer`
+and executable link `-fsanitize=address,undefined`. Reconfigure before adding new
+targets. OFF builds no GTK executable. Fedora uses its normal default-ON build
+and local dependencies. Do not repeat full checks without a changed source,
+failure or unresolved concern. Prior detailed checkpoints remain in the
+[versioned handoff](https://github.com/orbeavers14/xiphos/blob/b7f1bbb/doc/modernization/handoff-macos.md).
 
 ## GUI evidence and limits
 
@@ -91,22 +92,13 @@ launcher outside Documents for further GUI checks; do not weaken macOS privacy.
 
 ## Next bounded shared work
 
-1. Use the checked `note_numbers_from_preferences` decoder (default On except
-   decoded exact Off). The legacy adapter reuses it; 22 file/duplicate cases and
-   direct-value cases pass. Native saves preserve unhandled target keys until the
-   setting is actually applied. Cache bit 26 remains in the retained legacy path.
-2. Integrate owned numbering into opted-in session snapshots using Reader metadata.
-   Keep per-SDK-fragment heading cleanup before body cleanup, document counter
-   reset/continuation, copied diagnostics, whole-pane lexical fallback and independent
-   paired panes. The current C++ Reader option controls SDK supplied labels only.
-3. Add queued worker/C settings and compatible native controls after the shared
-   presentation contract is checked. No formatting policy belongs in Swift/GTK.
-4. Coordinate Fedora rebuild/desktop checks and native Windows bring-up through
-   their handoffs. Broader RTL/font/corpus/accessibility and full legacy retirement
-   remain gates. 0/38 complete parity groups and 0/3 native releases are accepted.
+1. Add queued worker/C capability and per-module note-setting commands, typed
+   copied state, ownership/error tests and compatible Swift/GTK adapters.
+2. Enable native controls after those contracts pass. All numbering policy stays
+   in the shared core; preserve one serialized SWORD worker and nonblocking UIs.
+3. Coordinate Fedora rebuild/desktop checks and native Windows bring-up through
+   their handoffs. Broader WORD/TEI/RTL/font/corpus/accessibility and retirement
+   gates remain open. 0/38 complete parity groups and 0/3 releases are accepted.
 
-Keep all routine checks local. No hosted build or reset credit was requested.
-The owner requested work until allowance exhaustion; resume from this checked
-checkpoint when usage permits rather than rebuilding already-checked helpers.
-Update this rolling handoff with the next implementation commit/results/limits;
-link historical evidence instead of accumulating conflicting current checkpoints.
+Work is stopped at the owner's requested checked/pushed checkpoint. Resume only
+on a new instruction; no follow-on work or hosted builds have been scheduled.
