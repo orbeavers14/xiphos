@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+name: linux-core
+"on":
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths: ['src/core/**', 'src/main/**', 'src/backend/**', 'platforms/linux/**', '.github/workflows/linux-core.yml']
+  pull_request:
+    paths: ['src/core/**', 'src/main/**', 'src/backend/**', 'platforms/linux/**', '.github/workflows/linux-core.yml']
+permissions:
+  contents: read
+concurrency:
+  group: linux-core-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  core:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+        mode: [release, sanitized]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build and test core
+        shell: bash
+        run: |
+          args=(--install-deps --jobs 2)
+          if [[ '${{ matrix.mode }}' == sanitized ]]; then args+=(--sanitize); fi
+          platforms/linux/core.sh "${args[@]}"
+      - name: Preserve test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: linux-core-${{ matrix.os }}-${{ matrix.mode }}-logs
+          path: build/linux-core-*/Testing/Temporary/
+          if-no-files-found: ignore
+          retention-days: 7

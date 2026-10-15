@@ -55,11 +55,13 @@ migration. See the [current status and sign-off rules](doc/modernization/status.
 
 * Existing GTK application: [INSTALL.md](INSTALL.md).
 * Shared core and engine tests: [src/core/README.md](src/core/README.md).
+* Linux dependency setup and automated checks: [platforms/linux/README.md](platforms/linux/README.md).
 * Native macOS preview and adapter tests: [platforms/macos/README.md](platforms/macos/README.md).
 * Translations: documentation in [doc](doc).
 
-PRs #1–80 are merged after local review and integration checks. Both hosted build
-workflows remain paused to conserve GitHub credits. New work stays in small,
+PRs #1–80 are merged after local review and integration checks. The existing legacy and native-core hosted build
+workflows remain paused to conserve GitHub credits. A dedicated Linux core workflow
+automates relevant changes with release and sanitizer checks on Ubuntu 22.04/24.04. New work stays in small,
 reviewable PRs. Next are representative module/profile validation, remaining hover
 and storage behavior, and established study-pane/commentary composition, followed
 by equivalent reading panes on GTK4 and WinUI 3.
