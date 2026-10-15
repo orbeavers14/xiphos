@@ -3,14 +3,13 @@
 Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md) and the
 [shared handoff](handoff.md) first.
 
-## Active shared-core task
+## Shared-core checkpoint: ready for handoff
 
-The macOS chat is continuing shared lexical-rendering corpus/fallback and internal
-modernization on `master`, starting from `74a4190`. Scope: `word_blocks` helper,
-its tests and associated evidence. No public API or frontend behavior change is
-planned for the first checkpoint. Other platform chats should avoid overlapping
-edits to these files; platform-local acceptance work can continue independently.
-Owner request: continue shared-core work using local checks until usage is exhausted.
+The macOS chat completed the shared lexical corpus/ownership/layout checkpoints
+below on `master`, starting from `74a4190`. No file claim remains after this
+handoff; the next chat must fetch and announce its bounded shared-core task before
+overlapping work. The owner requested local development until the usage allowance
+is reached. No reset credit or hosted build allowance was consumed.
 
 Completed/pushed implementation checkpoint: `f2a2c61`, 2026-10-15. Owned lexical
 layout now accepts opaque SWORD note markers, preserves their links/labels, checks
@@ -31,9 +30,45 @@ longer calls GLib allocation/free/search functions. 1,638 complete-oracle cases,
 pass; full macOS suite 65/65; focused ASan/UBSan and TSan each 1/1; strict C++11
 and native-disabled helper builds pass. Legacy source remains the retained oracle.
 
-Current follow-up: additive C++ `layout_lexical_content` bundles copied display
+Completed/pushed layout checkpoint: `0f7aed0`. Additive C++ `layout_lexical_content` bundles copied display
 flags, rendered HTML, matching CSS and requested/applied state for later shared
-snapshot adoption. It does not change the C ABI or either native frontend yet.
+snapshot adoption. 48 policy cases and 400 concurrent combined calls pass;
+full local suite 65/65, focused ASan/UBSan and TSan each 1/1, strict C++11 and
+native-disabled helper builds pass. It does not change the C ABI or either native
+frontend yet.
+
+Completed/pushed integration-test checkpoint: `7986d20`. Real worker-generated
+note and ranged-reference URLs survive formatting and still resolve to the right
+note body or reference list. Normal, ASan/UBSan and TSan focused runs each pass
+3/3 (including fixture prerequisites). Production source is unchanged since the
+65/65 suite at `0f7aed0`; the subsequent test additions were checked with these
+focused runs. No GUI acceptance or native snapshot adoption is claimed.
+
+Environment: macOS 27.0.1 (26A434), ARM64; AppleClang 21.0.0,
+Swift 6.4 toolchain (Swift 6 language mode), SWORD 1.9.0.3916 and configured
+GLib 2.86.5. Local deployment target remains 26.0, not evidence of macOS 13.
+External SWORD/GLib/libxml2 libraries are not fully sanitizer-instrumented;
+ASan leak detection is disabled. Windows/Fedora reruns of these new core commits
+are pending. No module corpus or user data was downloaded or modified.
+
+Commands to reproduce these local milestones (SDK discovery was already configured):
+
+```sh
+cmake --build build/macos -j4
+ctest --test-dir build/macos --output-on-failure
+cmake --build build/sanitized --target core_word_blocks_test core_study_note_test -j4
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/sanitized -R '^core_word_blocks$|^core_study_notes$' --no-tests=error --output-on-failure
+cmake --build build/thread-sanitized --target core_word_blocks_test core_study_note_test -j4
+ctest --test-dir build/thread-sanitized -R '^core_word_blocks$|^core_study_notes$' --no-tests=error --output-on-failure
+clang++ -std=c++11 -fsyntax-only -Isrc/core/include -I/usr/local/include/sword src/core/word_blocks.cpp
+cmake --build build/legacy-seam-build -j4
+```
+
+The final command uses the pre-existing ignored native-disabled helper harness;
+it does not build or validate the complete GTK3 application. The two focused
+test names were run separately for the recorded 1/1 and 3/3 results above;
+the combined regex is a convenient rerun. Build-cache paths/configuration are
+local, so use the platform build guide to configure a different computer first.
 
 ## Existing evidence and boundaries
 
@@ -51,12 +86,15 @@ platform README and tests before rebuilding any of this independently.
 
 ## Next bounded work
 
-1. Expand the owned lexical block renderer's real SDK/lemma/note/paragraph corpus
-   and fallback evidence; see [word block workflows](word-block-workflows.md).
-   The helper exists but is not yet adopted by native snapshots or the old parser.
-2. After the supported grammar and fallback policy are checked, integrate owned
-   styles/rendering into heading/body snapshots with controls and visual evidence.
-   Keep platform-independent behavior in C++, not Swift or a separate SwordKit engine.
+1. Integrate the owned HTML/CSS decision into shared heading/body snapshots,
+   preserving the legacy lexical-formatting-before-content-cleanup order. Do not
+   simply apply it in Swift/GTK after receiving an already-cleaned snapshot.
+   Carry matching copied CSS and layout status with the HTML, covering fallback,
+   entry/chapter/paired/heading paths, per-module options and saved-state behavior.
+2. Add compatible C/Swift/Linux consumption and native visual/interaction evidence
+   together; no UI should receive positioned annotation HTML without matching CSS.
+   Keep broader SDK/RTL/font/corpus and unsupported-grammar gates explicit; see
+   [word block workflows](word-block-workflows.md). The old parser is not retired.
 3. Preserve main/commentary/dictionary pane composition, draft input, histories,
    unknown option eligibility, busy/closed/stale-result guards and window isolation.
 4. Review Linux/Windows requests for shared API adjustments before changing those

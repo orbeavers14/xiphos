@@ -23,6 +23,10 @@ Known pushed checkpoints:
 - `f190c49` / PR #82: Linux shared-core setup/build/test script, Fedora dependency
   support, explicit standalone C++17 and CMake extraction compatibility fixes.
 - `cf9c853`: Linux hosted workflow changed to manual-only to conserve allowance.
+- `7986d20` concludes the current shared lexical helper checkpoints: owned scanner/
+  annotation state, SWORD note-marker preservation, combined HTML/CSS policy and
+  real note/reference URL integration evidence. See the Mac handoff for exact
+  tests and commits. Native snapshot adoption remains next; no UI parity is implied.
 - Linux catch-up PRs #83–89 and the final scope audit expose the existing macOS
   preview capability set. Fedora ARM64 passes 51 integrated tests, four sanitized
   model executables and six software-rendered desktop smoke modes. Exact source,
@@ -32,7 +36,7 @@ Known pushed checkpoints:
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Extend owned lexical rendering corpus/fallback evidence before snapshot/style adoption; preserve existing preview behavior | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Integrate shared lexical HTML/CSS into snapshots before cleanup, then compatible adapters and visual checks; preserve existing preview behavior | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Validate physical-input, picker, accessibility, visual/corpus and accelerated-rendering gates after the macOS preview scope catch-up | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 
