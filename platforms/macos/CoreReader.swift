@@ -99,14 +99,22 @@ struct RenderedCleanupDiagnostic: Sendable {
     let kind: Kind
     let suffix: String
 }
+struct RenderedLexicalPresentation: Sendable, Equatable {
+    let css: String
+    let requested: Bool
+    let applied: Bool
+    static let plain = Self(css: "", requested: false, applied: false)
+}
 struct RenderedEntry: Sendable {
     let reference: String
     let html: String
     let headingHTML: String
     let cleanupDiagnostics: [RenderedCleanupDiagnostic]
-    init(reference: String, html: String, headingHTML: String = "", cleanupDiagnostics: [RenderedCleanupDiagnostic] = []) {
+    let lexical: RenderedLexicalPresentation
+    init(reference: String, html: String, headingHTML: String = "", cleanupDiagnostics: [RenderedCleanupDiagnostic] = [], lexical: RenderedLexicalPresentation = .plain) {
         self.reference = reference; self.html = html; self.headingHTML = headingHTML
         self.cleanupDiagnostics = cleanupDiagnostics
+        self.lexical = lexical
     }
 }
 struct RenderedChapter: Sendable {
@@ -117,6 +125,11 @@ struct RenderedChapter: Sendable {
     let selectedVerse: Int
     let selectedAnchor: String
     let html: String
+    let lexical: RenderedLexicalPresentation
+    init(reference: String, title: String, verses: [RenderedEntry], verseOrdinals: [Int], selectedVerse: Int, selectedAnchor: String, html: String, lexical: RenderedLexicalPresentation = .plain) {
+        self.reference = reference; self.title = title; self.verses = verses; self.verseOrdinals = verseOrdinals
+        self.selectedVerse = selectedVerse; self.selectedAnchor = selectedAnchor; self.html = html; self.lexical = lexical
+    }
 }
 struct ReferenceChoice: Sendable { let label: String; let reference: String }
 struct ReferenceChoices: Sendable {
@@ -257,6 +270,12 @@ final class CoreSession {
 // Shared copying helpers for synchronous and asynchronous adapters. They add
 // no canon, display, navigation or history policy to either Swift interface.
 enum CoreValues {
+    static func lexicalLayout(_ load: (UnsafeMutablePointer<xc_lexical_presentation>) -> xc_status) -> RenderedLexicalPresentation {
+        var value = xc_lexical_presentation()
+        let status = load(&value)
+        precondition(status == XC_OK && value.css != nil, "Owned snapshot must expose matching layout metadata")
+        return RenderedLexicalPresentation(css: String(cString: value.css!), requested: value.requested != 0, applied: value.applied != 0)
+    }
     static func cleanupDiagnostics(count: Int, kind: (Int) -> Int32, suffix: (Int) -> UnsafePointer<CChar>?) -> [RenderedCleanupDiagnostic] {
         (0..<count).map { index in
             RenderedCleanupDiagnostic(kind: .init(rawValue: kind(index))!, suffix: String(cString: suffix(index)!))
@@ -268,7 +287,8 @@ enum CoreValues {
                       html: String(cString: xc_entry_html(result)!),
                       headingHTML: String(cString: xc_entry_heading_html(result)!),
                       cleanupDiagnostics: cleanupDiagnostics(count: xc_entry_cleanup_count(result),
-                          kind: { xc_entry_cleanup_kind(result, $0) }, suffix: { xc_entry_cleanup_suffix(result, $0) }))
+                          kind: { xc_entry_cleanup_kind(result, $0) }, suffix: { xc_entry_cleanup_suffix(result, $0) }),
+                      lexical: lexicalLayout { xc_entry_lexical_layout(result, $0) })
     }
     static func link(_ result: OpaquePointer) -> PassageTarget {
         PassageTarget(module: String(cString: xc_link_module(result)!),
@@ -329,11 +349,13 @@ enum CoreValues {
                               html: String(cString: xc_chapter_verse_html(result, index)!),
                               headingHTML: String(cString: xc_chapter_verse_heading_html(result, index)!),
                               cleanupDiagnostics: cleanupDiagnostics(count: xc_chapter_verse_cleanup_count(result, index),
-                                  kind: { xc_chapter_verse_cleanup_kind(result, index, $0) }, suffix: { xc_chapter_verse_cleanup_suffix(result, index, $0) }))
+                                  kind: { xc_chapter_verse_cleanup_kind(result, index, $0) }, suffix: { xc_chapter_verse_cleanup_suffix(result, index, $0) }),
+                              lexical: lexicalLayout { xc_chapter_verse_lexical_layout(result, index, $0) })
             }, verseOrdinals: (0..<xc_chapter_count(result)).map { Int(xc_chapter_verse_ordinal(result, $0)) },
             selectedVerse: xc_chapter_selected_verse(result),
             selectedAnchor: String(cString: xc_chapter_selected_anchor(result)!),
-            html: String(cString: xc_chapter_html(result)!))
+            html: String(cString: xc_chapter_html(result)!),
+            lexical: lexicalLayout { xc_chapter_lexical_layout(result, $0) })
     }
     static func choices(_ result: OpaquePointer) -> ReferenceChoices {
         func choices(_ kind: xc_choice_kind) -> [ReferenceChoice] {

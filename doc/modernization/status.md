@@ -90,7 +90,9 @@ Opt-in session/worker snapshots now stage lexical heading/body layout before cle
 carry owned CSS/status and roll unsupported documents back as a whole. The new
 private-fixture snapshot test covers chapters, paired history, tab isolation,
 save/import and worker lifetime. Typed C metadata and the queued consumer opt-in
-now expose the same owned snapshot contract; native adapter consumption and broader
+now expose the same owned snapshot contract. Swift copies matching HTML/CSS/status
+into immutable values, with a new async ownership/fallback check; full macOS suite
+67/67. Native view consumption and broader
 corpus/visual acceptance remain pending. Shared owned lexical CSS
 and HTML are now available through one layout decision, including explicit
 unsupported-content CSS fallback (48 policy cases and 400 concurrent combined calls).

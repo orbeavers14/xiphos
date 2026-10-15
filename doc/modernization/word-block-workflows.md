@@ -209,6 +209,15 @@ stale CSS from another owner. C11 header consumption and C ownership tests cover
 repeat access, absent commentary, invalid setters, closed tabs, later reads and
 HTML/CSS lifetime after request/tab/worker destruction. Adapters must copy CSS.
 
+The Swift adapter now copies this metadata into immutable Sendable values for
+entries, paired panes, dense/sparse chapters and individual verses. Its explicit
+capability command uses the same async worker without UI-thread waits. The new
+`swift_lexical_snapshots` private-fixture check covers disabled/applied/fallback
+states, per-tab isolation, history neutrality, closed-tab errors and values held
+after all handles/worker are released. Its focused run passes 3/3 including the
+two core fixture prerequisites. Native view consumption remains a separate step;
+no second Swift formatting policy or SWORD engine is introduced.
+
 Next: validate broader SDK/lemma/note/paragraph shapes and fallback policy, then
 adopt owned rendering/styles in heading/body snapshots with native controls and
 visual evidence. Representative RTL/font/module, keyboard/runtime and full GTK/

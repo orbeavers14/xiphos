@@ -22,6 +22,12 @@ normal/ASan/UBSan/TSan runs 2/2 including the private fixture setup. Existing
 consumers stay on the compatible plain path. C ABI consumption is the active next
 checkpoint; frontend layout/visual adoption is not yet claimed.
 
+Current-run C ABI checkpoint: `8c0f4f2`. Strict queued opt-in plus typed borrowed
+CSS/status getters for entry, paired panes, chapter and verses; C11 and owned C
+snapshot/null/bounds/lifetime tests pass. Full local suite 66/66; ASan/UBSan and
+TSan snapshot runs each 2/2. Swift value copying is the active next checkpoint;
+native view consumption stays off until matching CSS is connected.
+
 The macOS chat completed the shared lexical corpus/ownership/layout checkpoints
 below on `master`, starting from `74a4190`. No file claim remains after this
 handoff; the next chat must fetch and announce its bounded shared-core task before

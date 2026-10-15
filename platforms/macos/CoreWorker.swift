@@ -100,6 +100,11 @@ actor CoreWorker {
         let status = xc_worker_close_tab(try worker(), tab, &request)
         xc_request_release(try await wait(status, request))
     }
+    func setLexicalLayoutEnabled(tab: UInt64, enabled: Bool) async throws {
+        var request: OpaquePointer?
+        let status = xc_worker_set_lexical_layout_enabled(try worker(), tab, enabled ? 1 : 0, &request)
+        xc_request_release(try await wait(status, request))
+    }
     func clearHistory(_ tab: UInt64) async throws {
         var request: OpaquePointer?
         let status = xc_worker_clear_history(try worker(), tab, &request)
@@ -563,13 +568,15 @@ actor CoreWorker {
             html: String(cString: xc_passage_commentary_html(result)!),
             headingHTML: String(cString: xc_passage_commentary_heading_html(result)!),
             cleanupDiagnostics: CoreValues.cleanupDiagnostics(count: xc_passage_commentary_cleanup_count(result),
-                kind: { xc_passage_commentary_cleanup_kind(result, $0) }, suffix: { xc_passage_commentary_cleanup_suffix(result, $0) })) : nil
+                kind: { xc_passage_commentary_cleanup_kind(result, $0) }, suffix: { xc_passage_commentary_cleanup_suffix(result, $0) }),
+            lexical: CoreValues.lexicalLayout { xc_passage_commentary_lexical_layout(result, $0) }) : nil
         return RenderedStudyPassage(module: String(cString: xc_passage_module(result)!),
             commentaryModule: String(cString: xc_passage_commentary_module(result)!),
             text: RenderedEntry(reference: String(cString: xc_passage_reference(result)!),
                                 html: String(cString: xc_passage_html(result)!),
                                 cleanupDiagnostics: CoreValues.cleanupDiagnostics(count: xc_passage_cleanup_count(result),
-                                    kind: { xc_passage_cleanup_kind(result, $0) }, suffix: { xc_passage_cleanup_suffix(result, $0) })), commentary: commentary)
+                                    kind: { xc_passage_cleanup_kind(result, $0) }, suffix: { xc_passage_cleanup_suffix(result, $0) }),
+                                lexical: CoreValues.lexicalLayout { xc_passage_lexical_layout(result, $0) }), commentary: commentary)
     }
     func studyPassage(tab: UInt64, module: String, commentary: String, reference: String, record: Bool = true) async throws -> RenderedStudyPassage {
         guard ![module, commentary, reference].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
