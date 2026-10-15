@@ -37,6 +37,10 @@ namespace current {
 #undef ALIGN_WORD
 #undef EMPTY_WORD
 #undef XI_warning
+#include "legacy_lexical_style.inc"
+#undef CSS_BLOCK_BOTH
+#undef CSS_BLOCK_ONE
+#undef DOUBLE_SPACE
 void check(bool ok, const char *message) { if (!ok) throw std::runtime_error(message); }
 struct Snapshot { std::string html, warning, input; };
 Snapshot run(const char *(*render)(const char *), const std::string &input) {
@@ -205,6 +209,27 @@ int main(int argc, char **argv) {
           "depth and input-size bounds preserve unsupported data");
     bool nul = false; try { xiphos::core::render_word_blocks(std::string("a\0b", 3)); } catch (const std::invalid_argument &) { nul = true; }
     check(nul, "embedded NUL rejected");
+    unsigned policies = 0;
+    const std::string layout_input = "Original " + strong("3056", true) + morph("N-NSM", true);
+    for (unsigned bits = 0; bits < 16; ++bits) {
+      const bool strongs = bits & 1, lemmas = bits & 2, morphology = bits & 4, spacing = bits & 8;
+      const bool requested = strongs || lemmas || morphology;
+      const auto result = xiphos::core::layout_lexical_content(layout_input, strongs, lemmas, morphology, spacing);
+      check(result.requested == requested && result.applied == requested &&
+            result.html == (requested ? run(frozen::block_render, layout_input).html : layout_input) &&
+            result.css == frozen_lexical_style(strongs, lemmas, morphology, spacing),
+            "layout HTML and CSS share the complete legacy option decision");
+      const std::string unsupported = "Original <small>unsupported note</small>";
+      const auto fallback = xiphos::core::layout_lexical_content(unsupported, strongs, lemmas, morphology, spacing);
+      check(fallback.requested == requested && !fallback.applied && fallback.html == unsupported &&
+            fallback.css == frozen_lexical_style(false, false, false, spacing),
+            "unsupported content never receives annotation positioning CSS without word spans");
+      bool rejected = false;
+      try { xiphos::core::layout_lexical_content(std::string("a\0b", 3), strongs, lemmas, morphology, spacing); }
+      catch (const std::invalid_argument &) { rejected = true; }
+      check(rejected, "layout NUL validation is independent of selected display options");
+      policies += 3;
+    }
     unsigned random = 0x5eed;
     const std::string alphabet = "Original <>/smallabiuem=\"'&;()\t";
     for (unsigned n = 0; n < 8000; ++n) {
@@ -236,10 +261,14 @@ int main(int argc, char **argv) {
       for (unsigned i = 0; i < 100; ++i) {
         const auto result = xiphos::core::render_word_blocks(concurrent_input);
         if (!result.applied || result.html != concurrent_expected) mismatch = true;
+        const auto layout = xiphos::core::layout_lexical_content(concurrent_input, i & 1, i & 2, i & 4, i & 8);
+        if (layout.html != ((i & 7) ? concurrent_expected : concurrent_input) ||
+            layout.css != frozen_lexical_style(i & 1, i & 2, i & 4, i & 8)) mismatch = true;
       }
     });
     for (auto &renderer : renderers) renderer.join(); check(!mismatch, "owned output and recursion state isolated across concurrent calls");
     std::cout << "Structured scanner mutations checked: " << mutations << " cases\n";
+    std::cout << "Lexical layout policy checks: " << policies << " cases\n";
     std::cout << "Word block frozen/current checks passed: " << comparisons << " valid cases\n";
   } catch (const std::exception &e) { std::cerr << e.what() << '\n'; return 1; }
 }

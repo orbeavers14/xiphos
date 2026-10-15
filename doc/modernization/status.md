@@ -87,6 +87,9 @@ owned-string annotation edits and scanner state keep legacy spacing and link val
 while removing manual temporary allocation/free pairs from the new helper.
 Tests add 8,000 noise inputs, 3,039 structured mutations and 400 concurrent renders. Native
 snapshot adoption and broader corpus/visual acceptance remain pending. Shared owned lexical CSS
+and HTML are now available through one layout decision, including explicit
+unsupported-content CSS fallback (48 policy cases and 400 concurrent combined calls).
+Shared owned lexical CSS
 now matches frozen selection and three actual legacy call sites over 768 cases,
 plus 2,048 concurrent selections. Strict C++11/native-disabled builds pass. Native
 CSS/parser integration and pixel acceptance remain pending. Focused normal/address/

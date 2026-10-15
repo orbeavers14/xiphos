@@ -130,6 +130,28 @@ syntax checking now needs only the core and SWORD headers for this source file.
 The legacy parser remains retained as the oracle and no native snapshot has
 adopted this new implementation yet.
 
+## Shared HTML/CSS layout decision
+
+`layout_lexical_content` returns owned HTML, matching CSS and separate requested/
+applied flags in one C++11 value. Strong's, lemmas or morphology request word
+blocks; annotation rows take precedence over double spacing exactly as in the
+legacy selection. Disabled layout leaves HTML unchanged. This helper does not
+apply SWORD filters; it consumes already-rendered HTML and copied display flags.
+
+When the supported grammar falls back, raw HTML is retained and annotation
+positioning CSS is suppressed, since raw anchors may use the same class names
+without the required word-span containers. Optional double-spacing CSS remains.
+That is explicit fallback behavior for unsupported content, not a claim that
+the unsafe legacy parser accepted it. NUL is rejected for every option state.
+
+All 16 option combinations compare supported HTML with the frozen block renderer
+and CSS with frozen declarations, and check unsupported fallback and NUL behavior
+(48 policy cases). Another 400 concurrent combined-layout calls share no mutable
+result state. The existing 400 renderer calls and other corpus tests remain.
+This is an additive C++ helper; native snapshots, C/Swift/Linux adapters and UI
+layout have not yet adopted it. Adoption must publish HTML and its matching CSS
+together and preserve pane, option, heading/cleanup ordering and history contracts.
+
 Next: validate broader SDK/lemma/note/paragraph shapes and fallback policy, then
 adopt owned rendering/styles in heading/body snapshots with native controls and
 visual evidence. Representative RTL/font/module, keyboard/runtime and full GTK/

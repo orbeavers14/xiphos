@@ -19,6 +19,7 @@
  * along with this program; if not, see <https://www.gnu.org/licenses/>.
  */
 #include "xiphos/core/word_blocks.hpp"
+#include "xiphos/core/lexical_style.hpp"
 #include <swbuf.h>
 #include <algorithm>
 #include <cctype>
@@ -311,6 +312,20 @@ WordBlockResult render_word_blocks(std::string html) {
   block_render_secondary(html, rendered, supported);
   result.html = supported ? std::string(rendered.c_str()) : std::move(html);
   result.applied = supported;
+  return result;
+}
+LexicalLayout layout_lexical_content(std::string html, bool strongs, bool lemmas,
+                                     bool morphology, bool double_space) {
+  if (html.find('\0') != std::string::npos) throw std::invalid_argument("Lexical layout HTML contains NUL");
+  LexicalLayout result;
+  result.requested = strongs || lemmas || morphology;
+  if (result.requested) {
+    auto rendered = render_word_blocks(std::move(html));
+    result.html = std::move(rendered.html);
+    result.applied = rendered.applied;
+  } else result.html = std::move(html);
+  result.css = result.applied ? lexical_block_style(strongs, lemmas, morphology, double_space)
+                             : lexical_block_style(false, false, false, double_space);
   return result;
 }
 }}

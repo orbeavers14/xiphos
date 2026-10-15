@@ -22,8 +22,18 @@ builds passed. No public API/frontend adoption changed.
 Completed/pushed follow-up: `f9a8e0e`, 2026-10-15. Checked owned-string annotation
 edits retain NASB/class-shim/spacing/morphology behavior over 1,530 oracle cases.
 65/65 local suite; focused ASan/UBSan and TSan each 1/1; strict C++11 and legacy
-helper builds pass. Current follow-up moves scanner temporaries/recursion to
-owned C++ strings and adds structured mutation/style-boundary coverage.
+helper builds pass.
+
+Completed/pushed scanner checkpoint: `77b97a5`, 2026-10-15. Scanner word/annotation
+state and recursive working text now use C++ owned strings; the new source no
+longer calls GLib allocation/free/search functions. 1,638 complete-oracle cases,
+8,000 noise inputs, 3,039 structured mutations and 400 concurrent renderer calls
+pass; full macOS suite 65/65; focused ASan/UBSan and TSan each 1/1; strict C++11
+and native-disabled helper builds pass. Legacy source remains the retained oracle.
+
+Current follow-up: additive C++ `layout_lexical_content` bundles copied display
+flags, rendered HTML, matching CSS and requested/applied state for later shared
+snapshot adoption. It does not change the C ABI or either native frontend yet.
 
 ## Existing evidence and boundaries
 
