@@ -6,7 +6,8 @@
 #include <vector>
 
 namespace xiphos::linux_preview {
-struct Module { std::string id, description, type; };
+struct Module { std::string id, description, type; bool dictionary = false; };
+struct Dictionary { std::string module, key, html; };
 struct ReferenceChoice { std::string label, target; };
 struct Chapter { std::string html, anchor, title; };
 struct Passage { std::string bible, commentary, reference, bible_html, commentary_html; };
@@ -21,6 +22,16 @@ public:
   void tick();
   bool visit(const std::string &bible, const std::string &commentary, const std::string &reference);
   bool navigate(int direction);
+  bool lookup_dictionary(const std::string &module, const std::string &key, bool record = false);
+  bool step_dictionary(int direction);
+  bool navigate_dictionary_history(int direction);
+  bool clear_dictionary_history();
+  bool close_dictionary();
+  const Dictionary &dictionary() const { return dictionary_; }
+  const std::vector<std::string> &dictionary_keys() const { return dictionary_keys_; }
+  bool dictionary_can_back() const { return dictionary_back_; }
+  bool dictionary_can_forward() const { return dictionary_forward_; }
+  size_t dictionary_history_count() const { return dictionary_history_count_; }
   bool navigate_chapter(int direction);
   bool clear_history();
   bool set_display(bool chapter, unsigned flags);
@@ -46,7 +57,7 @@ public:
   const std::string &error() const { return error_; }
   unsigned revision() const { return revision_; }
 private:
-  enum class Operation { catalog, tab, preferences, passage, history, link, refresh, clear, presentation, bible_chapter, commentary_chapter, choices };
+  enum class Operation { catalog, tab, preferences, passage, history, link, refresh, clear, presentation, bible_chapter, commentary_chapter, choices, dictionary, dictionary_choices, dictionary_history, dictionary_clear };
   bool accept(xc_status status, xc_request *request, Operation operation);
   void history();
   void load_chapters(bool commentary = false);
@@ -58,6 +69,10 @@ private:
   bool ready_ = false, closed_ = false, back_ = false, forward_ = false;
   std::vector<Module> modules_;
   Passage passage_;
+  Dictionary dictionary_;
+  std::vector<std::string> dictionary_keys_;
+  bool dictionary_back_ = false, dictionary_forward_ = false;
+  size_t dictionary_history_count_ = 0;
   Chapter bible_chapter_, commentary_chapter_;
   bool show_chapter_ = false, show_commentary_chapter_ = false;
   unsigned display_flags_ = XC_CHAPTER_VERSE_NUMBERS | XC_CHAPTER_HIGHLIGHT_SELECTED;

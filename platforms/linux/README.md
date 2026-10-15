@@ -58,7 +58,7 @@ to select an explicit library; no user settings or installed modules are written
 Select a Bible and optional commentary, enter a reference and press Return or Go.
 Back/Forward restore pairs through the shared core. The right-hand commentary
 stays above the reserved dictionary/book/devotional area. This is an initial
-verse-reading slice: complete chapter layout, dictionary/notes/hover controls,
+verse-reading slice: complete chapter layout and notes/hover controls,
 module grouping, tabs, persistence and release packaging are pending. Only
 passage links are presented; unsupported links report an error and stay local.
 Module scripts and remote resources are blocked by JavaScript settings and CSP.
@@ -109,3 +109,13 @@ presentation controls. Commentary chapter mode comes from the core's per-module
 preference. Previous/Next chapter resolve through SWORD and visit paired history;
 Book/Chapter/Verse selectors consume core-owned labels and targets. Clear history
 leaves the committed display intact. Display refreshes do not add history.
+
+
+### Dictionary pane
+
+Choose a dictionary, enter a word/key and press Enter or Look up. Nearby keys
+retain the core's nine entries, including duplicate labels at SDK boundaries.
+Previous/Next key and direct lookups do not record history. Dictionary
+Back/Forward/Clear consume the shared separate dictionary history, which is
+populated by recorded lexical clicks (contextual click integration follows).
+Close clears the pane, not history. Failed lookups retain the last result.

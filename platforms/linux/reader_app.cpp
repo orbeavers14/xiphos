@@ -18,6 +18,12 @@ struct App {
   GtkWidget *selectors[3] = {}, *previous_chapter = nullptr, *next_chapter = nullptr, *clear_history = nullptr;
   bool updating = false;
   std::string selector_identity;
+  GtkWidget *dictionary_module = nullptr, *dictionary_key = nullptr, *dictionary_lookup = nullptr;
+  GtkWidget *dictionary_previous = nullptr, *dictionary_next = nullptr, *dictionary_back = nullptr, *dictionary_forward = nullptr;
+  GtkWidget *dictionary_nearby = nullptr, *dictionary_clear = nullptr, *dictionary_close = nullptr;
+  WebKitWebView *dictionary_view = nullptr;
+  std::vector<std::string> dictionaries;
+  std::string dictionary_identity, dictionary_choices_identity, dictionary_submitted;
   WebKitWebView *bible_view = nullptr, *commentary_view = nullptr;
   std::unique_ptr<ReaderModel> model;
   std::vector<std::string> bibles, commentaries{""};
@@ -55,7 +61,7 @@ gboolean policy(WebKitWebView *view, WebKitPolicyDecision *decision, WebKitPolic
         const char *uri = webkit_uri_request_get_uri(request);
         const auto &passage = app->model->passage();
         app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference));
-        app->model->follow(view == app->bible_view ? passage.bible : passage.commentary, uri ? uri : "");
+        app->model->follow(view == app->commentary_view ? passage.commentary : passage.bible, uri ? uri : "");
       }
       return TRUE;
     }
@@ -87,15 +93,17 @@ gboolean tick(gpointer data) {
   if (app->closing) return G_SOURCE_REMOVE;
   app->model->tick();
   if (app->model->ready() && !app->populated) {
-    auto *bibles = gtk_string_list_new(nullptr), *commentaries = gtk_string_list_new(nullptr);
+    auto *bibles = gtk_string_list_new(nullptr), *commentaries = gtk_string_list_new(nullptr), *dictionaries = gtk_string_list_new(nullptr);
     gtk_string_list_append(commentaries, "No commentary");
     for (const auto &module : app->model->modules()) {
       const auto label = module.id + " — " + module.description;
       if (module.type == "Biblical Texts") { app->bibles.push_back(module.id); gtk_string_list_append(bibles, label.c_str()); }
+      if (module.dictionary) { app->dictionaries.push_back(module.id); gtk_string_list_append(dictionaries, label.c_str()); }
       if (module.type == "Commentaries") { app->commentaries.push_back(module.id); gtk_string_list_append(commentaries, label.c_str()); }
     }
     gtk_drop_down_set_model(GTK_DROP_DOWN(app->bible), G_LIST_MODEL(bibles));
     gtk_drop_down_set_model(GTK_DROP_DOWN(app->commentary), G_LIST_MODEL(commentaries));
+    gtk_drop_down_set_model(GTK_DROP_DOWN(app->dictionary_module), G_LIST_MODEL(dictionaries)); g_object_unref(dictionaries);
     g_object_unref(bibles); g_object_unref(commentaries); app->populated = true;
   }
   const auto &passage = app->model->passage();
@@ -152,6 +160,34 @@ gboolean tick(gpointer data) {
     }
   }
   for (auto *selector : app->selectors) gtk_widget_set_sensitive(selector, enabled && !passage.bible.empty());
+  const auto &dictionary = app->model->dictionary();
+  const auto dictionary_identity = dictionary.module + "\n" + dictionary.key + "\n" + dictionary.html;
+  if (!app->model->busy() && dictionary_identity != app->dictionary_identity) {
+    app->dictionary_identity = dictionary_identity;
+    select(app->dictionary_module, app->dictionaries, dictionary.module);
+    if (app->dictionary_submitted == gtk_editable_get_text(GTK_EDITABLE(app->dictionary_key)))
+      gtk_editable_set_text(GTK_EDITABLE(app->dictionary_key), dictionary.key.c_str());
+    webkit_web_view_load_html(app->dictionary_view, document(dictionary.html).c_str(), "xiphos-preview://study/");
+  }
+  std::string dictionary_choices_identity;
+  for (const auto &key : app->model->dictionary_keys()) dictionary_choices_identity += key + "\n";
+  if (dictionary_choices_identity != app->dictionary_choices_identity) {
+    app->dictionary_choices_identity = dictionary_choices_identity;
+    auto *list = gtk_string_list_new(nullptr);
+    for (const auto &key : app->model->dictionary_keys()) gtk_string_list_append(list, key.c_str());
+    gtk_drop_down_set_model(GTK_DROP_DOWN(app->dictionary_nearby), G_LIST_MODEL(list)); g_object_unref(list);
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(app->dictionary_nearby), GTK_INVALID_LIST_POSITION);
+  }
+  const bool dictionary_matches = !dictionary.module.empty() && selected(app->dictionary_module, app->dictionaries) == dictionary.module;
+  gtk_widget_set_sensitive(app->dictionary_module, enabled);
+  gtk_widget_set_sensitive(app->dictionary_lookup, enabled && !app->dictionaries.empty());
+  gtk_widget_set_sensitive(app->dictionary_previous, enabled && dictionary_matches);
+  gtk_widget_set_sensitive(app->dictionary_next, enabled && dictionary_matches);
+  gtk_widget_set_sensitive(app->dictionary_nearby, enabled && dictionary_matches);
+  gtk_widget_set_sensitive(app->dictionary_back, enabled && app->model->dictionary_can_back());
+  gtk_widget_set_sensitive(app->dictionary_forward, enabled && app->model->dictionary_can_forward());
+  gtk_widget_set_sensitive(app->dictionary_clear, enabled && app->model->dictionary_history_count() > 0);
+  gtk_widget_set_sensitive(app->dictionary_close, enabled && !dictionary.module.empty());
   app->updating = false;
   const auto &error = app->model->error();
   gtk_label_set_text(GTK_LABEL(app->status), !error.empty() ? error.c_str() : app->model->busy() ? "Loading…" : app->populated && app->bibles.empty() ? "No Bible modules found. Open a SWORD library with --root DIRECTORY." : "Ready");
@@ -206,6 +242,17 @@ gboolean tick(gpointer data) {
       g_signal_emit_by_name(app->clear_history, "clicked"); ++app->smoke_stage; break;
     case 9:
       if (app->model->can_back() || app->model->can_forward()) app->smoke_failed = true;
+      select(app->dictionary_module, app->dictionaries, "Dictionary");
+      gtk_editable_set_text(GTK_EDITABLE(app->dictionary_key), "ALPHA");
+      g_signal_emit_by_name(app->dictionary_key, "activate"); ++app->smoke_stage; break;
+    case 10:
+      if (app->model->dictionary().html.find("dictionary pane fixture") == std::string::npos || app->model->dictionary_keys().size() != 9) app->smoke_failed = true;
+      g_signal_emit_by_name(app->dictionary_next, "clicked"); ++app->smoke_stage; break;
+    case 11:
+      if (app->model->dictionary_history_count() != 0) app->smoke_failed = true;
+      g_signal_emit_by_name(app->dictionary_close, "clicked"); ++app->smoke_stage; break;
+    case 12:
+      if (!app->model->dictionary().module.empty()) app->smoke_failed = true;
       g_signal_emit_by_name(app->go, "clicked"); // accepted work must drain during close
       ++app->smoke_stage; gtk_window_close(GTK_WINDOW(app->window)); return G_SOURCE_REMOVE;
     }
@@ -312,7 +359,47 @@ void activate(GtkApplication *application, gpointer data) {
   auto *right = gtk_paned_new(GTK_ORIENTATION_VERTICAL);
   gtk_paned_set_end_child(GTK_PANED(study), right); gtk_paned_set_position(GTK_PANED(study), 520);
   gtk_paned_set_start_child(GTK_PANED(right), pane(app, "Commentary", &app->commentary_view));
-  gtk_paned_set_end_child(GTK_PANED(right), gtk_label_new("Dictionary, books and devotional panes are not implemented in this preview."));
+  auto *dictionary_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+  gtk_paned_set_end_child(GTK_PANED(right), dictionary_box);
+  app->dictionary_module = gtk_drop_down_new(nullptr, nullptr); gtk_box_append(GTK_BOX(dictionary_box), app->dictionary_module);
+  gtk_accessible_update_property(GTK_ACCESSIBLE(app->dictionary_module), GTK_ACCESSIBLE_PROPERTY_LABEL, "Dictionary module", -1);
+  auto *lookup_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4); gtk_box_append(GTK_BOX(dictionary_box), lookup_bar);
+  app->dictionary_key = gtk_entry_new(); gtk_widget_set_hexpand(app->dictionary_key, TRUE); gtk_box_append(GTK_BOX(lookup_bar), app->dictionary_key);
+  gtk_accessible_update_property(GTK_ACCESSIBLE(app->dictionary_key), GTK_ACCESSIBLE_PROPERTY_LABEL, "Dictionary word or key", -1);
+  app->dictionary_lookup = gtk_button_new_with_label("Look up"); gtk_box_append(GTK_BOX(lookup_bar), app->dictionary_lookup);
+  app->dictionary_nearby = gtk_drop_down_new(nullptr, nullptr); gtk_box_append(GTK_BOX(lookup_bar), app->dictionary_nearby);
+  gtk_accessible_update_property(GTK_ACCESSIBLE(app->dictionary_nearby), GTK_ACCESSIBLE_PROPERTY_LABEL, "Nearby dictionary keys", -1);
+  auto *dictionary_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4); gtk_box_append(GTK_BOX(dictionary_box), dictionary_bar);
+  app->dictionary_previous = gtk_button_new_with_label("Previous key"); app->dictionary_next = gtk_button_new_with_label("Next key");
+  app->dictionary_back = gtk_button_new_with_label("Back"); app->dictionary_forward = gtk_button_new_with_label("Forward");
+  app->dictionary_clear = gtk_button_new_with_label("Clear history"); app->dictionary_close = gtk_button_new_with_label("Close");
+  gtk_accessible_update_property(GTK_ACCESSIBLE(app->dictionary_back), GTK_ACCESSIBLE_PROPERTY_LABEL, "Dictionary history Back", -1);
+  gtk_accessible_update_property(GTK_ACCESSIBLE(app->dictionary_forward), GTK_ACCESSIBLE_PROPERTY_LABEL, "Dictionary history Forward", -1);
+  for (auto *button : {app->dictionary_previous, app->dictionary_next, app->dictionary_back, app->dictionary_forward, app->dictionary_clear, app->dictionary_close}) {
+    gtk_box_append(GTK_BOX(dictionary_bar), button);
+    g_signal_connect(button, "clicked", G_CALLBACK(+[](GtkButton *button, gpointer data) {
+      auto *app = static_cast<App *>(data);
+      app->dictionary_submitted = gtk_editable_get_text(GTK_EDITABLE(app->dictionary_key));
+      if (GTK_WIDGET(button) == app->dictionary_previous) app->model->step_dictionary(-1);
+      else if (GTK_WIDGET(button) == app->dictionary_next) app->model->step_dictionary(1);
+      else if (GTK_WIDGET(button) == app->dictionary_back) app->model->navigate_dictionary_history(-1);
+      else if (GTK_WIDGET(button) == app->dictionary_forward) app->model->navigate_dictionary_history(1);
+      else if (GTK_WIDGET(button) == app->dictionary_clear) app->model->clear_dictionary_history();
+      else app->model->close_dictionary();
+    }), app);
+  }
+  g_signal_connect(app->dictionary_lookup, "clicked", G_CALLBACK(+[](GtkButton *, gpointer data) {
+    auto *app = static_cast<App *>(data); app->dictionary_submitted = gtk_editable_get_text(GTK_EDITABLE(app->dictionary_key));
+    app->model->lookup_dictionary(selected(app->dictionary_module, app->dictionaries), app->dictionary_submitted);
+  }), app);
+  g_signal_connect(app->dictionary_key, "activate", G_CALLBACK(+[](GtkEntry *, gpointer data) { g_signal_emit_by_name(static_cast<App *>(data)->dictionary_lookup, "clicked"); }), app);
+  g_signal_connect(app->dictionary_nearby, "notify::selected", G_CALLBACK(+[](GObject *object, GParamSpec *, gpointer data) {
+    auto *app = static_cast<App *>(data); if (app->updating || !app->model || app->model->busy()) return;
+    const auto index = gtk_drop_down_get_selected(GTK_DROP_DOWN(object)); const auto &keys = app->model->dictionary_keys();
+    if (index >= keys.size()) return;
+    gtk_editable_set_text(GTK_EDITABLE(app->dictionary_key), keys[index].c_str()); g_signal_emit_by_name(app->dictionary_lookup, "clicked");
+  }), app);
+  gtk_box_append(GTK_BOX(dictionary_box), pane(app, "Dictionary", &app->dictionary_view));
   gtk_paned_set_position(GTK_PANED(right), 440);
   gtk_accessible_update_property(GTK_ACCESSIBLE(app->bible_view), GTK_ACCESSIBLE_PROPERTY_LABEL, "Bible passage", -1);
   gtk_accessible_update_property(GTK_ACCESSIBLE(app->commentary_view), GTK_ACCESSIBLE_PROPERTY_LABEL, "Commentary passage", -1);
@@ -341,7 +428,7 @@ void activate(GtkApplication *application, gpointer data) {
   }), app);
   g_signal_connect(app->window, "close-request", G_CALLBACK(+[](GtkWindow *, gpointer data) -> gboolean { shutdown(static_cast<App *>(data)); return FALSE; }), app);
   try { app->model = std::make_unique<ReaderModel>(app->root.empty() ? nullptr : app->root.c_str()); }
-  catch (const std::exception &error) { gtk_label_set_text(GTK_LABEL(app->status), error.what()); gtk_widget_set_sensitive(toolbar, FALSE); gtk_window_present(GTK_WINDOW(app->window)); return; }
+  catch (const std::exception &error) { gtk_label_set_text(GTK_LABEL(app->status), error.what()); gtk_widget_set_sensitive(box, FALSE); gtk_window_present(GTK_WINDOW(app->window)); return; }
   app->timer = g_timeout_add(10, tick, app);
   tick(app); gtk_window_present(GTK_WINDOW(app->window));
 }
@@ -376,8 +463,8 @@ int main(int argc, char **argv) {
   if (deadline && !state.smoke_failed) g_source_remove(deadline);
   shutdown(&state); g_object_unref(app);
   if (state.smoke) {
-    if (state.smoke_failed || state.smoke_stage != 10) { std::cerr << "GTK4 smoke failed\n"; return 1; }
-    std::cout << "GTK4 smoke passed: focus action, module selection, draft retention, paired panes, navigation actions, chapters, selectors, clear history and pending close\n";
+    if (state.smoke_failed || state.smoke_stage != 13) { std::cerr << "GTK4 smoke failed\n"; return 1; }
+    std::cout << "GTK4 smoke passed: focus action, module selection, draft retention, paired panes, navigation actions, chapters, selectors, clear history, dictionary lookup/keys/close and pending close\n";
   }
   return result;
 }
