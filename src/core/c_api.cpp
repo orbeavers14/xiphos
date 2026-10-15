@@ -247,6 +247,24 @@ xc_status xc_worker_set_lexical_layout_enabled(xc_worker *w, uint64_t tab, int e
   if (enabled != 0 && enabled != 1) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.set_lexical_layout_enabled(tab, enabled != 0); });
 }
+xc_status xc_worker_set_note_numbering_enabled(xc_worker *w, uint64_t tab, int enabled, xc_request **out) {
+  if (enabled != 0 && enabled != 1) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.set_note_numbering_enabled(tab, enabled != 0); });
+}
+xc_status xc_worker_set_note_numbers(xc_worker *w, uint64_t tab, const char *id, int enabled, xc_request **out) {
+  if (!id || !*id || (enabled != 0 && enabled != 1)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.set_note_numbers(tab, id, enabled != 0); });
+}
+xc_status xc_request_note_numbers(const xc_request *r, int *enabled, int *available) {
+  if (enabled) *enabled = 0;
+  if (available) *available = 0;
+  if (!r || !enabled || !available) return XC_INVALID_ARGUMENT;
+  if (r->status != XC_OK) return r->status;
+  if (!r->presentation) return XC_INVALID_ARGUMENT;
+  *enabled = r->presentation->note_numbers ? 1 : 0;
+  *available = r->presentation->note_numbering_available ? 1 : 0;
+  return XC_OK;
+}
 xc_status xc_worker_set_double_space(xc_worker *w, uint64_t tab, const char *id, int enabled, xc_request **out) {
   if (!id || !*id || (enabled != 0 && enabled != 1)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.set_double_space(tab, id, enabled != 0); });

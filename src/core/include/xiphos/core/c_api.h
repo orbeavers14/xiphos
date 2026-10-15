@@ -76,6 +76,16 @@ xc_status xc_worker_close_tab(xc_worker *worker, uint64_t tab, xc_request **out)
  * 0/1; default off. Enable only when consuming HTML and matching CSS together.
  * FIFO, tab-local, history-neutral; invalid/closed tab errors arrive at poll. */
 xc_status xc_worker_set_lexical_layout_enabled(xc_worker *worker, uint64_t tab, int enabled, xc_request **out);
+/* Separate default-off migration capability for core note numbering. Requires
+ * configured engine options to become available; never persisted. Both setters
+ * accept strict 0/1, serialize on the worker and do not add history. Module
+ * setter rejects unavailable settings at poll; closed/unknown tabs also fail there. */
+xc_status xc_worker_set_note_numbering_enabled(xc_worker *worker, uint64_t tab, int enabled, xc_request **out);
+xc_status xc_worker_set_note_numbers(xc_worker *worker, uint64_t tab, const char *module, int enabled, xc_request **out);
+/* Repeatable typed presentation result. Copies 0/1 value and availability;
+ * default preference is On, independently of availability. Outputs reset to zero
+ * for null/pending/failed/wrong-kind results; reports their status. */
+xc_status xc_request_note_numbers(const xc_request *request, int *enabled, int *available);
 xc_status xc_worker_visit(xc_worker *worker, uint64_t tab, const char *module, const char *reference, xc_request **out);
 xc_status xc_worker_navigate(xc_worker *worker, uint64_t tab, int direction, xc_request **out);
 xc_status xc_worker_navigate_chapter(xc_worker *worker, uint64_t tab, const char *module, const char *reference, int direction, xc_request **out);
