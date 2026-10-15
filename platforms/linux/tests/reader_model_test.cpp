@@ -80,6 +80,12 @@ int main(int argc, char **argv) {
       check(model.clear_dictionary_history(), "clear dictionary history"); settle(model);
       check(model.dictionary_history_count() == 0 && model.dictionary().html == dictionary_html, "clear dictionary keeps displayed text");
       check(model.close_dictionary() && model.dictionary().module.empty(), "close dictionary presentation");
+      check(model.choose_commentary("OtherNotes"), "change commentary without visit"); settle(model);
+      check(model.error().empty() && model.passage().commentary == "OtherNotes" && !model.can_back(), "commentary selection preserves history");
+      check(model.visit("Notes", "", "John 3:16"), "standalone commentary"); settle(model);
+      check(model.error().empty() && model.passage().bible == "Notes" && model.passage().bible_html.find("Notes original commentary") != std::string::npos, "standalone commentary snapshot");
+      check(model.navigate_chapter(1), "standalone commentary next chapter"); settle(model);
+      check(model.error().empty() && model.passage().reference == "John 4:1", "standalone chapter navigation uses core");
       check(model.visit("Text", "Notes", "John 3:17"), "pending action before close");
       close(model); model.tick();
       check(!model.visit("Text", "Notes", "John 3:16") && !model.ready(), "closed model cannot publish or submit");

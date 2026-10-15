@@ -168,3 +168,29 @@ build/gtk4/xiphos-linux-preview --smoke-lexical-test build/gtk4/core/dictionary-
 
 These smoke modes exercise model-to-widget publication and signals, not physical
 pointer/key delivery or manual screen-reader/visual acceptance.
+
+### Windows and selected-verse scrolling
+
+New window (Ctrl+N) opens an independent study tab on the same process-wide core
+worker. Histories, display settings, lexicons and hover preference are window
+scoped. Closing a window drops its observers and queues tab cleanup; final worker
+shutdown runs on a background thread after the GTK loop has no windows left.
+
+Chapter anchors are copied from the core. After document load, a fixed trusted
+host expression scrolls to the escaped anchor in an isolated WebKit world;
+module JavaScript stays disabled. An asynchronous application hold protects
+callback lifetime even when the window closes during scrolling.
+
+Standalone commentaries can be selected as the main reading module. Changing a
+paired commentary refreshes the committed passage without adding history.
+
+```sh
+cmake --build build/gtk4 --parallel 2
+ctest --test-dir build/gtk4 --parallel 2 --timeout 120 --output-on-failure
+build/gtk4/xiphos-linux-preview --smoke-window-test build/gtk4/core/study-passage-fixture
+```
+
+The window smoke checks actual two-window publication, independent passages and
+chapter modes, successful Bible anchor lookup/scroll, pending close and continued
+use of the remaining window. It does not certify manual visual/accessibility
+parity or accelerated rendering in this VM.
