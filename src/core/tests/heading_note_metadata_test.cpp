@@ -6,6 +6,8 @@
 #include "xiphos/core/note_rendering.hpp"
 #include "xiphos/core/note_markers.hpp"
 #include <rawcom.h>
+#include <rawtext.h>
+#include <versekey.h>
 #include <swmgr.h>
 #include <swmodule.h>
 #include <markupfiltmgr.h>
@@ -70,6 +72,14 @@ int main(int argc, char **argv) {
       writer.setKey("John4:3"); writer.setEntry("<div class=\"sechead\">Original heading without a note.</div>Original body <note n=\"β\">Original UTF-8 labelled body note.</note>");
       writer.setKey("John4:4"); writer.setEntry("Original body without headings.");
     }
+    { std::ofstream config(root / "mods.d/text.conf", std::ios::app); config << "GlobalOptionFilter=ThMLFootnotes\n"; }
+    {
+      sword::RawText writer((root / "text").string().c_str());
+      writer.setKey("John4:1"); writer.setEntry("Original first Bible <note n=\"first\">Original first note.</note>");
+      writer.setKey("John4:2"); writer.setEntry("Original second Bible <note n=\"second\">Original second note.</note>");
+      writer.setKey("John4:3"); writer.setEntry("Original unlabeled Bible <note>Original note.</note>");
+      sword::VerseKey source_key("John4:1"); writer.setKey("John4:4"); writer.linkEntry(&source_key);
+    }
     std::vector<HeadingFragment> retained;
     {
       sword::SWMgr manager(root.string().c_str(), true, new sword::MarkupFilterMgr(sword::FMT_XHTML), false, false);
@@ -118,6 +128,7 @@ int main(int argc, char **argv) {
     Entry held_entry; Chapter held_sparse, held_dense;
     {
       Reader reader(root.string()); EngineOptions engine; engine.footnotes = true;
+      const auto bible_baseline = reader.read("Text", "John4:1", engine);
       const auto baseline = reader.read_commentary_entry("ThMLNotes", "John4:1", true, engine);
       check(!baseline.note_source.captured && baseline.note_source.headings.empty(), "existing Reader overload retains unavailable metadata state");
       held_entry = reader.read_commentary_entry("ThMLNotes", "John4:1", true, engine, true);
@@ -145,9 +156,16 @@ int main(int argc, char **argv) {
       const auto no_headings = reader.read_commentary_chapter("ThMLNotes", "John4:2", DisplayOptions{}, engine, false, true);
       check(no_headings.verses[offset].note_source.captured && no_headings.verses[offset].note_source.headings.empty() &&
             no_headings.verses[offset].heading_html.empty(), "heading-disabled note capture preserves eligibility");
-      held_dense = reader.read_chapter("Text", "John4:1", DisplayOptions{}, engine, true);
+      held_dense = reader.read_chapter("Text", "John4:2", DisplayOptions{}, engine, true);
       check(!held_dense.verses.empty() && std::all_of(held_dense.verses.begin(), held_dense.verses.end(), [](const Entry &entry) { return entry.note_source.captured; }),
             "dense Reader snapshots distinguish captured empty metadata from unavailable state");
+      check(held_dense.verses.size() >= 4 && held_dense.verses[0].note_source.reported_label == "first" &&
+            held_dense.verses[1].note_source.reported_label == "second" && held_dense.verses[2].note_source.reported_label.empty() &&
+            held_dense.verses[3].note_source.reported_label == "first" && held_dense.verse_ordinals[3] == 4 &&
+            held_dense.verses[3].reference.find("4:4") != std::string::npos && held_dense.selected_anchor == "verse-2",
+            "dense metadata stays with each distinct/empty/linked SDK verse instead of the last rendered entry");
+      check(reader.read("Text", "John4:1", engine).html == bible_baseline.html,
+            "shared Bible/commentary render filter restores the existing Bible consumer");
       reader.read_commentary_entry("Notes", "John4:1", true, engine, true);
       check(reader.read_commentary_entry("ThMLNotes", "John4:1", true, engine).html == baseline.html,
             "separate markup renderer scopes preserve prior module behavior");
