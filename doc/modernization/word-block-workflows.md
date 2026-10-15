@@ -1,6 +1,6 @@
 # Word/Strong’s/morphology block layout: characterization
 
-Updated 2026-10-12. Supports F03/F17/F18 rendering work. This is source behavior
+Updated 2026-10-15. Supports F03/F16/F17 rendering work. This is source behavior
 characterization plus an initial owned core renderer; native layout acceptance
 and snapshot adoption remain pending.
 
@@ -13,7 +13,7 @@ participate in layout. CSS then places annotations under each word.
 
 Complete frozen helper/entry functions from CrossWire c9976a8 retain GPL notices.
 Current complete functions are extracted at configure time. `core_word_blocks`
-compares owned copies of output, warnings and mutated input over 1,458 bounded
+compares owned copies of output, warnings and mutated input over 1,502 bounded
 valid cases: Unicode words, casing/classes, numeric codes, NASB-style exclamation
 values, repeated annotations, styled text and original Greek/Hebrew SWORD output.
 The fixture uses original prose, not a redistributed Bible module.
@@ -44,7 +44,7 @@ nonzero integer-to-bool conversion. Another 2,048 concurrent selections check th
 owned constant data, independently of the unsafe legacy block parser. Strict C++11
 and native-disabled helper builds pass; focused address/undefined/thread checks
 pass 1/1 each. This establishes CSS data/selection, not RTL/font pixel layout or
-native application. The native block parser remains pending.
+native application. Native adoption of the owned block parser remains pending.
 
 `render_word_blocks` now provides an owned C++11 interface around the characterized
 valid grammar. It copies mutable working input, uses local output/tag/recursion
@@ -63,12 +63,42 @@ inherited ASCII morphology case conversion; unsupported morphology stays raw. In
 legacy-compatible GLib string operations remain behind this owned boundary and
 still need later modernization; no unsafe API is exposed for unchecked input.
 
-The updated harness compares owned results alongside the 1,458 valid baseline
+The updated harness compares owned results alongside the 1,502 valid baseline
 cases, checks 8,000 bounded malformed samples, fallback/depth/size/NUL contracts
 and 400 concurrent owned renders. Normal, address/undefined and thread checks
 pass 1/1 each; strict C++11 and native-disabled helper builds pass. External SDK/
 GLib instrumentation limits remain. The old legacy parser remains the source
 oracle and has not yet been switched to this new guarded interface.
+
+## Footnote markers and expanded SDK corpus
+
+The corpus now includes one to eight lexical anchors in a single annotation,
+Unicode lemma values, OSIS paragraph/multiple-lemma output and ThML lexical,
+paragraph and passage-reference output across the four Strong's/morphology filter
+combinations. These use generated original prose and complete frozen/current
+comparisons. They do not substitute for a representative licensed module corpus.
+
+SWORD footnotes emit ordinary lowercase anchors containing small/sup markers.
+The scanner copies these anchors intact, so the guard now distinguishes their
+opaque marker content from a standalone lexical small element. Surrounding words
+can be formatted while the complete note marker, URI and displayed label remain
+byte-for-byte unchanged. Actual OSIS note/reference output and synthetic markers
+adjacent to Strong's/morphology annotations agree with frozen output. Note lookup
+and routing semantics are unchanged; this is owned-helper support, not yet a
+new frontend capability or visual acceptance claim.
+
+Malformed markers, unsupported anchor shapes, unrecognized standalone small
+elements and nested anchors still retain the original HTML with applied=false.
+Mixed-case nested anchors are rejected consistently. Uppercase lexical annotation
+anchors now fall back before the inherited lowercase-only pointer searches;
+allowing those searches would dereference a missing closing-tag match. Ordinary
+uppercase passage links without nested small markers remain supported. The unsafe
+annotation case is tested only against the guarded helper, not the legacy oracle.
+
+Expanded checks pass normally and under address/undefined and thread sanitizers;
+strict C++11 and native-disabled helper builds also pass. SDK instrumentation and
+leak-detection limitations above still apply. No public ABI or native consumer
+source changes are required for this helper extension.
 
 Next: validate broader SDK/lemma/note/paragraph shapes and fallback policy, then
 adopt owned rendering/styles in heading/body snapshots with native controls and

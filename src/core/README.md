@@ -519,7 +519,7 @@ rendering remain pending. See
 ### Word block characterization
 
 `core_word_blocks` compares complete frozen/current block helpers and entry over
-1,458 valid cases, with original Greek/Hebrew SDK data. It preserves displayed-code
+1,502 valid cases, with original Greek/Hebrew OSIS/ThML SDK data. It preserves displayed-code
 versus hyperlink distinctions and records input mutation/static recursion defects.
 The legacy comparisons are sequential characterization; `render_word_blocks`
 adds an owned C++11 result with local output/recursion state, conservative bounds/

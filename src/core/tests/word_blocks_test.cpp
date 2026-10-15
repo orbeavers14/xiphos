@@ -103,28 +103,91 @@ int main(int argc, char **argv) {
     check(duplicate.input != "<i><i>Original</i></i>", "characterize inherited duplicate-style caller-buffer mutation");
     const auto nested = compare("<i><b>Original</b></i>");
     check(nested.html.find("</b></b>") != std::string::npos, "characterize inherited recursive static closing-tag defect");
+    // Multiple anchors may arrive in one SDK annotation, rather than as repeated
+    // small elements. Exercise the complete legacy formatting, not just labels.
+    for (unsigned count = 1; count <= 8; ++count) for (bool classes : {false, true}) {
+      std::string annotation = "<small><em>&lt;";
+      for (unsigned n = 0; n < count; ++n) {
+        const auto single = strong(n % 2 ? "4487" : "λόγος", classes);
+        const auto anchor = single.find("<a ");
+        annotation += (n ? ", " : "") + single.substr(anchor, single.find("</a>") + 4 - anchor);
+      }
+      annotation += "&gt;</em></small>";
+      compare("Original " + annotation + morph("N-NSM", classes));
+    }
     const std::filesystem::path root(argv[1]); std::filesystem::create_directories(root / "mods.d");
     std::filesystem::create_directories(root / "data");
     check(sword::RawText::createModule((root / "data").string().c_str()) == 0, "create original lexical block module");
     { sword::RawText writer((root / "data").string().c_str());
       writer.setKey("John 3:16"); writer.setEntry("<w lemma=\"strong:G3056\" morph=\"robinson:N-NSM\">Original λόγος</w> original body.");
       writer.setKey("John 3:17"); writer.setEntry("<w lemma=\"strong:H0123\" morph=\"oshm:HR/Ncmsc/Sp2mp\">Original Hebrew word</w> original body.");
+      writer.setKey("John 3:18"); writer.setEntry("<p>Original paragraph <w lemma=\"strong:G3056 strong:G4487\" morph=\"robinson:N-NSM\">λόγος</w> with original following words.</p>");
+      writer.setKey("John 3:19"); writer.setEntry("Original note <note type=\"study\" n=\"a\">Original note body.</note> and <reference osisRef=\"John.3.16\">original reference</reference>.");
+      writer.setKey("John 3:20"); writer.setEntry("<p>Original line.</p><p>Original second paragraph with <w lemma=\"strong:H0123\" morph=\"oshm:Ncmsc/Sp2mp\">original word</w>.</p>");
       std::ofstream file(root / "mods.d/words.conf"); file << "[Words]\nDataPath=./data/\nModDrv=RawText\nSourceType=OSIS\nEncoding=UTF-8\nGlobalOptionFilter=OSISStrongs\nGlobalOptionFilter=OSISMorph\n";
+    }
+    std::filesystem::create_directories(root / "thml");
+    check(sword::RawText::createModule((root / "thml").string().c_str()) == 0, "create original ThML lexical module");
+    { sword::RawText writer((root / "thml").string().c_str());
+      writer.setKey("John 3:16"); writer.setEntry("Original λόγος<sync type=\"Strongs\" value=\"G3056\"/><sync type=\"morph\" class=\"Robinson\" value=\"N-NSM\"/> original body.");
+      writer.setKey("John 3:17"); writer.setEntry("<p>Original Hebrew word<sync type=\"Strongs\" value=\"H0123\"/> in an original paragraph.</p>");
+      writer.setKey("John 3:18"); writer.setEntry("Original <scripRef passage=\"John 3:16\">passage link</scripRef> with original following words.");
+      std::ofstream file(root / "mods.d/thml.conf");
+      file << "[ThMLWords]\nDataPath=./thml/\nModDrv=RawText\nSourceType=ThML\nEncoding=UTF-8\nGlobalOptionFilter=ThMLStrongs\nGlobalOptionFilter=ThMLMorph\nGlobalOptionFilter=ThMLScripref\n";
     }
     std::filesystem::remove(root / "mods.d/modules-conf.cache");
     sword::SWMgr manager(root.string().c_str(), true, new sword::MarkupFilterMgr(sword::FMT_XHTML), false, false);
     auto *module = manager.getModule("Words"); check(module, "load lexical fixture");
-    for (bool strongs : {false, true}) for (bool morphology : {false, true}) for (const auto *reference : {"John 3:16", "John 3:17"}) {
+    for (bool strongs : {false, true}) for (bool morphology : {false, true}) for (const auto *reference : {"John 3:16", "John 3:17", "John 3:18", "John 3:19", "John 3:20"}) {
       manager.setGlobalOption("Strong's Numbers", strongs ? "On" : "Off");
       manager.setGlobalOption("Morphological Tags", morphology ? "On" : "Off");
       module->setKey(reference); const std::string sdk = module->renderText().c_str();
+      if (std::string(reference) == "John 3:19") {
+        check(sdk.find("action=showNote") != std::string::npos && sdk.find("action=showRef") != std::string::npos &&
+              compare(sdk).html.find("action=showNote") != std::string::npos,
+              "SDK note-marker small elements retain complete note/reference links while formatting words");
+        continue;
+      }
       const auto rendered = compare(sdk);
       check(!rendered.html.empty() && rendered.warning.empty(), "complete block renderer accepts original SDK lexical output");
     }
+    auto *thml = manager.getModule("ThMLWords"); check(thml, "load ThML lexical fixture");
+    for (bool strongs : {false, true}) for (bool morphology : {false, true})
+      for (const auto *reference : {"John 3:16", "John 3:17", "John 3:18"}) {
+        manager.setGlobalOption("Strong's Numbers", strongs ? "On" : "Off");
+        manager.setGlobalOption("Morphological Tags", morphology ? "On" : "Off");
+        thml->setKey(reference); const std::string sdk = thml->renderText().c_str();
+        const auto rendered = compare(sdk);
+        check(!rendered.html.empty() && rendered.warning.empty(), "ThML SDK lexical/paragraph/reference output agrees with frozen layout");
+        if (strongs && std::string(reference) == "John 3:16")
+          check(sdk.find("action=showStrongs") != std::string::npos, "ThML fixture actually emits lexical links when enabled");
+      }
     for (const auto &input : {"<small>unrecognized note</small>", "<b>unfinished", "Original > text", "<a href=\"unfinished>Original</a>",
                              "<small><em>(<a href=\"original\">λ</a>)</em></small>", "<img alt=\"a > b\" />"}) {
       const auto result = xiphos::core::render_word_blocks(input);
       check(!result.applied && result.html == input, "unsupported/malformed block markup preserves original HTML");
+    }
+    for (auto annotation : {strong("3056", true), morph("N-NSM", true)}) {
+      annotation.replace(annotation.find("<a "), 3, "<A ");
+      annotation.replace(annotation.find("</a>"), 4, "</A>");
+      const auto result = xiphos::core::render_word_blocks("Original " + annotation);
+      check(!result.applied && result.html == "Original " + annotation,
+            "uppercase annotation anchors fall back before inherited lowercase-only pointer searches");
+    }
+    compare("<A href=\"sword:///John%203:16\">Original ordinary uppercase link</A>");
+    for (const auto *label : {"a", "λόγος", "*n"}) {
+      const std::string marker = "<a class=\"noteMarker study\" href=\"passagestudy.jsp?action=showNote&type=n&value=1&module=Words&passage=John+3%3A16\"><small><sup class=\"n\">" +
+          std::string(label) + "</sup></small></a>";
+      const auto rendered = compare("Original " + strong("3056", true) + marker + " following " + morph("N-NSM", true));
+      check(rendered.html.find(marker) != std::string::npos, "lexical layout preserves complete opaque note marker byte-for-byte");
+    }
+    for (const auto *input : {"<a><small>Unrecognized marker</small></a>",
+                             "<A href=\"x\"><small>Unrecognized marker</small></A>",
+                             "<a href=\"x\"><A href=\"y\">Nested</A></a>",
+                             "<a href=\"x\"><small>Missing close</a>",
+                             "<a href=\"x\">Original</a><small>Not an annotation</small>"}) {
+      const auto result = xiphos::core::render_word_blocks(input);
+      check(!result.applied && result.html == input, "only balanced opaque supported anchors exempt note markers from lexical grammar");
     }
     std::string deep;
     for (unsigned n = 0; n < 65; ++n) deep += "<i>";

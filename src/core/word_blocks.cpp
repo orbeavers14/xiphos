@@ -353,9 +353,11 @@ bool small_supported(const std::string &text) {
   std::size_t at = 0; unsigned anchors = 0;
   while (at < content.size()) {
     if (content[at] == ' ' || content[at] == '\t' || content[at] == ',') { ++at; continue; }
-    const bool upper = starts(content, at, "<A ");
-    if (!upper && !starts(content, at, "<a ")) return false;
-    const auto open = content.find('>', at), close = content.find(upper ? "</A>" : "</a>", open);
+    // The inherited annotation formatter searches for lowercase </a> and
+    // dereferences the match. Uppercase anchors are fine as ordinary content,
+    // but annotations must fall back until that formatter supports them.
+    if (!starts(content, at, "<a ")) return false;
+    const auto open = content.find('>', at), close = content.find("</a>", open);
     if (open == std::string::npos || close == std::string::npos || open == 0 || content[open - 1] != '"') return false;
     const auto tag = content.substr(at, open - at);
     if (tag.find('\'') != std::string::npos) return false;
@@ -371,10 +373,13 @@ bool small_supported(const std::string &text) {
 bool supported_markup(const std::string &html) {
   if (html.size() > 1024 * 1024) return false;
   std::vector<std::string> stack;
+  std::size_t opaque_anchor_depth = 0;
   for (std::size_t at = 0; at < html.size();) {
     if (html[at] == '>') return false;
     if (html[at] != '<') { ++at; continue; }
-    if (starts(html, at, "<small>")) {
+    // Ordinary lowercase anchors are copied intact by the scanner. A SWORD
+    // footnote's nested small/sup marker is content, not a lexical annotation.
+    if (starts(html, at, "<small>") && !opaque_anchor_depth) {
       const auto end = html.find("</small>", at);
       if (end == std::string::npos || !small_supported(html.substr(at, end + 8 - at))) return false;
     }
@@ -403,9 +408,13 @@ bool supported_markup(const std::string &html) {
     const bool empty = html[end - 1] == '/' || lower == "img" || lower == "br" || lower == "hr" || lower == "meta" || lower == "link" || lower == "input";
     if (closing) {
       if (stack.empty() || stack.back() != name || end != name_end) return false;
+      if (opaque_anchor_depth == stack.size()) opaque_anchor_depth = 0;
       stack.pop_back();
     } else if (!empty) {
-      if (stack.size() >= 64 || (lower == "a" && std::find(stack.begin(), stack.end(), name) != stack.end())) return false;
+      if (stack.size() >= 64 || (lower == "a" &&
+          (std::find(stack.begin(), stack.end(), "a") != stack.end() ||
+           std::find(stack.begin(), stack.end(), "A") != stack.end()))) return false;
+      if (name == "a" && starts(html, at, "<a ")) opaque_anchor_depth = stack.size() + 1;
       stack.push_back(name);
     }
     at = end + 1;
