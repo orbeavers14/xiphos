@@ -1,0 +1,108 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+#include "reader_model.hpp"
+#include <memory>
+#include <stdexcept>
+#include <thread>
+namespace xiphos::linux_preview {
+namespace {
+std::string copy(const char *value) { return value ? value : ""; }
+std::string message(xc_status status) {
+  switch (status) {
+  case XC_MODULE_NOT_FOUND: return "The selected module is unavailable.";
+  case XC_INVALID_ARGUMENT: return "The requested passage or action is unavailable.";
+  default: return "The study engine could not complete this action.";
+  }
+}
+}
+ReaderModel::ReaderModel(const char *root) {
+  auto status = xc_worker_open(root, &worker_);
+  if (status != XC_OK) throw std::runtime_error(message(status));
+  xc_request *request = nullptr;
+  status = xc_worker_modules(worker_, &request);
+  accept(status, request, Operation::catalog);
+}
+ReaderModel::~ReaderModel() {
+  // Fallback for non-UI callers. GTK explicitly transfers ownership to GTask.
+  if (auto *worker = detach()) std::thread([worker] { xc_worker_close(worker); }).join();
+}
+xc_worker *ReaderModel::detach() {
+  closed_ = true; ready_ = false; back_ = forward_ = false;
+  xc_request_release(request_); request_ = nullptr;
+  auto *worker = worker_; worker_ = nullptr;
+  return worker;
+}
+bool ReaderModel::accept(xc_status status, xc_request *request, Operation operation) {
+  if (status != XC_OK || !request) {
+    xc_request_release(request); error_ = message(status); ++revision_; return false;
+  }
+  request_ = request; operation_ = operation; error_.clear(); ++revision_; return true;
+}
+bool ReaderModel::visit(const std::string &bible, const std::string &commentary, const std::string &reference) {
+  if (!ready() || busy()) return false;
+  xc_request *request = nullptr;
+  auto status = xc_worker_visit_passage(worker_, tab_, bible.c_str(), commentary.c_str(), reference.c_str(), &request);
+  return accept(status, request, Operation::passage);
+}
+bool ReaderModel::navigate(int direction) {
+  if (!ready() || busy()) return false;
+  xc_request *request = nullptr;
+  auto status = xc_worker_navigate_passage(worker_, tab_, direction, &request);
+  return accept(status, request, Operation::passage);
+}
+bool ReaderModel::follow(const std::string &source, const std::string &uri) {
+  if (!ready() || busy() || passage_.bible.empty()) return false;
+  xc_request *request = nullptr;
+  auto status = xc_worker_follow_pane_link_at(worker_, tab_, passage_.bible.c_str(), source.c_str(), passage_.reference.c_str(), uri.c_str(), &request);
+  return accept(status, request, Operation::link);
+}
+void ReaderModel::history() {
+  xc_request *request = nullptr;
+  auto status = xc_worker_history(worker_, tab_, &request);
+  accept(status, request, Operation::history);
+}
+void ReaderModel::tick() {
+  if (!request_ || closed_) return;
+  const auto status = xc_request_poll(request_);
+  if (status == XC_PENDING) return;
+  std::unique_ptr<xc_request, decltype(&xc_request_release)> completed(request_, xc_request_release);
+  request_ = nullptr; ++revision_;
+  if (status != XC_OK) { error_ = message(status); return; }
+  xc_request *next = nullptr;
+  switch (operation_) {
+  case Operation::catalog: {
+    std::unique_ptr<xc_catalog, decltype(&xc_catalog_release)> catalog(xc_request_take_catalog(completed.get()), xc_catalog_release);
+    if (!catalog) { error_ = "Missing module catalog."; return; }
+    for (size_t i = 0; i < xc_catalog_count(catalog.get()); ++i)
+      modules_.push_back({copy(xc_catalog_id(catalog.get(), i)), copy(xc_catalog_description(catalog.get(), i)), copy(xc_catalog_type(catalog.get(), i))});
+    auto submitted = xc_worker_create_tab(worker_, &next); accept(submitted, next, Operation::tab); break;
+  }
+  case Operation::tab: {
+    tab_ = xc_request_tab(completed.get());
+    if (!tab_) { error_ = "Could not create study tab."; return; }
+    auto submitted = xc_worker_enable_module_preferences(worker_, tab_, &next);
+    accept(submitted, next, Operation::preferences); break;
+  }
+  case Operation::preferences: ready_ = true; break;
+  case Operation::passage: {
+    std::unique_ptr<xc_passage, decltype(&xc_passage_release)> result(xc_request_take_passage(completed.get()), xc_passage_release);
+    if (!result) { error_ = "Missing passage snapshot."; return; }
+    Passage value{copy(xc_passage_module(result.get())), copy(xc_passage_commentary_module(result.get())), copy(xc_passage_reference(result.get())), copy(xc_passage_html(result.get())), ""};
+    if (xc_passage_has_commentary(result.get()))
+      value.commentary_html = copy(xc_passage_commentary_heading_html(result.get())) + copy(xc_passage_commentary_html(result.get()));
+    passage_ = std::move(value); history(); break;
+  }
+  case Operation::history: {
+    std::unique_ptr<xc_history, decltype(&xc_history_release)> result(xc_request_take_history(completed.get()), xc_history_release);
+    if (!result) { error_ = "Missing history snapshot."; return; }
+    back_ = xc_history_can_back(result.get()); forward_ = xc_history_can_forward(result.get()); break;
+  }
+  case Operation::link: {
+    std::unique_ptr<xc_link, decltype(&xc_link_release)> link(xc_request_take_link(completed.get()), xc_link_release);
+    if (!link) { error_ = "This preview currently supports passage links only."; return; }
+    const auto module = copy(xc_link_module(link.get())), reference = copy(xc_link_reference(link.get()));
+    auto submitted = xc_worker_visit_linked_passage(worker_, tab_, passage_.bible.c_str(), passage_.commentary.c_str(), module.c_str(), reference.c_str(), &next);
+    accept(submitted, next, Operation::passage); break;
+  }
+  }
+}
+}
