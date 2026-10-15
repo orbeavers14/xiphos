@@ -13,7 +13,7 @@ participate in layout. CSS then places annotations under each word.
 
 Complete frozen helper/entry functions from CrossWire c9976a8 retain GPL notices.
 Current complete functions are extracted at configure time. `core_word_blocks`
-compares owned copies of output, warnings and mutated input over 1,530 bounded
+compares owned copies of output, warnings and mutated input over 1,638 bounded
 valid cases: Unicode words, casing/classes, numeric codes, NASB-style exclamation
 values, repeated annotations, styled text and original Greek/Hebrew SWORD output.
 The fixture uses original prose, not a redistributed Bible module.
@@ -59,11 +59,12 @@ This is a conservative supported grammar, not a general HTML parser/sanitizer.
 Non-ASCII morphology labels and broader SDK shapes remain corpus work. Unicode
 words, a Greek lemma annotation's displayed text/full lookup value, and original
 Greek/Hebrew SDK output are checked. Strong's/lemma labels do not run through the
-inherited ASCII morphology case conversion; unsupported morphology stays raw. Internal
-legacy-compatible GLib string operations remain behind this owned boundary and
-still need later modernization; no unsafe API is exposed for unchecked input.
+ASCII morphology case conversion; unsupported morphology stays raw. The helper
+now uses owned C++11 strings for scanner and annotation temporaries, with guarded
+matches and bounded private lookahead; it still follows the characterized grammar
+rather than implementing a general HTML parser.
 
-The updated harness compares owned results alongside the 1,530 valid baseline
+The updated harness compares owned results alongside the 1,638 valid baseline
 cases, checks 8,000 bounded malformed samples, fallback/depth/size/NUL contracts
 and 400 concurrent owned renders. Normal, address/undefined and thread checks
 pass 1/1 each; strict C++11 and native-disabled helper builds pass. External SDK/
@@ -104,18 +105,30 @@ source changes are required for this helper extension.
 
 The owned helper's annotation formatter now uses checked string offsets and
 owned `std::string` edits for NASB exclamation correction, class-marker spacing,
-display case/hyphens and Hebrew suffix removal. The scanner's allocations are
-adopted with RAII before copying, so those formatting temporaries have one owner
-even if string construction throws. Missing structural matches return through
+display case/hyphens and Hebrew suffix removal. Scanner word/annotation state and
+recursive working text are owned strings, so temporary storage is released through
+normal C++ lifetimes, including exceptions. Missing structural matches return through
 the original-HTML fallback instead of being dereferenced.
 
 The byte-based padding rule, full lexical hrefs, display-only truncation and
 two-occurrence legacy class shim are preserved. Additional complete-oracle
 comparisons cover empty morphology, short/trailing slash segments, pronominal
 and non-pronominal suffixes, mixed case, parentheses and tabs. The corpus total
-is 1,530. The surrounding scanner still uses legacy-compatible GLib operations
-on its private working copy; this is a bounded internal modernization, not a
-claim that the whole parser has been rewritten or adopted by native snapshots.
+is 1,638, including 108 empty/style-boundary state cases across lowercase/uppercase
+bold, italic and underline spans. The scanner no longer calls GLib allocation,
+free or string-search functions; it owns recursive text copies, replaces the old
+goto-based transitions and retains bounded lookahead for the characterized grammar.
+Duplicate styles are flattened only on the private copy, and unsupported states
+return through the existing fallback. The helper still uses SWORD's owned output
+buffer; the overall core still needs GLib for other existing Unicode behavior.
+
+Tests also check 3,039 structured deletions/insertions around valid lexical,
+recursive-style and footnote inputs, in addition to 8,000 noise inputs and 400
+concurrent renders. These bounded corpora pass normal/address/undefined/thread
+checks; they are not exhaustive parser or native visual acceptance. Strict C++11
+syntax checking now needs only the core and SWORD headers for this source file.
+The legacy parser remains retained as the oracle and no native snapshot has
+adopted this new implementation yet.
 
 Next: validate broader SDK/lemma/note/paragraph shapes and fallback policy, then
 adopt owned rendering/styles in heading/body snapshots with native controls and

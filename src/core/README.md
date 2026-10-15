@@ -519,12 +519,13 @@ rendering remain pending. See
 ### Word block characterization
 
 `core_word_blocks` compares complete frozen/current block helpers and entry over
-1,530 valid cases, with original Greek/Hebrew OSIS/ThML SDK data. It preserves displayed-code
+1,638 valid cases, with original Greek/Hebrew OSIS/ThML SDK data. It preserves displayed-code
 versus hyperlink distinctions and records input mutation/static recursion defects.
 The legacy comparisons are sequential characterization; `render_word_blocks`
 adds an owned C++11 result with local output/recursion state, conservative bounds/
 grammar guards and original-HTML fallback. It corrects inherited closing-tag/input
-ownership defects and is checked across 8,000 malformed samples and 400 concurrent
+ownership defects; scanner and annotation temporaries now use owned C++ strings.
+It is checked across 8,000 noise inputs, 3,039 structured mutations and 400 concurrent
 owned calls. It is not yet adopted by native snapshots or the legacy parser. `lexical_block_style` provides owned C++11 CSS and replaces selection in
 three legacy renderer call sites. Frozen/current/helper comparisons cover 768
 call-site cases plus 2,048 concurrent selections; strict C++11/native-disabled

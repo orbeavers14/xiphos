@@ -17,8 +17,13 @@ layout now accepts opaque SWORD note markers, preserves their links/labels, chec
 OSIS/ThML paragraph and multi-anchor data, and guards uppercase lexical anchors
 before unsafe inherited searches. 1,502 legacy-output comparisons; 65/65 macOS
 suite, focused ASan/UBSan 1/1 and TSan 1/1, strict C++11 and native-disabled helper
-builds passed. No public API/frontend adoption changed. Current follow-up replaces
-annotation buffer edits with checked owned strings and expands morphology edges.
+builds passed. No public API/frontend adoption changed.
+
+Completed/pushed follow-up: `f9a8e0e`, 2026-10-15. Checked owned-string annotation
+edits retain NASB/class-shim/spacing/morphology behavior over 1,530 oracle cases.
+65/65 local suite; focused ASan/UBSan and TSan each 1/1; strict C++11 and legacy
+helper builds pass. Current follow-up moves scanner temporaries/recursion to
+owned C++ strings and adds structured mutation/style-boundary coverage.
 
 ## Existing evidence and boundaries
 

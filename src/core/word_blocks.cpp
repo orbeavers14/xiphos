@@ -20,20 +20,16 @@
  */
 #include "xiphos/core/word_blocks.hpp"
 #include <swbuf.h>
-#include <glib.h>
 #include <algorithm>
-#include <cassert>
 #include <cctype>
 #include <cstring>
-#include <memory>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 namespace xiphos { namespace core {
 namespace {
 using sword::SWBuf;
-using std::max;
-#define XI_warning(args) (supported = false)
-#define ALIGN_WORD "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+const char *const alignment_word = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
 
 // Keep legacy spacing and displayed-code rules, but edit owned strings using
 // checked offsets instead of mutating buffers through unchecked pointer searches.
@@ -98,27 +94,24 @@ bool format_annotation(std::string &html, bool strong, std::size_t &width) {
   return true;
 }
 
-struct FreeString {
-  void operator()(const char *value) const { g_free(const_cast<char *>(value)); }
+struct WordParts {
+  std::string word, strongs, morph;
+  bool has_word = false; // Empty placeholder words differ from absent words.
+  bool any() const { return has_word || !strongs.empty() || !morph.empty(); }
 };
-void block_dump(SWBuf &rendered, const char **word, const char **strongs,
-                const char **morph, bool &supported) {
-  // Adopt all scanner allocations before any potentially throwing string copy.
-  // Clear the caller's pointers so each allocation has exactly one owner.
-  const std::unique_ptr<const char, FreeString> owned_word(*word), owned_strongs(*strongs), owned_morph(*morph);
-  *word = *strongs = *morph = nullptr;
-  const std::string word_html = owned_word ? owned_word.get() : ALIGN_WORD;
-  if (owned_word && !owned_strongs && !owned_morph) {
+void block_dump(SWBuf &rendered, WordParts &parts, bool &supported) {
+  WordParts owned = std::move(parts);
+  parts = WordParts{};
+  const std::string word_html = owned.has_word ? owned.word : alignment_word;
+  if (owned.has_word && owned.strongs.empty() && owned.morph.empty()) {
     rendered += "<span class=\"word\">";
     rendered += word_html.c_str();
     rendered += "</span> ";
     return;
   }
-  std::string strong_html = owned_strongs ? owned_strongs.get() : "";
-  std::string morph_html = owned_morph ? owned_morph.get() : "";
   std::size_t strong_width = 0, morph_width = 0;
-  if ((owned_strongs && !format_annotation(strong_html, true, strong_width)) ||
-      (owned_morph && !format_annotation(morph_html, false, morph_width))) {
+  if ((!owned.strongs.empty() && !format_annotation(owned.strongs, true, strong_width)) ||
+      (!owned.morph.empty() && !format_annotation(owned.morph, false, morph_width))) {
     supported = false;
     return;
   }
@@ -127,176 +120,100 @@ void block_dump(SWBuf &rendered, const char **word, const char **strongs,
   for (auto width = word_html.size(); width <= 2 + std::max(strong_width, morph_width); ++width)
     rendered += "&nbsp;";
   rendered += "<span class=\"strongs\"><sup>";
-  rendered += owned_strongs ? strong_html.c_str() : "&nbsp;";
+  rendered += owned.strongs.empty() ? "&nbsp;" : owned.strongs.c_str();
   rendered += "</sup></span><span class=\"morph\"><sup>";
-  rendered += owned_morph ? morph_html.c_str() : "&nbsp;";
+  rendered += owned.morph.empty() ? "&nbsp;" : owned.morph.c_str();
   rendered += "</sup></span></span> <span class=\"word\">&nbsp;</span>";
 }
 
-//
-// re-process a block of text so as to envelope its strong's and morph
-// references in <span> blocks which will be interpreted by the CSS
-// directives to put each ref immediately below the word it annotates.
-// this keeps the text linearly readable while providing annotation.
-//
-// secondary interface.
-// text destination is provided, ready to go.
-// this means we are able to recurse when needed.
-
-#define EMPTY_WORD ""
-
-void
-block_render_secondary(const char *text,
-		       SWBuf &rendered, bool &supported)
-{
-	const char *word = NULL,
-		   *strongs = NULL,
-		   *morph = NULL;
-	int bracket;
-	const char *s;
-	char *t, *u;
-
-	for (s = text; *s; ++s) {
-		switch (*s) {
-		case ' ':
-		case '\t':
-			break;
-
-		case '<':
-			// <token> causes a lot of grief, because we must
-			// keep it bound with its </token> terminator,
-			// esp. because anchors contain <small></small>. *sigh*
-			// i believe we see only anchors + font switches here.
-			if ((((*(s + 1) == 'a') || (*(s + 1) == 'A')) && (*(s + 2) == ' ')) ||
-			    (((*(s + 1) == 'b') || (*(s + 1) == 'B') ||
-			      (*(s + 1) == 'i') || (*(s + 1) == 'I') ||
-			      (*(s + 1) == 'u') || (*(s + 1) == 'U')) &&
-			     (*(s + 2) == '>'))) {
-				if (word)
-					block_dump(rendered, &word, &strongs, &morph, supported);
-
-				char end[5] = "</X>";
-				end[2] = *(s + 1);
-			again:
-				if ((t = strstr((char *)s, end)) == NULL) {
-					XI_warning(("No %s in %s\n", end, s));
-					break;
-				}
-
-				// yet another nightmare:
-				// if the markup results in e.g. doubled <i>
-				// (bogus "<hi><hi>word</hi></hi>"),
-				// then we will mis-assess termination.
-				// so we search for the same markup embedded within.
-				// if we find an internal set, we just wipe it out.
-				char embedded[4] = "<X>";
-				embedded[1] = *(s + 1);
-				if ((u = g_strstr_len(s + 3, t - (s + 3), embedded))) {
-					*u = *(u + 1) = *(u + 2) =
-					    *t = *(t + 1) = *(t + 2) = *(t + 3) = ' ';
-					goto again; // yuck, yes, i know...
-				}
-
-				// nasb eph 5:31: whole verse is an italicized
-				// quotation of gen 2:24...containing strongs.
-				// in event of font switch, output bare switch
-				// controls but recurse on content within.
-				if ((*(s + 1) == 'a') || (*(s + 1) == 'A')) {
-					// <a href> anchor -- uninteresting.
-					t += 4;
-					word = g_strndup(s, t - s);
-					s = t - 1;
-				} else {
-					// font switch nightmare.
-					word = g_strndup(s, 3);
-					rendered += word;
-					g_free((char *)word);
-					word = g_strndup(s + 3, t - (s + 3));
-					block_render_secondary(word, rendered, supported);
-					g_free((char *)word);
-					word = NULL;
-					rendered += end;
-					s = t + 3;
-				}
-				break;
-			} else if (!strncmp(s + 1, "small>", 6)) {
-				// strongs and morph are bounded by "<small>".
-				if ((t = strstr((char *)s, "</small>")) == NULL) {
-					XI_warning(("No </small> in %s\n", s));
-					break;
-				}
-				t += 8;
-				// this is very dicey -- phenomenological/
-				// observable about Sword filters' provision.
-				// strongs: "<em>&lt;...&gt;</em>"
-				// morph:   "<em>(...)</em>"
-				// if Sword ever changes this, we're dead.
-				const char *u = s + 11;
-				while ((*u != '(') && (*u != '&'))
-					++u; // it has to be one or the other.
-				if (*u == '(') {
-					if (morph) {
-						block_dump(rendered, &word, &strongs, &morph, supported);
-						word = g_strdup(EMPTY_WORD);
-					}
-					morph = g_strndup(s, t - s);
-				} else {
-					if (strongs) {
-						block_dump(rendered, &word, &strongs, &morph, supported);
-						word = g_strdup(EMPTY_WORD);
-					}
-					strongs = g_strndup(s, t - s);
-				}
-				s = t - 1;
-				break;
-			}
-		// ...fall through to ordinary text...
-		// (includes other "<>"-bounded markup.)
-
-		default:
-			if (word)
-				block_dump(rendered, &word, &strongs, &morph, supported);
-
-			// here's an unfortunate problem.  consider:
-			// L<font size="-1">ORD</font> followed by strongs.
-			// the SPC breaks it into 2 "words", very badly.
-			// we need to track <> use to get it as *1* word,
-			// before we capture the strongs, or just the latter
-			// half of it ("size=...") goes inside the <span>.
-			bracket = 0;
-			word = s;
-			do {
-				while ((*s == ' ') || (*s == '\t'))
-					s++;
-				for (/* */;
-				     *s && (*s != ' ') && (*s != '\t');
-				     ++s) {
-					if (*s == '<') {
-						if (!strncmp(s + 1, "small>", 6) ||
-						    ((*(s + 1) == 'a') &&
-						     (*(s + 2) == ' '))) {
-							// "break 2;"
-							goto outword;
-						}
-						bracket++;
-					} else if (*s == '>')
-						bracket--;
-					assert(bracket >= 0);
-				}
-			} while (bracket != 0);
-		outword:
-			word = g_strndup(word, s - word);
-			s--;
-		}
-	}
-	if (word || strongs || morph)
-		block_dump(rendered, &word, &strongs, &morph, supported);
+// All scanner state and recursive working text are owned values. The bounded
+// grammar guard runs first; no caller buffer or global output is mutated.
+void block_render_secondary(std::string text, SWBuf &rendered, bool &supported) {
+  text.append(8, '\0'); // Retain bounded lookahead room for the legacy grammar.
+  WordParts parts;
+  for (char *s = &text[0]; *s; ++s) {
+    switch (*s) {
+    case ' ':
+    case '\t':
+      break;
+    case '<':
+      if (((s[1] == 'a' || s[1] == 'A') && s[2] == ' ') ||
+          ((s[1] == 'b' || s[1] == 'B' || s[1] == 'i' || s[1] == 'I' ||
+            s[1] == 'u' || s[1] == 'U') && s[2] == '>')) {
+        if (parts.has_word) block_dump(rendered, parts, supported);
+        char end[] = "</X>";
+        end[2] = s[1];
+        char *close;
+        for (;;) {
+          close = std::strstr(s, end);
+          if (!close) { supported = false; return; }
+          char embedded[] = "<X>";
+          embedded[1] = s[1];
+          char *nested = std::search(s + 3, close, embedded, embedded + 3);
+          if (nested == close) break;
+          // Preserve legacy duplicate-style flattening on this private copy.
+          std::fill_n(nested, 3, ' ');
+          std::fill_n(close, 4, ' ');
+        }
+        if (s[1] == 'a' || s[1] == 'A') {
+          close += 4;
+          parts.word.assign(s, close - s);
+          parts.has_word = true;
+          s = close - 1;
+        } else {
+          rendered += std::string(s, 3).c_str();
+          block_render_secondary(std::string(s + 3, close - (s + 3)), rendered, supported);
+          rendered += end;
+          s = close + 3;
+        }
+        break;
+      } else if (!std::strncmp(s + 1, "small>", 6)) {
+        char *close = std::strstr(s, "</small>");
+        if (!close) { supported = false; return; }
+        close += 8;
+        const char *marker = s + 11;
+        while (marker < close && *marker != '(' && *marker != '&') ++marker;
+        if (marker == close) { supported = false; return; }
+        std::string &annotation = *marker == '(' ? parts.morph : parts.strongs;
+        if (!annotation.empty()) {
+          block_dump(rendered, parts, supported);
+          parts.has_word = true;
+        }
+        // block_dump resets the values, but not the identity of their members.
+        annotation.assign(s, close - s);
+        s = close - 1;
+        break;
+      }
+      // Other tags stay attached to the ordinary word as in the legacy parser.
+      // Fall through.
+    default:
+      if (parts.has_word) block_dump(rendered, parts, supported);
+      {
+        const char *start = s;
+        int bracket = 0;
+        bool annotation = false;
+        do {
+          while (*s == ' ' || *s == '\t') ++s;
+          for (; *s && *s != ' ' && *s != '\t'; ++s) {
+            if (*s == '<') {
+              if (!std::strncmp(s + 1, "small>", 6) || (s[1] == 'a' && s[2] == ' ')) {
+                annotation = true;
+                break;
+              }
+              ++bracket;
+            } else if (*s == '>') --bracket;
+            if (bracket < 0) { supported = false; return; }
+          }
+        } while (!annotation && bracket != 0);
+        parts.word.assign(start, s - start);
+        parts.has_word = true;
+        --s;
+      }
+    }
+  }
+  if (parts.any()) block_dump(rendered, parts, supported);
 }
 
-
-#undef ALIGN_WORD
-#undef EMPTY_WORD
-#undef XI_warning
 bool starts(const std::string &text, std::size_t at, const std::string &prefix) {
   return at <= text.size() && text.compare(at, prefix.size(), prefix) == 0;
 }
@@ -390,9 +307,8 @@ WordBlockResult render_word_blocks(std::string html) {
   if (html.find('\0') != std::string::npos) throw std::invalid_argument("Word block HTML contains NUL");
   WordBlockResult result;
   if (!supported_markup(html)) { result.html = std::move(html); return result; }
-  std::vector<char> mutable_text(html.begin(), html.end()); mutable_text.resize(mutable_text.size() + 8, '\0');
   SWBuf rendered; bool supported = true;
-  block_render_secondary(mutable_text.data(), rendered, supported);
+  block_render_secondary(html, rendered, supported);
   result.html = supported ? std::string(rendered.c_str()) : std::move(html);
   result.applied = supported;
   return result;

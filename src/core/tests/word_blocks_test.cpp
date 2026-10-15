@@ -105,6 +105,13 @@ int main(int argc, char **argv) {
     check(duplicate.input != "<i><i>Original</i></i>", "characterize inherited duplicate-style caller-buffer mutation");
     const auto nested = compare("<i><b>Original</b></i>");
     check(nested.html.find("</b></b>") != std::string::npos, "characterize inherited recursive static closing-tag defect");
+    for (const auto &annotation : {strong("3056", true), morph("N-NSM", true), strong("3056", true) + morph("N-NSM", true)})
+      for (const auto *tag : {"i", "b", "u", "I", "B", "U"}) for (const auto *word : {"", "Original"}) {
+        const auto styled = std::string("<") + tag + ">" + word + "</" + tag + ">";
+        compare(annotation + styled);
+        compare(styled + annotation);
+        compare(annotation + styled + annotation);
+      }
     // Multiple anchors may arrive in one SDK annotation, rather than as repeated
     // small elements. Exercise the complete legacy formatting, not just labels.
     for (unsigned count = 1; count <= 8; ++count) for (bool classes : {false, true}) {
@@ -206,6 +213,22 @@ int main(int argc, char **argv) {
       const auto result = xiphos::core::render_word_blocks(input);
       check(result.applied || result.html == input, "bounded malformed corpus never drops unsupported input");
     }
+    unsigned mutations = 0;
+    for (const auto &seed : {std::string("Original ") + strong("3056", true) + morph("N-NSM", true),
+                            std::string("<i><b>Original</b></i>"),
+                            std::string("Original<a href=\"note\"><small><sup>a</sup></small></a> following")}) {
+      auto verify = [&](const std::string &input) {
+        const auto original = input;
+        const auto result = xiphos::core::render_word_blocks(input);
+        check(input == original && (result.applied || result.html == original),
+              "structured grammar mutations preserve input and unsupported fallback");
+        ++mutations;
+      };
+      for (std::size_t at = 0; at <= seed.size(); ++at) {
+        if (at < seed.size()) { auto input = seed; input.erase(at, 1); verify(input); }
+        for (const auto byte : std::string("<>/aA\"'&")) { auto input = seed; input.insert(at, 1, byte); verify(input); }
+      }
+    }
     const std::string concurrent_input = "<i><b>Original " + strong("3056", true) + morph("N-NSM", true) + "</b></i>";
     const auto concurrent_expected = xiphos::core::render_word_blocks(concurrent_input).html;
     std::atomic<bool> mismatch{false}; std::vector<std::thread> renderers;
@@ -216,6 +239,7 @@ int main(int argc, char **argv) {
       }
     });
     for (auto &renderer : renderers) renderer.join(); check(!mismatch, "owned output and recursion state isolated across concurrent calls");
+    std::cout << "Structured scanner mutations checked: " << mutations << " cases\n";
     std::cout << "Word block frozen/current checks passed: " << comparisons << " valid cases\n";
   } catch (const std::exception &e) { std::cerr << e.what() << '\n'; return 1; }
 }
