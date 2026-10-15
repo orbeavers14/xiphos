@@ -101,3 +101,11 @@ reference only if the user has not typed a newer draft. Selectors and reading
 panes have explicit accessible labels. The desktop smoke checks action/accelerator
 registration, focus placement, draft retention and navigation; real key delivery
 and screen-reader usability still require manual acceptance.
+
+### Chapters and reference choices
+
+Bible chapter, verse numbers and selected-verse highlighting are per-window
+presentation controls. Commentary chapter mode comes from the core's per-module
+preference. Previous/Next chapter resolve through SWORD and visit paired history;
+Book/Chapter/Verse selectors consume core-owned labels and targets. Clear history
+leaves the committed display intact. Display refreshes do not add history.
