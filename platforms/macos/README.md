@@ -1,5 +1,8 @@
 # macOS native development preview
 
+For a new chat or computer, first read the [shared handoff](../../doc/modernization/handoff.md)
+and [macOS task/evidence instructions](../../doc/modernization/handoff-macos.md).
+
 This preview is an incremental implementation of the
 [shared-core/native-frontends goal](../../doc/modernization/architecture.md),
 not a complete Xiphos replacement. The existing GTK app remains available.

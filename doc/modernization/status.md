@@ -1,9 +1,18 @@
 # Modernization status and acceptance
-Updated 2026-10-12. Goal: preserve Xiphos functionality, visual composition,
+Updated 2026-10-14. Goal: preserve Xiphos functionality, visual composition,
 data and workflows through one shared C++ application core and separate
 SwiftUI/AppKit, WinUI 3 and GTK4 frontends. Native enhancements supplement
 that contract. The [parity matrix](parity-matrix.md) defines acceptance evidence;
 [architecture.md](architecture.md) describes boundaries and dependencies.
+
+For work across computers/chats, start with [the shared handoff](handoff.md) and
+its per-OS instructions. PR #82 (`f190c49`) adds Fedora-capable local core setup,
+release/sanitizer commands and compiler/CMake compatibility fixes. The owner
+reports Fedora passes; exact environment, tested revision, count and logs still
+need recording in [the Linux handoff](handoff-linux.md). This does not establish
+GTK4 or native Windows acceptance. `cf9c853` makes Linux hosted checks manual-only;
+routine builds remain local. The engineering estimate/parity totals below are
+unchanged by this coordination/documentation checkpoint.
 
 ## Overall completion estimate
 

@@ -1,5 +1,8 @@
 # Linux shared-core automation
 
+For a new chat or computer, first read the [shared handoff](../../doc/modernization/handoff.md)
+and [Linux/Fedora task/evidence instructions](../../doc/modernization/handoff-linux.md).
+
 Run from a checkout on Debian/Ubuntu or Fedora:
 
 ```sh

@@ -53,18 +53,27 @@ migration. See the [current status and sign-off rules](doc/modernization/status.
 
 ## Build and development
 
+**Starting a new chat or switching computers?** Read [AGENTS.md](AGENTS.md) and
+the [shared cross-platform handoff](doc/modernization/handoff.md). It contains
+the common goal, coordination rules, current checkpoints, per-OS next tasks and
+a starter message to paste into each chat. Pull the latest repository before
+working, and push updated handoff evidence when finishing.
+
 * Existing GTK application: [INSTALL.md](INSTALL.md).
 * Shared core and engine tests: [src/core/README.md](src/core/README.md).
 * Linux dependency setup and automated checks: [platforms/linux/README.md](platforms/linux/README.md).
 * Native macOS preview and adapter tests: [platforms/macos/README.md](platforms/macos/README.md).
 * Translations: documentation in [doc](doc).
 
-PRs #1–80 are merged after local review and integration checks. The existing legacy and native-core hosted build
-workflows remain paused to conserve GitHub credits. A dedicated Linux core workflow
-automates relevant changes with release and sanitizer checks on Ubuntu 22.04/24.04. New work stays in small,
-reviewable PRs. Next are representative module/profile validation, remaining hover
-and storage behavior, and established study-pane/commentary composition, followed
-by equivalent reading panes on GTK4 and WinUI 3.
+Initial PRs #1–80 are merged after local review and integration checks; later
+checkpoints include the Linux core setup in PR #82. The existing legacy and
+native-core hosted workflows remain paused to conserve GitHub credits. The Linux
+core workflow is manual-only; routine builds/checks run locally. Keep changes
+small and reviewable. Sequential checked commits to this fork's `master` are
+owner-authorized; use short-lived branches/PRs to coordinate overlapping chats.
+Next are representative module/profile validation, remaining rendering/hover and
+storage behavior, and small equivalent reading panes on GTK4 and WinUI 3 before
+declaring the core complete. See each OS handoff for its bounded next task.
 Each milestone needs reviewable changes, regression tests and parity evidence
 before the corresponding legacy files can be retired.
 
