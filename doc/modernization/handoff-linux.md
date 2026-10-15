@@ -195,8 +195,8 @@ standalone 47/47 core suites were executed for this checkpoint.
 |---|---|
 | Module/passage/commentary, history and actions | #83–84 |
 | Chapters, core selectors, chapter/history controls | Chapter checkpoint above; scroll pending |
-| Reading filters/variants and presentation preferences | Pending |
-| Engine preference import/save | Pending |
+| Reading filters/variants and presentation preferences | Options checkpoint below |
+| Engine preference import/save | Options checkpoint below; picker manual acceptance pending |
 | Dictionary lookup, key steps/chooser/history | Dictionary checkpoint below; contextual lexical feeds follow |
 | Lexicon preferences and XML import/save | Pending |
 | Note/reference-list/lexical click results | Pending |
@@ -229,3 +229,36 @@ Keep remaining gaps explicit; no feature group has complete accepted parity.
   manual visual/keyboard/accessibility or accelerated-rendering acceptance.
 - Next: reading filter/variant controls, presentation preferences and explicit
   selected-file profile import/save, followed by contextual links/hover.
+
+
+## macOS scope catch-up: reading options/profiles (2026-10-14)
+
+- Implementation `ffbc8da43e3193102e259bd8fe5cc3a1eafe2972`, branch
+  `linux/options-profile-parity`, based on merged dictionary PR #86.
+- Same Fedora ARM64 environment. Added twelve native filter toggles, variants,
+  Bible/commentary image/font states, commentary headings and core capability
+  guards. Native selected-file Import/Save delegates to core; no automatic
+  discovery/writes. The chooser uses GTK's deprecated compatibility API for the
+  declared GTK 4.6 minimum. No SDK minimum silently increased.
+- `cmake --build build/gtk4 --target xiphos-linux-preview linux_reader_model_test
+  linux_options_model_test core_scoped_options_test core_module_preferences_test
+  --parallel 2` succeeds. `ctest --test-dir build/gtk4
+  -R '^(core_study_passage|linux_reader_model|linux_options_model)$'
+  --output-on-failure` passes 5/5 including required fixtures.
+- Sanitized `options_model_test.cpp` was compiled with the exact adapter command
+  above, substituting that test source and `options_model_test` output, then run
+  with the same ASAN/UBSAN environment against
+  `build/gtk4/core/module-preferences-fixture` and
+  `build/linux-adapter-sanitized/profile-fixture`: passes.
+- Real fixture checks cover declared capabilities, changed SWORD HTML, no history
+  visits on filter refresh, variant flags, save preserving unrelated Unicode
+  values, read-only import restoring flags, and failed import/save retaining state.
+- `--smoke-options-test build/gtk4/core/module-preferences-fixture` passes native
+  filter/variant/history checks. The existing study-passage `--smoke-test` also
+  passes, including chapters and dictionary controls. File-picker interaction,
+  manual keyboard/accessibility and representative visual acceptance remain
+  pending. VMware/WebKit shutdown warnings remain as previously recorded.
+- Core API, GTK3, macOS and hosted workflow files unchanged; no hosted jobs run.
+  Diff checks pass. Next: lexicon preferences and explicit XML import/save,
+  contextual note/reference/lexical clicks/hover, selected-anchor scrolling and
+  per-window isolation through one process worker.
