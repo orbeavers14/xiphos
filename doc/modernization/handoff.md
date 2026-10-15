@@ -1,6 +1,6 @@
 # Shared project handoff: start here in every chat
 
-Updated 2026-10-14. These files replace missing conversation context with a
+Updated 2026-10-15. These files replace missing conversation context with a
 versioned record. They do not transfer chat messages or synchronize themselves:
 each chat must fetch/pull Git and read them before working.
 
@@ -23,15 +23,17 @@ Known pushed checkpoints:
 - `f190c49` / PR #82: Linux shared-core setup/build/test script, Fedora dependency
   support, explicit standalone C++17 and CMake extraction compatibility fixes.
 - `cf9c853`: Linux hosted workflow changed to manual-only to conserve allowance.
-- The owner reports Fedora passes. Exact Fedora release/compiler, tested commit,
-  test count and sanitizer logs have not been attached to this handoff yet.
+- Linux catch-up PRs #83–89 and the final scope audit expose the existing macOS
+  preview capability set. Fedora ARM64 passes 51 integrated tests, four sanitized
+  model executables and six software-rendered desktop smoke modes. Exact source,
+  environment, commands and unaccepted manual gates are in the Linux handoff.
 
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
 | macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Extend owned lexical rendering corpus/fallback evidence before snapshot/style adoption; preserve existing preview behavior | [Mac instructions](handoff-macos.md) |
-| Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Record reproducible Fedora evidence, then a GTK4 module/passage/commentary/history slice through the shared core | [Linux instructions](handoff-linux.md) |
+| Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Validate physical-input, picker, accessibility, visual/corpus and accelerated-rendering gates after the macOS preview scope catch-up | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 
 These are task lanes, not claims that sessions are running or leases are held.

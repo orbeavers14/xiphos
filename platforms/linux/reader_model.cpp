@@ -138,7 +138,7 @@ bool ReaderModel::take_preview(xc_request *request, bool hover) {
   if (lexical) {
     if (hover) information_ = {copy(xc_lexical_entry_module(lexical.get())), copy(xc_lexical_entry_source_reference(lexical.get())), copy(xc_lexical_entry_dictionary_html(lexical.get())), ""};
     else {
-      dictionary_ = {copy(xc_lexical_entry_dictionary_module(lexical.get())), copy(xc_lexical_entry_dictionary_key(lexical.get())), copy(xc_lexical_entry_dictionary_html(lexical.get()))};
+      dictionary_ = {copy(xc_lexical_entry_dictionary_module(lexical.get())), copy(xc_lexical_entry_dictionary_key(lexical.get())), copy(xc_lexical_entry_dictionary_html(lexical.get())), copy(xc_lexical_entry_module(lexical.get())), copy(xc_lexical_entry_source_reference(lexical.get()))};
       xc_request *next = nullptr;
       auto status = xc_worker_dictionary_choices(worker_, tab_, dictionary_.module.c_str(), dictionary_.key.c_str(), &next);
       accept(status, next, Operation::dictionary_choices);
@@ -190,6 +190,7 @@ bool ReaderModel::reading_profile(const std::string &path, bool save) {
 bool ReaderModel::lookup_dictionary(const std::string &module, const std::string &key, bool record) {
   if (!ready() || busy()) return false;
   xc_request *request = nullptr;
+  dictionary_source_module_ = passage_.bible; dictionary_source_reference_ = passage_.reference;
   auto status = record ? xc_worker_visit_dictionary(worker_, tab_, module.c_str(), key.c_str(), &request)
     : xc_worker_read_dictionary(worker_, tab_, module.c_str(), key.c_str(), &request);
   return accept(status, request, Operation::dictionary);
@@ -197,11 +198,13 @@ bool ReaderModel::lookup_dictionary(const std::string &module, const std::string
 bool ReaderModel::step_dictionary(int direction) {
   if (!ready() || busy() || dictionary_.module.empty()) return false;
   xc_request *request = nullptr;
+  dictionary_source_module_ = dictionary_.source_module; dictionary_source_reference_ = dictionary_.source_reference;
   auto status = xc_worker_navigate_dictionary(worker_, tab_, dictionary_.module.c_str(), dictionary_.key.c_str(), direction, &request);
   return accept(status, request, Operation::dictionary);
 }
 bool ReaderModel::navigate_dictionary_history(int direction) {
   if (!ready() || busy()) return false;
+  dictionary_source_module_ = passage_.bible; dictionary_source_reference_ = passage_.reference;
   xc_request *request = nullptr; auto status = xc_worker_navigate_dictionary_history(worker_, tab_, direction, &request);
   return accept(status, request, Operation::dictionary);
 }
@@ -273,6 +276,7 @@ void ReaderModel::load_chapters(bool commentary) {
 bool ReaderModel::follow(const std::string &source, const std::string &uri, const std::string &context) {
   if (!ready() || busy() || passage_.bible.empty()) return false;
   xc_request *request = nullptr;
+  dictionary_source_module_ = source; dictionary_source_reference_ = context.empty() ? passage_.reference : context;
   auto status = xc_worker_follow_pane_link_at(worker_, tab_, passage_.bible.c_str(), source.c_str(), (context.empty() ? passage_.reference : context).c_str(), uri.c_str(), &request);
   return accept(status, request, Operation::link);
 }
@@ -295,7 +299,7 @@ void ReaderModel::tick() {
     std::unique_ptr<xc_catalog, decltype(&xc_catalog_release)> catalog(xc_request_take_catalog(completed.get()), xc_catalog_release);
     if (!catalog) { error_ = "Missing module catalog."; return; }
     for (size_t i = 0; i < xc_catalog_count(catalog.get()); ++i)
-      modules_.push_back({copy(xc_catalog_id(catalog.get(), i)), copy(xc_catalog_description(catalog.get(), i)), copy(xc_catalog_type(catalog.get(), i)), xc_catalog_is_dictionary(catalog.get(), i) != 0, xc_catalog_declared_engine_flags(catalog.get(), i), xc_catalog_is_regular_commentary(catalog.get(), i) != 0, xc_catalog_has_headings(catalog.get(), i) != 0, xc_catalog_lexicon_roles(catalog.get(), i)});
+      modules_.push_back({copy(xc_catalog_id(catalog.get(), i)), copy(xc_catalog_description(catalog.get(), i)), copy(xc_catalog_type(catalog.get(), i)), xc_catalog_is_dictionary(catalog.get(), i) != 0, xc_catalog_declared_engine_flags(catalog.get(), i), xc_catalog_is_regular_commentary(catalog.get(), i) != 0, xc_catalog_has_headings(catalog.get(), i) != 0, xc_catalog_lexicon_roles(catalog.get(), i), copy(xc_catalog_language(catalog.get(), i))});
     auto submitted = xc_worker_create_tab(worker_, &next); accept(submitted, next, Operation::tab); break;
   }
   case Operation::tab: {
@@ -359,7 +363,7 @@ void ReaderModel::tick() {
   case Operation::dictionary: {
     std::unique_ptr<xc_dictionary_entry, decltype(&xc_dictionary_entry_release)> result(xc_request_take_dictionary_entry(completed.get()), xc_dictionary_entry_release);
     if (!result) { error_ = "Missing dictionary snapshot."; break; }
-    dictionary_ = {copy(xc_dictionary_entry_module(result.get())), copy(xc_dictionary_entry_key(result.get())), copy(xc_dictionary_entry_html(result.get()))};
+    dictionary_ = {copy(xc_dictionary_entry_module(result.get())), copy(xc_dictionary_entry_key(result.get())), copy(xc_dictionary_entry_html(result.get())), dictionary_source_module_, dictionary_source_reference_};
     auto submitted = xc_worker_dictionary_choices(worker_, tab_, dictionary_.module.c_str(), dictionary_.key.c_str(), &next);
     accept(submitted, next, Operation::dictionary_choices); break;
   }
@@ -431,6 +435,8 @@ void ReaderModel::tick() {
     std::unique_ptr<xc_link, decltype(&xc_link_release)> link(xc_request_take_link(completed.get()), xc_link_release);
     if (!link) { if (!take_preview(completed.get(), false)) error_ = "Unsupported study link result."; return; }
     const auto module = copy(xc_link_module(link.get())), reference = copy(xc_link_reference(link.get()));
+    const auto *main = this->module(passage_.bible);
+    if (main && main->type != "Biblical Texts") { visit(module, "", reference); break; }
     auto submitted = xc_worker_visit_linked_passage(worker_, tab_, passage_.bible.c_str(), passage_.commentary.c_str(), module.c_str(), reference.c_str(), &next);
     accept(submitted, next, Operation::passage); break;
   }

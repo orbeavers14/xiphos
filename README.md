@@ -8,7 +8,7 @@ C++ application core and native frontends:
 |---|---|---|
 | macOS | SwiftUI / AppKit | Reading/history/options, note/reference previews, lexical/direct dictionary lookup and key steps |
 | Windows | WinUI 3 | Planned; legacy GTK application retained |
-| Linux | GTK4 | Planned; legacy GTK3 application retained |
+| Linux | GTK4 / WebKitGTK | Reading/commentary/history/options, dictionary, contextual previews, profiles and shared-worker windows; legacy GTK3 retained |
 
 The goal is to preserve all existing Bible-study functionality, pane layout,
 module behavior, data and established workflows while adding appropriate
@@ -35,13 +35,13 @@ Core commentary snapshots include owned headings and shared display preferences.
 The native commentary pane sits above dictionary content; complete heading transformations, detached
 windows and broader visual/corpus acceptance remain pending.
 
-The current local suite has 65 checks, supplemented by scoped sanitizer,
+The macOS suite has 65 checks; the integrated Linux build passes 51 core/adapter checks and six desktop smoke modes. Both are supplemented by scoped sanitizer,
 strict-language and temporary-fixture GUI checks recorded in the status ledger.
 The legacy app retains its existing UI and delegates selected seams to shared
 helpers. Routine development and testing stay local to conserve GitHub builds;
 platform CI and full acceptance are reserved for meaningful checkpoints.
 
-Overall modernization is estimated at **about 8%** (planning range 6–10%).
+The last weighted modernization estimate was **about 8%** (planning range 6–10%) before the Linux catch-up; it needs reassessment.
 **0/38 feature groups** have accepted parity across all native platforms.
 See the status page for the weighted estimate, ordered next steps and
 [source reuse decisions](doc/modernization/status.md#reuse-from-related-projects).
@@ -74,6 +74,7 @@ owner-authorized; use short-lived branches/PRs to coordinate overlapping chats.
 Next are representative module/profile validation, remaining rendering/hover and
 storage behavior, and small equivalent reading panes on GTK4 and WinUI 3 before
 declaring the core complete. See each OS handoff for its bounded next task.
+See [Linux evidence and acceptance limits](doc/modernization/handoff-linux.md).
 Each milestone needs reviewable changes, regression tests and parity evidence
 before the corresponding legacy files can be retired.
 

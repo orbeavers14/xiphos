@@ -8,11 +8,11 @@
 #include <vector>
 
 namespace xiphos::linux_preview {
-struct Module { std::string id, description, type; bool dictionary = false; unsigned declared_flags = 0; bool regular_commentary = false, headings = false; unsigned lexicon_roles = 0; };
+struct Module { std::string id, description, type; bool dictionary = false; unsigned declared_flags = 0; bool regular_commentary = false, headings = false; unsigned lexicon_roles = 0; std::string language; };
 struct Preview { std::string module, reference, html, expression; size_t count = 0; bool limited = false; unsigned skipped = 0; };
 using Lexicons = std::array<std::optional<std::string>, 5>;
 struct Presentation { bool chapter = false, headings = true; int images = -1, font_faces = -1; };
-struct Dictionary { std::string module, key, html; };
+struct Dictionary { std::string module, key, html, source_module, source_reference; };
 struct ReferenceChoice { std::string label, target; };
 struct Chapter { std::string html, anchor, title; };
 struct Passage { std::string bible, commentary, reference, bible_html, commentary_html; };
@@ -111,7 +111,7 @@ private:
   unsigned engine_flags_ = 0;
   bool engine_configured_ = false;
   Presentation presentations_[2];
-  std::string notice_, pending_module_;
+  std::string notice_, pending_module_, dictionary_source_module_, dictionary_source_reference_;
   Dictionary dictionary_;
   std::vector<std::string> dictionary_keys_;
   bool dictionary_back_ = false, dictionary_forward_ = false;

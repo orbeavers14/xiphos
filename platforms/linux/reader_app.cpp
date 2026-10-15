@@ -20,6 +20,7 @@ struct App {
   xc_worker *shared_worker = nullptr;
   GtkApplication *application = nullptr;
   GtkWidget *window = nullptr, *reference = nullptr, *bible = nullptr, *commentary = nullptr;
+  GtkWidget *module_description = nullptr, *commentary_description = nullptr, *dictionary_description = nullptr;
   GtkWidget *back = nullptr, *forward = nullptr, *go = nullptr, *status = nullptr;
   GtkWidget *chapter_mode = nullptr, *commentary_mode = nullptr, *numbers = nullptr, *highlight = nullptr;
   GtkWidget *selectors[3] = {}, *previous_chapter = nullptr, *next_chapter = nullptr, *clear_history = nullptr;
@@ -45,6 +46,7 @@ struct App {
   std::string root, rendered, submitted_draft, bible_anchor, commentary_anchor;
   unsigned scroll_jobs = 0, scroll_successes = 0, bible_scroll_successes = 0;
   guint timer = 0;
+  bool automatic_start = true, startup_read_started = false, startup_smoke = false;
   bool options_smoke = false, preview_smoke = false, lexical_smoke = false, window_smoke = false; unsigned initial_flags = 0; std::string initial_html;
   bool populated = false, closing = false, smoke = false, smoke_failed = false, software = false;
   unsigned smoke_stage = 0, loaded = 0;
@@ -88,7 +90,7 @@ void go(App *app) {
 std::string document(const std::string &body) {
   // No module scripts, external resources, frames or network requests. Native
   // policy routes user passage clicks through C++; no browser navigation engine.
-  return "<!doctype html><html><head><meta charset='utf-8'><meta http-equiv='Content-Security-Policy' content=\"default-src 'none'; style-src 'unsafe-inline'; img-src 'none'; script-src 'none'; frame-src 'none'; connect-src 'none'\"><style>body{font:18px serif;line-height:1.55;margin:20px;color:#202020;background:#fff}a{color:#174ea6}.xc-verse{padding:.15em 0}.xc-current{background:#fff0b3}.xc-commentary td{padding:4px;vertical-align:top}@media(prefers-color-scheme:dark){body{background:#202020;color:#eee}a{color:#9ecbff}.xc-current{background:#4d421e}}</style></head><body>" + body + "</body></html>";
+  return "<!doctype html><html><head><meta charset='utf-8'><meta http-equiv='Content-Security-Policy' content=\"default-src 'none'; style-src 'unsafe-inline'; img-src 'none'; script-src 'none'; frame-src 'none'; connect-src 'none'\"><style>body{font:18px serif;line-height:1.55;margin:20px;color:#202020;background:#fff}:root{color-scheme:light dark}span.wordsOfJesus{color:red}.xc-reference{margin-bottom:20px}.xc-reference header{font-weight:bold}.xc-verse,.xc-commentary-section{scroll-margin-top:12px}.xc-current a{color:inherit}.xc-verse sup{font-size:.7em;padding-right:4px}a{color:#174ea6}.xc-verse{padding:.15em 0}.xc-current{background:#fff0b3}.xc-commentary td{padding:4px;vertical-align:top}@media(prefers-color-scheme:dark){body{background:#202020;color:#eee}a{color:#9ecbff}.xc-current{background:#4d421e}}</style></head><body>" + body + "</body></html>";
 }
 gboolean policy(WebKitWebView *view, WebKitPolicyDecision *decision, WebKitPolicyDecisionType type, gpointer data) {
   auto *app = static_cast<App *>(data);
@@ -107,6 +109,8 @@ gboolean policy(WebKitWebView *view, WebKitPolicyDecision *decision, WebKitPolic
           module = preview.module; context = preview.reference;
         } else if (view == app->information_view) {
           module = app->model->information().module; context = app->model->information().reference;
+        } else if (view == app->dictionary_view && !app->model->dictionary().source_module.empty()) {
+          module = app->model->dictionary().source_module; context = app->model->dictionary().source_reference;
         }
         app->model->follow(module, uri ? uri : "", context);
       }
@@ -123,7 +127,9 @@ gboolean policy(WebKitWebView *view, WebKitPolicyDecision *decision, WebKitPolic
 GtkWidget *pane(App *app, const char *title, WebKitWebView **view) {
   auto *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
   auto *heading = gtk_label_new(title); gtk_box_append(GTK_BOX(box), heading);
-  *view = WEBKIT_WEB_VIEW(webkit_web_view_new());
+  auto *session = webkit_network_session_new_ephemeral();
+  *view = WEBKIT_WEB_VIEW(g_object_new(WEBKIT_TYPE_WEB_VIEW, "network-session", session, nullptr));
+  g_object_unref(session);
   webkit_settings_set_enable_javascript(webkit_web_view_get_settings(*view), FALSE);
   if (app->software) webkit_settings_set_hardware_acceleration_policy(webkit_web_view_get_settings(*view), WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
   g_signal_connect(*view, "decide-policy", G_CALLBACK(policy), app);
@@ -322,6 +328,22 @@ gboolean tick(gpointer data) {
       const auto &name = app->model->lexicons()[i];
       gtk_check_button_set_active(GTK_CHECK_BUTTON(app->lexicon_unset[i]), !name);
       gtk_editable_set_text(GTK_EDITABLE(app->lexicon_entries[i]), name ? name->c_str() : "");
+    }
+  }
+  const std::pair<GtkWidget *, std::string> descriptions[] = {
+    {app->module_description, selected(app->bible, app->bibles)},
+    {app->commentary_description, selected(app->commentary, app->commentaries)},
+    {app->dictionary_description, selected(app->dictionary_module, app->dictionaries)}
+  };
+  for (const auto &entry : descriptions) {
+    const auto *module = app->model->module(entry.second);
+    const auto description = module ? module->type + (module->language.empty() ? "" : " • " + module->language) + "\n" + module->description : "";
+    gtk_label_set_text(GTK_LABEL(entry.first), description.c_str());
+  }
+  if (!app->smoke && app->automatic_start && !app->startup_read_started && enabled && app->populated) {
+    app->startup_read_started = true;
+    for (const auto &module : app->model->modules()) if (module.type == "Biblical Texts") {
+      select(app->bible, app->bibles, module.id); go(app); break;
     }
   }
   app->updating = false;
@@ -624,10 +646,24 @@ void activate(GtkApplication *application, gpointer data) {
   auto *library = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
   auto *bible_label = gtk_label_new_with_mnemonic("_Reading module");
   gtk_box_append(GTK_BOX(library), bible_label);
+  auto description = [](GtkWidget *box) {
+    auto *label = gtk_label_new(""); gtk_label_set_wrap(GTK_LABEL(label), TRUE); gtk_label_set_max_width_chars(GTK_LABEL(label), 28);
+    gtk_label_set_xalign(GTK_LABEL(label), 0); gtk_box_append(GTK_BOX(box), label); return label;
+  };
   app->bible = gtk_drop_down_new(nullptr, nullptr); gtk_box_append(GTK_BOX(library), app->bible);
+  g_signal_connect(app->bible, "notify::selected", G_CALLBACK(+[](GObject *, GParamSpec *, gpointer data) {
+    auto *app = static_cast<App *>(data);
+    if (app->smoke || app->updating || !app->model || !app->model->ready() || app->model->busy()) return;
+    const auto selection = selected(app->bible, app->bibles);
+    const auto *target = app->model->module(selection); const auto *main = app->model->module(app->model->passage().bible);
+    if (target && main && target->type == "Commentaries" && main->type == "Biblical Texts") app->model->choose_commentary(selection);
+    else go(app);
+  }), app);
+  app->module_description = description(library);
   auto *commentary_label = gtk_label_new_with_mnemonic("_Commentary module");
   gtk_box_append(GTK_BOX(library), commentary_label);
   app->commentary = gtk_drop_down_new(nullptr, nullptr); gtk_box_append(GTK_BOX(library), app->commentary);
+  app->commentary_description = description(library);
   g_signal_connect(app->commentary, "notify::selected", G_CALLBACK(+[](GObject *, GParamSpec *, gpointer data) {
     auto *app = static_cast<App *>(data); if (app->updating || !app->model || app->model->busy()) return;
     app->model->choose_commentary(selected(app->commentary, app->commentaries));
@@ -660,6 +696,7 @@ void activate(GtkApplication *application, gpointer data) {
   auto *dictionary_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
   gtk_paned_set_end_child(GTK_PANED(right), dictionary_box);
   app->dictionary_module = gtk_drop_down_new(nullptr, nullptr); gtk_box_append(GTK_BOX(dictionary_box), app->dictionary_module);
+  app->dictionary_description = description(dictionary_box);
   gtk_accessible_update_property(GTK_ACCESSIBLE(app->dictionary_module), GTK_ACCESSIBLE_PROPERTY_LABEL, "Dictionary module", -1);
   auto *lookup_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4); gtk_box_append(GTK_BOX(dictionary_box), lookup_bar);
   app->dictionary_key = gtk_entry_new(); gtk_widget_set_hexpand(app->dictionary_key, TRUE); gtk_box_append(GTK_BOX(lookup_bar), app->dictionary_key);
@@ -706,18 +743,20 @@ void activate(GtkApplication *application, gpointer data) {
     {"go", +[](GSimpleAction *, GVariant *, gpointer data) { go(static_cast<App *>(data)); }, nullptr, nullptr, nullptr, {}},
     {"back", +[](GSimpleAction *, GVariant *, gpointer data) { auto *app = static_cast<App *>(data); app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference)); app->model->navigate(-1); }, nullptr, nullptr, nullptr, {}},
     {"forward", +[](GSimpleAction *, GVariant *, gpointer data) { auto *app = static_cast<App *>(data); app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference)); app->model->navigate(1); }, nullptr, nullptr, nullptr, {}},
-    {"focus-reference", +[](GSimpleAction *, GVariant *, gpointer data) { gtk_widget_grab_focus(static_cast<App *>(data)->reference); }, nullptr, nullptr, nullptr, {}}
+    {"focus-reference", +[](GSimpleAction *, GVariant *, gpointer data) { gtk_widget_grab_focus(static_cast<App *>(data)->reference); }, nullptr, nullptr, nullptr, {}},
+    {"close", +[](GSimpleAction *, GVariant *, gpointer data) { gtk_window_close(GTK_WINDOW(static_cast<App *>(data)->window)); }, nullptr, nullptr, nullptr, {}}
   };
   g_action_map_add_action_entries(G_ACTION_MAP(app->window), actions, G_N_ELEMENTS(actions), app);
-  for (const auto &entry : actions) g_simple_action_set_enabled(G_SIMPLE_ACTION(g_action_map_lookup_action(G_ACTION_MAP(app->window), entry.name)), FALSE);
+  for (const auto &entry : actions) g_simple_action_set_enabled(G_SIMPLE_ACTION(g_action_map_lookup_action(G_ACTION_MAP(app->window), entry.name)), std::string(entry.name) == "close");
   gtk_actionable_set_action_name(GTK_ACTIONABLE(app->go), "win.go");
   gtk_actionable_set_action_name(GTK_ACTIONABLE(app->back), "win.back");
   gtk_actionable_set_action_name(GTK_ACTIONABLE(app->forward), "win.forward");
   const char *back_keys[] = {"<Alt>Left", nullptr}, *forward_keys[] = {"<Alt>Right", nullptr};
-  const char *focus_keys[] = {"<Primary>l", nullptr};
+  const char *focus_keys[] = {"<Primary>l", nullptr}, *close_keys[] = {"<Primary>w", nullptr};
   gtk_application_set_accels_for_action(application, "win.back", back_keys);
   gtk_application_set_accels_for_action(application, "win.forward", forward_keys);
   gtk_application_set_accels_for_action(application, "win.focus-reference", focus_keys);
+  gtk_application_set_accels_for_action(application, "win.close", close_keys);
   gtk_widget_set_tooltip_text(app->back, "Back (Alt+Left)");
   gtk_widget_set_tooltip_text(app->forward, "Forward (Alt+Right)");
   gtk_widget_set_tooltip_text(app->reference, "Passage reference (Ctrl+L to focus; Enter to go)");
@@ -739,11 +778,24 @@ struct Process {
 void new_window(Process *process) {
   auto window = std::make_unique<App>();
   window->application = process->application; window->shared_worker = process->worker;
+  window->automatic_start = !process->prototype->window_smoke;
   window->software = process->prototype->software; window->root = process->prototype->root;
   auto *state = window.get(); process->windows.push_back(std::move(window));
   activate(process->application, state);
 }
 
+gboolean startup_smoke(gpointer data) {
+  auto *process = static_cast<Process *>(data); auto &state = *process->prototype;
+  if (process->windows.empty()) return G_SOURCE_CONTINUE;
+  auto &window = *process->windows[0];
+  if (state.smoke_failed) { gtk_window_close(GTK_WINDOW(window.window)); return G_SOURCE_REMOVE; }
+  if (!window.model || !window.model->ready() || window.model->busy() || window.model->passage().bible.empty()) return G_SOURCE_CONTINUE;
+  const auto &passage = window.model->passage();
+  if (!webkit_network_session_is_ephemeral(webkit_web_view_get_network_session(window.bible_view)) || passage.bible != "Text" || passage.reference != "John 3:16" || window.model->can_back() || std::string(gtk_label_get_text(GTK_LABEL(window.module_description))).find("Original study pane fixture") == std::string::npos) state.smoke_failed = true;
+  if (state.smoke_stage == 0) { select(window.bible, window.bibles, "Notes"); state.smoke_stage = 1; return G_SOURCE_CONTINUE; }
+  if (passage.commentary != "Notes") state.smoke_failed = true;
+  state.smoke_stage = 2; gtk_window_close(GTK_WINDOW(window.window)); return G_SOURCE_REMOVE;
+}
 gboolean window_smoke(gpointer data) {
   auto *process = static_cast<Process *>(data); auto &state = *process->prototype;
   if (state.smoke_failed) {
@@ -767,7 +819,7 @@ gboolean window_smoke(gpointer data) {
     process->windows[1]->model->visit("Text", "OtherNotes", "John 4:1"); ++state.smoke_stage; break;
   case 4:
     if (first.model->passage().reference != "John 3:16" || process->windows[1]->model->passage().reference != "John 4:1") state.smoke_failed = true;
-    first.model->visit("Text", "Notes", "John 3:17"); gtk_window_close(GTK_WINDOW(first.window));
+    first.model->visit("Text", "Notes", "John 3:17"); gtk_widget_activate_action(first.window, "win.close", nullptr);
     process->windows[1]->model->visit("Text", "OtherNotes", "John 3:18"); ++state.smoke_stage; break;
   case 5:
     if (!process->windows[1]->model->error().empty() || process->windows[1]->model->passage().reference != "John 3:18") state.smoke_failed = true;
@@ -783,13 +835,14 @@ int main(int argc, char **argv) {
   for (int i = 1; i < argc; ++i) {
     const std::string argument = argv[i];
     if (argument == "--software-rendering") state.software = true;
-    else if ((argument == "--root" || argument == "--smoke-test" || argument == "--smoke-options-test" || argument == "--smoke-preview-test" || argument == "--smoke-lexical-test" || argument == "--smoke-window-test") && i + 1 < argc) {
+    else if ((argument == "--root" || argument == "--smoke-test" || argument == "--smoke-options-test" || argument == "--smoke-preview-test" || argument == "--smoke-lexical-test" || argument == "--smoke-window-test" || argument == "--smoke-startup-test") && i + 1 < argc) {
       state.root = argv[++i];
       if (argument != "--root") state.smoke = state.software = true;
       if (argument == "--smoke-options-test") state.options_smoke = true;
       if (argument == "--smoke-preview-test") state.preview_smoke = true;
       if (argument == "--smoke-lexical-test") state.lexical_smoke = true;
       if (argument == "--smoke-window-test") state.window_smoke = true;
+      if (argument == "--smoke-startup-test") state.startup_smoke = true;
     } else {
       std::cerr << "Usage: xiphos-linux-preview [--software-rendering] [--root SWORD_LIBRARY]\n";
       return argument == "--help" ? 0 : 2;
@@ -799,16 +852,24 @@ int main(int argc, char **argv) {
   if (!state.root.empty()) state.root = std::filesystem::absolute(state.root).string();
   auto *app = gtk_application_new("org.xiphos.LinuxPreview", G_APPLICATION_NON_UNIQUE);
   Process process; process.application = app; process.prototype = &state;
-  if (state.smoke && !state.window_smoke) g_signal_connect(app, "activate", G_CALLBACK(activate), &state);
+  if (state.smoke && !state.window_smoke && !state.startup_smoke) g_signal_connect(app, "activate", G_CALLBACK(activate), &state);
   else {
     if (xc_worker_open(state.root.empty() ? nullptr : state.root.c_str(), &process.worker) != XC_OK) {
       std::cerr << "Unable to start the study engine.\n"; g_object_unref(app); return 1;
     }
     g_signal_connect(app, "activate", G_CALLBACK(+[](GtkApplication *, gpointer data) { new_window(static_cast<Process *>(data)); }), &process);
-    const GActionEntry actions[] = {{"new-window", +[](GSimpleAction *, GVariant *, gpointer data) { new_window(static_cast<Process *>(data)); }, nullptr, nullptr, nullptr, {}}};
+    const GActionEntry actions[] = {
+      {"new-window", +[](GSimpleAction *, GVariant *, gpointer data) { new_window(static_cast<Process *>(data)); }, nullptr, nullptr, nullptr, {}},
+      {"quit", +[](GSimpleAction *, GVariant *, gpointer data) {
+        auto *process = static_cast<Process *>(data);
+        for (const auto &window : process->windows) if (!window->closing) gtk_window_close(GTK_WINDOW(window->window));
+      }, nullptr, nullptr, nullptr, {}}
+    };
     g_action_map_add_action_entries(G_ACTION_MAP(app), actions, G_N_ELEMENTS(actions), &process);
-    const char *keys[] = {"<Primary>n", nullptr}; gtk_application_set_accels_for_action(app, "app.new-window", keys);
+    const char *keys[] = {"<Primary>n", nullptr}, *quit_keys[] = {"<Primary>q", nullptr};
+    gtk_application_set_accels_for_action(app, "app.new-window", keys); gtk_application_set_accels_for_action(app, "app.quit", quit_keys);
   }
+  if (state.startup_smoke) g_timeout_add(10, startup_smoke, &process);
   if (state.window_smoke) g_timeout_add(10, window_smoke, &process);
   guint deadline = 0;
   if (state.smoke) deadline = g_timeout_add_seconds(90, +[](gpointer data) -> gboolean {
@@ -825,7 +886,8 @@ int main(int argc, char **argv) {
   if (process.worker) { auto *worker = process.worker; process.worker = nullptr; std::thread([worker] { xc_worker_close(worker); }).join(); }
   g_object_unref(app);
   if (state.smoke) {
-    if (state.smoke_failed || state.smoke_stage != (state.window_smoke ? 6u : state.options_smoke ? 4u : state.preview_smoke ? 7u : state.lexical_smoke ? 5u : 13u)) { std::cerr << "GTK4 smoke failed\n"; return 1; }
+    if (state.smoke_failed || state.smoke_stage != (state.startup_smoke ? 2u : state.window_smoke ? 6u : state.options_smoke ? 4u : state.preview_smoke ? 7u : state.lexical_smoke ? 5u : 13u)) { std::cerr << "GTK4 smoke failed\n"; return 1; }
+    if (state.startup_smoke) { std::cout << "GTK4 startup selection and module metadata smoke passed\n"; return result; }
     if (state.window_smoke) { std::cout << "GTK4 shared-worker window and anchor scrolling smoke passed\n"; return result; }
     if (state.preview_smoke || state.lexical_smoke) { std::cout << "GTK4 contextual preview smoke passed\n"; return result; }
     if (state.options_smoke) { std::cout << "GTK4 options smoke passed: filters, variants and history isolation\n"; return result; }

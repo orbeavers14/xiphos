@@ -55,6 +55,12 @@ int main(int argc, char **argv) {
       check(model.information().html.find("DictionaryOne") != std::string::npos && model.dictionary_history_count() == 0, "lexical hover has no dictionary visit");
       check(model.follow("OriginalBible", lexical), "lexical click"); settle(model);
       check(model.dictionary().module == "DictionaryOne" && model.dictionary_history_count() == 1 && !model.can_back(), "main click uses core dictionary history only");
+      check(model.dictionary().source_module == "OriginalBible" && model.dictionary().source_reference == "John 3:16", "lexical dictionary retains source context");
+      check(model.visit("OriginalBible", "", "John 3:17"), "new main passage after dictionary"); settle(model);
+      check(model.step_dictionary(1), "step older dictionary view"); settle(model);
+      check(model.dictionary().source_reference == "John 3:16", "key step preserves older source context");
+      check(model.lookup_dictionary("DictionaryOne", "alpha"), "new direct lookup source"); settle(model);
+      check(model.dictionary().source_reference == "John 3:17", "new lookup captures live source");
       const std::filesystem::path scratch(argv[3]); std::filesystem::create_directories(scratch); const auto profile = scratch / "settings.xml";
       { std::ofstream output(profile); output << "<Xiphos><misc><saved>preserve café</saved></misc></Xiphos>"; }
       check(model.lexicon_profile(profile.string(), true), "save XML choices"); settle(model);
