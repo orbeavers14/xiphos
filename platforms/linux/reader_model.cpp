@@ -49,6 +49,33 @@ bool ReaderModel::navigate(int direction) {
   auto status = xc_worker_navigate_passage(worker_, tab_, direction, &request);
   return accept(status, request, Operation::passage);
 }
+bool ReaderModel::lookup_dictionary(const std::string &module, const std::string &key, bool record) {
+  if (!ready() || busy()) return false;
+  xc_request *request = nullptr;
+  auto status = record ? xc_worker_visit_dictionary(worker_, tab_, module.c_str(), key.c_str(), &request)
+    : xc_worker_read_dictionary(worker_, tab_, module.c_str(), key.c_str(), &request);
+  return accept(status, request, Operation::dictionary);
+}
+bool ReaderModel::step_dictionary(int direction) {
+  if (!ready() || busy() || dictionary_.module.empty()) return false;
+  xc_request *request = nullptr;
+  auto status = xc_worker_navigate_dictionary(worker_, tab_, dictionary_.module.c_str(), dictionary_.key.c_str(), direction, &request);
+  return accept(status, request, Operation::dictionary);
+}
+bool ReaderModel::navigate_dictionary_history(int direction) {
+  if (!ready() || busy()) return false;
+  xc_request *request = nullptr; auto status = xc_worker_navigate_dictionary_history(worker_, tab_, direction, &request);
+  return accept(status, request, Operation::dictionary);
+}
+bool ReaderModel::clear_dictionary_history() {
+  if (!ready() || busy()) return false;
+  xc_request *request = nullptr; auto status = xc_worker_clear_dictionary_history(worker_, tab_, &request);
+  return accept(status, request, Operation::dictionary_clear);
+}
+bool ReaderModel::close_dictionary() {
+  if (!ready() || busy()) return false;
+  dictionary_ = {}; dictionary_keys_.clear(); ++revision_; return true;
+}
 bool ReaderModel::navigate_chapter(int direction) {
   if (!ready() || busy() || passage_.bible.empty()) return false;
   xc_request *request = nullptr;
@@ -117,7 +144,7 @@ void ReaderModel::tick() {
     std::unique_ptr<xc_catalog, decltype(&xc_catalog_release)> catalog(xc_request_take_catalog(completed.get()), xc_catalog_release);
     if (!catalog) { error_ = "Missing module catalog."; return; }
     for (size_t i = 0; i < xc_catalog_count(catalog.get()); ++i)
-      modules_.push_back({copy(xc_catalog_id(catalog.get(), i)), copy(xc_catalog_description(catalog.get(), i)), copy(xc_catalog_type(catalog.get(), i))});
+      modules_.push_back({copy(xc_catalog_id(catalog.get(), i)), copy(xc_catalog_description(catalog.get(), i)), copy(xc_catalog_type(catalog.get(), i)), xc_catalog_is_dictionary(catalog.get(), i) != 0});
     auto submitted = xc_worker_create_tab(worker_, &next); accept(submitted, next, Operation::tab); break;
   }
   case Operation::tab: {
@@ -145,6 +172,31 @@ void ReaderModel::tick() {
       accept(submitted, next, Operation::presentation);
     } else { show_commentary_chapter_ = false; load_chapters(); }
     break;
+  }
+  case Operation::dictionary: {
+    std::unique_ptr<xc_dictionary_entry, decltype(&xc_dictionary_entry_release)> result(xc_request_take_dictionary_entry(completed.get()), xc_dictionary_entry_release);
+    if (!result) { error_ = "Missing dictionary snapshot."; break; }
+    dictionary_ = {copy(xc_dictionary_entry_module(result.get())), copy(xc_dictionary_entry_key(result.get())), copy(xc_dictionary_entry_html(result.get()))};
+    auto submitted = xc_worker_dictionary_choices(worker_, tab_, dictionary_.module.c_str(), dictionary_.key.c_str(), &next);
+    accept(submitted, next, Operation::dictionary_choices); break;
+  }
+  case Operation::dictionary_choices: {
+    std::unique_ptr<xc_dictionary_choices, decltype(&xc_dictionary_choices_release)> result(xc_request_take_dictionary_choices(completed.get()), xc_dictionary_choices_release);
+    if (!result) { error_ = "Missing dictionary choices."; break; }
+    dictionary_keys_.clear();
+    for (size_t i = 0; i < xc_dictionary_choices_count(result.get()); ++i) dictionary_keys_.push_back(copy(xc_dictionary_choices_at(result.get(), i)));
+    auto submitted = xc_worker_dictionary_history(worker_, tab_, &next);
+    accept(submitted, next, Operation::dictionary_history); break;
+  }
+  case Operation::dictionary_clear: {
+    auto submitted = xc_worker_dictionary_history(worker_, tab_, &next);
+    accept(submitted, next, Operation::dictionary_history); break;
+  }
+  case Operation::dictionary_history: {
+    std::unique_ptr<xc_dictionary_history, decltype(&xc_dictionary_history_release)> result(xc_request_take_dictionary_history(completed.get()), xc_dictionary_history_release);
+    if (!result) { error_ = "Missing dictionary history."; break; }
+    dictionary_back_ = xc_dictionary_history_can_back(result.get()); dictionary_forward_ = xc_dictionary_history_can_forward(result.get());
+    dictionary_history_count_ = xc_dictionary_history_count(result.get()); break;
   }
   case Operation::refresh: refresh(); break;
   case Operation::clear: history(); break;
