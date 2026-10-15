@@ -1,7 +1,13 @@
 # Native Windows chat handoff
 
 Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md) and the
-[shared handoff](handoff.md) first. No task is currently claimed by this file.
+[shared handoff](handoff.md) first.
+
+Active task on `master`: inventory native Windows ARM64 prerequisites and add a
+repeatable local MSVC core build/test entry point in `platforms/windows`.
+Shared core/API ownership is not claimed. The initial inventory found no MSVC,
+Windows SDK, CMake, .NET or dependency SDK in PATH/standard install locations;
+this session has no administrator token. Native build acceptance remains open.
 
 ## Existing evidence and boundaries
 
