@@ -19,6 +19,9 @@ struct StudyPassage {
 class StudySession {
 public:
   explicit StudySession(Reader &reader) : reader_(reader) {}
+  // Migration opt-in for consumers that copy/apply snapshot HTML and CSS together.
+  // Not a saved study preference. Existing consumers retain plain snapshots.
+  void set_lexical_layout_enabled(bool enabled) { lexical_layout_enabled_ = enabled; }
   // Explicit copied lexicons; existing tabs remain unconfigured until set.
   void set_lexicon_preferences(const LexiconPreferences &preferences);
   const std::optional<LexiconPreferences> &lexicon_preferences() const { return lexicons_; }
@@ -94,6 +97,7 @@ private:
   std::optional<LexiconPreferences> lexicons_;
   std::optional<EngineOptions> options_;
   bool module_preferences_ = false;
+  bool lexical_layout_enabled_ = false;
   bool xrefs_in_verse_list_ = true; // Legacy misc/xrefsinverselist default.
   std::map<std::string, EngineOptions> module_options_;
   ModulePresentationPreferences presentation_options_;

@@ -7,9 +7,15 @@
 namespace xiphos::core {
 struct ParsedReferenceList;
 struct DictionaryEntry { std::string module, key, html; };
+struct LexicalPresentation {
+  std::string css;
+  bool requested = false;
+  bool applied = false;
+};
 struct Entry {
   std::string reference, html, heading_html;
   std::vector<ContentCleanupDiagnostic> cleanup_diagnostics;
+  LexicalPresentation lexical; // Matching body/heading CSS; consume with this snapshot.
 };
 struct DisplayOptions {
   bool verse_numbers = true;
@@ -22,6 +28,7 @@ struct Chapter {
   std::size_t selected_verse = 0;
   std::string selected_anchor, html;
   std::vector<unsigned> verse_ordinals; // Copied SDK ordinals, including sparse commentary positions.
+  LexicalPresentation lexical; // All verses share one document-wide layout decision.
 };
 struct ReferenceList {
   std::string module, context, expression, html;

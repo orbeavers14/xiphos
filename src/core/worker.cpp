@@ -126,6 +126,9 @@ std::future<std::optional<LexiconPreferences>> StudyWorker::lexicon_preferences(
 std::future<void> StudyWorker::set_cross_reference_preview_list(StudyTab tab, bool enabled) {
   return impl_->submit([tab, enabled](Impl::State &s) { s.tab(tab).set_cross_reference_preview_list(enabled); });
 }
+std::future<void> StudyWorker::set_lexical_layout_enabled(StudyTab tab, bool enabled) {
+  return impl_->submit([tab, enabled](Impl::State &s) { s.tab(tab).set_lexical_layout_enabled(enabled); });
+}
 std::future<bool> StudyWorker::cross_reference_preview_list(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s) { return s.tab(tab).cross_reference_preview_list(); });
 }

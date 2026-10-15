@@ -1,8 +1,8 @@
 # Word/Strong’s/morphology block layout: characterization
 
 Updated 2026-10-15. Supports F03/F16/F17 rendering work. This is source behavior
-characterization plus an initial owned core renderer; native layout acceptance
-and snapshot adoption remain pending.
+characterization plus an owned core renderer and opt-in session snapshots;
+native layout acceptance and frontend consumption remain pending.
 
 `src/main/display.cc:block_dump`, `block_render_secondary` and `block_render` group
 words and annotations into word/strongs/morph spans. They preserve lexical href
@@ -127,8 +127,8 @@ recursive-style and footnote inputs, in addition to 8,000 noise inputs and 400
 concurrent renders. These bounded corpora pass normal/address/undefined/thread
 checks; they are not exhaustive parser or native visual acceptance. Strict C++11
 syntax checking now needs only the core and SWORD headers for this source file.
-The legacy parser remains retained as the oracle and no native snapshot has
-adopted this new implementation yet.
+The legacy parser remains retained as the oracle. The new session snapshot path
+below opts into this implementation; native frontends have not enabled it yet.
 
 ## Shared HTML/CSS layout decision
 
@@ -148,8 +148,8 @@ All 16 option combinations compare supported HTML with the frozen block renderer
 and CSS with frozen declarations, and check unsupported fallback and NUL behavior
 (48 policy cases). Another 400 concurrent combined-layout calls share no mutable
 result state. The existing 400 renderer calls and other corpus tests remain.
-This is an additive C++ helper; native snapshots, C/Swift/Linux adapters and UI
-layout have not yet adopted it. Adoption must publish HTML and its matching CSS
+This additive C++ helper is now used by opt-in session snapshots below. C/Swift/
+Linux adapters and UI layout have not yet adopted it. Adoption must publish HTML and its matching CSS
 together and preserve pane, option, heading/cleanup ordering and history contracts.
 
 The real worker study-note fixture also passes its note-bearing snapshot through
@@ -157,14 +157,47 @@ this layout helper, extracts the unchanged SWORD-generated note URL and resolves
 it through the existing core. A formatted ranged-note body similarly retains its
 exact URL and expands through the shared reference-list service. Normal and
 address/undefined/thread focused runs each pass 3/3, including prerequisite fixtures.
-These integration checks exercise the helper explicitly; production snapshots
-still retain their prior behavior until the separate adoption milestone.
+These integration checks exercise the helper explicitly; existing consumers retain
+their prior behavior until enabling the separate snapshot path below.
 
 That milestone must apply lexical formatting **before** image/font cleanup, as
 the legacy body and heading paths do. Current session snapshots already perform
 cleanup; simply formatting their returned HTML in each frontend would put the
 operations in the wrong place and duplicate policy. Integrate the combined stage
 inside the shared core, then carry copied HTML/CSS through the adapters together.
+
+## Opt-in session and worker snapshots
+
+`StudySession::set_lexical_layout_enabled` and its FIFO worker command enable a
+consumer capability for a tab. This migration opt-in is separate from saved
+module preferences and is off for existing consumers until they can consume HTML
+and CSS together. Configured Strong's/lemma/morphology flags select layout through
+the shared policy; unconfigured engine state is never guessed. Double-spacing
+preference adoption is a later, separate compatibility seam.
+
+`Entry.lexical` owns CSS and requested/applied state for its body and heading;
+`Chapter.lexical` reports one document-wide decision. Header/body layout is staged
+before the existing image/font cleanup. Unknown-content discovery, diagnostics,
+per-module state and heading-before-body cleanup remain core-owned. Dense and
+sparse chapter HTML is rebuilt with its original SDK ordinals/selected anchors.
+
+Since one pane shares one CSS document, one unsupported heading or verse causes
+the whole pane to retain raw content and omit annotation positioning CSS. Nothing
+from the staged layout is published partially. Entry body/header and chapter
+neighbors therefore cannot accidentally inherit incompatible positioning rules.
+This is explicit unsupported-content fallback, not proof of full legacy grammar
+or visual acceptance. Paired panes each retain their own independent decision.
+
+`core_lexical_snapshots` uses a private copy of generated original-prose modules;
+it does not modify a shared fixture or installed library. It checks configured/
+unconfigured/disabled states, image/font cleanup, headers, dense/sparse chapters,
+paired history, unsupported headings/neighbors, tab isolation, save/import and
+worker drain/closed-tab recovery. Native adapters remain unchanged at this first
+core checkpoint; no GUI or legacy-source retirement acceptance is claimed.
+
+The full local macOS suite passes 66/66; focused normal, ASan/UBSan and TSan
+snapshot runs each pass 2/2 including the heading fixture prerequisite. External
+SDK instrumentation and disabled leak-detection limits remain as above.
 
 Next: validate broader SDK/lemma/note/paragraph shapes and fallback policy, then
 adopt owned rendering/styles in heading/body snapshots with native controls and

@@ -35,7 +35,7 @@ Core commentary snapshots include owned headings and shared display preferences.
 The native commentary pane sits above dictionary content; complete heading transformations, detached
 windows and broader visual/corpus acceptance remain pending.
 
-The macOS suite has 65 checks; the integrated Linux build passes 51 core/adapter checks and six desktop smoke modes. Both are supplemented by scoped sanitizer,
+The macOS suite has 66 checks; the prior integrated Linux checkpoint passes 51 core/adapter checks and six desktop smoke modes. Both are supplemented by scoped sanitizer,
 strict-language and temporary-fixture GUI checks recorded in the status ledger.
 The legacy app retains its existing UI and delegates selected seams to shared
 helpers. Routine development and testing stay local to conserve GitHub builds;

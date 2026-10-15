@@ -529,8 +529,11 @@ It is checked across 8,000 noise inputs, 3,039 structured mutations and 400 conc
 owned calls. `layout_lexical_content` combines owned HTML/CSS and requested/applied
 state; 48 policy cases cover all flags, fallback and NUL, plus 400 concurrent
 combined calls. Unsupported HTML never receives annotation positioning CSS without
-word spans. These helpers are not yet adopted by native snapshots or the legacy
-parser. `lexical_block_style` provides owned C++11 CSS and replaces selection in
+word spans. Opt-in session/worker entry and chapter snapshots now carry owned
+`lexical` CSS/status and format before cleanup, with whole-document raw fallback
+on unsupported markup. Existing consumers stay compatible until explicitly opting
+in; C/native adapter consumption and visual checks remain pending. The legacy
+parser remains intact. `lexical_block_style` provides owned C++11 CSS and replaces selection in
 three legacy renderer call sites. Frozen/current/helper comparisons cover 768
 call-site cases plus 2,048 concurrent selections; strict C++11/native-disabled
 builds pass. Broader grammar/corpus, native integration and visual acceptance remain pending. See [scope](../../doc/modernization/word-block-workflows.md).

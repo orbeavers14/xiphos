@@ -3,6 +3,8 @@
 #include <stdexcept>
 #include "xiphos/core/preferences.hpp"
 #include "xiphos/core/dictionary.hpp"
+#include "xiphos/core/word_blocks.hpp"
+#include "xiphos/core/lexical_style.hpp"
 namespace xiphos::core {
 namespace {
 void clean_content(Entry &entry, ModulePresentationOptions &options) {
@@ -16,16 +18,49 @@ void clean_content(Entry &entry, ModulePresentationOptions &options) {
   clean(entry.heading_html); // Legacy collects/cleans headers before body content.
   clean(entry.html);
 }
+LexicalPresentation present_document(const std::vector<Entry *> &entries,
+                                    ModulePresentationOptions &options,
+                                    const std::optional<EngineOptions> &engine, bool enabled) {
+  LexicalPresentation presentation;
+  presentation.requested = enabled && engine && (engine->strongs || engine->lemmas || engine->morphs);
+  if (presentation.requested) {
+    std::vector<std::pair<LexicalLayout, LexicalLayout>> rendered;
+    bool complete = !entries.empty();
+    for (const auto *entry : entries) {
+      auto heading = layout_lexical_content(entry->heading_html, engine->strongs, engine->lemmas, engine->morphs, false);
+      auto body = layout_lexical_content(entry->html, engine->strongs, engine->lemmas, engine->morphs, false);
+      complete = complete && heading.applied && body.applied;
+      rendered.emplace_back(std::move(heading), std::move(body));
+    }
+    // One pane is one CSS document. A raw fallback verse must never inherit
+    // positioning rules intended for formatted neighbors or headings.
+    presentation.applied = complete;
+    if (complete) {
+      presentation.css = lexical_block_style(engine->strongs, engine->lemmas, engine->morphs, false);
+      for (std::size_t i = 0; i < entries.size(); ++i) {
+        entries[i]->heading_html = std::move(rendered[i].first.html);
+        entries[i]->html = std::move(rendered[i].second.html);
+      }
+    }
+  }
+  for (auto *entry : entries) {
+    entry->lexical = presentation;
+    clean_content(*entry, options); // Legacy order: format, then heading/body cleanup.
+  }
+  return presentation;
+}
 }
 Entry StudySession::present_content(const std::string &module, Entry entry) {
   auto options = module_presentation_options(module);
-  clean_content(entry, options);
+  present_document({&entry}, options, module_engine_options(module), lexical_layout_enabled_);
   presentation_options_[module] = options;
   return entry;
 }
 Chapter StudySession::present_content(const std::string &module, Chapter chapter, const DisplayOptions &display, bool commentary) {
   auto options = module_presentation_options(module);
-  for (auto &entry : chapter.verses) clean_content(entry, options);
+  std::vector<Entry *> entries;
+  for (auto &entry : chapter.verses) entries.push_back(&entry);
+  chapter.lexical = present_document(entries, options, module_engine_options(module), lexical_layout_enabled_);
   chapter.html = commentary ? display_commentary_chapter(chapter, chapter.verse_ordinals, display) : display_chapter(chapter, display);
   presentation_options_[module] = options;
   return chapter;

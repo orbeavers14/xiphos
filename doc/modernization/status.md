@@ -85,8 +85,12 @@ words, checks OSIS/ThML paragraphs and multiple lexical anchors, and safely fall
 back on uppercase lexical annotations before unsafe inherited searches. Checked
 owned-string annotation edits and scanner state keep legacy spacing and link values
 while removing manual temporary allocation/free pairs from the new helper.
-Tests add 8,000 noise inputs, 3,039 structured mutations and 400 concurrent renders. Native
-snapshot adoption and broader corpus/visual acceptance remain pending. Shared owned lexical CSS
+Tests add 8,000 noise inputs, 3,039 structured mutations and 400 concurrent renders.
+Opt-in session/worker snapshots now stage lexical heading/body layout before cleanup,
+carry owned CSS/status and roll unsupported documents back as a whole. The new
+private-fixture snapshot test covers chapters, paired history, tab isolation,
+save/import and worker lifetime. C/native adapter consumption and broader
+corpus/visual acceptance remain pending. Shared owned lexical CSS
 and HTML are now available through one layout decision, including explicit
 unsupported-content CSS fallback (48 policy cases and 400 concurrent combined calls).
 Worker note/ranged-reference fixtures verify that formatted URLs still resolve
