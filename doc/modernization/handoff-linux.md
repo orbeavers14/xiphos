@@ -1,8 +1,9 @@
 # Linux / Fedora / WSL2 chat handoff
 
 Updated 2026-10-14. Read [AGENTS.md](../../AGENTS.md) and the
-[shared handoff](handoff.md) first. Current checkpoint: desktop actions, focus labels and explicit software rendering
-on `linux/gtk4-desktop-controls`, based on merged PR #83 (`051bdb6`).
+[shared handoff](handoff.md) first. Active work: bring Linux to the existing macOS preview scope in locally checked,
+automatically merged milestones, authorized by the owner. Current branch:
+`linux/macos-reading-parity`; shared API changes are not currently needed.
 
 ## Existing evidence and boundaries
 
@@ -161,3 +162,47 @@ standalone 47/47 core suites were executed for this checkpoint.
 - Next bounded implementation: chapter snapshots/navigation and pane previews
   using the existing worker. Obtain representative desktop/manual acceptance
   separately; retain the existing GTK3 app and all unfinished parity gates.
+
+
+## macOS scope catch-up: chapters (2026-10-14)
+
+- Owner authorized implementing and merging successive checked Linux milestones
+  until matching the existing macOS preview scope. This is not full legacy parity.
+- Implementation: `d205c0e0c568622bcf478b8cd68e8fd611ed2959` on
+  `linux/macos-reading-parity`, based on merged #84 (`867a53a`).
+- Added core-owned book/chapter/verse targets, Bible chapter/verse numbers/highlight
+  controls, sparse commentary chapters using the core per-module default,
+  Previous/Next chapter and Clear History. Refreshes do not create history visits.
+  Native CSS supplies selected-row and dark-theme contrast. Selected-anchor copying
+  is implemented; host scrolling remains a follow-up.
+- Same Fedora ARM64 dependencies. Built `xiphos-linux-preview` and
+  `linux_reader_model_test`; focused CTest/fixture 2/2 passes. The exact sanitized
+  adapter command above passes with new chapter/mode/history/choice checks.
+- Expanded opt-in `--smoke-test` checks chapter controls, chapter navigation,
+  selectors and Clear History as well as the prior interactions. One initial
+  assertion failed without diagnostics; diagnostic reruns passed twice. Preserve
+  this as a GUI stability limitation, not manual visual/keyboard acceptance.
+- The first history test expected browser-style truncation; corrected to the
+  documented shared legacy rule retaining forward entries. Core behavior is
+  unchanged and identical across macOS/Linux. No shared API or GTK3 changes.
+- No hosted builds; diff checks pass. Next: dictionary lookup, key steps/chooser,
+  separate dictionary history; then reading/presentation options and profiles,
+  contextual note/reference/lexical click/hover, scroll and window acceptance.
+
+### Compared with macOS at `867a53a`
+
+| Existing macOS capability | Linux implementation checkpoint |
+|---|---|
+| Module/passage/commentary, history and actions | #83–84 |
+| Chapters, core selectors, chapter/history controls | Chapter checkpoint above; scroll pending |
+| Reading filters/variants and presentation preferences | Pending |
+| Engine preference import/save | Pending |
+| Dictionary lookup, key steps/chooser/history | Next |
+| Lexicon preferences and XML import/save | Pending |
+| Note/reference-list/lexical click results | Pending |
+| Semantic hover and retained information | Pending |
+| Cross-reference list/information setting | Pending |
+| Per-window isolation on one process worker | Single-window host; pending |
+| Native selected-anchor scrolling | Pending |
+
+Keep remaining gaps explicit; no feature group has complete accepted parity.
