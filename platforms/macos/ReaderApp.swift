@@ -110,6 +110,7 @@ final class ReaderModel: ObservableObject {
             guard !closed else { try? await worker.closeTab(opened); return }
             tab = opened
             try await worker.setLexicalLayoutEnabled(tab: opened, enabled: true)
+            try await worker.setNoteNumberingEnabled(tab: opened, enabled: true)
             try await worker.enableModulePreferences(tab: opened)
             try await worker.enableLexiconPreferences(tab: opened)
             let lexicons = try await worker.lexiconPreferences(tab: opened)
@@ -262,6 +263,17 @@ final class ReaderModel: ObservableObject {
         run { token in
             try await worker.setCommentaryChapterMode(tab: tab, module: module, enabled: enabled)
             try await self.present(entry, module: main, token: token, updateInput: false)
+        }
+    }
+    func setNoteNumbers(_ enabled: Bool, commentary: Bool = false) {
+        guard let worker, let tab, let main = displayedModule, let entry = displayedEntry else { return }
+        let module = commentary ? commentarySelection : main
+        let options = commentary ? commentaryContentOptions : contentOptions
+        guard !module.isEmpty, options.noteNumbers != nil else { return }
+        run { token in
+            try await worker.setNoteNumbers(tab: tab, module: module, enabled: enabled)
+            let refreshed = try await worker.readTabEntry(tab: tab, module: main, reference: entry.reference)
+            try await self.present(refreshed, module: main, token: token, updateInput: false)
         }
     }
     func setDoubleSpace(_ enabled: Bool, commentary: Bool = false) {
@@ -908,6 +920,9 @@ struct ReaderWindow: View {
                         Toggle("Highlight selected verse", isOn: $model.highlightSelected)
                     }.disabled(!model.showChapter && !model.showCommentaryChapter)
                     Menu("Reading options") {
+                        if let numbers = model.contentOptions.noteNumbers {
+                            Toggle("Footnote and cross-reference numbers", isOn: Binding(get: { numbers }, set: { model.setNoteNumbers($0) }))
+                        }
                         if let spacing = model.contentOptions.doubleSpace {
                             Toggle("Double space", isOn: Binding(get: { spacing }, set: { model.setDoubleSpace($0) }))
                         }
@@ -936,7 +951,7 @@ struct ReaderWindow: View {
                                 variantOption("All Readings", flag: .variantsAll, reading: .all)
                             }
                         }
-                    }.disabled(model.engineOptions == nil || (model.contentOptions.images == nil && model.contentOptions.fontFaces == nil && model.moduleOptions.declared.intersection(
+                    }.disabled(model.engineOptions == nil || (model.contentOptions.noteNumbers == nil && model.contentOptions.doubleSpace == nil && model.contentOptions.images == nil && model.contentOptions.fontFaces == nil && model.moduleOptions.declared.intersection(
                         [.wordsInRed, .strongs, .morphology, .footnotes, .greekAccents, .crossReferences, .hebrewVowels, .hebrewCantillation, .lemmas, .transliteratedForms, .glosses, .morphemeSegmentation, .variantsPrimary]).isEmpty))
                 }.padding(.horizontal, 12).padding(.bottom, 8).disabled(model.isBusy)
                 HStack {
@@ -998,8 +1013,11 @@ struct ReaderWindow: View {
                                 get: { model.commentaryHeadings }, set: { model.setCommentaryHeadings($0) }))
                                 .padding(.horizontal, 8).padding(.bottom, 8).disabled(model.isBusy || model.commentaryEntry == nil ||
                                     model.modules.first(where: { $0.id == model.commentarySelection })?.options.hasHeadings != true)
-                            if model.commentaryContentOptions.doubleSpace != nil || model.commentaryContentOptions.images != nil || model.commentaryContentOptions.fontFaces != nil {
+                            if model.commentaryContentOptions.noteNumbers != nil || model.commentaryContentOptions.doubleSpace != nil || model.commentaryContentOptions.images != nil || model.commentaryContentOptions.fontFaces != nil {
                                 Menu("Commentary options") {
+                                    if let numbers = model.commentaryContentOptions.noteNumbers {
+                                        Toggle("Footnote and cross-reference numbers", isOn: Binding(get: { numbers }, set: { model.setNoteNumbers($0, commentary: true) }))
+                                    }
                                     if let spacing = model.commentaryContentOptions.doubleSpace {
                                         Toggle("Double space", isOn: Binding(get: { spacing }, set: { model.setDoubleSpace($0, commentary: true) }))
                                     }

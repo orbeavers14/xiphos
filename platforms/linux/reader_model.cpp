@@ -170,6 +170,13 @@ bool ReaderModel::select_variant(int choice) {
   auto status = xc_worker_select_module_variant(worker_, tab_, passage_.bible.c_str(), choice, &request);
   return accept(status, request, Operation::refresh);
 }
+bool ReaderModel::set_note_numbers(bool commentary, bool enabled) {
+  const auto &module = commentary ? passage_.commentary : passage_.bible;
+  if (!ready() || busy() || module.empty() || presentation(commentary).note_numbers < 0) return false;
+  xc_request *request = nullptr;
+  auto status = xc_worker_set_note_numbers(worker_, tab_, module.c_str(), enabled, &request);
+  return accept(status, request, Operation::refresh);
+}
 bool ReaderModel::set_double_space(bool commentary, bool enabled) {
   const auto &module = commentary ? passage_.commentary : passage_.bible;
   if (!ready() || busy() || module.empty()) return false;
@@ -321,6 +328,10 @@ void ReaderModel::tick() {
     accept(submitted, next, Operation::lexical_layout); break;
   }
   case Operation::lexical_layout: {
+    auto submitted = xc_worker_set_note_numbering_enabled(worker_, tab_, 1, &next);
+    accept(submitted, next, Operation::note_numbering); break;
+  }
+  case Operation::note_numbering: {
     auto submitted = xc_worker_enable_module_preferences(worker_, tab_, &next);
     accept(submitted, next, Operation::preferences); break;
   }
@@ -453,6 +464,9 @@ void ReaderModel::tick() {
     const auto spacing = xc_request_double_space(completed.get());
     if (spacing < 0) { error_ = "Missing spacing preference."; break; }
     presentations_[index].double_space = spacing != 0;
+    int numbers = 0, available = 0;
+    if (xc_request_note_numbers(completed.get(), &numbers, &available) != XC_OK) { error_ = "Missing note-number preference."; break; }
+    presentations_[index].note_numbers = available ? numbers : -1;
     presentations_[index].chapter = xc_request_commentary_chapter_mode(completed.get()) == 1;
     presentations_[index].headings = xc_request_headings(completed.get()) == 1;
     if (xc_request_content_options(completed.get(), &presentations_[index].images, &presentations_[index].font_faces) != XC_OK) { error_ = "Missing presentation preferences."; break; }

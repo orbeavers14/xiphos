@@ -32,7 +32,7 @@ struct App {
   GtkWidget *dictionary_previous = nullptr, *dictionary_next = nullptr, *dictionary_back = nullptr, *dictionary_forward = nullptr;
   GtkWidget *dictionary_nearby = nullptr, *dictionary_clear = nullptr, *dictionary_close = nullptr;
   GtkWidget *reading_checks[12] = {}, *variants = nullptr, *headings = nullptr;
-  GtkWidget *spacing_checks[2] = {};
+  GtkWidget *number_checks[2] = {}, *spacing_checks[2] = {};
   GtkWidget *content_checks[4] = {}, *profile_import = nullptr, *profile_save = nullptr;
   GtkNativeDialog *file_dialog = nullptr;
   WebKitWebView *sidebar_view = nullptr, *information_view = nullptr;
@@ -292,6 +292,8 @@ gboolean tick(gpointer data) {
   gtk_check_button_set_active(GTK_CHECK_BUTTON(app->headings), app->model->presentation(true).headings);
   gtk_widget_set_sensitive(app->headings, enabled && commentary_module && commentary_module->headings);
   for (int i = 0; i < 2; ++i) {
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(app->number_checks[i]), app->model->presentation(i != 0).note_numbers == 1);
+    gtk_widget_set_sensitive(app->number_checks[i], enabled && app->model->presentation(i != 0).note_numbers >= 0 && !(i ? passage.commentary : passage.bible).empty());
     gtk_check_button_set_active(GTK_CHECK_BUTTON(app->spacing_checks[i]), app->model->presentation(i != 0).double_space);
     gtk_widget_set_sensitive(app->spacing_checks[i], enabled && !(i ? passage.commentary : passage.bible).empty());
   }
@@ -603,6 +605,14 @@ void activate(GtkApplication *application, gpointer data) {
     }), app);
   }
   for (int i = 0; i < 2; ++i) {
+    app->number_checks[i] = gtk_check_button_new_with_label(i ? "Commentary footnote and cross-reference numbers" : "Bible footnote and cross-reference numbers");
+    gtk_box_append(GTK_BOX(options_box), app->number_checks[i]);
+    g_object_set_data(G_OBJECT(app->number_checks[i]), "number-pane", GINT_TO_POINTER(i));
+    g_signal_connect(app->number_checks[i], "toggled", G_CALLBACK(+[](GtkCheckButton *button, gpointer data) {
+      auto *app = static_cast<App *>(data); if (app->updating || !app->model) return;
+      app->model->set_note_numbers(GPOINTER_TO_INT(g_object_get_data(G_OBJECT(button), "number-pane")) != 0,
+                                  gtk_check_button_get_active(button));
+    }), app);
     app->spacing_checks[i] = gtk_check_button_new_with_label(i ? "Commentary double space" : "Bible double space");
     gtk_box_append(GTK_BOX(options_box), app->spacing_checks[i]);
     g_object_set_data(G_OBJECT(app->spacing_checks[i]), "spacing-pane", GINT_TO_POINTER(i));

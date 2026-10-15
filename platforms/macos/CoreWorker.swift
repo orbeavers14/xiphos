@@ -105,6 +105,11 @@ actor CoreWorker {
         let status = xc_worker_set_lexical_layout_enabled(try worker(), tab, enabled ? 1 : 0, &request)
         xc_request_release(try await wait(status, request))
     }
+    func setNoteNumberingEnabled(tab: UInt64, enabled: Bool) async throws {
+        var request: OpaquePointer?
+        let status = xc_worker_set_note_numbering_enabled(try worker(), tab, enabled ? 1 : 0, &request)
+        xc_request_release(try await wait(status, request))
+    }
     func clearHistory(_ tab: UInt64) async throws {
         var request: OpaquePointer?
         let status = xc_worker_clear_history(try worker(), tab, &request)
@@ -468,7 +473,18 @@ actor CoreWorker {
         guard (-1...1).contains(images), (-1...1).contains(fonts) else { throw CoreError(status: XC_ENGINE_ERROR) }
         let spacing = xc_request_double_space(completed)
         guard (0...1).contains(spacing) else { throw CoreError(status: XC_ENGINE_ERROR) }
-        return ContentDisplayOptions(images: images == -1 ? nil : images != 0, fontFaces: fonts == -1 ? nil : fonts != 0, doubleSpace: spacing != 0)
+        var numbers: Int32 = 0, available: Int32 = 0
+        let noteStatus = xc_request_note_numbers(completed, &numbers, &available)
+        guard noteStatus == XC_OK else { throw CoreError(status: noteStatus) }
+        guard (0...1).contains(numbers), (0...1).contains(available) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        return ContentDisplayOptions(images: images == -1 ? nil : images != 0, fontFaces: fonts == -1 ? nil : fonts != 0, doubleSpace: spacing != 0, noteNumbers: available == 0 ? nil : numbers != 0)
+    }
+    func setNoteNumbers(tab: UInt64, module: String, enabled: Bool) async throws {
+        guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { xc_worker_set_note_numbers(handle, tab, $0, enabled ? 1 : 0, &request) }
+        xc_request_release(try await wait(status, request))
     }
     func setDoubleSpace(tab: UInt64, module: String, enabled: Bool) async throws {
         guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }

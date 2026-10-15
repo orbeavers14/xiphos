@@ -80,6 +80,52 @@ struct ReaderModelSmoke {
               diagnosticPair.text.cleanupDiagnostics.first?.suffix == diagnosticChapter.verses[21].cleanupDiagnostics.first?.suffix else { fatalError("copied Swift metadata survives worker shutdown") }
         print("Native content control checks passed")
     }
+    @MainActor static func noteNumbers(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let model = ReaderModel(worker: worker, startupError: nil)
+        let other = ReaderModel(worker: worker, startupError: nil)
+        try await idle(model); try await idle(other)
+        model.reference = "John4:5"; model.read(); try await idle(model)
+        guard model.contentOptions.noteNumbers == true, model.html.contains("*n1"), model.html.contains("*n2") else { fatalError("native default On uses shared-core numbering") }
+        let back = model.canBack, forward = model.canForward
+        model.reference = "John 4:2"
+        model.setNoteNumbers(false); try await idle(model)
+        guard model.contentOptions.noteNumbers == false, !model.html.contains("*n1"),
+              model.reference == "John 4:2", model.canBack == back, model.canForward == forward,
+              other.contentOptions.noteNumbers == true else { fatalError("number control preserves draft/history and isolates windows") }
+        model.setNoteNumbers(true); try await idle(model)
+        model.showChapter = true; model.refreshDisplay(); try await idle(model)
+        guard model.renderedAnchor == "verse-5", model.html.contains("*n3") else { fatalError("chapter refresh uses document counters and preserves selected verse") }
+        model.chooseCommentary("ThMLNotes"); try await idle(model)
+        model.setNoteNumbers(false, commentary: true); try await idle(model)
+        guard model.commentaryContentOptions.noteNumbers == false, model.contentOptions.noteNumbers == true,
+              model.commentaryChapter?.html.contains("*na") == false else { fatalError("commentary controls have independent core policy") }
+        let profile = URL(fileURLWithPath: root).appendingPathComponent("native-note-controls.conf")
+        model.saveReadingOptions(path: profile.path); try await idle(model)
+        model.setNoteNumbers(false); try await idle(model)
+        model.setNoteNumbers(true, commentary: true); try await idle(model)
+        model.importReadingOptions(path: profile.path); try await idle(model)
+        guard model.contentOptions.noteNumbers == true, model.commentaryContentOptions.noteNumbers == false,
+              model.html.contains("*n3"), model.reference == "John 4:2", model.canBack == back, model.canForward == forward else { fatalError("number preferences round trip through shared persistence without navigation") }
+        model.importReadingOptions(path: URL(fileURLWithPath: root).appendingPathComponent("missing/native-note.conf").path); try await idle(model)
+        guard model.contentOptions.noteNumbers == true, model.html.contains("*n3") else { fatalError("failed import retains numbered snapshot") }
+        let retained = model.html
+        model.close(); model.setNoteNumbers(false); try await idle(model)
+        guard model.html == retained else { fatalError("closed number action cannot publish") }
+        // Copied Swift adapter states distinguish unavailable from explicit Off.
+        let tab = try await worker.createTab()
+        let unavailable = try await worker.contentDisplayOptions(tab: tab, module: "Text")
+        guard unavailable.noteNumbers == nil else { fatalError("adapter never invents unknown consumer availability") }
+        try await worker.enableModulePreferences(tab: tab)
+        try await worker.setNoteNumberingEnabled(tab: tab, enabled: true)
+        try await worker.setNoteNumbers(tab: tab, module: "Text", enabled: false)
+        let copied = try await worker.contentDisplayOptions(tab: tab, module: "Text")
+        do { try await worker.setNoteNumbers(tab: tab, module: "Text\0suffix", enabled: true); fatalError("embedded NUL must reject") } catch is CoreError {}
+        try await worker.closeTab(tab)
+        other.close(); await worker.shutdown()
+        guard copied.noteNumbers == false, unavailable.noteNumbers == nil, retained.contains("*n3") else { fatalError("copied settings and HTML survive worker shutdown") }
+        print("Native note numbering controls and adapter ownership passed")
+    }
     @MainActor static func doubleSpace(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let model = ReaderModel(worker: worker, startupError: nil)
@@ -890,6 +936,9 @@ struct ReaderModelSmoke {
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--commentary" {
             try await commentary(root: CommandLine.arguments[2]); return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--note-numbers" {
+            try await noteNumbers(root: CommandLine.arguments[2]); return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--double-space" {
             try await doubleSpace(root: CommandLine.arguments[2]); return

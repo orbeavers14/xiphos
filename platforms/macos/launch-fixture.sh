@@ -9,6 +9,7 @@ case "$kind" in
   reader) fixture="$build_dir/core/fixture"; config="test.conf" ;;
   lexicons) fixture="$build_dir/core/dictionary-fixture"; config="bible.conf" ;;
   headings) fixture="$build_dir/core/heading-fixture"; config="notes.conf" ;;
+  notes) fixture="$build_dir/core/note-snapshots-fixture"; config="text.conf" ;;
   lexical) fixture="$build_dir/core/lexical-snapshots-fixture"; config="text.conf" ;;
   commentary) fixture="$build_dir/core/study-passage-fixture"; config="Text.conf" ;;
   reading-options) fixture="$build_dir/core/module-preferences-fixture"; config="options.conf" ;;
