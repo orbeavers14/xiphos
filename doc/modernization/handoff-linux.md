@@ -197,7 +197,7 @@ standalone 47/47 core suites were executed for this checkpoint.
 | Chapters, core selectors, chapter/history controls | Chapter checkpoint above; scroll pending |
 | Reading filters/variants and presentation preferences | Pending |
 | Engine preference import/save | Pending |
-| Dictionary lookup, key steps/chooser/history | Next |
+| Dictionary lookup, key steps/chooser/history | Dictionary checkpoint below; contextual lexical feeds follow |
 | Lexicon preferences and XML import/save | Pending |
 | Note/reference-list/lexical click results | Pending |
 | Semantic hover and retained information | Pending |
@@ -206,3 +206,26 @@ standalone 47/47 core suites were executed for this checkpoint.
 | Native selected-anchor scrolling | Pending |
 
 Keep remaining gaps explicit; no feature group has complete accepted parity.
+
+
+## macOS scope catch-up: dictionary (2026-10-14)
+
+- Branch `linux/dictionary-parity`, implementation
+  `3590cdf64e670609d66be4a5e37f463e116c2260`, following merged chapter PR #85.
+- Same Fedora ARM64 environment. Dictionary catalog classification and owned
+  snapshots now feed a lower-right native pane with module/key entry, nine-key
+  chooser, Previous/Next keys and separate Back/Forward/Clear/Close controls.
+- Direct lookup and key steps remain unrecorded, matching macOS. The adapter
+  tests explicit recorded visits and dictionary history restoration separately;
+  main lexical clicks will populate the UI history in a subsequent checkpoint.
+- Local build succeeds; focused fixture/adapter CTest 2/2 passes. The exact
+  ASan/UBSan adapter command above passes updated dictionary checks (real RawLD
+  fixture, nine repeated boundary keys, failures retaining display, separate
+  recorded history, clear without display loss, and close). The desktop
+  `--smoke-test` passes lookup/key-step/close plus all previous reading checks.
+- Initialization failure now disables the full host; dictionary stepping/history
+  updates normalized keys only if the user has not typed a newer key draft.
+- Core API/GTK3/macOS unchanged; no hosted builds. Diff checks pass. No new
+  manual visual/keyboard/accessibility or accelerated-rendering acceptance.
+- Next: reading filter/variant controls, presentation preferences and explicit
+  selected-file profile import/save, followed by contextual links/hover.
