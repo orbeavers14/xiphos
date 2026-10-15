@@ -6,7 +6,8 @@
 #include <vector>
 
 namespace xiphos::linux_preview {
-struct Module { std::string id, description, type; bool dictionary = false; };
+struct Module { std::string id, description, type; bool dictionary = false; unsigned declared_flags = 0; bool regular_commentary = false, headings = false; unsigned lexicon_roles = 0; };
+struct Presentation { bool chapter = false, headings = true; int images = -1, font_faces = -1; };
 struct Dictionary { std::string module, key, html; };
 struct ReferenceChoice { std::string label, target; };
 struct Chapter { std::string html, anchor, title; };
@@ -22,6 +23,16 @@ public:
   void tick();
   bool visit(const std::string &bible, const std::string &commentary, const std::string &reference);
   bool navigate(int direction);
+  bool set_filter(unsigned flag, bool enabled);
+  bool select_variant(int choice);
+  bool set_content(bool commentary, bool font_faces, bool enabled);
+  bool set_commentary_headings(bool enabled);
+  bool reading_profile(const std::string &path, bool save);
+  unsigned engine_flags() const { return engine_flags_; }
+  bool engine_configured() const { return engine_configured_; }
+  const Module *module(const std::string &id) const;
+  const Presentation &presentation(bool commentary = false) const { return presentations_[commentary ? 1 : 0]; }
+  const std::string &notice() const { return notice_; }
   bool lookup_dictionary(const std::string &module, const std::string &key, bool record = false);
   bool step_dictionary(int direction);
   bool navigate_dictionary_history(int direction);
@@ -57,7 +68,7 @@ public:
   const std::string &error() const { return error_; }
   unsigned revision() const { return revision_; }
 private:
-  enum class Operation { catalog, tab, preferences, passage, history, link, refresh, clear, presentation, bible_chapter, commentary_chapter, choices, dictionary, dictionary_choices, dictionary_history, dictionary_clear };
+  enum class Operation { catalog, tab, preferences, passage, history, link, refresh, clear, presentation, bible_chapter, commentary_chapter, choices, dictionary, dictionary_choices, dictionary_history, dictionary_clear, engine_options, bible_options, commentary_options, saved };
   bool accept(xc_status status, xc_request *request, Operation operation);
   void history();
   void load_chapters(bool commentary = false);
@@ -69,6 +80,10 @@ private:
   bool ready_ = false, closed_ = false, back_ = false, forward_ = false;
   std::vector<Module> modules_;
   Passage passage_;
+  unsigned engine_flags_ = 0;
+  bool engine_configured_ = false;
+  Presentation presentations_[2];
+  std::string notice_;
   Dictionary dictionary_;
   std::vector<std::string> dictionary_keys_;
   bool dictionary_back_ = false, dictionary_forward_ = false;

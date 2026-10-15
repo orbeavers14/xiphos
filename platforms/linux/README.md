@@ -119,3 +119,26 @@ Previous/Next key and direct lookups do not record history. Dictionary
 Back/Forward/Clear consume the shared separate dictionary history, which is
 populated by recorded lexical clicks (contextual click integration follows).
 Close clears the pane, not history. Failed lookups retain the last result.
+
+### Reading options and profiles
+
+The Reading options popover exposes the same twelve filter controls and textual
+variants as the macOS preview. Eligibility, configured values, commentary mode,
+headings, image content and font-face states come from core snapshots. Unknown or
+unsupported options remain disabled. Refreshes preserve Bible history and drafts.
+
+Import/Save reading options open native file pickers and delegate explicit local
+paths to the core's verified profile transaction. Nothing is automatically read
+from or saved into a user profile. GTK's older native chooser API is retained for
+the declared GTK 4.6 baseline (new GTK emits deprecation warnings).
+
+Additional local checks:
+
+```sh
+cmake --build build/gtk4 --target linux_options_model_test core_scoped_options_test core_module_preferences_test --parallel 2
+ctest --test-dir build/gtk4 -R '^(linux_options_model|linux_reader_model)$' --output-on-failure
+build/gtk4/xiphos-linux-preview --smoke-options-test build/gtk4/core/module-preferences-fixture
+```
+
+File-picker selection/cancellation still requires manual desktop acceptance;
+profile behavior itself is covered using generated original-prose fixtures.
