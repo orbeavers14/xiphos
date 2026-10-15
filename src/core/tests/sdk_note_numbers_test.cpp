@@ -10,6 +10,10 @@
 #include <rawtext.h>
 #include <versekey.h>
 #include <filesystem>
+#include <fstream>
+#include <swmgr.h>
+#include <markupfiltmgr.h>
+#include <algorithm>
 #include <iostream>
 #include <stdexcept>
 using namespace xiphos::core;
@@ -74,6 +78,31 @@ template<class Filter> void inspect(const char *name, const char *open, const ch
     filter.setRenderNoteNumbers(true); frozen::set_render_numbers(module, nullptr);
     check(render(input) == on, "frozen null options preserve SDK state");
     current::set_render_numbers(module, nullptr); check(render(input) == on, "actual null options preserve SDK state");
+    {
+      NoteRenderingState owner;
+      filter.setRenderNoteNumbers(true); extra.setRenderNoteNumbers(true);
+      bool rejected = false;
+      try { ScopedNoteNumbers unknown(owner, module, false); } catch (const std::invalid_argument &) { rejected = true; }
+      check(rejected && render(input) == on && render_with(extra, input) == on,
+            "unowned note filters reject before any SDK mutation");
+      owner.register_module(module, false);
+      check(render(input) == off && render_with(extra, input) == off, "registration establishes an explicit baseline");
+      {
+        ScopedNoteNumbers outer(owner, module, true);
+        owner.register_module(module, false);
+        check(render(input) == on, "registering known filter aliases never overwrites active owned state");
+        {
+          ScopedNoteNumbers inner(owner, module, false);
+          check(render(input) == off && render_with(extra, input) == off, "nested note scope applies its own value");
+        }
+        check(render(input) == on && render_with(extra, input) == on, "nested note scope restores every previous filter");
+      }
+      check(render(input) == off && render_with(extra, input) == off, "outer scope restores baseline");
+      bool caught = false;
+      try { ScopedNoteNumbers exceptional(owner, module, true); throw std::runtime_error("Original scope test"); }
+      catch (const std::runtime_error &) { caught = true; }
+      check(caught && render(input) == off && render_with(extra, input) == off, "exceptional scope restores owned SDK values");
+    }
     const bool tei = std::string(name) == "TEI", gbf = std::string(name) == "GBF";
     const std::string prefix = !tei && !gbf && std::string(type) == "crossReference" ? "*x" : "*n";
     const std::string encoded = std::string(label) == "α" ? "%CE%B1" : std::string(label) == "A B" ? "A+B" : label;
@@ -106,11 +135,75 @@ template<class Filter> void inspect(const char *name, const char *open, const ch
   }
   std::cout << name << " label/default/toggle/URI/layout cases passed: " << cases << '\n';
 }
+void shared_filter_scopes(const std::filesystem::path &root) {
+  std::filesystem::create_directories(root / "mods.d"); std::filesystem::create_directories(root / "data");
+  check(sword::RawText::createModule((root / "data").string().c_str()) == 0, "create original shared-filter data");
+  {
+    sword::RawText writer((root / "data").string().c_str()); writer.setKey("John3:16");
+    writer.setEntry("Original <note swordFootnote=\"7\" n=\"a\" type=\"study\">Original note.</note> body.");
+  }
+  for (const auto *name : {"First", "Second", "Third"}) {
+    std::ofstream config(root / "mods.d" / (std::string(name) + ".conf"));
+    config << '[' << name << "]\nDataPath=./data/\nModDrv=RawText\nEncoding=UTF-8\nSourceType=" << (std::string(name) == "Third" ? "ThML" : "OSIS") << '\n';
+  }
+  std::filesystem::remove(root / "mods.d/modules-conf.cache");
+  sword::SWMgr manager(root.string().c_str(), true, new sword::MarkupFilterMgr(sword::FMT_XHTML), false, false);
+  auto *first = manager.getModule("First"), *second = manager.getModule("Second"), *third = manager.getModule("Third");
+  check(first && second && third, "load shared SDK renderer modules");
+  bool alias = false;
+  for (auto *filter : first->getRenderFilters()) if (dynamic_cast<sword::OSISXHTML *>(filter))
+    alias = alias || std::find(second->getRenderFilters().begin(), second->getRenderFilters().end(), filter) != second->getRenderFilters().end();
+  check(alias, "SDK reuses an OSIS XHTML render filter across modules");
+  auto label = [](sword::SWModule &module) { module.setKey("John3:16"); return marker(module.renderText().c_str()); };
+  set_render_note_numbers(*first, true);
+  check(label(*first) == "*na" && label(*second) == "*na" && label(*third) == "*n", "unscoped SDK mutation is shared by renderer aliases only");
+  {
+    NoteRenderingState owner;
+    owner.register_module(*first, false); owner.register_module(*second, true); owner.register_module(*third, false);
+    check(label(*first) == "*n" && label(*second) == "*n" && label(*third) == "*n", "alias registration retains the established per-filter baseline");
+    {
+      ScopedNoteNumbers outer(owner, *first, true);
+      check(label(*first) == "*na" && label(*second) == "*na" && label(*third) == "*n", "owned scope follows actual SDK pointer sharing");
+      {
+        ScopedNoteNumbers inner(owner, *second, false);
+        check(label(*first) == "*n" && label(*third) == "*n", "alias inner scope temporarily overrides shared filter only");
+      }
+      check(label(*first) == "*na" && label(*second) == "*na", "alias inner scope restores outer shared state");
+    }
+    check(label(*first) == "*n" && label(*second) == "*n", "alias outer scope restores baseline");
+    try { ScopedNoteNumbers one(owner, *first, true); ScopedNoteNumbers two(owner, *third, true); throw std::runtime_error("Original unwind test"); }
+    catch (const std::runtime_error &) {}
+    check(label(*first) == "*n" && label(*second) == "*n" && label(*third) == "*n", "exception unwinds separate shared renderer types");
+  }
+  {
+    NoteRenderingState owner; owner.register_module(*first, true); owner.register_module(*third, false);
+    {
+      ScopedNoteNumbers off(owner, *second, false), on(owner, *third, true);
+      check(label(*first) == "*n" && label(*third) == "*na", "different renderer baselines compose independently");
+    }
+    check(label(*first) == "*na" && label(*second) == "*na" && label(*third) == "*n", "owned scope restores true and false baselines exactly");
+  }
+  {
+    NoteRenderingState partial; partial.register_module(*second, false);
+    sword::SWFilter *third_filter = nullptr;
+    for (auto *filter : third->getRenderFilters()) if (dynamic_cast<sword::ThMLXHTML *>(filter)) third_filter = filter;
+    check(third_filter, "find separate renderer for partial-owner failure");
+    {
+      AttachedFilter borrowed(*first, *third_filter);
+      bool rejected = false;
+      try { ScopedNoteNumbers incomplete(partial, *first, true); } catch (const std::invalid_argument &) { rejected = true; }
+      check(rejected && label(*second) == "*n" && label(*third) == "*n",
+            "later unregistered filter rejects before changing an earlier registered alias");
+    }
+  }
+  std::cout << "Shared SDK filter alias/nesting/baseline/exception cases passed\n";
+}
 int main(int argc, char **argv) {
   try {
     check(argc == 2, "isolated SDK module directory required");
     const std::filesystem::path root(argv[1]); std::filesystem::create_directories(root);
     check(sword::RawText::createModule(root.string().c_str()) == 0, "create original SDK marker module");
+    {
     sword::RawText module(root.string().c_str(), "OriginalMarker", "Original marker filter fixture");
     module.setKey("John3:16"); module.setEntry("Original module body.");
     UnrelatedFilter unrelated; AttachedFilter attached(module, unrelated);
@@ -120,5 +213,7 @@ int main(int argc, char **argv) {
     inspect<sword::TEIXHTML>("TEI", "<note", "</note>", module);
     check(module.getRenderFilters().size() == 1 && unrelated.calls == 0,
           "filter mutation ignores unrelated filters and fixture detaches every temporary filter");
+    }
+    shared_filter_scopes(root / "shared");
   } catch (const std::exception &error) { std::cerr << error.what() << '\n'; return 1; }
 }

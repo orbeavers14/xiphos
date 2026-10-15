@@ -60,6 +60,13 @@ public:
   DictionaryChoices dictionary_choices(const std::string &module, const std::string &key);
   DictionaryEntry navigate_dictionary(const std::string &module, const std::string &key, int direction);
   DictionaryEntry navigate_dictionary(const std::string &module, const std::string &key, int direction, const EngineOptions &options);
+  // Configured opt-in note-label reads use owned per-filter scopes and capture
+  // source/heading metadata before later renders replace it. No automatic *n/*x
+  // insertion occurs here. Existing overloads keep the unconfigured label path.
+  Entry read(const std::string &module, const std::string &reference, const EngineOptions &options, bool render_note_labels);
+  Entry read_commentary_entry(const std::string &module, const std::string &reference, bool headings, const EngineOptions &options, bool render_note_labels);
+  Chapter read_chapter(const std::string &module, const std::string &reference, const DisplayOptions &display, const EngineOptions &engine, bool render_note_labels);
+  Chapter read_commentary_chapter(const std::string &module, const std::string &reference, const DisplayOptions &display, const EngineOptions &engine, bool headings, bool render_note_labels);
   Entry read_commentary_entry(const std::string &module, const std::string &reference, bool headings = true);
   Entry read_commentary_entry(const std::string &module, const std::string &reference, bool headings, const EngineOptions &options);
   Entry read(const std::string &module, const std::string &reference);
@@ -82,11 +89,11 @@ private:
   StudyNote note_impl(const std::string &module, const std::string &reference,
                        const std::string &identifier, const EngineOptions *options, bool render_body = true);
   Entry read_impl(const std::string &module, const std::string &reference, const EngineOptions *options,
-                  bool headings = false, bool commentary_only = false);
+                  bool headings = false, bool commentary_only = false, const bool *render_note_labels = nullptr);
   Chapter chapter_impl(const std::string &module, const std::string &reference,
-                       const DisplayOptions &display, const EngineOptions *engine);
+                       const DisplayOptions &display, const EngineOptions *engine, const bool *render_note_labels = nullptr);
   Chapter commentary_chapter_impl(const std::string &module, const std::string &reference,
-                                   const DisplayOptions &display, const EngineOptions *engine, bool headings);
+                                   const DisplayOptions &display, const EngineOptions *engine, bool headings, const bool *render_note_labels = nullptr);
   struct Impl;
   std::unique_ptr<Impl> impl_;
 };

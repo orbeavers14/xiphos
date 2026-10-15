@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/headings.hpp"
+#include "xiphos/core/reader.hpp"
+#include <algorithm>
 #include "xiphos/core/entry_attribute.hpp"
 #include "xiphos/core/note_rendering.hpp"
 #include "xiphos/core/note_markers.hpp"
@@ -113,6 +115,50 @@ int main(int argc, char **argv) {
     check(retained.size() == 2 && retained[0].html.find("Original first heading") != std::string::npos && retained[0].reported_note_label == "body" &&
           retained[1].reported_note_label == "body",
           "copied fragments remain owned after later renders and manager destruction");
+    Entry held_entry; Chapter held_sparse, held_dense;
+    {
+      Reader reader(root.string()); EngineOptions engine; engine.footnotes = true;
+      const auto baseline = reader.read_commentary_entry("ThMLNotes", "John4:1", true, engine);
+      check(!baseline.note_source.captured && baseline.note_source.headings.empty(), "existing Reader overload retains unavailable metadata state");
+      held_entry = reader.read_commentary_entry("ThMLNotes", "John4:1", true, engine, true);
+      check(held_entry.note_source.captured && held_entry.note_source.reported_label == "body" &&
+            held_entry.note_source.headings.size() == 2 && held_entry.note_source.headings[0].reported_note_label == "body" &&
+            held_entry.html.find("*nbody") != std::string::npos && held_entry.heading_html.find("*na") != std::string::npos,
+            "opt-in Reader copies body and heading metadata while scoped SDK labels are enabled");
+      const auto disabled = reader.read_commentary_entry("ThMLNotes", "John4:1", true, engine, false);
+      check(disabled.note_source.captured && disabled.note_source.reported_label == "body" && disabled.html == baseline.html &&
+            disabled.heading_html == baseline.heading_html,
+            "explicit label Off remains captured and preserves the baseline rendering");
+      const auto after = reader.read_commentary_entry("ThMLNotes", "John4:1", true, engine);
+      check(after.html == baseline.html && after.heading_html == baseline.heading_html && !after.note_source.captured,
+            "opt-in Reader restores renderer state for existing consumers");
+      const auto body_only = reader.read("ThMLNotes", "John4:1", engine, true);
+      check(body_only.note_source.captured && body_only.note_source.reported_label == "body" && body_only.note_source.headings.empty(),
+            "opt-in entry read captures the body without inventing headings");
+      held_sparse = reader.read_commentary_chapter("ThMLNotes", "John4:2", DisplayOptions{}, engine, true, true);
+      const auto first = std::find(held_sparse.verse_ordinals.begin(), held_sparse.verse_ordinals.end(), 1);
+      check(first != held_sparse.verse_ordinals.end(), "sparse chapter retains SDK verse positions");
+      const auto offset = static_cast<std::size_t>(first - held_sparse.verse_ordinals.begin());
+      check(held_sparse.verses[offset].note_source.captured && held_sparse.verses[offset].note_source.reported_label == "body" &&
+            held_sparse.verses[offset].note_source.headings.size() == 2 && held_sparse.selected_anchor == "commentary-verse-2",
+            "sparse Reader snapshots copy each source before later SDK entries replace attributes");
+      const auto no_headings = reader.read_commentary_chapter("ThMLNotes", "John4:2", DisplayOptions{}, engine, false, true);
+      check(no_headings.verses[offset].note_source.captured && no_headings.verses[offset].note_source.headings.empty() &&
+            no_headings.verses[offset].heading_html.empty(), "heading-disabled note capture preserves eligibility");
+      held_dense = reader.read_chapter("Text", "John4:1", DisplayOptions{}, engine, true);
+      check(!held_dense.verses.empty() && std::all_of(held_dense.verses.begin(), held_dense.verses.end(), [](const Entry &entry) { return entry.note_source.captured; }),
+            "dense Reader snapshots distinguish captured empty metadata from unavailable state");
+      reader.read_commentary_entry("Notes", "John4:1", true, engine, true);
+      check(reader.read_commentary_entry("ThMLNotes", "John4:1", true, engine).html == baseline.html,
+            "separate markup renderer scopes preserve prior module behavior");
+      bool wrong_type = false;
+      try { reader.read_commentary_entry("Text", "John4:1", true, engine, true); } catch (const std::invalid_argument &) { wrong_type = true; }
+      check(wrong_type && reader.read_commentary_entry("ThMLNotes", "John4:1", true, engine).html == baseline.html,
+            "failed opt-in request retains subsequent Reader state");
+    }
+    check(held_entry.note_source.captured && held_entry.note_source.headings[0].reported_note_label == "body" &&
+          !held_sparse.verses.empty() && held_sparse.verses[0].note_source.captured && held_dense.verses[0].note_source.captured,
+          "owned Reader metadata outlives renderer state and manager destruction");
     std::cout << "Owned heading fragments match frozen metadata, heading/body numbering, source restoration and lifetime\n";
   } catch (const std::exception &error) { std::cerr << error.what() << '\n'; return 1; }
 }

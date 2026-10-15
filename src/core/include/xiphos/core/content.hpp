@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include "html_cleanup.hpp"
+#include "headings.hpp"
 namespace xiphos::core {
 struct ParsedReferenceList;
 struct DictionaryEntry { std::string module, key, html; };
@@ -14,10 +15,19 @@ struct LexicalPresentation {
   bool requested = false;
   bool applied = false;
 };
+// Raw SDK metadata for the configured, opt-in Reader note-label overloads.
+// captured distinguishes empty reported labels from legacy/unavailable metadata.
+// This is input to future owned numbering, not a completed presentation result.
+struct NoteNumberingSource {
+  bool captured = false;
+  std::string reported_label;
+  std::vector<HeadingFragment> headings;
+};
 struct Entry {
   std::string reference, html, heading_html;
   std::vector<ContentCleanupDiagnostic> cleanup_diagnostics;
   LexicalPresentation lexical; // Matching body/heading CSS; consume with this snapshot.
+  NoteNumberingSource note_source;
 };
 struct DisplayOptions {
   bool verse_numbers = true;

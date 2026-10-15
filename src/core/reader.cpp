@@ -2,6 +2,8 @@
 #include "xiphos/core/commentary.hpp"
 #include "xiphos/core/headings.hpp"
 #include "xiphos/core/presentation.hpp"
+#include "xiphos/core/entry_attribute.hpp"
+#include "xiphos/core/note_rendering.hpp"
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/reader.hpp"
 #include "xiphos/core/reference_list.hpp"
@@ -18,6 +20,18 @@
 
 namespace xiphos::core {
 namespace {
+void copy_note_source(sword::SWModule &module, Entry &entry) {
+  entry.note_source.captured = true;
+  entry.note_source.reported_label = entry_attribute(module, "Footnote", "1", "n", false);
+}
+void copy_headings(sword::SWModule &module, Entry &entry, bool metadata) {
+  if (metadata) {
+    entry.note_source.headings = render_preverse_heading_fragments(module);
+    for (const auto &fragment : entry.note_source.headings) entry.heading_html += fragment.html;
+  } else {
+    for (const auto &heading : render_preverse_headings(module)) entry.heading_html += heading;
+  }
+}
 // Heading extraction must run even when no per-module engine profile is active.
 // Preserve every registered Headings filter, rather than a global getter that
 // may describe only one of several filters with the same option name.
@@ -43,6 +57,7 @@ public:
 
 struct Reader::Impl {
   std::unique_ptr<EngineManager> manager;
+  NoteRenderingState note_rendering;
   std::vector<Module> modules;
   std::mutex mutex;
   sword::SWModule &verse_module(const std::string &id, const std::string &reference) {
@@ -66,6 +81,10 @@ Reader::Reader(const std::string &root) : impl_(std::make_unique<Impl>()) {
     if (name == "Transliteration") transliteration_available = true;
   for (const auto &item : impl_->manager->Modules) {
     auto &m = *item.second;
+    // This private manager owns all renderer writes. Establish the default Off
+    // baseline verified by core_sdk_note_numbers; later scopes restore tracked
+    // per-filter state, including aliases shared across modules.
+    impl_->note_rendering.register_module(m, false);
     const char *language = m.getConfigEntry("Lang");
     const char *feature = m.getConfigEntry("Feature");
     const bool dictionary = std::string(m.getType()) == "Lexicons / Dictionaries" && dynamic_cast<sword::SWLD *>(&m) &&
@@ -245,14 +264,22 @@ Entry Reader::read(const std::string &id, const std::string &reference) {
 Entry Reader::read(const std::string &id, const std::string &reference, const EngineOptions &options) {
   return read_impl(id, reference, &options);
 }
+Entry Reader::read(const std::string &id, const std::string &reference, const EngineOptions &options, bool labels) {
+  return read_impl(id, reference, &options, false, false, &labels);
+}
+Entry Reader::read_commentary_entry(const std::string &id, const std::string &reference, bool headings, const EngineOptions &options, bool labels) {
+  return read_impl(id, reference, &options, headings, true, &labels);
+}
 Entry Reader::read_impl(const std::string &id, const std::string &reference, const EngineOptions *options,
-                        bool headings, bool commentary_only) {
+                        bool headings, bool commentary_only, const bool *labels) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto *module = &impl_->verse_module(id, reference);
   if (commentary_only && std::string(module->getType()) != "Commentaries")
     throw std::invalid_argument("Commentary entry requires a commentary module");
   std::unique_ptr<ScopedEngineOptions> scope;
   if (options) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *options);
+  std::unique_ptr<ScopedNoteNumbers> note_scope;
+  if (labels) note_scope = std::make_unique<ScopedNoteNumbers>(impl_->note_rendering, *module, *labels);
   std::unique_ptr<ScopedCommentaryHeadings> heading_scope;
   if (commentary_only) heading_scope = std::make_unique<ScopedCommentaryHeadings>(*impl_->manager);
   // Resolve using the module's own versification and SWORD normalization,
@@ -262,7 +289,8 @@ Entry Reader::read_impl(const std::string &id, const std::string &reference, con
   if (module->getKey()->getError())
     throw std::invalid_argument("SWORD could not resolve the reference");
   result.reference = module->getKeyText();
-  if (headings) for (const auto &heading : render_preverse_headings(*module)) result.heading_html += heading;
+  if (labels) copy_note_source(*module, result);
+  if (headings) copy_headings(*module, result, labels != nullptr);
   return result;
 }
 Chapter Reader::read_chapter(const std::string &id, const std::string &reference,
@@ -273,12 +301,18 @@ Chapter Reader::read_chapter(const std::string &id, const std::string &reference
                              const DisplayOptions &display, const EngineOptions &engine) {
   return chapter_impl(id, reference, display, &engine);
 }
+Chapter Reader::read_chapter(const std::string &id, const std::string &reference,
+                             const DisplayOptions &display, const EngineOptions &engine, bool labels) {
+  return chapter_impl(id, reference, display, &engine, &labels);
+}
 Chapter Reader::chapter_impl(const std::string &id, const std::string &reference,
-                             const DisplayOptions &options, const EngineOptions *engine) {
+                             const DisplayOptions &options, const EngineOptions *engine, const bool *labels) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto &module = impl_->verse_module(id, reference);
   std::unique_ptr<ScopedEngineOptions> scope;
   if (engine) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *engine);
+  std::unique_ptr<ScopedNoteNumbers> note_scope;
+  if (labels) note_scope = std::make_unique<ScopedNoteNumbers>(impl_->note_rendering, module, *labels);
   // Clone the module key so its own locale/versification drives enumeration.
   // Work on this clone, avoiding persistent changes to the module key flags.
   sword::VerseKey key(*static_cast<sword::VerseKey *>(module.getKey()));
@@ -299,6 +333,7 @@ Chapter Reader::chapter_impl(const std::string &id, const std::string &reference
     key.setVerse(verse);
     const std::string resolved = key.getText();
     result.verses.push_back({resolved, render_entry(module, resolved.c_str())});
+    if (labels) copy_note_source(module, result.verses.back());
     result.verse_ordinals.push_back(static_cast<unsigned>(verse));
   }
   // Keep the module at the requested anchor, as with a single-entry read.
@@ -314,8 +349,12 @@ Chapter Reader::read_commentary_chapter(const std::string &id, const std::string
                                         const DisplayOptions &display, const EngineOptions &engine, bool headings) {
   return commentary_chapter_impl(id, reference, display, &engine, headings);
 }
+Chapter Reader::read_commentary_chapter(const std::string &id, const std::string &reference,
+                                        const DisplayOptions &display, const EngineOptions &engine, bool headings, bool labels) {
+  return commentary_chapter_impl(id, reference, display, &engine, headings, &labels);
+}
 Chapter Reader::commentary_chapter_impl(const std::string &id, const std::string &reference,
-                                         const DisplayOptions &display, const EngineOptions *engine, bool headings) {
+                                         const DisplayOptions &display, const EngineOptions *engine, bool headings, const bool *labels) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto &module = impl_->verse_module(id, reference);
   if (std::string(module.getType()) != "Commentaries")
@@ -329,6 +368,8 @@ Chapter Reader::commentary_chapter_impl(const std::string &id, const std::string
   result.title = std::string(key.getBookName()) + " " + std::to_string(key.getChapter());
   std::unique_ptr<ScopedEngineOptions> scope;
   if (engine) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *engine);
+  std::unique_ptr<ScopedNoteNumbers> note_scope;
+  if (labels) note_scope = std::make_unique<ScopedNoteNumbers>(impl_->note_rendering, module, *labels);
   ScopedCommentaryHeadings heading_scope(*impl_->manager);
   std::vector<unsigned> positions;
   for (const auto &position : references) {
@@ -336,9 +377,10 @@ Chapter Reader::commentary_chapter_impl(const std::string &id, const std::string
     positions.push_back(static_cast<unsigned>(key.getVerse()));
     auto html = render_entry(module, position.c_str());
     if (module.getKey()->getError()) throw std::invalid_argument("SWORD could not render a commentary section");
-    std::string header;
-    if (headings) for (const auto &heading : render_preverse_headings(module)) header += heading;
-    result.verses.push_back({module.getKeyText(), std::move(html), std::move(header)});
+    Entry entry{module.getKeyText(), std::move(html)};
+    if (labels) copy_note_source(module, entry);
+    if (headings) copy_headings(module, entry, labels != nullptr);
+    result.verses.push_back(std::move(entry));
   }
   module.setKey(result.reference.c_str());
   result.verse_ordinals = std::move(positions);
