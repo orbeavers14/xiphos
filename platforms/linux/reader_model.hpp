@@ -12,10 +12,11 @@ struct Module { std::string id, description, type; bool dictionary = false; unsi
 struct Preview { std::string module, reference, html, expression; size_t count = 0; bool limited = false; unsigned skipped = 0; };
 using Lexicons = std::array<std::optional<std::string>, 5>;
 struct Presentation { bool chapter = false, headings = true; int images = -1, font_faces = -1; };
+struct LexicalPresentation { std::string css; bool requested = false, applied = false; };
 struct Dictionary { std::string module, key, html, source_module, source_reference; };
 struct ReferenceChoice { std::string label, target; };
-struct Chapter { std::string html, anchor, title; };
-struct Passage { std::string bible, commentary, reference, bible_html, commentary_html; };
+struct Chapter { std::string html, anchor, title; LexicalPresentation lexical; };
+struct Passage { std::string bible, commentary, reference, bible_html, commentary_html; LexicalPresentation bible_lexical, commentary_lexical; };
 // UI-thread serial submissions and nonblocking polling only. All engine policy
 // and history stay on the core's one FIFO worker. No user-profile discovery.
 class ReaderModel {
@@ -89,7 +90,7 @@ public:
   const std::string &error() const { return error_; }
   unsigned revision() const { return revision_; }
 private:
-  enum class Operation { catalog, tab, preferences, passage, history, link, refresh, clear, presentation, bible_chapter, commentary_chapter, choices, dictionary, dictionary_choices, dictionary_history, dictionary_clear, engine_options, bible_options, commentary_options, saved, enable_lexicons, lexicons, lexicon_changed, reference_preference, reference_preference_changed, references, entry };
+  enum class Operation { catalog, tab, preferences, passage, history, link, refresh, clear, presentation, bible_chapter, commentary_chapter, choices, dictionary, dictionary_choices, dictionary_history, dictionary_clear, engine_options, bible_options, commentary_options, saved, enable_lexicons, lexicons, lexicon_changed, reference_preference, reference_preference_changed, references, entry, lexical_layout };
   bool accept(xc_status status, xc_request *request, Operation operation);
   void history();
   bool take_preview(xc_request *request, bool hover);

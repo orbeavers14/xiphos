@@ -6,6 +6,11 @@
 namespace xiphos::linux_preview {
 namespace {
 std::string copy(const char *value) { return value ? value : ""; }
+template<class Getter> std::optional<LexicalPresentation> copy_layout(Getter getter) {
+  xc_lexical_presentation value{};
+  if (getter(&value) != XC_OK || !value.css) return std::nullopt;
+  return LexicalPresentation{value.css, value.requested != 0, value.applied != 0};
+}
 std::string message(xc_status status) {
   switch (status) {
   case XC_MODULE_NOT_FOUND: return "The selected module is unavailable.";
@@ -305,6 +310,10 @@ void ReaderModel::tick() {
   case Operation::tab: {
     tab_ = xc_request_tab(completed.get());
     if (!tab_) { error_ = "Could not create study tab."; return; }
+    auto submitted = xc_worker_set_lexical_layout_enabled(worker_, tab_, 1, &next);
+    accept(submitted, next, Operation::lexical_layout); break;
+  }
+  case Operation::lexical_layout: {
     auto submitted = xc_worker_enable_module_preferences(worker_, tab_, &next);
     accept(submitted, next, Operation::preferences); break;
   }
@@ -337,7 +346,9 @@ void ReaderModel::tick() {
   case Operation::entry: {
     std::unique_ptr<xc_entry, decltype(&xc_entry_release)> result(xc_request_take_entry(completed.get()), xc_entry_release);
     if (!result) { error_ = "Missing entry snapshot."; break; }
-    passage_ = {pending_module_, "", copy(xc_entry_reference(result.get())), copy(xc_entry_html(result.get())), ""};
+    const auto layout = copy_layout([&](auto *out) { return xc_entry_lexical_layout(result.get(), out); });
+    if (!layout) { error_ = "Missing layout snapshot."; break; }
+    passage_ = {pending_module_, "", copy(xc_entry_reference(result.get())), copy(xc_entry_html(result.get())), "", *layout, {}};
     bible_chapter_ = {}; commentary_chapter_ = {}; note_ = {}; references_ = {}; showing_references_ = false;
     history(); break;
   }
@@ -345,8 +356,15 @@ void ReaderModel::tick() {
     std::unique_ptr<xc_passage, decltype(&xc_passage_release)> result(xc_request_take_passage(completed.get()), xc_passage_release);
     if (!result) { error_ = "Missing passage snapshot."; return; }
     Passage value{copy(xc_passage_module(result.get())), copy(xc_passage_commentary_module(result.get())), copy(xc_passage_reference(result.get())), copy(xc_passage_html(result.get())), ""};
-    if (xc_passage_has_commentary(result.get()))
+    const auto main_layout = copy_layout([&](auto *out) { return xc_passage_lexical_layout(result.get(), out); });
+    if (!main_layout) { error_ = "Missing layout snapshot."; break; }
+    value.bible_lexical = *main_layout;
+    if (xc_passage_has_commentary(result.get())) {
       value.commentary_html = copy(xc_passage_commentary_heading_html(result.get())) + copy(xc_passage_commentary_html(result.get()));
+      const auto commentary_layout = copy_layout([&](auto *out) { return xc_passage_commentary_lexical_layout(result.get(), out); });
+      if (!commentary_layout) { error_ = "Missing commentary layout snapshot."; break; }
+      value.commentary_lexical = *commentary_layout;
+    }
     passage_ = std::move(value); note_ = {}; references_ = {}; showing_references_ = false; bible_chapter_ = {}; commentary_chapter_ = {}; history(); break;
   }
   case Operation::history: {
@@ -396,6 +414,9 @@ void ReaderModel::tick() {
     std::unique_ptr<xc_chapter, decltype(&xc_chapter_release)> chapter(xc_request_take_chapter(completed.get()), xc_chapter_release);
     if (!chapter) { error_ = "Missing chapter snapshot."; break; }
     Chapter value{copy(xc_chapter_html(chapter.get())), copy(xc_chapter_selected_anchor(chapter.get())), copy(xc_chapter_title(chapter.get()))};
+    const auto layout = copy_layout([&](auto *out) { return xc_chapter_lexical_layout(chapter.get(), out); });
+    if (!layout) { error_ = "Missing chapter layout snapshot."; break; }
+    value.lexical = *layout;
     if (operation_ == Operation::bible_chapter) { bible_chapter_ = std::move(value); load_chapters(true); }
     else { commentary_chapter_ = std::move(value); load_choices(); }
     break;

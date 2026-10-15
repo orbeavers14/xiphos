@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "reader_model.hpp"
+#include "reader_document.hpp"
+using xiphos::linux_preview::document;
 #include <gtk/gtk.h>
 #include <webkit/webkit.h>
 #include <clocale>
@@ -87,11 +89,7 @@ void go(App *app) {
   app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference));
   app->model->visit(selected(app->bible, app->bibles), selected(app->commentary, app->commentaries), gtk_editable_get_text(GTK_EDITABLE(app->reference)));
 }
-std::string document(const std::string &body) {
-  // No module scripts, external resources, frames or network requests. Native
-  // policy routes user passage clicks through C++; no browser navigation engine.
-  return "<!doctype html><html><head><meta charset='utf-8'><meta http-equiv='Content-Security-Policy' content=\"default-src 'none'; style-src 'unsafe-inline'; img-src 'none'; script-src 'none'; frame-src 'none'; connect-src 'none'\"><style>body{font:18px serif;line-height:1.55;margin:20px;color:#202020;background:#fff}:root{color-scheme:light dark}span.wordsOfJesus{color:red}.xc-reference{margin-bottom:20px}.xc-reference header{font-weight:bold}.xc-verse,.xc-commentary-section{scroll-margin-top:12px}.xc-current a{color:inherit}.xc-verse sup{font-size:.7em;padding-right:4px}a{color:#174ea6}.xc-verse{padding:.15em 0}.xc-current{background:#fff0b3}.xc-commentary td{padding:4px;vertical-align:top}@media(prefers-color-scheme:dark){body{background:#202020;color:#eee}a{color:#9ecbff}.xc-current{background:#4d421e}}</style></head><body>" + body + "</body></html>";
-}
+
 gboolean policy(WebKitWebView *view, WebKitPolicyDecision *decision, WebKitPolicyDecisionType type, gpointer data) {
   auto *app = static_cast<App *>(data);
   if (type == WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION || type == WEBKIT_POLICY_DECISION_TYPE_NEW_WINDOW_ACTION) {
@@ -197,7 +195,9 @@ gboolean tick(gpointer data) {
   const auto &passage = app->model->passage();
   const auto bible_html = app->model->show_chapter() ? app->model->bible_chapter().html : passage.bible_html;
   const auto commentary_html = app->model->show_commentary_chapter() ? app->model->commentary_chapter().html : passage.commentary_html;
-  const auto identity = passage.bible + "\n" + passage.commentary + "\n" + passage.reference + "\n" + bible_html + commentary_html;
+  const auto &bible_css = app->model->show_chapter() ? app->model->bible_chapter().lexical.css : passage.bible_lexical.css;
+  const auto &commentary_css = app->model->show_commentary_chapter() ? app->model->commentary_chapter().lexical.css : passage.commentary_lexical.css;
+  const auto identity = bible_css + "\n" + commentary_css + "\n" + passage.bible + "\n" + passage.commentary + "\n" + passage.reference + "\n" + bible_html + commentary_html;
   if (!app->model->busy() && !passage.bible.empty() && identity != app->rendered) {
     app->rendered = identity;
     app->bible_anchor = app->model->show_chapter() ? app->model->bible_chapter().anchor : "";
@@ -205,8 +205,8 @@ gboolean tick(gpointer data) {
     select(app->bible, app->bibles, passage.bible); select(app->commentary, app->commentaries, passage.commentary);
     if (app->submitted_draft == gtk_editable_get_text(GTK_EDITABLE(app->reference)))
       gtk_editable_set_text(GTK_EDITABLE(app->reference), passage.reference.c_str());
-    webkit_web_view_load_html(app->bible_view, document(bible_html).c_str(), "xiphos-preview://study/");
-    webkit_web_view_load_html(app->commentary_view, document(commentary_html).c_str(), "xiphos-preview://study/");
+    webkit_web_view_load_html(app->bible_view, document(bible_html, bible_css).c_str(), "xiphos-preview://study/");
+    webkit_web_view_load_html(app->commentary_view, document(commentary_html, commentary_css).c_str(), "xiphos-preview://study/");
   }
   const bool enabled = app->model->ready() && !app->model->busy();
   gtk_widget_set_sensitive(app->go, enabled && !app->bibles.empty());
