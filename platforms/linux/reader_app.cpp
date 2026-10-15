@@ -14,6 +14,10 @@ struct App {
   GtkApplication *application = nullptr;
   GtkWidget *window = nullptr, *reference = nullptr, *bible = nullptr, *commentary = nullptr;
   GtkWidget *back = nullptr, *forward = nullptr, *go = nullptr, *status = nullptr;
+  GtkWidget *chapter_mode = nullptr, *commentary_mode = nullptr, *numbers = nullptr, *highlight = nullptr;
+  GtkWidget *selectors[3] = {}, *previous_chapter = nullptr, *next_chapter = nullptr, *clear_history = nullptr;
+  bool updating = false;
+  std::string selector_identity;
   WebKitWebView *bible_view = nullptr, *commentary_view = nullptr;
   std::unique_ptr<ReaderModel> model;
   std::vector<std::string> bibles, commentaries{""};
@@ -38,7 +42,7 @@ void go(App *app) {
 std::string document(const std::string &body) {
   // No module scripts, external resources, frames or network requests. Native
   // policy routes user passage clicks through C++; no browser navigation engine.
-  return "<!doctype html><html><head><meta charset='utf-8'><meta http-equiv='Content-Security-Policy' content=\"default-src 'none'; style-src 'unsafe-inline'; img-src 'none'; script-src 'none'; frame-src 'none'; connect-src 'none'\"><style>body{font:18px serif;line-height:1.55;margin:20px;color:#202020;background:#fff}a{color:#174ea6}</style></head><body>" + body + "</body></html>";
+  return "<!doctype html><html><head><meta charset='utf-8'><meta http-equiv='Content-Security-Policy' content=\"default-src 'none'; style-src 'unsafe-inline'; img-src 'none'; script-src 'none'; frame-src 'none'; connect-src 'none'\"><style>body{font:18px serif;line-height:1.55;margin:20px;color:#202020;background:#fff}a{color:#174ea6}.xc-verse{padding:.15em 0}.xc-current{background:#fff0b3}.xc-commentary td{padding:4px;vertical-align:top}@media(prefers-color-scheme:dark){body{background:#202020;color:#eee}a{color:#9ecbff}.xc-current{background:#4d421e}}</style></head><body>" + body + "</body></html>";
 }
 gboolean policy(WebKitWebView *view, WebKitPolicyDecision *decision, WebKitPolicyDecisionType type, gpointer data) {
   auto *app = static_cast<App *>(data);
@@ -95,14 +99,16 @@ gboolean tick(gpointer data) {
     g_object_unref(bibles); g_object_unref(commentaries); app->populated = true;
   }
   const auto &passage = app->model->passage();
-  const auto identity = passage.bible + "\n" + passage.commentary + "\n" + passage.reference + "\n" + passage.bible_html + passage.commentary_html;
-  if (!passage.bible.empty() && identity != app->rendered) {
+  const auto bible_html = app->model->show_chapter() ? app->model->bible_chapter().html : passage.bible_html;
+  const auto commentary_html = app->model->show_commentary_chapter() ? app->model->commentary_chapter().html : passage.commentary_html;
+  const auto identity = passage.bible + "\n" + passage.commentary + "\n" + passage.reference + "\n" + bible_html + commentary_html;
+  if (!app->model->busy() && !passage.bible.empty() && identity != app->rendered) {
     app->rendered = identity;
     select(app->bible, app->bibles, passage.bible); select(app->commentary, app->commentaries, passage.commentary);
     if (app->submitted_draft == gtk_editable_get_text(GTK_EDITABLE(app->reference)))
       gtk_editable_set_text(GTK_EDITABLE(app->reference), passage.reference.c_str());
-    webkit_web_view_load_html(app->bible_view, document(passage.bible_html).c_str(), "xiphos-preview://study/");
-    webkit_web_view_load_html(app->commentary_view, document(passage.commentary_html).c_str(), "xiphos-preview://study/");
+    webkit_web_view_load_html(app->bible_view, document(bible_html).c_str(), "xiphos-preview://study/");
+    webkit_web_view_load_html(app->commentary_view, document(commentary_html).c_str(), "xiphos-preview://study/");
   }
   const bool enabled = app->model->ready() && !app->model->busy();
   gtk_widget_set_sensitive(app->go, enabled && !app->bibles.empty());
@@ -116,12 +122,44 @@ gboolean tick(gpointer data) {
     g_simple_action_set_enabled(G_SIMPLE_ACTION(action), active);
   }
   gtk_widget_set_sensitive(app->bible, enabled); gtk_widget_set_sensitive(app->commentary, enabled);
+  app->updating = true;
+  gtk_check_button_set_active(GTK_CHECK_BUTTON(app->chapter_mode), app->model->show_chapter());
+  gtk_check_button_set_active(GTK_CHECK_BUTTON(app->commentary_mode), app->model->show_commentary_chapter());
+  gtk_check_button_set_active(GTK_CHECK_BUTTON(app->numbers), app->model->display_flags() & XC_CHAPTER_VERSE_NUMBERS);
+  gtk_check_button_set_active(GTK_CHECK_BUTTON(app->highlight), app->model->display_flags() & XC_CHAPTER_HIGHLIGHT_SELECTED);
+  gtk_widget_set_sensitive(app->chapter_mode, enabled);
+  gtk_widget_set_sensitive(app->numbers, enabled); gtk_widget_set_sensitive(app->highlight, enabled);
+  gtk_widget_set_sensitive(app->commentary_mode, enabled && !passage.commentary.empty());
+  gtk_widget_set_sensitive(app->previous_chapter, enabled && !passage.bible.empty());
+  gtk_widget_set_sensitive(app->next_chapter, enabled && !passage.bible.empty());
+  gtk_widget_set_sensitive(app->clear_history, enabled && !passage.bible.empty());
+  std::string selector_identity;
+  for (int k = 0; k < 3; ++k) {
+    selector_identity += app->model->choice_label(k) + "\n";
+    for (const auto &choice : app->model->choices(k)) selector_identity += choice.label + choice.target + "\n";
+  }
+  if (selector_identity != app->selector_identity) {
+    app->selector_identity = selector_identity;
+    for (int k = 0; k < 3; ++k) {
+      auto *list = gtk_string_list_new(nullptr); guint selected_index = 0;
+      const auto &choices = app->model->choices(k);
+      for (size_t i = 0; i < choices.size(); ++i) {
+        gtk_string_list_append(list, choices[i].label.c_str());
+        if (choices[i].label == app->model->choice_label(k)) selected_index = i;
+      }
+      gtk_drop_down_set_model(GTK_DROP_DOWN(app->selectors[k]), G_LIST_MODEL(list)); g_object_unref(list);
+      gtk_drop_down_set_selected(GTK_DROP_DOWN(app->selectors[k]), selected_index);
+    }
+  }
+  for (auto *selector : app->selectors) gtk_widget_set_sensitive(selector, enabled && !passage.bible.empty());
+  app->updating = false;
   const auto &error = app->model->error();
   gtk_label_set_text(GTK_LABEL(app->status), !error.empty() ? error.c_str() : app->model->busy() ? "Loading…" : app->populated && app->bibles.empty() ? "No Bible modules found. Open a SWORD library with --root DIRECTORY." : "Ready");
   if (app->smoke && enabled) {
     if (!error.empty()) {
       app->smoke_failed = true; std::cerr << error << "\n"; gtk_window_close(GTK_WINDOW(app->window)); return G_SOURCE_REMOVE;
     }
+    const auto prior_stage = app->smoke_stage;
     switch (app->smoke_stage) {
     case 0:
       for (const auto *name : {"win.back", "win.forward", "win.focus-reference"}) {
@@ -153,9 +191,25 @@ gboolean tick(gpointer data) {
     case 4:
       if (app->loaded < 2) break;
       if (passage.reference != "John 3:17") app->smoke_failed = true;
+      gtk_check_button_set_active(GTK_CHECK_BUTTON(app->chapter_mode), TRUE); ++app->smoke_stage; break;
+    case 5:
+      if (app->model->bible_chapter().html.empty() || app->model->choices(XC_VERSE).empty()) app->smoke_failed = true;
+      g_signal_emit_by_name(app->next_chapter, "clicked"); ++app->smoke_stage; break;
+    case 6:
+      if (passage.reference != "John 4:1") app->smoke_failed = true;
+      gtk_widget_activate_action(app->window, "win.back", nullptr); ++app->smoke_stage; break;
+    case 7:
+      if (passage.reference != "John 3:17") app->smoke_failed = true;
+      gtk_check_button_set_active(GTK_CHECK_BUTTON(app->commentary_mode), FALSE); ++app->smoke_stage; break;
+    case 8:
+      if (app->model->show_commentary_chapter()) app->smoke_failed = true;
+      g_signal_emit_by_name(app->clear_history, "clicked"); ++app->smoke_stage; break;
+    case 9:
+      if (app->model->can_back() || app->model->can_forward()) app->smoke_failed = true;
       g_signal_emit_by_name(app->go, "clicked"); // accepted work must drain during close
       ++app->smoke_stage; gtk_window_close(GTK_WINDOW(app->window)); return G_SOURCE_REMOVE;
     }
+    if (app->smoke_failed) std::cerr << "GTK4 smoke assertion at stage " << prior_stage << " reference=" << passage.reference << " commentary=" << passage.commentary << "\n";
   }
   return G_SOURCE_CONTINUE;
 }
@@ -191,6 +245,52 @@ void activate(GtkApplication *application, gpointer data) {
   app->reference = gtk_entry_new(); gtk_editable_set_text(GTK_EDITABLE(app->reference), "John 3:16");
   gtk_widget_set_hexpand(app->reference, TRUE); gtk_box_append(GTK_BOX(toolbar), app->reference);
   app->go = gtk_button_new_with_label("Go"); gtk_box_append(GTK_BOX(toolbar), app->go);
+  auto *display_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+  gtk_box_append(GTK_BOX(box), display_bar);
+  app->previous_chapter = gtk_button_new_with_label("Previous chapter");
+  app->next_chapter = gtk_button_new_with_label("Next chapter");
+  gtk_box_append(GTK_BOX(display_bar), app->previous_chapter); gtk_box_append(GTK_BOX(display_bar), app->next_chapter);
+  const char *selector_names[] = {"Book", "Chapter", "Verse"};
+  for (int k = 0; k < 3; ++k) {
+    app->selectors[k] = gtk_drop_down_new(nullptr, nullptr);
+    g_object_set_data(G_OBJECT(app->selectors[k]), "choice-kind", GINT_TO_POINTER(k));
+    gtk_accessible_update_property(GTK_ACCESSIBLE(app->selectors[k]), GTK_ACCESSIBLE_PROPERTY_LABEL, selector_names[k], -1);
+    gtk_box_append(GTK_BOX(display_bar), app->selectors[k]);
+    g_signal_connect(app->selectors[k], "notify::selected", G_CALLBACK(+[](GObject *object, GParamSpec *, gpointer data) {
+      auto *app = static_cast<App *>(data);
+      if (app->updating || !app->model || app->model->busy()) return;
+      const int kind = GPOINTER_TO_INT(g_object_get_data(object, "choice-kind"));
+      const auto index = gtk_drop_down_get_selected(GTK_DROP_DOWN(object)); const auto &choices = app->model->choices(kind);
+      if (index >= choices.size()) return;
+      const auto passage = app->model->passage(); const auto target = choices[index].target;
+      app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference));
+      app->model->visit(passage.bible, passage.commentary, target);
+    }), app);
+  }
+  app->chapter_mode = gtk_check_button_new_with_label("Bible chapter");
+  app->commentary_mode = gtk_check_button_new_with_label("Commentary chapter");
+  app->numbers = gtk_check_button_new_with_label("Verse numbers");
+  app->highlight = gtk_check_button_new_with_label("Highlight selected");
+  for (auto *control : {app->chapter_mode, app->commentary_mode, app->numbers, app->highlight}) {
+    gtk_box_append(GTK_BOX(display_bar), control);
+    g_signal_connect(control, "toggled", G_CALLBACK(+[](GtkCheckButton *button, gpointer data) {
+      auto *app = static_cast<App *>(data); if (app->updating || !app->model || app->model->busy()) return;
+      if (GTK_WIDGET(button) == app->commentary_mode) app->model->set_commentary_chapter(gtk_check_button_get_active(button));
+      else {
+        unsigned flags = (gtk_check_button_get_active(GTK_CHECK_BUTTON(app->numbers)) ? XC_CHAPTER_VERSE_NUMBERS : 0u)
+          | (gtk_check_button_get_active(GTK_CHECK_BUTTON(app->highlight)) ? XC_CHAPTER_HIGHLIGHT_SELECTED : 0u);
+        app->model->set_display(gtk_check_button_get_active(GTK_CHECK_BUTTON(app->chapter_mode)), flags);
+      }
+    }), app);
+  }
+  app->clear_history = gtk_button_new_with_label("Clear history"); gtk_box_append(GTK_BOX(display_bar), app->clear_history);
+  g_signal_connect(app->clear_history, "clicked", G_CALLBACK(+[](GtkButton *, gpointer data) { static_cast<App *>(data)->model->clear_history(); }), app);
+  for (auto *button : {app->previous_chapter, app->next_chapter}) {
+    g_signal_connect(button, "clicked", G_CALLBACK(+[](GtkButton *button, gpointer data) {
+      auto *app = static_cast<App *>(data); app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference));
+      app->model->navigate_chapter(GTK_WIDGET(button) == app->previous_chapter ? -1 : 1);
+    }), app);
+  }
   auto *panes = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL); gtk_widget_set_vexpand(panes, TRUE);
   gtk_box_append(GTK_BOX(box), panes);
   auto *library = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
@@ -276,8 +376,8 @@ int main(int argc, char **argv) {
   if (deadline && !state.smoke_failed) g_source_remove(deadline);
   shutdown(&state); g_object_unref(app);
   if (state.smoke) {
-    if (state.smoke_failed || state.smoke_stage != 5) { std::cerr << "GTK4 smoke failed\n"; return 1; }
-    std::cout << "GTK4 smoke passed: focus action, module selection, draft retention, paired panes, navigation actions and pending close\n";
+    if (state.smoke_failed || state.smoke_stage != 10) { std::cerr << "GTK4 smoke failed\n"; return 1; }
+    std::cout << "GTK4 smoke passed: focus action, module selection, draft retention, paired panes, navigation actions, chapters, selectors, clear history and pending close\n";
   }
   return result;
 }

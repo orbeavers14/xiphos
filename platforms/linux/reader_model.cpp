@@ -49,6 +49,50 @@ bool ReaderModel::navigate(int direction) {
   auto status = xc_worker_navigate_passage(worker_, tab_, direction, &request);
   return accept(status, request, Operation::passage);
 }
+bool ReaderModel::navigate_chapter(int direction) {
+  if (!ready() || busy() || passage_.bible.empty()) return false;
+  xc_request *request = nullptr;
+  auto status = xc_worker_navigate_passage_chapter(worker_, tab_, passage_.bible.c_str(), passage_.commentary.c_str(), passage_.reference.c_str(), direction, &request);
+  return accept(status, request, Operation::passage);
+}
+bool ReaderModel::clear_history() {
+  if (!ready() || busy()) return false;
+  xc_request *request = nullptr; auto status = xc_worker_clear_history(worker_, tab_, &request);
+  return accept(status, request, Operation::clear);
+}
+bool ReaderModel::refresh() {
+  if (!ready() || busy() || passage_.bible.empty()) return false;
+  xc_request *request = nullptr;
+  auto status = xc_worker_read_passage(worker_, tab_, passage_.bible.c_str(), passage_.commentary.c_str(), passage_.reference.c_str(), &request);
+  return accept(status, request, Operation::passage);
+}
+bool ReaderModel::set_display(bool chapter, unsigned flags) {
+  if (!ready() || busy() || (flags & ~(XC_CHAPTER_VERSE_NUMBERS | XC_CHAPTER_HIGHLIGHT_SELECTED))) return false;
+  show_chapter_ = chapter; display_flags_ = flags;
+  if (passage_.bible.empty()) { ++revision_; return true; }
+  return refresh();
+}
+bool ReaderModel::set_commentary_chapter(bool enabled) {
+  if (!ready() || busy() || passage_.commentary.empty()) return false;
+  xc_request *request = nullptr;
+  auto status = xc_worker_set_commentary_chapter_mode(worker_, tab_, passage_.commentary.c_str(), enabled, &request);
+  return accept(status, request, Operation::refresh);
+}
+void ReaderModel::load_choices() {
+  xc_request *request = nullptr;
+  auto status = xc_worker_reference_choices(worker_, passage_.bible.c_str(), passage_.reference.c_str(), &request);
+  accept(status, request, Operation::choices);
+}
+void ReaderModel::load_chapters(bool commentary) {
+  xc_request *request = nullptr;
+  if (!commentary && show_chapter_) {
+    auto status = xc_worker_read_tab_chapter(worker_, tab_, passage_.bible.c_str(), passage_.reference.c_str(), display_flags_, &request);
+    accept(status, request, Operation::bible_chapter);
+  } else if (!passage_.commentary.empty() && show_commentary_chapter_) {
+    auto status = xc_worker_read_tab_commentary_chapter(worker_, tab_, passage_.commentary.c_str(), passage_.reference.c_str(), display_flags_, &request);
+    accept(status, request, Operation::commentary_chapter);
+  } else load_choices();
+}
 bool ReaderModel::follow(const std::string &source, const std::string &uri) {
   if (!ready() || busy() || passage_.bible.empty()) return false;
   xc_request *request = nullptr;
@@ -89,12 +133,43 @@ void ReaderModel::tick() {
     Passage value{copy(xc_passage_module(result.get())), copy(xc_passage_commentary_module(result.get())), copy(xc_passage_reference(result.get())), copy(xc_passage_html(result.get())), ""};
     if (xc_passage_has_commentary(result.get()))
       value.commentary_html = copy(xc_passage_commentary_heading_html(result.get())) + copy(xc_passage_commentary_html(result.get()));
-    passage_ = std::move(value); history(); break;
+    passage_ = std::move(value); bible_chapter_ = {}; commentary_chapter_ = {}; history(); break;
   }
   case Operation::history: {
     std::unique_ptr<xc_history, decltype(&xc_history_release)> result(xc_request_take_history(completed.get()), xc_history_release);
     if (!result) { error_ = "Missing history snapshot."; return; }
-    back_ = xc_history_can_back(result.get()); forward_ = xc_history_can_forward(result.get()); break;
+    back_ = xc_history_can_back(result.get()); forward_ = xc_history_can_forward(result.get());
+    if (passage_.bible.empty()) break;
+    if (!passage_.commentary.empty()) {
+      auto submitted = xc_worker_module_presentation_options(worker_, tab_, passage_.commentary.c_str(), &next);
+      accept(submitted, next, Operation::presentation);
+    } else { show_commentary_chapter_ = false; load_chapters(); }
+    break;
+  }
+  case Operation::refresh: refresh(); break;
+  case Operation::clear: history(); break;
+  case Operation::presentation:
+    show_commentary_chapter_ = xc_request_commentary_chapter_mode(completed.get()) == 1;
+    load_chapters(); break;
+  case Operation::bible_chapter:
+  case Operation::commentary_chapter: {
+    std::unique_ptr<xc_chapter, decltype(&xc_chapter_release)> chapter(xc_request_take_chapter(completed.get()), xc_chapter_release);
+    if (!chapter) { error_ = "Missing chapter snapshot."; break; }
+    Chapter value{copy(xc_chapter_html(chapter.get())), copy(xc_chapter_selected_anchor(chapter.get())), copy(xc_chapter_title(chapter.get()))};
+    if (operation_ == Operation::bible_chapter) { bible_chapter_ = std::move(value); load_chapters(true); }
+    else { commentary_chapter_ = std::move(value); load_choices(); }
+    break;
+  }
+  case Operation::choices: {
+    std::unique_ptr<xc_choices, decltype(&xc_choices_release)> choices(xc_request_take_choices(completed.get()), xc_choices_release);
+    if (!choices) { error_ = "Missing reference choices."; break; }
+    for (int k = 0; k < 3; ++k) {
+      choices_[k].clear(); const auto kind = static_cast<xc_choice_kind>(k);
+      for (size_t i = 0; i < xc_choices_count(choices.get(), kind); ++i)
+        choices_[k].push_back({copy(xc_choices_label(choices.get(), kind, i)), copy(xc_choices_reference(choices.get(), kind, i))});
+      choice_labels_[k] = copy(xc_choices_current_label(choices.get(), kind));
+    }
+    break;
   }
   case Operation::link: {
     std::unique_ptr<xc_link, decltype(&xc_link_release)> link(xc_request_take_link(completed.get()), xc_link_release);

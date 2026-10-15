@@ -7,6 +7,8 @@
 
 namespace xiphos::linux_preview {
 struct Module { std::string id, description, type; };
+struct ReferenceChoice { std::string label, target; };
+struct Chapter { std::string html, anchor, title; };
 struct Passage { std::string bible, commentary, reference, bible_html, commentary_html; };
 // UI-thread serial submissions and nonblocking polling only. All engine policy
 // and history stay on the core's one FIFO worker. No user-profile discovery.
@@ -19,6 +21,11 @@ public:
   void tick();
   bool visit(const std::string &bible, const std::string &commentary, const std::string &reference);
   bool navigate(int direction);
+  bool navigate_chapter(int direction);
+  bool clear_history();
+  bool set_display(bool chapter, unsigned flags);
+  bool set_commentary_chapter(bool enabled);
+  bool refresh();
   bool follow(const std::string &source, const std::string &uri);
   // Stop submissions/drop observation, then transfer shutdown ownership. The
   // caller MUST close the returned worker on a background thread (drain/join).
@@ -29,12 +36,21 @@ public:
   bool can_forward() const { return forward_; }
   const std::vector<Module> &modules() const { return modules_; }
   const Passage &passage() const { return passage_; }
+  const Chapter &bible_chapter() const { return bible_chapter_; }
+  const Chapter &commentary_chapter() const { return commentary_chapter_; }
+  bool show_chapter() const { return show_chapter_; }
+  bool show_commentary_chapter() const { return show_commentary_chapter_; }
+  unsigned display_flags() const { return display_flags_; }
+  const std::vector<ReferenceChoice> &choices(int kind) const { return choices_[kind]; }
+  const std::string &choice_label(int kind) const { return choice_labels_[kind]; }
   const std::string &error() const { return error_; }
   unsigned revision() const { return revision_; }
 private:
-  enum class Operation { catalog, tab, preferences, passage, history, link };
+  enum class Operation { catalog, tab, preferences, passage, history, link, refresh, clear, presentation, bible_chapter, commentary_chapter, choices };
   bool accept(xc_status status, xc_request *request, Operation operation);
   void history();
+  void load_chapters(bool commentary = false);
+  void load_choices();
   xc_worker *worker_ = nullptr;
   xc_request *request_ = nullptr;
   uint64_t tab_ = 0;
@@ -42,6 +58,11 @@ private:
   bool ready_ = false, closed_ = false, back_ = false, forward_ = false;
   std::vector<Module> modules_;
   Passage passage_;
+  Chapter bible_chapter_, commentary_chapter_;
+  bool show_chapter_ = false, show_commentary_chapter_ = false;
+  unsigned display_flags_ = XC_CHAPTER_VERSE_NUMBERS | XC_CHAPTER_HIGHLIGHT_SELECTED;
+  std::vector<ReferenceChoice> choices_[3];
+  std::string choice_labels_[3];
   std::string error_;
   unsigned revision_ = 0;
 };
