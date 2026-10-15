@@ -2,6 +2,13 @@
 import Foundation
 @main
 struct ReaderModelSmoke {
+    // Original-prose variant fixtures contain no encoded text except spacing.
+    // Compare their words independently of the core's per-word layout spans.
+    static func fixtureWords(_ html: String) -> String {
+        html.replacingOccurrences(of: "<[^>]*>", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "&nbsp;", with: " ")
+            .split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    }
     @MainActor static func idle(_ model: ReaderModel) async throws {
         let deadline = Date().addingTimeInterval(10)
         while model.isBusy {
@@ -72,6 +79,46 @@ struct ReaderModelSmoke {
         guard diagnosticEntry.cleanupDiagnostics.first?.suffix.contains("unfinished") == true,
               diagnosticPair.text.cleanupDiagnostics.first?.suffix == diagnosticChapter.verses[21].cleanupDiagnostics.first?.suffix else { fatalError("copied Swift metadata survives worker shutdown") }
         print("Native content control checks passed")
+    }
+    @MainActor static func lexicalLayout(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let model = ReaderModel(worker: worker, startupError: nil)
+        let other = ReaderModel(worker: worker, startupError: nil)
+        try await idle(model); try await idle(other)
+        model.reference = "John4:1"; model.read(); try await idle(model)
+        guard model.lexicalPresentation == .plain else { fatalError("disabled annotation preference has no positioning CSS") }
+        let reference = model.renderedReference, back = model.canBack
+        model.reference = "John 4:2"
+        model.setReadingOption(.strongs, enabled: true); try await idle(model)
+        guard model.lexicalPresentation.applied, model.lexicalPresentation.css.contains("line-height: 2.7em"),
+              model.html.contains("class=\"word\""), model.reference == "John 4:2",
+              model.renderedReference == reference, model.canBack == back else { fatalError("native opt-in consumes paired HTML/CSS without submitting draft/history") }
+        let document = PassageView.documentHTML(html: model.html, css: model.lexicalPresentation.css)
+        guard document.contains(model.lexicalPresentation.css), document.contains("Content-Security-Policy"),
+              document.contains("default-src 'none'") else { fatalError("native document includes core CSS and retains resource policy") }
+        model.setImageContent(false); try await idle(model)
+        model.setRespectFontFaces(false); try await idle(model)
+        guard !model.html.contains("<img "), !model.html.contains("Original Lexical Font"), model.lexicalPresentation.applied else { fatalError("native layout refresh preserves core cleanup order") }
+        model.showChapter = true; model.refreshDisplay(); try await idle(model)
+        guard model.lexicalPresentation.applied, model.renderedAnchor == "verse-1", model.reference == "John 4:2" else { fatalError("native chapter uses matching CSS and committed anchor") }
+        let profile = URL(fileURLWithPath: root).appendingPathComponent("native-lexical-profile.conf")
+        try Data("[Text]\nStrong's Numbers=On\nImage Content=Off\nRespect Font Faces=Off\n[ThMLNotes]\nStrong's Numbers=On\n".utf8).write(to: profile)
+        model.importReadingOptions(path: profile.path); try await idle(model)
+        model.chooseCommentary("ThMLNotes"); try await idle(model)
+        guard model.commentaryEntry?.lexical.applied == true, model.commentaryChapter?.lexical.applied == true,
+              model.commentaryChapter?.lexical.css == model.lexicalPresentation.css else { fatalError("native paired commentary copies its own matching CSS") }
+        other.reference = "John4:1"; other.read(); try await idle(other)
+        guard other.lexicalPresentation == .plain else { fatalError("native windows retain independent annotation preferences") }
+        model.reference = "John5:1"; model.read(); try await idle(model)
+        guard model.lexicalPresentation.requested, !model.lexicalPresentation.applied, model.lexicalPresentation.css.isEmpty,
+              model.commentaryChapter?.lexical.applied == false,
+              !PassageView.documentHTML(html: model.html, css: model.lexicalPresentation.css).contains("position: absolute") else { fatalError("native unsupported documents omit annotation CSS for both panes") }
+        let closedCSS = model.lexicalPresentation
+        model.close(); model.setReadingOption(.strongs, enabled: false)
+        try await Task.sleep(nanoseconds: 20_000_000)
+        guard model.lexicalPresentation == closedCSS else { fatalError("closed native window cannot publish stale CSS") }
+        other.close(); await worker.shutdown()
+        print("Native lexical HTML/CSS, cleanup, chapter/pane fallback and draft/window guards passed")
     }
     @MainActor static func headings(root: String) async throws {
         let worker = try CoreWorker(root: root)
@@ -357,7 +404,7 @@ struct ReaderModelSmoke {
         first.reference = "John 3:22"; first.read(); try await idle(first)
         second.reference = "John 3:22"; second.read(); try await idle(second)
         let primaryHTML = second.html
-        guard first.html.contains("Original primary reading"), !first.html.contains("Original secondary reading") else { fatalError("legacy primary reading default") }
+        guard fixtureWords(first.html).contains("Original primary reading"), !fixtureWords(first.html).contains("Original secondary reading") else { fatalError("legacy primary reading default") }
         let variantFlags: EngineOptionFlags = [.variantsPrimary, .variantsSecondary, .variantsAll]
         let unrelatedFlags = first.engineOptions?.subtracting(variantFlags)
         let variantBack = first.canBack, variantForward = first.canForward
@@ -366,19 +413,19 @@ struct ReaderModelSmoke {
             first.selectVariant(choice)
             guard first.isBusy else { fatalError("nonblocking variant selection") }
             try await idle(first)
-            guard first.html.contains("Original primary reading") == (choice != .secondary),
-                  first.html.contains("Original secondary reading") == (choice != .primary),
+            guard fixtureWords(first.html).contains("Original primary reading") == (choice != .secondary),
+                  fixtureWords(first.html).contains("Original secondary reading") == (choice != .primary),
                   first.engineOptions?.subtracting(variantFlags) == unrelatedFlags,
                   first.reference == "John 4:2", first.canBack == variantBack, first.canForward == variantForward,
                   second.html == primaryHTML, first.renderedAnchor == "verse-22" else { fatalError("native variant chapter/output/options/history/window isolation") }
         }
         first.showChapter = false; first.refreshDisplay(); try await idle(first)
         first.selectVariant(.secondary); try await idle(first)
-        guard !first.html.contains("Original primary reading"), first.html.contains("Original secondary reading") else { fatalError("variant single-entry output") }
+        guard !fixtureWords(first.html).contains("Original primary reading"), fixtureWords(first.html).contains("Original secondary reading") else { fatalError("variant single-entry output") }
         first.saveReadingOptions(path: saveURL.path); try await idle(first)
         second.importReadingOptions(path: saveURL.path); try await idle(second)
-        guard second.engineOptions?.contains(.variantsSecondary) == true, second.html.contains("Original secondary reading"),
-              !second.html.contains("Original primary reading") else { fatalError("native variant save/reload") }
+        guard second.engineOptions?.contains(.variantsSecondary) == true, fixtureWords(second.html).contains("Original secondary reading"),
+              !fixtureWords(second.html).contains("Original primary reading") else { fatalError("native variant save/reload") }
         first.showChapter = true; first.refreshDisplay(); try await idle(first)
         first.showChapter = false; first.reference = "John 3:23"; first.read(); try await idle(first)
         second.reference = "John 3:23"; second.read(); try await idle(second)
@@ -758,6 +805,9 @@ struct ReaderModelSmoke {
     }
     @MainActor static func main() async throws {
         let selectedLocale = initializePreviewLocale()
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--lexical-layout" {
+            try await lexicalLayout(root: CommandLine.arguments[2]); return
+        }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--hover" {
             try await studyHovers(root: CommandLine.arguments[2]); return
         }

@@ -48,6 +48,7 @@ final class ReaderModel: ObservableObject {
     @Published var reference = "John 3:16"
     @Published var renderedReference = ""
     @Published var html = ""
+    @Published private(set) var lexicalPresentation: RenderedLexicalPresentation = .plain
     @Published var message = "Loading installed modules…"
     @Published var showChapter = false
     @Published var verseNumbers = true
@@ -108,6 +109,7 @@ final class ReaderModel: ObservableObject {
             let opened = try await worker.createTab()
             guard !closed else { try? await worker.closeTab(opened); return }
             tab = opened
+            try await worker.setLexicalLayoutEnabled(tab: opened, enabled: true)
             try await worker.enableModulePreferences(tab: opened)
             try await worker.enableLexiconPreferences(tab: opened)
             let lexicons = try await worker.lexiconPreferences(tab: opened)
@@ -402,9 +404,11 @@ final class ReaderModel: ObservableObject {
         moduleOptions = modules.first(where: { $0.id == module })?.options ?? .unknown
         if let chapter {
             html = chapter.html; renderedAnchor = chapter.selectedAnchor; renderedReference = chapter.title
+            lexicalPresentation = chapter.lexical
             message = chapter.verses.allSatisfy { $0.html.isEmpty } ? "This module has no text in this chapter." : ""
         } else {
             html = entry.html; renderedAnchor = nil; renderedReference = entry.reference
+            lexicalPresentation = entry.lexical
             message = entry.html.isEmpty ? "This module has no text at this reference." : ""
         }
         choices = selectors
@@ -549,12 +553,14 @@ final class ReaderModel: ObservableObject {
 
 struct PassageView: NSViewRepresentable {
     let html: String
+    var css: String = ""
     let anchor: String?
     var onScrollFailure: (String) -> Void
     var onLink: (String) -> Void
     var onLinkHover: ((String) -> Void)? = nil
     @MainActor final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var loaded: String?
+        var loadedCSS: String?
         var anchor: String?
         var navigation: WKNavigation?
         var onScrollFailure: ((String) -> Void)?
@@ -625,12 +631,16 @@ struct PassageView: NSViewRepresentable {
         context.coordinator.onLinkHover = onLinkHover
         let changedAnchor = context.coordinator.anchor != anchor
         context.coordinator.anchor = anchor
-        guard context.coordinator.loaded != html else {
+        guard context.coordinator.loaded != html || context.coordinator.loadedCSS != css else {
             if changedAnchor { context.coordinator.scrollToAnchor(view) }
             return
         }
         context.coordinator.loaded = html
-        context.coordinator.navigation = view.loadHTMLString("""
+        context.coordinator.loadedCSS = css
+        context.coordinator.navigation = view.loadHTMLString(Self.documentHTML(html: html, css: css), baseURL: nil)
+    }
+    static func documentHTML(html: String, css: String) -> String {
+        """
             <!doctype html><html><head><meta charset="utf-8">
             <base href="xiphos-preview://study/">
             <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
@@ -642,9 +652,10 @@ struct PassageView: NSViewRepresentable {
             .xc-verse.xc-current, .xc-commentary-section.xc-current { background: Highlight; color: HighlightText; }
             .xc-current a { color: inherit; }
             .xc-verse sup { font-size: 0.7em; padding-right: 4px; }
+            \(css)
             </style>
             </head><body>\(html)</body></html>
-            """, baseURL: nil)
+            """
     }
     static func dismantleNSView(_ view: WKWebView, coordinator: Coordinator) {
         view.configuration.userContentController.removeScriptMessageHandler(forName: "xiphosHover", contentWorld: .defaultClient)
@@ -934,7 +945,7 @@ struct ReaderWindow: View {
                 if !model.renderedReference.isEmpty {
                     Text(model.renderedReference).font(.headline).padding(12)
                 }
-                PassageView(html: model.html, anchor: model.renderedAnchor,
+                PassageView(html: model.html, css: model.lexicalPresentation.css, anchor: model.renderedAnchor,
                             onScrollFailure: { model.message = $0 }, onLink: { model.followLink($0) },
                             onLinkHover: { model.previewStudyLink($0) })
                 if !model.message.isEmpty {
@@ -985,7 +996,7 @@ struct ReaderWindow: View {
                             }
                             if let entry = model.commentaryEntry {
                                 Text(model.commentaryChapter?.title ?? entry.reference).font(.caption).padding(8)
-                                PassageView(html: model.commentaryChapter?.html ?? (entry.headingHTML + entry.html), anchor: model.commentaryChapter?.selectedAnchor, onScrollFailure: { model.message = $0 },
+                                PassageView(html: model.commentaryChapter?.html ?? (entry.headingHTML + entry.html), css: (model.commentaryChapter?.lexical ?? entry.lexical).css, anchor: model.commentaryChapter?.selectedAnchor, onScrollFailure: { model.message = $0 },
                                     onLink: { model.followCommentaryLink($0) },
                                     onLinkHover: { model.previewStudyLink($0) })
                                 if model.commentaryChapter?.verses.allSatisfy({ $0.html.isEmpty && $0.headingHTML.isEmpty }) ?? (entry.html.isEmpty && entry.headingHTML.isEmpty) {
