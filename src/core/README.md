@@ -1,5 +1,7 @@
 # Shared Xiphos application core
 
+On Linux, use the [automated setup/build/test commands](../../platforms/linux/README.md).
+
 Build/test independently of the GTK application:
 
 ```sh
