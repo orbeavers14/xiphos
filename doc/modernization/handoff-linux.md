@@ -3,6 +3,16 @@
 Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the [shared handoff](handoff.md),
 [status](status.md), [architecture](architecture.md) and [parity ledger](parity-matrix.md).
 
+## Incoming shared note helpers
+
+`c39b024` and `8572594` extract legacy literal numbering and SDK render-label
+switching, with frozen/actual regression evidence. No native numbering option is
+enabled yet. Portable/core checks now pass 55/55 **on macOS**; native Fedora must
+rerun current sources (including the new SDK filter test) before recording Linux
+acceptance. Note the scoped TEI direct-filter limitation and follow-up boundaries
+in [the shared audit](note-numbering-workflows.md). Shared attribute/restore work
+is currently claimed by the Mac chat; platform-only checks can proceed.
+
 ## Incoming double-spacing controls — native validation pending
 
 `25cf291` adds shared `Doublespace` decoding/persistence and a typed queued

@@ -25,6 +25,13 @@ pass 4/4 and 3/3 respectively. A real Mac window check confirms CSS-only chapter
 spacing refresh on/off. Current GTK controls still need native Fedora validation.
 No full parity row or release gate changes status.
 
+The [note-numbering seam](note-numbering-workflows.md) now has owned explicit
+counters reused by legacy cleanup (`c39b024`) and a shared SDK label switch
+(`8572594`). Frozen/current comparisons and 40 OSIS/ThML/GBF/TEI filter cases pass;
+current local suites are 71/71 Mac and 55/55 portable Linux/core on Mac. Native
+numbering adoption remains pending metadata/fragment capture and owned filter
+restoration. The tested TEI direct-filter limitation is documented explicitly.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three

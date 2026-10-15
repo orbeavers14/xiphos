@@ -13,6 +13,38 @@ shared content/session/worker/C API, their tests, native adapter integration and
 associated evidence. Other chats should avoid overlapping shared API edits while
 this task is active; platform-local acceptance can proceed independently.
 
+## Latest checked follow-up: note-numbering helpers
+
+`c39b024` extracts owned literal counters into shared C++11 and retains legacy
+cleanup behavior; `8572594` shares the SDK label switch and characterizes all four
+XHTML filters. Current Mac suite passes 71/71; portable Linux/core passes 55/55 on
+Mac. Focused cleanup ASan/UBSan and TSan each 1/1; SDK-switch ASan/UBSan 1/1;
+strict C++11 and native-disabled helper builds pass. No native numbering controls
+are enabled yet. See [contracts, commands and next boundaries](note-numbering-workflows.md).
+The active task now includes owned entry-attribute access and refresh semantics;
+other chats should avoid shared render/attribute API edits while this continues.
+
+Commands used after configured local SDK discovery:
+
+```sh
+cmake -S platforms/macos -B build/macos
+cmake --build build/macos --parallel 4
+ctest --test-dir build/macos --no-tests=error --output-on-failure
+cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
+cmake --build build/linux-models --parallel 2
+ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
+cmake --build build/linux-models-sanitized --target core_content_cleanup_test core_sdk_note_numbers_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^(core_content_cleanup|core_sdk_note_numbers)$' --no-tests=error --output-on-failure
+cmake --build build/thread-sanitized --target core_content_cleanup_test --parallel 2
+ctest --test-dir build/thread-sanitized -R '^core_content_cleanup$' --no-tests=error --output-on-failure
+```
+
+Focused sanitizer names were run separately for recorded 1/1 results. External
+SDKs remain uninstrumented; no new GUI claim accompanies these helper extractions.
+The three temporary Mac fixture apps launched during this run were quit and their
+known generated copies removed. Repository source, user data and unrelated files
+remain intact. No hosted build allowance or reset was used.
+
 ## Latest checked follow-up: double spacing
 
 `25cf291` adds exact legacy double-spacing defaults/persistence and queued

@@ -46,6 +46,12 @@ See [workflow evidence](double-space-workflows.md). Fedora must rebuild current
 GTK source; previous native counts are historical. Next shared presentation seam:
 characterize note-number rendering and its SDK filter/state boundaries.
 
+Note-numbering helpers: `c39b024` owned legacy counters, `8572594` SDK switch and
+40 filter/label cases. Current checks: 71 Mac, 55 portable Linux/core on Mac.
+Native numbering is still gated on owned entry-attribute/fragment metadata and
+filter restoration; see [the seam audit](note-numbering-workflows.md). These
+commits do not change the GTK4 view controls or establish Fedora/MSVC acceptance.
+
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
