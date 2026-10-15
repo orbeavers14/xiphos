@@ -1,7 +1,16 @@
 # macOS chat handoff
 
-Updated 2026-10-14. Read [AGENTS.md](../../AGENTS.md) and the
-[shared handoff](handoff.md) first. No task is currently claimed by this file.
+Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md) and the
+[shared handoff](handoff.md) first.
+
+## Active shared-core task
+
+The macOS chat is continuing shared lexical-rendering corpus/fallback and internal
+modernization on `master`, starting from `74a4190`. Scope: `word_blocks` helper,
+its tests and associated evidence. No public API or frontend behavior change is
+planned for the first checkpoint. Other platform chats should avoid overlapping
+edits to these files; platform-local acceptance work can continue independently.
+Owner request: continue shared-core work using local checks until usage is exhausted.
 
 ## Existing evidence and boundaries
 
