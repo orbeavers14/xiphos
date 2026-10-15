@@ -40,3 +40,45 @@ require these checks on every change while routine acceptance stays local.
 This validates the shared core's existing contracts. It does not establish full
 feature parity or complete the shared engine. See the modernization status and
 parity ledger before moving to GTK4 frontend implementation.
+
+## Experimental GTK4 reading preview
+
+Fedora prerequisites (GTK4-compatible WebKit, separate from legacy GTK3):
+
+```sh
+sudo dnf install gtk4-devel webkitgtk6.0-devel
+cmake -S platforms/linux -B build/gtk4 -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build build/gtk4 --parallel 2
+ctest --test-dir build/gtk4 --output-on-failure --parallel 2
+build/gtk4/xiphos-linux-preview
+```
+
+The standalone preview discovers a SWORD library read-only. Use `--root DIRECTORY`
+to select an explicit library; no user settings or installed modules are written.
+Select a Bible and optional commentary, enter a reference and press Return or Go.
+Back/Forward restore pairs through the shared core. The right-hand commentary
+stays above the reserved dictionary/book/devotional area. This is an initial
+verse-reading slice: complete chapter layout, dictionary/notes/hover controls,
+module grouping, tabs, persistence and release packaging are pending. Only
+passage links are presented; unsupported links report an error and stay local.
+Module scripts and remote resources are blocked by JavaScript settings and CSP.
+
+One core worker serializes engine jobs. GTK polls request completion without
+waiting, copies result strings before release and drains shutdown in a background
+GTask. Busy/closed actions cannot submit or publish; failed actions retain the
+last committed passage. History and module routing stay in the existing core.
+
+For original-prose fixtures, build `core_study_passage_test` and generate its
+modules before running the disposable desktop smoke test:
+
+```sh
+ctest --test-dir build/gtk4 -R '^(core_study_passage|linux_reader_model)$' --output-on-failure
+GSK_RENDERER=cairo build/gtk4/xiphos-linux-preview --smoke-test build/gtk4/core/study-passage-fixture
+```
+
+The opt-in smoke test opens and closes a real window, exercises entry/button
+signals and waits for WebKit document loads. It disables WebKit hardware
+acceleration for VM use and checks pending-work shutdown. It requires a desktop
+session and is deliberately absent from default CTest/hosted runs. The ordinary
+preview leaves acceleration at the system default. Automated signal tests do
+not establish keyboard, screen-reader, visual composition or performance parity.
