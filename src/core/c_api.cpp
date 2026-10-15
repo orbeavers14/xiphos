@@ -247,6 +247,13 @@ xc_status xc_worker_set_lexical_layout_enabled(xc_worker *w, uint64_t tab, int e
   if (enabled != 0 && enabled != 1) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.set_lexical_layout_enabled(tab, enabled != 0); });
 }
+xc_status xc_worker_set_double_space(xc_worker *w, uint64_t tab, const char *id, int enabled, xc_request **out) {
+  if (!id || !*id || (enabled != 0 && enabled != 1)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.set_double_space(tab, id, enabled != 0); });
+}
+int xc_request_double_space(const xc_request *r) {
+  return r && r->status == XC_OK && r->presentation ? (r->presentation->double_space ? 1 : 0) : -1;
+}
 xc_status xc_worker_set_image_content(xc_worker *w, uint64_t tab, const char *id, int enabled, xc_request **out) {
   if (!id || !*id || (enabled != 0 && enabled != 1)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.set_image_content(tab, id, enabled != 0); });

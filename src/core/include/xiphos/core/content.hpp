@@ -7,6 +7,8 @@
 namespace xiphos::core {
 struct ParsedReferenceList;
 struct DictionaryEntry { std::string module, key, html; };
+// requested/applied refer to annotation word layout; CSS may contain only
+// explicit double spacing even when both flags are false.
 struct LexicalPresentation {
   std::string css;
   bool requested = false;

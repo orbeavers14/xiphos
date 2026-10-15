@@ -91,6 +91,7 @@ public:
   std::future<void> clear_module_engine_options(StudyTab tab, std::string module);
   std::future<std::optional<EngineOptions>> module_engine_options(StudyTab tab, std::string module);
   std::future<ModulePresentationOptions> module_presentation_options(StudyTab tab, std::string module);
+  std::future<void> set_double_space(StudyTab tab, std::string module, bool enabled);
   std::future<void> set_image_content(StudyTab tab, std::string module, bool enabled);
   std::future<void> set_respect_font_faces(StudyTab tab, std::string module, bool enabled);
   std::future<void> set_headings(StudyTab tab, std::string module, bool enabled);

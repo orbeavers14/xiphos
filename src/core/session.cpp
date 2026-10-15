@@ -22,13 +22,14 @@ LexicalPresentation present_document(const std::vector<Entry *> &entries,
                                     ModulePresentationOptions &options,
                                     const std::optional<EngineOptions> &engine, bool enabled) {
   LexicalPresentation presentation;
+  if (enabled) presentation.css = lexical_block_style(false, false, false, options.double_space);
   presentation.requested = enabled && engine && (engine->strongs || engine->lemmas || engine->morphs);
   if (presentation.requested) {
     std::vector<std::pair<LexicalLayout, LexicalLayout>> rendered;
     bool complete = !entries.empty();
     for (const auto *entry : entries) {
-      auto heading = layout_lexical_content(entry->heading_html, engine->strongs, engine->lemmas, engine->morphs, false);
-      auto body = layout_lexical_content(entry->html, engine->strongs, engine->lemmas, engine->morphs, false);
+      auto heading = layout_lexical_content(entry->heading_html, engine->strongs, engine->lemmas, engine->morphs, options.double_space);
+      auto body = layout_lexical_content(entry->html, engine->strongs, engine->lemmas, engine->morphs, options.double_space);
       complete = complete && heading.applied && body.applied;
       rendered.emplace_back(std::move(heading), std::move(body));
     }
@@ -36,7 +37,7 @@ LexicalPresentation present_document(const std::vector<Entry *> &entries,
     // positioning rules intended for formatted neighbors or headings.
     presentation.applied = complete;
     if (complete) {
-      presentation.css = lexical_block_style(engine->strongs, engine->lemmas, engine->morphs, false);
+      presentation.css = lexical_block_style(engine->strongs, engine->lemmas, engine->morphs, options.double_space);
       for (std::size_t i = 0; i < entries.size(); ++i) {
         entries[i]->heading_html = std::move(rendered[i].first.html);
         entries[i]->html = std::move(rendered[i].second.html);
@@ -155,6 +156,11 @@ ModulePresentationOptions StudySession::module_presentation_options(const std::s
   for (const auto &module : reader_.modules())
     if (module.id == id) return presentation_options_from_preferences({}, module.regular_commentary);
   throw std::out_of_range("Module is not installed");
+}
+void StudySession::set_double_space(const std::string &id, bool enabled) {
+  auto options = module_presentation_options(id);
+  options.double_space = enabled;
+  presentation_options_[id] = options;
 }
 void StudySession::set_image_content(const std::string &id, bool enabled) {
   auto options = module_presentation_options(id);

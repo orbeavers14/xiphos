@@ -13,6 +13,8 @@ ModulePresentationOptions presentation_options_from_preferences(const EngineOpti
     if (value == values.end() || value->second.empty()) return ContentPreference::unknown;
     return value->second == "On" ? ContentPreference::on : ContentPreference::off;
   };
+  const auto spacing = values.find("Doublespace");
+  result.double_space = spacing != values.end() && spacing->second == "On";
   result.image_content = content("Image Content");
   result.respect_font_faces = content("Respect Font Faces");
   const auto heading = values.find("Headings");

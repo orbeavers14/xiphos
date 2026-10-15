@@ -347,6 +347,9 @@ std::future<std::optional<EngineOptions>> StudyWorker::module_engine_options(Stu
 std::future<ModulePresentationOptions> StudyWorker::module_presentation_options(StudyTab tab, std::string module) {
   return impl_->submit([tab, module = std::move(module)](Impl::State &s) { return s.tab(tab).module_presentation_options(module); });
 }
+std::future<void> StudyWorker::set_double_space(StudyTab tab, std::string module, bool enabled) {
+  return impl_->submit([tab, module = std::move(module), enabled](Impl::State &s) { s.tab(tab).set_double_space(module, enabled); });
+}
 std::future<void> StudyWorker::set_image_content(StudyTab tab, std::string module, bool enabled) {
   return impl_->submit([tab, module = std::move(module), enabled](Impl::State &s) { s.tab(tab).set_image_content(module, enabled); });
 }

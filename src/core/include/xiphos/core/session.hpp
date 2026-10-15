@@ -83,6 +83,7 @@ public:
   std::optional<EngineOptions> module_engine_options(const std::string &module) const;
   ModulePresentationOptions module_presentation_options(const std::string &module) const;
   void set_headings(const std::string &module, bool enabled);
+  void set_double_space(const std::string &module, bool enabled);
   void set_image_content(const std::string &module, bool enabled);
   void set_respect_font_faces(const std::string &module, bool enabled);
   void set_commentary_chapter_mode(const std::string &module, bool enabled);

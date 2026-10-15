@@ -46,10 +46,11 @@ int main(int argc, char **argv) {
     const auto profile = root / "modops.conf";
     const std::vector<std::string> values = {"<missing>", "", "On", "Off", "on", "OFF", "unexpected", "café", " On ", " Off "};
     unsigned comparisons = 0;
-    for (const auto &image : values) for (const auto &font : values) for (bool regular : {false, true}) {
+    for (const auto &image : values) for (const auto &font : values) for (const auto &spacing : values) for (bool regular : {false, true}) {
       { std::ofstream file(profile); file << "[Text]\n";
         if (image != "<missing>") file << "Image Content=" << image << '\n';
         if (font != "<missing>") file << "Respect Font Faces=" << font << '\n';
+        if (spacing != "<missing>") file << "Doublespace=" << spacing << '\n';
         file << "Headings=Off\nStrong's Numbers=On\nCommentary by Chapter=Off\n";
       }
       backend_value.type = regular ? COMMENTARY_TYPE : 0;
@@ -59,6 +60,8 @@ int main(int argc, char **argv) {
       check(old->image_content == current->image_content && old->image_content == static_cast<int>(options.image_content) &&
             old->respect_font_faces == current->respect_font_faces && old->respect_font_faces == static_cast<int>(options.respect_font_faces),
             "content decoding agrees with complete frozen/current initializers");
+      check(old->doublespace == current->doublespace && (old->doublespace != 0) == options.double_space,
+            "double spacing exact-On decoding matches complete frozen/current initializers");
       check(old->headings == current->headings && old->headings == options.headings && old->strongs == current->strongs,
             "adapted initializer retains adjacent rendering preferences");
       std::free(old); std::free(current); ++comparisons;
@@ -68,15 +71,16 @@ int main(int argc, char **argv) {
     { RawText writer((root / "data").string().c_str()); writer.setKey("John 3:16"); writer.setEntry("Original content preference body.");
       std::ofstream file(root / "mods.d/text.conf"); file << "[Text]\nDataPath=./data/\nModDrv=RawText\nEncoding=UTF-8\n"; }
     std::filesystem::remove(root / "mods.d/modules-conf.cache");
-    { std::ofstream file(profile); file << "[Text]\nImage Content=On\nRespect Font Faces=Off\nCustom=café\n[Uninstalled]\nImage Content=Off\nRespect Font Faces=On\nKeep=value\n"; }
+    { std::ofstream file(profile); file << "[Text]\nImage Content=On\nRespect Font Faces=Off\nDoublespace=On\nCustom=café\n[Uninstalled]\nImage Content=Off\nRespect Font Faces=On\nDoublespace=On\nKeep=value\n"; }
     Reader reader(root.string()); StudySession session(reader);
     session.import_module_preferences(profile.string());
     auto options = session.module_presentation_options("Text");
-    check(options.image_content == ContentPreference::on && options.respect_font_faces == ContentPreference::off,
+    check(options.image_content == ContentPreference::on && options.respect_font_faces == ContentPreference::off && options.double_space,
           "combined import owns tri-state content preferences");
     session.save_module_preferences(profile.string());
     const auto saved = read_module_option_values(profile.string());
     check(saved.at("Text").at("Image Content") == "On" && saved.at("Text").at("Respect Font Faces") == "Off" &&
+          saved.at("Text").at("Doublespace") == "On" && saved.at("Uninstalled").at("Doublespace") == "On" &&
           saved.at("Text").at("Custom") == "café" && saved.at("Uninstalled").at("Respect Font Faces") == "On",
           "explicit known settings round trip with unrelated/unavailable values intact");
     ModulePresentationPreferences unknown; unknown.emplace("Text", ModulePresentationOptions{});

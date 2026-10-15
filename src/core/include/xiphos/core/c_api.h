@@ -33,7 +33,8 @@ typedef struct xc_history xc_history;
 typedef enum xc_status { XC_OK = 0, XC_INVALID_ARGUMENT = 1,
   XC_MODULE_NOT_FOUND = 2, XC_ENGINE_ERROR = 3, XC_PENDING = 4 } xc_status;
 /* Copied flags and borrowed CSS from an owned HTML snapshot. CSS remains valid
- * until that snapshot is released. Disabled and fallback are distinct states. */
+ * until that snapshot is released. requested/applied describe annotation word
+ * layout; CSS may contain spacing-only rules while both flags are zero. */
 typedef struct { const char *css; int requested, applied; } xc_lexical_presentation;
 /* Explicit SWORD filter settings, not saved-preference defaults. All-zero
  * means Off filters with engine headings On; clear restores unconfigured reads.
@@ -106,6 +107,13 @@ int xc_request_headings(const xc_request *request);
  * Otherwise returns pending/failure/wrong-kind status; outputs reset to unknown.
  * Getter may repeat; setters accept only 0/1 and do not visit history. */
 xc_status xc_request_content_options(const xc_request *request, int *images, int *font_faces);
+/* Double spacing defaults off; exact legacy Doublespace=On enables it.
+ * Getter: repeatable 0/1 for ready presentation result, -1 otherwise.
+ * Setter: strict 0/1, FIFO/tab/module-local and history-neutral. Its CSS is
+ * exposed only to opted-in HTML/CSS consumers. Annotation spacing takes
+ * precedence; unsupported annotation layout retains spacing-only CSS. */
+int xc_request_double_space(const xc_request *request);
+xc_status xc_worker_set_double_space(xc_worker *worker, uint64_t tab, const char *module, int enabled, xc_request **out);
 xc_status xc_worker_set_image_content(xc_worker *worker, uint64_t tab, const char *module, int enabled, xc_request **out);
 xc_status xc_worker_set_respect_font_faces(xc_worker *worker, uint64_t tab, const char *module, int enabled, xc_request **out);
 xc_status xc_worker_set_headings(xc_worker *worker, uint64_t tab, const char *module, int enabled, xc_request **out);

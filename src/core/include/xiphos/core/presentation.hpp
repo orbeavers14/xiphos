@@ -8,6 +8,7 @@ struct ModulePresentationOptions {
   bool headings = true;
   ContentPreference image_content = ContentPreference::unknown;
   ContentPreference respect_font_faces = ContentPreference::unknown;
+  bool double_space = false; // Exact legacy Doublespace=On; missing/empty is off.
   bool commentary_chapter_available = false; // Copied classification for selective persistence.
 };
 using ModulePresentationPreferences = std::map<std::string, ModulePresentationOptions>;

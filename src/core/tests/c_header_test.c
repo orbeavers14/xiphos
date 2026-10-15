@@ -12,6 +12,8 @@ int c_header_test(void) {
          xc_passage_commentary_lexical_layout(NULL, &layout) == XC_INVALID_ARGUMENT &&
          xc_chapter_lexical_layout(NULL, &layout) == XC_INVALID_ARGUMENT &&
          xc_chapter_verse_lexical_layout(NULL, 0, &layout) == XC_INVALID_ARGUMENT &&
+         xc_request_double_space(NULL) == -1 &&
+         xc_worker_set_double_space(NULL, 0, "Text", 1, &request) == XC_INVALID_ARGUMENT && request == NULL &&
          xc_worker_set_lexical_layout_enabled(NULL, 0, 1, &request) == XC_INVALID_ARGUMENT && request == NULL &&
          xc_reference_list_context(NULL) == NULL && xc_reference_list_expression(NULL) == NULL &&
          xc_reference_list_html(NULL) == NULL && xc_reference_list_entry_reference(NULL, 0) == NULL &&

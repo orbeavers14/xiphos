@@ -21,6 +21,7 @@ void save_module_preferences(const std::string &path, const ModuleEnginePreferen
       for (const auto &preference : engine_options_to_preferences(module.second))
         configuration[module.first.c_str()][preference.first.c_str()] = preference.second.c_str();
     for (const auto &module : presentation) {
+      configuration[module.first.c_str()]["Doublespace"] = module.second.double_space ? "On" : "Off";
       configuration[module.first.c_str()]["Headings"] = module.second.headings ? "On" : "Off";
       auto write_content = [&](const char *key, ContentPreference value) {
         if (value == ContentPreference::unknown) return; // No discovery or explicit setting yet.
