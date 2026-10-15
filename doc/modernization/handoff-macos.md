@@ -3,7 +3,17 @@
 Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md) and the
 [shared handoff](handoff.md) first.
 
-## Shared-core checkpoint: ready for handoff
+## Active shared-core snapshot task
+
+The macOS chat has resumed from `fff8740` on `master`: shared lexical snapshot
+integration, format-before-cleanup, document-wide fallback, copied CSS/status,
+worker/C ABI and compatible native adapter consumption. Existing consumers stay
+compatible until they explicitly opt in to the new presentation path. Scope:
+shared content/session/worker/C API, their tests, native adapter integration and
+associated evidence. Other chats should avoid overlapping shared API edits while
+this task is active; platform-local acceptance can proceed independently.
+
+## Previous checked milestones
 
 The macOS chat completed the shared lexical corpus/ownership/layout checkpoints
 below on `master`, starting from `74a4190`. No file claim remains after this
