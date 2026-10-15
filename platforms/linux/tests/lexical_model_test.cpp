@@ -22,6 +22,11 @@ int main(int argc, char **argv) {
     ReaderModel model(argv[1]); settle(model);
     check(model.visit("Text", "", "John4:1"), "read original styled fixture"); settle(model);
     check(!model.passage().bible_lexical.requested && model.passage().bible_lexical.css.empty(), "disabled preferences have no annotation CSS");
+    const auto plain = model.passage().bible_html;
+    check(!model.presentation(false).double_space && model.set_double_space(false, true), "spacing starts off and accepts a core command"); settle(model);
+    check(model.passage().bible_html == plain && model.passage().bible_lexical.css.find("2em ! important") != std::string::npos &&
+          !model.passage().bible_lexical.requested && model.presentation(false).double_space,
+          "Linux spacing-only refresh changes CSS and keeps HTML/history");
     check(model.set_filter(XC_ENGINE_STRONGS, true), "enable declared Strong's option"); settle(model);
     const auto css = model.passage().bible_lexical.css;
     check(model.error().empty() && model.passage().bible_lexical.applied && css.find("line-height: 2.7em") != std::string::npos &&
@@ -42,6 +47,9 @@ int main(int argc, char **argv) {
     check(model.choose_commentary("ThMLNotes"), "paired commentary"); settle(model);
     check(model.passage().commentary_lexical.applied && model.commentary_chapter().lexical.applied &&
           model.commentary_chapter().lexical.css == css, "Linux paired commentary copies independently owned layout metadata");
+    check(model.set_double_space(true, true), "separate commentary spacing preference"); settle(model);
+    check(model.presentation(true).double_space && model.commentary_chapter().lexical.css == css,
+          "Linux annotation spacing takes precedence over separately enabled commentary preference");
     const auto retained = model.passage();
     check(model.visit("Missing", "", "John4:1"), "submit unavailable module"); settle(model);
     check(!model.error().empty() && model.passage().bible_html == retained.bible_html && model.passage().bible_lexical.css == retained.bible_lexical.css,
@@ -49,6 +57,7 @@ int main(int argc, char **argv) {
     check(model.visit("Text", "ThMLNotes", "John5:1"), "unsupported chapter"); settle(model);
     check(model.error().empty() && model.bible_chapter().lexical.requested && !model.bible_chapter().lexical.applied &&
           model.bible_chapter().lexical.css.empty() && !model.commentary_chapter().lexical.applied &&
+          model.commentary_chapter().lexical.css.find("2em ! important") != std::string::npos &&
           document(model.bible_chapter().html, model.bible_chapter().lexical.css).find("position: absolute") == std::string::npos,
           "Linux raw fallback never inherits annotation positioning CSS");
     auto *worker = model.detach(); std::thread([worker] { xc_worker_close(worker); }).join();

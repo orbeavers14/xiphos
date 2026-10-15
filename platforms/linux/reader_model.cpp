@@ -170,6 +170,13 @@ bool ReaderModel::select_variant(int choice) {
   auto status = xc_worker_select_module_variant(worker_, tab_, passage_.bible.c_str(), choice, &request);
   return accept(status, request, Operation::refresh);
 }
+bool ReaderModel::set_double_space(bool commentary, bool enabled) {
+  const auto &module = commentary ? passage_.commentary : passage_.bible;
+  if (!ready() || busy() || module.empty()) return false;
+  xc_request *request = nullptr;
+  auto status = xc_worker_set_double_space(worker_, tab_, module.c_str(), enabled, &request);
+  return accept(status, request, Operation::refresh);
+}
 bool ReaderModel::set_content(bool commentary, bool font_faces, bool enabled) {
   const auto &module = commentary ? passage_.commentary : passage_.bible;
   const auto &options = presentation(commentary);
@@ -443,6 +450,9 @@ void ReaderModel::tick() {
   case Operation::bible_options:
   case Operation::commentary_options: {
     const int index = operation_ == Operation::bible_options ? 0 : 1;
+    const auto spacing = xc_request_double_space(completed.get());
+    if (spacing < 0) { error_ = "Missing spacing preference."; break; }
+    presentations_[index].double_space = spacing != 0;
     presentations_[index].chapter = xc_request_commentary_chapter_mode(completed.get()) == 1;
     presentations_[index].headings = xc_request_headings(completed.get()) == 1;
     if (xc_request_content_options(completed.get(), &presentations_[index].images, &presentations_[index].font_faces) != XC_OK) { error_ = "Missing presentation preferences."; break; }

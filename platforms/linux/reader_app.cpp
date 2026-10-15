@@ -32,6 +32,7 @@ struct App {
   GtkWidget *dictionary_previous = nullptr, *dictionary_next = nullptr, *dictionary_back = nullptr, *dictionary_forward = nullptr;
   GtkWidget *dictionary_nearby = nullptr, *dictionary_clear = nullptr, *dictionary_close = nullptr;
   GtkWidget *reading_checks[12] = {}, *variants = nullptr, *headings = nullptr;
+  GtkWidget *spacing_checks[2] = {};
   GtkWidget *content_checks[4] = {}, *profile_import = nullptr, *profile_save = nullptr;
   GtkNativeDialog *file_dialog = nullptr;
   WebKitWebView *sidebar_view = nullptr, *information_view = nullptr;
@@ -290,6 +291,10 @@ gboolean tick(gpointer data) {
   gtk_widget_set_sensitive(app->commentary_mode, enabled && commentary_module && commentary_module->regular_commentary);
   gtk_check_button_set_active(GTK_CHECK_BUTTON(app->headings), app->model->presentation(true).headings);
   gtk_widget_set_sensitive(app->headings, enabled && commentary_module && commentary_module->headings);
+  for (int i = 0; i < 2; ++i) {
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(app->spacing_checks[i]), app->model->presentation(i != 0).double_space);
+    gtk_widget_set_sensitive(app->spacing_checks[i], enabled && !(i ? passage.commentary : passage.bible).empty());
+  }
   for (int i = 0; i < 4; ++i) {
     const auto &options = app->model->presentation(i >= 2);
     const int value = i % 2 ? options.font_faces : options.images;
@@ -595,6 +600,16 @@ void activate(GtkApplication *application, gpointer data) {
       auto *app = static_cast<App *>(data); if (app->updating || !app->model) return;
       const auto kind = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(button), "content-kind"));
       app->model->set_content(kind >= 2, kind % 2, gtk_check_button_get_active(button));
+    }), app);
+  }
+  for (int i = 0; i < 2; ++i) {
+    app->spacing_checks[i] = gtk_check_button_new_with_label(i ? "Commentary double space" : "Bible double space");
+    gtk_box_append(GTK_BOX(options_box), app->spacing_checks[i]);
+    g_object_set_data(G_OBJECT(app->spacing_checks[i]), "spacing-pane", GINT_TO_POINTER(i));
+    g_signal_connect(app->spacing_checks[i], "toggled", G_CALLBACK(+[](GtkCheckButton *button, gpointer data) {
+      auto *app = static_cast<App *>(data); if (app->updating || !app->model) return;
+      app->model->set_double_space(GPOINTER_TO_INT(g_object_get_data(G_OBJECT(button), "spacing-pane")) != 0,
+                                   gtk_check_button_get_active(button));
     }), app);
   }
   app->headings = gtk_check_button_new_with_label("Commentary headings"); gtk_box_append(GTK_BOX(options_box), app->headings);

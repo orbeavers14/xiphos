@@ -11,7 +11,7 @@ namespace xiphos::linux_preview {
 struct Module { std::string id, description, type; bool dictionary = false; unsigned declared_flags = 0; bool regular_commentary = false, headings = false; unsigned lexicon_roles = 0; std::string language; };
 struct Preview { std::string module, reference, html, expression; size_t count = 0; bool limited = false; unsigned skipped = 0; };
 using Lexicons = std::array<std::optional<std::string>, 5>;
-struct Presentation { bool chapter = false, headings = true; int images = -1, font_faces = -1; };
+struct Presentation { bool chapter = false, headings = true, double_space = false; int images = -1, font_faces = -1; };
 struct LexicalPresentation { std::string css; bool requested = false, applied = false; };
 struct Dictionary { std::string module, key, html, source_module, source_reference; };
 struct ReferenceChoice { std::string label, target; };
@@ -47,6 +47,7 @@ public:
   bool showing_references() const { return showing_references_; }
   bool set_filter(unsigned flag, bool enabled);
   bool select_variant(int choice);
+  bool set_double_space(bool commentary, bool enabled);
   bool set_content(bool commentary, bool font_faces, bool enabled);
   bool set_commentary_headings(bool enabled);
   bool reading_profile(const std::string &path, bool save);
