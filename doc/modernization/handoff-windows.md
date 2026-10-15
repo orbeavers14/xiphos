@@ -3,11 +3,10 @@
 Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md) and the
 [shared handoff](handoff.md) first.
 
-Active task on `master`: inventory native Windows ARM64 prerequisites and add a
-repeatable local MSVC core build/test entry point in `platforms/windows`.
-Shared core/API ownership is not claimed. The initial inventory found no MSVC,
-Windows SDK, CMake, .NET or dependency SDK in PATH/standard install locations;
-this session has no administrator token. Native build acceptance remains open.
+Current task on `master`: validate the shared core on native Windows ARM64.
+The prerequisite inventory and local build entry point are published; compiler
+installation is pending owner action. Shared core/API ownership is not claimed.
+Native build acceptance remains open.
 
 ## Existing evidence and boundaries
 
@@ -69,9 +68,63 @@ WinUI/.NET/C++ interop choice and exact build commands must be documented when
 implemented and tested. Keep hosted checks off; do not dispatch the legacy MinGW
 workflow to stand in for an unavailable native Windows environment.
 
-## Next handoff entry
+## 2026-10-15 native Windows prerequisite checkpoint
 
-Replace this section with the [checkpoint format](handoff.md#evidence-to-record-at-each-checkpoint).
-Include native Windows build, architecture, MSVC/SDK/dependency versions, tested
-commit, local results, adapter/GUI coverage and platform failures still open.
-Push the handoff so the other chats do not assume this work is already complete.
+- Task/branch: Windows ARM64 core validation on `master`; build tooling checked,
+  native compiler/dependency validation pending. Owner was given the official
+  Build Tools installer and ARM64/Windows SDK/CMake component directions and
+  offered to install them with administrator access.
+- Implementation commit checked: `0ad8917726e1214329f153b9d149238b3062f7bb`.
+- Host: native Windows build 26300, ARM64 host and ARM64 PowerShell process.
+  PowerShell 7 and Windows PowerShell 5.1 inventory/native-exit checks passed.
+  No MSVC, Windows SDK, Ninja, pkg-config or .NET SDK CLI was found in PATH or
+  standard install locations. No compatible SWORD/GLib/libxml2 SDK was located;
+  this does not rule out an SDK elsewhere. The session has no administrator token.
+- Added [core.ps1](../../platforms/windows/core.ps1) and
+  [Windows build instructions](../../platforms/windows/README.md): read-only
+  inventory, developer-target/SDK prerequisites, Ninja/MSVC C++17 configuration,
+  all existing core tests, native-error propagation and empty-suite rejection.
+  No core, C ABI, legacy application or hosted workflow behavior changed.
+- Local-only tool: official Kitware CMake 3.31.8 ARM64 ZIP, downloaded from
+  `https://github.com/Kitware/CMake/releases/download/v3.31.8/` and verified
+  against the release's `cmake-3.31.8-SHA-256.txt`. Archive SHA-256:
+  `d37ca89ec60aece080664ee936f7aaffdfdbde0a201b165c45ecfaf68a4c1fa9`.
+  Its `bin` directory was used as `$cmakeBin` below; no binary is committed.
+- Checks actually run from the repository root:
+
+  ```powershell
+  ./platforms/windows/core.ps1 -Inventory | Format-List
+  ./platforms/windows/core.ps1 -Inventory -CMakeExecutable "$cmakeBin/cmake.exe"
+  ./platforms/windows/core.ps1
+  & "$cmakeBin/cmake.exe" --version
+  & "$cmakeBin/cmake.exe" -S src/core -B build/windows-core-arm64-probe -G 'Visual Studio 17 2022' -A ARM64 -DCMAKE_CXX_STANDARD=17 -DBUILD_TESTING=ON
+  git diff --check
+  ```
+
+  Inventory and portable CMake/sibling CTest discovery passed. Default build
+  invocation correctly rejected the missing compiler/SDK/tools. CMake reports
+  3.31.8; direct configuration failed at `project()` because no Visual Studio
+  instance exists. **Zero core tests ran; no MSVC linking or parity is accepted.**
+  PowerShell parser validation passed. Windows PowerShell's default execution
+  policy blocked the script; a process-only `-ExecutionPolicy Bypass` invocation
+  passed inventory without changing the machine policy.
+- Native helper checks used the real CMake/CTest executables:
+
+  ```powershell
+  $null = . ./platforms/windows/core.ps1 -Inventory
+  Invoke-Checked "$cmakeBin/cmake.exe" @('--version')
+  # Expected exception: native exit code 1, checked in both PowerShell versions.
+  Invoke-Checked "$cmakeBin/cmake.exe" @('-E', 'false')
+  New-Item -ItemType Directory -Force build/windows-empty-test-probe
+  # Expected exception: CTest found no tests, rather than reporting a passing suite.
+  Invoke-Checked "$cmakeBin/ctest.exe" @('--test-dir', 'build/windows-empty-test-probe', '--no-tests=error')
+  ```
+
+- Publication: command-line Git credential-manager invocation failed in this
+  sandbox; the connected GitHub API published the checked files with an expected
+  branch-head check and no force update. No hosted jobs were dispatched.
+- Not checked: native core compile/link/tests, dependency versions/provenance,
+  DLL deployment, Unicode/file replacement behavior, WinUI/GUI and accessibility.
+- Next bounded task: after the owner's MSVC/ARM64/Windows SDK installation,
+  initialize a matching developer shell, build a coherent dependency set, then
+  run `core.ps1` and inspect every failure before implementing WinUI.
