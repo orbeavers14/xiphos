@@ -252,7 +252,7 @@ bool small_supported(const std::string &text) {
   }
   return anchors != 0;
 }
-bool supported_markup(const std::string &html) {
+bool supported_markup(const std::string &html, bool lexical_input = true) {
   if (html.size() > 1024 * 1024) return false;
   std::vector<std::string> stack;
   std::size_t opaque_anchor_depth = 0;
@@ -261,7 +261,7 @@ bool supported_markup(const std::string &html) {
     if (html[at] != '<') { ++at; continue; }
     // Ordinary lowercase anchors are copied intact by the scanner. A SWORD
     // footnote's nested small/sup marker is content, not a lexical annotation.
-    if (starts(html, at, "<small>") && !opaque_anchor_depth) {
+    if (lexical_input && starts(html, at, "<small>") && !opaque_anchor_depth) {
       const auto end = html.find("</small>", at);
       if (end == std::string::npos || !small_supported(html.substr(at, end + 8 - at))) return false;
     }
@@ -320,9 +320,22 @@ LexicalLayout layout_lexical_content(std::string html, bool strongs, bool lemmas
   LexicalLayout result;
   result.requested = strongs || lemmas || morphology;
   if (result.requested) {
-    auto rendered = render_word_blocks(std::move(html));
-    result.html = std::move(rendered.html);
-    result.applied = rendered.applied;
+    // SWORD exposes captured section headings as an outer h1-h6 element.
+    // Keep that block outside the inherited inline-word scanner so it cannot
+    // cross word spans. Other markup still takes the conservative checked path.
+    std::string heading;
+    if (html.size() >= 9 && starts(html, 0, "<h") && html[2] >= '1' && html[2] <= '6' && html[3] == '>') {
+      const auto close = "</h" + html.substr(2, 1) + ">";
+      if (html.compare(html.size() - close.size(), close.size(), close) == 0 && supported_markup(html)) heading = html.substr(0, 4);
+    }
+    auto rendered = render_word_blocks(heading.empty() ? html : html.substr(4, html.size() - 9));
+    if (rendered.applied && !heading.empty()) rendered.html = heading + rendered.html + "</h" + heading.substr(2, 1) + ">";
+    // The inherited scanner can split balanced inline tags across word spans
+    // (for example a font around several words). Browser repair can then put
+    // annotations outside their containing word. Preserve the complete source
+    // document instead of publishing positioning CSS for that broken nesting.
+    result.applied = rendered.applied && supported_markup(rendered.html, false);
+    result.html = result.applied ? std::move(rendered.html) : std::move(html);
   } else result.html = std::move(html);
   result.css = result.applied ? lexical_block_style(strongs, lemmas, morphology, double_space)
                              : lexical_block_style(false, false, false, double_space);

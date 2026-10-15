@@ -209,6 +209,27 @@ int main(int argc, char **argv) {
           "depth and input-size bounds preserve unsupported data");
     bool nul = false; try { xiphos::core::render_word_blocks(std::string("a\0b", 3)); } catch (const std::invalid_argument &) { nul = true; }
     check(nul, "embedded NUL rejected");
+    for (const auto &styled : {std::string("<font face=\"Original\">Original styled word</font> "),
+                              std::string("<em>Original styled word</em> ")}) {
+      const auto input = styled + strong("3056", true);
+      const auto inherited = xiphos::core::render_word_blocks(input);
+      check(inherited.applied, "characterized low-level scanner remains compatible");
+      for (bool spacing : {false, true}) {
+        const auto result = xiphos::core::layout_lexical_content(input, true, false, false, spacing);
+        check(result.requested && !result.applied && result.html == input &&
+              result.css == frozen_lexical_style(false, false, false, spacing),
+              "layout rejects scanner output whose inline tags cross word-span boundaries");
+      }
+    }
+    const auto safe_font = xiphos::core::layout_lexical_content("<font face=\"Original\">Original</font> word " + strong("3056", true), true, false, false, false);
+    check(safe_font.applied && !safe_font.css.empty(), "balanced single-word font retains supported layout");
+    for (char level = '1'; level <= '6'; ++level) {
+      const auto open = std::string("<h") + level + ">", close = std::string("</h") + level + ">";
+      const auto body = "Original heading " + strong("3056", true);
+      const auto result = xiphos::core::layout_lexical_content(open + body + close, true, false, false, false);
+      check(result.applied && result.html == open + xiphos::core::render_word_blocks(body).html + close,
+            "captured heading block wraps balanced word layout without entering the inline scanner");
+    }
     unsigned policies = 0;
     const std::string layout_input = "Original " + strong("3056", true) + morph("N-NSM", true);
     for (unsigned bits = 0; bits < 16; ++bits) {

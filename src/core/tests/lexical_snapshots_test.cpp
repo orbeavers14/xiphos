@@ -29,13 +29,18 @@ int main(int argc, char **argv) {
     std::filesystem::create_directories(root);
     std::filesystem::copy(source, root, std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
     std::filesystem::remove(root / "mods.d/modules-conf.cache");
-    const auto styled = "<font face=\"Original Lexical Font\">Original styled word</font> " + annotation() + " <img src=\"original.png\" />";
+    for (const auto *config : {"text.conf", "thml.conf"}) {
+      std::ofstream file(root / "mods.d" / config, std::ios::app);
+      file << "GlobalOptionFilter=ThMLStrongs\n";
+    }
+    const auto styled = "<font face=\"Original Lexical Font\">Original</font> styled word " + annotation() + " <img src=\"original.png\" />";
     {
       sword::RawText writer((root / "text").string().c_str());
       writer.setKey("John 4:1"); writer.setEntry(styled.c_str());
       writer.setKey("John 4:2"); writer.setEntry("Original <scripRef passage=\"John 4:1\">passage link</scripRef>.");
       writer.setKey("John 5:1"); writer.setEntry(styled.c_str());
       writer.setKey("John 5:2"); writer.setEntry("Original unsupported <small>ordinary note</small>");
+      writer.setKey("John 6:1"); writer.setEntry(("<font face=\"Original Font\">Original styled word</font> " + annotation()).c_str());
     }
     {
       sword::RawCom writer((root / "thml").string().c_str());
@@ -86,6 +91,10 @@ int main(int argc, char **argv) {
       check(sparse.lexical.applied && sparse.verse_ordinals == std::vector<unsigned>({1, 2}) &&
             sparse.verses.front().heading_html == pair.commentary->heading_html && sparse.selected_anchor == "commentary-verse-2",
             "sparse commentary preserves SDK ordinals and heading layout");
+      const auto broken_nesting = first.read_entry("Text", "John 6:1");
+      check(broken_nesting.lexical.requested && !broken_nesting.lexical.applied && broken_nesting.lexical.css.empty() &&
+            broken_nesting.html.find("class=\"word\"") == std::string::npos,
+            "browser-repaired cross-word style nesting retains raw HTML without annotation CSS");
       const auto fallback = first.read_chapter("Text", "John 5:1");
       check(fallback.lexical.requested && !fallback.lexical.applied && fallback.lexical.css.empty() &&
             fallback.verses.at(0).html == cleanup_html_content(reader.read("Text", "John 5:1", on).html, ContentPreference::off, ContentPreference::off).html &&

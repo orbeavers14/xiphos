@@ -15,6 +15,7 @@ struct LexicalLayout {
 // One owned decision for HTML and its matching legacy layout CSS. No annotation
 // flags means unchanged HTML. Unsupported markup retains raw HTML and uses only
 // optional double-spacing CSS, never positioning rules for missing word spans.
+// Also falls back when inherited rendering crosses inline/word tag boundaries.
 // NUL is rejected even when layout is disabled. Does not apply module filters.
 LexicalLayout layout_lexical_content(std::string html, bool strongs, bool lemmas,
                                      bool morphology, bool double_space);
