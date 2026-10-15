@@ -5,7 +5,8 @@ Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the [shared handoff](hand
 
 ## Current incoming changes — native Fedora rerun required
 
-Fetch current master. The latest shared implementation is `c499324`: owned
+Fetch current master. Latest production follow-ups are `d1175af` / `5da4a7a`,
+with final added dense/linked coverage `084fdde`. Reader `c499324` adds owned
 per-filter note-label scopes and opt-in C++ Reader metadata. Existing session/C/
 native numbering behavior remains compatible; automatic native numbering is not
 enabled. Earlier changes add matching lexical HTML/CSS consumption (`0b40574`)
@@ -23,8 +24,8 @@ Next Fedora task: build the current default-ON GTK target, run the integrated
 suite (56 tests at this checkpoint), repeat the existing six desktop smoke modes,
 then inspect actual lexical positioning/fallback and both spacing controls with
 keyboard/pointer. Retain picker, accessibility, RTL/font/corpus and accelerated
-rendering gates. Preserve manual-only hosted CI. The Mac chat still claims shared
-presentation/session/Reader API work; report shared defects before overlapping edits.
+rendering gates. Preserve manual-only hosted CI. The bounded Mac shared-edit claim is released; the next chat should announce
+session-numbering ownership before overlapping shared API work.
 
 ## Recorded native Fedora checkpoint and authority
 

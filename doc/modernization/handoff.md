@@ -16,7 +16,8 @@ The [status ledger](status.md) is the detailed scope/evidence record; the
 about 8% (range 6–10%), with 0/38 feature groups fully accepted and 0/3 native
 release-ready applications. Do not turn passed build counts into parity scores.
 
-Latest checked shared implementation: `c499324`. Local suites pass **72/72 on
+Latest production follow-ups: `d1175af` / `5da4a7a`, following Reader `c499324`;
+final added dense/linked regression coverage: `084fdde`. Local suites pass **72/72 on
 Mac** and **56/56 portable Linux/core checks on Mac**; focused note/Reader
 ASan/UBSan checks pass 3/3. Current GTK source still requires Fedora compilation
 and desktop checks; MSVC/WinUI remain unvalidated. The previous native Fedora
@@ -30,16 +31,16 @@ checkpoint passed 51 tests and six desktop smokes on its recorded older revision
 | Earlier Fedora preview scope catch-up | PRs #82–89, `a80409b` | [Native Fedora evidence](handoff-linux.md); retain manual/corpus/renderer gates |
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
-The Mac chat continues shared presentation/note-numbering work. Platform-local
-acceptance can proceed independently; fetch/read the current ownership note before
-editing shared APIs. These results are scoped implementation evidence, not complete
+The bounded Mac checkpoint is checked and its shared-edit claim is released.
+Next shared task: opted-in session numbering using the checked Reader metadata
+and preference decoder. Fetch/read the current ownership note before editing. These results are scoped implementation evidence, not complete
 functional/design parity or permission to retire the reference application.
 
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Characterize saved note-number settings, then integrate owned numbering in shared sessions before native commands/controls | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Integrate owned numbering in shared sessions using checked metadata/setting decoder before native commands/controls | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

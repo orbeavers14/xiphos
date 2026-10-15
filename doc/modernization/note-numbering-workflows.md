@@ -109,10 +109,33 @@ Current evidence: 72/72 Mac, 56/56 portable Linux/core on Mac, focused ASan/UBSa
 3/3 (SDK scopes, heading fixture, Reader metadata), strict C++11 and native-disabled
 helper build pass. No new GUI/native Fedora/MSVC acceptance is claimed.
 
+## Saved-setting and final coverage follow-up
+
+`d1175af` extracts `note_numbers_from_preferences`: On unless the decoded value is
+exactly Off. The complete frozen/current initializer, 22 file/duplicate cases and
+direct map cases preserve SDK decoding/order without extra normalization. Native
+save tests preserve unhandled `XrefNoteNumbers` values in existing and different
+target files. It is not a new native presentation field or activated setting.
+The legacy menu saves the option then refreshes its pane/dialog; ConstructFlags
+uses XrefNoteNumbers bit 26 and CacheIsValid compares flags. Native caching and
+setting application remain separate work.
+
+`5da4a7a` avoids the second output allocation/copy when literal numbering finds no
+markers. Frozen comparisons and concurrent cases remain unchanged. Full suites
+at that production checkpoint pass 72/72 Mac and 56/56 portable Linux/core on Mac;
+focused preference/counter ASan/UBSan 2/2 and counter TSan 1/1 pass. Strict C++11
+and native-disabled helper builds pass.
+
+`084fdde` adds distinct/empty/linked dense Bible sources and a real shared
+Bible/commentary renderer restoration check. Focused normal 2/2 and ASan/UBSan
+2/2 pass including the heading fixture. This adds coverage without changing
+production behavior; no additional GUI/native Fedora/MSVC acceptance is implied.
+
 ## Next integration boundaries
 
-1. Characterize saved `XrefNoteNumbers` defaults/import/cache behavior before
-   applying or persisting the new setting in native sessions.
+1. Use the checked saved-setting decoder while adding native session state.
+   Apply the setting before expanding persistence; retain unhandled target values
+   until the new behavior is implemented and checked.
 2. Integrate opted-in session numbering using owned Reader sources. Preserve
    per-fragment heading cleanup before body cleanup, document counter reset/
    continuation, diagnostic ordering, whole-pane lexical fallback and paired panes.

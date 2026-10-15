@@ -3,16 +3,24 @@
 Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the
 [shared handoff](handoff.md), [status](status.md) and relevant parity rows first.
 
-## Active task and ownership
+## Current bounded checkpoint and ownership
 
-Branch: `master` on `orbeavers14/xiphos`. The Mac chat is continuing shared
-presentation/note-numbering work. Scope: core Reader/session/render/presentation,
-worker/C ABI, compatible adapters, tests and evidence. Other chats should avoid
-overlapping shared API edits while this continues; platform-only checks can
-proceed independently. Fetch before work or integration; never force-push or
-overwrite unrelated changes. Sequential checked master commits/pushes are authorized.
+Branch: `master` on `orbeavers14/xiphos`. This bounded presentation/note-source
+checkpoint is checked; its shared-edit claim is released. The project is not
+complete. The next chat must fetch and announce the session-numbering task below
+before overlapping core/worker/C ABI work. Platform-only acceptance can proceed.
+Sequential checked master commits/pushes remain authorized; preserve unrelated
+changes and never force-push.
 
 ## Latest checked implementation
+
+Latest test checkpoint: `084fdde`; production follow-ups `d1175af` (legacy
+note-setting decoder) and `5da4a7a` (marker-free allocation). The full suites
+passed 72/72 Mac and 56/56 portable Linux/core at `5da4a7a`; additional distinct,
+empty and linked dense-note cases at `084fdde` passed focused normal 2/2 and
+ASan/UBSan 2/2 including the heading fixture. Production source is unchanged by
+that final test addition. Preference/counter ASan/UBSan 2/2 and counter TSan 1/1
+also pass, with strict C++11 and native-disabled helper builds.
 
 `c499324`: owned per-filter note-label restoration and opt-in C++ Reader sources.
 The private Reader establishes an explicit Off baseline, matching the checked SDK
@@ -82,8 +90,10 @@ launcher outside Documents for further GUI checks; do not weaken macOS privacy.
 
 ## Next bounded shared work
 
-1. Characterize `XrefNoteNumbers` saved defaults/import/cache behavior against the
-   full legacy initializer. Preserve unknown/unhandled values until a setting is applied.
+1. Use the checked `note_numbers_from_preferences` decoder (default On except
+   decoded exact Off). The legacy adapter reuses it; 22 file/duplicate cases and
+   direct-value cases pass. Native saves preserve unhandled target keys until the
+   setting is actually applied. Cache bit 26 remains in the retained legacy path.
 2. Integrate owned numbering into opted-in session snapshots using Reader metadata.
    Keep per-SDK-fragment heading cleanup before body cleanup, document counter
    reset/continuation, copied diagnostics, whole-pane lexical fallback and independent
@@ -95,5 +105,7 @@ launcher outside Documents for further GUI checks; do not weaken macOS privacy.
    remain gates. 0/38 complete parity groups and 0/3 native releases are accepted.
 
 Keep all routine checks local. No hosted build or reset credit was requested.
+The owner requested work until allowance exhaustion; resume from this checked
+checkpoint when usage permits rather than rebuilding already-checked helpers.
 Update this rolling handoff with the next implementation commit/results/limits;
 link historical evidence instead of accumulating conflicting current checkpoints.

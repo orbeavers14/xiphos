@@ -47,6 +47,14 @@ portable Linux/core on Mac; focused note/Reader ASan/UBSan passes 3/3. Automatic
 session numbering, saved settings and native controls are still pending. See the
 [rolling Mac handoff](handoff-macos.md) for current commands and bounded next work.
 
+Follow-ups `d1175af` / `5da4a7a` share exact saved note-setting decoding, protect
+unhandled native target values and avoid an extra marker-free text copy. Full
+local suites pass 72/72 Mac and 56/56 portable Linux/core on Mac; focused
+ASan/UBSan 2/2 and counter TSan 1/1 pass. Final extra dense/linked coverage
+`084fdde` passes normal/sanitized 2/2 each with production source unchanged.
+The bounded shared-edit claim is released; the next task is session-numbering
+integration. Automatic native numbering/settings and full parity remain pending.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three
