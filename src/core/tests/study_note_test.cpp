@@ -4,6 +4,7 @@
 #include <chrono>
 #include <thread>
 #include "xiphos/core/engine_manager.hpp"
+#include "xiphos/core/word_blocks.hpp"
 #include <markupfiltmgr.h>
 #include <utf8html.h>
 #include <array>
@@ -107,10 +108,15 @@ int main(int argc, char **argv) {
       auto options = engine_options_from_preferences({}); options.strongs = true;
       worker.set_module_engine_options(tab, "OptionOther", options).get();
       const auto rendered = worker.read_entry(tab, "OptionOther", "John 3:19").get().html;
-      const auto href = rendered.find("href=\"");
+      const auto layout = layout_lexical_content(rendered, true, false, false, false);
+      check(layout.applied && layout.html != rendered && layout.css.find("line-height: 2.7em") != std::string::npos,
+            "real worker note-bearing snapshot receives shared word layout and matching CSS");
+      const auto href = layout.html.find("href=\"");
       check(href != std::string::npos, "engine generates note URI");
-      const auto end = rendered.find('"', href + 6);
-      generated_note_uri = rendered.substr(href + 6, end - href - 6);
+      const auto end = layout.html.find('"', href + 6);
+      generated_note_uri = layout.html.substr(href + 6, end - href - 6);
+      check(rendered.find("href=\"" + generated_note_uri + "\"") != std::string::npos,
+            "word layout retains the exact SDK note URI before shared dispatch");
       check(worker.study_note_link(tab, "OptionTest", generated_note_uri).get().html == expected[3],
             "actual engine note URI resolves explicit module/verse/body");
       const auto resolvedNote = worker.resolve_study_link(tab, "OptionTest", generated_note_uri).get();
@@ -136,10 +142,14 @@ int main(int argc, char **argv) {
       check(singleList.context == "John 3:18" && singleList.entries.size() == 1 && singleList.entries[0].reference == "John 3:16" &&
             singleList.entries[0].html.find("3056") != std::string::npos, "single note reference is configured sidebar list");
       const auto rangeNote = worker.study_note(tab, "OptionOther", "John3:20", "1").get();
-      const auto rangeHref = rangeNote.html.find("href=\"");
+      const auto rangeLayout = layout_lexical_content(rangeNote.html, true, false, false, false);
+      check(rangeLayout.applied, "real ranged note body supports owned word layout");
+      const auto rangeHref = rangeLayout.html.find("href=\"");
       check(rangeHref != std::string::npos, "engine generated ranged reference URI");
-      const auto rangeEnd = rangeNote.html.find('"', rangeHref + 6);
-      const auto rangeUri = rangeNote.html.substr(rangeHref + 6, rangeEnd - rangeHref - 6);
+      const auto rangeEnd = rangeLayout.html.find('"', rangeHref + 6);
+      const auto rangeUri = rangeLayout.html.substr(rangeHref + 6, rangeEnd - rangeHref - 6);
+      check(rangeNote.html.find("href=\"" + rangeUri + "\"") != std::string::npos,
+            "word layout retains the exact SDK range URI before expansion");
       const auto rangeList = std::get<ReferenceList>(worker.resolve_study_link_at(tab, "OptionOther", "John3:20", rangeUri).get());
       check(rangeList.entries.size() == 4 && rangeList.entries.front().reference == "John 3:16" && rangeList.entries.back().reference == "John 3:19",
             "actual SWORD ranged note link expands through shared parser");

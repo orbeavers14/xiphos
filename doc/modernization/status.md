@@ -89,8 +89,9 @@ Tests add 8,000 noise inputs, 3,039 structured mutations and 400 concurrent rend
 snapshot adoption and broader corpus/visual acceptance remain pending. Shared owned lexical CSS
 and HTML are now available through one layout decision, including explicit
 unsupported-content CSS fallback (48 policy cases and 400 concurrent combined calls).
-Shared owned lexical CSS
-now matches frozen selection and three actual legacy call sites over 768 cases,
+Worker note/ranged-reference fixtures verify that formatted URLs still resolve
+through the existing shared services (normal/ASan/UBSan/TSan focused runs 3/3 each).
+The CSS matches frozen selection and three actual legacy call sites over 768 cases,
 plus 2,048 concurrent selections. Strict C++11/native-disabled builds pass. Native
 CSS/parser integration and pixel acceptance remain pending. Focused normal/address/
 undefined/thread checks pass, with sequential scope and SDK instrumentation limits.

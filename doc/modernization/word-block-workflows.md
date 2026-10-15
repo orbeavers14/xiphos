@@ -152,6 +152,20 @@ This is an additive C++ helper; native snapshots, C/Swift/Linux adapters and UI
 layout have not yet adopted it. Adoption must publish HTML and its matching CSS
 together and preserve pane, option, heading/cleanup ordering and history contracts.
 
+The real worker study-note fixture also passes its note-bearing snapshot through
+this layout helper, extracts the unchanged SWORD-generated note URL and resolves
+it through the existing core. A formatted ranged-note body similarly retains its
+exact URL and expands through the shared reference-list service. Normal and
+address/undefined/thread focused runs each pass 3/3, including prerequisite fixtures.
+These integration checks exercise the helper explicitly; production snapshots
+still retain their prior behavior until the separate adoption milestone.
+
+That milestone must apply lexical formatting **before** image/font cleanup, as
+the legacy body and heading paths do. Current session snapshots already perform
+cleanup; simply formatting their returned HTML in each frontend would put the
+operations in the wrong place and duplicate policy. Integrate the combined stage
+inside the shared core, then carry copied HTML/CSS through the adapters together.
+
 Next: validate broader SDK/lemma/note/paragraph shapes and fallback policy, then
 adopt owned rendering/styles in heading/body snapshots with native controls and
 visual evidence. Representative RTL/font/module, keyboard/runtime and full GTK/
