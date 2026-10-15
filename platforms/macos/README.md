@@ -218,3 +218,21 @@ adds separate main/commentary controls through the shared preference command.
 The current suite passes 70/70; a temporary-window check confirms visible on/off
 chapter spacing refresh with unchanged passage/selection. CSS may contain only
 spacing while annotation requested/applied flags are false; views use copied CSS.
+
+## Shared note-number controls
+
+Reading options and Commentary options provide independent “Footnote and
+cross-reference numbers” toggles using the shared queued core setting. Profiles
+save/restore it; toggles refresh committed context without adding history or
+replacing a typed reference. Supported supplied labels and legacy document
+counters come from C++, including fragment cleanup order and lexical fallback.
+
+At `1d3612f`, 75/75 local Mac/core tests and a disposable window check cover the
+controls. To reproduce using original-prose data, run local tests first, then:
+
+```sh
+sh platforms/macos/launch-fixture.sh build/macos notes
+```
+
+The [note contract](../../doc/modernization/note-numbering-workflows.md) records
+remaining WORD lexical markup, heading/TEI identifiers and full corpus limits.

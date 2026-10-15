@@ -165,17 +165,50 @@ are not fully instrumented; leak detection is off. No new GUI, native Fedora or
 MSVC acceptance is claimed. Unsupported WORD footnote lexical markup still uses
 the established readable fallback; this checkpoint does not expand that grammar.
 
-## Next integration boundaries
+## Queued commands and native controls
 
-1. Add queued worker/C capability and per-module settings commands, with typed
-   copied state and compatible Swift/GTK consumption. Keep all numbering policy in
-   the shared core and preserve nonblocking FIFO ownership and neutral history.
-2. Add native controls only after those adapter contracts pass local checks.
-   Current C/native consumers remain on the default compatible path.
-3. Expand real module/TEI/RTL/corpus and platform acceptance. The direct-filter TEI
-   empty identifier remains a recorded narrow limitation, not an accepted note workflow.
+`aff5f59` exposes the checked session policy through queued worker/C commands:
+`xc_worker_set_note_numbering_enabled`, `xc_worker_set_note_numbers`, and typed
+repeatable `xc_request_note_numbers` value/availability outputs. Setters accept
+only 0/1 and remain FIFO, tab/module-local and history-neutral. Unknown engine
+state or a disabled consumer leaves the setting unavailable. Getter outputs clear
+on null/pending/failure/wrong-kind results; copies survive subsequent requests,
+closed tabs and worker destruction. Existing consumers remain default-off.
 
-The owner requested finishing this checkpoint, pushing it and stopping. Shared
-ownership is released; no follow-on worker/C/frontend task is active.
-Legacy source is not eligible for retirement. Passing these helpers does not
-check off whole F14/F17 parity or enable automatic GitHub builds.
+`1d3612f` opts the Mac and Linux preview models into that contract, copies state,
+and adds separate Bible/commentary “Footnote and cross-reference numbers” controls.
+Refresh uses committed passage context and the core's current policy; it preserves
+input drafts/history and paired-pane independence. Reading-option profiles save
+and restore the applied shared setting. No Swift/GTK numbering algorithm exists.
+Swift represents unavailable state as nil; the Linux model uses -1.
+
+Local evidence at `1d3612f`: **75/75 Mac/core CTests**, **59/59 portable Linux/core
+CTests on this Mac**, **ASan/UBSan 5/5** (worker/C and Linux model tests plus three
+fixture prerequisites), and strict C11 header syntax. Tests cover FIFO ordering,
+strict inputs, unknown/closed tabs, copied arguments/state, profiles, failed saves/
+imports retained by existing regression tests, window isolation, chapter counters,
+selection, drafts and shutdown. External SDKs are not fully instrumented; leak
+checks are off. No hosted builds were run.
+
+A disposable Mac window visibly switched entry markers from *n1/*n2 to *n and
+back; chapter counters continued through supplied/linked labels to *n2/*n3 at
+verse 5. Clicking a numbered Bible marker opened the Study note pane. Toggling
+commentary numbers removed its labels while the Bible remained numbered. The
+fixture app was quit and its temporary copy removed. GTK controls were source
+reviewed and their model tested here; current Fedora GUI and MSVC/WinUI validation
+remain pending. The ThML heading fixture also emits empty SDK note-link IDs,
+which remain a recorded SDK/heading follow-up, not an accepted click workflow.
+
+## Next acceptance boundaries
+
+1. On Fedora, rebuild the default-ON GTK preview and verify both controls,
+   chapter/entry updates, profile round trips and note clicks with real input.
+2. Expand WORD lexical note markup, real module/RTL/corpus and heading-note ID
+   coverage. Existing unsupported lexical markup retains the readable fallback.
+   The direct-filter TEI empty identifier remains a separate narrow limitation.
+3. Bring up native Windows dependencies/core and a thin WinUI adapter using the
+   same queued commands, not separate numbering logic.
+
+The requested native control checkpoint is complete and pushed; shared ownership
+is released. Legacy source is not eligible for retirement. These checks do not
+accept whole F14/F17 parity or enable automatic GitHub builds.

@@ -1,6 +1,6 @@
 # Native Windows chat handoff
 
-Updated 2026-10-14. Read [AGENTS.md](../../AGENTS.md) and the
+Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md) and the
 [shared handoff](handoff.md) first. No task is currently claimed by this file.
 
 ## Existing evidence and boundaries
@@ -10,6 +10,15 @@ linking, file replacement behavior and a WinUI 3 frontend remain unvalidated.
 There is no new Windows frontend at this checkpoint. The old MinGW/GTK packaging
 is a legacy application path, not evidence of WinUI 3 parity. Fedora/WSL passes
 are Linux checks and do not close the Windows gates.
+
+## Incoming shared note controls
+
+`aff5f59` adds queued C capability/settings and typed copied value/availability;
+`1d3612f` adopts them in existing Mac/GTK preview controls. Use the same API for
+future WinUI controls. Default-off capability and engine configuration are
+separate from the saved per-module value. Formatting/counters stay in the core.
+Local Mac and portable tests do not establish MSVC or WinUI acceptance. See the
+[note contract](note-numbering-workflows.md); shared ownership is released.
 
 ## Next bounded work
 

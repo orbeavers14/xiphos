@@ -5,28 +5,29 @@ Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the [shared handoff](hand
 
 ## Current incoming changes — native Fedora rerun required
 
-Fetch current master. Latest implementation `1bd924c` adds opt-in C++
-session note numbering and selective persistence, using owned Reader sources.
-The capability is default false and requires configured engine state. Existing
-worker/C/native consumers retain their current numbering behavior. Their queued
-commands and native adapter adoption are the next shared boundary. Earlier changes
-add matching lexical HTML/CSS consumption (`0b40574`) and main/commentary spacing
-controls (`420ae13`); current GTK source has not been compiled/run on this Mac.
+Fetch current master. Latest implementation `1d3612f` adds separate Bible/
+commentary note-number controls and copied state to the GTK preview/model; queued
+worker/C API is `aff5f59`, session policy `1bd924c`. Both preview models opt in;
+numbering, cleanup, fragment order and persistence stay in the shared core.
+Existing other C consumers remain default-off. Earlier lexical (`0b40574`) and
+spacing (`420ae13`) GTK changes also still require a current native rebuild.
 
-Current local results: **57/57 portable Linux/core checks on macOS**, 73/73 Mac,
-and focused session ASan/UBSan 3/3 including both fixture prerequisites.
-`XIPHOS_BUILD_GTK4_PREVIEW=OFF` builds no GTK executable and cannot validate Fedora
-runtime behavior. The earlier native Fedora results below remain historical.
+Current local results: **59/59 portable Linux/core tests on macOS**, **75/75 Mac**,
+and focused **ASan/UBSan 5/5** (worker/C, Linux note model, three fixture tests).
+Mac entry/chapter/paired controls were checked in a real window. The GTK source
+was reviewed and its model tested here; **no current GTK compilation/runtime** is
+claimed. `XIPHOS_BUILD_GTK4_PREVIEW=OFF` builds no GTK executable.
 See [layout](word-block-workflows.md), [spacing](double-space-workflows.md) and
-[note-numbering](note-numbering-workflows.md) contracts for scope and limits.
+[note-numbering](note-numbering-workflows.md) for exact contracts and limits.
 
-Next Fedora task: build the current default-ON GTK target, run the integrated
-suite (57 tests at this checkpoint), repeat the existing six desktop smoke modes,
-then inspect lexical positioning/fallback and spacing controls with keyboard/
-pointer. Retain picker, accessibility, RTL/font/corpus and accelerated-rendering
-gates. Preserve manual-only hosted CI. The owner requested this Mac checkpoint
-be pushed and work stopped; no shared-edit claim remains active. Announce the
-next bounded task before overlapping shared APIs.
+Next Fedora task: build the current default-ON GTK target, run all integrated
+tests (59 at this checkpoint), and repeat six desktop smoke modes. Verify both
+numbering controls and lexical/spacing refresh, entry/chapter selection, profile
+round trips, note clicks and unchanged history using keyboard/pointer. Retain
+picker, accessibility, RTL/font/corpus and accelerated-rendering gates. Unsupported
+WORD lexical note markup and SDK heading/TEI note IDs remain shared follow-ups.
+No hosted checks were used. The native-controls task is complete; shared ownership
+is released. Announce the next bounded task before overlapping shared APIs.
 
 ## Recorded native Fedora checkpoint and authority
 

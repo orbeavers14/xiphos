@@ -55,7 +55,7 @@ unhandled native target values and avoid an extra marker-free text copy. Full
 local suites pass 72/72 Mac and 56/56 portable Linux/core on Mac; focused
 ASan/UBSan 2/2 and counter TSan 1/1 pass. Final extra dense/linked coverage
 `084fdde` passes normal/sanitized 2/2 each with production source unchanged.
-Latest implementation `1bd924c` adds opted-in C++ session numbering,
+Session implementation `1bd924c` adds opted-in C++ session numbering,
 per-module settings and selective persistence with owned Reader fragment metadata.
 Full local suites pass 73/73 Mac and 57/57 portable Linux/core on Mac; focused
 session ASan/UBSan 3/3, strict C++11 and native-disabled helper checks pass. Dense/
@@ -65,6 +65,17 @@ Existing worker/C/native consumers remain compatible; their numbering commands,
 adapters and controls are the next boundary. Unsupported WORD lexical note markup
 still falls back. No whole parity row or release gate is accepted. The owner
 requested push and stop; shared ownership is released after this checkpoint.
+
+Latest implementation `1d3612f`, with queued API `aff5f59`, adds native Bible/
+commentary note-number controls through shared session policy and copied typed
+settings. Mac/core passes 75/75; portable Linux/core passes 59/59 on this Mac;
+focused ASan/UBSan passes 5/5 and strict C11 header syntax passes. A disposable Mac
+window checked entry On/Off/On, chapter continuation, a numbered-marker note-pane
+open and separate commentary Off while Bible numbering stayed On. Current GTK
+controls require Fedora runtime checks; Windows remains unvalidated. Unsupported
+WORD lexical markup and SDK heading/TEI note identifiers retain their stated
+limits. No whole parity group or completion estimate is changed. Shared ownership
+is released; the requested control checkpoint is complete.
 
 ## Overall completion estimate
 
