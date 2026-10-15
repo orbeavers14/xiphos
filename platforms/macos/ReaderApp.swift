@@ -264,6 +264,17 @@ final class ReaderModel: ObservableObject {
             try await self.present(entry, module: main, token: token, updateInput: false)
         }
     }
+    func setDoubleSpace(_ enabled: Bool, commentary: Bool = false) {
+        guard let worker, let tab, let main = displayedModule, let entry = displayedEntry else { return }
+        let module = commentary ? commentarySelection : main
+        let options = commentary ? commentaryContentOptions : contentOptions
+        guard !module.isEmpty, options.doubleSpace != nil else { return }
+        run { token in
+            try await worker.setDoubleSpace(tab: tab, module: module, enabled: enabled)
+            let refreshed = try await worker.readTabEntry(tab: tab, module: main, reference: entry.reference)
+            try await self.present(refreshed, module: main, token: token, updateInput: false)
+        }
+    }
     func setImageContent(_ enabled: Bool, commentary: Bool = false) {
         setContentOption(enabled, commentary: commentary, fontFaces: false)
     }
@@ -897,6 +908,9 @@ struct ReaderWindow: View {
                         Toggle("Highlight selected verse", isOn: $model.highlightSelected)
                     }.disabled(!model.showChapter && !model.showCommentaryChapter)
                     Menu("Reading options") {
+                        if let spacing = model.contentOptions.doubleSpace {
+                            Toggle("Double space", isOn: Binding(get: { spacing }, set: { model.setDoubleSpace($0) }))
+                        }
                         if let images = model.contentOptions.images {
                             Toggle("Image content", isOn: Binding(get: { images }, set: { model.setImageContent($0) }))
                         }
@@ -984,8 +998,11 @@ struct ReaderWindow: View {
                                 get: { model.commentaryHeadings }, set: { model.setCommentaryHeadings($0) }))
                                 .padding(.horizontal, 8).padding(.bottom, 8).disabled(model.isBusy || model.commentaryEntry == nil ||
                                     model.modules.first(where: { $0.id == model.commentarySelection })?.options.hasHeadings != true)
-                            if model.commentaryContentOptions.images != nil || model.commentaryContentOptions.fontFaces != nil {
+                            if model.commentaryContentOptions.doubleSpace != nil || model.commentaryContentOptions.images != nil || model.commentaryContentOptions.fontFaces != nil {
                                 Menu("Commentary options") {
+                                    if let spacing = model.commentaryContentOptions.doubleSpace {
+                                        Toggle("Double space", isOn: Binding(get: { spacing }, set: { model.setDoubleSpace($0, commentary: true) }))
+                                    }
                                     if let images = model.commentaryContentOptions.images {
                                         Toggle("Image content", isOn: Binding(get: { images }, set: { model.setImageContent($0, commentary: true) }))
                                     }

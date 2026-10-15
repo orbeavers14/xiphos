@@ -34,7 +34,10 @@ struct ModuleOptionInfo: Sendable {
 }
 // Nil carries the core's unknown content state; no display defaults live here.
 struct ContentDisplayOptions: Sendable {
-    let images: Bool?, fontFaces: Bool?
+    let images: Bool?, fontFaces: Bool?, doubleSpace: Bool?
+    init(images: Bool?, fontFaces: Bool?, doubleSpace: Bool? = nil) {
+        self.images = images; self.fontFaces = fontFaces; self.doubleSpace = doubleSpace
+    }
     static let unknown = Self(images: nil, fontFaces: nil)
 }
 struct InstalledModule: Identifiable, Sendable {

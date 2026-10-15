@@ -466,7 +466,16 @@ actor CoreWorker {
         let result = xc_request_content_options(completed, &images, &fonts)
         guard result == XC_OK else { throw CoreError(status: result) }
         guard (-1...1).contains(images), (-1...1).contains(fonts) else { throw CoreError(status: XC_ENGINE_ERROR) }
-        return ContentDisplayOptions(images: images == -1 ? nil : images != 0, fontFaces: fonts == -1 ? nil : fonts != 0)
+        let spacing = xc_request_double_space(completed)
+        guard (0...1).contains(spacing) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        return ContentDisplayOptions(images: images == -1 ? nil : images != 0, fontFaces: fonts == -1 ? nil : fonts != 0, doubleSpace: spacing != 0)
+    }
+    func setDoubleSpace(tab: UInt64, module: String, enabled: Bool) async throws {
+        guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { xc_worker_set_double_space(handle, tab, $0, enabled ? 1 : 0, &request) }
+        xc_request_release(try await wait(status, request))
     }
     func setImageContent(tab: UInt64, module: String, enabled: Bool) async throws {
         guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }

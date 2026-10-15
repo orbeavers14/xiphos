@@ -80,6 +80,51 @@ struct ReaderModelSmoke {
               diagnosticPair.text.cleanupDiagnostics.first?.suffix == diagnosticChapter.verses[21].cleanupDiagnostics.first?.suffix else { fatalError("copied Swift metadata survives worker shutdown") }
         print("Native content control checks passed")
     }
+    @MainActor static func doubleSpace(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let model = ReaderModel(worker: worker, startupError: nil)
+        let other = ReaderModel(worker: worker, startupError: nil)
+        try await idle(model); try await idle(other)
+        model.reference = "John4:1"; model.read(); try await idle(model)
+        guard model.contentOptions.doubleSpace == false else { fatalError("copied spacing defaults off") }
+        let plain = model.html, back = model.canBack, forward = model.canForward
+        model.reference = "John 4:2"
+        model.setDoubleSpace(true); try await idle(model)
+        guard model.contentOptions.doubleSpace == true, model.html == plain,
+              model.lexicalPresentation.css.contains("2em ! important"), !model.lexicalPresentation.requested,
+              model.reference == "John 4:2", model.canBack == back, model.canForward == forward,
+              other.contentOptions.doubleSpace == false else { fatalError("spacing changes only CSS and preserves draft/history/window isolation") }
+        model.showChapter = true; model.refreshDisplay(); try await idle(model)
+        guard model.renderedAnchor == "verse-1", model.lexicalPresentation.css.contains("2em ! important") else { fatalError("chapter retains spacing CSS and committed anchor") }
+        model.setReadingOption(.strongs, enabled: true); try await idle(model)
+        let annotationHTML = model.html, annotationCSS = model.lexicalPresentation.css
+        guard annotationCSS.contains("2.7em"), model.contentOptions.doubleSpace == true else { fatalError("core annotation spacing takes precedence") }
+        model.setDoubleSpace(false); try await idle(model)
+        guard model.html == annotationHTML, model.lexicalPresentation.css == annotationCSS,
+              model.contentOptions.doubleSpace == false else { fatalError("spacing preference stays independent of active annotation CSS") }
+        model.setDoubleSpace(true); try await idle(model)
+        model.chooseCommentary("ThMLNotes"); try await idle(model)
+        let commentaryHTML = model.commentaryChapter?.html
+        guard model.commentaryContentOptions.doubleSpace == false else { fatalError("commentary has separate spacing default") }
+        model.setDoubleSpace(true, commentary: true); try await idle(model)
+        guard model.commentaryContentOptions.doubleSpace == true, model.commentaryChapter?.html == commentaryHTML,
+              model.commentaryChapter?.lexical.css.contains("2em ! important") == true else { fatalError("commentary spacing changes CSS without reformatting body/headings") }
+        let profile = URL(fileURLWithPath: root).appendingPathComponent("native-double-space.conf")
+        model.saveReadingOptions(path: profile.path); try await idle(model)
+        model.setDoubleSpace(false); try await idle(model)
+        model.setDoubleSpace(false, commentary: true); try await idle(model)
+        model.importReadingOptions(path: profile.path); try await idle(model)
+        guard model.contentOptions.doubleSpace == true, model.commentaryContentOptions.doubleSpace == true,
+              model.reference == "John 4:2", model.canBack == back, model.canForward == forward else { fatalError("native spacing profile round trip preserves draft/history") }
+        model.reference = "John6:1"; model.read(); try await idle(model)
+        guard model.lexicalPresentation.requested, !model.lexicalPresentation.applied,
+              model.lexicalPresentation.css.contains("2em ! important"), !model.lexicalPresentation.css.contains("position: absolute") else { fatalError("native unsupported annotations retain spacing-only CSS") }
+        let retained = model.html, retainedCSS = model.lexicalPresentation.css
+        model.close(); model.setDoubleSpace(false); try await idle(model)
+        guard model.html == retained, model.lexicalPresentation.css == retainedCSS else { fatalError("closed spacing action cannot publish") }
+        other.close(); await worker.shutdown()
+        print("Native spacing CSS-only refresh, precedence, fallback, profiles and isolation passed")
+    }
     @MainActor static func lexicalLayout(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let model = ReaderModel(worker: worker, startupError: nil)
@@ -845,6 +890,9 @@ struct ReaderModelSmoke {
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--commentary" {
             try await commentary(root: CommandLine.arguments[2]); return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--double-space" {
+            try await doubleSpace(root: CommandLine.arguments[2]); return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--options" {
             try await readingOptions(root: CommandLine.arguments[2]); return
