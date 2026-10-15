@@ -40,6 +40,13 @@ ASan/UBSan 2/2, C++11 and native-disabled helper checks pass. Reader adoption an
 owned filter restoration remain the next boundaries; no native numbering or
 whole parity group is accepted.
 
+Latest implementation `c499324` establishes owned SDK note-renderer baselines,
+restores scoped values across real module aliases/nesting/exceptions, and copies
+opt-in C++ Reader body/heading sources. Current suites remain 72/72 Mac and 56/56
+portable Linux/core on Mac; focused note/Reader ASan/UBSan passes 3/3. Automatic
+session numbering, saved settings and native controls are still pending. See the
+[rolling Mac handoff](handoff-macos.md) for current commands and bounded next work.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three

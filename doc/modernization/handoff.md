@@ -16,52 +16,30 @@ The [status ledger](status.md) is the detailed scope/evidence record; the
 about 8% (range 6–10%), with 0/38 feature groups fully accepted and 0/3 native
 release-ready applications. Do not turn passed build counts into parity scores.
 
-Known pushed checkpoints:
+Latest checked shared implementation: `c499324`. Local suites pass **72/72 on
+Mac** and **56/56 portable Linux/core checks on Mac**; focused note/Reader
+ASan/UBSan checks pass 3/3. Current GTK source still requires Fedora compilation
+and desktop checks; MSVC/WinUI remain unvalidated. The previous native Fedora
+checkpoint passed 51 tests and six desktop smokes on its recorded older revision.
 
-- `9e288b3`: local macOS/shared-core checkpoint, including the owned lexical
-  block renderer and explicit threading linkage for its concurrent checks.
-- `f190c49` / PR #82: Linux shared-core setup/build/test script, Fedora dependency
-  support, explicit standalone C++17 and CMake extraction compatibility fixes.
-- `cf9c853`: Linux hosted workflow changed to manual-only to conserve allowance.
-- `7986d20` concludes the current shared lexical helper checkpoints: owned scanner/
-  annotation state, SWORD note-marker preservation, combined HTML/CSS policy and
-  real note/reference URL integration evidence. See the Mac handoff for exact
-  tests and commits. Later snapshot/adapter checkpoints below add scoped native consumption; no full UI parity is implied.
-- Linux catch-up PRs #83–89 and the final scope audit expose the existing macOS
-  preview capability set. Fedora ARM64 passes 51 integrated tests, four sanitized
-  model executables and six software-rendered desktop smoke modes. Exact source,
-  environment, commands and unaccepted manual gates are in the Linux handoff.
+| Implemented area | Checkpoints | Contract / limits |
+|---|---|---|
+| Matching lexical HTML/CSS snapshots and native adapters | `7fd1bce` through `0b40574` | [Layout evidence](word-block-workflows.md); Mac window checked, GTK recheck pending |
+| Shared double-spacing preferences and native controls | `25cf291`, `68562af`, `420ae13` | [Spacing evidence](double-space-workflows.md); Mac window checked, GTK recheck pending |
+| Owned note counters, SDK scopes and Reader source metadata | `c39b024` through `c499324` | [Note seam](note-numbering-workflows.md); automatic native numbering/settings still pending |
+| Earlier Fedora preview scope catch-up | PRs #82–89, `a80409b` | [Native Fedora evidence](handoff-linux.md); retain manual/corpus/renderer gates |
+| Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
-Latest lexical checkpoints: `7fd1bce` core snapshots, `8c0f4f2` C metadata,
-`0af3689` Swift copies, `1393edd` nesting guard/captured headings, `d953adc` Mac
-view consumption and `0b40574` Linux adapter/headless model support. Mac passes
-68/68 plus scoped GUI checks; Linux portable/core checks pass 53/53 on Mac with
-4/4 focused ASan/UBSan checks. New GTK view source still needs native Fedora
-build/runtime checks; the earlier 51-test Fedora result does not cover it.
-
-Double-spacing follow-up: `25cf291` shared decoder/persistence/session/worker/C ABI,
-`68562af` Mac controls, `420ae13` Linux controls. Current local results: 70/70 Mac,
-54/54 portable Linux/core on Mac, focused ASan/UBSan 4/4 core and 3/3 Linux model.
-See [workflow evidence](double-space-workflows.md). Fedora must rebuild current
-GTK source; previous native counts are historical. Next shared presentation seam:
-characterize note-number rendering and its SDK filter/state boundaries.
-
-Note-numbering helpers: `c39b024` owned legacy counters, `8572594` SDK switch and
-40 filter/label cases. Current checks: 71 Mac, 55 portable Linux/core on Mac.
-Native numbering is still gated on owned entry-attribute/fragment metadata and
-filter restoration; see [the seam audit](note-numbering-workflows.md). These
-commits do not change the GTK4 view controls or establish Fedora/MSVC acceptance.
-
-`858ea63` shares owned entry attributes; `e3fcdb2` adds cleanup-point heading
-metadata and frozen heading/body numbering evidence. Current local suites: 72
-Mac, 56 portable Linux/core on Mac. Native Reader adoption/filter restoration is
-still active shared work; platform-only acceptance can proceed independently.
+The Mac chat continues shared presentation/note-numbering work. Platform-local
+acceptance can proceed independently; fetch/read the current ownership note before
+editing shared APIs. These results are scoped implementation evidence, not complete
+functional/design parity or permission to retire the reference application.
 
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Characterize remaining presentation preferences and broader lexical corpus; preserve shared HTML/CSS and existing preview behavior | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Characterize saved note-number settings, then integrate owned numbering in shared sessions before native commands/controls | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

@@ -3,68 +3,37 @@
 Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the [shared handoff](handoff.md),
 [status](status.md), [architecture](architecture.md) and [parity ledger](parity-matrix.md).
 
-## Incoming attribute/heading metadata checkpoint
+## Current incoming changes — native Fedora rerun required
 
-`858ea63` and `e3fcdb2` share UTF8HTML attribute reads and copy heading note
-metadata at the frozen cleanup point. Current portable/core suite is 56/56 on
-macOS, not Fedora; the new heading-note fixture is isolated and needs no installed
-modules. Reader snapshot/filter-state adoption remains active shared work.
-Rebuild/rerun current core and GTK targets on Fedora before claiming native
-acceptance. Existing desktop controls have not changed in these helper commits.
+Fetch current master. The latest shared implementation is `c499324`: owned
+per-filter note-label scopes and opt-in C++ Reader metadata. Existing session/C/
+native numbering behavior remains compatible; automatic native numbering is not
+enabled. Earlier changes add matching lexical HTML/CSS consumption (`0b40574`)
+and separate main/commentary double-spacing controls (`420ae13`). Their portable
+models were tested on Mac; current GTK source has not been compiled/run here.
 
-## Incoming shared note helpers
+Current local results: **56/56 portable Linux/core checks on macOS**, 72/72 Mac,
+and 3/3 focused note/Reader ASan/UBSan checks including the heading prerequisite.
+The headless option `XIPHOS_BUILD_GTK4_PREVIEW=OFF` builds no GTK executable and
+cannot validate Fedora runtime behavior. Earlier counts below are historical.
+See [layout](word-block-workflows.md), [spacing](double-space-workflows.md) and
+[note-numbering](note-numbering-workflows.md) contracts for scope and limits.
 
-`c39b024` and `8572594` extract legacy literal numbering and SDK render-label
-switching, with frozen/actual regression evidence. No native numbering option is
-enabled yet. Portable/core checks now pass 55/55 **on macOS**; native Fedora must
-rerun current sources (including the new SDK filter test) before recording Linux
-acceptance. Note the scoped TEI direct-filter limitation and follow-up boundaries
-in [the shared audit](note-numbering-workflows.md). Shared attribute/restore work
-is currently claimed by the Mac chat; platform-only checks can proceed.
+Next Fedora task: build the current default-ON GTK target, run the integrated
+suite (56 tests at this checkpoint), repeat the existing six desktop smoke modes,
+then inspect actual lexical positioning/fallback and both spacing controls with
+keyboard/pointer. Retain picker, accessibility, RTL/font/corpus and accelerated
+rendering gates. Preserve manual-only hosted CI. The Mac chat still claims shared
+presentation/session/Reader API work; report shared defects before overlapping edits.
 
-## Incoming double-spacing controls — native validation pending
-
-`25cf291` adds shared `Doublespace` decoding/persistence and a typed queued
-command/scalar getter. `420ae13` adds separate main/commentary GTK controls and
-model copying; Mac controls are `68562af`. The portable Linux/core suite passes
-54/54 **on macOS** and focused Linux lexical model ASan/UBSan checks pass 3/3
-including fixtures. Focused shared preference/core sanitizer checks pass 4/4.
-The actual GTK controls have only received static review here. Rebuild default-ON
-GTK target on Fedora, run all current tests and desktop smoke modes, then inspect
-both spacing controls and CSS-only refresh. The expected suite count at this
-checkpoint is 54; do not use the older 51/53 counts as current acceptance.
-See [exact workflow/limits](double-space-workflows.md).
-
-## Incoming shared lexical adapter checkpoint — Fedora validation pending
-
-`0b40574` follows core `1393edd` and Mac view `d953adc`. The Linux model opts its
-tab into shared lexical snapshots, copies CSS/status before C handle release and
-feeds matching CSS to the GTK host document. CSS joins refresh identity. A new
-`linux_lexical_model` check covers entry/chapter/paired copies, cleanup, failure
-retention, raw fallback and lifetime. `XIPHOS_BUILD_GTK4_PREVIEW=OFF` permits
-portable adapter testing without GTK; it defaults ON for the normal desktop.
-
-These changes were tested **on macOS**, not Fedora: 53/53 portable/core CTests;
-4/4 focused ASan/UBSan checks (two fixture prerequisites, lexical model, word
-blocks), with leak detection off for uninstrumented SDK dependencies. The GTK
-application source received static review only; macOS has no GTK4/WebKitGTK SDK.
-The older Fedora evidence below remains historical, not validation of this commit.
-
-Next Fedora task: fetch current master, configure/build with the default ON
-option, run the integrated suite (expected 53 tests at this checkpoint), repeat
-the existing six desktop smoke modes, and inspect real Strong's/morphology and
-heading/whole-chapter fallback with actual pointer/keyboard and representative
-licensed modules. Record compiler/runtime evidence and any new shared-core defect
-before claiming native acceptance. Preserve manual-only hosted CI.
-
-## Current checkpoint and authority
+## Recorded native Fedora checkpoint and authority
 
 The owner authorized implementing and automatically merging locally checked Linux
 milestones until matching the **existing macOS preview's implemented scope**.
 This is not permission to bypass branch protection or spend hosted runner minutes.
 `linux-core` remains manual-only; older workflows remain administratively paused.
 
-Implementation tested: `a80409b7d23d49a57a0a571e86ac09f15db9e8e6` on
+Previous native implementation tested: `a80409b7d23d49a57a0a571e86ac09f15db9e8e6` on
 `linux/macos-scope-audit`, following merged [#89](https://github.com/orbeavers14/xiphos/pull/89).
 The subsequent handoff commit is documentation-only. The comparison target is
 `platforms/macos/ReaderApp.swift` and its adapters at `8f12841`; macOS and shared

@@ -307,3 +307,20 @@ replacement transaction for explicit save. The C++11 policy helpers remain
 available to the legacy build; native ownership/persistence stays C++17. See
 [commentary scope and acceptance](commentary-workflows.md) for checked behavior
 and remaining headings, editors, corpus and platform work.
+
+### Owned note-renderer state and source snapshots
+
+The private native Reader owns a note-renderer state registry alongside its
+manager. SWORD shares XHTML filter objects across modules and exposes label
+setters without getters. Registration establishes an explicit Off baseline,
+verified against the checked SDK; scoped reads track/restore values by filter
+pointer rather than module name. All allocation/registration validation precedes
+mutation; the owner/filters outlive scopes and all operations stay serialized.
+Legacy unscoped setters remain a separate retained-adapter path.
+
+Configured opt-in C++ Reader calls copy raw body/SDK-heading cleanup-point metadata
+into `Entry.note_source` before later renders replace attributes. Captured empty
+values differ from unavailable metadata. Existing session/C/native consumers keep
+their current rendering path. Automatic shared numbering and its native commands
+remain future work; the current Reader flag controls SDK supplied labels only.
+See [the note-numbering seam](note-numbering-workflows.md) for evidence and limits.

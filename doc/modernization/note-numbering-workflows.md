@@ -82,19 +82,44 @@ ASan/UBSan passes 2/2 with the heading prerequisite; strict C++11 and the
 native-disabled helper build pass. Reader snapshot adoption and native numbering
 controls are still pending; no new GUI parity is claimed.
 
+## Owned renderer scopes and opt-in Reader sources
+
+`c499324` adds `NoteRenderingState` and `ScopedNoteNumbers`. Registration establishes
+an explicit baseline on new filter objects; known aliases keep their current
+tracked values. Scope construction validates/stages all matching filters before
+mutation. Nested scopes, mixed baselines, real SDK cross-module aliases and
+exception unwinding restore prior owned values. An unregistered later filter
+cannot leave an earlier one changed. Registration/scopes require serialized
+engine ownership and prohibit external writes to tracked filters.
+
+The private Reader establishes Off, matching the checked SDK default, at engine
+startup. Configured opt-in entry/chapter/commentary overloads scope supplied-label
+rendering and copy raw `Entry.note_source` values. `captured=false` means unavailable;
+`captured=true` with an empty label is a checked empty value. Heading metadata
+keeps SDK fragment boundaries and cleanup-point semantics. Dense/sparse entries
+copy their source before later renders; values survive Reader/manager destruction.
+Existing overloads and all current session/C/native consumers keep their prior path.
+
+The boolean controls SDK supplied labels, not automatic counter insertion. The
+new source metadata remains internal C++ input to the future shared presentation
+stage; no frontend needs its own numbering logic. Raw metadata is not exposed by
+new C getters or used as a saved-preference default.
+
+Current evidence: 72/72 Mac, 56/56 portable Linux/core on Mac, focused ASan/UBSan
+3/3 (SDK scopes, heading fixture, Reader metadata), strict C++11 and native-disabled
+helper build pass. No new GUI/native Fedora/MSVC acceptance is claimed.
+
 ## Next integration boundaries
 
-1. The shared attribute reader is checked. Preserve its exact refresh and
-   missing/empty-label behavior during snapshot adoption.
-2. Adopt the copied body/heading metadata in Reader snapshots at each render.
-   The rich heading service is checked; preserve its SDK fragment boundaries and
-   reported label semantics rather than guessing from visible text.
-3. Establish owned render-filter state/restoration on the one engine worker before
-   native per-tab settings call SDK setters. Do not guess an external filter's
-   previous value or leak one pane's option into another read.
-4. Only then integrate heading/body numbering after lexical formatting and content
-   cleanup, preserving document reset/continuation and independently paired panes.
-   Add typed C/native controls and real platform/corpus checks together.
+1. Characterize saved `XrefNoteNumbers` defaults/import/cache behavior before
+   applying or persisting the new setting in native sessions.
+2. Integrate opted-in session numbering using owned Reader sources. Preserve
+   per-fragment heading cleanup before body cleanup, document counter reset/
+   continuation, diagnostic ordering, whole-pane lexical fallback and paired panes.
+3. Add queued worker/C commands and compatible native controls after shared
+   presentation tests pass. Keep existing consumers compatible and histories neutral.
+4. Expand real module/TEI/RTL/corpus and platform acceptance. The direct-filter TEI
+   empty identifier remains a recorded narrow limitation, not an accepted note workflow.
 
 Legacy source is not eligible for retirement. Passing these helpers does not
 check off whole F14/F17 parity or enable automatic GitHub builds.
