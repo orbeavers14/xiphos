@@ -1,18 +1,18 @@
 # Linux / Fedora / WSL2 chat handoff
 
 Updated 2026-10-14. Read [AGENTS.md](../../AGENTS.md) and the
-[shared handoff](handoff.md) first. No task is currently claimed by this file.
+[shared handoff](handoff.md) first. Current checkpoint: Fedora evidence and experimental GTK4 reading slice on
+`linux/gtk4-reader-slice`; handoff details below.
 
 ## Existing evidence and boundaries
 
 `f190c49` (PR #82) adds Fedora/Debian/Ubuntu dependency setup, standalone release
 and sanitizer checks, explicit C++17 selection and CMake extraction fixes.
 `cf9c853` removes automatic Linux hosted triggers; do not put them back.
-The owner reports a passing Fedora run. This chat has inspected the pushed source,
-but has not received the run's exact tested commit, Fedora/compiler/dependency
-versions, test count or logs. Record those from the Fedora checkout before treating
-them as a reproducible platform checkpoint. GTK4 frontend code is not implemented
-at this handoff. Core build success does not establish Linux interface parity.
+The owner reported passing Fedora release/sanitizer runs after PR #82.
+This Linux chat has now inspected the environment and is recording fresh
+reproducible checks of the integrated revision below. The first scoped GTK4 frontend is now implemented under `platforms/linux`;
+its implementation and acceptance limits are recorded below. Core build success does not establish Linux interface parity.
 
 ## Next bounded work
 
@@ -55,9 +55,74 @@ not validate native Windows/MSVC or every full Linux desktop integration. A Fedo
 desktop/VM can supply those Linux interaction checks. Hosted builds stay manual
 and require owner authorization; no runner minutes are needed for this work.
 
-## Next handoff entry
+## Checkpoint evidence (2026-10-14 / Fedora Linux)
 
-Replace this section with the [checkpoint format](handoff.md#evidence-to-record-at-each-checkpoint).
-Include Fedora version, architecture, compiler, dependency versions, tested commit,
-normal/sanitizer results, GUI coverage and pending checks. Push the evidence and
-implementation so Mac/Windows chats can pull the same contracts.
+- Task/branch: `linux/gtk4-reader-slice`, first Linux reading slice; checked locally.
+- Core implementation tested: `8f12841` (includes PR #82 / `f190c49`).
+  Fresh standalone release and ASan/UBSan runs each pass **47/47** tests.
+  Commands: `platforms/linux/core.sh --jobs 2` and
+  `platforms/linux/core.sh --sanitize --jobs 2`. Generated Ninja flags explicitly
+  contain `-std=gnu++17`; no hosted jobs were dispatched or enabled.
+- Environment: Fedora 44 Workstation, aarch64, GCC 16.2.1, CMake 4.3.0,
+  Ninja 1.13.2; pkg-config reports SWORD 1.9.0, GLib 2.88.4,
+  libxml2 2.12.10, GTK4 4.22.5, WebKitGTK 6.0 API library 2.54.1.
+  Fedora package metadata confirms `gtk4-devel` and `webkitgtk6.0-devel`;
+  the owner installed them in the terminal. Original prose fixtures only.
+- Changed behavior: independent GTK4/WebKitGTK build, module selection, direct
+  reference entry, paired Bible/commentary snapshots and core Back/Forward.
+  One FIFO core worker; nonblocking GTK polling, copied results, GTask drain
+  on close. No shared API or legacy GTK3 changes. Unsupported links retain
+  the last committed passage; passage links route through the shared core.
+- Adapter checks: configured `cmake -S platforms/linux -B build/gtk4 -G Ninja
+  -DCMAKE_BUILD_TYPE=Debug`; built preview/model test/core study-passage fixture.
+  `ctest --test-dir build/gtk4 -R '^(core_study_passage|linux_reader_model)$'
+  `--output-on-failure` passes **2/2**, including fixture setup. Model checks
+  cover catalog/empty roots, paired HTML, normalization, history restoration,
+  missing modules, invalid moves, external/passage links, busy guards and
+  close with startup/visit work pending.
+- Sanitized adapter: compiled `reader_model.cpp` and `tests/reader_model_test.cpp`
+  with `-std=c++17 -g -fsanitize=address,undefined -fno-omit-frame-pointer`,
+  linking the four freshly sanitized core static libraries plus pkg-config
+  SWORD/GLib/libxml2 and pthread; executed with
+  `ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1`.
+  All adapter checks pass. External SDKs are uninstrumented; no leak audit.
+- Desktop smoke: `GSK_RENDERER=cairo build/gtk4/xiphos-linux-preview
+  --smoke-test build/gtk4/core/study-passage-fixture` passes on the Fedora VM.
+  This uses real GTK entry/button signals, both WebKit panes and pending-work
+  close; smoke mode disables WebKit acceleration. The initial default-renderer
+  smoke timed out with VMware EGL/DRI graphics warnings. Accelerated rendering,
+  manual keyboard/accessibility, screenshots/visual comparison and representative
+  installed modules are **not accepted**. This is not full GTK4 parity.
+- Shared API/other platforms: unchanged. Existing macOS/Windows consumers and
+  GTK3 build sources are untouched. Central parity totals are unchanged.
+- Next: inspect the bounded preview on a real desktop, verify keyboard/focus and
+  accelerated/software rendering, then add chapter/preview/dictionary controls
+  through the same worker. Keep hosted checks manual-only.
+
+Implementation source tested: `24a07ba353da1a6f921f5bda34be61527f0a9ccb`.
+The subsequent handoff commit changes documentation only.
+
+Exact additional sanitizer command (run from the repository root after the
+standalone sanitized build and GTK fixture setup above):
+
+```sh
+mkdir -p build/linux-adapter-sanitized
+c++ -std=c++17 -g -fsanitize=address,undefined -fno-omit-frame-pointer \
+  -Iplatforms/linux -Isrc/core/include \
+  platforms/linux/reader_model.cpp platforms/linux/tests/reader_model_test.cpp \
+  build/linux-core-sanitized/libxiphos_core.a \
+  build/linux-core-sanitized/libxiphos_core_render.a \
+  build/linux-core-sanitized/libxiphos_core_history.a \
+  build/linux-core-sanitized/libxiphos_core_options.a \
+  $(pkg-config --libs sword glib-2.0 libxml-2.0) -pthread \
+  -o build/linux-adapter-sanitized/reader_model_test
+ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
+  build/linux-adapter-sanitized/reader_model_test \
+  build/gtk4/core/study-passage-fixture build/linux-adapter-sanitized/empty-library
+```
+
+Build the focused GTK targets with:
+`cmake --build build/gtk4 --target xiphos-linux-preview linux_reader_model_test core_study_passage_test --parallel 2`.
+The GTK guide documents a full frontend/core build before running the complete
+CTest registration; only the focused 2/2 frontend/fixture tests and independent
+standalone 47/47 core suites were executed for this checkpoint.
