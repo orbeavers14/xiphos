@@ -27,6 +27,7 @@ ReaderModel::~ReaderModel() {
 }
 xc_worker *ReaderModel::detach() {
   closed_ = true; ready_ = false; back_ = forward_ = false;
+  xc_request_release(hover_request_); hover_request_ = nullptr;
   xc_request_release(request_); request_ = nullptr;
   auto *worker = worker_; worker_ = nullptr;
   return worker;
@@ -35,6 +36,7 @@ bool ReaderModel::accept(xc_status status, xc_request *request, Operation operat
   if (status != XC_OK || !request) {
     xc_request_release(request); error_ = message(status); ++revision_; return false;
   }
+  xc_request_release(hover_request_); hover_request_ = nullptr;
   request_ = request; operation_ = operation; error_.clear(); notice_.clear(); ++revision_; return true;
 }
 bool ReaderModel::visit(const std::string &bible, const std::string &commentary, const std::string &reference) {
@@ -48,6 +50,79 @@ bool ReaderModel::navigate(int direction) {
   xc_request *request = nullptr;
   auto status = xc_worker_navigate_passage(worker_, tab_, direction, &request);
   return accept(status, request, Operation::passage);
+}
+bool ReaderModel::set_lexicons(const Lexicons &names) {
+  if (!ready() || busy()) return false;
+  for (const auto &name : names) if (name && name->find('\0') != std::string::npos) return false;
+  auto value = [&](size_t i) { return names[i] ? names[i]->c_str() : nullptr; };
+  const xc_lexicon_names preferences{value(0), value(1), value(2), value(3), value(4)};
+  xc_request *request = nullptr; auto status = xc_worker_set_lexicon_preferences(worker_, tab_, &preferences, &request);
+  return accept(status, request, Operation::lexicon_changed);
+}
+bool ReaderModel::lexicon_profile(const std::string &path, bool save) {
+  if (!ready() || busy()) return false;
+  xc_request *request = nullptr;
+  auto status = save ? xc_worker_save_lexicon_profile(worker_, tab_, path.c_str(), &request)
+    : xc_worker_import_lexicon_profile(worker_, tab_, path.c_str(), &request);
+  return accept(status, request, save ? Operation::saved : Operation::lexicons);
+}
+bool ReaderModel::set_cross_reference_list(bool enabled) {
+  if (!ready() || busy()) return false;
+  xc_request *request = nullptr; auto status = xc_worker_set_cross_reference_preview_list(worker_, tab_, enabled, &request);
+  return accept(status, request, Operation::reference_preference_changed);
+}
+bool ReaderModel::hover(const std::string &uri) {
+  if (!ready() || busy() || passage_.bible.empty() || uri.empty() || uri.size() > 32768) return false;
+  xc_request_release(hover_request_); hover_request_ = nullptr;
+  return xc_worker_hover_study_link_at(worker_, tab_, passage_.bible.c_str(), passage_.reference.c_str(), uri.c_str(), &hover_request_) == XC_OK;
+}
+void ReaderModel::poll_hover() {
+  if (!hover_request_ || closed_) return;
+  const auto status = xc_request_poll(hover_request_); if (status == XC_PENDING) return;
+  std::unique_ptr<xc_request, decltype(&xc_request_release)> completed(hover_request_, xc_request_release);
+  hover_request_ = nullptr;
+  if (status == XC_OK && !xc_request_no_presentation(completed.get())) { take_preview(completed.get(), true); ++revision_; }
+}
+bool ReaderModel::show_references() {
+  if (!ready() || busy() || note_.expression.empty()) return false;
+  xc_request *request = nullptr;
+  auto status = xc_worker_read_reference_list(worker_, tab_, note_.module.c_str(), note_.expression.c_str(), note_.reference.c_str(), &request);
+  return accept(status, request, Operation::references);
+}
+bool ReaderModel::show_note() {
+  if (!ready() || busy()) return false;
+  showing_references_ = false; ++revision_; return true;
+}
+bool ReaderModel::close_preview() {
+  if (!ready() || busy()) return false;
+  xc_request_release(hover_request_); hover_request_ = nullptr;
+  note_ = {}; references_ = {}; showing_references_ = false; ++revision_; return true;
+}
+bool ReaderModel::take_preview(xc_request *request, bool hover) {
+  std::unique_ptr<xc_note, decltype(&xc_note_release)> note(xc_request_take_note(request), xc_note_release);
+  if (note) {
+    Preview value{copy(xc_note_module(note.get())), copy(xc_note_reference(note.get())), copy(xc_note_html(note.get())), copy(xc_note_reference_list(note.get()))};
+    if (hover) information_ = std::move(value); else { note_ = std::move(value); references_ = {}; showing_references_ = false; }
+    return true;
+  }
+  std::unique_ptr<xc_reference_list, decltype(&xc_reference_list_release)> references(xc_request_take_reference_list(request), xc_reference_list_release);
+  if (references) {
+    references_ = {copy(xc_reference_list_module(references.get())), copy(xc_reference_list_context(references.get())), copy(xc_reference_list_html(references.get())), copy(xc_reference_list_expression(references.get())), xc_reference_list_count(references.get()), xc_reference_list_limited(references.get()) != 0, xc_reference_list_skipped(references.get())};
+    if (hover || operation_ != Operation::references) note_ = {};
+    showing_references_ = true; return true;
+  }
+  std::unique_ptr<xc_lexical_entry, decltype(&xc_lexical_entry_release)> lexical(xc_request_take_lexical_entry(request), xc_lexical_entry_release);
+  if (lexical) {
+    if (hover) information_ = {copy(xc_lexical_entry_module(lexical.get())), copy(xc_lexical_entry_source_reference(lexical.get())), copy(xc_lexical_entry_dictionary_html(lexical.get())), ""};
+    else {
+      dictionary_ = {copy(xc_lexical_entry_dictionary_module(lexical.get())), copy(xc_lexical_entry_dictionary_key(lexical.get())), copy(xc_lexical_entry_dictionary_html(lexical.get()))};
+      xc_request *next = nullptr;
+      auto status = xc_worker_dictionary_choices(worker_, tab_, dictionary_.module.c_str(), dictionary_.key.c_str(), &next);
+      accept(status, next, Operation::dictionary_choices);
+    }
+    return true;
+  }
+  return false;
 }
 const Module *ReaderModel::module(const std::string &id) const {
   for (const auto &value : modules_) if (value.id == id) return &value;
@@ -160,10 +235,10 @@ void ReaderModel::load_chapters(bool commentary) {
     accept(status, request, Operation::commentary_chapter);
   } else load_choices();
 }
-bool ReaderModel::follow(const std::string &source, const std::string &uri) {
+bool ReaderModel::follow(const std::string &source, const std::string &uri, const std::string &context) {
   if (!ready() || busy() || passage_.bible.empty()) return false;
   xc_request *request = nullptr;
-  auto status = xc_worker_follow_pane_link_at(worker_, tab_, passage_.bible.c_str(), source.c_str(), passage_.reference.c_str(), uri.c_str(), &request);
+  auto status = xc_worker_follow_pane_link_at(worker_, tab_, passage_.bible.c_str(), source.c_str(), (context.empty() ? passage_.reference : context).c_str(), uri.c_str(), &request);
   return accept(status, request, Operation::link);
 }
 void ReaderModel::history() {
@@ -172,6 +247,7 @@ void ReaderModel::history() {
   accept(status, request, Operation::history);
 }
 void ReaderModel::tick() {
+  poll_hover();
   if (!request_ || closed_) return;
   const auto status = xc_request_poll(request_);
   if (status == XC_PENDING) return;
@@ -193,14 +269,39 @@ void ReaderModel::tick() {
     auto submitted = xc_worker_enable_module_preferences(worker_, tab_, &next);
     accept(submitted, next, Operation::preferences); break;
   }
-  case Operation::preferences: ready_ = true; break;
+  case Operation::preferences: {
+    auto submitted = xc_worker_enable_lexicon_preferences(worker_, tab_, &next);
+    accept(submitted, next, Operation::enable_lexicons); break;
+  }
+  case Operation::enable_lexicons:
+  case Operation::lexicon_changed: {
+    auto submitted = xc_worker_lexicon_preferences(worker_, tab_, &next);
+    accept(submitted, next, Operation::lexicons); break;
+  }
+  case Operation::lexicons: {
+    std::unique_ptr<xc_lexicons, decltype(&xc_lexicons_release)> preferences(xc_request_take_lexicons(completed.get()), xc_lexicons_release);
+    if (!preferences) { error_ = "Missing lexicon preferences."; break; }
+    const char *names[] = {xc_lexicons_greek(preferences.get()), xc_lexicons_hebrew(preferences.get()), xc_lexicons_greek_morph_nt(preferences.get()), xc_lexicons_greek_morph_ot(preferences.get()), xc_lexicons_hebrew_morph(preferences.get())};
+    for (size_t i = 0; i < 5; ++i) lexicons_[i] = names[i] ? std::optional<std::string>(names[i]) : std::nullopt;
+    auto submitted = xc_worker_cross_reference_preview_list(worker_, tab_, &next);
+    accept(submitted, next, Operation::reference_preference); break;
+  }
+  case Operation::reference_preference_changed: {
+    auto submitted = xc_worker_cross_reference_preview_list(worker_, tab_, &next);
+    accept(submitted, next, Operation::reference_preference); break;
+  }
+  case Operation::reference_preference: {
+    int enabled = 1; xc_request_cross_reference_preview_list(completed.get(), &enabled);
+    cross_reference_list_ = enabled != 0; ready_ = true; break;
+  }
+  case Operation::references: take_preview(completed.get(), false); break;
   case Operation::passage: {
     std::unique_ptr<xc_passage, decltype(&xc_passage_release)> result(xc_request_take_passage(completed.get()), xc_passage_release);
     if (!result) { error_ = "Missing passage snapshot."; return; }
     Passage value{copy(xc_passage_module(result.get())), copy(xc_passage_commentary_module(result.get())), copy(xc_passage_reference(result.get())), copy(xc_passage_html(result.get())), ""};
     if (xc_passage_has_commentary(result.get()))
       value.commentary_html = copy(xc_passage_commentary_heading_html(result.get())) + copy(xc_passage_commentary_html(result.get()));
-    passage_ = std::move(value); bible_chapter_ = {}; commentary_chapter_ = {}; history(); break;
+    passage_ = std::move(value); note_ = {}; references_ = {}; showing_references_ = false; bible_chapter_ = {}; commentary_chapter_ = {}; history(); break;
   }
   case Operation::history: {
     std::unique_ptr<xc_history, decltype(&xc_history_release)> result(xc_request_take_history(completed.get()), xc_history_release);
@@ -286,7 +387,7 @@ void ReaderModel::tick() {
   }
   case Operation::link: {
     std::unique_ptr<xc_link, decltype(&xc_link_release)> link(xc_request_take_link(completed.get()), xc_link_release);
-    if (!link) { error_ = "This preview currently supports passage links only."; return; }
+    if (!link) { if (!take_preview(completed.get(), false)) error_ = "Unsupported study link result."; return; }
     const auto module = copy(xc_link_module(link.get())), reference = copy(xc_link_reference(link.get()));
     auto submitted = xc_worker_visit_linked_passage(worker_, tab_, passage_.bible.c_str(), passage_.commentary.c_str(), module.c_str(), reference.c_str(), &next);
     accept(submitted, next, Operation::passage); break;

@@ -142,3 +142,29 @@ build/gtk4/xiphos-linux-preview --smoke-options-test build/gtk4/core/module-pref
 
 File-picker selection/cancellation still requires manual desktop acceptance;
 profile behavior itself is covered using generated original-prose fixtures.
+
+### Contextual study previews and lexicons
+
+Study-note clicks open the left study preview. Passages expands a note's ordered
+reference list; Note returns to its owned body; Close dismisses it. Strong's and
+morphology clicks use the shared lexicon policy and recorded dictionary history.
+Hover information is retained on pointer leave and unsupported/failed hovers.
+The cross-reference list/information choice belongs to the core study tab.
+Main navigation invalidates pending hover observation; no module logic is parsed
+in GTK, and hover always uses the live committed main source.
+
+Lexicon dictionaries provides five nullable preferences, role-filtered installed
+module choices, exact-name editing for unavailable modules, Apply and explicit
+XML Import/Save. Unset and empty values remain distinct; core XML save rejects
+values that cannot round trip without changing the existing file. No startup
+profile writes or locale changes are introduced.
+
+```sh
+cmake --build build/gtk4 --target linux_preview_model_test core_dictionary_test --parallel 2
+ctest --test-dir build/gtk4 -R '^linux_.*model$' --output-on-failure
+build/gtk4/xiphos-linux-preview --smoke-preview-test build/gtk4/core/module-preferences-fixture
+build/gtk4/xiphos-linux-preview --smoke-lexical-test build/gtk4/core/dictionary-fixture
+```
+
+These smoke modes exercise model-to-widget publication and signals, not physical
+pointer/key delivery or manual screen-reader/visual acceptance.

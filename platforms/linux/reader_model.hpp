@@ -2,11 +2,15 @@
 #pragma once
 #include "xiphos/core/c_api.h"
 #include <cstdint>
+#include <array>
+#include <optional>
 #include <string>
 #include <vector>
 
 namespace xiphos::linux_preview {
 struct Module { std::string id, description, type; bool dictionary = false; unsigned declared_flags = 0; bool regular_commentary = false, headings = false; unsigned lexicon_roles = 0; };
+struct Preview { std::string module, reference, html, expression; size_t count = 0; bool limited = false; unsigned skipped = 0; };
+using Lexicons = std::array<std::optional<std::string>, 5>;
 struct Presentation { bool chapter = false, headings = true; int images = -1, font_faces = -1; };
 struct Dictionary { std::string module, key, html; };
 struct ReferenceChoice { std::string label, target; };
@@ -23,6 +27,20 @@ public:
   void tick();
   bool visit(const std::string &bible, const std::string &commentary, const std::string &reference);
   bool navigate(int direction);
+  bool set_lexicons(const Lexicons &names);
+  bool lexicon_profile(const std::string &path, bool save);
+  const Lexicons &lexicons() const { return lexicons_; }
+  bool set_cross_reference_list(bool enabled);
+  bool cross_reference_list() const { return cross_reference_list_; }
+  bool hover(const std::string &uri);
+  bool preview_busy() const { return hover_request_ != nullptr; }
+  bool show_references();
+  bool show_note();
+  bool close_preview();
+  const Preview &note() const { return note_; }
+  const Preview &references() const { return references_; }
+  const Preview &information() const { return information_; }
+  bool showing_references() const { return showing_references_; }
   bool set_filter(unsigned flag, bool enabled);
   bool select_variant(int choice);
   bool set_content(bool commentary, bool font_faces, bool enabled);
@@ -48,7 +66,7 @@ public:
   bool set_display(bool chapter, unsigned flags);
   bool set_commentary_chapter(bool enabled);
   bool refresh();
-  bool follow(const std::string &source, const std::string &uri);
+  bool follow(const std::string &source, const std::string &uri, const std::string &context = "");
   // Stop submissions/drop observation, then transfer shutdown ownership. The
   // caller MUST close the returned worker on a background thread (drain/join).
   xc_worker *detach();
@@ -68,9 +86,11 @@ public:
   const std::string &error() const { return error_; }
   unsigned revision() const { return revision_; }
 private:
-  enum class Operation { catalog, tab, preferences, passage, history, link, refresh, clear, presentation, bible_chapter, commentary_chapter, choices, dictionary, dictionary_choices, dictionary_history, dictionary_clear, engine_options, bible_options, commentary_options, saved };
+  enum class Operation { catalog, tab, preferences, passage, history, link, refresh, clear, presentation, bible_chapter, commentary_chapter, choices, dictionary, dictionary_choices, dictionary_history, dictionary_clear, engine_options, bible_options, commentary_options, saved, enable_lexicons, lexicons, lexicon_changed, reference_preference, reference_preference_changed, references };
   bool accept(xc_status status, xc_request *request, Operation operation);
   void history();
+  bool take_preview(xc_request *request, bool hover);
+  void poll_hover();
   void load_chapters(bool commentary = false);
   void load_choices();
   xc_worker *worker_ = nullptr;
@@ -80,6 +100,10 @@ private:
   bool ready_ = false, closed_ = false, back_ = false, forward_ = false;
   std::vector<Module> modules_;
   Passage passage_;
+  xc_request *hover_request_ = nullptr;
+  Lexicons lexicons_;
+  Preview note_, references_, information_;
+  bool showing_references_ = false, cross_reference_list_ = true;
   unsigned engine_flags_ = 0;
   bool engine_configured_ = false;
   Presentation presentations_[2];
