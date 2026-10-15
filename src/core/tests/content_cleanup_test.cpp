@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/html_cleanup.hpp"
+#include "xiphos/core/note_markers.hpp"
+#include <limits>
+#include <thread>
+#include <atomic>
 #include <glib.h>
 #include <cstdarg>
 #include <clocale>
@@ -43,8 +47,8 @@ int main() {
   try {
     using LegacyCleanup = GString *(*)(GString *, GLOBAL_OPS *, const char *, bool);
     struct Snapshot { std::string html, diagnostic; GLOBAL_OPS options; std::vector<std::string> saves, timeline; int notes, references; };
-    auto run = [](LegacyCleanup cleanup, const std::string &input, int images, int fonts, bool reset, bool numbering = false) {
-      GLOBAL_OPS options{images, fonts, numbering}; diagnostic.clear(); saved.clear(); timeline.clear(); footnote = xref = 0;
+    auto run = [](LegacyCleanup cleanup, const std::string &input, int images, int fonts, bool reset, bool numbering = false, NoteNumberingState initial = NoteNumberingState()) {
+      GLOBAL_OPS options{images, fonts, numbering}; diagnostic.clear(); saved.clear(); timeline.clear(); footnote = initial.footnotes; xref = initial.cross_references;
       auto *text = cleanup(g_string_new(input.c_str()), &options, "Original Café Module", reset);
       Snapshot snapshot{text->str, diagnostic, options, saved, timeline, footnote, xref}; g_string_free(text, true); return snapshot;
     };
@@ -105,6 +109,42 @@ int main() {
               "adapted content stage preserves subsequent legacy numbering and callback ordering");
         ++numbering_checks;
       }
+    unsigned owned_numbering_checks = 0;
+    const std::vector<std::string> markers = {"", "Original café ", "*n", "*x", "*N *X", "*n7*x12", "**n*x*n",
+      "<a href=\"passagestudy.jsp?value=1\"><small><sup>*n</sup></small></a>", "<span title=\"*x\">Original *n</span>"};
+    for (const auto &left : markers) for (const auto &right : markers) for (bool enabled : {false, true})
+      for (bool labelled : {false, true}) for (int start : {0, 8, 98, 998, 9998, 10000, std::numeric_limits<int>::max() - 16}) {
+        backend_value.reported = labelled;
+        const auto input = left + right;
+        const NoteNumberingState initial(start, start / 2);
+        const auto old = run(frozen::CleanupContent, input, 1, 1, false, enabled, initial);
+        const auto actual = run(current::CleanupContent, input, 1, 1, false, enabled, initial);
+        const auto result = number_note_markers(input, enabled, labelled, initial);
+        check(old.html == actual.html && old.html == result.html && old.notes == actual.notes && old.notes == result.counters.footnotes &&
+              old.references == actual.references && old.references == result.counters.cross_references,
+              "owned literal numbering preserves complete frozen/current output, independent counters and four-digit limits");
+        ++owned_numbering_checks;
+      }
+    const auto first = number_note_markers("Original *n *x", true, false);
+    const auto second = number_note_markers("Next *x *n", true, false, first.counters);
+    check(first.html == "Original *n1 *x1" && second.html == "Next *x2 *n2", "caller-owned counters continue across entries without global state");
+    for (bool enabled : {false, true}) for (bool labelled : {false, true}) {
+      bool nul = false, negative = false;
+      try { number_note_markers(std::string("a\0*n", 4), enabled, labelled); } catch (const std::invalid_argument &) { nul = true; }
+      try { number_note_markers("*n", enabled, labelled, {-1, 0}); } catch (const std::invalid_argument &) { negative = true; }
+      check(nul && negative, "invalid text/counter state rejects independently of numbering eligibility");
+    }
+    bool overflow = false;
+    try { number_note_markers("*n", true, false, {std::numeric_limits<int>::max(), 0}); } catch (const std::overflow_error &) { overflow = true; }
+    check(overflow, "owned numbering rejects counter overflow instead of signed overflow");
+    std::atomic<bool> mismatch(false); std::vector<std::thread> threads;
+    for (int worker = 0; worker < 4; ++worker) threads.emplace_back([worker, &mismatch] {
+      for (int i = 0; i < 100; ++i) {
+        const auto value = number_note_markers("Original *n *x", true, false, {worker * 100, i});
+        if (value.counters.footnotes != worker * 100 + 1 || value.counters.cross_references != i + 1) mismatch = true;
+      }
+    });
+    for (auto &thread : threads) thread.join(); check(!mismatch, "owned numbering counters/output isolate concurrent callers");
     backend_value.reported = false;
     const auto hidden = cleanup_html_content("<img alt='<font face=\"Original\">'>", ContentPreference::off, ContentPreference::unknown);
     check(hidden.respect_font_faces == ContentPreference::unknown && !hidden.discovered_font_faces, "font discovery sees post-image-cleanup content");
@@ -113,6 +153,6 @@ int main() {
     bool rejected = false;
     try { cleanup_html_content("original", static_cast<ContentPreference>(2), ContentPreference::on); } catch (const std::invalid_argument &) { rejected = true; }
     check(rejected, "invalid content state rejected");
-    std::cout << "Content cleanup frozen/current/owned checks passed: " << comparisons << " content combinations + " << numbering_checks << " legacy numbering checks + " << locale_checks << " cases in " << locales << " host locales\n";
+    std::cout << "Content cleanup frozen/current/owned checks passed: " << comparisons << " content combinations + " << numbering_checks << " legacy numbering checks + " << owned_numbering_checks << " owned numbering comparisons + 400 concurrent calls + " << locale_checks << " cases in " << locales << " host locales\n";
   } catch (const std::exception &e) { std::cerr << e.what() << '\n'; return 1; }
 }

@@ -23,6 +23,7 @@
 #endif
 
 #include "xiphos/core/html_cleanup.hpp"
+#include "xiphos/core/note_markers.hpp"
 #include "xiphos/core/lexical_style.hpp"
 #include <glib.h>
 #include <treekeyidx.h>
@@ -691,30 +692,17 @@ CleanupContent(GString *text,
     if (cleaned.discovered_font_faces)
         main_save_module_options(name, "Respect Font Faces", 1);
 
-	gint pos;
-	gchar value[50], *reported, *s = text->str;
-
-	// test for any 'n="X"' content.  if so, use it directly.
-	if ((reported = backend->get_entry_attribute("Footnote", "1", "n", false))) {
-		g_free(reported); // dispose of test junk.
-	}
-	// otherwise we simply count notes & xrefs through the verse.
-	else if (ops->xrefnotenumbers) {
-		while ((s = strstr(s, "*n"))) {
-			g_snprintf(value, 5, "%d", ++footnote);
-			pos = s - (text->str) + 2;
-			text = g_string_insert(text, pos, value);
-			s = text->str + pos + 1;
-		}
-
-		s = text->str;
-		while ((s = strstr(s, "*x"))) {
-			g_snprintf(value, 5, "%d", ++xref);
-			pos = s - (text->str) + 2;
-			text = g_string_insert(text, pos, value);
-			s = text->str + pos + 1;
-		}
-	}
+    // Keep the backend's exact first-note label probe and call ordering. A
+    // reported module label suppresses automatic numbering for the whole entry.
+    gchar *reported = backend->get_entry_attribute("Footnote", "1", "n", false);
+    const bool labelled = reported != NULL;
+    g_free(reported);
+    const auto numbered = xiphos::core::number_note_markers(
+        text->str, ops->xrefnotenumbers != 0, labelled,
+        xiphos::core::NoteNumberingState(footnote, xref));
+    g_string_assign(text, numbered.html.c_str());
+    footnote = numbered.counters.footnotes;
+    xref = numbered.counters.cross_references;
 
 	return text;
 }
