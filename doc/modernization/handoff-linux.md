@@ -3,6 +3,15 @@
 Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the [shared handoff](handoff.md),
 [status](status.md), [architecture](architecture.md) and [parity ledger](parity-matrix.md).
 
+## Incoming attribute/heading metadata checkpoint
+
+`858ea63` and `e3fcdb2` share UTF8HTML attribute reads and copy heading note
+metadata at the frozen cleanup point. Current portable/core suite is 56/56 on
+macOS, not Fedora; the new heading-note fixture is isolated and needs no installed
+modules. Reader snapshot/filter-state adoption remains active shared work.
+Rebuild/rerun current core and GTK targets on Fedora before claiming native
+acceptance. Existing desktop controls have not changed in these helper commits.
+
 ## Incoming shared note helpers
 
 `c39b024` and `8572594` extract legacy literal numbering and SDK render-label

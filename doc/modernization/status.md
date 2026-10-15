@@ -28,9 +28,17 @@ No full parity row or release gate changes status.
 The [note-numbering seam](note-numbering-workflows.md) now has owned explicit
 counters reused by legacy cleanup (`c39b024`) and a shared SDK label switch
 (`8572594`). Frozen/current comparisons and 40 OSIS/ThML/GBF/TEI filter cases pass;
-current local suites are 71/71 Mac and 55/55 portable Linux/core on Mac. Native
+that checkpoint passed 71/71 Mac and 55/55 portable Linux/core on Mac. Native
 numbering adoption remains pending metadata/fragment capture and owned filter
 restoration. The tested TEI direct-filter limitation is documented explicitly.
+
+Owned attribute/heading metadata follow-up: `858ea63` shares exact UTF8HTML
+attribute reads, and `e3fcdb2` captures SDK heading fragments at the frozen
+cleanup point. Owned metadata/counters reproduce heading-then-body numbering.
+Current suites pass 72/72 Mac and 56/56 portable Linux/core on Mac; focused
+ASan/UBSan 2/2, C++11 and native-disabled helper checks pass. Reader adoption and
+owned filter restoration remain the next boundaries; no native numbering or
+whole parity group is accepted.
 
 ## Overall completion estimate
 

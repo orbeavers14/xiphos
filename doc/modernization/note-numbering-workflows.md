@@ -59,13 +59,36 @@ pass. External SDK libraries are not fully instrumented and leak detection is of
 The new test does not require a desktop, installed module corpus or user settings.
 Native Fedora/MSVC and representative-module acceptance remain separate gates.
 
+## Owned attribute and heading-fragment metadata
+
+`858ea63` shares the UTF8HTML entry-attribute reader between native heading
+collection and the retained legacy backend. Eighty frozen/current/owned cases
+cover empty values, UTF-8, arbitrary paths and refresh modes. Copied values survive
+later rendering; invalid NUL paths reject before changing engine attributes.
+
+`e3fcdb2` adds copied `HeadingFragment` values at each legacy SDK Preverse index.
+A fragment can contain several HTML headings. `reported_note_label` is the exact
+Footnote/1/n value at the legacy cleanup point; it can remain the main entry's
+label and must not be substituted as visible heading text. The existing string
+API retains its output and dataflow through a shared collector.
+
+A private fixture compares metadata at the full frozen CacheHeader/CleanupContent
+boundary and reproduces heading-then-body numbering using owned counters. It
+covers OSIS and multiple ThML fragments, labelled/unlabelled/UTF-8 note sources,
+option Off/On, missing headings, key/source-attribute restoration and ownership
+after SDK teardown. Shared fixture modules and installed libraries are untouched.
+Current suites pass 72/72 Mac and 56/56 portable Linux/core on Mac. Focused
+ASan/UBSan passes 2/2 with the heading prerequisite; strict C++11 and the
+native-disabled helper build pass. Reader snapshot adoption and native numbering
+controls are still pending; no new GUI parity is claimed.
+
 ## Next integration boundaries
 
-1. Share/characterize the exact UTF8HTML entry-attribute reader and its refresh
-   semantics. A missing/empty first-note label must follow the legacy probe.
-2. Capture needed note metadata at each render, before later heading/body renders
-   replace SDK attributes. Multiple headings need their own fragment boundaries;
-   a single Boolean for an entire concatenated heading block is insufficient.
+1. The shared attribute reader is checked. Preserve its exact refresh and
+   missing/empty-label behavior during snapshot adoption.
+2. Adopt the copied body/heading metadata in Reader snapshots at each render.
+   The rich heading service is checked; preserve its SDK fragment boundaries and
+   reported label semantics rather than guessing from visible text.
 3. Establish owned render-filter state/restoration on the one engine worker before
    native per-tab settings call SDK setters. Do not guess an external filter's
    previous value or leak one pane's option into another read.

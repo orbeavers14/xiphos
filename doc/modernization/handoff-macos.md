@@ -13,6 +13,26 @@ shared content/session/worker/C API, their tests, native adapter integration and
 associated evidence. Other chats should avoid overlapping shared API edits while
 this task is active; platform-local acceptance can proceed independently.
 
+## Latest checked follow-up: owned attributes and heading metadata
+
+`858ea63` shares UTF8HTML attribute reads across native heading collection and the
+legacy backend; 80 frozen/current/owned cases plus refresh/lifetime/NUL guards.
+`e3fcdb2` copies SDK Preverse fragments and exact cleanup-point note-label metadata;
+its private fixture reproduces frozen heading-then-body numbering with owned
+counters. Current suites: 72/72 Mac; 56/56 portable Linux/core **on Mac**. Focused
+ASan/UBSan 2/2 including the heading prerequisite, strict C++11 and native-disabled
+helper build pass. Full legacy GTK runtime and native Fedora/MSVC remain untested.
+
+Commands: normal configured Mac and headless Linux full-suite commands above;
+new sanitizer target `core_heading_note_metadata_test` plus
+`core_heading_collection_test`, followed by
+`ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_heading_note_metadata$' --no-tests=error --output-on-failure`.
+Standalone C++11 syntax checked `entry_attribute.cpp` and `headings.cpp` with the
+core/SWORD include directories. Rich metadata is not yet used by Reader snapshots
+or native numbering controls. The shared task remains active for owned SDK
+filter-state restoration and compatible opt-in Reader snapshot adoption.
+See [the note seam](note-numbering-workflows.md) for exact semantics and limits.
+
 ## Latest checked follow-up: note-numbering helpers
 
 `c39b024` extracts owned literal counters into shared C++11 and retains legacy

@@ -52,6 +52,11 @@ Native numbering is still gated on owned entry-attribute/fragment metadata and
 filter restoration; see [the seam audit](note-numbering-workflows.md). These
 commits do not change the GTK4 view controls or establish Fedora/MSVC acceptance.
 
+`858ea63` shares owned entry attributes; `e3fcdb2` adds cleanup-point heading
+metadata and frozen heading/body numbering evidence. Current local suites: 72
+Mac, 56 portable Linux/core on Mac. Native Reader adoption/filter restoration is
+still active shared work; platform-only acceptance can proceed independently.
+
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
