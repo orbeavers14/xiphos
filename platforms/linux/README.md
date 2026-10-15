@@ -82,3 +82,22 @@ acceleration for VM use and checks pending-work shutdown. It requires a desktop
 session and is deliberately absent from default CTest/hosted runs. The ordinary
 preview leaves acceleration at the system default. Automated signal tests do
 not establish keyboard, screen-reader, visual composition or performance parity.
+
+### VM rendering and desktop actions
+
+Use `build/gtk4/xiphos-linux-preview --software-rendering` when the VM cannot
+supply accelerated graphics. This disables WebKit hardware acceleration and
+selects GTK's Cairo renderer unless `GSK_RENDERER` is already explicitly set.
+The default preview retains the system rendering policy.
+
+- Ctrl+L focuses the passage reference field; Enter submits it.
+- Alt+Left and Alt+Right use the same core Back/Forward actions as the buttons.
+- Alt+B and Alt+C target the labeled Bible/commentary selectors through GTK
+  mnemonics (desktop mnemonic settings apply).
+
+Navigation actions disable while work is pending and obey core history state.
+The reference field remains editable: a completed read updates its normalized
+reference only if the user has not typed a newer draft. Selectors and reading
+panes have explicit accessible labels. The desktop smoke checks action/accelerator
+registration, focus placement, draft retention and navigation; real key delivery
+and screen-reader usability still require manual acceptance.

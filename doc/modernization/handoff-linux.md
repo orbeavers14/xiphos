@@ -1,8 +1,8 @@
 # Linux / Fedora / WSL2 chat handoff
 
 Updated 2026-10-14. Read [AGENTS.md](../../AGENTS.md) and the
-[shared handoff](handoff.md) first. Current checkpoint: Fedora evidence and experimental GTK4 reading slice on
-`linux/gtk4-reader-slice`; handoff details below.
+[shared handoff](handoff.md) first. Current checkpoint: desktop actions, focus labels and explicit software rendering
+on `linux/gtk4-desktop-controls`, based on merged PR #83 (`051bdb6`).
 
 ## Existing evidence and boundaries
 
@@ -126,3 +126,38 @@ Build the focused GTK targets with:
 The GTK guide documents a full frontend/core build before running the complete
 CTest registration; only the focused 2/2 frontend/fixture tests and independent
 standalone 47/47 core suites were executed for this checkpoint.
+
+
+## Desktop-controls checkpoint (2026-10-14 / Fedora Linux)
+
+- Task/branch: `linux/gtk4-desktop-controls`; ready for automatic merge after
+  scoped local success, as explicitly authorized by the owner.
+- Implementation tested: `ade10a7635594eeccf9b6b7974157a7e93aceaac`.
+- Same Fedora ARM64 toolchain/dependencies as the preceding checkpoint.
+- Changed: `--software-rendering` disables WebKit acceleration and selects GTK
+  Cairo unless the user explicitly overrides `GSK_RENDERER`. Named window
+  actions connect buttons, Enter and Ctrl+L/Alt+Left/Alt+Right accelerators.
+  Bible/commentary selectors have mnemonics; selectors/reference/web panes have
+  accessible labels. Pending engine work cannot overwrite a newer reference
+  draft. Actions remain disabled until initialization succeeds, during pending
+  navigation and at unavailable history boundaries.
+- Exact checks: `cmake --build build/gtk4 --target xiphos-linux-preview
+  linux_reader_model_test --parallel 2` succeeds; `ctest --test-dir build/gtk4
+  -R '^(core_study_passage|linux_reader_model)$' --output-on-failure` passes 2/2.
+  Final-source `build/gtk4/xiphos-linux-preview --software-rendering --smoke-test
+  build/gtk4/core/study-passage-fixture` passes, verifying accelerator
+  registration, focus placement, pending draft preservation, module selection,
+  paired panes, Back/Forward actions and close with work pending.
+  `build/gtk4/xiphos-linux-preview --help` and `git diff --check` pass.
+- Desktop evidence is automated action/signal wiring, not physical key events or
+  screen-reader usability. VMware emits EGL/DRI warnings; WebKit subprocesses
+  occasionally emit D-Bus name-release warnings during successful shutdown.
+  No GLib focus-out warning occurred after preserving reference-field focus.
+- Shared API/core/GTK3 unchanged; no hosted jobs dispatched. The previous
+  standalone 47/47 release/sanitizer and sanitized adapter evidence remains
+  applicable to unchanged core/model sources; those suites were not rerun for
+  a UI-only edit. Full visual, manual keyboard/accessibility and accelerated
+  rendering acceptance remain pending; central parity scores are unchanged.
+- Next bounded implementation: chapter snapshots/navigation and pane previews
+  using the existing worker. Obtain representative desktop/manual acceptance
+  separately; retain the existing GTK3 app and all unfinished parity gates.
