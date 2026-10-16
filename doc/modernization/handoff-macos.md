@@ -3,17 +3,26 @@
 Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the
 [shared handoff](handoff.md), [status](status.md) and relevant parity rows first.
 
-## Active shared SDK render recovery task
+## Active shared general-book source task
 
 Branch `master`, fork `orbeavers14/xiphos`. The owner requested continued shared
 core work until the available usage limit. Heading-link snapshot integration
-`3411f45` and native adoption `2390568` are checked and pushed. The Mac chat now
-claims bounded SDK attribute-processing recovery in core render/heading/note/
-attribute helpers and related tests. Keep output and normal dataflow unchanged;
-all checks stay local. Windows inventory through `cf3b24c` and unrelated
-`.DS_Store` remain untouched. Fetch before overlapping shared edits.
+`3411f45`, native adoption `2390568`, and SDK render recovery `2b756bf` are checked
+and pushed. The Mac chat now claims bounded read-only general-book tree/source
+characterization and a feasible shared C++ slice. Inspect legacy offset/path/root
+behavior before API choices; prove queries do not alter module files. Keep GTK3
+editors/writes intact, all checks local, Windows inventory through `cf3b24c` and
+unrelated `.DS_Store` untouched. Fetch before overlapping shared edits.
 
 ## Latest checked behavior
+
+`2b756bf` puts every shared SDK text render behind one internal C++11 boundary.
+It restores the caller's attribute-processing flag on stored/buffer render errors,
+including deliberately disabled callers. It preserves healthy output/key behavior
+and does not roll back source attributes that normal renders must populate.
+Entry, attribute refresh, heading and note-body helpers now recover for later
+reads instead of inheriting a disabled SDK state. Heading capture retains its
+stronger full-attribute scope. Frozen output and native behavior remain unchanged.
 
 Native Mac and Linux reading models opt into shared scoped heading IDs, following
 owned capture `91f83c9` and lookup `7c98ebf`. Candidate replacement must match the
@@ -41,13 +50,12 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At `2390568`: **81/81 Mac/core**, **65/65 portable Linux/core on this Mac**,
-focused **ASan/UBSan 5/5** (Linux model/snapshot and capture prerequisites).
-Core `3411f45` separately passed 80/80, 64/64 and ASan/UBSan 5/5; extra linked-source
-coverage passed normal/sanitized 4/4. Strict C11 header syntax passes. Capture/codec
-C++11 and native-disabled helper builds passed at `7c98ebf`. SDKs are not fully
-instrumented; leak checks are off. No current Fedora GTK/MSVC acceptance is claimed.
-All checks stayed local; no hosted jobs were requested.
+At `2b756bf`: **82/82 Mac/core**, **66/66 portable Linux/core on this Mac**,
+focused **ASan/UBSan 5/5** (SDK recovery/snapshot plus capture prerequisites), strict
+C++11 rendering/helper/test syntax and native-disabled helper build pass. Prior
+native heading adoption `2390568` passed 81/81, 65/65 and ASan/UBSan 5/5 with Mac
+window evidence. SDKs are not fully instrumented; leak checks are off. No current
+Fedora GTK/MSVC acceptance is claimed. All checks stayed local.
 
 Environment: macOS 27.0.1 (26A434), ARM64; AppleClang 21.0.0; Swift 6.4 toolchain
 in Swift 6 language mode; SWORD 1.9.0.3916; GLib 2.86.5; configured libxml2 SDK.
@@ -62,8 +70,8 @@ cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -D
 cmake --build build/linux-models --parallel 2
 ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
 cmake -S platforms/linux -B build/linux-models-sanitized -C build/linux-model-sdk.cmake -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
-cmake --build build/linux-models-sanitized --target linux_heading_note_model_test core_heading_note_snapshots_test core_heading_notes_test core_heading_note_metadata_test core_heading_collection_test --parallel 2
-ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^(linux_heading_note_model|core_heading_note_snapshots)$' --no-tests=error --output-on-failure
+cmake --build build/linux-models-sanitized --target core_sdk_render_recovery_test core_heading_note_snapshots_test core_heading_notes_test core_heading_note_metadata_test core_heading_collection_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^(core_sdk_render_recovery|core_heading_note_snapshots)$' --no-tests=error --output-on-failure
 clang++ -std=c++11 -fsyntax-only -Isrc/core/include -I/usr/local/include/sword src/core/heading_notes.cpp src/core/heading_note_id.cpp
 cmake --build build/legacy-seam-build --parallel 2
 ```
@@ -90,9 +98,9 @@ No complete functional or visual parity is claimed.
 
 ## Next bounded work
 
-1. Current Mac shared task: protect SDK attribute-processing state on exceptions
-   in ordinary render/heading/note/attribute helpers, using the proven recovery
-   issue without altering healthy output or caller-owned settings.
+1. Current Mac shared task: characterize read-only general-book tree/source APIs
+   against legacy offset/path/root and navigation behavior, then implement a
+   bounded shared slice with module-file immutability and ownership checks.
 2. Fedora: rebuild default-ON GTK; verify heading click/hover and source/body
    separation, linked chapters, numbering/spacing, profiles and real input.
 3. Windows: continue native compiler/dependency/core setup in its own lane.

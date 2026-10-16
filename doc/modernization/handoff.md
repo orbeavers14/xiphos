@@ -16,34 +16,34 @@ The [status ledger](status.md) is the detailed scope/evidence record; the
 about 8% (range 6–10%), with 0/38 feature groups fully accepted and 0/3 native
 release-ready applications. Do not turn passed build counts into parity scores.
 
-Latest native adoption `2390568` enables checked shared scoped heading links;
-core snapshot gate/capability is `3411f45`, capture/lookup `91f83c9` / `7c98ebf`.
-Only exact presentation matches outside IDs are repaired; raw Reader metadata and
-legacy labels/counters remain unchanged. Suites pass **81/81 Mac/core**, **65/65
-portable Linux/core on Mac**, focused ASan/UBSan 5/5. A disposable Mac window
-verified heading/body separation and distinct ThML fragment lookup. Current GTK
-runtime and MSVC/WinUI remain unvalidated. Windows inventory through `cf3b24c`
-was retained. The Mac chat now claims shared SDK render exception recovery.
+Latest shared core `2b756bf` restores SDK attribute processing after text-render
+failures while retaining exact healthy output. Native heading repair remains
+`2390568`, core gate `3411f45`, capture/lookup `91f83c9` / `7c98ebf`. Suites pass
+**82/82 Mac/core**, **66/66 portable Linux/core on Mac**, focused ASan/UBSan 5/5;
+C++11 and native-disabled helper checks pass. Prior Mac window evidence validates
+heading/body and ThML-fragment separation. Current GTK runtime and MSVC/WinUI
+remain unvalidated. The Mac chat now claims read-only general-book tree/source
+characterization and a bounded core slice. Preserve the Windows handoff lane.
 
 | Implemented area | Checkpoints | Contract / limits |
 |---|---|---|
 | Matching lexical HTML/CSS snapshots and native adapters | `7fd1bce` through `0b40574` | [Layout evidence](word-block-workflows.md); Mac window checked, GTK recheck pending |
 | Shared double-spacing preferences and native controls | `25cf291`, `68562af`, `420ae13` | [Spacing evidence](double-space-workflows.md); Mac window checked, GTK recheck pending |
-| Owned note counters, SDK scopes and session presentation | `c39b024` through `1d3612f` | [Note seam](note-numbering-workflows.md); queued core settings and native controls; GTK runtime recheck pending |
+| Owned note counters, scopes and native heading links | `c39b024` through `2390568` | [Note seam](note-numbering-workflows.md); queued core settings and native controls; GTK runtime recheck pending |
 | Earlier Fedora preview scope catch-up | PRs #82–89, `a80409b` | [Native Fedora evidence](handoff-linux.md); retain manual/corpus/renderer gates |
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
-The owner requested continued shared-core work until usage runs out. Heading
-capture/lookup/snapshot adoption is complete for the stated subset. The Mac chat
-now claims bounded SDK attribute-processing recovery in shared render, heading,
-note and attribute helpers. Fetch/read current ownership before overlapping
-shared edits. No whole parity or retirement gate is accepted by these checks.
+The owner requested continued shared-core work until usage runs out. Current Mac
+ownership covers read-only general-book tree/source characterization and a feasible
+shared implementation; inspect its handoff before overlapping APIs. Earlier
+heading and render-recovery slices are pushed and checked to their stated limits.
+No whole parity or retirement gate is accepted by these checks.
 
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Protect SDK attribute-processing state across render failures; preserve checked native heading links | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Characterize general-book tree/source offsets, paths and root behavior; implement a read-only owned core slice | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

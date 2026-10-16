@@ -5,64 +5,29 @@ Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the [shared handoff](hand
 
 ## Current incoming changes — native Fedora rerun required
 
-Latest native models `2390568` opt into shared heading links (`3411f45`). They
-repair only candidates identical outside IDs, with copied source metadata intact;
-unknown/mixed shapes retain original rendering. Mac window clicks checked OSIS
-heading/body separation and distinct ThML fragments. Local suites pass **81/81
-Mac/core**, **65/65 portable Linux/core on Mac**, focused **ASan/UBSan 5/5**.
-The new `linux_heading_note_model` covers click/hover, stale-link source retention,
-linked passage context, display toggles and shutdown. **Current GTK compilation/
-runtime is still pending**; this Mac uses OFF/headless builds. Rebuild current
-master on Fedora and verify these paths with real input. The Mac chat's next
-shared task is SDK render processing-state recovery; coordinate before overlap.
+Fetch current master. Shared SDK render recovery `2b756bf` restores the caller's
+attribute-processing flag on stored/buffer render failures without changing
+healthy output. Full suites pass **82/82 Mac/core**, **66/66 portable Linux/core
+on Mac**; focused SDK-recovery/snapshot **ASan/UBSan 5/5**, strict C++11 and
+native-disabled helper checks pass. These are portable checks on this Mac, not a
+current Fedora GTK build; the OFF configuration builds no GTK executable.
 
-Latest shared lookup `7c98ebf` adds canonical heading-scoped IDs and configured
-Reader source/lookup, usable by existing queued session/C note dispatch. Current
-native snapshots do not publish them yet. Mac ownership now covers opt-in
-appearance-preserving snapshot integration. Local suites pass 78/78 Mac/core and
-62/62 portable Linux/core on Mac, with focused ASan/UBSan 5/5 and C++11/helper
-checks. This remains portable validation, not a current Fedora GTK build.
+Native models `2390568` opt into shared heading links (`3411f45`), repairing only
+exact presentation matches outside validated IDs. Mac window clicks checked OSIS
+heading/body separation and distinct ThML fragments. Unsupported/mixed shapes
+retain the original rendering. The new Linux model check covers click/hover,
+retained-source links, linked entries, label toggles, fallback and shutdown.
+Earlier lexical (`0b40574`) and spacing (`420ae13`) GTK changes also still need
+current native validation. See [layout](word-block-workflows.md),
+[spacing](double-space-workflows.md) and [notes](note-numbering-workflows.md).
 
-Latest shared source `91f83c9` adds isolated C++11 heading-note capture, including
-both SDK filter orders and complete attribute/processing restoration. It remains
-internal; current native heading links are unchanged pending scoped identity and
-lookup. Full suites pass 76/76 Mac/core and 60/60 portable Linux/core on Mac;
-focused capture ASan/UBSan 3/3, strict C++11 and native-disabled helper checks pass.
-These are Mac-hosted portable checks, not a current Fedora GTK build. The Mac chat
-claims the next shared scoped-identity/lookup slice; avoid overlapping those APIs.
-
-Fetch current master. Latest shared layout `1f899ca` keeps top-level SDK p/h1–h6
-wrappers outside word spans, including multiple headings in one SDK fragment.
-Normal suites remain 75/75 Mac and 59/59 portable Linux/core on Mac; focused
-layout/session ASan/UBSan 4/4, strict C++11 and native-disabled helper checks pass.
-A disposable Mac window checked combined headings/labels with lexical layout on.
-Rebuild this on Fedora; no current GTK runtime claim is made. The Mac chat now
-claims a bounded shared investigation of empty SDK heading-note IDs. Coordinate
-before overlapping rendering/lookup edits. No hosted builds are authorized.
-
-Native control implementation `1d3612f` adds separate Bible/
-commentary note-number controls and copied state to the GTK preview/model; queued
-worker/C API is `aff5f59`, session policy `1bd924c`. Both preview models opt in;
-numbering, cleanup, fragment order and persistence stay in the shared core.
-Existing other C consumers remain default-off. Earlier lexical (`0b40574`) and
-spacing (`420ae13`) GTK changes also still require a current native rebuild.
-
-Current local results: **59/59 portable Linux/core tests on macOS**, **75/75 Mac**,
-and focused **ASan/UBSan 5/5** (worker/C, Linux note model, three fixture tests).
-Mac entry/chapter/paired controls were checked in a real window. The GTK source
-was reviewed and its model tested here; **no current GTK compilation/runtime** is
-claimed. `XIPHOS_BUILD_GTK4_PREVIEW=OFF` builds no GTK executable.
-See [layout](word-block-workflows.md), [spacing](double-space-workflows.md) and
-[note-numbering](note-numbering-workflows.md) for exact contracts and limits.
-
-Next Fedora task: build the current default-ON GTK target, run all integrated
-tests (59 at this checkpoint), and repeat six desktop smoke modes. Verify both
-numbering controls and lexical/spacing refresh, entry/chapter selection, profile
-round trips, note clicks and unchanged history using keyboard/pointer. Retain
-picker, accessibility, RTL/font/corpus and accelerated-rendering gates. Unsupported
-WORD lexical note markup and SDK heading/TEI note IDs remain shared follow-ups.
-No hosted checks were used. The native-controls task is complete; current shared
-heading-note investigation ownership is recorded above.
+Next Fedora task: default-ON build and all integrated tests (66 at this
+checkpoint), then six desktop smokes and actual keyboard/pointer checks of
+heading/body lookup, linked chapters, lexical/spacing/number controls, profiles
+and history. Retain picker, accessibility, RTL/font/corpus and accelerated-renderer
+gates. No hosted checks were used. The Mac chat now claims read-only general-book
+tree/source characterization and a bounded shared slice; coordinate before
+editing those APIs. Do not overwrite current Windows platform work.
 
 ## Recorded native Fedora checkpoint and authority
 

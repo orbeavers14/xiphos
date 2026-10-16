@@ -110,6 +110,14 @@ ASan/UBSan passes 5/5. GTK runtime/Fedora, MSVC/WinUI and broad corpus/visual ga
 remain pending. This accepts no whole parity row or revised percentage. Next
 shared work is SDK processing-state recovery during render exceptions.
 
+SDK recovery checkpoint `2b756bf` centralizes shared text rendering behind a
+C++11 processing-state guard. Healthy output/source-attribute dataflow stays the
+same; injected entry/attribute/heading/note failures no longer leave later reads
+with attribute processing disabled. Suites pass 82/82 Mac/core and 66/66 portable
+Linux/core on Mac; ASan/UBSan 5/5, strict C++11 and native-disabled helper builds
+pass. No new full parity/GUI claim is implied. Next is read-only general-book
+source characterization and a bounded shared slice.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three

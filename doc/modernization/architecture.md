@@ -351,3 +351,13 @@ module/reference/type and counter-suppression label must agree. The Mac and GTK
 models opt in with queued calls, keeping all association/formatting policy in core.
 Unsupported candidates retain original rendering. See the note contract for
 checked subset behavior and remaining native/corpus gates.
+
+### SDK text-render failure recovery
+
+`2b756bf` centralizes all shared SDK `renderText` calls in a private C++11 boundary.
+A local guard restores the caller's entry-attribute processing flag if a filter
+throws, preserving both initially enabled and deliberately disabled callers.
+Healthy SWBuf output and ordinary source-attribute population remain unchanged;
+this does not roll back selected keys or attribute maps. Heading source capture
+retains its separate stronger attribute transaction. No platform policy or new
+public C API is introduced by this recovery guard.
