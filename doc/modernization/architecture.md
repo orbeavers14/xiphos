@@ -369,7 +369,9 @@ indexed-tree node/relationship snapshots from private SDK query keys in Reader.
 Typed offsets and exact canonical paths avoid legacy text-input ambiguity;
 invalid SDK snaps cannot publish stale nodes. Actual tree root remains distinct
 from legacy initial reading offset 4. Configured raw entry rendering and queued worker/C transport now retain these
-source identities and existing tab/module option policy. Native controls and
+source identities and existing tab/module option policy. Bounded child pages
+keep lazy-tree order/cursor rules in core and travel as owned queued C snapshots.
+Native controls and
 book-specific display/link/history rules remain subsequent seams. No additional
 engine or frontend navigation policy is introduced; GTK3 book/editor paths remain
 intact.

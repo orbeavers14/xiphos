@@ -16,13 +16,13 @@ The [status ledger](status.md) is the detailed scope/evidence record; the
 about 8% (range 6–10%), with 0/38 feature groups fully accepted and 0/3 native
 release-ready applications. Do not turn passed build counts into parity scores.
 
-Latest book transport `b9c0a34` queues copied source/entry results through the
-single worker and additive C API, reusing session option precedence. Source and
-render checkpoints remain `6f61997` / `6b2399c`. Suites pass **85/85 Mac/core**,
-**69/69 portable Linux/core on Mac**, focused ASan/UBSan books 3/3 and strict C11.
-Native heading adoption remains `2390568`; current GTK runtime and MSVC/WinUI
-remain unvalidated. The Mac chat next claims bounded shared child enumeration
-for lazy native trees. Preserve the Windows lane; read the [book contract](book-tree-workflows.md).
+Latest book paging `f35b6dd` adds bounded owned children/cursors through Reader,
+worker and C. A 600-child fixture reproduces frozen SDK order at four page sizes.
+Sources/render/transport remain `6f61997` / `6b2399c` / `b9c0a34`. Suites pass
+**86/86 Mac/core**, **70/70 portable Linux/core on Mac**, focused ASan/UBSan books
+4/4 and strict C11. Native heading adoption remains `2390568`; current GTK runtime
+and MSVC/WinUI remain unvalidated. The Mac chat next claims shared indexed-book
+capability discovery. Preserve the Windows lane; read the [book contract](book-tree-workflows.md).
 
 | Implemented area | Checkpoints | Contract / limits |
 |---|---|---|
@@ -33,7 +33,7 @@ for lazy native trees. Preserve the Windows lane; read the [book contract](book-
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
 The owner requested continued shared-core work until usage runs out. Current Mac
-ownership covers bounded shared child enumeration for lazy native trees; inspect its handoff before overlapping APIs. Earlier
+ownership covers shared indexed-book capability discovery; inspect its handoff before overlapping APIs. Earlier
 heading and render-recovery slices are pushed and checked to their stated limits.
 No whole parity or retirement gate is accepted by these checks.
 
@@ -41,7 +41,7 @@ No whole parity or retirement gate is accepted by these checks.
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Bounded shared book child enumeration for lazy native trees | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Shared indexed-book module capability discovery | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

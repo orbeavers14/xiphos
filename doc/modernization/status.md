@@ -118,29 +118,16 @@ Linux/core on Mac; ASan/UBSan 5/5, strict C++11 and native-disabled helper build
 pass. No new full parity/GUI claim is implied. Next is read-only general-book
 source characterization and a bounded shared slice.
 
-Read-only general-book source `6f61997` adds owned indexed-tree root/node and
-one-hop navigation queries in the existing Reader. Frozen legacy SDK comparisons,
-stale-error rejection, result/key/attribute ownership and complete module-data
-byte comparisons pass. Full suites pass 83/83 Mac/core and 67/67 portable
-Linux/core on Mac; focused ASan/UBSan passes 1/1, with added depth-limit checks
-passing in all three caches. See [the source contract](book-tree-workflows.md).
-Configured book entry rendering is next; F10/UI/images/history/editors remain
-pending. This changes no whole parity acceptance or completion estimate.
-
-Configured general-book rendering `6b2399c` pairs raw SDK HTML/entry presence with
-the selected tree identity, including linked aliases, root and empty branches.
-OSIS/ThML option toggles, exact frozen output, source/processing/filter recovery,
-owned results and module-data byte identity pass. Full suites pass 84/84 Mac/core,
-68/68 portable Linux/core on Mac; ASan/UBSan book tests pass 2/2. Queued worker/C
-transport is next. No whole F10/native/corpus acceptance is implied.
-
-Book worker/C transport `b9c0a34` adds copied asynchronous sources/entries, typed
-node presence and take-once ownership, using the existing session option policy.
-FIFO, tab isolation, module override precedence, history neutrality, errors,
-borrowing/shutdown and module-data identity pass. Full suites pass 85/85 Mac/core,
-69/69 portable Linux/core on Mac; ASan/UBSan book tests pass 3/3 and C11 syntax
-passes. Bounded child enumeration is next; native tree/UI and whole F10 remain
-pending. No hosted builds ran.
+General-book source/render/transport/paging checkpoints `6f61997`, `6b2399c`,
+`b9c0a34`, `f35b6dd` add copied tree discovery, exact configured SDK HTML/node
+identity and queued C ownership. Bounded pages reproduce a 600-child frozen SDK
+sequence without frontend navigation logic. Current suites pass **86/86 Mac/core**,
+**70/70 portable Linux/core on Mac** and book **ASan/UBSan 4/4**; strict C11 passes.
+Tests cover option precedence/isolation, linked/empty entries, cursor/error guards,
+source/render state, handle lifetime/shutdown and unchanged module data bytes.
+See [the book contract](book-tree-workflows.md). Shared capability discovery is
+next; native tree/UI, images/links, history, corpus and full F10 remain pending.
+No percentage or whole-parity gate is changed and no hosted builds ran.
 
 ## Overall completion estimate
 
