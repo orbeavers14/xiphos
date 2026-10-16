@@ -9,7 +9,8 @@ int c_header_test(void) {
   uint64_t book_cursor = 123;
   xc_book_node book_node = {4, "stale", "stale", 1, 1};
   xc_saved_book_selection saved_book = {NULL, NULL, NULL};
-  return xc_worker_select_book(NULL, 0, "Book", 4, &request) == XC_INVALID_ARGUMENT && request == NULL &&
+  return xc_worker_restore_book_profile(NULL, 0, "explicit.xml", XC_BOOK_RESTORE_DISPLAY_KEY, &request) == XC_INVALID_ARGUMENT && request == NULL &&
+         xc_worker_select_book(NULL, 0, "Book", 4, &request) == XC_INVALID_ARGUMENT && request == NULL &&
          xc_worker_restore_book_selection(NULL, 0, &saved_book, XC_BOOK_RESTORE_DISPLAY_KEY, &request) == XC_INVALID_ARGUMENT && request == NULL &&
          xc_worker_book_selection(NULL, 0, &request) == XC_INVALID_ARGUMENT && request == NULL &&
          xc_request_book_selection_present(NULL) == -1 &&

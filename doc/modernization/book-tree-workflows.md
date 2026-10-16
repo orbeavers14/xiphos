@@ -320,7 +320,27 @@ kinds/presence/take-once ownership and observer-drop/shutdown behavior. Existing
 lower-level entry tests cover injected SDK render failures; this session test
 directly exercises target/restore failures and successful publication.
 
-The next slices are explicit queued profile-file restore and native tree/navigation controls,
+## Explicit profile-file restore
+
+StudyWorker/C `restore_book_profile` reads only an explicitly selected XML path
+on the existing engine thread, then uses the same restore decoder and successful
+per-tab publication operation. It validates tab lifetime before file access and
+keeps current module/tab engine preferences. No profile discovery, file writes,
+locale/lexicon application, saved-tab XML replacement or window-visibility change
+occurs. Optional entry ownership/presence semantics match raw-value restore.
+
+Read/parse/target failures leave the committed selection intact. A profile with
+no book is a successful no-op. Input paths copy before submission returns; close
+drains accepted work. Existing size, DTD/network, encoding and path guards come
+from the shared profile reader.
+
+`core_book_profile_restore` uses original UTF-16 profiles and Unicode filenames,
+checks actual configured HTML, both restore contexts, other-tab neutrality,
+missing/malformed/DTD/overflow rejection, absent-book retention, C argument/result
+ownership and shutdown draining. Successful/failed imports retain source profile
+bytes and permissions. No personal profiles or installed content are tested.
+
+The next slices are final reading-boundary compatibility checks and native tree/navigation controls,
 then image/resource routing,
 links, history/persistent selection, additional book windows and editors. Preserve
 the GTK3 app and all its write paths. No F10 group, native GUI, corpus, platform or

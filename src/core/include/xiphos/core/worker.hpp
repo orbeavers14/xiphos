@@ -45,6 +45,9 @@ public:
   std::future<BookEntry> read_book(StudyTab tab, std::string module, std::uint64_t offset);
   std::future<BookEntry> select_book(StudyTab tab, BookSelectionTarget target);
   std::future<std::optional<BookEntry>> restore_book_selection(StudyTab tab, SavedBookSelection saved, BookRestoreMode mode);
+  // Explicit read-only file import on the engine thread. Uses only saved book
+  // fields, retaining current engine preferences and existing profile bytes.
+  std::future<std::optional<BookEntry>> restore_book_profile(StudyTab tab, std::string path, BookRestoreMode mode);
   std::future<std::optional<BookTree>> book_selection(StudyTab tab);
   std::future<BookNote> book_note(StudyTab tab, std::string module, std::uint64_t offset,
                                  std::string identifier, bool render_body = true);

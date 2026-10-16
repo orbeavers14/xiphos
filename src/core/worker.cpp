@@ -127,6 +127,15 @@ std::future<std::optional<BookEntry>> StudyWorker::restore_book_selection(StudyT
     return s.tab(tab).restore_book_selection(saved, mode);
   });
 }
+std::future<std::optional<BookEntry>> StudyWorker::restore_book_profile(StudyTab tab, std::string path, BookRestoreMode mode) {
+  return impl_->submit([tab, path = std::move(path), mode](Impl::State &s) {
+    auto &session = s.tab(tab); // reject closed tabs before accessing a file
+    if (mode != BookRestoreMode::display_key && mode != BookRestoreMode::initial_window)
+      throw std::invalid_argument("Unknown book restore mode");
+    const auto saved = read_saved_book_selection(path);
+    return session.restore_book_selection(saved, mode);
+  });
+}
 std::future<std::optional<BookTree>> StudyWorker::book_selection(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s) -> std::optional<BookTree> {
     const auto &selected = s.tab(tab).book_selection();

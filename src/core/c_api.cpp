@@ -214,6 +214,15 @@ const xiphos::core::Module *module_at(const xc_reader *r, size_t i) {
 }
 }
 extern "C" {
+xc_status xc_worker_restore_book_profile(xc_worker *w, uint64_t tab, const char *path, int mode, xc_request **out) {
+  if (!path || !*path || (mode != XC_BOOK_RESTORE_DISPLAY_KEY && mode != XC_BOOK_RESTORE_INITIAL_WINDOW)) {
+    if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w, out, [=](auto &worker) {
+    return worker.restore_book_profile(tab, path,
+      mode == XC_BOOK_RESTORE_DISPLAY_KEY ? xiphos::core::BookRestoreMode::display_key : xiphos::core::BookRestoreMode::initial_window);
+  });
+}
 xc_status xc_worker_select_book(xc_worker *w, uint64_t tab, const char *id, uint64_t offset, xc_request **out) {
   if (!id || !*id) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.select_book(tab, {id, offset}); });

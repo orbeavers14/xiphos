@@ -97,6 +97,11 @@ xc_status xc_worker_select_book(xc_worker *worker, uint64_t tab, const char *mod
  * and no state change. Failure retains the previous committed tab selection. */
 xc_status xc_worker_restore_book_selection(xc_worker *worker, uint64_t tab, const xc_saved_book_selection *saved,
                                           int mode, xc_request **out);
+/* Same optional-entry publication from an explicitly selected XML file. Copies
+ * path before return; reads/parses on the engine thread. No discovery, profile
+ * writes, locale/lexicon import or changes to existing engine preferences.
+ * Missing/invalid files or targets preserve the committed tab selection. */
+xc_status xc_worker_restore_book_profile(xc_worker *worker, uint64_t tab, const char *path, int mode, xc_request **out);
 /* Copied optional committed source: presence 1 -> take_book_tree, 0 -> none. */
 xc_status xc_worker_book_selection(xc_worker *worker, uint64_t tab, xc_request **out);
 /* Owned tree discovery, no tab or live selection mutation. Empty canonical path
