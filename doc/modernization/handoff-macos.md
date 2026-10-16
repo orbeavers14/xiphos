@@ -7,12 +7,19 @@ Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the
 
 Branch `master`, fork `orbeavers14/xiphos`. The owner requested continued shared
 core work until the available usage limit. The Mac chat finished lexical block
-segmentation (`1f899ca`) and now claims a bounded investigation of empty SDK
-heading-note identifiers and shared rendering/lookup seams. No hosted builds.
+segmentation (`1f899ca`) and isolated heading-note capture (`91f83c9`). It now
+claims heading-scoped identifiers and shared lookup before native publication. No hosted builds.
 Windows inventory changes through `cf3b24c` were fetched and retained; do not
 modify that chat's platform lane or unrelated `.DS_Store`.
 
 ## Latest checked behavior
+
+`91f83c9` captures owned heading notes without overwriting source/body attributes.
+It handles both Headings/Footnotes filter orders, preserves already-filtered
+bodies/IDs and the frozen cleanup label, skips repeated heading extraction, and
+restores SDK attribute processing even on filter exceptions. Existing Reader/
+session/C/native paths are unchanged. Fragment-local IDs must not be published
+as ordinary body-note IDs; scoped identity and lookup are the active next step.
 
 `1f899ca` retains top-level p/h1–h6 wrappers outside inline word spans. Multiple
 headings in one SDK fragment and adjacent paragraphs now keep lexical HTML/CSS
@@ -41,12 +48,12 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At `1f899ca`: **75/75 Mac/core**, **59/59 portable Linux/core on this Mac**,
-focused **ASan/UBSan 4/4** (word layout/session and fixture prerequisites), strict
-C++11 word-layout syntax and native-disabled legacy helper build pass. Previous
-native control tests also passed ASan/UBSan 5/5 at `1d3612f`. External SDKs are not
-fully instrumented; leak checks are off. No full GTK3 runtime, current Fedora GTK
-or MSVC/WinUI test is claimed. No hosted build credits were used.
+At `91f83c9`: **76/76 Mac/core**, **60/60 portable Linux/core on this Mac**,
+focused **ASan/UBSan 3/3** (heading capture and two fixture prerequisites), strict
+C++11 capture syntax and native-disabled helper build pass. Prior layout
+`1f899ca` passed 75/75, 59/59 and ASan/UBSan 4/4. External SDKs are not fully
+instrumented; leak checks are off. No full GTK3 runtime, current Fedora GTK or
+MSVC/WinUI test is claimed. No hosted build credits were used.
 
 Environment: macOS 27.0.1 (26A434), ARM64; AppleClang 21.0.0; Swift 6.4 toolchain
 in Swift 6 language mode; SWORD 1.9.0.3916; GLib 2.86.5; configured libxml2 SDK.
@@ -61,9 +68,9 @@ cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -D
 cmake --build build/linux-models --parallel 2
 ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
 cmake -S platforms/linux -B build/linux-models-sanitized -C build/linux-model-sdk.cmake -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
-cmake --build build/linux-models-sanitized --target core_word_blocks_test core_note_snapshots_test core_heading_note_metadata_test core_heading_collection_test --parallel 2
-ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^(core_word_blocks|core_note_snapshots)$' --no-tests=error --output-on-failure
-clang++ -std=c++11 -fsyntax-only -Isrc/core/include -I/usr/local/include/sword src/core/word_blocks.cpp
+cmake --build build/linux-models-sanitized --target core_heading_notes_test core_heading_note_metadata_test core_heading_collection_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_heading_notes$' --no-tests=error --output-on-failure
+clang++ -std=c++11 -fsyntax-only -Isrc/core/include -I/usr/local/include/sword src/core/heading_notes.cpp
 cmake --build build/legacy-seam-build --parallel 2
 ```
 
@@ -90,8 +97,8 @@ The TEI direct-filter limitation remains separately recorded.
 
 ## Next bounded work
 
-1. Current Mac shared task: characterize empty heading-note IDs against SDK source
-   attributes and retained collection; keep any repair in the shared core.
+1. Current Mac shared task: add heading-scoped identifiers and shared lookup using
+   the checked capture service before publishing the new links to native consumers.
 2. Fedora: rebuild current default-ON GTK and verify numbering, paragraph/heading
    layout, lexical/spacing refresh, profiles and note clicks with real input.
 3. Windows: continue native compiler/dependency/core setup in its own handoff lane.

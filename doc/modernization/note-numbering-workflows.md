@@ -199,6 +199,36 @@ reviewed and their model tested here; current Fedora GUI and MSVC/WinUI validati
 remain pending. The ThML heading fixture also emits empty SDK note-link IDs,
 which remain a recorded SDK/heading follow-up, not an accepted click workflow.
 
+## Isolated heading-note source capture
+
+`91f83c9` adds C++11 `capture_preverse_heading_notes` as an internal source service.
+It refreshes the selected verse, isolates heading note attributes, copies note
+bodies/metadata and the legacy cleanup-point label, and restores the complete
+source attribute map. It also restores SDK attribute processing after exceptions
+from initial refresh, heading render or body render. Disabled attribute processing
+rejects before mutation. Metadata-only capture does not render note bodies.
+
+Headings must not be option-filtered twice: doing so strips ThML's
+`fromEntryAttributes` marker and hides its output. Other option filters process
+unfiltered heading notes in isolation. If Footnotes ran before Headings, the saved
+fragment already has SDK IDs; those original IDs/bodies are retained without
+rerunning Footnotes or importing the source body's notes. Mixed filtered/raw
+notes, missing note attributes, malformed tags and NUL source reject explicitly.
+Empty note bodies remain distinct from missing metadata.
+
+Local SDK tests cover both OSIS/ThML filter orders, labels On/Off, footnotes On/Off,
+Unicode, mixed study/cross-reference/empty notes, source-key identity, complete
+state restoration, injected failures, malformed input, subsequent ordinary body
+lookup and ownership after manager destruction. Full local suites pass 76/76
+Mac/core and 60/60 portable Linux/core on Mac; focused ASan/UBSan 3/3, strict C++11
+and native-disabled helper builds pass. External SDKs remain partly
+uninstrumented; leak detection is off.
+
+**The captured IDs are fragment-local internal input, not body-note IDs.** This
+service is not enabled in Reader/session/C/native snapshots yet. Heading-scoped
+identifiers and shared lookup remain the next boundary; no native heading-click
+repair or new GUI/native Fedora/MSVC acceptance is claimed at this source step.
+
 ## Next acceptance boundaries
 
 1. On Fedora, rebuild the default-ON GTK preview and verify both controls,

@@ -87,6 +87,13 @@ SDK note markers already work in the checked grammar; arbitrary WORD/corpus and
 empty heading-note identifiers remain separate follow-ups. No full parity score
 changes. The Mac chat continues the bounded heading-note investigation.
 
+Internal source checkpoint `91f83c9` captures heading notes without overwriting
+source/body attributes, handles both SDK filter orders, and restores SDK processing
+state across injected failures. Full suites pass 76/76 Mac/core and 60/60 portable
+Linux/core on Mac; focused ASan/UBSan 3/3, C++11 and native-disabled helper checks
+pass. Fragment-local IDs are not yet published in native snapshots; shared scoped
+identity/lookup is the next task. No new whole parity or GUI acceptance is claimed.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three

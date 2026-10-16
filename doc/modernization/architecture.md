@@ -327,3 +327,14 @@ serve both native preview adapters. Existing other consumers remain default-off;
 raw source metadata remains internal C++ input. Top-level SDK paragraph/heading
 wrappers stay outside inline word spans, with one pane-wide fallback decision.
 See [the note-numbering seam](note-numbering-workflows.md) for evidence and limits.
+
+### Isolated heading-note source capture
+
+The C++11 capture service refreshes a selected source entry, copies its attributes
+before heading filtering, and restores source attributes and SDK attribute
+processing on success/exception. Raw heading notes are filtered separately; saved
+headings already processed by Footnotes retain their source IDs/bodies. Repeated
+heading extraction is skipped to retain ThML visibility. All metadata is copied
+before optional note-body rendering. These fragment-local IDs remain internal
+until a shared heading namespace/lookup is supplied; body-note lookup cannot be
+used for them. Existing native snapshots remain unchanged at `91f83c9`.

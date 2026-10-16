@@ -16,13 +16,14 @@ The [status ledger](status.md) is the detailed scope/evidence record; the
 about 8% (range 6–10%), with 0/38 feature groups fully accepted and 0/3 native
 release-ready applications. Do not turn passed build counts into parity scores.
 
-Latest implementation `1f899ca` retains SDK paragraph/heading wrappers outside
-lexical word spans, including multiple headings per fragment. Native numbering
-controls remain `1d3612f` / `aff5f59`. Local suites pass **75/75 Mac/core** and
-**59/59 portable Linux/core on Mac**; focused layout/session ASan/UBSan passes 4/4.
-A disposable Mac window checked combined headings and note labels with layout on.
-Current GTK runtime and MSVC/WinUI remain unvalidated. Windows tooling inventory
-through `cf3b24c` was fetched and retained; read that platform's current handoff.
+Latest core implementation `91f83c9` isolates and owns heading-note source data,
+including both SDK filter orders and exception restoration. It is internal input:
+fragment-local IDs must not be published as body-note IDs. Heading-scoped identity
+and shared lookup are the active Mac task. Earlier `1f899ca` adds paragraph/
+heading lexical layout; native controls remain `1d3612f` / `aff5f59`. Local suites
+pass **76/76 Mac/core**, **60/60 portable Linux/core on Mac**, and focused capture
+ASan/UBSan 3/3. Current GTK runtime and MSVC/WinUI remain unvalidated. Windows
+inventory through `cf3b24c` was fetched and retained; read its current handoff.
 
 | Implemented area | Checkpoints | Contract / limits |
 |---|---|---|
@@ -33,8 +34,8 @@ through `cf3b24c` was fetched and retained; read that platform's current handoff
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
 The owner requested continued shared-core work until usage runs out. The Mac
-chat completed the block-layout slice and is investigating empty SDK heading-note
-IDs; that bounded shared rendering/lookup task is claimed. Fetch/read the current
+chat completed the block-layout slice and is implementing scoped heading-note identity/lookup; that bounded shared task
+is claimed. Fetch/read the current
 handoff before overlapping shared edits. No whole parity or retirement gate is
 accepted by these scoped checks.
 

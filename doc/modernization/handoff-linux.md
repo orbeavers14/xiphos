@@ -5,6 +5,14 @@ Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the [shared handoff](hand
 
 ## Current incoming changes — native Fedora rerun required
 
+Latest shared source `91f83c9` adds isolated C++11 heading-note capture, including
+both SDK filter orders and complete attribute/processing restoration. It remains
+internal; current native heading links are unchanged pending scoped identity and
+lookup. Full suites pass 76/76 Mac/core and 60/60 portable Linux/core on Mac;
+focused capture ASan/UBSan 3/3, strict C++11 and native-disabled helper checks pass.
+These are Mac-hosted portable checks, not a current Fedora GTK build. The Mac chat
+claims the next shared scoped-identity/lookup slice; avoid overlapping those APIs.
+
 Fetch current master. Latest shared layout `1f899ca` keeps top-level SDK p/h1–h6
 wrappers outside word spans, including multiple headings in one SDK fragment.
 Normal suites remain 75/75 Mac and 59/59 portable Linux/core on Mac; focused
