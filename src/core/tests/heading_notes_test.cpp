@@ -82,6 +82,15 @@ int main(int argc, char **argv) {
                   "copied cleanup-point label retains legacy suppression independently of heading labels");
             check(module.getEntryAttributes() == original && module.getKey() == identity && std::string(module.getKeyText()) == reference,
                   "success restores all refreshed source attributes and key identity");
+            const auto scoped = capture_scoped_preverse_heading_notes(module, fragment);
+            const auto scoped_id = heading_note_identifier(fragment, "1");
+            auto expected_html = source.html;
+            const auto value_at = expected_html.find("&value=1&");
+            if (value_at != std::string::npos) expected_html.replace(value_at + 7, 1, scoped_id);
+            check(scoped.notes.count(scoped_id) == 1 && scoped.notes.at(scoped_id).identifier == scoped_id &&
+                  scoped.notes.at(scoped_id).html == note.html && scoped.html == expected_html &&
+                  scoped.reported_note_label == source.reported_note_label && module.getEntryAttributes() == original,
+                  "scoping SDK attributes before rendering changes only the note ID and copied identity");
             const auto metadata = capture_preverse_heading_notes(module, fragment, false);
             check(metadata.html == source.html && metadata.notes.at("1").html.empty() && metadata.notes.at("1").label == note.label &&
                   module.getEntryAttributes() == original, "metadata-only capture avoids note-body rendering and restores source state");

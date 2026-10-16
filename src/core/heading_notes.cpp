@@ -39,9 +39,7 @@ std::string checked(const sword::SWBuf &text) {
 // Some modules run Footnotes before Headings: their saved heading already has
 // SDK IDs and the note bodies live in the source attribute map. Do not filter
 // those notes again or replace their bodies with the emptied marker contents.
-std::set<std::string> processed_note_ids(const std::string &raw) {
-  std::set<std::string> ids;
-  bool unfiltered = false;
+template<class Visit> void visit_tags(const std::string &raw, Visit visit) {
   for (std::size_t at = 0; (at = raw.find('<', at)) != std::string::npos;) {
     auto end = at + 1; char quote = 0;
     for (; end < raw.size(); ++end) {
@@ -52,19 +50,36 @@ std::set<std::string> processed_note_ids(const std::string &raw) {
     }
     if (end == raw.size()) throw std::invalid_argument("Unterminated heading source tag");
     sword::XMLTag tag(raw.substr(at, end + 1 - at).c_str());
+    visit(at, end + 1, tag); at = end + 1;
+  }
+}
+std::set<std::string> processed_note_ids(const std::string &raw) {
+  std::set<std::string> ids; bool unfiltered = false;
+  visit_tags(raw, [&](std::size_t, std::size_t, sword::XMLTag &tag) {
     if (std::string(tag.getName()) == "note" && !tag.isEndTag()) {
       const auto *id = tag.getAttribute("swordFootnote");
-      if (id && *id) ids.insert(id);
-      else unfiltered = true;
+      if (id && *id) ids.insert(id); else unfiltered = true;
     }
-    at = end + 1;
-  }
+  });
   if (!ids.empty() && unfiltered) throw std::invalid_argument("Mixed filtered and unfiltered heading notes");
   return ids;
 }
+std::string scope_note_ids(const std::string &raw, std::size_t fragment, const std::map<std::string, StudyNote> &notes) {
+  std::string result; std::size_t copied = 0;
+  visit_tags(raw, [&](std::size_t at, std::size_t end, sword::XMLTag &tag) {
+    if (std::string(tag.getName()) != "note" || tag.isEndTag()) return;
+    const auto *id = tag.getAttribute("swordFootnote");
+    if (!id || !notes.count(id)) throw std::invalid_argument("Heading marker has no copied source note");
+    const auto scoped = heading_note_identifier(fragment, id);
+    tag.setAttribute("swordFootnote", scoped.c_str());
+    result.append(raw, copied, at - copied); result += tag.toString(); copied = end;
+  });
+  result.append(raw, copied, raw.size() - copied);
+  return result;
 }
-HeadingNoteSource capture_preverse_heading_notes(sword::SWModule &module,
-                                                 std::size_t fragment, bool render_bodies) {
+}
+static HeadingNoteSource capture_notes(sword::SWModule &module,
+                                      std::size_t fragment, bool render_bodies, bool scoped) {
   if (!module.isProcessEntryAttributes()) throw std::invalid_argument("Heading-note capture requires entry attribute processing");
   ScopedEntryAttributes scope(module);
   module.renderText(); scope.refreshed();
@@ -92,7 +107,7 @@ HeadingNoteSource capture_preverse_heading_notes(sword::SWModule &module,
     if (name && (std::string(name) == "Headings" || (!existing_ids.empty() && std::string(name) == "Footnotes"))) continue;
     filter->processText(filtered, module.getKey(), &module);
   }
-  const auto filtered_text = checked(filtered);
+  auto filtered_text = checked(filtered);
   std::vector<std::pair<std::string, std::string>> bodies;
   const auto group = attributes.find("Footnote");
   if (group != attributes.end()) for (const auto &item : group->second) {
@@ -111,6 +126,16 @@ HeadingNoteSource capture_preverse_heading_notes(sword::SWModule &module,
   }
   if (!existing_ids.empty() && result.notes.size() != existing_ids.size())
     throw std::invalid_argument("Filtered heading note has no source attributes");
+  if (scoped) {
+    filtered_text = scope_note_ids(filtered_text, fragment, result.notes);
+    std::map<std::string, StudyNote> renamed;
+    for (auto &item : result.notes) {
+      const auto id = heading_note_identifier(fragment, item.first);
+      item.second.identifier = id; renamed.emplace(id, std::move(item.second));
+    }
+    result.notes.swap(renamed);
+    for (auto &body : bodies) body.first = heading_note_identifier(fragment, body.first);
+  }
   sword::SWBuf encoded(filtered_text.c_str()); sword::UTF8HTML conversion; conversion.processText(encoded);
   result.html = checked(module.renderText(encoded.c_str()));
   if (render_bodies) for (const auto &body : bodies) {
@@ -119,4 +144,13 @@ HeadingNoteSource capture_preverse_heading_notes(sword::SWModule &module,
   }
   return result;
 }
+HeadingNoteSource capture_preverse_heading_notes(sword::SWModule &module,
+                                                 std::size_t fragment, bool render_bodies) {
+  return capture_notes(module, fragment, render_bodies, false);
+}
+HeadingNoteSource capture_scoped_preverse_heading_notes(sword::SWModule &module,
+                                                        std::size_t fragment, bool render_bodies) {
+  return capture_notes(module, fragment, render_bodies, true);
+}
+
 }}

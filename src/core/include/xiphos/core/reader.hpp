@@ -3,6 +3,7 @@
 #include "reference_list.hpp"
 #include "render.hpp"
 #include "study_note.hpp"
+#include "heading_notes.hpp"
 #include "engine_options.hpp"
 #include "content.hpp"
 #include "link.hpp"
@@ -42,6 +43,12 @@ public:
                                     const std::string &context);
   ReferenceList read_reference_list(const std::string &module, const std::string &expression,
                                     const std::string &context, const EngineOptions &options);
+  // Configured owned heading source with scoped IDs, suitable for future native
+  // publication. The existing study_note/metadata calls resolve these IDs using
+  // source fragment context, never the body's SDK note namespace. No history.
+  HeadingNoteSource heading_notes(const std::string &module, const std::string &reference,
+                                  std::size_t fragment, const EngineOptions &options,
+                                  bool render_note_labels, bool render_bodies = true);
   StudyNote study_note(const std::string &module, const std::string &reference,
                        const std::string &identifier);
   StudyNote study_note(const std::string &module, const std::string &reference,

@@ -5,6 +5,13 @@
 #include <map>
 namespace sword { class SWModule; }
 namespace xiphos { namespace core {
+struct HeadingNoteTarget { std::size_t fragment = 0; std::string local_id; };
+// Reserved internal namespace, with canonical decimal fragment and lowercase hex
+// of a nonempty local SDK ID (at most 256 bytes, no control bytes). Encoding is
+// URL-safe and cannot collide between fragments. Parse clears output first;
+// ordinary body IDs return false, malformed reserved IDs throw invalid_argument.
+std::string heading_note_identifier(std::size_t fragment, const std::string &local_id);
+bool parse_heading_note_identifier(const std::string &identifier, HeadingNoteTarget &out);
 // Owned internal source for a future heading-aware presentation/lookup stage.
 // These SDK identifiers are LOCAL TO THIS FRAGMENT, not body-note identifiers.
 // Do not publish the HTML before assigning a heading-scoped link namespace.
@@ -28,4 +35,9 @@ struct HeadingNoteSource {
 // rejects. Existing legacy heading collection and native snapshots are unchanged.
 HeadingNoteSource capture_preverse_heading_notes(sword::SWModule &module,
                                                  std::size_t fragment, bool render_bodies = true);
+// Same owned capture with heading-scoped IDs in both HTML and copied notes.
+// Rewrites SDK swordFootnote attributes BEFORE XHTML rendering, preserving the
+// SDK URI generator, labels and note types. Unknown/unmapped note IDs reject.
+HeadingNoteSource capture_scoped_preverse_heading_notes(sword::SWModule &module,
+                                                        std::size_t fragment, bool render_bodies = true);
 }}

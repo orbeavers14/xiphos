@@ -146,6 +146,19 @@ ReferenceList Reader::reference_list_impl(const std::string &id, const std::stri
   result.html = display_reference_list(result);
   return result;
 }
+HeadingNoteSource Reader::heading_notes(const std::string &id, const std::string &reference,
+                                        std::size_t fragment, const EngineOptions &options,
+                                        bool labels, bool render_bodies) {
+  if (id.find('\0') != std::string::npos || reference.empty() || reference.find('\0') != std::string::npos)
+    throw std::invalid_argument("Heading source requires a valid module and reference");
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto &module = impl_->verse_module(id, reference);
+  ScopedEngineOptions engine(*impl_->manager, options);
+  ScopedCommentaryHeadings headings(*impl_->manager);
+  ScopedNoteNumbers notes(impl_->note_rendering, module, labels);
+  module.setKey(reference.c_str());
+  return capture_scoped_preverse_heading_notes(module, fragment, render_bodies);
+}
 StudyNote Reader::study_note(const std::string &id, const std::string &reference,
                              const std::string &identifier) {
   return note_impl(id, reference, identifier, nullptr);
@@ -157,8 +170,28 @@ StudyNote Reader::study_note(const std::string &id, const std::string &reference
 StudyNote Reader::note_impl(const std::string &id, const std::string &reference,
                             const std::string &identifier, const EngineOptions *options, bool render_body) {
   if (id.find('\0') != std::string::npos) throw std::invalid_argument("Note module name contains NUL");
+  HeadingNoteTarget heading;
+  const bool scoped_heading = parse_heading_note_identifier(identifier, heading);
+  if (scoped_heading && !options) throw std::invalid_argument("Heading-note lookup requires configured engine options");
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto &module = impl_->verse_module(id, reference);
+  if (scoped_heading) {
+    auto capture = *options;
+    // Display can hide markers; an already-issued heading link must still be
+    // resolved from complete source metadata. Never save this temporary setting.
+    capture.footnotes = true;
+    ScopedEngineOptions engine(*impl_->manager, capture);
+    ScopedCommentaryHeadings headings(*impl_->manager);
+    if (reference.empty() || reference.find('\0') != std::string::npos)
+      throw std::invalid_argument("Heading note requires a valid reference");
+    module.setKey(reference.c_str());
+    HeadingNoteSource source;
+    try { source = capture_scoped_preverse_heading_notes(module, heading.fragment, render_body); }
+    catch (const std::out_of_range &) { throw std::invalid_argument("Heading note is unavailable"); }
+    const auto found = source.notes.find(identifier);
+    if (found == source.notes.end()) throw std::invalid_argument("Heading note is unavailable");
+    return found->second;
+  }
   std::unique_ptr<ScopedEngineOptions> scope;
   if (options) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *options);
   return render_body ? render_study_note(module, reference, identifier)
