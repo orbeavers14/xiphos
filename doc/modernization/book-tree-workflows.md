@@ -197,6 +197,31 @@ parsing, malformed/duplicate/unknown/external commands, wrong module/path/type/I
 queued errors, copied strings, C take-once lifetime and shutdown draining. Native
 book windows and hover/click controls still need separate integration/acceptance.
 
+## Read-only saved selection
+
+`parse_saved_book_selection` / `read_saved_book_selection` reuse the existing
+bounded, encoding-aware XML profile parser. They copy optional `modules/book`,
+`keys/book` and `keys/offset` text using the actual legacy getter's first matching
+key and null/empty semantics. Raw strings stay unnormalized, including missing
+modules, slash paths, numeric-looking titles, whitespace, numeric prefixes and
+out-of-range text. No SDK discovery, numeric conversion, selection, locale change,
+preference write or implicit profile-path access occurs.
+
+`settings.c` reads these fields separately: a missing book key causes legacy
+startup to add `0`, while a missing offset adds an empty value and uses zero.
+`main_display_book` later chooses numeric-prefix vs path behavior, clamps numeric
+reading offsets below 4 to 4, and only numeric selection updates `keys/offset`.
+Thus an old offset may coexist with a newer path key. The raw import intentionally
+preserves the evidence instead of inventing precedence or silently applying
+startup writes. Typed startup resolution, per-tab book data and round-trip saving
+require later characterization/acceptance; this import alone is not that workflow.
+
+`core_book_profile` compares the new values with the extracted actual legacy XML
+getter, including duplicate sections/keys, missing/empty/child-only values,
+entities, numeric text and UTF-16. It verifies owned UTF-8 results, unchanged file
+bytes/permissions, explicit-path validation, parser size/DTD/NUL guards and
+independent concurrent parser contexts. Only original generated profiles are used.
+
 `core_book_tree` generates original-prose RawGenBook fixtures, including empty,
 structural-only and deep branches, numeric and Unicode titles. It compares all
 one-hop relationships with the frozen SDK sequence used by the legacy backend,
@@ -205,7 +230,7 @@ lifetime, and byte-for-byte identity of every module data file and filename
 before/after successful and rejected queries. Manager-generated configuration
 caches are outside this module-data identity assertion.
 
-The next slices are saved book-selection characterization and native tree/navigation controls,
+The next slices are typed saved-selection/startup resolution and native tree/navigation controls,
 then image/resource routing,
 links, history/persistent selection, additional book windows and editors. Preserve
 the GTK3 app and all its write paths. No F10 group, native GUI, corpus, platform or

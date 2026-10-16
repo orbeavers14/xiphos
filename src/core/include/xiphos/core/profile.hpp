@@ -13,6 +13,14 @@ struct StudyProfile {
 // No external resources, home/profile discovery, module validation or writes.
 StudyProfile parse_study_profile(const std::string &xml);
 StudyProfile read_study_profile(const std::string &path);
+// Read-only saved general-book fields, with the legacy XML getter's null/empty
+// and first-matching-key semantics. Raw key/offset text stays unnormalized:
+// startup resolution, module validation, tab state and writes are separate.
+struct SavedBookSelection {
+  std::optional<std::string> module, key, offset_text;
+};
+SavedBookSelection parse_saved_book_selection(const std::string &xml);
+SavedBookSelection read_saved_book_selection(const std::string &path);
 // Separately selected preview settings: lexicon import does not apply these.
 struct StudyPreviewPreferences {
   bool cross_references_in_verse_list = true;

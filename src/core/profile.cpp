@@ -108,6 +108,14 @@ StudyProfile parse_study_profile(const std::string &source) {
 StudyProfile read_study_profile(const std::string &path) {
   return parse_study_profile(read_profile_source(path));
 }
+SavedBookSelection parse_saved_book_selection(const std::string &source) {
+  auto document = parse_document(source);
+  return {value(document.get(), "modules", "book"), value(document.get(), "keys", "book"),
+          value(document.get(), "keys", "offset")};
+}
+SavedBookSelection read_saved_book_selection(const std::string &path) {
+  return parse_saved_book_selection(read_profile_source(path));
+}
 StudyPreviewPreferences parse_study_preview_preferences(const std::string &source) {
   auto document = parse_document(source);
   StudyPreviewPreferences result;
