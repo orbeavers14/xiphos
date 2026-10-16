@@ -16,14 +16,14 @@ The [status ledger](status.md) is the detailed scope/evidence record; the
 about 8% (range 6–10%), with 0/38 feature groups fully accepted and 0/3 native
 release-ready applications. Do not turn passed build counts into parity scores.
 
-Latest shared core `2b756bf` restores SDK attribute processing after text-render
-failures while retaining exact healthy output. Native heading repair remains
-`2390568`, core gate `3411f45`, capture/lookup `91f83c9` / `7c98ebf`. Suites pass
-**82/82 Mac/core**, **66/66 portable Linux/core on Mac**, focused ASan/UBSan 5/5;
-C++11 and native-disabled helper checks pass. Prior Mac window evidence validates
-heading/body and ThML-fragment separation. Current GTK runtime and MSVC/WinUI
-remain unvalidated. The Mac chat now claims read-only general-book tree/source
-characterization and a bounded core slice. Preserve the Windows handoff lane.
+Latest shared source `6f61997` adds owned, read-only indexed general-book tree
+queries by typed offset/canonical path. Root and one-hop relationships match SDK
+source behavior; stale/missing lookups reject and queries preserve module bytes.
+Suites pass **83/83 Mac/core**, **67/67 portable Linux/core on Mac**, focused
+ASan/UBSan book test 1/1. Native heading adoption remains `2390568`, SDK recovery
+`2b756bf`; current GTK runtime and MSVC/WinUI remain unvalidated. The Mac chat now
+claims configured general-book entry rendering/identity as its next bounded slice.
+Preserve the Windows lane and read the [book contract](book-tree-workflows.md).
 
 | Implemented area | Checkpoints | Contract / limits |
 |---|---|---|
@@ -34,8 +34,7 @@ characterization and a bounded core slice. Preserve the Windows handoff lane.
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
 The owner requested continued shared-core work until usage runs out. Current Mac
-ownership covers read-only general-book tree/source characterization and a feasible
-shared implementation; inspect its handoff before overlapping APIs. Earlier
+ownership covers configured general-book entry rendering and source identity; inspect its handoff before overlapping APIs. Earlier
 heading and render-recovery slices are pushed and checked to their stated limits.
 No whole parity or retirement gate is accepted by these checks.
 
@@ -43,7 +42,7 @@ No whole parity or retirement gate is accepted by these checks.
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Characterize general-book tree/source offsets, paths and root behavior; implement a read-only owned core slice | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Configured general-book entry rendering and identity, preserving validated tree sources | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

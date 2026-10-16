@@ -361,3 +361,13 @@ Healthy SWBuf output and ordinary source-attribute population remain unchanged;
 this does not roll back selected keys or attribute maps. Heading source capture
 retains its separate stronger attribute transaction. No platform policy or new
 public C API is introduced by this recovery guard.
+
+### General-book source boundary
+
+The initial [book source seam](book-tree-workflows.md) returns owned C++17
+indexed-tree node/relationship snapshots from private SDK query keys in Reader.
+Typed offsets and exact canonical paths avoid legacy text-input ambiguity;
+invalid SDK snaps cannot publish stale nodes. Actual tree root remains distinct
+from legacy initial reading offset 4. Rendering, worker/C transport and native
+controls are subsequent seams; no additional engine or frontend navigation policy
+is introduced, and GTK3 book/editor paths remain intact.

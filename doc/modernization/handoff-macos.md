@@ -6,15 +6,20 @@ Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the
 ## Active shared general-book source task
 
 Branch `master`, fork `orbeavers14/xiphos`. The owner requested continued shared
-core work until the available usage limit. Heading-link snapshot integration
-`3411f45`, native adoption `2390568`, and SDK render recovery `2b756bf` are checked
-and pushed. The Mac chat now claims bounded read-only general-book tree/source
-characterization and a feasible shared C++ slice. Inspect legacy offset/path/root
-behavior before API choices; prove queries do not alter module files. Keep GTK3
-editors/writes intact, all checks local, Windows inventory through `cf3b24c` and
-unrelated `.DS_Store` untouched. Fetch before overlapping shared edits.
+core work until the available usage limit. Owned read-only general-book source
+`6f61997` is checked. The Mac chat now claims configured book-entry rendering and
+source identity as a bounded next slice. Keep GTK3 editors/writes intact, all
+checks local, Windows inventory through `cf3b24c` and unrelated `.DS_Store`
+untouched. Fetch before overlapping shared edits.
 
 ## Latest checked behavior
+
+`6f61997` adds C++17 Reader tree snapshots by typed offset and canonical path.
+Private SDK keys preserve the live key, attributes and module data files. Root,
+Unicode/numeric titles, structural branches, sibling order, empty/deep trees and
+stale SDK errors are tested. No book rendering, queued/C transport or native UI
+is introduced yet. See [the book source contract](book-tree-workflows.md).
+
 
 `2b756bf` puts every shared SDK text render behind one internal C++11 boundary.
 It restores the caller's attribute-processing flag on stored/buffer render errors,
@@ -50,12 +55,12 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At `2b756bf`: **82/82 Mac/core**, **66/66 portable Linux/core on this Mac**,
-focused **ASan/UBSan 5/5** (SDK recovery/snapshot plus capture prerequisites), strict
-C++11 rendering/helper/test syntax and native-disabled helper build pass. Prior
-native heading adoption `2390568` passed 81/81, 65/65 and ASan/UBSan 5/5 with Mac
-window evidence. SDKs are not fully instrumented; leak checks are off. No current
-Fedora GTK/MSVC acceptance is claimed. All checks stayed local.
+At `6f61997`: **83/83 Mac/core**, **67/67 portable Linux/core on this Mac**,
+focused book **ASan/UBSan 1/1**. The depth-limit test added after full-suite runs
+also passes individually in both caches and sanitized. Previous render recovery
+`2b756bf` passed 82/82, 66/66 and ASan/UBSan 5/5 plus legacy/C++11 checks. SDKs
+are not fully instrumented; leak checks are off. No current Fedora GTK/MSVC
+acceptance is claimed. All checks stayed local.
 
 Environment: macOS 27.0.1 (26A434), ARM64; AppleClang 21.0.0; Swift 6.4 toolchain
 in Swift 6 language mode; SWORD 1.9.0.3916; GLib 2.86.5; configured libxml2 SDK.
@@ -70,10 +75,10 @@ cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -D
 cmake --build build/linux-models --parallel 2
 ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
 cmake -S platforms/linux -B build/linux-models-sanitized -C build/linux-model-sdk.cmake -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
-cmake --build build/linux-models-sanitized --target core_sdk_render_recovery_test core_heading_note_snapshots_test core_heading_notes_test core_heading_note_metadata_test core_heading_collection_test --parallel 2
-ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^(core_sdk_render_recovery|core_heading_note_snapshots)$' --no-tests=error --output-on-failure
-clang++ -std=c++11 -fsyntax-only -Isrc/core/include -I/usr/local/include/sword src/core/heading_notes.cpp src/core/heading_note_id.cpp
-cmake --build build/legacy-seam-build --parallel 2
+cmake --build build/linux-models-sanitized --target core_book_tree_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_book_tree$' --no-tests=error --output-on-failure
+cmake --build build/macos --target core_book_tree_test --parallel 2
+ctest --test-dir build/macos -R '^core_book_tree$' --no-tests=error --output-on-failure
 ```
 
 The ignored SDK seed is copied from this Mac's cache, not a portable file. The
@@ -98,9 +103,9 @@ No complete functional or visual parity is claimed.
 
 ## Next bounded work
 
-1. Current Mac shared task: characterize read-only general-book tree/source APIs
-   against legacy offset/path/root and navigation behavior, then implement a
-   bounded shared slice with module-file immutability and ownership checks.
+1. Current Mac shared task: configured general-book entry rendering/identity on
+   the validated source tree, with original-prose output and state tests. Queued
+   worker/C transport and native UI remain later bounded steps.
 2. Fedora: rebuild default-ON GTK; verify heading click/hover and source/body
    separation, linked chapters, numbering/spacing, profiles and real input.
 3. Windows: continue native compiler/dependency/core setup in its own lane.

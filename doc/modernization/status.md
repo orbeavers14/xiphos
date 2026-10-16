@@ -118,6 +118,15 @@ Linux/core on Mac; ASan/UBSan 5/5, strict C++11 and native-disabled helper build
 pass. No new full parity/GUI claim is implied. Next is read-only general-book
 source characterization and a bounded shared slice.
 
+Read-only general-book source `6f61997` adds owned indexed-tree root/node and
+one-hop navigation queries in the existing Reader. Frozen legacy SDK comparisons,
+stale-error rejection, result/key/attribute ownership and complete module-data
+byte comparisons pass. Full suites pass 83/83 Mac/core and 67/67 portable
+Linux/core on Mac; focused ASan/UBSan passes 1/1, with added depth-limit checks
+passing in all three caches. See [the source contract](book-tree-workflows.md).
+Configured book entry rendering is next; F10/UI/images/history/editors remain
+pending. This changes no whole parity acceptance or completion estimate.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three
