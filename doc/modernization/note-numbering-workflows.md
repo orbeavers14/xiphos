@@ -260,6 +260,42 @@ Preserve raw Reader metadata, legacy label/counter behavior and appearance; do n
 replace a heading if the generated candidate differs beyond note identifiers.
 Unsupported shapes retain the established rendering, not a guessed association.
 
+## Appearance-preserving snapshots and native adoption
+
+`3411f45` adds a default-off, unsaved session/worker/C heading-link capability.
+It requires available configured note-source/numbering capability, independently
+of the user's number-display value. Each candidate must match original HTML
+byte-for-byte outside note URI IDs, retain any known local ID, match the copied
+module/reference/type/identity and keep the legacy cleanup-point label. It never
+chooses a body from visible labels or marker position. Unsupported shapes retain
+the original fragment. Raw Reader source metadata remains unchanged; counters,
+cleanup, CSS, sparse ordinals, selected anchors, profiles and history retain their
+checked behavior. A separate pure presentation gate tests adversarial targets.
+
+The snapshot matrix covers 64 display/filter/SDK-order combinations. Additional
+cases check linked-entry selected passage context, FIFO capability/read ordering,
+unknown and closed tabs, strict C inputs, copied passage/note lifetime and fallback
+for mixed filtered/raw heading notes. Core suites pass 80/80 Mac and 64/64 portable
+Linux/core on Mac; ASan/UBSan 5/5 passes. Added linked-source cases pass normal and
+sanitized 4/4 including fixture prerequisites. Strict C11 header syntax passes.
+
+`2390568` opts the existing Mac and Linux models into this shared capability.
+No platform note parser, counter or body selector was added. Existing click/hover
+requests carry opaque IDs to the core. New model tests cover heading/body
+separation, hover, retained old links after navigation, linked-source reference,
+number toggles, unsupported fallback and shutdown. Full suites pass **81/81 Mac/
+core**, **65/65 portable Linux/core on this Mac**, and focused **ASan/UBSan 5/5**
+(Linux model, snapshot test and capture prerequisites). External SDKs remain
+partly uninstrumented and leak checks are off.
+
+A disposable Mac window verified that the OSIS heading marker opens “Original
+heading note,” its colliding body marker still opens “Original body note,” and
+the second ThML heading fragment opens its distinct unlabeled note. Labels and
+composition were retained. The app was quit and its temporary copy removed.
+Current GTK source/model still needs Fedora compilation and real desktop checks;
+MSVC/WinUI, broad corpus/RTL/TEI and unsupported shapes remain open. This is a
+validated subset repair, not complete F14 or visual parity. All checks were local.
+
 ## Next acceptance boundaries
 
 1. On Fedora, rebuild the default-ON GTK preview and verify both controls,
@@ -270,6 +306,5 @@ Unsupported shapes retain the established rendering, not a guessed association.
 3. Bring up native Windows dependencies/core and a thin WinUI adapter using the
    same queued commands, not separate numbering logic.
 
-The requested native control checkpoint is complete and pushed; shared ownership
-is released. Legacy source is not eligible for retirement. These checks do not
+The owner resumed shared work; current ownership is recorded in the Mac handoff. Legacy source is not eligible for retirement. These checks do not
 accept whole F14/F17 parity or enable automatic GitHub builds.

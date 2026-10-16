@@ -101,6 +101,15 @@ ASan/UBSan 5/5; strict C++11 and native-disabled helper checks pass. Existing na
 snapshots do not publish these IDs yet; opt-in appearance-preserving snapshot
 integration is next. No whole parity or native GUI gate is accepted by this step.
 
+Heading snapshot gate/capability `3411f45` and native adoption `2390568` repair
+supported heading-note URIs only when all presentation outside IDs is unchanged.
+Raw metadata, known local identity, labels/counters and history are preserved.
+Native Mac clicks verified heading/body separation and distinct ThML fragments.
+Full suites pass 81/81 Mac/core and 65/65 portable Linux/core on Mac; focused
+ASan/UBSan passes 5/5. GTK runtime/Fedora, MSVC/WinUI and broad corpus/visual gates
+remain pending. This accepts no whole parity row or revised percentage. Next
+shared work is SDK processing-state recovery during render exceptions.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three

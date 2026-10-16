@@ -338,3 +338,16 @@ heading extraction is skipped to retain ThML visibility. All metadata is copied
 before optional note-body rendering. These fragment-local IDs remain internal
 until a shared heading namespace/lookup is supplied; body-note lookup cannot be
 used for them. Existing native snapshots remain unchanged at `91f83c9`.
+
+### Scoped heading identity and presentation gate
+
+A reserved canonical heading namespace carries fragment index plus encoded opaque
+SDK ID through existing note URLs and copied results. Configured shared lookup
+regenerates source metadata, scopes Headings/Footnotes as needed, and never treats
+these IDs as body-note IDs. Session replacement is default-off for other consumers
+and requires note-source capability. It preserves raw Reader metadata and accepts
+only HTML matching byte-for-byte outside validated note IDs; known IDs, source
+module/reference/type and counter-suppression label must agree. The Mac and GTK
+models opt in with queued calls, keeping all association/formatting policy in core.
+Unsupported candidates retain original rendering. See the note contract for
+checked subset behavior and remaining native/corpus gates.

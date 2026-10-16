@@ -5,6 +5,17 @@ Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the [shared handoff](hand
 
 ## Current incoming changes — native Fedora rerun required
 
+Latest native models `2390568` opt into shared heading links (`3411f45`). They
+repair only candidates identical outside IDs, with copied source metadata intact;
+unknown/mixed shapes retain original rendering. Mac window clicks checked OSIS
+heading/body separation and distinct ThML fragments. Local suites pass **81/81
+Mac/core**, **65/65 portable Linux/core on Mac**, focused **ASan/UBSan 5/5**.
+The new `linux_heading_note_model` covers click/hover, stale-link source retention,
+linked passage context, display toggles and shutdown. **Current GTK compilation/
+runtime is still pending**; this Mac uses OFF/headless builds. Rebuild current
+master on Fedora and verify these paths with real input. The Mac chat's next
+shared task is SDK render processing-state recovery; coordinate before overlap.
+
 Latest shared lookup `7c98ebf` adds canonical heading-scoped IDs and configured
 Reader source/lookup, usable by existing queued session/C note dispatch. Current
 native snapshots do not publish them yet. Mac ownership now covers opt-in

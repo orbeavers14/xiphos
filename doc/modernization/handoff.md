@@ -16,14 +16,14 @@ The [status ledger](status.md) is the detailed scope/evidence record; the
 about 8% (range 6–10%), with 0/38 feature groups fully accepted and 0/3 native
 release-ready applications. Do not turn passed build counts into parity scores.
 
-Latest core implementation `7c98ebf` adds heading-scoped IDs and configured
-Reader capture/lookup through the existing session/worker/C note path. Captured
-source isolation is `91f83c9`; lexical block layout is `1f899ca`. Native snapshots
-do not publish the new links yet. Opt-in snapshot integration preserving raw
-metadata, labels and appearance is the active Mac task. Suites pass **78/78
-Mac/core**, **62/62 portable Linux/core on Mac**, and focused ASan/UBSan 5/5.
-Current GTK runtime and MSVC/WinUI remain unvalidated; preserve the Windows
-inventory through `cf3b24c` and read its current handoff.
+Latest native adoption `2390568` enables checked shared scoped heading links;
+core snapshot gate/capability is `3411f45`, capture/lookup `91f83c9` / `7c98ebf`.
+Only exact presentation matches outside IDs are repaired; raw Reader metadata and
+legacy labels/counters remain unchanged. Suites pass **81/81 Mac/core**, **65/65
+portable Linux/core on Mac**, focused ASan/UBSan 5/5. A disposable Mac window
+verified heading/body separation and distinct ThML fragment lookup. Current GTK
+runtime and MSVC/WinUI remain unvalidated. Windows inventory through `cf3b24c`
+was retained. The Mac chat now claims shared SDK render exception recovery.
 
 | Implemented area | Checkpoints | Contract / limits |
 |---|---|---|
@@ -33,17 +33,17 @@ inventory through `cf3b24c` and read its current handoff.
 | Earlier Fedora preview scope catch-up | PRs #82–89, `a80409b` | [Native Fedora evidence](handoff-linux.md); retain manual/corpus/renderer gates |
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
-The owner requested continued shared-core work until usage runs out. The Mac
-chat completed the block-layout slice and is integrating opt-in scoped heading links in snapshots; that bounded shared
-task is claimed. Fetch/read the current
-handoff before overlapping shared edits. No whole parity or retirement gate is
-accepted by these scoped checks.
+The owner requested continued shared-core work until usage runs out. Heading
+capture/lookup/snapshot adoption is complete for the stated subset. The Mac chat
+now claims bounded SDK attribute-processing recovery in shared render, heading,
+note and attribute helpers. Fetch/read current ownership before overlapping
+shared edits. No whole parity or retirement gate is accepted by these checks.
 
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Characterize empty SDK heading-note IDs; preserve checked paragraph/heading layout and native controls | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Protect SDK attribute-processing state across render failures; preserve checked native heading links | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

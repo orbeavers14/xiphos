@@ -3,43 +3,28 @@
 Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the
 [shared handoff](handoff.md), [status](status.md) and relevant parity rows first.
 
-## Active shared heading-note investigation
+## Active shared SDK render recovery task
 
 Branch `master`, fork `orbeavers14/xiphos`. The owner requested continued shared
-core work until the available usage limit. The Mac chat finished lexical block
-segmentation (`1f899ca`) and isolated heading-note capture (`91f83c9`). It now
-claims opt-in session snapshot publication after checked scoped identity/lookup
-(`7c98ebf`). Keep raw metadata and existing appearance unchanged. No hosted builds.
-Windows inventory changes through `cf3b24c` were fetched and retained; do not
-modify that chat's platform lane or unrelated `.DS_Store`.
+core work until the available usage limit. Heading-link snapshot integration
+`3411f45` and native adoption `2390568` are checked and pushed. The Mac chat now
+claims bounded SDK attribute-processing recovery in core render/heading/note/
+attribute helpers and related tests. Keep output and normal dataflow unchanged;
+all checks stay local. Windows inventory through `cf3b24c` and unrelated
+`.DS_Store` remain untouched. Fetch before overlapping shared edits.
 
 ## Latest checked behavior
 
-`7c98ebf` adds canonical heading-scoped IDs and configured Reader capture/lookup.
-Existing session/worker/C note dispatch resolves these IDs without body collisions,
-including after display footnotes are hidden or another passage is rendered.
-Canonical/overflow/control checks, metadata-only behavior and ownership pass.
-Existing native snapshots do not publish them yet; an explicit migration
-capability and validated appearance-preserving replacement are next.
+Native Mac and Linux reading models opt into shared scoped heading IDs, following
+owned capture `91f83c9` and lookup `7c98ebf`. Candidate replacement must match the
+legacy HTML outside IDs and retain known local IDs, target metadata and the
+cleanup-point label. Raw Reader sources, visible labels/counters, body rendering,
+CSS, anchors and history stay unchanged. Unknown/mixed/changed shapes keep their
+original rendering. Existing other consumers remain default-off.
 
-`91f83c9` captures owned heading notes without overwriting source/body attributes.
-It handles both Headings/Footnotes filter orders, preserves already-filtered
-bodies/IDs and the frozen cleanup label, skips repeated heading extraction, and
-restores SDK attribute processing even on filter exceptions. Existing Reader/
-session/C/native paths are unchanged. Fragment-local IDs must not be published
-as ordinary body-note IDs; scoped identity and lookup are the active next step.
-
-`1f899ca` retains top-level p/h1–h6 wrappers outside inline word spans. Multiple
-headings in one SDK fragment and adjacent paragraphs now keep lexical HTML/CSS
-without forcing pane fallback. Each inline segment agrees with the frozen legacy
-renderer; inter-block whitespace, raw note metadata, labels and URLs are retained.
-Malformed/nested supported blocks or crossed inline spans still fall back with
-spacing-only CSS. The low-level legacy-compatible renderer remains unchanged.
-This is not a general HTML validator or proof of an arbitrary module corpus.
-
-Earlier `aff5f59` / `1d3612f` queued settings and native Bible/commentary controls
-remain checked. Core formatting/counters stay shared. Current GTK runtime and
-native MSVC/WinUI validation remain pending.
+`2390568` adds only capability selection and model checks to native adapters.
+Heading/body note separation, hover, retained links, linked selection, display
+toggles and shutdown are tested. Full F14/corpus/visual acceptance remains open.
 
 Earlier current-run milestones:
 
@@ -56,12 +41,13 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At `7c98ebf`: **78/78 Mac/core**, **62/62 portable Linux/core on this Mac**,
-focused **ASan/UBSan 5/5** (ID/lookup and capture prerequisites), strict C++11
-capture/codec syntax and native-disabled helper build pass. Existing native
-controls and legacy-compatible Reader HTML remain unchanged. SDKs are not fully
-instrumented; leak checks are off. No new GUI/current Fedora GTK/MSVC acceptance
-is claimed. All checks stayed local.
+At `2390568`: **81/81 Mac/core**, **65/65 portable Linux/core on this Mac**,
+focused **ASan/UBSan 5/5** (Linux model/snapshot and capture prerequisites).
+Core `3411f45` separately passed 80/80, 64/64 and ASan/UBSan 5/5; extra linked-source
+coverage passed normal/sanitized 4/4. Strict C11 header syntax passes. Capture/codec
+C++11 and native-disabled helper builds passed at `7c98ebf`. SDKs are not fully
+instrumented; leak checks are off. No current Fedora GTK/MSVC acceptance is claimed.
+All checks stayed local; no hosted jobs were requested.
 
 Environment: macOS 27.0.1 (26A434), ARM64; AppleClang 21.0.0; Swift 6.4 toolchain
 in Swift 6 language mode; SWORD 1.9.0.3916; GLib 2.86.5; configured libxml2 SDK.
@@ -76,8 +62,8 @@ cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -D
 cmake --build build/linux-models --parallel 2
 ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
 cmake -S platforms/linux -B build/linux-models-sanitized -C build/linux-model-sdk.cmake -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
-cmake --build build/linux-models-sanitized --target core_heading_note_id_test core_heading_note_lookup_test core_heading_notes_test core_heading_note_metadata_test core_heading_collection_test --parallel 2
-ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^(core_heading_note_id|core_heading_note_lookup)$' --no-tests=error --output-on-failure
+cmake --build build/linux-models-sanitized --target linux_heading_note_model_test core_heading_note_snapshots_test core_heading_notes_test core_heading_note_metadata_test core_heading_collection_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^(linux_heading_note_model|core_heading_note_snapshots)$' --no-tests=error --output-on-failure
 clang++ -std=c++11 -fsyntax-only -Isrc/core/include -I/usr/local/include/sword src/core/heading_notes.cpp src/core/heading_note_id.cpp
 cmake --build build/legacy-seam-build --parallel 2
 ```
@@ -92,25 +78,24 @@ failure or unresolved concern. Prior detailed checkpoints remain in the
 
 ## GUI evidence and limits
 
-At `1f899ca`, a disposable original-prose window imported a generated profile
-with lexical layout enabled and showed both OSIS headings, supplied note labels
-and body in commentary entry view. The temporary copy was quit and removed.
-Prior controls On/Off/On, chapter continuation, note-pane open and independent
-commentary settings were checked at `1d3612f`; see the workflow contracts.
+At `2390568`, an original-prose disposable window verified OSIS heading marker →
+heading body, ordinary marker → body note, and second ThML fragment → distinct
+unlabeled heading note. The temporary copy was quit and removed. Earlier layout,
+numbering and spacing checks remain in their linked contracts.
 
-Ordinary SDK note markers are supported by the checked complete layout path.
-Arbitrary WORD/RTL/font/corpus acceptance remains open. SDK heading-note links
-still have empty IDs; formatting does not fix routing or accept heading clicks.
-The TEI direct-filter limitation remains separately recorded.
+Only candidates identical outside their note IDs are repaired. Unsupported mixed
+source retains its original rendering; arbitrary corpus, RTL/font and TEI gates
+remain open. GTK was model-checked here, not compiled/run on current Fedora.
+No complete functional or visual parity is claimed.
 
 ## Next bounded work
 
-1. Current Mac shared task: add explicit session capability and reading-snapshot
-   publication, preserving raw source metadata, legacy counters/labels and HTML
-   outside identifiers. Unsupported replacements must retain existing rendering.
-2. Fedora: rebuild current default-ON GTK and verify numbering, paragraph/heading
-   layout, lexical/spacing refresh, profiles and note clicks with real input.
-3. Windows: continue native compiler/dependency/core setup in its own handoff lane.
+1. Current Mac shared task: protect SDK attribute-processing state on exceptions
+   in ordinary render/heading/note/attribute helpers, using the proven recovery
+   issue without altering healthy output or caller-owned settings.
+2. Fedora: rebuild default-ON GTK; verify heading click/hover and source/body
+   separation, linked chapters, numbering/spacing, profiles and real input.
+3. Windows: continue native compiler/dependency/core setup in its own lane.
 
 0/38 whole parity groups and 0/3 releases remain accepted. Continue within the
-owner's latest instruction; the earlier requested stop was superseded.
+owner's latest instruction; the earlier stop was superseded.
