@@ -112,6 +112,12 @@ std::future<BookTree> StudyWorker::book_tree_path(std::string module, std::strin
 std::future<BookEntry> StudyWorker::read_book(StudyTab tab, std::string module, std::uint64_t offset) {
   return impl_->submit([tab, module = std::move(module), offset](Impl::State &s) { return s.tab(tab).read_book(module, offset); });
 }
+std::future<BookChildren> StudyWorker::book_children(std::string module, std::uint64_t parent,
+                                                    std::optional<std::uint64_t> after, std::uint32_t limit) {
+  return impl_->submit([module = std::move(module), parent, after, limit](Impl::State &s) {
+    return s.reader.book_children(module, parent, after, limit);
+  });
+}
 std::future<StudyTab> StudyWorker::create_tab() {
   return impl_->submit([](Impl::State &s) {
     if (s.next_tab == std::numeric_limits<StudyTab>::max()) throw std::overflow_error("Study tab IDs exhausted");

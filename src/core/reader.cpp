@@ -115,6 +115,14 @@ BookTree Reader::book_tree_path(const std::string &id, const std::string &path) 
 BookEntry Reader::read_book(const std::string &id, std::uint64_t offset, const EngineOptions &options) {
   return book_impl(id, offset, &options);
 }
+BookChildren Reader::book_children(const std::string &id, std::uint64_t parent,
+                                   std::optional<std::uint64_t> after, std::uint32_t limit) {
+  if (id.empty() || id.find('\0') != std::string::npos) throw std::invalid_argument("Invalid general-book module ID");
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto *module = impl_->manager->getModule(id.c_str());
+  if (!module) throw std::out_of_range("Module is not installed");
+  return detail::capture_book_children(*module, parent, after, limit);
+}
 BookEntry Reader::read_book(const std::string &id, std::uint64_t offset) {
   return book_impl(id, offset, nullptr);
 }

@@ -6,8 +6,15 @@ int c_header_test(void) {
   xc_session *session = NULL;
   xc_request *request = NULL;
   xc_lexical_presentation layout = {"stale", 1, 1};
+  uint64_t book_cursor = 123;
   xc_book_node book_node = {4, "stale", "stale", 1, 1};
-  return xc_reference_list_count(NULL) == 0 && xc_reference_list_module(NULL) == NULL &&
+  return xc_book_children_count(NULL) == 0 && xc_book_children_module(NULL) == NULL &&
+         xc_book_children_parent(NULL, &book_node) == XC_INVALID_ARGUMENT && !book_node.present &&
+         xc_book_children_get_node(NULL, 0, &book_node) == XC_INVALID_ARGUMENT && !book_node.path &&
+         !xc_book_children_next_after(NULL, &book_cursor) && book_cursor == 0 &&
+         xc_request_take_book_children(NULL) == NULL &&
+         xc_worker_book_children(NULL, "Book", 0, 0, 0, 64, &request) == XC_INVALID_ARGUMENT && request == NULL &&
+         xc_reference_list_count(NULL) == 0 && xc_reference_list_module(NULL) == NULL &&
          xc_book_tree_get_node(NULL, XC_BOOK_CURRENT, &book_node) == XC_INVALID_ARGUMENT &&
          book_node.offset == 0 && book_node.path == NULL && book_node.title == NULL && !book_node.present && !book_node.has_children &&
          xc_book_entry_tree(NULL) == NULL && xc_book_entry_html(NULL) == NULL && !xc_book_entry_has_entry(NULL) &&

@@ -17,6 +17,7 @@ typedef struct xc_dictionary_history xc_dictionary_history;
 typedef struct xc_dictionary_entry xc_dictionary_entry;
 typedef struct xc_book_tree xc_book_tree;
 typedef struct xc_book_entry xc_book_entry;
+typedef struct xc_book_children xc_book_children;
 typedef struct xc_lexical_entry xc_lexical_entry;
 typedef struct xc_lexicons xc_lexicons;
 /* Borrowed submission strings. NULL is unset; empty is an explicit empty name. */
@@ -102,6 +103,21 @@ const xc_book_tree *xc_book_entry_tree(const xc_book_entry *entry);
 const char *xc_book_entry_html(const xc_book_entry *entry);
 int xc_book_entry_has_entry(const xc_book_entry *entry);
 void xc_book_entry_release(xc_book_entry *entry);
+/* Read-only SDK child order, page limit 1..256; has_after is strict 0/1.
+ * after is ignored when has_after=0; otherwise it must identify a direct child
+ * of parent. All node strings borrow from the owned page. Out-of-range indices
+ * clear out and return XC_INVALID_ARGUMENT. Pages do not freeze an externally
+ * modified module across requests. No automatic recursive/full-tree walk. */
+xc_status xc_worker_book_children(xc_worker *worker, const char *module, uint64_t parent,
+                                  int has_after, uint64_t after, uint32_t limit, xc_request **out);
+xc_book_children *xc_request_take_book_children(xc_request *request);
+const char *xc_book_children_module(const xc_book_children *page);
+size_t xc_book_children_count(const xc_book_children *page);
+xc_status xc_book_children_parent(const xc_book_children *page, xc_book_node *out);
+xc_status xc_book_children_get_node(const xc_book_children *page, size_t index, xc_book_node *out);
+/* 1 and last-child cursor if more exist; otherwise 0, clearing non-NULL out. */
+int xc_book_children_next_after(const xc_book_children *page, uint64_t *out);
+void xc_book_children_release(xc_book_children *page);
 xc_status xc_worker_modules(xc_worker *worker, xc_request **out);
 xc_status xc_worker_create_tab(xc_worker *worker, xc_request **out);
 xc_status xc_worker_close_tab(xc_worker *worker, uint64_t tab, xc_request **out);

@@ -87,6 +87,40 @@ take-once/wrong-kind behavior, root/absence distinctions, borrowed/owned lifetim
 initialization failures, shutdown draining and unchanged module data bytes. C11
 header checks cover the new API without exposing C++/SWORD types.
 
+## Bounded child enumeration
+
+Reader/StudyWorker `book_children(module, parent, after, limit)` returns an owned
+parent and up to 256 direct children in the same firstChild/nextSibling order as
+`main_dialogs_add_children_to_tree`. Default page size is 64; valid sizes are
+1 through 256. No recursive subtree walk, sorting or UI list indices are used.
+The optional `after` cursor identifies the last returned child, and must still
+be a direct child of this parent. A single validated lookahead produces
+`next_after` only when another child exists. Exact final and empty pages need
+no extra continuation. A leaf, root, and structural branch retain their actual
+source meaning.
+
+The query validates the cursor without rescanning all preceding siblings. Its
+own traversal/copies are bounded by page size plus one lookahead, with bounded
+ancestor checks for each node. It detects repeated sibling offsets within the
+request, including a cycle back to its starting cursor. Pages do not freeze a
+module revision or prove the absence of cycles spanning multiple pages in a
+corrupt module. Invalid/deleted/reparented cursors reject; external module edits
+between requests require refreshing the tree. As with other SDK queries, these
+guards do not claim comprehensive arbitrary-file corruption safety.
+
+The additive C page handle follows the same copied-request/take-once lifetime.
+`has_after` is strict 0/1; a false value ignores the supplied offset. Borrowed
+parent/child node views remain valid until page release. Bounds/null errors clear
+stale node outputs; absence of continuation clears the cursor output. Requests
+use the same FIFO worker and shutdown contract, and never change live selection,
+entry attributes, history or module data bytes.
+
+`core_book_children` generates a 600-child original-prose branch. Page sizes
+1/64/127/256 reproduce the complete frozen SDK sequence without omissions,
+duplication or sorting, including numeric/Unicode titles. Tests cover root,
+leaf, exact/partial final pages, invalid limits/offsets/parents/cursors, state
+preservation, Reader/worker/C lifetime, queued failures and shutdown draining.
+
 `core_book_tree` generates original-prose RawGenBook fixtures, including empty,
 structural-only and deep branches, numeric and Unicode titles. It compares all
 one-hop relationships with the frozen SDK sequence used by the legacy backend,
@@ -95,7 +129,7 @@ lifetime, and byte-for-byte identity of every module data file and filename
 before/after successful and rejected queries. Manager-generated configuration
 caches are outside this module-data identity assertion.
 
-The next slices are bounded child enumeration and native tree/navigation controls,
+The next slices are shared module capability discovery and native tree/navigation controls,
 then image/resource routing,
 links, history/persistent selection, additional book windows and editors. Preserve
 the GTK3 app and all its write paths. No F10 group, native GUI, corpus, platform or

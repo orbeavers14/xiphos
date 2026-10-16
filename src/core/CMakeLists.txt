@@ -89,6 +89,11 @@ target_link_libraries(xiphos_core PUBLIC Xiphos::CoreRender Xiphos::CoreHistory 
 set_target_properties(xiphos_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 if(BUILD_TESTING)
+  add_executable(core_book_children_test tests/book_children_test.cpp)
+  target_include_directories(core_book_children_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+  target_link_libraries(core_book_children_test PRIVATE Xiphos::Core)
+  add_test(NAME core_book_children COMMAND core_book_children_test "${CMAKE_CURRENT_BINARY_DIR}/book-children-fixture")
+  set_tests_properties(core_book_children PROPERTIES TIMEOUT 30)
   add_executable(core_book_tree_test tests/book_tree_test.cpp)
   target_include_directories(core_book_tree_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
   target_link_libraries(core_book_tree_test PRIVATE Xiphos::Core)

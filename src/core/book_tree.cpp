@@ -108,4 +108,41 @@ BookEntry capture_book_entry(sword::SWModule &module, std::uint64_t offset) {
     throw std::runtime_error("General-book render changed the requested source");
   return result;
 }
+BookChildren capture_book_children(sword::SWModule &module, std::uint64_t parent,
+                                   std::optional<std::uint64_t> after, std::uint32_t limit) {
+  if (!limit || limit > 256) throw std::invalid_argument("Book child page limit must be 1 through 256");
+  auto key = source_key(module);
+  position(*key, parent);
+  BookChildren result;
+  result.module = module.getName();
+  result.parent = node(*key, result.module);
+  const auto direct_child = [&] {
+    sword::TreeKeyIdx owner(*key);
+    if (!owner.parent() || owner.popError() || owner.getOffset() != parent)
+      throw std::invalid_argument("Book child/cursor belongs to a different parent");
+  };
+  std::set<unsigned long> visited;
+  if (after) {
+    position(*key, *after);
+    direct_child();
+    visited.insert(key->getOffset());
+    if (!key->nextSibling()) return result;
+  } else if (!key->firstChild()) return result;
+  for (;;) {
+    if (key->popError()) throw std::runtime_error("Cannot enumerate book children");
+    if (!visited.insert(key->getOffset()).second)
+      throw std::runtime_error("Book child page contains a sibling cycle");
+    auto child = node(*key, result.module);
+    direct_child();
+    // Validate one lookahead before promising another page. Work/memory remain
+    // bounded by limit + 1 nodes, without rescanning all preceding siblings.
+    if (result.children.size() == limit) {
+      result.next_after = result.children.back().offset;
+      break;
+    }
+    result.children.push_back(std::move(child));
+    if (!key->nextSibling()) break;
+  }
+  return result;
+}
 }
