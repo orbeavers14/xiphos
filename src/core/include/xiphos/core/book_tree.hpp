@@ -16,4 +16,9 @@ struct BookTree {
   BookTreeNode node;
   std::optional<BookTreeNode> parent, first_child, previous_sibling, next_sibling;
 };
+struct BookEntry {
+  BookTree tree;
+  bool has_entry = false;
+  std::string html;
+};
 }

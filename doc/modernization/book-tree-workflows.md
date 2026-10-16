@@ -1,7 +1,7 @@
 # General-book tree source seam
 
-The first shared F10 slice is a read-only C++17 source query, not a complete book
-reader. `Reader::book_tree(module, offset)` and `book_tree_path(module, path)`
+The first shared F10 slices are read-only C++17 sources and configured entry
+rendering, not a complete book reader. `Reader::book_tree(module, offset)` and `book_tree_path(module, path)`
 return copied node data and optional parent, first child, previous sibling and
 next sibling. They use the Reader's existing manager and private query keys.
 No additional engine, frontend tree algorithm, history or persistence is added.
@@ -39,6 +39,25 @@ No additional engine, frontend tree algorithm, history or persistence is added.
 
 ## Local evidence and remaining work
 
+`Reader::read_book(module, offset, options)` pairs exact raw SDK HTML and entry
+presence with the validated source tree. It applies/restores the existing shared
+engine-option scope and selects the requested live tree offset without replacing
+its key object. It does not re-resolve the title/path, so linked entries retain
+their selected alias identity. Root stays root; structural-only branches remain
+empty rather than showing nearby prose. Source validation happens before live
+selection. The common render boundary restores attribute-processing state on
+exceptions; failed renders publish no result. Like ordinary entry reads, a
+successful selection remains current. It adds no visit/history or preference
+write. Unexpected key/source mutation during rendering rejects the result.
+
+`core_book_entry` generates original OSIS/ThML prose and compares exact configured
+HTML against frozen live SDK rendering across note/red-letter toggles, root,
+branches, leaves and links. It checks real note visibility/red-letter changes,
+source/HTML lifetime, missing/wrong-module/offset rejection, injected render and
+source-mutation failures, filter/processing recovery and module-data byte identity.
+This is raw SDK output: native book-note URI dispatch, display cleanup and image
+resource resolution are not enabled or claimed by this API.
+
 `core_book_tree` generates original-prose RawGenBook fixtures, including empty,
 structural-only and deep branches, numeric and Unicode titles. It compares all
 one-hop relationships with the frozen SDK sequence used by the legacy backend,
@@ -47,8 +66,8 @@ lifetime, and byte-for-byte identity of every module data file and filename
 before/after successful and rejected queries. Manager-generated configuration
 caches are outside this module-data identity assertion.
 
-The next slices are configured book-entry rendering and source identity, queued
-worker/C ownership, native tree/navigation controls, then image/resource routing,
+The next slices are queued worker/C ownership, native tree/navigation controls,
+then image/resource routing,
 links, history/persistent selection, additional book windows and editors. Preserve
 the GTK3 app and all its write paths. No F10 group, native GUI, corpus, platform or
 legacy-retirement gate is accepted by source queries alone.

@@ -39,6 +39,10 @@ public:
   // startup's legacy offset-4 selection. Unsupported drivers are rejected.
   BookTree book_tree(const std::string &module, std::uint64_t offset);
   BookTree book_tree_path(const std::string &module, const std::string &path);
+  // Configured raw SDK HTML paired with its exact typed tree source. Selects
+  // the requested live node, as ordinary reads do; no root-to-first-node clamp,
+  // display cleanup, semantic link dispatch, history or persistence yet.
+  BookEntry read_book(const std::string &module, std::uint64_t offset, const EngineOptions &options);
   ReferenceChoices reference_choices(const std::string &module, const std::string &reference);
   PassageLink resolve_link(const std::string &current_module, const std::string &url);
   // Owned targets/guard metadata from the existing parser, without rendering

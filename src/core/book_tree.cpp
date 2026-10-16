@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "book_tree_source.hpp"
+#include "sdk_render.hpp"
 #include <swmodule.h>
 #include <treekeyidx.h>
 #include <limits>
@@ -91,5 +92,20 @@ BookTree capture_book_tree_path(sword::SWModule &module, const std::string &path
   if (key->popError() || actual != path)
     throw std::out_of_range("General-book path does not exist or is not canonical");
   return snapshot(*key, module.getName());
+}
+BookEntry capture_book_entry(sword::SWModule &module, std::uint64_t offset) {
+  BookEntry result;
+  result.tree = capture_book_tree(module, offset);
+  auto *key = dynamic_cast<sword::TreeKeyIdx *>(module.getKey());
+  if (!key) throw std::invalid_argument("General book has no live indexed key");
+  // Do not setKey(path): distinct tree addresses (including linked entries)
+  // must retain the selected node identity rather than resolving a title again.
+  position(*key, offset);
+  result.has_entry = module.hasEntry(key);
+  result.html = render_sdk_entry(module).c_str();
+  if (module.getKey() != key || key->getOffset() != offset ||
+      result.tree.node.path != key->getText() || key->getError())
+    throw std::runtime_error("General-book render changed the requested source");
+  return result;
 }
 }

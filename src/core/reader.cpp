@@ -112,6 +112,14 @@ BookTree Reader::book_tree_path(const std::string &id, const std::string &path) 
   if (!module) throw std::out_of_range("Module is not installed");
   return detail::capture_book_tree_path(*module, path);
 }
+BookEntry Reader::read_book(const std::string &id, std::uint64_t offset, const EngineOptions &options) {
+  if (id.empty() || id.find('\0') != std::string::npos) throw std::invalid_argument("Invalid general-book module ID");
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto *module = impl_->manager->getModule(id.c_str());
+  if (!module) throw std::out_of_range("Module is not installed");
+  ScopedEngineOptions scope(*impl_->manager, options);
+  return detail::capture_book_entry(*module, offset);
+}
 ReferenceChoices Reader::reference_choices(const std::string &id, const std::string &reference) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   return xiphos::core::reference_choices(impl_->verse_module(id, reference), reference);
