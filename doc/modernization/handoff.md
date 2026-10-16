@@ -16,16 +16,15 @@ The [status ledger](status.md) is the detailed scope/evidence record; the
 about 8% (range 6–10%), with 0/38 feature groups fully accepted and 0/3 native
 release-ready applications. Do not turn passed build counts into parity scores.
 
-Latest typed book notes `9888bf0` pair ordinary metadata/body with exact tree
-identity through the shared note renderer, session policy, worker and C. A shared
-C++11 scope prevents stale note capture when attribute processing was disabled.
-Suites pass **87/87 Mac/core**, **71/71 portable Linux/core on Mac**, focused books
-and render recovery **ASan/UBSan 8/8**, plus C11/C++11 and native-disabled helpers.
-Added C Off/On checks pass separately in all three caches. Prior tree/render/
-transport/paging/capability contracts remain in [book workflows](book-tree-workflows.md).
+Latest book-note commands `045f27e` validate SDK URIs against captured typed
+module/path/type and reuse note lookup `9888bf0`. Verse URI rules stay strict.
+Suites pass **88/88 Mac/core**, **72/72 portable Linux/core on Mac**, focused books
+and existing parser **ASan/UBSan 7/7**, plus C11. Prior note recovery also passed
+C++11/native-disabled helpers and ASan/UBSan 8/8. Source/render/transport/paging/
+capability contracts remain in [book workflows](book-tree-workflows.md).
 Current GTK runtime/MSVC/WinUI remain unvalidated. The Mac chat next claims
-source-bound SDK book-note URI validation, reusing the shared command parser.
-Preserve the Windows lane.
+read-only saved book-selection characterization/import using the existing XML
+profile parser. Preserve the Windows lane.
 
 | Implemented area | Checkpoints | Contract / limits |
 |---|---|---|
@@ -36,7 +35,7 @@ Preserve the Windows lane.
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
 The owner requested continued shared-core work until usage runs out. Current Mac
-ownership covers source-bound SDK book-note URI validation; inspect its handoff before overlapping APIs. Earlier
+ownership covers read-only saved book-selection characterization/import; inspect its handoff before overlapping APIs. Earlier
 heading and render-recovery slices are pushed and checked to their stated limits.
 No whole parity or retirement gate is accepted by these checks.
 
@@ -44,7 +43,7 @@ No whole parity or retirement gate is accepted by these checks.
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Source-bound SDK book-note URI validation with shared command parsing | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Read-only saved book-selection characterization/import with existing XML parser | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

@@ -9,11 +9,19 @@ Branch `master`, fork `orbeavers14/xiphos`. The owner requested continued shared
 core work until the available usage limit. Owned read-only general-book source
 `6f61997`, configured rendering `6b2399c` and queued/C transport `b9c0a34` and paging
 `f35b6dd`, plus capability `b49c823`, are checked. The Mac chat now claims typed
-source-bound SDK book-note URI validation, using shared command parsing. Keep GTK3 editors/writes intact, all
+read-only saved book-selection characterization/import with the existing XML
+profile parser. Keep GTK3 editors/writes intact, all
 checks local, Windows inventory through `cf3b24c` and unrelated `.DS_Store`
 untouched. Fetch before overlapping shared edits.
 
 ## Latest checked behavior
+
+`045f27e` binds real SDK book-note URIs to the captured typed source, using shared
+command decoding. It rejects wrong module/path/type/ID, external/unknown/malformed
+commands and avoids verse short-reference fallback. Session/worker/C use existing
+note ownership and engine policy, including metadata-only/alias lookup. Existing
+verse parser regressions pass. No native book controls are introduced.
+
 
 `9888bf0` pairs ordinary book-note metadata/body with exact typed tree identity,
 including linked aliases, through existing engine policy and queued C ownership.
@@ -93,12 +101,11 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At `9888bf0`: **87/87 Mac/core**, **71/71 portable Linux/core on this Mac**,
-focused books/render recovery **ASan/UBSan 8/8**, strict C11 header/C++11 note-helper
-syntax and native-disabled helper build pass. Additional C body Off/On assertions
-pass individually with their entry fixture in all three caches (2/2 each) after
-full-suite runs. SDKs are not fully instrumented; leaks are off. Current Fedora
-GTK/MSVC remains unvalidated. All checks stayed local.
+At `045f27e`: **88/88 Mac/core**, **72/72 portable Linux/core on this Mac**,
+focused books/common parser **ASan/UBSan 7/7**, strict C11 header syntax. At
+`9888bf0`, note/recovery ASan/UBSan passed 8/8, C++11 note-helper syntax and
+native-disabled helper build passed. SDKs are not fully instrumented; leaks are
+off. Current Fedora GTK/MSVC remains unvalidated. All checks stayed local.
 
 Environment: macOS 27.0.1 (26A434), ARM64; AppleClang 21.0.0; Swift 6.4 toolchain
 in Swift 6 language mode; SWORD 1.9.0.3916; GLib 2.86.5; configured libxml2 SDK.
@@ -113,13 +120,9 @@ cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -D
 cmake --build build/linux-models --parallel 2
 ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
 cmake -S platforms/linux -B build/linux-models-sanitized -C build/linux-model-sdk.cmake -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
-cmake --build build/linux-models-sanitized --target core_book_tree_test core_book_entry_test core_book_worker_test core_book_children_test core_book_note_test core_sdk_render_recovery_test --parallel 2
-ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_book_(tree|entry|worker|children|note)$|^core_sdk_render_recovery$' --no-tests=error --output-on-failure
-cmake --build build/macos --target core_book_tree_test core_book_entry_test core_book_worker_test core_book_children_test core_book_note_test core_sdk_render_recovery_test --parallel 2
+cmake --build build/linux-models-sanitized --target core_book_tree_test core_book_entry_test core_book_worker_test core_book_children_test core_book_note_test core_book_note_link_test core_content_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_book_(tree|entry|worker|children|note|note_link)$|^core_content$' --no-tests=error --output-on-failure
 clang -std=c11 -fsyntax-only -Isrc/core/include src/core/tests/c_header_test.c
-clang++ -std=c++11 -fsyntax-only -Isrc/core/include -Isrc/core -I/usr/local/include/sword src/core/study_note.cpp
-cmake --build build/legacy-seam-build --parallel 2
-ctest --test-dir build/macos -R '^core_book_(tree|entry|worker|children|note)$|^core_sdk_render_recovery$' --no-tests=error --output-on-failure
 ```
 
 The ignored SDK seed is copied from this Mac's cache, not a portable file. The
@@ -144,8 +147,9 @@ No complete functional or visual parity is claimed.
 
 ## Next bounded work
 
-1. Current Mac shared task: source-bound SDK book-note URI validation using the
-   shared command parser, without relaxing existing verse URI handling.
+1. Current Mac shared task: read-only saved book-selection characterization/
+   import through the existing XML parser. Do not auto-apply, resolve or rewrite
+   saved selections before numeric/path/startup compatibility is characterized.
    Native tree/navigation controls, URI/image dispatch, book history and saved
    selection remain later bounded steps.
 2. Fedora: rebuild default-ON GTK; verify heading click/hover and source/body
