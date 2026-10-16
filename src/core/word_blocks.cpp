@@ -314,22 +314,63 @@ WordBlockResult render_word_blocks(std::string html) {
   result.applied = supported;
   return result;
 }
+namespace {
+// The inherited inline scanner cannot keep block elements outside its word
+// spans. Segment top-level SDK paragraphs/headings before invoking that scanner;
+// each inline fragment retains the frozen spacing/annotation rules. Nested blocks
+// and blocks inside inline styles stay on the conservative raw fallback path.
+WordBlockResult render_layout_blocks(const std::string &html) {
+  auto fallback = [&]() { WordBlockResult value; value.html = html; return value; };
+  if (!supported_markup(html)) return fallback();
+  std::string formatted;
+  std::vector<std::string> stack;
+  std::size_t chunk = 0;
+  bool has_blocks = false;
+  auto append_inline = [&](std::size_t end, bool between_blocks) {
+    if (between_blocks && html.find_first_not_of(" \t\r\n\f", chunk) >= end) {
+      formatted += html.substr(chunk, end - chunk); return true;
+    }
+    auto rendered = render_word_blocks(html.substr(chunk, end - chunk));
+    if (!rendered.applied) return false;
+    formatted += rendered.html;
+    return true;
+  };
+  for (std::size_t at = 0; (at = html.find('<', at)) != std::string::npos;) {
+    const auto end = html.find('>', at); // Whole input already passed the bounded tag guard.
+    auto start = at + 1;
+    const bool closing = html[start] == '/';
+    if (closing) ++start;
+    auto name_end = start;
+    while (name_end < end && html[name_end] != ' ' && html[name_end] != '\t' &&
+           html[name_end] != '\n' && html[name_end] != '\r' && html[name_end] != '/') ++name_end;
+    const auto name = html.substr(start, name_end - start);
+    auto lower = name;
+    for (auto &c : lower) if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
+    const bool block = name == "p" || (name.size() == 2 && name[0] == 'h' && name[1] >= '1' && name[1] <= '6');
+    const bool empty = html[end - 1] == '/' || lower == "img" || lower == "br" || lower == "hr" || lower == "meta" || lower == "link" || lower == "input";
+    if (block) {
+      if (empty || (!closing && !stack.empty()) || (closing && stack.size() != 1)) return fallback();
+      has_blocks = true;
+      if (!append_inline(at, !closing)) return fallback();
+      formatted += html.substr(at, end + 1 - at);
+      chunk = end + 1;
+    }
+    if (closing) stack.pop_back(); // Matching names were checked before segmentation.
+    else if (!empty) stack.push_back(name);
+    at = end + 1;
+  }
+  if (!append_inline(html.size(), has_blocks)) return fallback();
+  WordBlockResult result; result.html = std::move(formatted); result.applied = true;
+  return result;
+}
+}
 LexicalLayout layout_lexical_content(std::string html, bool strongs, bool lemmas,
                                      bool morphology, bool double_space) {
   if (html.find('\0') != std::string::npos) throw std::invalid_argument("Lexical layout HTML contains NUL");
   LexicalLayout result;
   result.requested = strongs || lemmas || morphology;
   if (result.requested) {
-    // SWORD exposes captured section headings as an outer h1-h6 element.
-    // Keep that block outside the inherited inline-word scanner so it cannot
-    // cross word spans. Other markup still takes the conservative checked path.
-    std::string heading;
-    if (html.size() >= 9 && starts(html, 0, "<h") && html[2] >= '1' && html[2] <= '6' && html[3] == '>') {
-      const auto close = "</h" + html.substr(2, 1) + ">";
-      if (html.compare(html.size() - close.size(), close.size(), close) == 0 && supported_markup(html)) heading = html.substr(0, 4);
-    }
-    auto rendered = render_word_blocks(heading.empty() ? html : html.substr(4, html.size() - 9));
-    if (rendered.applied && !heading.empty()) rendered.html = heading + rendered.html + "</h" + heading.substr(2, 1) + ">";
+    auto rendered = render_layout_blocks(html);
     // The inherited scanner can split balanced inline tags across word spans
     // (for example a font around several words). Browser repair can then put
     // annotations outside their containing word. Preserve the complete source

@@ -122,6 +122,22 @@ int main(int argc, char **argv) {
       check(footnote == 2 && xref == 2, "independent footnote/cross-reference counters continue across sparse entries");
       check(reader.read("Text", "John4:1", engine).html == baseline.html,
             "session SDK label scopes restore existing Reader rendering");
+      engine.strongs = true; session.set_engine_options(engine); session.set_lexical_layout_enabled(true);
+      const auto lexical_notes = session.read_entry("Text", "John4:5");
+      check(lexical_notes.lexical.requested && lexical_notes.lexical.applied && lexical_notes.html.find("*n2") != std::string::npos &&
+            lexical_notes.html.find("action=showNote") != std::string::npos,
+            "opted-in session combines automatic note counters with safe lexical HTML/CSS");
+      const auto combined_headings = session.read_commentary_entry("Notes", "John4:1");
+      check(combined_headings.lexical.applied && combined_headings.note_source.headings.size() == 1 &&
+            combined_headings.note_source.headings[0].html.find("Original second heading") != std::string::npos &&
+            combined_headings.heading_html.find(">second</span>") != std::string::npos &&
+            combined_headings.heading_html.find("*na") != std::string::npos && combined_headings.html.find("*nbody") != std::string::npos,
+            "multiple OSIS headings in one SDK fragment retain supplied labels and matching body layout");
+      const auto distinct_headings = session.read_commentary_entry("ThMLNotes", "John4:2");
+      check(distinct_headings.lexical.applied && distinct_headings.note_source.headings.size() == 2 &&
+            distinct_headings.heading_html.find("*n1") != std::string::npos && distinct_headings.heading_html.find("*n2") != std::string::npos,
+            "distinct SDK heading fragments retain sequential numbering while lexical layout is active");
+      session.set_lexical_layout_enabled(false);
       const auto raw_cleanup = reader.read("Text", "John6:1", engine, true);
       const auto cleanup = session.read_entry("Text", "John6:1"); footnote = xref = 0; compare(raw_cleanup, cleanup, true);
       check(footnote == 2 && xref == 0 && cleanup.html.find("*n2") != std::string::npos,

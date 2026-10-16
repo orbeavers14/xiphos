@@ -159,6 +159,9 @@ int main(int argc, char **argv) {
         check(sdk.find("action=showNote") != std::string::npos && sdk.find("action=showRef") != std::string::npos &&
               compare(sdk).html.find("action=showNote") != std::string::npos,
               "SDK note-marker small elements retain complete note/reference links while formatting words");
+        const auto layout = xiphos::core::layout_lexical_content(sdk, true, false, false, false);
+        check(layout.applied && layout.html == compare(sdk).html,
+              "complete layout accepts SDK note/reference markers without altering their lexical output");
         continue;
       }
       const auto rendered = compare(sdk);
@@ -189,7 +192,11 @@ int main(int argc, char **argv) {
     }
     compare("<A href=\"sword:///John%203:16\">Original ordinary uppercase link</A>");
     for (const auto *label : {"a", "λόγος", "*n"}) {
-      const std::string marker = "<a class=\"noteMarker study\" href=\"passagestudy.jsp?action=showNote&type=n&value=1&module=Words&passage=John+3%3A16\"><small><sup class=\"n\">" +
+      const auto whitespace_blocks = xiphos::core::layout_lexical_content("\n<h3>Original</h3>\n\n<p>Following</p>\t", true, false, false, false);
+    check(whitespace_blocks.applied && whitespace_blocks.html == "\n<h3>" + run(frozen::block_render, "Original").html +
+          "</h3>\n\n<p>" + run(frozen::block_render, "Following").html + "</p>\t",
+          "whitespace between SDK blocks stays outside generated word spans");
+    const std::string marker = "<a class=\"noteMarker study\" href=\"passagestudy.jsp?action=showNote&type=n&value=1&module=Words&passage=John+3%3A16\"><small><sup class=\"n\">" +
           std::string(label) + "</sup></small></a>";
       const auto rendered = compare("Original " + strong("3056", true) + marker + " following " + morph("N-NSM", true));
       check(rendered.html.find(marker) != std::string::npos, "lexical layout preserves complete opaque note marker byte-for-byte");
@@ -220,6 +227,35 @@ int main(int argc, char **argv) {
               result.css == frozen_lexical_style(false, false, false, spacing),
               "layout rejects scanner output whose inline tags cross word-span boundaries");
       }
+    }
+    for (const auto *tag : {"p", "h1", "h2", "h3", "h4", "h5", "h6"}) {
+      const auto open = std::string("<") + tag + ">", close = std::string("</") + tag + ">";
+      const std::string first = "Original " + strong("3056", true);
+      const std::string second = "Original second heading";
+      const auto input = open + first + close + open + second + close;
+      const auto layout = xiphos::core::layout_lexical_content(input, true, false, false, false);
+      const auto expected = open + run(frozen::block_render, first).html + close + open + run(frozen::block_render, second).html + close;
+      check(layout.applied && layout.html == expected,
+            "adjacent SDK heading/paragraph blocks keep wrappers outside independent frozen inline layout");
+    }
+    const std::string marker = "<a class=\"noteMarker\" href=\"passagestudy.jsp?action=showNote&type=n&value=1&module=Words&passage=John+3%3A16\"><small><sup class=\"n\">*n</sup></small></a>";
+    const std::string block_body = "Original " + strong("3056", true) + marker + " following";
+    for (const auto &open : {std::string("<p>"), std::string("<p class=\"original paragraph\">"), std::string("<h3 class=\"original heading\">")}) {
+      const auto close = open[1] == 'p' ? "</p>" : "</h3>";
+      const auto input = "Before " + open + block_body + close + " after";
+      const auto expected = run(frozen::block_render, "Before ").html + open + run(frozen::block_render, block_body).html + close + run(frozen::block_render, " after").html;
+      for (bool spacing : {false, true}) {
+        const auto layout = xiphos::core::layout_lexical_content(input, true, false, false, spacing);
+        check(layout.applied && layout.html == expected && layout.html.find(marker) != std::string::npos,
+              "block attributes, surrounding text and opaque note URLs survive segmented frozen inline layout");
+      }
+    }
+    for (const auto *input : {"<p>Original<p>Nested</p></p>", "<h3>Original<h4>Nested</h4></h3>",
+                             "<font face=\"Original\"><p>Block inside inline font</p></font>",
+                             "<p><i>Unclosed style</p></i>", "<p />", "<h3>Unclosed heading", "<p>Wrong close</h3>"}) {
+      const auto layout = xiphos::core::layout_lexical_content(input, true, false, false, true);
+      check(!layout.applied && layout.html == input && layout.css == frozen_lexical_style(false, false, false, true),
+            "nested, misplaced, empty-form or malformed blocks retain complete raw fallback and spacing-only CSS");
     }
     const auto safe_font = xiphos::core::layout_lexical_content("<font face=\"Original\">Original</font> word " + strong("3056", true), true, false, false, false);
     check(safe_font.applied && !safe_font.css.empty(), "balanced single-word font retains supported layout");
@@ -262,12 +298,16 @@ int main(int argc, char **argv) {
     unsigned mutations = 0;
     for (const auto &seed : {std::string("Original ") + strong("3056", true) + morph("N-NSM", true),
                             std::string("<i><b>Original</b></i>"),
+                            std::string("<h3 class=\"title\">Original</h3>\n<p>Following</p>"),
                             std::string("Original<a href=\"note\"><small><sup>a</sup></small></a> following")}) {
       auto verify = [&](const std::string &input) {
         const auto original = input;
         const auto result = xiphos::core::render_word_blocks(input);
         check(input == original && (result.applied || result.html == original),
               "structured grammar mutations preserve input and unsupported fallback");
+        const auto layout = xiphos::core::layout_lexical_content(input, true, false, false, true);
+        check(layout.applied || (layout.html == input && layout.css == frozen_lexical_style(false, false, false, true)),
+              "segmented layout mutations retain complete source and spacing-only CSS on fallback");
         ++mutations;
       };
       for (std::size_t at = 0; at <= seed.size(); ++at) {
