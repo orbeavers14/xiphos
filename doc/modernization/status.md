@@ -119,14 +119,15 @@ pass. No new full parity/GUI claim is implied. Next is read-only general-book
 source characterization and a bounded shared slice.
 
 General-book source/render/transport/paging checkpoints `6f61997`, `6b2399c`,
-`b9c0a34`, `f35b6dd` add copied tree discovery, exact configured SDK HTML/node
+`b9c0a34`, `f35b6dd`, `b49c823` add copied tree discovery, exact configured SDK HTML/node
 identity and queued C ownership. Bounded pages reproduce a 600-child frozen SDK
 sequence without frontend navigation logic. Current suites pass **86/86 Mac/core**,
 **70/70 portable Linux/core on Mac** and book **ASan/UBSan 4/4**; strict C11 passes.
 Tests cover option precedence/isolation, linked/empty entries, cursor/error guards,
 source/render state, handle lifetime/shutdown and unchanged module data bytes.
-See [the book contract](book-tree-workflows.md). Shared capability discovery is
-next; native tree/UI, images/links, history, corpus and full F10 remain pending.
+Shared catalog eligibility excludes unsupported verse-key Generic Books. See
+[the book contract](book-tree-workflows.md). Typed book-note source lookup is next;
+native tree/UI, images/links, history, corpus and full F10 remain pending.
 No percentage or whole-parity gate is changed and no hosted builds ran.
 
 ## Overall completion estimate

@@ -8,11 +8,18 @@ Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the
 Branch `master`, fork `orbeavers14/xiphos`. The owner requested continued shared
 core work until the available usage limit. Owned read-only general-book source
 `6f61997`, configured rendering `6b2399c` and queued/C transport `b9c0a34` and paging
-`f35b6dd` are checked. The Mac chat now claims shared indexed-book capability discovery. Keep GTK3 editors/writes intact, all
+`f35b6dd`, plus capability `b49c823`, are checked. The Mac chat now claims typed
+book-note source lookup and queued ownership using common note rendering. Keep GTK3 editors/writes intact, all
 checks local, Windows inventory through `cf3b24c` and unrelated `.DS_Store`
 untouched. Fetch before overlapping shared edits.
 
 ## Latest checked behavior
+
+`b49c823` publishes indexed-tree capability in Reader/worker/C catalogs, sharing
+the query gate. SDK Generic Books with verse keys and dictionaries are excluded;
+eligible, empty and deep indexed books are included. Copied metadata, getters and
+unsupported-operation rejection are tested. It is no claim of full book support.
+
 
 `f35b6dd` pages direct children through the same Reader/worker/C owner. Limits
 1..256, validated last-child cursors and one lookahead preserve SDK order without
@@ -77,9 +84,9 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At `f35b6dd`: **86/86 Mac/core**, **70/70 portable Linux/core on this Mac**,
+At `b49c823`: **86/86 Mac/core**, **70/70 portable Linux/core on this Mac**,
 focused book **ASan/UBSan 4/4** (children + tree + entry + worker/C), strict C11
-header syntax. Previous transport `b9c0a34` passed 85/85, 69/69 and ASan/UBSan 3/3.
+header syntax. Previous paging `f35b6dd` passed the same counts.
 SDKs are not fully instrumented; leak checks are off. Current Fedora GTK/MSVC
 remains unvalidated. All checks stayed local.
 
@@ -125,7 +132,8 @@ No complete functional or visual parity is claimed.
 
 ## Next bounded work
 
-1. Current Mac shared task: indexed-book capability discovery in core/catalog.
+1. Current Mac shared task: typed book-note source lookup/queued ownership,
+   reusing common note rendering without re-resolving canonical tree titles.
    Native tree/navigation controls, URI/image dispatch, book history and saved
    selection remain later bounded steps.
 2. Fedora: rebuild default-ON GTK; verify heading click/hover and source/body
