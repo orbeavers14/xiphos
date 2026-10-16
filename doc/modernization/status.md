@@ -119,14 +119,18 @@ pass. No new full parity/GUI claim is implied. Next is read-only general-book
 source characterization and a bounded shared slice.
 
 General-book source/render/transport/paging checkpoints `6f61997`, `6b2399c`,
-`b9c0a34`, `f35b6dd`, `b49c823` add copied tree discovery, exact configured SDK HTML/node
+`b9c0a34`, `f35b6dd`, `b49c823`, `9888bf0` add copied tree discovery, exact configured SDK HTML/node
 identity and queued C ownership. Bounded pages reproduce a 600-child frozen SDK
-sequence without frontend navigation logic. Current suites pass **86/86 Mac/core**,
-**70/70 portable Linux/core on Mac** and book **ASan/UBSan 4/4**; strict C11 passes.
+sequence without frontend navigation logic. Current suites pass **87/87 Mac/core**,
+**71/71 portable Linux/core on Mac** and book/render recovery **ASan/UBSan 8/8**;
+C11/C++11 and native-disabled helper checks pass. Added C body Off/On assertions
+pass separately in all three caches after the full runs.
 Tests cover option precedence/isolation, linked/empty entries, cursor/error guards,
 source/render state, handle lifetime/shutdown and unchanged module data bytes.
 Shared catalog eligibility excludes unsupported verse-key Generic Books. See
-[the book contract](book-tree-workflows.md). Typed book-note source lookup is next;
+[the book contract](book-tree-workflows.md). Typed ordinary notes reuse common
+rendering, with fresh source capture even when its initial flag was disabled.
+Source-bound SDK book-note URI validation is next;
 native tree/UI, images/links, history, corpus and full F10 remain pending.
 No percentage or whole-parity gate is changed and no hosted builds ran.
 
