@@ -67,6 +67,7 @@ int main(int argc,char **argv) {
     }
     check(sword::RawLD::createModule((root/"data/dictionary").string().c_str())==0,"Create non-book fixture");
     { std::ofstream conf(root/"mods.d/dictionary.conf"); conf << "[Dictionary]\nDataPath=./data/dictionary\nModDrv=RawLD\n"; }
+    { std::ofstream conf(root/"mods.d/verse-book.conf"); conf << "[VerseBook]\nDataPath=./data/OSISBook\nModDrv=RawGenBook\nKeyType=VerseKey\n"; }
     fs::remove(root/"mods.d/modules-conf.cache");
     const auto before=bytes(root/"data");
     BookEntry retained;

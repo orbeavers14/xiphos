@@ -5,6 +5,7 @@
 #include <rawgenbook.h>
 #include <rawld.h>
 #include <treekeyidx.h>
+#include <versekey.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -85,12 +86,25 @@ int main(int argc,char **argv) {
       writer.setKey(path.c_str()); writer.setEntry("Original deep leaf prose.");
       std::ofstream conf(root/"mods.d/deep.conf"); conf << "[Deep]\nDataPath=./data/deep\nModDrv=RawGenBook\n";
     }
+    { std::ofstream conf(root/"mods.d/verse-book.conf"); conf << "[VerseBook]\nDataPath=./data/book\nModDrv=RawGenBook\nKeyType=VerseKey\n"; }
     fs::remove(root/"mods.d/modules-conf.cache");
     const auto before=bytes(root/"data"); check(!before.empty(),"Book bytes captured");
     BookTree retained;
     {
       Reader reader(root.string());
       sword::SWMgr legacy(root.string().c_str(),true,nullptr,false,false);
+      check(dynamic_cast<sword::VerseKey *>(legacy.getModule("VerseBook")->getKey()),"SDK non-indexed generic-book fixture is a verse key");
+      unsigned indexed=0;
+      for (const auto &item : reader.modules()) {
+        const bool expected=item.id=="Book" || item.id=="Empty" || item.id=="Deep";
+        check(item.indexed_book==expected,"Runtime indexed-book catalog capability");
+        if(item.indexed_book) ++indexed;
+      }
+      check(indexed==3,"All eligible indexed books discovered");
+      rejects<std::invalid_argument>([&]{reader.book_tree("VerseBook",0);});
+      rejects<std::invalid_argument>([&]{reader.book_tree_path("VerseBook","");});
+      rejects<std::invalid_argument>([&]{reader.book_children("VerseBook",0);});
+      rejects<std::invalid_argument>([&]{reader.read_book("VerseBook",0,{});});
       auto *module=legacy.getModule("Book"); check(module,"Load frozen book");
       auto *live=dynamic_cast<sword::TreeKeyIdx *>(module->getKey()); check(live,"Book has live indexed tree");
       live->setOffset(12);

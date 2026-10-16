@@ -93,7 +93,7 @@ Reader::Reader(const std::string &root) : impl_(std::make_unique<Impl>()) {
     impl_->modules.push_back({m.getName(), m.getDescription(), m.getType(),
                              language ? language : "", module_options(m), transliteration_available, dictionary,
                              dictionary ? xiphos_core_lexicon_role(feature) : 0,
-                             regular_commentary(m.getType(), m.getConfigEntry("ModDrv"))});
+                             regular_commentary(m.getType(), m.getConfigEntry("ModDrv")), detail::indexed_book(m)});
   }
 }
 Reader::~Reader() = default;

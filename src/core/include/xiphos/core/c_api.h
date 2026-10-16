@@ -365,6 +365,8 @@ const char *xc_catalog_language(const xc_catalog *catalog, size_t index);
 /* Copied dictionary classification (excludes DailyDevotion) and declared
  * exact first-Feature roles. Missing catalog/index returns zero. */
 int xc_catalog_is_dictionary(const xc_catalog *catalog, size_t index);
+/* Generic Books with a runtime TreeKeyIdx source, not full native book parity. */
+int xc_catalog_has_book_tree(const xc_catalog *catalog, size_t index);
 int xc_catalog_is_regular_commentary(const xc_catalog *catalog, size_t index);
 unsigned xc_catalog_lexicon_roles(const xc_catalog *catalog, size_t index);
 /* Declared module features using the legacy GlobalOptionFilter checks, not
@@ -396,6 +398,7 @@ const char *xc_module_description(const xc_reader *reader, size_t index);
 const char *xc_module_type(const xc_reader *reader, size_t index);
 const char *xc_module_language(const xc_reader *reader, size_t index);
 int xc_module_is_dictionary(const xc_reader *reader, size_t index);
+int xc_module_has_book_tree(const xc_reader *reader, size_t index);
 int xc_module_is_regular_commentary(const xc_reader *reader, size_t index);
 unsigned xc_module_lexicon_roles(const xc_reader *reader, size_t index);
 /* out is NULL on failure. Entry owns copied strings independently of reader;

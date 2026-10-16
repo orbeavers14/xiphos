@@ -21,6 +21,7 @@ struct Module {
   bool dictionary = false;
   unsigned lexicon_roles = 0;
   bool regular_commentary = false;
+  bool indexed_book = false;
 };
 
 

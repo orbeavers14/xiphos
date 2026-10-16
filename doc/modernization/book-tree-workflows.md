@@ -121,6 +121,22 @@ duplication or sorting, including numeric/Unicode titles. Tests cover root,
 leaf, exact/partial final pages, invalid limits/offsets/parents/cursors, state
 preservation, Reader/worker/C lifetime, queued failures and shutdown draining.
 
+## Shared module capability
+
+Module snapshots carry `indexed_book`, exposed as `xc_catalog_has_book_tree` and
+`xc_module_has_book_tree`. The shared predicate requires the SDK Generic Books
+type and a runtime TreeKeyIdx key, matching the source-query gate. This is a
+capability for these tree APIs, not a claim that every book driver or native book
+workflow is supported. Frontends can use it rather than guessing from names,
+file layout, or platform-specific casts.
+
+An actual SDK `RawGenBook` configured with `KeyType=VerseKey` remains a Generic
+Book but is ineligible for these indexed-tree APIs. Fixtures verify that it and
+dictionaries are excluded, eligible/empty/deep books are included, unsupported
+queries reject, synchronous/worker/C catalog copies agree, index/null getters are
+safe, and copied capability metadata survives worker shutdown. No existing C
+layout or legacy driver operation is changed.
+
 `core_book_tree` generates original-prose RawGenBook fixtures, including empty,
 structural-only and deep branches, numeric and Unicode titles. It compares all
 one-hop relationships with the frozen SDK sequence used by the legacy backend,
@@ -129,7 +145,7 @@ lifetime, and byte-for-byte identity of every module data file and filename
 before/after successful and rejected queries. Manager-generated configuration
 caches are outside this module-data identity assertion.
 
-The next slices are shared module capability discovery and native tree/navigation controls,
+The next slices are typed book-note source lookup and native tree/navigation controls,
 then image/resource routing,
 links, history/persistent selection, additional book windows and editors. Preserve
 the GTK3 app and all its write paths. No F10 group, native GUI, corpus, platform or

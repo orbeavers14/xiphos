@@ -49,9 +49,28 @@ int main(int argc,char **argv) {
       plain=reader.read_book("OSISBook",4,off).html; marked=reader.read_book("OSISBook",4,on).html;
       check(plain!=marked,"Real option fixtures differ");
     }
+    {
+      xc_reader *reader=nullptr; check(xc_open(root.c_str(),&reader)==XC_OK,"Open synchronous capability catalog");
+      unsigned supported=0;
+      for(std::size_t i=0;i<xc_module_count(reader);++i) {
+        const std::string id=xc_module_id(reader,i);
+        const bool expected=id=="OSISBook" || id=="ThMLBook";
+        check(bool(xc_module_has_book_tree(reader,i))==expected,"Synchronous C runtime book capability");
+        supported+=expected?1:0;
+      }
+      check(supported==2 && !xc_module_has_book_tree(reader,xc_module_count(reader)),"Synchronous catalog count/bounds");
+      xc_close(reader);
+    }
     std::future<BookTree> drained_tree; std::future<BookEntry> drained_entry;
     {
-      StudyWorker worker(root); const auto a=worker.create_tab().get(), b=worker.create_tab().get();
+      StudyWorker worker(root);
+      unsigned supported=0;
+      for(const auto &module : worker.modules().get()) {
+        check(module.indexed_book==(module.id=="OSISBook" || module.id=="ThMLBook"),"Worker copies runtime book capability");
+        supported+=module.indexed_book?1:0;
+      }
+      check(supported==2,"Worker catalog eligibility");
+      const auto a=worker.create_tab().get(), b=worker.create_tab().get();
       check(worker.read_book(a,"OSISBook",4).get().html==unconfigured,"Unconfigured tab keeps Reader baseline");
       auto settings=worker.set_engine_options(a,on);
       auto first=worker.read_book(a,"OSISBook",4);
@@ -70,21 +89,32 @@ int main(int argc,char **argv) {
       check(worker.read_book(a,"OSISBook",8).get().html=="Original leaf prose.","Enabled legacy defaults can read books");
       auto bad=worker.book_tree_path("OSISBook","/Missing");
       auto good=worker.book_tree_path("OSISBook","/Linked");
-      rejects<std::out_of_range>([&]{bad.get();}); check(good.get().node.offset==20,"Failed source query does not stop FIFO");
+      rejects<std::out_of_range>([&]{(void)bad.get();}); check(good.get().node.offset==20,"Failed source query does not stop FIFO");
       check(worker.history(a).get().entries.empty() && worker.dictionary_history(a).get().entries.empty(),"Book queries/read have no Bible/dictionary history side effects");
       worker.close_tab(a).get();
-      rejects<std::invalid_argument>([&]{worker.read_book(a,"OSISBook",4).get();});
+      rejects<std::invalid_argument>([&]{(void)worker.read_book(a,"OSISBook",4).get();});
       check(worker.book_tree("OSISBook",0).get().node.title=="OSISBook","Source queries do not require an open tab");
       drained_tree=worker.book_tree("OSISBook",4); drained_entry=worker.read_book(b,"OSISBook",20);
     }
     check(drained_tree.get().first_child->offset==8 && drained_entry.get().tree.node.path=="/Linked","Worker close drains and copied results outlive engine");
     {
       StudyWorker failed((fs::path(root)/"missing-root").string());
-      rejects<std::invalid_argument>([&]{failed.book_tree("OSISBook",0).get();});
-      rejects<std::invalid_argument>([&]{failed.read_book(1,"OSISBook",4).get();});
+      rejects<std::invalid_argument>([&]{(void)failed.book_tree("OSISBook",0).get();});
+      rejects<std::invalid_argument>([&]{(void)failed.read_book(1,"OSISBook",4).get();});
     }
     xc_worker *worker=nullptr; check(xc_worker_open(root.c_str(),&worker)==XC_OK,"Open C worker");
-    xc_request *request=nullptr; check(xc_worker_create_tab(worker,&request)==XC_OK && wait(request)==XC_OK,"Create C book tab");
+    xc_request *request=nullptr;
+    check(xc_worker_modules(worker,&request)==XC_OK && wait(request)==XC_OK,"Queue C capability catalog");
+    auto *catalog=xc_request_take_catalog(request);check(catalog,"Take C catalog");xc_request_release(request);
+    unsigned supported=0;
+    for(std::size_t i=0;i<xc_catalog_count(catalog);++i) {
+      const std::string id=xc_catalog_id(catalog,i);
+      const bool expected=id=="OSISBook" || id=="ThMLBook";
+      check(bool(xc_catalog_has_book_tree(catalog,i))==expected,"Async C indexed-tree capability excludes non-tree Generic Books");
+      supported+=expected?1:0;
+    }
+    check(supported==2 && !xc_catalog_has_book_tree(catalog,xc_catalog_count(catalog)),"Copied capability catalog bounds");
+    check(xc_worker_create_tab(worker,&request)==XC_OK && wait(request)==XC_OK,"Create C book tab");
     const auto tab=xc_request_tab(request); xc_request_release(request);
     xc_request *invalid=reinterpret_cast<xc_request *>(1);
     check(xc_worker_book_tree(worker,nullptr,0,&invalid)==XC_INVALID_ARGUMENT && !invalid,"NULL module resets output");
@@ -129,6 +159,7 @@ int main(int argc,char **argv) {
     xc_worker_close(worker);
     check(wait(request)==XC_OK,"Close drains pending C book work"); root_tree=xc_request_take_book_tree(request); xc_request_release(request);
     check(std::string(xc_book_tree_module(tree))=="OSISBook" && std::string(xc_book_entry_html(entry))==marked && xc_book_tree_get_node(borrowed,XC_BOOK_FIRST_CHILD,&node)==XC_OK && node.offset==8,"Owned and borrowed book snapshots outlive request and worker");
+    check(xc_catalog_count(catalog)==4,"Capability catalog survives worker shutdown");xc_catalog_release(catalog);
     xc_book_tree_release(tree); xc_book_tree_release(root_tree); xc_book_entry_release(entry);
     xc_book_tree_release(nullptr); xc_book_entry_release(nullptr);
     check(bytes(fs::path(root)/"data")==before,"Queued successes/failures preserve all module data bytes and filenames");

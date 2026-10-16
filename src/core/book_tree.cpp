@@ -24,8 +24,8 @@ void position(sword::TreeKeyIdx &key, std::uint64_t offset) {
     throw std::out_of_range("General-book node does not exist");
 }
 std::unique_ptr<sword::TreeKeyIdx> source_key(sword::SWModule &module) {
-  if (std::string(module.getType()) != "Generic Books")
-    throw std::invalid_argument("Module is not a general book");
+  if (!indexed_book(module))
+    throw std::invalid_argument("Module has no supported general-book indexed key");
   std::unique_ptr<sword::SWKey> owned(module.createKey());
   auto *tree = dynamic_cast<sword::TreeKeyIdx *>(owned.get());
   if (!tree) throw std::invalid_argument("General book has no supported indexed tree");
@@ -74,6 +74,10 @@ BookTree snapshot(sword::TreeKeyIdx &key, const std::string &module) {
   result.next_sibling = relative(&sword::TreeKeyIdx::nextSibling);
   return result;
 }
+}
+bool indexed_book(const sword::SWModule &module) {
+  return std::string(module.getType()) == "Generic Books" &&
+    dynamic_cast<sword::TreeKeyIdx *>(module.getKey());
 }
 BookTree capture_book_tree(sword::SWModule &module, std::uint64_t offset) {
   auto key = source_key(module);
