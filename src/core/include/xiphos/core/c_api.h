@@ -90,7 +90,8 @@ xc_status xc_worker_resolve_saved_book_selection(xc_worker *worker, const xc_sav
  * Presence remains stable after taking the tree; take itself is still once. */
 int xc_request_book_selection_present(const xc_request *request);
 /* Explicit per-tab publication after validation/render success; owned entry
- * result, no Bible/dictionary history visit or preference writes. */
+ * result, no Bible/dictionary history visit or preference writes. Numeric
+ * reading offsets below four use four; low-level source queries retain root 0. */
 xc_status xc_worker_select_book(xc_worker *worker, uint64_t tab, const char *module, uint64_t offset, xc_request **out);
 /* Same explicit context rules as read-only resolution, but successful rendering
  * publishes the tab selection. Presence 1 -> take_book_entry, 0 -> no saved book

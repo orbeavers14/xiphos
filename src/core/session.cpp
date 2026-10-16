@@ -212,7 +212,7 @@ BookEntry StudySession::read_book(const std::string &module, std::uint64_t offse
   return options ? reader_.read_book(module, offset, *options) : reader_.read_book(module, offset);
 }
 BookEntry StudySession::select_book(const BookSelectionTarget &target) {
-  const auto resolved = reader_.resolve_book_target(target);
+  const auto resolved = reader_.resolve_book_target(book_reading_target(target));
   auto result = read_book(resolved.module, resolved.node.offset);
   if (result.tree.module != resolved.module || result.tree.node.offset != resolved.node.offset ||
       result.tree.node.path != resolved.node.path)

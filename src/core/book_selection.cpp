@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/book_selection.hpp"
 #include <stdexcept>
+#include <utility>
 namespace xiphos::core {
 namespace {
 bool digit(char c) { return c >= '0' && c <= '9'; }
@@ -23,8 +24,13 @@ std::uint64_t prefix(const std::string &text) {
     value = value * 10 + next;
   }
   if (negative && value) throw std::invalid_argument("Saved book offset is negative");
-  return value < 4 ? 4 : value;
+  return value;
 }
+}
+BookSelectionTarget book_reading_target(BookSelectionTarget target) {
+  if (auto *offset = std::get_if<std::uint64_t>(&target.address))
+    if (*offset < 4) *offset = 4;
+  return target;
 }
 std::optional<BookSelectionTarget> saved_book_target(const SavedBookSelection &saved, BookRestoreMode mode) {
   if (mode != BookRestoreMode::display_key && mode != BookRestoreMode::initial_window)
@@ -48,6 +54,6 @@ std::optional<BookSelectionTarget> saved_book_target(const SavedBookSelection &s
     }
     default: throw std::invalid_argument("Unknown book restore mode");
   }
-  return result;
+  return book_reading_target(std::move(result));
 }
 }

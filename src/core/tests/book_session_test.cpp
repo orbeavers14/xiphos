@@ -16,6 +16,9 @@ int main(int argc,char **argv){
   {
    Reader reader(root);plain=reader.read_book("OSISBook",4,off).html;marked=reader.read_book("OSISBook",4,on).html;check(plain!=marked,"Real book option outputs differ");
    StudySession a(reader),b(reader);check(!a.book_selection() && !b.book_selection(),"New sessions have no selected book");a.set_engine_options(on);b.set_engine_options(off);
+   check(a.select_book({"OSISBook",std::uint64_t(0)}).tree.node.offset==4,"Direct numeric selection retains legacy first-reading-node clamp");
+   check(a.select_book({"OSISBook",std::string("/")}).tree.node.offset==0,"Explicit path root remains a root selection");
+   check(reader.resolve_book_target({"OSISBook",std::uint64_t(0)}).node.offset==0 && a.read_book("OSISBook",0).tree.node.offset==0,"Low-level source/read APIs still expose actual root");
    auto entry=a.select_book({"OSISBook",std::string("Part One")});
    check(entry.html==marked && a.book_selection()->tree.node.offset==4 && std::get<std::string>(a.book_selection()->requested.address)=="Part One","Selection publishes configured source and retains typed request");
    b.select_book({"ThMLBook",std::uint64_t(20)});check(a.book_selection()->tree.module=="OSISBook" && b.book_selection()->tree.module=="ThMLBook","Shared Reader does not couple committed tab selections");
@@ -54,6 +57,7 @@ int main(int argc,char **argv){
   check(xc_worker_book_selection(worker,a,&request)==XC_OK && wait(request)==XC_OK && xc_request_book_selection_present(request)==0 && !xc_request_take_book_tree(request),"C committed source initially absent");xc_request_release(request);
   check(xc_worker_set_engine_options(worker,a,XC_ENGINE_FOOTNOTES|XC_ENGINE_WORDS_IN_RED,&request)==XC_OK,"Queue C tab options");done(request);
   check(xc_worker_select_book(worker,a,"OSISBook",4,&request)==XC_OK && wait(request)==XC_OK,"Queue explicit C selection");auto *entry=xc_request_take_book_entry(request);check(entry && std::string(xc_book_entry_html(entry))==marked,"C published entry uses tab options");xc_request_release(request);
+  check(xc_worker_select_book(worker,a,"OSISBook",0,&request)==XC_OK && wait(request)==XC_OK,"C direct numeric root request follows shared reading policy");auto *first=xc_request_take_book_entry(request);xc_request_release(request);xc_book_node root_node{};check(xc_book_tree_get_node(xc_book_entry_tree(first),XC_BOOK_CURRENT,&root_node)==XC_OK && root_node.offset==4,"C numeric reading root clamps to four");xc_book_entry_release(first);
   check(xc_worker_book_selection(worker,b,&request)==XC_OK && wait(request)==XC_OK && xc_request_book_selection_present(request)==0,"C other tab remains unselected");xc_request_release(request);
   check(xc_worker_select_book(worker,a,"OSISBook",40000,&request)==XC_OK,"Queue rejected C selection");done(request,XC_MODULE_NOT_FOUND);
   xc_saved_book_selection saved={nullptr,nullptr,nullptr};check(xc_worker_restore_book_selection(worker,a,&saved,XC_BOOK_RESTORE_DISPLAY_KEY,&request)==XC_OK && wait(request)==XC_OK && xc_request_book_selection_present(request)==0 && !xc_request_take_book_entry(request),"C absent restore is a successful no-op");xc_request_release(request);

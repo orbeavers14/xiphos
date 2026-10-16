@@ -290,7 +290,8 @@ copies, successful absence, result ownership and shutdown draining.
 
 ## Explicit per-tab publication
 
-StudySession `select_book` validates the requested target, renders with existing
+StudySession `select_book` applies the shared numeric reading rule (offsets below
+4 become 4, while explicit path roots remain root), validates the target, renders with existing
 module/tab/default/unconfigured engine precedence, and verifies the resulting
 source still matches. It stages owned request/source copies before publishing
 the tab's committed book selection. A compile-time no-throw move requirement
@@ -340,7 +341,7 @@ missing/malformed/DTD/overflow rejection, absent-book retention, C argument/resu
 ownership and shutdown draining. Successful/failed imports retain source profile
 bytes and permissions. No personal profiles or installed content are tested.
 
-The next slices are final reading-boundary compatibility checks and native tree/navigation controls,
+The next slices are native tree/navigation controls and saved-tab/visibility integration,
 then image/resource routing,
 links, history/persistent selection, additional book windows and editors. Preserve
 the GTK3 app and all its write paths. No F10 group, native GUI, corpus, platform or
