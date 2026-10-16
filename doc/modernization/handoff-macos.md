@@ -7,12 +7,20 @@ Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the
 
 Branch `master`, fork `orbeavers14/xiphos`. The owner requested continued shared
 core work until the available usage limit. Owned read-only general-book source
-`6f61997` is checked. The Mac chat now claims configured book-entry rendering and
-source identity as a bounded next slice. Keep GTK3 editors/writes intact, all
+`6f61997` and configured rendering `6b2399c` are checked. The Mac chat now claims
+queued book worker/C ownership with shared tab-option policy. Keep GTK3 editors/writes intact, all
 checks local, Windows inventory through `cf3b24c` and unrelated `.DS_Store`
 untouched. Fetch before overlapping shared edits.
 
 ## Latest checked behavior
+
+`6b2399c` pairs configured raw SDK book HTML/entry presence with exact tree
+identity, including linked aliases and structural-only empty branches. It selects
+without replacing the live indexed key, validates source before selection,
+rejects unexpected source changes, and reuses filter/processing recovery scopes.
+OSIS/ThML options, real toggles, exceptions and module-byte identity are tested.
+No native book-note/image dispatch or history/UI is introduced.
+
 
 `6f61997` adds C++17 Reader tree snapshots by typed offset and canonical path.
 Private SDK keys preserve the live key, attributes and module data files. Root,
@@ -55,12 +63,10 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At `6f61997`: **83/83 Mac/core**, **67/67 portable Linux/core on this Mac**,
-focused book **ASan/UBSan 1/1**. The depth-limit test added after full-suite runs
-also passes individually in both caches and sanitized. Previous render recovery
-`2b756bf` passed 82/82, 66/66 and ASan/UBSan 5/5 plus legacy/C++11 checks. SDKs
-are not fully instrumented; leak checks are off. No current Fedora GTK/MSVC
-acceptance is claimed. All checks stayed local.
+At `6b2399c`: **84/84 Mac/core**, **68/68 portable Linux/core on this Mac**,
+focused book **ASan/UBSan 2/2** (tree + entry). Previous source `6f61997` passed
+83/83, 67/67 and ASan/UBSan 1/1. SDKs are not fully instrumented; leak checks are
+off. No current Fedora GTK/MSVC acceptance is claimed. All checks stayed local.
 
 Environment: macOS 27.0.1 (26A434), ARM64; AppleClang 21.0.0; Swift 6.4 toolchain
 in Swift 6 language mode; SWORD 1.9.0.3916; GLib 2.86.5; configured libxml2 SDK.
@@ -75,10 +81,10 @@ cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -D
 cmake --build build/linux-models --parallel 2
 ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
 cmake -S platforms/linux -B build/linux-models-sanitized -C build/linux-model-sdk.cmake -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
-cmake --build build/linux-models-sanitized --target core_book_tree_test --parallel 2
-ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_book_tree$' --no-tests=error --output-on-failure
-cmake --build build/macos --target core_book_tree_test --parallel 2
-ctest --test-dir build/macos -R '^core_book_tree$' --no-tests=error --output-on-failure
+cmake --build build/linux-models-sanitized --target core_book_tree_test core_book_entry_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_book_(tree|entry)$' --no-tests=error --output-on-failure
+cmake --build build/macos --target core_book_tree_test core_book_entry_test --parallel 2
+ctest --test-dir build/macos -R '^core_book_(tree|entry)$' --no-tests=error --output-on-failure
 ```
 
 The ignored SDK seed is copied from this Mac's cache, not a portable file. The
@@ -103,9 +109,9 @@ No complete functional or visual parity is claimed.
 
 ## Next bounded work
 
-1. Current Mac shared task: configured general-book entry rendering/identity on
-   the validated source tree, with original-prose output and state tests. Queued
-   worker/C transport and native UI remain later bounded steps.
+1. Current Mac shared task: queued book worker/C transport and ownership with
+   existing shared tab-option policy. Native tree/navigation controls, URI/image
+   dispatch, book history and saved selection remain later bounded steps.
 2. Fedora: rebuild default-ON GTK; verify heading click/hover and source/body
    separation, linked chapters, numbering/spacing, profiles and real input.
 3. Windows: continue native compiler/dependency/core setup in its own lane.

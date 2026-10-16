@@ -127,6 +127,13 @@ passing in all three caches. See [the source contract](book-tree-workflows.md).
 Configured book entry rendering is next; F10/UI/images/history/editors remain
 pending. This changes no whole parity acceptance or completion estimate.
 
+Configured general-book rendering `6b2399c` pairs raw SDK HTML/entry presence with
+the selected tree identity, including linked aliases, root and empty branches.
+OSIS/ThML option toggles, exact frozen output, source/processing/filter recovery,
+owned results and module-data byte identity pass. Full suites pass 84/84 Mac/core,
+68/68 portable Linux/core on Mac; ASan/UBSan book tests pass 2/2. Queued worker/C
+transport is next. No whole F10/native/corpus acceptance is implied.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three
