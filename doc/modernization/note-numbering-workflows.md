@@ -229,6 +229,37 @@ service is not enabled in Reader/session/C/native snapshots yet. Heading-scoped
 identifiers and shared lookup remain the next boundary; no native heading-click
 repair or new GUI/native Fedora/MSVC acceptance is claimed at this source step.
 
+## Scoped heading identity and shared lookup
+
+`7c98ebf` adds a reserved, canonical `xiphos-heading-<fragment>-<hex-local-id>`
+namespace. Decimal fragments reject signs, leading zero aliases and overflow;
+hex IDs reject malformed encoding, control bytes and excessive size. Ordinary
+body IDs stay outside the namespace. Distinct heading fragments cannot collide.
+Scoped capture changes SDK `swordFootnote` attributes before XHTML rendering,
+retaining the SDK URI generator, note types and labels. It copies scoped IDs into
+owned note snapshots; raw capture remains available unchanged.
+
+Configured `Reader::heading_notes` selects the requested source verse and scopes
+headings/SDK labels. Existing shared note/metadata lookup, session, worker and C
+requests resolve the new IDs from heading source context, never body-note IDs.
+Lookup temporarily captures with Footnotes On so an already-issued heading link
+survives a display toggle; it restores actual filter settings. Missing/unconfigured
+or malformed targets reject. Metadata-only lookup avoids body rendering; copied
+C results survive request/tab/worker lifetime. Existing Reader rendering remains
+unchanged and native snapshots do not yet publish these links.
+
+Full local suites: 78/78 Mac/core, 62/62 portable Linux/core on Mac; focused
+ASan/UBSan 5/5 (ID/lookup plus capture fixtures), strict C++11 and native-disabled
+helper build pass. Tests include both SDK orders, later source-key movement,
+Unicode/empty/cross-reference notes, canonical mutations, setting restoration,
+namespace collision rejection and worker/C ownership. SDK instrumentation/leak
+limits remain. No new GUI, Fedora runtime or MSVC claim accompanies this slice.
+
+Next shared task: explicit session capability and reading-snapshot integration.
+Preserve raw Reader metadata, legacy label/counter behavior and appearance; do not
+replace a heading if the generated candidate differs beyond note identifiers.
+Unsupported shapes retain the established rendering, not a guessed association.
+
 ## Next acceptance boundaries
 
 1. On Fedora, rebuild the default-ON GTK preview and verify both controls,

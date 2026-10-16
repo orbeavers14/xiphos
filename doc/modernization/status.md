@@ -94,6 +94,13 @@ Linux/core on Mac; focused ASan/UBSan 3/3, C++11 and native-disabled helper chec
 pass. Fragment-local IDs are not yet published in native snapshots; shared scoped
 identity/lookup is the next task. No new whole parity or GUI acceptance is claimed.
 
+Scoped identity/lookup checkpoint `7c98ebf` gives each heading fragment a reserved
+canonical note namespace and resolves it through configured Reader/session/worker/
+C note calls. Suites pass 78/78 Mac/core, 62/62 portable Linux/core on Mac and
+ASan/UBSan 5/5; strict C++11 and native-disabled helper checks pass. Existing native
+snapshots do not publish these IDs yet; opt-in appearance-preserving snapshot
+integration is next. No whole parity or native GUI gate is accepted by this step.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three

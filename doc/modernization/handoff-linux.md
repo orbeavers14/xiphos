@@ -5,6 +5,13 @@ Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the [shared handoff](hand
 
 ## Current incoming changes — native Fedora rerun required
 
+Latest shared lookup `7c98ebf` adds canonical heading-scoped IDs and configured
+Reader source/lookup, usable by existing queued session/C note dispatch. Current
+native snapshots do not publish them yet. Mac ownership now covers opt-in
+appearance-preserving snapshot integration. Local suites pass 78/78 Mac/core and
+62/62 portable Linux/core on Mac, with focused ASan/UBSan 5/5 and C++11/helper
+checks. This remains portable validation, not a current Fedora GTK build.
+
 Latest shared source `91f83c9` adds isolated C++11 heading-note capture, including
 both SDK filter orders and complete attribute/processing restoration. It remains
 internal; current native heading links are unchanged pending scoped identity and

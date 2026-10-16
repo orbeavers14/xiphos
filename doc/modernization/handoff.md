@@ -16,14 +16,14 @@ The [status ledger](status.md) is the detailed scope/evidence record; the
 about 8% (range 6–10%), with 0/38 feature groups fully accepted and 0/3 native
 release-ready applications. Do not turn passed build counts into parity scores.
 
-Latest core implementation `91f83c9` isolates and owns heading-note source data,
-including both SDK filter orders and exception restoration. It is internal input:
-fragment-local IDs must not be published as body-note IDs. Heading-scoped identity
-and shared lookup are the active Mac task. Earlier `1f899ca` adds paragraph/
-heading lexical layout; native controls remain `1d3612f` / `aff5f59`. Local suites
-pass **76/76 Mac/core**, **60/60 portable Linux/core on Mac**, and focused capture
-ASan/UBSan 3/3. Current GTK runtime and MSVC/WinUI remain unvalidated. Windows
-inventory through `cf3b24c` was fetched and retained; read its current handoff.
+Latest core implementation `7c98ebf` adds heading-scoped IDs and configured
+Reader capture/lookup through the existing session/worker/C note path. Captured
+source isolation is `91f83c9`; lexical block layout is `1f899ca`. Native snapshots
+do not publish the new links yet. Opt-in snapshot integration preserving raw
+metadata, labels and appearance is the active Mac task. Suites pass **78/78
+Mac/core**, **62/62 portable Linux/core on Mac**, and focused ASan/UBSan 5/5.
+Current GTK runtime and MSVC/WinUI remain unvalidated; preserve the Windows
+inventory through `cf3b24c` and read its current handoff.
 
 | Implemented area | Checkpoints | Contract / limits |
 |---|---|---|
@@ -34,8 +34,8 @@ inventory through `cf3b24c` was fetched and retained; read its current handoff.
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
 The owner requested continued shared-core work until usage runs out. The Mac
-chat completed the block-layout slice and is implementing scoped heading-note identity/lookup; that bounded shared task
-is claimed. Fetch/read the current
+chat completed the block-layout slice and is integrating opt-in scoped heading links in snapshots; that bounded shared
+task is claimed. Fetch/read the current
 handoff before overlapping shared edits. No whole parity or retirement gate is
 accepted by these scoped checks.
 

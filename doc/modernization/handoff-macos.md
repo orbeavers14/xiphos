@@ -8,11 +8,19 @@ Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the
 Branch `master`, fork `orbeavers14/xiphos`. The owner requested continued shared
 core work until the available usage limit. The Mac chat finished lexical block
 segmentation (`1f899ca`) and isolated heading-note capture (`91f83c9`). It now
-claims heading-scoped identifiers and shared lookup before native publication. No hosted builds.
+claims opt-in session snapshot publication after checked scoped identity/lookup
+(`7c98ebf`). Keep raw metadata and existing appearance unchanged. No hosted builds.
 Windows inventory changes through `cf3b24c` were fetched and retained; do not
 modify that chat's platform lane or unrelated `.DS_Store`.
 
 ## Latest checked behavior
+
+`7c98ebf` adds canonical heading-scoped IDs and configured Reader capture/lookup.
+Existing session/worker/C note dispatch resolves these IDs without body collisions,
+including after display footnotes are hidden or another passage is rendered.
+Canonical/overflow/control checks, metadata-only behavior and ownership pass.
+Existing native snapshots do not publish them yet; an explicit migration
+capability and validated appearance-preserving replacement are next.
 
 `91f83c9` captures owned heading notes without overwriting source/body attributes.
 It handles both Headings/Footnotes filter orders, preserves already-filtered
@@ -48,12 +56,12 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At `91f83c9`: **76/76 Mac/core**, **60/60 portable Linux/core on this Mac**,
-focused **ASan/UBSan 3/3** (heading capture and two fixture prerequisites), strict
-C++11 capture syntax and native-disabled helper build pass. Prior layout
-`1f899ca` passed 75/75, 59/59 and ASan/UBSan 4/4. External SDKs are not fully
-instrumented; leak checks are off. No full GTK3 runtime, current Fedora GTK or
-MSVC/WinUI test is claimed. No hosted build credits were used.
+At `7c98ebf`: **78/78 Mac/core**, **62/62 portable Linux/core on this Mac**,
+focused **ASan/UBSan 5/5** (ID/lookup and capture prerequisites), strict C++11
+capture/codec syntax and native-disabled helper build pass. Existing native
+controls and legacy-compatible Reader HTML remain unchanged. SDKs are not fully
+instrumented; leak checks are off. No new GUI/current Fedora GTK/MSVC acceptance
+is claimed. All checks stayed local.
 
 Environment: macOS 27.0.1 (26A434), ARM64; AppleClang 21.0.0; Swift 6.4 toolchain
 in Swift 6 language mode; SWORD 1.9.0.3916; GLib 2.86.5; configured libxml2 SDK.
@@ -68,9 +76,9 @@ cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -D
 cmake --build build/linux-models --parallel 2
 ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
 cmake -S platforms/linux -B build/linux-models-sanitized -C build/linux-model-sdk.cmake -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
-cmake --build build/linux-models-sanitized --target core_heading_notes_test core_heading_note_metadata_test core_heading_collection_test --parallel 2
-ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_heading_notes$' --no-tests=error --output-on-failure
-clang++ -std=c++11 -fsyntax-only -Isrc/core/include -I/usr/local/include/sword src/core/heading_notes.cpp
+cmake --build build/linux-models-sanitized --target core_heading_note_id_test core_heading_note_lookup_test core_heading_notes_test core_heading_note_metadata_test core_heading_collection_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^(core_heading_note_id|core_heading_note_lookup)$' --no-tests=error --output-on-failure
+clang++ -std=c++11 -fsyntax-only -Isrc/core/include -I/usr/local/include/sword src/core/heading_notes.cpp src/core/heading_note_id.cpp
 cmake --build build/legacy-seam-build --parallel 2
 ```
 
@@ -97,8 +105,9 @@ The TEI direct-filter limitation remains separately recorded.
 
 ## Next bounded work
 
-1. Current Mac shared task: add heading-scoped identifiers and shared lookup using
-   the checked capture service before publishing the new links to native consumers.
+1. Current Mac shared task: add explicit session capability and reading-snapshot
+   publication, preserving raw source metadata, legacy counters/labels and HTML
+   outside identifiers. Unsupported replacements must retain existing rendering.
 2. Fedora: rebuild current default-ON GTK and verify numbering, paragraph/heading
    layout, lexical/spacing refresh, profiles and note clicks with real input.
 3. Windows: continue native compiler/dependency/core setup in its own handoff lane.
