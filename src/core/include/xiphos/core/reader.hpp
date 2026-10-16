@@ -9,6 +9,7 @@
 #include "link.hpp"
 #include "navigation.hpp"
 #include "lexical.hpp"
+#include "book_tree.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -33,6 +34,11 @@ public:
   Reader(const Reader &) = delete;
   Reader &operator=(const Reader &) = delete;
   const std::vector<Module> &modules() const;
+  // Read-only owned one-hop tree sources. Neither call selects/renders a book,
+  // changes history, or writes missing paths. Root offset 0 is not reading
+  // startup's legacy offset-4 selection. Unsupported drivers are rejected.
+  BookTree book_tree(const std::string &module, std::uint64_t offset);
+  BookTree book_tree_path(const std::string &module, const std::string &path);
   ReferenceChoices reference_choices(const std::string &module, const std::string &reference);
   PassageLink resolve_link(const std::string &current_module, const std::string &url);
   // Owned targets/guard metadata from the existing parser, without rendering

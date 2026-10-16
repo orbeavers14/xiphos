@@ -6,6 +6,7 @@
 #include "xiphos/core/note_rendering.hpp"
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/reader.hpp"
+#include "book_tree_source.hpp"
 #include "xiphos/core/reference_list.hpp"
 #include <markupfiltmgr.h>
 #include "xiphos/core/engine_manager.hpp"
@@ -97,6 +98,20 @@ Reader::Reader(const std::string &root) : impl_(std::make_unique<Impl>()) {
 }
 Reader::~Reader() = default;
 const std::vector<Module> &Reader::modules() const { return impl_->modules; }
+BookTree Reader::book_tree(const std::string &id, std::uint64_t offset) {
+  if (id.empty() || id.find('\0') != std::string::npos) throw std::invalid_argument("Invalid general-book module ID");
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto *module = impl_->manager->getModule(id.c_str());
+  if (!module) throw std::out_of_range("Module is not installed");
+  return detail::capture_book_tree(*module, offset);
+}
+BookTree Reader::book_tree_path(const std::string &id, const std::string &path) {
+  if (id.empty() || id.find('\0') != std::string::npos) throw std::invalid_argument("Invalid general-book module ID");
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto *module = impl_->manager->getModule(id.c_str());
+  if (!module) throw std::out_of_range("Module is not installed");
+  return detail::capture_book_tree_path(*module, path);
+}
 ReferenceChoices Reader::reference_choices(const std::string &id, const std::string &reference) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   return xiphos::core::reference_choices(impl_->verse_module(id, reference), reference);
