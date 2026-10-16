@@ -134,6 +134,14 @@ owned results and module-data byte identity pass. Full suites pass 84/84 Mac/cor
 68/68 portable Linux/core on Mac; ASan/UBSan book tests pass 2/2. Queued worker/C
 transport is next. No whole F10/native/corpus acceptance is implied.
 
+Book worker/C transport `b9c0a34` adds copied asynchronous sources/entries, typed
+node presence and take-once ownership, using the existing session option policy.
+FIFO, tab isolation, module override precedence, history neutrality, errors,
+borrowing/shutdown and module-data identity pass. Full suites pass 85/85 Mac/core,
+69/69 portable Linux/core on Mac; ASan/UBSan book tests pass 3/3 and C11 syntax
+passes. Bounded child enumeration is next; native tree/UI and whole F10 remain
+pending. No hosted builds ran.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three

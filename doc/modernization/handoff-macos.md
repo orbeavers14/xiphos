@@ -7,12 +7,19 @@ Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the
 
 Branch `master`, fork `orbeavers14/xiphos`. The owner requested continued shared
 core work until the available usage limit. Owned read-only general-book source
-`6f61997` and configured rendering `6b2399c` are checked. The Mac chat now claims
-queued book worker/C ownership with shared tab-option policy. Keep GTK3 editors/writes intact, all
+`6f61997`, configured rendering `6b2399c` and queued/C transport `b9c0a34` are
+checked. The Mac chat now claims bounded shared child enumeration for lazy trees. Keep GTK3 editors/writes intact, all
 checks local, Windows inventory through `cf3b24c` and unrelated `.DS_Store`
 untouched. Fetch before overlapping shared edits.
 
 ## Latest checked behavior
+
+`b9c0a34` adds queued owned book sources/entries and separate take-once C handles.
+It reuses session module/tab/default/unconfigured option precedence, leaves Bible
+and dictionary history unchanged, and preserves root/absence distinctions in C
+node views. Copied arguments, errors/continued work, borrow lifetimes, close/drain
+and module-byte identity are checked. No native tree UI is introduced.
+
 
 `6b2399c` pairs configured raw SDK book HTML/entry presence with exact tree
 identity, including linked aliases and structural-only empty branches. It selects
@@ -63,10 +70,11 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At `6b2399c`: **84/84 Mac/core**, **68/68 portable Linux/core on this Mac**,
-focused book **ASan/UBSan 2/2** (tree + entry). Previous source `6f61997` passed
-83/83, 67/67 and ASan/UBSan 1/1. SDKs are not fully instrumented; leak checks are
-off. No current Fedora GTK/MSVC acceptance is claimed. All checks stayed local.
+At `b9c0a34`: **85/85 Mac/core**, **69/69 portable Linux/core on this Mac**,
+focused book **ASan/UBSan 3/3** (tree + entry + worker/C), strict C11 header syntax.
+Previous rendering `6b2399c` passed 84/84, 68/68 and ASan/UBSan 2/2. SDKs are not
+fully instrumented; leak checks are off. Current Fedora GTK/MSVC remains
+unvalidated. All checks stayed local.
 
 Environment: macOS 27.0.1 (26A434), ARM64; AppleClang 21.0.0; Swift 6.4 toolchain
 in Swift 6 language mode; SWORD 1.9.0.3916; GLib 2.86.5; configured libxml2 SDK.
@@ -81,10 +89,11 @@ cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -D
 cmake --build build/linux-models --parallel 2
 ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
 cmake -S platforms/linux -B build/linux-models-sanitized -C build/linux-model-sdk.cmake -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
-cmake --build build/linux-models-sanitized --target core_book_tree_test core_book_entry_test --parallel 2
-ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_book_(tree|entry)$' --no-tests=error --output-on-failure
-cmake --build build/macos --target core_book_tree_test core_book_entry_test --parallel 2
-ctest --test-dir build/macos -R '^core_book_(tree|entry)$' --no-tests=error --output-on-failure
+cmake --build build/linux-models-sanitized --target core_book_tree_test core_book_entry_test core_book_worker_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_book_(tree|entry|worker)$' --no-tests=error --output-on-failure
+cmake --build build/macos --target core_book_tree_test core_book_entry_test core_book_worker_test --parallel 2
+clang -std=c11 -fsyntax-only -Isrc/core/include src/core/tests/c_header_test.c
+ctest --test-dir build/macos -R '^core_book_(tree|entry|worker)$' --no-tests=error --output-on-failure
 ```
 
 The ignored SDK seed is copied from this Mac's cache, not a portable file. The
@@ -109,9 +118,9 @@ No complete functional or visual parity is claimed.
 
 ## Next bounded work
 
-1. Current Mac shared task: queued book worker/C transport and ownership with
-   existing shared tab-option policy. Native tree/navigation controls, URI/image
-   dispatch, book history and saved selection remain later bounded steps.
+1. Current Mac shared task: bounded shared child enumeration for lazy trees.
+   Native tree/navigation controls, URI/image dispatch, book history and saved
+   selection remain later bounded steps.
 2. Fedora: rebuild default-ON GTK; verify heading click/hover and source/body
    separation, linked chapters, numbering/spacing, profiles and real input.
 3. Windows: continue native compiler/dependency/core setup in its own lane.

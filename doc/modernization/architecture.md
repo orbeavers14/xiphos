@@ -368,6 +368,8 @@ The initial [book source seam](book-tree-workflows.md) returns owned C++17
 indexed-tree node/relationship snapshots from private SDK query keys in Reader.
 Typed offsets and exact canonical paths avoid legacy text-input ambiguity;
 invalid SDK snaps cannot publish stale nodes. Actual tree root remains distinct
-from legacy initial reading offset 4. Rendering, worker/C transport and native
-controls are subsequent seams; no additional engine or frontend navigation policy
-is introduced, and GTK3 book/editor paths remain intact.
+from legacy initial reading offset 4. Configured raw entry rendering and queued worker/C transport now retain these
+source identities and existing tab/module option policy. Native controls and
+book-specific display/link/history rules remain subsequent seams. No additional
+engine or frontend navigation policy is introduced; GTK3 book/editor paths remain
+intact.
