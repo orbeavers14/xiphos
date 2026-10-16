@@ -25,6 +25,10 @@ public:
   // Separate migration opt-in: applies SDK labels and owned per-document note
   // counters only for configured module engine state. Not a saved preference.
   void set_note_numbering_enabled(bool enabled) { note_numbering_enabled_ = enabled; }
+  // Default-off migration capability. Requires available numbering/source capture;
+  // repairs only heading candidates identical outside their note URI identifiers.
+  // No saved preference or history visit; raw Reader note sources stay unchanged.
+  void set_heading_note_links_enabled(bool enabled) { heading_note_links_enabled_ = enabled; }
   // Explicit copied lexicons; existing tabs remain unconfigured until set.
   void set_lexicon_preferences(const LexiconPreferences &preferences);
   const std::optional<LexiconPreferences> &lexicon_preferences() const { return lexicons_; }
@@ -104,10 +108,14 @@ private:
   bool module_preferences_ = false;
   bool lexical_layout_enabled_ = false;
   bool note_numbering_enabled_ = false;
+  bool heading_note_links_enabled_ = false;
   bool xrefs_in_verse_list_ = true; // Legacy misc/xrefsinverselist default.
   std::map<std::string, EngineOptions> module_options_;
   ModulePresentationPreferences presentation_options_;
   void require_module(const std::string &module) const;
+  std::vector<std::vector<std::string>> heading_note_html(const std::string &module,
+      const std::vector<Entry *> &entries, const ModulePresentationOptions &options,
+      const std::optional<EngineOptions> &engine);
   Entry present_content(const std::string &module, Entry entry);
   Chapter present_content(const std::string &module, Chapter chapter, const DisplayOptions &display, bool commentary);
   LexicalEntry lookup_lexical(const std::string &module, const std::string &reference,

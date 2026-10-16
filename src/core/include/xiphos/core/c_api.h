@@ -81,6 +81,12 @@ xc_status xc_worker_set_lexical_layout_enabled(xc_worker *worker, uint64_t tab, 
  * accept strict 0/1, serialize on the worker and do not add history. Module
  * setter rejects unavailable settings at poll; closed/unknown tabs also fail there. */
 xc_status xc_worker_set_note_numbering_enabled(xc_worker *worker, uint64_t tab, int enabled, xc_request **out);
+/* Default-off heading-link migration capability; strict 0/1, FIFO/tab-local,
+ * history-neutral and not saved. Effective only with configured note source/
+ * numbering capability. Only exact presentation matches outside note IDs are
+ * repaired; unsupported candidates retain their existing heading HTML. Native
+ * hosts pass opaque scoped IDs through existing note click/hover requests. */
+xc_status xc_worker_set_heading_note_links_enabled(xc_worker *worker, uint64_t tab, int enabled, xc_request **out);
 xc_status xc_worker_set_note_numbers(xc_worker *worker, uint64_t tab, const char *module, int enabled, xc_request **out);
 /* Repeatable typed presentation result. Copies 0/1 value and availability;
  * default preference is On, independently of availability. Outputs reset to zero

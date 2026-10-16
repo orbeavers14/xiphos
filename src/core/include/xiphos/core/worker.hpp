@@ -39,6 +39,7 @@ public:
   std::future<void> close_tab(StudyTab tab);
   std::future<void> set_lexical_layout_enabled(StudyTab tab, bool enabled);
   std::future<void> set_note_numbering_enabled(StudyTab tab, bool enabled);
+  std::future<void> set_heading_note_links_enabled(StudyTab tab, bool enabled);
   std::future<void> set_note_numbers(StudyTab tab, std::string module, bool enabled);
   std::future<void> set_lexicon_preferences(StudyTab tab, LexiconPreferences preferences);
   std::future<std::optional<LexiconPreferences>> lexicon_preferences(StudyTab tab);

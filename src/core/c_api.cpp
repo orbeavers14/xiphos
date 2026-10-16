@@ -251,6 +251,10 @@ xc_status xc_worker_set_note_numbering_enabled(xc_worker *w, uint64_t tab, int e
   if (enabled != 0 && enabled != 1) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.set_note_numbering_enabled(tab, enabled != 0); });
 }
+xc_status xc_worker_set_heading_note_links_enabled(xc_worker *w, uint64_t tab, int enabled, xc_request **out) {
+  if (enabled != 0 && enabled != 1) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.set_heading_note_links_enabled(tab, enabled != 0); });
+}
 xc_status xc_worker_set_note_numbers(xc_worker *w, uint64_t tab, const char *id, int enabled, xc_request **out) {
   if (!id || !*id || (enabled != 0 && enabled != 1)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.set_note_numbers(tab, id, enabled != 0); });

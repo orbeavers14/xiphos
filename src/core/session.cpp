@@ -2,6 +2,7 @@
 #include "xiphos/core/session.hpp"
 #include <stdexcept>
 #include <functional>
+#include "xiphos/core/heading_note_presentation.hpp"
 #include "xiphos/core/note_markers.hpp"
 #include "xiphos/core/preferences.hpp"
 #include "xiphos/core/dictionary.hpp"
@@ -58,19 +59,25 @@ LexicalPresentation present_document(const std::vector<Entry *> &entries,
 // atomic lexical stage. Each piece is then cleaned/numbered in legacy order;
 // the raw copied Reader sources remain unchanged in the published snapshot.
 LexicalPresentation present_numbered_document(const std::vector<Entry *> &entries,
-    ModulePresentationOptions &options, const std::optional<EngineOptions> &engine, bool lexical) {
+    ModulePresentationOptions &options, const std::optional<EngineOptions> &engine, bool lexical,
+    const std::vector<std::vector<std::string>> *heading_html = nullptr) {
   struct Span { Entry *entry; std::size_t first, body; };
   std::vector<Entry> pieces;
   std::vector<Span> spans;
-  for (auto *entry : entries) {
+  for (std::size_t entry_index = 0; entry_index < entries.size(); ++entry_index) {
+    auto *entry = entries[entry_index];
+    if (heading_html && (heading_html->size() != entries.size() || (*heading_html)[entry_index].size() != entry->note_source.headings.size()))
+      throw std::logic_error("Heading replacements do not match source fragments");
     if (!entry->note_source.captured) throw std::logic_error("Note numbering requires captured Reader sources");
     const auto first = pieces.size(); std::size_t offset = 0;
+    std::size_t fragment_index = 0;
     for (const auto &fragment : entry->note_source.headings) {
       if (offset > entry->heading_html.size() || fragment.html.size() > entry->heading_html.size() - offset ||
           entry->heading_html.compare(offset, fragment.html.size(), fragment.html) != 0)
         throw std::logic_error("Note heading sources do not match the Reader snapshot");
       offset += fragment.html.size();
-      pieces.push_back({{}, fragment.html});
+      pieces.push_back({{}, heading_html ? (*heading_html)[entry_index][fragment_index] : fragment.html});
+      ++fragment_index;
       pieces.back().note_source.captured = true;
       pieces.back().note_source.reported_label = fragment.reported_note_label;
     }
@@ -102,10 +109,37 @@ LexicalPresentation present_numbered_document(const std::vector<Entry *> &entrie
   return presentation;
 }
 }
+std::vector<std::vector<std::string>> StudySession::heading_note_html(const std::string &module,
+    const std::vector<Entry *> &entries, const ModulePresentationOptions &options,
+    const std::optional<EngineOptions> &engine) {
+  if (!heading_note_links_enabled_ || !options.note_numbering_available || !engine) return {};
+  std::vector<std::vector<std::string>> result;
+  for (const auto *entry : entries) {
+    result.emplace_back();
+    for (std::size_t index = 0; index < entry->note_source.headings.size(); ++index) {
+      const auto &raw = entry->note_source.headings[index];
+      auto html = raw.html;
+      if (html.find("action=showNote") != std::string::npos) {
+        try {
+          auto capture = *engine;
+          // Retain the legacy visible marker even if Headings extracted it before
+          // Footnotes Off ran on the body. Candidates must match its exact HTML.
+          capture.footnotes = true;
+          const auto source = reader_.heading_notes(module, entry->reference, index, capture, options.note_numbers, false);
+          if (compatible_heading_note_presentation(raw, source, index)) html = source.html;
+        } catch (const std::invalid_argument &) { /* Unsupported candidate retains original heading. */ }
+          catch (const std::out_of_range &) { /* Missing fragment retains original heading. */ }
+      }
+      result.back().push_back(std::move(html));
+    }
+  }
+  return result;
+}
 Entry StudySession::present_content(const std::string &module, Entry entry) {
   auto options = module_presentation_options(module);
   const auto engine = module_engine_options(module);
-  if (options.note_numbering_available) present_numbered_document({&entry}, options, engine, lexical_layout_enabled_);
+  const auto headings = heading_note_html(module, {&entry}, options, engine);
+  if (options.note_numbering_available) present_numbered_document({&entry}, options, engine, lexical_layout_enabled_, headings.empty() ? nullptr : &headings);
   else present_document({&entry}, options, engine, lexical_layout_enabled_);
   presentation_options_[module] = options;
   return entry;
@@ -115,7 +149,8 @@ Chapter StudySession::present_content(const std::string &module, Chapter chapter
   std::vector<Entry *> entries;
   for (auto &entry : chapter.verses) entries.push_back(&entry);
   const auto engine = module_engine_options(module);
-  chapter.lexical = options.note_numbering_available ? present_numbered_document(entries, options, engine, lexical_layout_enabled_)
+  const auto headings = heading_note_html(module, entries, options, engine);
+  chapter.lexical = options.note_numbering_available ? present_numbered_document(entries, options, engine, lexical_layout_enabled_, headings.empty() ? nullptr : &headings)
       : present_document(entries, options, engine, lexical_layout_enabled_);
   chapter.html = commentary ? display_commentary_chapter(chapter, chapter.verse_ordinals, display) : display_chapter(chapter, display);
   presentation_options_[module] = options;

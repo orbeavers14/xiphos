@@ -129,6 +129,9 @@ std::future<void> StudyWorker::set_cross_reference_preview_list(StudyTab tab, bo
 std::future<void> StudyWorker::set_note_numbering_enabled(StudyTab tab, bool enabled) {
   return impl_->submit([tab, enabled](Impl::State &s) { s.tab(tab).set_note_numbering_enabled(enabled); });
 }
+std::future<void> StudyWorker::set_heading_note_links_enabled(StudyTab tab, bool enabled) {
+  return impl_->submit([tab, enabled](Impl::State &s) { s.tab(tab).set_heading_note_links_enabled(enabled); });
+}
 std::future<void> StudyWorker::set_note_numbers(StudyTab tab, std::string module, bool enabled) {
   return impl_->submit([tab, module = std::move(module), enabled](Impl::State &s) { s.tab(tab).set_note_numbers(module, enabled); });
 }
