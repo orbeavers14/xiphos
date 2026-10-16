@@ -7,6 +7,9 @@ namespace xiphos::core::detail {
 bool indexed_book(const sword::SWModule &module);
 BookTree capture_book_tree(sword::SWModule &module, std::uint64_t offset);
 BookTree capture_book_tree_path(sword::SWModule &module, const std::string &path);
+// Legacy display paths may be relative, or '/' for root. SDK normalization is
+// accepted only after a successful snap; never publish a missing-path fallback.
+BookTree capture_book_display_path(sword::SWModule &module, const std::string &path);
 // Validates source first, selects that exact live tree offset, and renders it.
 // Caller owns engine-option scoping and serialization, as for ordinary reads.
 BookEntry capture_book_entry(sword::SWModule &module, std::uint64_t offset);

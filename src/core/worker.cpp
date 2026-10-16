@@ -109,6 +109,13 @@ std::future<BookTree> StudyWorker::book_tree(std::string module, std::uint64_t o
 std::future<BookTree> StudyWorker::book_tree_path(std::string module, std::string path) {
   return impl_->submit([module = std::move(module), path = std::move(path)](Impl::State &s) { return s.reader.book_tree_path(module, path); });
 }
+std::future<std::optional<BookTree>> StudyWorker::resolve_saved_book_selection(SavedBookSelection saved, BookRestoreMode mode) {
+  return impl_->submit([saved = std::move(saved), mode](Impl::State &s) -> std::optional<BookTree> {
+    const auto target = saved_book_target(saved, mode);
+    if (!target) return std::nullopt;
+    return s.reader.resolve_book_target(*target);
+  });
+}
 std::future<BookEntry> StudyWorker::read_book(StudyTab tab, std::string module, std::uint64_t offset) {
   return impl_->submit([tab, module = std::move(module), offset](Impl::State &s) { return s.tab(tab).read_book(module, offset); });
 }

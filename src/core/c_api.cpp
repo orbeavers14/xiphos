@@ -46,6 +46,7 @@ struct xc_request {
   xc_status status = XC_PENDING;
   uint64_t tab = 0;
   bool options_result = false;
+  bool book_selection_result = false, book_selection_present = false;
   bool preview_preference_result = false, preview_preference = true, no_presentation = false;
   std::optional<xiphos::core::EngineOptions> options;
   std::optional<xiphos::core::ModulePresentationOptions> presentation;
@@ -85,6 +86,11 @@ struct xc_request {
   void store(xiphos::core::DictionaryHistorySnapshot v) { dictionary_history = std::make_unique<xc_dictionary_history>(xc_dictionary_history{std::move(v)}); }
   void store(xiphos::core::DictionaryEntry v) { dictionary = std::make_unique<xc_dictionary_entry>(xc_dictionary_entry{std::move(v)}); }
   void store(xiphos::core::BookTree v) { book_tree = std::make_unique<xc_book_tree>(xc_book_tree{std::move(v)}); }
+  void store(std::optional<xiphos::core::BookTree> v) {
+    book_selection_result = true;
+    book_selection_present = v.has_value();
+    if (v) store(std::move(*v));
+  }
   void store(xiphos::core::BookEntry v) { book_entry = std::make_unique<xc_book_entry>(std::move(v)); }
   void store(xiphos::core::BookChildren v) { book_children = std::make_unique<xc_book_children>(xc_book_children{std::move(v)}); }
   void store(xiphos::core::BookNote v) { book_note = std::make_unique<xc_book_note>(std::move(v)); }
@@ -197,6 +203,22 @@ const xiphos::core::Module *module_at(const xc_reader *r, size_t i) {
 }
 }
 extern "C" {
+xc_status xc_worker_resolve_saved_book_selection(xc_worker *w, const xc_saved_book_selection *saved,
+                                                int mode, xc_request **out) {
+  if (!saved || (mode != XC_BOOK_RESTORE_DISPLAY_KEY && mode != XC_BOOK_RESTORE_INITIAL_WINDOW)) {
+    if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w, out, [=](auto &worker) {
+    const auto copy = [](const char *text) -> std::optional<std::string> {
+      return text ? std::optional<std::string>(text) : std::nullopt;
+    };
+    return worker.resolve_saved_book_selection({copy(saved->module), copy(saved->key), copy(saved->offset_text)},
+      mode == XC_BOOK_RESTORE_DISPLAY_KEY ? xiphos::core::BookRestoreMode::display_key : xiphos::core::BookRestoreMode::initial_window);
+  });
+}
+int xc_request_book_selection_present(const xc_request *r) {
+  return r && r->status == XC_OK && r->book_selection_result ? (r->book_selection_present ? 1 : 0) : -1;
+}
 xc_status xc_worker_book_note_link_at(xc_worker *w, uint64_t tab, const char *id, uint64_t offset,
                                       const char *uri, int render_body, xc_request **out) {
   if (!id || !*id || !uri || !*uri || (render_body != 0 && render_body != 1)) {

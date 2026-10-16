@@ -27,6 +27,8 @@ std::uint64_t prefix(const std::string &text) {
 }
 }
 std::optional<BookSelectionTarget> saved_book_target(const SavedBookSelection &saved, BookRestoreMode mode) {
+  if (mode != BookRestoreMode::display_key && mode != BookRestoreMode::initial_window)
+    throw std::invalid_argument("Unknown book restore mode");
   if (!saved.module || saved.module->empty()) return std::nullopt;
   if (saved.module->find('\0') != std::string::npos) throw std::invalid_argument("Saved book module contains NUL");
   BookSelectionTarget result{*saved.module, std::uint64_t(4)};

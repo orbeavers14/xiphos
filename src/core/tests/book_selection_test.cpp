@@ -79,7 +79,8 @@ int main(){
   saved.module=std::string("Book\0hidden",11);rejects([&]{saved_book_target(saved,BookRestoreMode::display_key);});
   saved.module="Book";rejects([&]{saved_book_target(saved,static_cast<BookRestoreMode>(99));});
   saved.module=std::nullopt;check(!saved_book_target(saved,BookRestoreMode::initial_window),"Missing module yields no book, with no address interpretation");
-  saved.module="";check(!saved_book_target(saved,BookRestoreMode::display_key),"Empty module yields no book");
+  saved.module="";rejects([&]{saved_book_target(saved,static_cast<BookRestoreMode>(99));});
+  check(!saved_book_target(saved,BookRestoreMode::display_key),"Empty module yields no book");
   auto source=parse_saved_book_selection("<Xiphos><modules><book>Book</book></modules><keys><book>/Part One</book><offset>24</offset></keys></Xiphos>");
   const auto target=saved_book_target(source,BookRestoreMode::display_key);source={};
   check(target->module=="Book" && std::get<std::string>(target->address)=="/Part One","Targets own source values after profile destruction");

@@ -10,6 +10,7 @@
 #include "navigation.hpp"
 #include "lexical.hpp"
 #include "book_tree.hpp"
+#include "book_selection.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -40,6 +41,9 @@ public:
   // startup's legacy offset-4 selection. Unsupported drivers are rejected.
   BookTree book_tree(const std::string &module, std::uint64_t offset);
   BookTree book_tree_path(const std::string &module, const std::string &path);
+  // Validates a typed candidate with private SDK query keys. Relative display
+  // paths normalize through SWORD. No live selection, render or writes.
+  BookTree resolve_book_target(const BookSelectionTarget &target);
   // SDK child order, at most `limit` copied nodes (1..256). The optional cursor
   // is the last child from the preceding page, never a UI list index.
   BookChildren book_children(const std::string &module, std::uint64_t parent,

@@ -257,7 +257,38 @@ It also compares the defined settings-offset/format/display startup sequence,
 checks conflicting saved fields, defaults, numeric/path distinctions, errors
 and lifetime. The GTK3 function and startup writes remain untouched.
 
-The next slices are SDK restore-candidate resolution and native tree/navigation controls,
+## Read-only SDK restore resolution
+
+`Reader::resolve_book_target` resolves the typed candidate using private SDK keys.
+Numeric candidates retain the existing indexed-offset checks. Display-path
+candidates allow successful SDK normalization of relative paths and `/` root,
+then return the SDK's actual canonical path and offset. Missing snaps reject
+before stale node data can be published. The strict `book_tree_path` API still
+requires exact canonical input and retains its previous behavior.
+
+StudyWorker `resolve_saved_book_selection` copies raw values, decodes the explicit
+restore context, and returns an optional owned tree on the single engine thread.
+No module is successful absence; invalid modes, modules, addresses and missing
+nodes remain typed errors. C submits borrowed optional strings in
+`xc_saved_book_selection` and receives the same take-once tree kind. The presence
+getter returns -1 for pending/failed/wrong-kind requests, 0 for no book, and 1 for
+a resolved tree; it stays stable after transfer. Requests drain on close.
+
+These operations do not render entries, change live selection/attributes/history,
+publish a tab selection, auto-choose a module, or read/write any profile. The
+saved-tab XML and visibility/fallback rules remain separate startup gates:
+`tabbed_browser.c` can replace the effective initial-window offset with a restored
+tab's raw `book_offset`, while later tab activation uses that raw value as a
+display key. Callers must supply the effective fields for the explicit context;
+global XML import alone is not a complete saved-tab restore implementation.
+
+`core_book_restore` compares valid normalized paths with frozen SDK snaps,
+including relative, root, numeric-title and Unicode paths. It checks conflicting
+saved fields, strict-API compatibility, missing/error rejection, live key and
+attribute preservation, complete module-data byte identity, worker/C argument
+copies, successful absence, result ownership and shutdown draining.
+
+The next slices are successful per-tab book selection publication and native tree/navigation controls,
 then image/resource routing,
 links, history/persistent selection, additional book windows and editors. Preserve
 the GTK3 app and all its write paths. No F10 group, native GUI, corpus, platform or

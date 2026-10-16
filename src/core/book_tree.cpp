@@ -84,18 +84,26 @@ BookTree capture_book_tree(sword::SWModule &module, std::uint64_t offset) {
   position(*key, offset);
   return snapshot(*key, module.getName());
 }
-BookTree capture_book_tree_path(sword::SWModule &module, const std::string &path) {
+namespace {
+BookTree capture_path(sword::SWModule &module, const std::string &path, bool canonical) {
   // Canonical SDK paths begin with '/'; empty selects the actual tree root.
   // Numeric titles therefore cannot be confused with numeric legacy offsets.
-  if (path.size() > 4096 || path.find('\0') != std::string::npos || (!path.empty() && path.front() != '/'))
+  if (path.size() > 4096 || path.find('\0') != std::string::npos || (canonical && !path.empty() && path.front() != '/'))
     throw std::invalid_argument("Expected a canonical general-book path");
   auto key = source_key(module);
   key->popError();
   key->setText(path.c_str());
   const std::string actual = key->getText(); // force the SDK's pending path snap
-  if (key->popError() || actual != path)
+  if (key->popError() || (canonical && actual != path))
     throw std::out_of_range("General-book path does not exist or is not canonical");
   return snapshot(*key, module.getName());
+}
+}
+BookTree capture_book_tree_path(sword::SWModule &module, const std::string &path) {
+  return capture_path(module, path, true);
+}
+BookTree capture_book_display_path(sword::SWModule &module, const std::string &path) {
+  return capture_path(module, path, false);
 }
 BookEntry capture_book_entry(sword::SWModule &module, std::uint64_t offset) {
   BookEntry result;

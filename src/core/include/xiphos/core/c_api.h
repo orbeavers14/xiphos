@@ -19,6 +19,12 @@ typedef struct xc_book_tree xc_book_tree;
 typedef struct xc_book_entry xc_book_entry;
 typedef struct xc_book_children xc_book_children;
 typedef struct xc_book_note xc_book_note;
+/* Submission-only borrowed strings, copied before return. NULL is absent;
+ * empty text remains explicit. No implicit XML/profile access or writes. */
+typedef struct { const char *module, *key, *offset_text; } xc_saved_book_selection;
+typedef enum xc_book_restore_mode {
+  XC_BOOK_RESTORE_DISPLAY_KEY = 0, XC_BOOK_RESTORE_INITIAL_WINDOW = 1
+} xc_book_restore_mode;
 typedef struct xc_lexical_entry xc_lexical_entry;
 typedef struct xc_lexicons xc_lexicons;
 /* Borrowed submission strings. NULL is unset; empty is an explicit empty name. */
@@ -73,6 +79,15 @@ typedef enum xc_engine_option_flag {
  * No active engine-call cancellation or unrelated SWORD concurrency promise. */
 xc_status xc_worker_open(const char *root, xc_worker **out);
 void xc_worker_close(xc_worker *worker);
+/* No tab/UI publication: resolve through private SDK query keys. Relative
+ * display paths use successful SDK normalization; missing snaps fail at poll.
+ * mode accepts exactly the two restore constants. On XC_OK, presence is 0 for
+ * no saved module and 1 for a take-once xc_book_tree. Copies outlive worker close. */
+xc_status xc_worker_resolve_saved_book_selection(xc_worker *worker, const xc_saved_book_selection *saved,
+                                                int mode, xc_request **out);
+/* -1 unless this is a successful selection-resolution result; otherwise 0/1.
+ * Presence remains stable after taking the tree; take itself is still once. */
+int xc_request_book_selection_present(const xc_request *request);
 /* Owned tree discovery, no tab or live selection mutation. Empty canonical path
  * selects root; numeric titles require their slash path. Read uses the existing
  * tab/module engine policy and selects the exact offset, without a history visit.

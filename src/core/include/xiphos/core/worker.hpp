@@ -38,6 +38,7 @@ public:
   // Owned, read-only source queries use the same engine thread, without a tab.
   std::future<BookTree> book_tree(std::string module, std::uint64_t offset);
   std::future<BookTree> book_tree_path(std::string module, std::string path);
+  std::future<std::optional<BookTree>> resolve_saved_book_selection(SavedBookSelection saved, BookRestoreMode mode);
   std::future<BookChildren> book_children(std::string module, std::uint64_t parent,
                                         std::optional<std::uint64_t> after = std::nullopt, std::uint32_t limit = 64);
   // Read with existing tab/module engine policy; no history visit.
