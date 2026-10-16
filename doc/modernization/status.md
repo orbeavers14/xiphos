@@ -145,6 +145,13 @@ SDK selection or writes. Suites pass 90/90 Mac/core, 74/74 portable Linux/core o
 Mac and decoder ASan/UBSan 1/1. SDK resolution/queued ownership is next; native
 startup and whole F10 acceptance remain pending.
 
+SDK candidate resolution `eb33f2a` adds read-only relative/root path normalization
+and optional queued/C ownership, retaining strict canonical source queries.
+Portable Linux/core on Mac passed 75/75. Mac full run was 90/91 with one timing
+failure; isolated paging rerun passed 1/1 in 3.6 s. Sanitizers passed 3/3 on isolated
+rerun after an initial fixture timeout; C11 passes. These are rerun results, not
+clean initial runs. Per-tab selection publication is next; no full parity accepted.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three

@@ -16,13 +16,15 @@ The [status ledger](status.md) is the detailed scope/evidence record; the
 about 8% (range 6–10%), with 0/38 feature groups fully accepted and 0/3 native
 release-ready applications. Do not turn passed build counts into parity scores.
 
-Latest restore-candidate decoder `929c8d8` distinguishes initial-window saved
-offset from tab/display saved key, retaining defined legacy prefix/default/path
-behavior without writes or SDK selection. The extracted actual legacy display
-adapter agrees. Suites pass **90/90 Mac/core**, **74/74 portable Linux/core on Mac**,
-new decoder **ASan/UBSan 1/1**. Prior scope remains in [book workflows](book-tree-workflows.md).
-The Mac chat now claims SDK candidate resolution and queued owned results; the
-Windows lane remains separate. No current GTK runtime/MSVC/WinUI acceptance.
+SDK restore `eb33f2a` resolves explicit candidate contexts through private query
+keys and queues optional owned trees through worker/C. Relative/root normalization
+is accepted only on successful SDK snaps; no selection/render/profile write occurs.
+Linux/core on Mac passed **75/75**. Mac full run passed **90/91** with one timing
+failure; isolated paging recheck passed **1/1** in 3.6 seconds. Sanitizers passed
+**3/3** on isolated rerun after an initial fixture timeout. C11 passes. Keep the
+initial timeout evidence; do not label the first run clean. The Mac now claims
+successful per-tab book selection publication. See [book workflows](book-tree-workflows.md).
+Current GTK runtime/MSVC/WinUI remain unvalidated; preserve the Windows lane.
 
 | Implemented area | Checkpoints | Contract / limits |
 |---|---|---|
@@ -33,7 +35,7 @@ Windows lane remains separate. No current GTK runtime/MSVC/WinUI acceptance.
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
 The owner renewed continued shared-core work until usage runs out. Active Mac
-ownership covers SDK restore-candidate resolution/queued ownership. No reset
+ownership covers per-tab book selection publication after successful rendering. No reset
 credit or hosted builds are authorized by this continuation. No whole parity or
 legacy-retirement gate is accepted by scoped checks.
 
@@ -41,7 +43,7 @@ legacy-retirement gate is accepted by scoped checks.
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Resolve typed restore candidates through SDK and queued owned results | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Publish per-tab book selections only after successful validation/rendering | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

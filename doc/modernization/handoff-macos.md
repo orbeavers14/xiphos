@@ -6,9 +6,14 @@ Updated 2026-10-16. Read [AGENTS.md](../../AGENTS.md), the
 ## Checked shared-core handoff
 
 Branch `master`, fork `orbeavers14/xiphos`. Active shared claim: resolve typed
-book restore candidates through the SDK and queued owned results. Initial-window
+book selections per tab only after successful validation/rendering. Initial-window
 and tab/display restore remain distinct. Preserve Windows lane, `.DS_Store`, GTK3,
 tests and licenses. Keep all checks local; fetch before overlapping edits.
+
+Latest SDK resolution `eb33f2a` preserves successful relative/root normalization,
+rejects missing snaps before copying stale nodes and queues copied optional tree
+results with explicit C presence. Live keys, attributes and module bytes remain
+unchanged. Pure decoder remains `929c8d8`. No UI/tab publication or writes yet.
 
 Read-only profile `1a19c1d` imports raw saved book module/key/offset values
 through the existing bounded XML parser. Actual legacy getters, duplicates/nulls,
@@ -47,10 +52,13 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At `929c8d8`: **90/90 Mac/core**, **74/74 portable Linux/core on this Mac**,
-new decoder **ASan/UBSan 1/1**. Prior profile `1a19c1d` passed 89/89, 73/73 and
-ASan/UBSan 3/3. SDKs are not fully instrumented; leaks are off. Current Fedora
-GTK/MSVC remains unvalidated. All checks stayed local.
+At `eb33f2a`: **75/75 portable Linux/core on this Mac**; Mac full run **90/91**
+with one timeout despite success output. Isolated paging rerun passed **1/1** in
+3.6 s. Initial sanitizer tree fixture timed out despite success output; isolated
+selection/tree/restore rerun passed **3/3** in 1.6 s. No source change/timeout
+relaxation was used to obtain these reruns. Strict C11 passes. Do not report the
+initial runs as clean. SDKs are not fully instrumented; leaks are off. All checks
+are local; current Fedora GTK/MSVC remains unvalidated.
 
 Environment: macOS 27.0.1 (26A434), ARM64; AppleClang 21.0.0; Swift 6.4 toolchain
 in Swift 6 language mode; SWORD 1.9.0.3916; GLib 2.86.5; configured libxml2 SDK.
@@ -65,8 +73,8 @@ cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -D
 cmake --build build/linux-models --parallel 2
 ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
 cmake -S platforms/linux -B build/linux-models-sanitized -C build/linux-model-sdk.cmake -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
-cmake --build build/linux-models-sanitized --target core_book_selection_test --parallel 2
-ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_book_selection$' --no-tests=error --output-on-failure
+cmake --build build/linux-models-sanitized --target core_book_selection_test core_book_tree_test core_book_restore_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_book_(restore|selection)$' --no-tests=error --output-on-failure
 ```
 
 The ignored SDK seed is copied from this Mac's cache, not a portable file. The
@@ -91,10 +99,10 @@ No complete functional or visual parity is claimed.
 
 ## Next bounded work
 
-1. Active shared task: SDK resolution/queued ownership of the typed restore
-   candidate. Preserve relative-path SDK normalization while rejecting missing
-   snaps before copying stale nodes. Do not add profile writes or implicit UI
-   publication. Saved-tab XML/visibility/fallback policy remain separate gates.
+1. Active shared task: per-tab book selection publication after successful SDK
+   validation/rendering, retaining existing option precedence and one FIFO worker.
+   Keep existing read-only queries history/state neutral. Saved-tab XML, file
+   writes and native controls remain separate acceptance gates.
 2. Fedora: rebuild default-ON GTK; verify heading click/hover and source/body
    separation, linked chapters, numbering/spacing, profiles and real input.
 3. Windows: continue native compiler/dependency/core setup in its own lane.
