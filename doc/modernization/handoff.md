@@ -16,15 +16,16 @@ The [status ledger](status.md) is the detailed scope/evidence record; the
 about 8% (range 6–10%), with 0/38 feature groups fully accepted and 0/3 native
 release-ready applications. Do not turn passed build counts into parity scores.
 
-Latest book-note commands `045f27e` validate SDK URIs against captured typed
-module/path/type and reuse note lookup `9888bf0`. Verse URI rules stay strict.
-Suites pass **88/88 Mac/core**, **72/72 portable Linux/core on Mac**, focused books
-and existing parser **ASan/UBSan 7/7**, plus C11. Prior note recovery also passed
-C++11/native-disabled helpers and ASan/UBSan 8/8. Source/render/transport/paging/
-capability contracts remain in [book workflows](book-tree-workflows.md).
-Current GTK runtime/MSVC/WinUI remain unvalidated. The Mac chat next claims
-read-only saved book-selection characterization/import using the existing XML
-profile parser. Preserve the Windows lane.
+Latest saved selection `1a19c1d` copies legacy book module/key/offset values using
+the existing safe XML parser, without normalization, startup application or writes.
+Suites pass **89/89 Mac/core**, **73/73 portable Linux/core on Mac**, profile
+**ASan/UBSan 3/3**. Prior source-bound URI `045f27e` passed books/common-parser
+ASan/UBSan 7/7; note recovery `9888bf0` passed 8/8 and C++11/helper checks.
+See [book workflows](book-tree-workflows.md) for source/render/transport/paging/
+capability/note contracts. Current GTK runtime/MSVC/WinUI remain unvalidated.
+The Mac work is handed off with no active shared edit claim. Next: characterize
+safe typed startup resolution, then integrate native book controls. Preserve the
+Windows lane and fetch before resuming.
 
 | Implemented area | Checkpoints | Contract / limits |
 |---|---|---|
@@ -34,16 +35,15 @@ profile parser. Preserve the Windows lane.
 | Earlier Fedora preview scope catch-up | PRs #82–89, `a80409b` | [Native Fedora evidence](handoff-linux.md); retain manual/corpus/renderer gates |
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
-The owner requested continued shared-core work until usage runs out. Current Mac
-ownership covers read-only saved book-selection characterization/import; inspect its handoff before overlapping APIs. Earlier
-heading and render-recovery slices are pushed and checked to their stated limits.
-No whole parity or retirement gate is accepted by these checks.
+The owner requested continued shared-core work until usage runs out. This checked
+checkpoint is handed off near the usage ceiling; no reset credit or hosted builds
+were used. No whole parity or legacy-retirement gate is accepted by these checks.
 
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Read-only saved book-selection characterization/import with existing XML parser | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Characterize typed saved-selection/startup resolution before native controls | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

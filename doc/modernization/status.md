@@ -119,10 +119,11 @@ pass. No new full parity/GUI claim is implied. Next is read-only general-book
 source characterization and a bounded shared slice.
 
 General-book source/render/transport/paging checkpoints `6f61997`, `6b2399c`,
-`b9c0a34`, `f35b6dd`, `b49c823`, `9888bf0`, `045f27e` add copied tree discovery, exact configured SDK HTML/node
+`b9c0a34`, `f35b6dd`, `b49c823`, `9888bf0`, `045f27e`, `1a19c1d` add copied tree discovery, exact configured SDK HTML/node
 identity and queued C ownership. Bounded pages reproduce a 600-child frozen SDK
-sequence without frontend navigation logic. Current suites pass **88/88 Mac/core**,
-**72/72 portable Linux/core on Mac** and books/common parser **ASan/UBSan 7/7**;
+sequence without frontend navigation logic. Current suites pass **89/89 Mac/core**,
+**73/73 portable Linux/core on Mac** and profile **ASan/UBSan 3/3**; prior
+books/common parser passed **ASan/UBSan 7/7**;
 C11 passes. Prior note/recovery checks passed ASan/UBSan 8/8 plus C++11 and
 native-disabled helpers.
 Tests cover option precedence/isolation, linked/empty entries, cursor/error guards,
@@ -131,7 +132,9 @@ Shared catalog eligibility excludes unsupported verse-key Generic Books. See
 [the book contract](book-tree-workflows.md). Typed ordinary notes reuse common
 rendering, with fresh source capture even when its initial flag was disabled.
 SDK book-note URI commands now validate exact captured module/path/type while
-verse parsing stays strict. Read-only saved selection import is next;
+verse parsing stays strict. Read-only saved selection now matches actual legacy XML getters without
+normalizing, applying startup defaults or writing files. Typed startup resolution
+is next;
 native tree/UI, images/links, history, corpus and full F10 remain pending.
 No percentage or whole-parity gate is changed and no hosted builds ran.
 

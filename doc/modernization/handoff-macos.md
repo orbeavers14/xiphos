@@ -3,88 +3,29 @@
 Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the
 [shared handoff](handoff.md), [status](status.md) and relevant parity rows first.
 
-## Active shared general-book source task
+## Checked shared-core handoff
 
-Branch `master`, fork `orbeavers14/xiphos`. The owner requested continued shared
-core work until the available usage limit. Owned read-only general-book source
-`6f61997`, configured rendering `6b2399c` and queued/C transport `b9c0a34` and paging
-`f35b6dd`, plus capability `b49c823`, are checked. The Mac chat now claims typed
-read-only saved book-selection characterization/import with the existing XML
-profile parser. Keep GTK3 editors/writes intact, all
-checks local, Windows inventory through `cf3b24c` and unrelated `.DS_Store`
-untouched. Fetch before overlapping shared edits.
+Branch `master`, fork `orbeavers14/xiphos`. Work is handed off near the usage
+ceiling with no active shared edit claim. Owner authorization to continue/push
+remains; fetch before resuming. Preserve Windows inventory through `cf3b24c`,
+unrelated `.DS_Store`, GTK3, tests and licenses. Keep builds local.
 
-## Latest checked behavior
+Latest implementation `1a19c1d` imports raw saved book module/key/offset values
+through the existing bounded XML parser. Actual legacy getters, duplicates/nulls,
+Unicode, source ownership/bytes and parser guards are tested. It does not apply
+startup defaults, resolve numeric/path ambiguity or write profiles. Legacy numeric
+reading clamps to 4; path reads may leave an older saved offset. Those startup
+semantics need a separate typed resolution decision before native integration.
 
-`045f27e` binds real SDK book-note URIs to the captured typed source, using shared
-command decoding. It rejects wrong module/path/type/ID, external/unknown/malformed
-commands and avoids verse short-reference fallback. Session/worker/C use existing
-note ownership and engine policy, including metadata-only/alias lookup. Existing
-verse parser regressions pass. No native book controls are introduced.
+Book sources/render/worker-C/paging/capability/notes/URI contracts are in
+[book workflows](book-tree-workflows.md), with implementations `6f61997`, `6b2399c`,
+`b9c0a34`, `f35b6dd`, `b49c823`, `9888bf0`, `045f27e`. One engine/FIFO, owned
+results and existing module/tab option precedence remain intact. Native book
+controls, URI presentation, images, saved selection application and editors are
+pending. Existing verse URI validation remains strict. No full F10 acceptance.
 
-
-`9888bf0` pairs ordinary book-note metadata/body with exact typed tree identity,
-including linked aliases, through existing engine policy and queued C ownership.
-The common C++11 note helper accepts an already positioned key and temporarily
-enables source-attribute capture, restoring the initial flag after success/failure.
-It prevents stale notes even for deliberately disabled callers. Existing enabled
-passage output remains exact. Metadata-only skips body rendering. Native book URI
-routing/hover/click and heading-note repair remain pending.
-
-
-`b49c823` publishes indexed-tree capability in Reader/worker/C catalogs, sharing
-the query gate. SDK Generic Books with verse keys and dictionaries are excluded;
-eligible, empty and deep indexed books are included. Copied metadata, getters and
-unsupported-operation rejection are tested. It is no claim of full book support.
-
-
-`f35b6dd` pages direct children through the same Reader/worker/C owner. Limits
-1..256, validated last-child cursors and one lookahead preserve SDK order without
-whole-tree/native enumeration loops. A 600-child fixture validates four page sizes,
-root/empty/final pages, cursor guards, key/attribute/byte identity and handle lifetime.
-It does not freeze module revisions or validate arbitrary corrupt modules.
-
-
-`b9c0a34` adds queued owned book sources/entries and separate take-once C handles.
-It reuses session module/tab/default/unconfigured option precedence, leaves Bible
-and dictionary history unchanged, and preserves root/absence distinctions in C
-node views. Copied arguments, errors/continued work, borrow lifetimes, close/drain
-and module-byte identity are checked. No native tree UI is introduced.
-
-
-`6b2399c` pairs configured raw SDK book HTML/entry presence with exact tree
-identity, including linked aliases and structural-only empty branches. It selects
-without replacing the live indexed key, validates source before selection,
-rejects unexpected source changes, and reuses filter/processing recovery scopes.
-OSIS/ThML options, real toggles, exceptions and module-byte identity are tested.
-No native book-note/image dispatch or history/UI is introduced.
-
-
-`6f61997` adds C++17 Reader tree snapshots by typed offset and canonical path.
-Private SDK keys preserve the live key, attributes and module data files. Root,
-Unicode/numeric titles, structural branches, sibling order, empty/deep trees and
-stale SDK errors are tested. No book rendering, queued/C transport or native UI
-is introduced yet. See [the book source contract](book-tree-workflows.md).
-
-
-`2b756bf` puts every shared SDK text render behind one internal C++11 boundary.
-It restores the caller's attribute-processing flag on stored/buffer render errors,
-including deliberately disabled callers. It preserves healthy output/key behavior
-and does not roll back source attributes that normal renders must populate.
-Entry, attribute refresh, heading and note-body helpers now recover for later
-reads instead of inheriting a disabled SDK state. Heading capture retains its
-stronger full-attribute scope. Frozen output and native behavior remain unchanged.
-
-Native Mac and Linux reading models opt into shared scoped heading IDs, following
-owned capture `91f83c9` and lookup `7c98ebf`. Candidate replacement must match the
-legacy HTML outside IDs and retain known local IDs, target metadata and the
-cleanup-point label. Raw Reader sources, visible labels/counters, body rendering,
-CSS, anchors and history stay unchanged. Unknown/mixed/changed shapes keep their
-original rendering. Existing other consumers remain default-off.
-
-`2390568` adds only capability selection and model checks to native adapters.
-Heading/body note separation, hover, retained links, linked selection, display
-toggles and shutdown are tested. Full F14/corpus/visual acceptance remains open.
+Prior lexical, spacing, note-numbering, native heading-link and SDK recovery
+behavior/evidence remains in the linked contracts and versioned handoffs.
 
 Earlier current-run milestones:
 
@@ -101,11 +42,12 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At `045f27e`: **88/88 Mac/core**, **72/72 portable Linux/core on this Mac**,
-focused books/common parser **ASan/UBSan 7/7**, strict C11 header syntax. At
-`9888bf0`, note/recovery ASan/UBSan passed 8/8, C++11 note-helper syntax and
-native-disabled helper build passed. SDKs are not fully instrumented; leaks are
-off. Current Fedora GTK/MSVC remains unvalidated. All checks stayed local.
+At `1a19c1d`: **89/89 Mac/core**, **73/73 portable Linux/core on this Mac**,
+profile **ASan/UBSan 3/3** (book/profile-reader/preview-profile). Prior URI
+`045f27e` passed books/common-parser ASan/UBSan 7/7 and C11. Note `9888bf0`
+passed recovery/book ASan/UBSan 8/8, C++11 and native-disabled helpers. SDKs are
+not fully instrumented; leaks are off. Current Fedora GTK/MSVC remains unvalidated.
+All checks stayed local; no hosted allowance or reset credit was used.
 
 Environment: macOS 27.0.1 (26A434), ARM64; AppleClang 21.0.0; Swift 6.4 toolchain
 in Swift 6 language mode; SWORD 1.9.0.3916; GLib 2.86.5; configured libxml2 SDK.
@@ -120,9 +62,8 @@ cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -D
 cmake --build build/linux-models --parallel 2
 ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
 cmake -S platforms/linux -B build/linux-models-sanitized -C build/linux-model-sdk.cmake -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
-cmake --build build/linux-models-sanitized --target core_book_tree_test core_book_entry_test core_book_worker_test core_book_children_test core_book_note_test core_book_note_link_test core_content_test --parallel 2
-ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_book_(tree|entry|worker|children|note|note_link)$|^core_content$' --no-tests=error --output-on-failure
-clang -std=c11 -fsyntax-only -Isrc/core/include src/core/tests/c_header_test.c
+cmake --build build/linux-models-sanitized --target core_book_profile_test core_profile_reader_test core_preview_profile_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_(book_profile|profile_reader|preview_profile)$' --no-tests=error --output-on-failure
 ```
 
 The ignored SDK seed is copied from this Mac's cache, not a portable file. The
@@ -147,11 +88,10 @@ No complete functional or visual parity is claimed.
 
 ## Next bounded work
 
-1. Current Mac shared task: read-only saved book-selection characterization/
-   import through the existing XML parser. Do not auto-apply, resolve or rewrite
-   saved selections before numeric/path/startup compatibility is characterized.
-   Native tree/navigation controls, URI/image dispatch, book history and saved
-   selection remain later bounded steps.
+1. Next shared task (unclaimed): characterize safe typed saved-selection/startup
+   resolution against legacy numeric/path/default behavior. Then native book
+   controls can consume the existing queued core APIs. Do not auto-apply raw saved
+   values or invent a separate frontend navigation/persistence engine.
 2. Fedora: rebuild default-ON GTK; verify heading click/hover and source/body
    separation, linked chapters, numbering/spacing, profiles and real input.
 3. Windows: continue native compiler/dependency/core setup in its own lane.
