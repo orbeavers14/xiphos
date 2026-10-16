@@ -58,6 +58,35 @@ source-mutation failures, filter/processing recovery and module-data byte identi
 This is raw SDK output: native book-note URI dispatch, display cleanup and image
 resource resolution are not enabled or claimed by this API.
 
+## Serialized native transport
+
+StudyWorker queues tree/path queries on its existing engine thread. Book reads
+use StudySession's existing module override, tab override, enabled legacy defaults,
+then unconfigured Reader baseline, in that order. No separate book preference
+engine or history is introduced. Source queries require no open tab; entry reads
+reject closed/unknown tabs. Failed queries do not stop subsequent jobs, and close
+drains accepted work.
+
+The additive C API exposes `xc_worker_book_tree`, `xc_worker_book_tree_path` and
+`xc_worker_read_book`, with separate take-once tree/entry handles. Strings copy
+at submission. Returned entry trees are borrowed from their entry and must not
+be released separately. Node getters publish borrowed strings with explicit
+`present`: actual root offset 0 remains distinct from an absent relationship.
+Null handles/outputs and unknown kinds have deterministic empty/error behavior.
+Results outlive their request and worker; normal release functions own destruction.
+Existing C layouts/version and all existing consumers remain compatible.
+
+The existing `XC_MODULE_NOT_FOUND` status also represents a missing tree node or
+path for these operations. Other malformed arguments map to `XC_INVALID_ARGUMENT`;
+unexpected SDK failures map to `XC_ENGINE_ERROR`. Requests retain the common
+nonblocking poll contract; worker close still belongs off the UI thread.
+
+`core_book_worker` checks copied arguments, FIFO and tab/module option precedence,
+unconfigured/default reads, history neutrality, typed errors/continued work,
+take-once/wrong-kind behavior, root/absence distinctions, borrowed/owned lifetime,
+initialization failures, shutdown draining and unchanged module data bytes. C11
+header checks cover the new API without exposing C++/SWORD types.
+
 `core_book_tree` generates original-prose RawGenBook fixtures, including empty,
 structural-only and deep branches, numeric and Unicode titles. It compares all
 one-hop relationships with the frozen SDK sequence used by the legacy backend,
@@ -66,7 +95,7 @@ lifetime, and byte-for-byte identity of every module data file and filename
 before/after successful and rejected queries. Manager-generated configuration
 caches are outside this module-data identity assertion.
 
-The next slices are queued worker/C ownership, native tree/navigation controls,
+The next slices are bounded child enumeration and native tree/navigation controls,
 then image/resource routing,
 links, history/persistent selection, additional book windows and editors. Preserve
 the GTK3 app and all its write paths. No F10 group, native GUI, corpus, platform or

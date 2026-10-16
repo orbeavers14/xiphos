@@ -21,6 +21,14 @@ struct xc_lexical_entry { xiphos::core::LexicalEntry value; };
 struct xc_dictionary_choices { xiphos::core::DictionaryChoices value; };
 struct xc_dictionary_history { xiphos::core::DictionaryHistorySnapshot value; };
 struct xc_dictionary_entry { xiphos::core::DictionaryEntry value; };
+struct xc_book_tree { xiphos::core::BookTree value; };
+struct xc_book_entry {
+  xc_book_tree tree;
+  bool has_entry;
+  std::string html;
+  explicit xc_book_entry(xiphos::core::BookEntry value)
+    : tree{std::move(value.tree)}, has_entry(value.has_entry), html(std::move(value.html)) {}
+};
 struct xc_note { xiphos::core::StudyNote value; };
 struct xc_passage { xiphos::core::StudyPassage value; };
 struct xc_entry { xiphos::core::Entry value; };
@@ -38,6 +46,8 @@ struct xc_request {
   std::unique_ptr<xc_dictionary_choices> dictionary_choices;
   std::unique_ptr<xc_dictionary_history> dictionary_history;
   std::unique_ptr<xc_dictionary_entry> dictionary;
+  std::unique_ptr<xc_book_tree> book_tree;
+  std::unique_ptr<xc_book_entry> book_entry;
   std::unique_ptr<xc_lexical_entry> lexical;
   std::unique_ptr<xc_lexicons> lexicons;
   std::unique_ptr<xc_note> note;
@@ -65,6 +75,8 @@ struct xc_request {
   void store(xiphos::core::DictionaryChoices v) { dictionary_choices = std::make_unique<xc_dictionary_choices>(xc_dictionary_choices{std::move(v)}); }
   void store(xiphos::core::DictionaryHistorySnapshot v) { dictionary_history = std::make_unique<xc_dictionary_history>(xc_dictionary_history{std::move(v)}); }
   void store(xiphos::core::DictionaryEntry v) { dictionary = std::make_unique<xc_dictionary_entry>(xc_dictionary_entry{std::move(v)}); }
+  void store(xiphos::core::BookTree v) { book_tree = std::make_unique<xc_book_tree>(xc_book_tree{std::move(v)}); }
+  void store(xiphos::core::BookEntry v) { book_entry = std::make_unique<xc_book_entry>(std::move(v)); }
   void store(xiphos::core::StudyNote v) { note = std::make_unique<xc_note>(xc_note{std::move(v)}); }
   void store(xiphos::core::Entry v) { entry = std::make_unique<xc_entry>(xc_entry{std::move(v)}); }
   void store(xiphos::core::Chapter v) { chapter = std::make_unique<xc_chapter>(xc_chapter{std::move(v)}); }
@@ -174,6 +186,43 @@ const xiphos::core::Module *module_at(const xc_reader *r, size_t i) {
 }
 }
 extern "C" {
+xc_status xc_worker_book_tree(xc_worker *w, const char *id, uint64_t offset, xc_request **out) {
+  if (!id || !*id) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.book_tree(id, offset); });
+}
+xc_status xc_worker_book_tree_path(xc_worker *w, const char *id, const char *path, xc_request **out) {
+  if (!id || !*id || !path) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.book_tree_path(id, path); });
+}
+xc_status xc_worker_read_book(xc_worker *w, uint64_t tab, const char *id, uint64_t offset, xc_request **out) {
+  if (!id || !*id) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.read_book(tab, id, offset); });
+}
+xc_book_tree *xc_request_take_book_tree(xc_request *r) { return r && r->status == XC_OK ? r->book_tree.release() : nullptr; }
+xc_book_entry *xc_request_take_book_entry(xc_request *r) { return r && r->status == XC_OK ? r->book_entry.release() : nullptr; }
+xc_status xc_book_tree_get_node(const xc_book_tree *tree, int kind, xc_book_node *out) {
+  if (!out) return XC_INVALID_ARGUMENT;
+  *out = {};
+  if (!tree) return XC_INVALID_ARGUMENT;
+  const xiphos::core::BookTreeNode *node = nullptr;
+  const auto &value = tree->value;
+  switch (kind) {
+    case XC_BOOK_CURRENT: node = &value.node; break;
+    case XC_BOOK_PARENT: if (value.parent) node = &*value.parent; break;
+    case XC_BOOK_FIRST_CHILD: if (value.first_child) node = &*value.first_child; break;
+    case XC_BOOK_PREVIOUS_SIBLING: if (value.previous_sibling) node = &*value.previous_sibling; break;
+    case XC_BOOK_NEXT_SIBLING: if (value.next_sibling) node = &*value.next_sibling; break;
+    default: return XC_INVALID_ARGUMENT;
+  }
+  if (node) *out = {node->offset, node->path.c_str(), node->title.c_str(), 1, node->has_children ? 1 : 0};
+  return XC_OK;
+}
+const char *xc_book_tree_module(const xc_book_tree *tree) { return tree ? tree->value.module.c_str() : nullptr; }
+void xc_book_tree_release(xc_book_tree *tree) { delete tree; }
+const xc_book_tree *xc_book_entry_tree(const xc_book_entry *entry) { return entry ? &entry->tree : nullptr; }
+const char *xc_book_entry_html(const xc_book_entry *entry) { return entry ? entry->html.c_str() : nullptr; }
+int xc_book_entry_has_entry(const xc_book_entry *entry) { return entry && entry->has_entry; }
+void xc_book_entry_release(xc_book_entry *entry) { delete entry; }
 xc_status xc_worker_open(const char *root, xc_worker **out) {
   if (!out) return XC_INVALID_ARGUMENT;
   *out = nullptr;

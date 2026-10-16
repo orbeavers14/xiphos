@@ -206,6 +206,10 @@ DictionaryEntry StudySession::read_dictionary(const std::string &module, const s
   const auto options = module_engine_options(module);
   return options ? reader_.read_dictionary(module, key, *options) : reader_.read_dictionary(module, key);
 }
+BookEntry StudySession::read_book(const std::string &module, std::uint64_t offset) {
+  const auto options = module_engine_options(module);
+  return options ? reader_.read_book(module, offset, *options) : reader_.read_book(module, offset);
+}
 ReferenceList StudySession::read_reference_list(const std::string &module, const std::string &expression,
                                               const std::string &context) {
   const auto options = module_engine_options(module);

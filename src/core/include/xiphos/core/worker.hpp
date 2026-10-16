@@ -35,6 +35,11 @@ public:
   StudyWorker(const StudyWorker &) = delete;
   StudyWorker &operator=(const StudyWorker &) = delete;
   std::future<std::vector<Module>> modules();
+  // Owned, read-only source queries use the same engine thread, without a tab.
+  std::future<BookTree> book_tree(std::string module, std::uint64_t offset);
+  std::future<BookTree> book_tree_path(std::string module, std::string path);
+  // Read with existing tab/module engine policy; no history visit.
+  std::future<BookEntry> read_book(StudyTab tab, std::string module, std::uint64_t offset);
   std::future<StudyTab> create_tab();
   std::future<void> close_tab(StudyTab tab);
   std::future<void> set_lexical_layout_enabled(StudyTab tab, bool enabled);

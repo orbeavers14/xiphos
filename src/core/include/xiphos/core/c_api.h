@@ -15,6 +15,8 @@ typedef struct xc_note xc_note;
 typedef struct xc_dictionary_choices xc_dictionary_choices;
 typedef struct xc_dictionary_history xc_dictionary_history;
 typedef struct xc_dictionary_entry xc_dictionary_entry;
+typedef struct xc_book_tree xc_book_tree;
+typedef struct xc_book_entry xc_book_entry;
 typedef struct xc_lexical_entry xc_lexical_entry;
 typedef struct xc_lexicons xc_lexicons;
 /* Borrowed submission strings. NULL is unset; empty is an explicit empty name. */
@@ -69,6 +71,37 @@ typedef enum xc_engine_option_flag {
  * No active engine-call cancellation or unrelated SWORD concurrency promise. */
 xc_status xc_worker_open(const char *root, xc_worker **out);
 void xc_worker_close(xc_worker *worker);
+/* Owned tree discovery, no tab or live selection mutation. Empty canonical path
+ * selects root; numeric titles require their slash path. Read uses the existing
+ * tab/module engine policy and selects the exact offset, without a history visit.
+ * Strings copy at submission. Invalid/missing nodes fail at poll; existing
+ * XC_MODULE_NOT_FOUND also represents a missing tree node/path in these calls.
+ * Raw entry HTML has no native book-link/image or display-cleanup policy yet. */
+xc_status xc_worker_book_tree(xc_worker *worker, const char *module, uint64_t offset, xc_request **out);
+xc_status xc_worker_book_tree_path(xc_worker *worker, const char *module, const char *path, xc_request **out);
+xc_status xc_worker_read_book(xc_worker *worker, uint64_t tab, const char *module, uint64_t offset, xc_request **out);
+xc_book_tree *xc_request_take_book_tree(xc_request *request);
+xc_book_entry *xc_request_take_book_entry(xc_request *request);
+typedef enum xc_book_node_kind {
+  XC_BOOK_CURRENT = 0, XC_BOOK_PARENT = 1, XC_BOOK_FIRST_CHILD = 2,
+  XC_BOOK_PREVIOUS_SIBLING = 3, XC_BOOK_NEXT_SIBLING = 4
+} xc_book_node_kind;
+/* Borrowed node strings until the owning tree/entry is released. present=0 is
+ * an absent relationship, distinct from a present root at offset 0. Invalid
+ * handles/kinds clear a non-NULL out value and return XC_INVALID_ARGUMENT. */
+typedef struct {
+  uint64_t offset;
+  const char *path, *title;
+  int present, has_children;
+} xc_book_node;
+xc_status xc_book_tree_get_node(const xc_book_tree *tree, int kind, xc_book_node *out);
+const char *xc_book_tree_module(const xc_book_tree *tree);
+void xc_book_tree_release(xc_book_tree *tree);
+/* Borrowed tree: do not release it separately; its entry owns its lifetime. */
+const xc_book_tree *xc_book_entry_tree(const xc_book_entry *entry);
+const char *xc_book_entry_html(const xc_book_entry *entry);
+int xc_book_entry_has_entry(const xc_book_entry *entry);
+void xc_book_entry_release(xc_book_entry *entry);
 xc_status xc_worker_modules(xc_worker *worker, xc_request **out);
 xc_status xc_worker_create_tab(xc_worker *worker, xc_request **out);
 xc_status xc_worker_close_tab(xc_worker *worker, uint64_t tab, xc_request **out);

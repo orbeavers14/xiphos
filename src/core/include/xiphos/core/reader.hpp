@@ -43,6 +43,8 @@ public:
   // the requested live node, as ordinary reads do; no root-to-first-node clamp,
   // display cleanup, semantic link dispatch, history or persistence yet.
   BookEntry read_book(const std::string &module, std::uint64_t offset, const EngineOptions &options);
+  // Unconfigured overload retains the manager baseline, as other Reader reads do.
+  BookEntry read_book(const std::string &module, std::uint64_t offset);
   ReferenceChoices reference_choices(const std::string &module, const std::string &reference);
   PassageLink resolve_link(const std::string &current_module, const std::string &url);
   // Owned targets/guard metadata from the existing parser, without rendering
@@ -100,6 +102,7 @@ public:
   std::string adjacent_chapter(const std::string &module, const std::string &reference,
                                int direction);
 private:
+  BookEntry book_impl(const std::string &module, std::uint64_t offset, const EngineOptions *options);
   DictionaryEntry dictionary_impl(const std::string &module, const std::string &key, const EngineOptions *options, int direction = 0);
   ReferenceList reference_list_impl(const std::string &module, const std::string &expression,
                                     const std::string &context, const EngineOptions *options);

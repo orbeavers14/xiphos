@@ -103,6 +103,15 @@ StudyWorker::~StudyWorker() = default;
 std::future<std::vector<Module>> StudyWorker::modules() {
   return impl_->submit([](Impl::State &s) { return s.reader.modules(); });
 }
+std::future<BookTree> StudyWorker::book_tree(std::string module, std::uint64_t offset) {
+  return impl_->submit([module = std::move(module), offset](Impl::State &s) { return s.reader.book_tree(module, offset); });
+}
+std::future<BookTree> StudyWorker::book_tree_path(std::string module, std::string path) {
+  return impl_->submit([module = std::move(module), path = std::move(path)](Impl::State &s) { return s.reader.book_tree_path(module, path); });
+}
+std::future<BookEntry> StudyWorker::read_book(StudyTab tab, std::string module, std::uint64_t offset) {
+  return impl_->submit([tab, module = std::move(module), offset](Impl::State &s) { return s.tab(tab).read_book(module, offset); });
+}
 std::future<StudyTab> StudyWorker::create_tab() {
   return impl_->submit([](Impl::State &s) {
     if (s.next_tab == std::numeric_limits<StudyTab>::max()) throw std::overflow_error("Study tab IDs exhausted");
