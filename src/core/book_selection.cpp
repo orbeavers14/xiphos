@@ -1,0 +1,51 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+#include "xiphos/core/book_selection.hpp"
+#include <stdexcept>
+namespace xiphos::core {
+namespace {
+bool digit(char c) { return c >= '0' && c <= '9'; }
+bool space(char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\v' || c == '\f'; }
+void valid_text(const std::string &text) {
+  if (text.size() > 4096 || text.find('\0') != std::string::npos)
+    throw std::invalid_argument("Saved book address is too long or contains NUL");
+}
+std::uint64_t prefix(const std::string &text) {
+  std::size_t at = 0;
+  while (at < text.size() && space(text[at])) ++at;
+  bool negative = false;
+  if (at < text.size() && (text[at] == '+' || text[at] == '-')) negative = text[at++] == '-';
+  std::uint64_t value = 0;
+  for (; at < text.size() && digit(text[at]); ++at) {
+    const auto next = static_cast<unsigned>(text[at] - '0');
+    // SDK TreeKeyIdx stores signed 32-bit index positions on LP64 and LLP64.
+    if (value > (2147483647u - next) / 10u)
+      throw std::invalid_argument("Saved book offset exceeds the indexed-tree range");
+    value = value * 10 + next;
+  }
+  if (negative && value) throw std::invalid_argument("Saved book offset is negative");
+  return value < 4 ? 4 : value;
+}
+}
+std::optional<BookSelectionTarget> saved_book_target(const SavedBookSelection &saved, BookRestoreMode mode) {
+  if (!saved.module || saved.module->empty()) return std::nullopt;
+  if (saved.module->find('\0') != std::string::npos) throw std::invalid_argument("Saved book module contains NUL");
+  BookSelectionTarget result{*saved.module, std::uint64_t(4)};
+  switch (mode) {
+    case BookRestoreMode::initial_window: {
+      const auto text = saved.offset_text.value_or("");
+      valid_text(text);
+      result.address = prefix(text);
+      break;
+    }
+    case BookRestoreMode::display_key: {
+      const auto text = saved.key.value_or("0");
+      valid_text(text);
+      if (!text.empty() && digit(text.front())) result.address = prefix(text);
+      else result.address = text;
+      break;
+    }
+    default: throw std::invalid_argument("Unknown book restore mode");
+  }
+  return result;
+}
+}

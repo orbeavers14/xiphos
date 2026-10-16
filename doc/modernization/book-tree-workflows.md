@@ -230,7 +230,34 @@ lifetime, and byte-for-byte identity of every module data file and filename
 before/after successful and rejected queries. Manager-generated configuration
 caches are outside this module-data identity assertion.
 
-The next slices are typed saved-selection/startup resolution and native tree/navigation controls,
+## Typed restore candidates
+
+`saved_book_target` makes restore origin explicit. `display_key` follows
+`main_display_book`: missing key becomes `0`; only an ASCII digit in the first
+byte selects decimal-prefix offset parsing; other strings, including relative
+titles, signs, leading spaces and explicit empty paths, remain path candidates.
+Numeric reading candidates below 4 become 4. `initial_window` instead follows
+`settings.c` / `main_window.c`: decode the separate saved offset's decimal prefix,
+then produce the numeric display candidate. Missing/non-numeric offsets become
+4, and leading ASCII whitespace or `+` retains defined legacy prefix behavior.
+A newer path key may coexist with an older saved offset; the two contexts do
+not silently override each other. Missing/empty module produces no book target.
+
+Candidates own their values and do not read the SDK, select a node, render,
+publish tab state or write profiles. SDK existence/alignment and relative-path
+resolution remain separate. The parser rejects embedded NUL, address strings
+above 4096 bytes, offsets outside the signed 32-bit SDK index range, and negative
+initial offsets. It avoids platform-dependent `atol` overflow and unsigned/signed
+formatting behavior; these rejected cases are not claimed as legacy equivalence.
+Explicit raw display key `-4` remains a path, as in the legacy first-byte branch.
+
+`core_book_selection` compiles the extracted actual `main_display_book` against
+headless adapters and compares its selected address with candidate decoding.
+It also compares the defined settings-offset/format/display startup sequence,
+checks conflicting saved fields, defaults, numeric/path distinctions, errors
+and lifetime. The GTK3 function and startup writes remain untouched.
+
+The next slices are SDK restore-candidate resolution and native tree/navigation controls,
 then image/resource routing,
 links, history/persistent selection, additional book windows and editors. Preserve
 the GTK3 app and all its write paths. No F10 group, native GUI, corpus, platform or
