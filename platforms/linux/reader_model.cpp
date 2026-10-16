@@ -332,6 +332,10 @@ void ReaderModel::tick() {
     accept(submitted, next, Operation::note_numbering); break;
   }
   case Operation::note_numbering: {
+    auto submitted = xc_worker_set_heading_note_links_enabled(worker_, tab_, 1, &next);
+    accept(submitted, next, Operation::heading_note_links); break;
+  }
+  case Operation::heading_note_links: {
     auto submitted = xc_worker_enable_module_preferences(worker_, tab_, &next);
     accept(submitted, next, Operation::preferences); break;
   }

@@ -111,6 +111,7 @@ final class ReaderModel: ObservableObject {
             tab = opened
             try await worker.setLexicalLayoutEnabled(tab: opened, enabled: true)
             try await worker.setNoteNumberingEnabled(tab: opened, enabled: true)
+            try await worker.setHeadingNoteLinksEnabled(tab: opened, enabled: true)
             try await worker.enableModulePreferences(tab: opened)
             try await worker.enableLexiconPreferences(tab: opened)
             let lexicons = try await worker.lexiconPreferences(tab: opened)

@@ -80,6 +80,46 @@ struct ReaderModelSmoke {
               diagnosticPair.text.cleanupDiagnostics.first?.suffix == diagnosticChapter.verses[21].cleanupDiagnostics.first?.suffix else { fatalError("copied Swift metadata survives worker shutdown") }
         print("Native content control checks passed")
     }
+    static func headingURI(_ html: String) -> String {
+        guard let uri = html.components(separatedBy: "href=\"").dropFirst().compactMap({ $0.components(separatedBy: "\"").first })
+            .first(where: { $0.contains("&value=xiphos-heading-") }) else { fatalError("core publishes scoped heading URI") }
+        return uri
+    }
+    @MainActor static func headingNotes(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let model = ReaderModel(worker: worker, startupError: nil)
+        try await idle(model)
+        model.reference = "John4:1"; model.read(); try await idle(model)
+        model.chooseCommentary("Notes"); try await idle(model)
+        let uri = headingURI(model.commentaryEntry?.headingHTML ?? "")
+        let back = model.canBack, forward = model.canForward
+        model.reference = "John 4:2"
+        model.followCommentaryLink(uri); try await idle(model)
+        guard model.studyNote?.identifier.hasPrefix("xiphos-heading-") == true,
+              model.studyNote?.html.contains("Original heading note.") == true,
+              model.studyNote?.html.contains("Original body note.") == false,
+              model.reference == "John 4:2", model.canBack == back, model.canForward == forward else { fatalError("native heading click retains source body, draft and navigation history") }
+        model.previewStudyLink(uri); try await previewIdle(model)
+        guard model.informationNote?.html.contains("Original heading note.") == true else { fatalError("native heading hover uses the same core lookup") }
+        model.setNoteNumbers(false, commentary: true); try await idle(model)
+        guard model.commentaryContentOptions.noteNumbers == false,
+              headingURI(model.commentaryEntry?.headingHTML ?? "") == uri else { fatalError("counter/label display toggle retains scoped source identity") }
+        model.read(); try await idle(model)
+        model.followCommentaryLink(uri); try await idle(model)
+        guard model.studyNote?.reference == "John 4:1", model.studyNote?.html.contains("Original heading note.") == true,
+              model.renderedReference == "John 4:2" else { fatalError("retained heading URI does not drift to a later selected passage") }
+        model.reference = "John4:7"; model.read(); try await idle(model)
+        let linked = headingURI(model.commentaryEntry?.headingHTML ?? "")
+        model.followCommentaryLink(linked); try await idle(model)
+        guard model.studyNote?.reference == "John 4:7", model.studyNote?.html.contains("Original heading note.") == true else { fatalError("linked heading uses selected passage context") }
+        model.reference = "John6:1"; model.read(); try await idle(model)
+        guard model.commentaryEntry?.headingHTML.contains("xiphos-heading-") == false,
+              fixtureWords(model.commentaryEntry?.headingHTML ?? "").contains("Original mixed") else { fatalError("unsupported heading capture keeps readable original rendering") }
+        let retained = model.commentaryEntry?.headingHTML
+        model.close(); model.followCommentaryLink(uri); try await idle(model); await worker.shutdown()
+        guard model.commentaryEntry?.headingHTML == retained else { fatalError("closed heading action cannot publish") }
+        print("Native heading click/hover, retained source, linked context and conservative fallback passed")
+    }
     @MainActor static func noteNumbers(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let model = ReaderModel(worker: worker, startupError: nil)
@@ -936,6 +976,9 @@ struct ReaderModelSmoke {
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--commentary" {
             try await commentary(root: CommandLine.arguments[2]); return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--heading-notes" {
+            try await headingNotes(root: CommandLine.arguments[2]); return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--note-numbers" {
             try await noteNumbers(root: CommandLine.arguments[2]); return

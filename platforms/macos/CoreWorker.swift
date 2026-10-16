@@ -105,6 +105,11 @@ actor CoreWorker {
         let status = xc_worker_set_lexical_layout_enabled(try worker(), tab, enabled ? 1 : 0, &request)
         xc_request_release(try await wait(status, request))
     }
+    func setHeadingNoteLinksEnabled(tab: UInt64, enabled: Bool) async throws {
+        var request: OpaquePointer?
+        let status = xc_worker_set_heading_note_links_enabled(try worker(), tab, enabled ? 1 : 0, &request)
+        xc_request_release(try await wait(status, request))
+    }
     func setNoteNumberingEnabled(tab: UInt64, enabled: Bool) async throws {
         var request: OpaquePointer?
         let status = xc_worker_set_note_numbering_enabled(try worker(), tab, enabled ? 1 : 0, &request)
