@@ -1,6 +1,6 @@
 # Shared project handoff: start here in every chat
 
-Updated 2026-10-15. These files replace missing conversation context with a
+Updated 2026-10-16. These files replace missing conversation context with a
 versioned record. They do not transfer chat messages or synchronize themselves:
 each chat must fetch/pull Git and read them before working.
 
@@ -16,16 +16,13 @@ The [status ledger](status.md) is the detailed scope/evidence record; the
 about 8% (range 6–10%), with 0/38 feature groups fully accepted and 0/3 native
 release-ready applications. Do not turn passed build counts into parity scores.
 
-Latest saved selection `1a19c1d` copies legacy book module/key/offset values using
-the existing safe XML parser, without normalization, startup application or writes.
-Suites pass **89/89 Mac/core**, **73/73 portable Linux/core on Mac**, profile
-**ASan/UBSan 3/3**. Prior source-bound URI `045f27e` passed books/common-parser
-ASan/UBSan 7/7; note recovery `9888bf0` passed 8/8 and C++11/helper checks.
-See [book workflows](book-tree-workflows.md) for source/render/transport/paging/
-capability/note contracts. Current GTK runtime/MSVC/WinUI remain unvalidated.
-The Mac work is handed off with no active shared edit claim. Next: characterize
-safe typed startup resolution, then integrate native book controls. Preserve the
-Windows lane and fetch before resuming.
+Latest restore-candidate decoder `929c8d8` distinguishes initial-window saved
+offset from tab/display saved key, retaining defined legacy prefix/default/path
+behavior without writes or SDK selection. The extracted actual legacy display
+adapter agrees. Suites pass **90/90 Mac/core**, **74/74 portable Linux/core on Mac**,
+new decoder **ASan/UBSan 1/1**. Prior scope remains in [book workflows](book-tree-workflows.md).
+The Mac chat now claims SDK candidate resolution and queued owned results; the
+Windows lane remains separate. No current GTK runtime/MSVC/WinUI acceptance.
 
 | Implemented area | Checkpoints | Contract / limits |
 |---|---|---|
@@ -35,15 +32,16 @@ Windows lane and fetch before resuming.
 | Earlier Fedora preview scope catch-up | PRs #82–89, `a80409b` | [Native Fedora evidence](handoff-linux.md); retain manual/corpus/renderer gates |
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
-The owner requested continued shared-core work until usage runs out. This checked
-checkpoint is handed off near the usage ceiling; no reset credit or hosted builds
-were used. No whole parity or legacy-retirement gate is accepted by these checks.
+The owner renewed continued shared-core work until usage runs out. Active Mac
+ownership covers SDK restore-candidate resolution/queued ownership. No reset
+credit or hosted builds are authorized by this continuation. No whole parity or
+legacy-retirement gate is accepted by scoped checks.
 
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Characterize typed saved-selection/startup resolution before native controls | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Resolve typed restore candidates through SDK and queued owned results | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

@@ -1,5 +1,5 @@
 # Modernization status and acceptance
-Updated 2026-10-15. Goal: preserve Xiphos functionality, visual composition,
+Updated 2026-10-16. Goal: preserve Xiphos functionality, visual composition,
 data and workflows through one shared C++ application core and separate
 SwiftUI/AppKit, WinUI 3 and GTK4 frontends. Native enhancements supplement
 that contract. The [parity matrix](parity-matrix.md) defines acceptance evidence;
@@ -137,6 +137,13 @@ normalizing, applying startup defaults or writing files. Typed startup resolutio
 is next;
 native tree/UI, images/links, history, corpus and full F10 remain pending.
 No percentage or whole-parity gate is changed and no hosted builds ran.
+
+Restore-candidate decoder `929c8d8` preserves distinct initial-window offset and
+tab/display key inputs, matching the extracted legacy display adapter for defined
+prefix/default/path cases. It rejects unsafe overflow/NUL/oversized inputs without
+SDK selection or writes. Suites pass 90/90 Mac/core, 74/74 portable Linux/core on
+Mac and decoder ASan/UBSan 1/1. SDK resolution/queued ownership is next; native
+startup and whole F10 acceptance remain pending.
 
 ## Overall completion estimate
 

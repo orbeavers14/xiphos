@@ -1,21 +1,26 @@
 # macOS chat handoff
 
-Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the
+Updated 2026-10-16. Read [AGENTS.md](../../AGENTS.md), the
 [shared handoff](handoff.md), [status](status.md) and relevant parity rows first.
 
 ## Checked shared-core handoff
 
-Branch `master`, fork `orbeavers14/xiphos`. Work is handed off near the usage
-ceiling with no active shared edit claim. Owner authorization to continue/push
-remains; fetch before resuming. Preserve Windows inventory through `cf3b24c`,
-unrelated `.DS_Store`, GTK3, tests and licenses. Keep builds local.
+Branch `master`, fork `orbeavers14/xiphos`. Active shared claim: resolve typed
+book restore candidates through the SDK and queued owned results. Initial-window
+and tab/display restore remain distinct. Preserve Windows lane, `.DS_Store`, GTK3,
+tests and licenses. Keep all checks local; fetch before overlapping edits.
 
-Latest implementation `1a19c1d` imports raw saved book module/key/offset values
+Read-only profile `1a19c1d` imports raw saved book module/key/offset values
 through the existing bounded XML parser. Actual legacy getters, duplicates/nulls,
 Unicode, source ownership/bytes and parser guards are tested. It does not apply
 startup defaults, resolve numeric/path ambiguity or write profiles. Legacy numeric
 reading clamps to 4; path reads may leave an older saved offset. Those startup
 semantics need a separate typed resolution decision before native integration.
+
+Decoder `929c8d8` now owns candidate/default/prefix rules for the two explicit
+contexts, with bounded, overflow-safe numeric handling. The extracted actual
+legacy display function is compared headlessly. No SDK selection or UI publication
+occurs yet.
 
 Book sources/render/worker-C/paging/capability/notes/URI contracts are in
 [book workflows](book-tree-workflows.md), with implementations `6f61997`, `6b2399c`,
@@ -42,12 +47,10 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At `1a19c1d`: **89/89 Mac/core**, **73/73 portable Linux/core on this Mac**,
-profile **ASan/UBSan 3/3** (book/profile-reader/preview-profile). Prior URI
-`045f27e` passed books/common-parser ASan/UBSan 7/7 and C11. Note `9888bf0`
-passed recovery/book ASan/UBSan 8/8, C++11 and native-disabled helpers. SDKs are
-not fully instrumented; leaks are off. Current Fedora GTK/MSVC remains unvalidated.
-All checks stayed local; no hosted allowance or reset credit was used.
+At `929c8d8`: **90/90 Mac/core**, **74/74 portable Linux/core on this Mac**,
+new decoder **ASan/UBSan 1/1**. Prior profile `1a19c1d` passed 89/89, 73/73 and
+ASan/UBSan 3/3. SDKs are not fully instrumented; leaks are off. Current Fedora
+GTK/MSVC remains unvalidated. All checks stayed local.
 
 Environment: macOS 27.0.1 (26A434), ARM64; AppleClang 21.0.0; Swift 6.4 toolchain
 in Swift 6 language mode; SWORD 1.9.0.3916; GLib 2.86.5; configured libxml2 SDK.
@@ -62,8 +65,8 @@ cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -D
 cmake --build build/linux-models --parallel 2
 ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
 cmake -S platforms/linux -B build/linux-models-sanitized -C build/linux-model-sdk.cmake -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
-cmake --build build/linux-models-sanitized --target core_book_profile_test core_profile_reader_test core_preview_profile_test --parallel 2
-ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_(book_profile|profile_reader|preview_profile)$' --no-tests=error --output-on-failure
+cmake --build build/linux-models-sanitized --target core_book_selection_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_book_selection$' --no-tests=error --output-on-failure
 ```
 
 The ignored SDK seed is copied from this Mac's cache, not a portable file. The
@@ -88,10 +91,10 @@ No complete functional or visual parity is claimed.
 
 ## Next bounded work
 
-1. Next shared task (unclaimed): characterize safe typed saved-selection/startup
-   resolution against legacy numeric/path/default behavior. Then native book
-   controls can consume the existing queued core APIs. Do not auto-apply raw saved
-   values or invent a separate frontend navigation/persistence engine.
+1. Active shared task: SDK resolution/queued ownership of the typed restore
+   candidate. Preserve relative-path SDK normalization while rejecting missing
+   snaps before copying stale nodes. Do not add profile writes or implicit UI
+   publication. Saved-tab XML/visibility/fallback policy remain separate gates.
 2. Fedora: rebuild default-ON GTK; verify heading click/hover and source/body
    separation, linked chapters, numbering/spacing, profiles and real input.
 3. Windows: continue native compiler/dependency/core setup in its own lane.
