@@ -152,6 +152,12 @@ failure; isolated paging rerun passed 1/1 in 3.6 s. Sanitizers passed 3/3 on iso
 rerun after an initial fixture timeout; C11 passes. These are rerun results, not
 clean initial runs. Per-tab selection publication is next; no full parity accepted.
 
+Per-tab publication `0af4593` commits owned source state after successful target
+validation/rendering, keeping failed/absent restore and read-only calls neutral.
+Suites pass 92/92 Mac/core, 76/76 portable Linux/core on Mac and focused
+publication/restore/decoder ASan/UBSan 5/5; C11 passes. This later full run is clean.
+Explicit profile-file restore is next; native controls and full F10 remain pending.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three

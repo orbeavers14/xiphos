@@ -16,15 +16,15 @@ The [status ledger](status.md) is the detailed scope/evidence record; the
 about 8% (range 6–10%), with 0/38 feature groups fully accepted and 0/3 native
 release-ready applications. Do not turn passed build counts into parity scores.
 
-SDK restore `eb33f2a` resolves explicit candidate contexts through private query
-keys and queues optional owned trees through worker/C. Relative/root normalization
-is accepted only on successful SDK snaps; no selection/render/profile write occurs.
-Linux/core on Mac passed **75/75**. Mac full run passed **90/91** with one timing
-failure; isolated paging recheck passed **1/1** in 3.6 seconds. Sanitizers passed
-**3/3** on isolated rerun after an initial fixture timeout. C11 passes. Keep the
-initial timeout evidence; do not label the first run clean. The Mac now claims
-successful per-tab book selection publication. See [book workflows](book-tree-workflows.md).
-Current GTK runtime/MSVC/WinUI remain unvalidated; preserve the Windows lane.
+Per-tab book publication `0af4593` stages owned source state only after target
+validation and configured rendering succeed. Read-only calls and absent restore
+retain committed state; tab isolation and existing option precedence remain.
+Suites pass **92/92 Mac/core**, **76/76 portable Linux/core on Mac**, focused
+publication/restore/decoder **ASan/UBSan 5/5**, plus C11. Prior `eb33f2a` timeout
+and isolated-rerun evidence remains in status/history; this later full run is clean.
+The Mac now claims explicit queued profile-file restore into the same selection
+operation. See [book workflows](book-tree-workflows.md). Current GTK runtime/
+MSVC/WinUI remain unvalidated; preserve the Windows lane.
 
 | Implemented area | Checkpoints | Contract / limits |
 |---|---|---|
@@ -35,7 +35,7 @@ Current GTK runtime/MSVC/WinUI remain unvalidated; preserve the Windows lane.
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
 The owner renewed continued shared-core work until usage runs out. Active Mac
-ownership covers per-tab book selection publication after successful rendering. No reset
+ownership covers explicit queued profile-file book restore. No reset
 credit or hosted builds are authorized by this continuation. No whole parity or
 legacy-retirement gate is accepted by scoped checks.
 
@@ -43,7 +43,7 @@ legacy-retirement gate is accepted by scoped checks.
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Publish per-tab book selections only after successful validation/rendering | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Explicit profile-file restore through shared selection publication | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

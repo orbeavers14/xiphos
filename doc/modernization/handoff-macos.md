@@ -6,9 +6,15 @@ Updated 2026-10-16. Read [AGENTS.md](../../AGENTS.md), the
 ## Checked shared-core handoff
 
 Branch `master`, fork `orbeavers14/xiphos`. Active shared claim: resolve typed
-book selections per tab only after successful validation/rendering. Initial-window
+explicit profile-file book restore through shared selection publication. Initial-window
 and tab/display restore remain distinct. Preserve Windows lane, `.DS_Store`, GTK3,
 tests and licenses. Keep all checks local; fetch before overlapping edits.
+
+Latest `0af4593` publishes per-tab requested/resolved book sources only after
+validation/rendering and staging owned copies. Read-only requests and absent
+restore do not replace the previous selection. New C entry/optional restore/tree
+snapshot requests retain FIFO, option policy and ownership contracts. Native
+book controls and profile writes remain pending.
 
 Latest SDK resolution `eb33f2a` preserves successful relative/root normalization,
 rejects missing snaps before copying stale nodes and queues copied optional tree
@@ -52,13 +58,12 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At `eb33f2a`: **75/75 portable Linux/core on this Mac**; Mac full run **90/91**
-with one timeout despite success output. Isolated paging rerun passed **1/1** in
-3.6 s. Initial sanitizer tree fixture timed out despite success output; isolated
-selection/tree/restore rerun passed **3/3** in 1.6 s. No source change/timeout
-relaxation was used to obtain these reruns. Strict C11 passes. Do not report the
-initial runs as clean. SDKs are not fully instrumented; leaks are off. All checks
-are local; current Fedora GTK/MSVC remains unvalidated.
+At `0af4593`: **92/92 Mac/core**, **76/76 portable Linux/core on this Mac**,
+focused publication/restore/decoder **ASan/UBSan 5/5**, strict C11 passes. This full
+run is clean. Prior `eb33f2a` had a Mac paging timeout and sanitizer fixture timeout
+(despite success output); isolated reruns passed 1/1 and 3/3 without source or
+timeout changes. Preserve that evidence in status/history. SDKs are not fully
+instrumented; leaks are off. All checks are local; Fedora GTK/MSVC is unvalidated.
 
 Environment: macOS 27.0.1 (26A434), ARM64; AppleClang 21.0.0; Swift 6.4 toolchain
 in Swift 6 language mode; SWORD 1.9.0.3916; GLib 2.86.5; configured libxml2 SDK.
@@ -73,8 +78,8 @@ cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -D
 cmake --build build/linux-models --parallel 2
 ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
 cmake -S platforms/linux -B build/linux-models-sanitized -C build/linux-model-sdk.cmake -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
-cmake --build build/linux-models-sanitized --target core_book_selection_test core_book_tree_test core_book_restore_test --parallel 2
-ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_book_(restore|selection)$' --no-tests=error --output-on-failure
+cmake --build build/linux-models-sanitized --target core_book_selection_test core_book_tree_test core_book_restore_test core_book_entry_test core_book_session_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_book_(session|restore|selection)$' --no-tests=error --output-on-failure
 ```
 
 The ignored SDK seed is copied from this Mac's cache, not a portable file. The
@@ -99,10 +104,10 @@ No complete functional or visual parity is claimed.
 
 ## Next bounded work
 
-1. Active shared task: per-tab book selection publication after successful SDK
-   validation/rendering, retaining existing option precedence and one FIFO worker.
-   Keep existing read-only queries history/state neutral. Saved-tab XML, file
-   writes and native controls remain separate acceptance gates.
+1. Active shared task: explicit queued profile-file restore through existing
+   XML parsing and successful per-tab publication. Keep source files unchanged;
+   malformed/missing/unsupported imports must preserve committed state. Native
+   controls, full saved-tab XML, visibility and writes remain separate gates.
 2. Fedora: rebuild default-ON GTK; verify heading click/hover and source/body
    separation, linked chapters, numbering/spacing, profiles and real input.
 3. Windows: continue native compiler/dependency/core setup in its own lane.
