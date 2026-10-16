@@ -215,6 +215,15 @@ BookNote StudySession::book_note(const std::string &module, std::uint64_t offset
   return options ? reader_.book_note(module, offset, identifier, *options, render_body)
                  : reader_.book_note(module, offset, identifier, render_body);
 }
+BookNote StudySession::book_note_link_at(const std::string &module, std::uint64_t offset, const std::string &uri, bool render_body) {
+  const auto source = reader_.book_tree(module, offset);
+  const auto target = xiphos::core::book_note_link(uri, module, source.node.path);
+  auto result = book_note(module, offset, target.identifier, render_body);
+  if (result.tree.node.path != target.reference || result.note.module != target.module ||
+      ((target.type == "x") != (result.note.type == "crossReference")))
+    throw std::invalid_argument("Book-note command type/source does not match the entry");
+  return result;
+}
 ReferenceList StudySession::read_reference_list(const std::string &module, const std::string &expression,
                                               const std::string &context) {
   const auto options = module_engine_options(module);

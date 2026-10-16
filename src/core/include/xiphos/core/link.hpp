@@ -24,6 +24,9 @@ ContextualStudyCommandLink contextual_hover_link(const std::string &url, const s
 using StudyCommandLink = std::variant<PassageLink, StudyNoteLink>;
 StudyCommandLink study_link(const std::string &url, const std::string &current_module);
 StudyNoteLink study_note_link(const std::string &url, const std::string &current_module);
+// Exact source-bound book command. Context comes from an owned SDK tree node;
+// slash paths are never fed to the verse parser or short-passage fallback.
+StudyNoteLink book_note_link(const std::string &url, const std::string &module, const std::string &path);
 // Scoped single-reference subset of main/url.cc sword_uri + hex_decode.
 // Module abbreviations, ranges and fragments remain pending.
 PassageLink passage_link(const std::string &url, const std::string &current_module);

@@ -81,18 +81,23 @@ std::string parameter(const CommandParameters &parameters, const char *name) {
   const auto found = parameters.find(name);
   return found == parameters.end() ? std::string() : found->second;
 }
-StudyNoteLink note_target(const CommandParameters &parameters, const std::string &current_module,
-                          const std::string &current_reference = {}) {
+StudyNoteLink note_fields(const CommandParameters &parameters, const std::string &current_module) {
   const auto get = [&parameters](const char *name) {
     const auto found = parameters.find(name);
     return found == parameters.end() ? std::string() : found->second;
   };
   StudyNoteLink result{get("module"), get("passage"), get("value"), get("type")};
   if (result.module.empty()) result.module = current_module;
-  if (!current_reference.empty() && result.reference.size() < 5) result.reference = current_reference;
   if (get("action") != "showNote" || (result.type != "n" && result.type != "x") ||
-      result.module.empty() || result.reference.empty() || result.identifier.empty() ||
-      result.reference.find_first_of("#?!-;,/") != std::string::npos)
+      result.module.empty() || result.identifier.empty())
+    throw std::invalid_argument("Study-note link requires a single passage and identifier");
+  return result;
+}
+StudyNoteLink note_target(const CommandParameters &parameters, const std::string &current_module,
+                          const std::string &current_reference = {}) {
+  auto result = note_fields(parameters, current_module);
+  if (!current_reference.empty() && result.reference.size() < 5) result.reference = current_reference;
+  if (result.reference.empty() || result.reference.find_first_of("#?!-;,/") != std::string::npos)
     throw std::invalid_argument("Study-note link requires a single passage and identifier");
   return result;
 }
@@ -129,6 +134,18 @@ LexicalLink lexical_link(const std::string &url, const std::string &current_modu
 }
 StudyNoteLink study_note_link(const std::string &url, const std::string &current_module) {
   return note_target(command_parameters(url), current_module);
+}
+StudyNoteLink book_note_link(const std::string &url, const std::string &module, const std::string &path) {
+  if (module.empty() || module.find('\0') != std::string::npos || path.size() > 4096 ||
+      path.find('\0') != std::string::npos || (!path.empty() && path.front() != '/'))
+    throw std::invalid_argument("Invalid book-note source context");
+  const auto parameters = command_parameters(url);
+  const auto result = note_fields(parameters, module);
+  // Book titles can contain verse-parser delimiters. Compare the entire decoded
+  // SDK path instead of reinterpreting it as a verse or using short-text fallback.
+  if (!parameters.count("passage") || result.module != module || result.reference != path)
+    throw std::invalid_argument("Book-note command does not match the captured source");
+  return result;
 }
 StudyCommandLink study_link(const std::string &url, const std::string &current_module) {
   if (url.compare(0, 8, "sword://") == 0 || url.compare(0, 8, "bible://") == 0)

@@ -50,6 +50,7 @@ public:
   // book-specific presentation/history/persistence policy is introduced yet.
   BookEntry read_book(const std::string &module, std::uint64_t offset);
   BookNote book_note(const std::string &module, std::uint64_t offset, const std::string &identifier, bool render_body = true);
+  BookNote book_note_link_at(const std::string &module, std::uint64_t offset, const std::string &uri, bool render_body = true);
   ReferenceList read_reference_list(const std::string &module, const std::string &expression,
                                     const std::string &context);
   ParsedReferenceList reference_targets(const std::string &module, const std::string &expression,

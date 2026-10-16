@@ -125,6 +125,10 @@ void xc_book_children_release(xc_book_children *page);
  * Content/tree getters borrow from the owned book-note: do not release them. */
 xc_status xc_worker_book_note(xc_worker *worker, uint64_t tab, const char *module, uint64_t offset,
                               const char *identifier, int render_body, xc_request **out);
+/* Same result/ownership, requiring the command's decoded module/path/type to
+ * match the captured typed source. Does not relax existing verse URI parsing. */
+xc_status xc_worker_book_note_link_at(xc_worker *worker, uint64_t tab, const char *module, uint64_t offset,
+                                      const char *uri, int render_body, xc_request **out);
 xc_book_note *xc_request_take_book_note(xc_request *request);
 const xc_book_tree *xc_book_note_tree(const xc_book_note *note);
 const xc_note *xc_book_note_content(const xc_book_note *note);

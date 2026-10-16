@@ -169,9 +169,33 @@ metadata-only avoidance of a failing body, unexpected source mutation, state and
 owned/borrowed lifetime, module data bytes, queued errors and shutdown draining.
 Unconfigured SDK baseline is measured separately from explicit all-Off options.
 
-This is ordinary note-source transport. Automatic SDK book-note URI validation,
-native hover/click routing, cross-reference-list presentation, heading-note repair
-and book display cleanup remain separate gates; no full note UI parity is claimed.
+This is ordinary note-source transport. Native hover/click routing,
+cross-reference-list presentation, heading-note repair and book display cleanup
+remain separate gates; no full note UI parity is claimed.
+
+## Source-bound SDK book-note commands
+
+The shared command decoder now separates common note fields from the existing
+verse-reference guard. `book_note_link` requires the complete decoded command
+module/path to match its captured tree context. It retains the same local/fixed
+origin allowlist, percent/control/duplicate/unknown-parameter checks, action and
+note-type checks. Existing verse parsing and short-passage fallback stay separate
+and retain their prior rules. Book titles may contain Unicode, spaces, slashes,
+and encoded verse delimiters; short book paths never become current verses.
+Root requires an explicitly present empty passage parameter.
+
+StudySession/worker/C `book_note_link_at` use the captured module and typed offset,
+validate the command against an owned source tree, then reuse ordinary typed note
+lookup and effective engine options. The returned source and note type must still
+match. They do not retarget another module/node, execute external links, interpret
+heading IDs, visit history or implement cross-reference-list presentation. The
+result is the existing owned book-note kind, including metadata-only behavior.
+
+`core_book_note_link` exercises real OSIS/ThML SDK markers, linked aliases, later
+navigation, short/root/Unicode/reserved-character paths, strict unchanged verse
+parsing, malformed/duplicate/unknown/external commands, wrong module/path/type/ID,
+queued errors, copied strings, C take-once lifetime and shutdown draining. Native
+book windows and hover/click controls still need separate integration/acceptance.
 
 `core_book_tree` generates original-prose RawGenBook fixtures, including empty,
 structural-only and deep branches, numeric and Unicode titles. It compares all
@@ -181,7 +205,7 @@ lifetime, and byte-for-byte identity of every module data file and filename
 before/after successful and rejected queries. Manager-generated configuration
 caches are outside this module-data identity assertion.
 
-The next slices are source-bound SDK book-note URI validation and native tree/navigation controls,
+The next slices are saved book-selection characterization and native tree/navigation controls,
 then image/resource routing,
 links, history/persistent selection, additional book windows and editors. Preserve
 the GTK3 app and all its write paths. No F10 group, native GUI, corpus, platform or

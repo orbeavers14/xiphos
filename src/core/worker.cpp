@@ -118,6 +118,12 @@ std::future<BookNote> StudyWorker::book_note(StudyTab tab, std::string module, s
     return s.tab(tab).book_note(module, offset, identifier, render_body);
   });
 }
+std::future<BookNote> StudyWorker::book_note_link_at(StudyTab tab, std::string module, std::uint64_t offset,
+                                                  std::string uri, bool render_body) {
+  return impl_->submit([tab, module = std::move(module), offset, uri = std::move(uri), render_body](Impl::State &s) {
+    return s.tab(tab).book_note_link_at(module, offset, uri, render_body);
+  });
+}
 std::future<BookChildren> StudyWorker::book_children(std::string module, std::uint64_t parent,
                                                     std::optional<std::uint64_t> after, std::uint32_t limit) {
   return impl_->submit([module = std::move(module), parent, after, limit](Impl::State &s) {

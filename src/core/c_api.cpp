@@ -197,6 +197,13 @@ const xiphos::core::Module *module_at(const xc_reader *r, size_t i) {
 }
 }
 extern "C" {
+xc_status xc_worker_book_note_link_at(xc_worker *w, uint64_t tab, const char *id, uint64_t offset,
+                                      const char *uri, int render_body, xc_request **out) {
+  if (!id || !*id || !uri || !*uri || (render_body != 0 && render_body != 1)) {
+    if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w, out, [=](auto &worker) { return worker.book_note_link_at(tab, id, offset, uri, render_body != 0); });
+}
 xc_status xc_worker_book_note(xc_worker *w, uint64_t tab, const char *id, uint64_t offset,
                               const char *identifier, int render_body, xc_request **out) {
   if (!id || !*id || !identifier || !*identifier || (render_body != 0 && render_body != 1)) {
