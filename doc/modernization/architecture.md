@@ -320,7 +320,10 @@ Legacy unscoped setters remain a separate retained-adapter path.
 
 Configured opt-in C++ Reader calls copy raw body/SDK-heading cleanup-point metadata
 into `Entry.note_source` before later renders replace attributes. Captured empty
-values differ from unavailable metadata. Existing session/C/native consumers keep
-their current rendering path. Automatic shared numbering and its native commands
-remain future work; the current Reader flag controls SDK supplied labels only.
+values differ from unavailable metadata. The Reader flag controls SDK supplied
+labels; opt-in StudySession presentation adds owned document counters after
+per-fragment cleanup. Queued worker/C capability/settings and typed copied state
+serve both native preview adapters. Existing other consumers remain default-off;
+raw source metadata remains internal C++ input. Top-level SDK paragraph/heading
+wrappers stay outside inline word spans, with one pane-wide fallback decision.
 See [the note-numbering seam](note-numbering-workflows.md) for evidence and limits.

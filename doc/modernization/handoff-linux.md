@@ -5,7 +5,16 @@ Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the [shared handoff](hand
 
 ## Current incoming changes — native Fedora rerun required
 
-Fetch current master. Latest implementation `1d3612f` adds separate Bible/
+Fetch current master. Latest shared layout `1f899ca` keeps top-level SDK p/h1–h6
+wrappers outside word spans, including multiple headings in one SDK fragment.
+Normal suites remain 75/75 Mac and 59/59 portable Linux/core on Mac; focused
+layout/session ASan/UBSan 4/4, strict C++11 and native-disabled helper checks pass.
+A disposable Mac window checked combined headings/labels with lexical layout on.
+Rebuild this on Fedora; no current GTK runtime claim is made. The Mac chat now
+claims a bounded shared investigation of empty SDK heading-note IDs. Coordinate
+before overlapping rendering/lookup edits. No hosted builds are authorized.
+
+Native control implementation `1d3612f` adds separate Bible/
 commentary note-number controls and copied state to the GTK preview/model; queued
 worker/C API is `aff5f59`, session policy `1bd924c`. Both preview models opt in;
 numbering, cleanup, fragment order and persistence stay in the shared core.
@@ -26,8 +35,8 @@ numbering controls and lexical/spacing refresh, entry/chapter selection, profile
 round trips, note clicks and unchanged history using keyboard/pointer. Retain
 picker, accessibility, RTL/font/corpus and accelerated-rendering gates. Unsupported
 WORD lexical note markup and SDK heading/TEI note IDs remain shared follow-ups.
-No hosted checks were used. The native-controls task is complete; shared ownership
-is released. Announce the next bounded task before overlapping shared APIs.
+No hosted checks were used. The native-controls task is complete; current shared
+heading-note investigation ownership is recorded above.
 
 ## Recorded native Fedora checkpoint and authority
 

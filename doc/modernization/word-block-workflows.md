@@ -238,3 +238,36 @@ plus 4 focused ASan/UBSan checks with fixture prerequisites. Its GTK source stil
 requires Fedora compilation and desktop acceptance. Both document hosts retain
 resource restrictions. Note/reference/dictionary preview snapshots retain their
 previous presentation path; those families need their own scoped adoption.
+
+## Segmented paragraph and heading layout
+
+`1f899ca` keeps top-level lowercase SDK `p` and `h1`–`h6` wrappers outside the
+inherited inline word scanner. Multiple headings in one SDK fragment, adjacent
+paragraphs, wrapper attributes and surrounding inline content can now carry
+matching lexical HTML/CSS. Each inline segment agrees with the complete frozen
+renderer; whitespace between blocks is copied without extra word spans. Low-level
+`render_word_blocks` remains unchanged. The whole-document session decision still
+rolls back all fragments if a neighbor is unsupported.
+
+Nested supported blocks, blocks inside inline styles, self-closing paragraph/
+heading forms, malformed markup and crossed inline/word boundaries retain raw
+HTML and optional spacing-only CSS. This is a bounded grammar extension, not a
+general HTML content-model validator or sanitizer. Broader block structures and
+representative WORD/RTL/font/corpus acceptance remain open.
+
+New session checks use original-prose OSIS multiple headings in one SDK fragment
+and ThML distinct fragments with supplied/automatic note labels. Ordinary SDK
+small/sup note markers already pass both low-level and complete layout; the old
+generic footnote limitation must not be read as rejection of every SWORD note.
+URLs and raw metadata are unchanged. Empty SDK heading-note identifiers remain
+unresolved and are not repaired by formatting.
+
+At this implementation: 75/75 Mac/core tests, 59/59 portable Linux/core tests on
+Mac, ASan/UBSan 4/4 (word layout/session plus fixture prerequisites), strict C++11
+and native-disabled legacy helper build pass. External SDKs are not fully
+instrumented; leak checks are off. Structured mutation tests now exercise complete
+segmented layout as well as the lower-level scanner. A disposable native window
+loaded a generated profile and visibly retained both OSIS headings, body and note
+labels with lexical layout active. The app was quit and its temporary copy removed.
+No current Fedora GTK/MSVC or complete parity acceptance is claimed. No hosted
+builds were used.

@@ -16,13 +16,13 @@ The [status ledger](status.md) is the detailed scope/evidence record; the
 about 8% (range 6–10%), with 0/38 feature groups fully accepted and 0/3 native
 release-ready applications. Do not turn passed build counts into parity scores.
 
-Latest implementation: `1d3612f`, separate native Bible/commentary numbering
-controls and copied adapter state, following queued worker/C API `aff5f59` and
-session numbering `1bd924c`. Local suites pass **75/75 Mac/core** and **59/59
-portable Linux/core on Mac**; focused ASan/UBSan 5/5 passes. Mac window controls
-were checked; current GTK controls await Fedora runtime validation. MSVC/WinUI
-remain unvalidated. The earlier native Fedora checkpoint passed 51 tests and six
-desktop smokes on its recorded revision.
+Latest implementation `1f899ca` retains SDK paragraph/heading wrappers outside
+lexical word spans, including multiple headings per fragment. Native numbering
+controls remain `1d3612f` / `aff5f59`. Local suites pass **75/75 Mac/core** and
+**59/59 portable Linux/core on Mac**; focused layout/session ASan/UBSan passes 4/4.
+A disposable Mac window checked combined headings and note labels with layout on.
+Current GTK runtime and MSVC/WinUI remain unvalidated. Windows tooling inventory
+through `cf3b24c` was fetched and retained; read that platform's current handoff.
 
 | Implemented area | Checkpoints | Contract / limits |
 |---|---|---|
@@ -32,16 +32,17 @@ desktop smokes on its recorded revision.
 | Earlier Fedora preview scope catch-up | PRs #82–89, `a80409b` | [Native Fedora evidence](handoff-linux.md); retain manual/corpus/renderer gates |
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
-The owner resumed after the previous stop and requested native controls. That
-bounded task is now complete and handed off; no shared-edit claim remains active.
-Fetch/read the current handoff before the next shared task. These results do not
-accept complete functional/design parity or permit reference-app retirement.
+The owner requested continued shared-core work until usage runs out. The Mac
+chat completed the block-layout slice and is investigating empty SDK heading-note
+IDs; that bounded shared rendering/lookup task is claimed. Fetch/read the current
+handoff before overlapping shared edits. No whole parity or retirement gate is
+accepted by these scoped checks.
 
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Characterize remaining WORD lexical note markup and heading-note IDs; preserve checked native controls | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Characterize empty SDK heading-note IDs; preserve checked paragraph/heading layout and native controls | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

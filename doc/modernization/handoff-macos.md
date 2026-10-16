@@ -3,30 +3,28 @@
 Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the
 [shared handoff](handoff.md), [status](status.md) and relevant parity rows first.
 
-## Handed-off native controls checkpoint
+## Active shared heading-note investigation
 
-Branch `master`, fork `orbeavers14/xiphos`. Latest implementation `1d3612f`
-(native adapters/controls), following `aff5f59` (queued worker/C API) and `1bd924c`
-(shared session numbering). The owner resumed after the prior stop and explicitly
-requested native controls. That bounded task is complete; shared ownership is
-released. Preserve unrelated `.DS_Store`, fetch before future shared edits, and
-never force-push.
+Branch `master`, fork `orbeavers14/xiphos`. The owner requested continued shared
+core work until the available usage limit. The Mac chat finished lexical block
+segmentation (`1f899ca`) and now claims a bounded investigation of empty SDK
+heading-note identifiers and shared rendering/lookup seams. No hosted builds.
+Windows inventory changes through `cf3b24c` were fetched and retained; do not
+modify that chat's platform lane or unrelated `.DS_Store`.
 
 ## Latest checked behavior
 
-Mac Reading options and Commentary options now expose separate “Footnote and
-cross-reference numbers” toggles. The Mac and Linux models opt into the checked
-core policy, copy availability/value and refresh committed entry/chapter context
-without adding history or losing input drafts. Profiles save/restore per-module
-settings. The GTK options panel has the matching two controls; its portable model
-passes on this Mac, but the current GTK executable still needs native Fedora
-validation. No Windows UI exists yet. One shared core owns formatting/counters;
-no platform-specific numbering implementation was introduced.
+`1f899ca` retains top-level p/h1–h6 wrappers outside inline word spans. Multiple
+headings in one SDK fragment and adjacent paragraphs now keep lexical HTML/CSS
+without forcing pane fallback. Each inline segment agrees with the frozen legacy
+renderer; inter-block whitespace, raw note metadata, labels and URLs are retained.
+Malformed/nested supported blocks or crossed inline spans still fall back with
+spacing-only CSS. The low-level legacy-compatible renderer remains unchanged.
+This is not a general HTML validator or proof of an arbitrary module corpus.
 
-Worker/C requests preserve FIFO ordering, strict booleans, typed ready/unavailable
-state, closed/unknown-tab errors and copied result lifetime. Tests cover adapter
-copies, settings/reads interleaved in submission order, paired panes, chapter
-counters/anchors, profiles, failure retention, busy/closed models and shutdown.
+Earlier `aff5f59` / `1d3612f` queued settings and native Bible/commentary controls
+remain checked. Core formatting/counters stay shared. Current GTK runtime and
+native MSVC/WinUI validation remain pending.
 
 Earlier current-run milestones:
 
@@ -43,11 +41,12 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At `1d3612f`: **75/75 Mac/core CTests**, **59/59 portable Linux/core CTests on
-this Mac**, focused **ASan/UBSan 5/5** (worker/C and Linux note models plus three
-fixture prerequisites), and strict C11 header syntax pass. External SDKs are not
-fully instrumented; sanitizer leak detection is off. No full GTK3 runtime, current
-Fedora GTK or MSVC/WinUI acceptance is claimed. No hosted build credits were used.
+At `1f899ca`: **75/75 Mac/core**, **59/59 portable Linux/core on this Mac**,
+focused **ASan/UBSan 4/4** (word layout/session and fixture prerequisites), strict
+C++11 word-layout syntax and native-disabled legacy helper build pass. Previous
+native control tests also passed ASan/UBSan 5/5 at `1d3612f`. External SDKs are not
+fully instrumented; leak checks are off. No full GTK3 runtime, current Fedora GTK
+or MSVC/WinUI test is claimed. No hosted build credits were used.
 
 Environment: macOS 27.0.1 (26A434), ARM64; AppleClang 21.0.0; Swift 6.4 toolchain
 in Swift 6 language mode; SWORD 1.9.0.3916; GLib 2.86.5; configured libxml2 SDK.
@@ -62,9 +61,10 @@ cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -D
 cmake --build build/linux-models --parallel 2
 ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
 cmake -S platforms/linux -B build/linux-models-sanitized -C build/linux-model-sdk.cmake -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
-cmake --build build/linux-models-sanitized --target core_note_controls_test core_note_snapshots_test core_heading_note_metadata_test core_heading_collection_test linux_note_model_test --parallel 2
-ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^(core_note_controls|linux_note_model)$' --no-tests=error --output-on-failure
-clang -std=c11 -fsyntax-only -Isrc/core/include src/core/tests/c_header_test.c
+cmake --build build/linux-models-sanitized --target core_word_blocks_test core_note_snapshots_test core_heading_note_metadata_test core_heading_collection_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^(core_word_blocks|core_note_snapshots)$' --no-tests=error --output-on-failure
+clang++ -std=c++11 -fsyntax-only -Isrc/core/include -I/usr/local/include/sword src/core/word_blocks.cpp
+cmake --build build/legacy-seam-build --parallel 2
 ```
 
 The ignored SDK seed is copied from this Mac's cache, not a portable file. The
@@ -77,25 +77,24 @@ failure or unresolved concern. Prior detailed checkpoints remain in the
 
 ## GUI evidence and limits
 
-At `1d3612f`, a disposable generated-fixture Mac window checked entry numbering
-On/Off/On, chapter continuation/selection, opening a Study note pane from its
-numbered marker, and independently disabling commentary labels while the Bible
-remained numbered. The temporary app was quit and removed. The new `notes` fixture
-kind in `launch-fixture.sh` reproduces this outside Documents; do not weaken macOS
-privacy. Prior lexical/spacing GUI evidence remains in the linked workflow docs.
+At `1f899ca`, a disposable original-prose window imported a generated profile
+with lexical layout enabled and showed both OSIS headings, supplied note labels
+and body in commentary entry view. The temporary copy was quit and removed.
+Prior controls On/Off/On, chapter continuation, note-pane open and independent
+commentary settings were checked at `1d3612f`; see the workflow contracts.
 
-Unsupported WORD lexical footnote markup still falls back. The SDK's generated
-ThML heading links have empty note IDs; heading-click/corpus acceptance remains
-open alongside the recorded direct-filter TEI issue. No full note parity is claimed.
+Ordinary SDK note markers are supported by the checked complete layout path.
+Arbitrary WORD/RTL/font/corpus acceptance remains open. SDK heading-note links
+still have empty IDs; formatting does not fix routing or accept heading clicks.
+The TEI direct-filter limitation remains separately recorded.
 
 ## Next bounded work
 
-1. Fedora: rebuild current default-ON GTK and verify numbering controls, lexical/
-   spacing behavior, profiles and note clicks with physical keyboard/pointer.
-2. Shared core: characterize unsupported WORD lexical note markup and heading-note
-   identifiers against retained behavior before expanding supported grammar.
-3. Windows: validate dependencies/core with native MSVC before WinUI bring-up.
-   Broader RTL/font/corpus/accessibility and retirement gates remain open.
+1. Current Mac shared task: characterize empty heading-note IDs against SDK source
+   attributes and retained collection; keep any repair in the shared core.
+2. Fedora: rebuild current default-ON GTK and verify numbering, paragraph/heading
+   layout, lexical/spacing refresh, profiles and note clicks with real input.
+3. Windows: continue native compiler/dependency/core setup in its own handoff lane.
 
-The requested controls and checks are complete and pushed; no follow-on task or
-hosted build is scheduled. 0/38 parity groups and 0/3 releases are fully accepted.
+0/38 whole parity groups and 0/3 releases remain accepted. Continue within the
+owner's latest instruction; the earlier requested stop was superseded.

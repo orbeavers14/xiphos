@@ -77,6 +77,16 @@ WORD lexical markup and SDK heading/TEI note identifiers retain their stated
 limits. No whole parity group or completion estimate is changed. Shared ownership
 is released; the requested control checkpoint is complete.
 
+Latest shared layout `1f899ca` keeps top-level SDK paragraph/heading wrappers
+outside inline word spans, including multiple headings per fragment, with frozen
+inline comparisons and raw fallback for malformed/nested supported blocks. Local
+suites remain 75/75 Mac and 59/59 portable Linux/core on Mac; ASan/UBSan 4/4,
+strict C++11 and native-disabled helper checks pass. A disposable Mac window
+checked combined headings and note labels with lexical layout enabled. Ordinary
+SDK note markers already work in the checked grammar; arbitrary WORD/corpus and
+empty heading-note identifiers remain separate follow-ups. No full parity score
+changes. The Mac chat continues the bounded heading-note investigation.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three
