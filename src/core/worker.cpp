@@ -119,6 +119,21 @@ std::future<std::optional<BookTree>> StudyWorker::resolve_saved_book_selection(S
 std::future<BookEntry> StudyWorker::read_book(StudyTab tab, std::string module, std::uint64_t offset) {
   return impl_->submit([tab, module = std::move(module), offset](Impl::State &s) { return s.tab(tab).read_book(module, offset); });
 }
+std::future<BookEntry> StudyWorker::select_book(StudyTab tab, BookSelectionTarget target) {
+  return impl_->submit([tab, target = std::move(target)](Impl::State &s) { return s.tab(tab).select_book(target); });
+}
+std::future<std::optional<BookEntry>> StudyWorker::restore_book_selection(StudyTab tab, SavedBookSelection saved, BookRestoreMode mode) {
+  return impl_->submit([tab, saved = std::move(saved), mode](Impl::State &s) {
+    return s.tab(tab).restore_book_selection(saved, mode);
+  });
+}
+std::future<std::optional<BookTree>> StudyWorker::book_selection(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s) -> std::optional<BookTree> {
+    const auto &selected = s.tab(tab).book_selection();
+    if (!selected) return std::nullopt;
+    return selected->tree;
+  });
+}
 std::future<BookNote> StudyWorker::book_note(StudyTab tab, std::string module, std::uint64_t offset,
                                           std::string identifier, bool render_body) {
   return impl_->submit([tab, module = std::move(module), offset, identifier = std::move(identifier), render_body](Impl::State &s) {

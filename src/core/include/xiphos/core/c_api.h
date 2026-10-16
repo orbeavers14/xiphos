@@ -85,9 +85,20 @@ void xc_worker_close(xc_worker *worker);
  * no saved module and 1 for a take-once xc_book_tree. Copies outlive worker close. */
 xc_status xc_worker_resolve_saved_book_selection(xc_worker *worker, const xc_saved_book_selection *saved,
                                                 int mode, xc_request **out);
-/* -1 unless this is a successful selection-resolution result; otherwise 0/1.
+/* -1 unless this is a successful selection resolution/restore/snapshot result;
+ * otherwise 0/1. The called operation determines tree versus entry payload.
  * Presence remains stable after taking the tree; take itself is still once. */
 int xc_request_book_selection_present(const xc_request *request);
+/* Explicit per-tab publication after validation/render success; owned entry
+ * result, no Bible/dictionary history visit or preference writes. */
+xc_status xc_worker_select_book(xc_worker *worker, uint64_t tab, const char *module, uint64_t offset, xc_request **out);
+/* Same explicit context rules as read-only resolution, but successful rendering
+ * publishes the tab selection. Presence 1 -> take_book_entry, 0 -> no saved book
+ * and no state change. Failure retains the previous committed tab selection. */
+xc_status xc_worker_restore_book_selection(xc_worker *worker, uint64_t tab, const xc_saved_book_selection *saved,
+                                          int mode, xc_request **out);
+/* Copied optional committed source: presence 1 -> take_book_tree, 0 -> none. */
+xc_status xc_worker_book_selection(xc_worker *worker, uint64_t tab, xc_request **out);
 /* Owned tree discovery, no tab or live selection mutation. Empty canonical path
  * selects root; numeric titles require their slash path. Read uses the existing
  * tab/module engine policy and selects the exact offset, without a history visit.

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/session.hpp"
 #include <stdexcept>
+#include <type_traits>
 #include <functional>
 #include "xiphos/core/heading_note_presentation.hpp"
 #include "xiphos/core/note_markers.hpp"
@@ -209,6 +210,25 @@ DictionaryEntry StudySession::read_dictionary(const std::string &module, const s
 BookEntry StudySession::read_book(const std::string &module, std::uint64_t offset) {
   const auto options = module_engine_options(module);
   return options ? reader_.read_book(module, offset, *options) : reader_.read_book(module, offset);
+}
+BookEntry StudySession::select_book(const BookSelectionTarget &target) {
+  const auto resolved = reader_.resolve_book_target(target);
+  auto result = read_book(resolved.module, resolved.node.offset);
+  if (result.tree.module != resolved.module || result.tree.node.offset != resolved.node.offset ||
+      result.tree.node.path != resolved.node.path)
+    throw std::runtime_error("Book source changed before selection could be published");
+  // Prepare every owned copy first. Failure to resolve/render/copy leaves the
+  // previously published tab selection intact; SDK cursor position is ephemeral.
+  std::optional<BookSelectionState> next{BookSelectionState{target, result.tree}};
+  static_assert(std::is_nothrow_move_assignable_v<decltype(book_selection_)>,
+                "Book selection publication must not throw after staging owned copies");
+  book_selection_ = std::move(next);
+  return result;
+}
+std::optional<BookEntry> StudySession::restore_book_selection(const SavedBookSelection &saved, BookRestoreMode mode) {
+  const auto target = saved_book_target(saved, mode);
+  if (!target) return std::nullopt;
+  return select_book(*target);
 }
 BookNote StudySession::book_note(const std::string &module, std::uint64_t offset, const std::string &identifier, bool render_body) {
   const auto options = module_engine_options(module);

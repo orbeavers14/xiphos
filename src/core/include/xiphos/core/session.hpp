@@ -7,6 +7,10 @@
 #include <optional>
 #include <map>
 namespace xiphos::core {
+struct BookSelectionState {
+  BookSelectionTarget requested;
+  BookTree tree;
+};
 // One instance per study tab/window. Calls and lifetime must be serialized.
 // The reader must outlive this C++ session; C ABI sessions retain their reader.
 // Owned synchronized pane snapshot. Commentary uses the normalized Bible
@@ -49,6 +53,12 @@ public:
   // Raw book source/HTML with existing effective engine options. No visit or
   // book-specific presentation/history/persistence policy is introduced yet.
   BookEntry read_book(const std::string &module, std::uint64_t offset);
+  // Publish only after target validation and configured entry rendering succeed.
+  // Read-only book/notes/restore-resolution calls do not update this state.
+  BookEntry select_book(const BookSelectionTarget &target);
+  // No saved module is a successful no-op, retaining any existing selection.
+  std::optional<BookEntry> restore_book_selection(const SavedBookSelection &saved, BookRestoreMode mode);
+  const std::optional<BookSelectionState> &book_selection() const { return book_selection_; }
   BookNote book_note(const std::string &module, std::uint64_t offset, const std::string &identifier, bool render_body = true);
   BookNote book_note_link_at(const std::string &module, std::uint64_t offset, const std::string &uri, bool render_body = true);
   ReferenceList read_reference_list(const std::string &module, const std::string &expression,
@@ -107,6 +117,7 @@ public:
   const History &history() const { return history_; }
   void clear_history() { history_.clear(); }
 private:
+  std::optional<BookSelectionState> book_selection_;
   Reader &reader_;
   std::optional<LexiconPreferences> lexicons_;
   std::optional<EngineOptions> options_;

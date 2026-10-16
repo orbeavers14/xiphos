@@ -91,6 +91,11 @@ struct xc_request {
     book_selection_present = v.has_value();
     if (v) store(std::move(*v));
   }
+  void store(std::optional<xiphos::core::BookEntry> v) {
+    book_selection_result = true;
+    book_selection_present = v.has_value();
+    if (v) store(std::move(*v));
+  }
   void store(xiphos::core::BookEntry v) { book_entry = std::make_unique<xc_book_entry>(std::move(v)); }
   void store(xiphos::core::BookChildren v) { book_children = std::make_unique<xc_book_children>(xc_book_children{std::move(v)}); }
   void store(xiphos::core::BookNote v) { book_note = std::make_unique<xc_book_note>(std::move(v)); }
@@ -103,6 +108,12 @@ struct xc_request {
   void store(xiphos::core::HistorySnapshot v) { history = std::make_unique<xc_history>(xc_history{std::move(v)}); }
 };
 namespace {
+xiphos::core::SavedBookSelection copy_book_selection(const xc_saved_book_selection &saved) {
+  const auto copy = [](const char *text) -> std::optional<std::string> {
+    return text ? std::optional<std::string>(text) : std::nullopt;
+  };
+  return {copy(saved.module), copy(saved.key), copy(saved.offset_text)};
+}
 xc_status borrow_lexical_presentation(const xiphos::core::LexicalPresentation *value,
                                       xc_lexical_presentation *out) {
   if (!out) return XC_INVALID_ARGUMENT;
@@ -203,16 +214,30 @@ const xiphos::core::Module *module_at(const xc_reader *r, size_t i) {
 }
 }
 extern "C" {
+xc_status xc_worker_select_book(xc_worker *w, uint64_t tab, const char *id, uint64_t offset, xc_request **out) {
+  if (!id || !*id) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.select_book(tab, {id, offset}); });
+}
+xc_status xc_worker_restore_book_selection(xc_worker *w, uint64_t tab, const xc_saved_book_selection *saved,
+                                          int mode, xc_request **out) {
+  if (!saved || (mode != XC_BOOK_RESTORE_DISPLAY_KEY && mode != XC_BOOK_RESTORE_INITIAL_WINDOW)) {
+    if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w, out, [=](auto &worker) {
+    return worker.restore_book_selection(tab, copy_book_selection(*saved),
+      mode == XC_BOOK_RESTORE_DISPLAY_KEY ? xiphos::core::BookRestoreMode::display_key : xiphos::core::BookRestoreMode::initial_window);
+  });
+}
+xc_status xc_worker_book_selection(xc_worker *w, uint64_t tab, xc_request **out) {
+  return queue_request(w, out, [=](auto &worker) { return worker.book_selection(tab); });
+}
 xc_status xc_worker_resolve_saved_book_selection(xc_worker *w, const xc_saved_book_selection *saved,
                                                 int mode, xc_request **out) {
   if (!saved || (mode != XC_BOOK_RESTORE_DISPLAY_KEY && mode != XC_BOOK_RESTORE_INITIAL_WINDOW)) {
     if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
   }
   return queue_request(w, out, [=](auto &worker) {
-    const auto copy = [](const char *text) -> std::optional<std::string> {
-      return text ? std::optional<std::string>(text) : std::nullopt;
-    };
-    return worker.resolve_saved_book_selection({copy(saved->module), copy(saved->key), copy(saved->offset_text)},
+    return worker.resolve_saved_book_selection(copy_book_selection(*saved),
       mode == XC_BOOK_RESTORE_DISPLAY_KEY ? xiphos::core::BookRestoreMode::display_key : xiphos::core::BookRestoreMode::initial_window);
   });
 }

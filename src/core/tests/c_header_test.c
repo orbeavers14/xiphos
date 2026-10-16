@@ -9,7 +9,10 @@ int c_header_test(void) {
   uint64_t book_cursor = 123;
   xc_book_node book_node = {4, "stale", "stale", 1, 1};
   xc_saved_book_selection saved_book = {NULL, NULL, NULL};
-  return xc_request_book_selection_present(NULL) == -1 &&
+  return xc_worker_select_book(NULL, 0, "Book", 4, &request) == XC_INVALID_ARGUMENT && request == NULL &&
+         xc_worker_restore_book_selection(NULL, 0, &saved_book, XC_BOOK_RESTORE_DISPLAY_KEY, &request) == XC_INVALID_ARGUMENT && request == NULL &&
+         xc_worker_book_selection(NULL, 0, &request) == XC_INVALID_ARGUMENT && request == NULL &&
+         xc_request_book_selection_present(NULL) == -1 &&
          xc_worker_resolve_saved_book_selection(NULL, &saved_book, XC_BOOK_RESTORE_DISPLAY_KEY, &request) == XC_INVALID_ARGUMENT && request == NULL &&
          xc_worker_book_note_link_at(NULL, 0, "Book", 4, "passagestudy.jsp?action=showNote", 1, &request) == XC_INVALID_ARGUMENT && request == NULL &&
          xc_book_note_tree(NULL) == NULL && xc_book_note_content(NULL) == NULL && xc_request_take_book_note(NULL) == NULL &&

@@ -288,7 +288,39 @@ saved fields, strict-API compatibility, missing/error rejection, live key and
 attribute preservation, complete module-data byte identity, worker/C argument
 copies, successful absence, result ownership and shutdown draining.
 
-The next slices are successful per-tab book selection publication and native tree/navigation controls,
+## Explicit per-tab publication
+
+StudySession `select_book` validates the requested target, renders with existing
+module/tab/default/unconfigured engine precedence, and verifies the resulting
+source still matches. It stages owned request/source copies before publishing
+the tab's committed book selection. A compile-time no-throw move requirement
+protects that final publication step. Failed target/render/copy operations cannot
+replace the prior committed source. The SDK cursor remains ephemeral; this is
+application-state atomicity, not an SDK/file transaction.
+
+`restore_book_selection` uses the same explicit restore contexts. No saved module
+is a successful no-op and does not clear an existing selection, matching the
+legacy null-module early return. Read-only book/notes/source queries do not
+publish state. Book selections are independent per tab and do not add Bible or
+dictionary history. The stored request is typed intent, not a guarantee of exact
+original numeric-token round-trip. Profile writes and complete saved-tab restore
+remain separate work.
+
+Worker/C calls expose selection, restore and copied committed-source snapshots
+through the existing FIFO owner. Explicit selection returns the owned book-entry
+kind. Optional restore uses presence 0/1 and the entry kind; committed snapshots
+use presence 0/1 and the tree kind. Presence stays stable after transfer. Dropping
+observation does not cancel an accepted publication; close drains accepted work.
+No existing C layouts or platform frontend behavior change.
+
+`core_book_session` verifies actual configured HTML, option precedence, separate
+tabs, state-neutral reads/notes, failed/absent restore retention, both restore
+contexts, copied request/source lifetime, FIFO and closed-tab behavior, C payload
+kinds/presence/take-once ownership and observer-drop/shutdown behavior. Existing
+lower-level entry tests cover injected SDK render failures; this session test
+directly exercises target/restore failures and successful publication.
+
+The next slices are explicit queued profile-file restore and native tree/navigation controls,
 then image/resource routing,
 links, history/persistent selection, additional book windows and editors. Preserve
 the GTK3 app and all its write paths. No F10 group, native GUI, corpus, platform or
