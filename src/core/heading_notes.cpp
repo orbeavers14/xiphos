@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+#include "sdk_render.hpp"
 #include "xiphos/core/heading_notes.hpp"
 #include "xiphos/core/entry_attribute.hpp"
 #include <swmodule.h>
@@ -82,7 +83,7 @@ static HeadingNoteSource capture_notes(sword::SWModule &module,
                                       std::size_t fragment, bool render_bodies, bool scoped) {
   if (!module.isProcessEntryAttributes()) throw std::invalid_argument("Heading-note capture requires entry attribute processing");
   ScopedEntryAttributes scope(module);
-  module.renderText(); scope.refreshed();
+  detail::render_sdk_entry(module); scope.refreshed();
   if (module.getKey()->getError()) throw std::invalid_argument("SWORD could not resolve the heading-note passage");
   auto &attributes = module.getEntryAttributes();
   const auto heading = attributes.find("Heading");
@@ -137,10 +138,10 @@ static HeadingNoteSource capture_notes(sword::SWModule &module,
     for (auto &body : bodies) body.first = heading_note_identifier(fragment, body.first);
   }
   sword::SWBuf encoded(filtered_text.c_str()); sword::UTF8HTML conversion; conversion.processText(encoded);
-  result.html = checked(module.renderText(encoded.c_str()));
+  result.html = checked(detail::render_sdk_buffer(module, encoded.c_str()));
   if (render_bodies) for (const auto &body : bodies) {
     sword::SWBuf text(body.second.c_str()); conversion.processText(text);
-    result.notes.at(body.first).html = checked(module.renderText(text.c_str()));
+    result.notes.at(body.first).html = checked(detail::render_sdk_buffer(module, text.c_str()));
   }
   return result;
 }

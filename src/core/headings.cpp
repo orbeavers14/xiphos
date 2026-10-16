@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+#include "sdk_render.hpp"
 #include "xiphos/core/headings.hpp"
 #include "xiphos/core/entry_attribute.hpp"
 #include <swmodule.h>
@@ -12,7 +13,7 @@ template<class Append> void collect_preverse(sword::SWModule &module, Append app
     const auto position = std::to_string(index);
     const auto heading = entry_attribute(module, "Heading", "Preverse", position, true);
     if (heading.empty()) break;
-    append(std::string(module.renderText(heading.c_str()).c_str()));
+    append(std::string(detail::render_sdk_buffer(module, heading.c_str()).c_str()));
   }
 }
 }

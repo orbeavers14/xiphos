@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+#include "sdk_render.hpp"
 #include "xiphos/core/study_note.hpp"
 #include <swmodule.h>
 #include <utf8html.h>
@@ -10,7 +11,7 @@ StudyNote read_note(sword::SWModule &module, const std::string &reference,
   if (reference.empty() || identifier.empty() || reference.find('\0') != std::string::npos || identifier.find('\0') != std::string::npos)
     throw std::invalid_argument("Note requires a valid passage and identifier");
   module.setKey(reference.c_str());
-  module.renderText(); // Entry attributes belong to this exact verse, not the last rendered chapter verse.
+  detail::render_sdk_entry(module); // Entry attributes belong to this exact verse, not the last rendered chapter verse.
   if (module.getKey()->getError()) throw std::invalid_argument("SWORD could not resolve the note passage");
   const auto &attributes = module.getEntryAttributes();
   const auto group = attributes.find("Footnote");
@@ -31,7 +32,7 @@ StudyNote read_note(sword::SWModule &module, const std::string &reference,
     sword::SWBuf body(value("body").c_str());
     sword::UTF8HTML encoding;
     encoding.processText(body);
-    result.html = module.renderText(body.c_str()).c_str();
+    result.html = detail::render_sdk_buffer(module, body.c_str()).c_str();
   }
   return result;
 }
