@@ -42,6 +42,8 @@ public:
                                         std::optional<std::uint64_t> after = std::nullopt, std::uint32_t limit = 64);
   // Read with existing tab/module engine policy; no history visit.
   std::future<BookEntry> read_book(StudyTab tab, std::string module, std::uint64_t offset);
+  std::future<BookNote> book_note(StudyTab tab, std::string module, std::uint64_t offset,
+                                 std::string identifier, bool render_body = true);
   std::future<StudyTab> create_tab();
   std::future<void> close_tab(StudyTab tab);
   std::future<void> set_lexical_layout_enabled(StudyTab tab, bool enabled);

@@ -137,6 +137,42 @@ queries reject, synchronous/worker/C catalog copies agree, index/null getters ar
 safe, and copied capability metadata survives worker shutdown. No existing C
 layout or legacy driver operation is changed.
 
+## Typed ordinary book-note source
+
+Reader/StudySession/StudyWorker `book_note` pairs a copied tree source with the
+existing StudyNote value. It selects the validated exact offset, refreshes that
+source's attributes and reuses the common UTF8HTML/SDK note-body renderer. It
+does not re-resolve a title or feed a book path through a verse parser. Linked
+aliases retain their selected offset/path; a later unrelated render cannot
+supply stale notes. Missing IDs, empty branches and unsupported module/key types
+reject without publishing a result. Unexpected source mutation rejects too.
+
+The common C++11 note helper now has an already-positioned-key entry point used
+by both typed books and existing passage wrappers. Attribute capture is enabled
+temporarily even when a caller deliberately disabled it, then the original flag
+is restored on success/failure. This prevents stale note attributes from another
+source. Existing enabled-caller HTML/metadata and passage validation stay intact.
+Metadata-only lookup refreshes source metadata without a note-body render.
+
+The worker reuses existing session module/tab/default/unconfigured engine policy,
+adds no history, and drains accepted note requests. The additive C book-note
+handle owns both its tree and ordinary note; `xc_book_note_tree/content` borrow
+views until release, and must not be released separately. `render_body` is strict
+0/1. Request polling, error mapping, argument copying and take-once semantics
+match the other book handles. No existing C layout or public verse parser changes.
+
+`core_book_note` compares frozen pre-extraction SDK metadata/UTF8HTML/body output
+for OSIS/ThML, note/red-letter options, source and linked aliases. Real colored
+note bodies verify option precedence rather than merely testing unchanged prose.
+It checks disabled-capture stale-state recovery, source/body filter failures,
+metadata-only avoidance of a failing body, unexpected source mutation, state and
+owned/borrowed lifetime, module data bytes, queued errors and shutdown draining.
+Unconfigured SDK baseline is measured separately from explicit all-Off options.
+
+This is ordinary note-source transport. Automatic SDK book-note URI validation,
+native hover/click routing, cross-reference-list presentation, heading-note repair
+and book display cleanup remain separate gates; no full note UI parity is claimed.
+
 `core_book_tree` generates original-prose RawGenBook fixtures, including empty,
 structural-only and deep branches, numeric and Unicode titles. It compares all
 one-hop relationships with the frozen SDK sequence used by the legacy backend,
@@ -145,7 +181,7 @@ lifetime, and byte-for-byte identity of every module data file and filename
 before/after successful and rejected queries. Manager-generated configuration
 caches are outside this module-data identity assertion.
 
-The next slices are typed book-note source lookup and native tree/navigation controls,
+The next slices are source-bound SDK book-note URI validation and native tree/navigation controls,
 then image/resource routing,
 links, history/persistent selection, additional book windows and editors. Preserve
 the GTK3 app and all its write paths. No F10 group, native GUI, corpus, platform or

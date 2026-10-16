@@ -18,6 +18,7 @@ typedef struct xc_dictionary_entry xc_dictionary_entry;
 typedef struct xc_book_tree xc_book_tree;
 typedef struct xc_book_entry xc_book_entry;
 typedef struct xc_book_children xc_book_children;
+typedef struct xc_book_note xc_book_note;
 typedef struct xc_lexical_entry xc_lexical_entry;
 typedef struct xc_lexicons xc_lexicons;
 /* Borrowed submission strings. NULL is unset; empty is an explicit empty name. */
@@ -118,6 +119,16 @@ xc_status xc_book_children_get_node(const xc_book_children *page, size_t index, 
 /* 1 and last-child cursor if more exist; otherwise 0, clearing non-NULL out. */
 int xc_book_children_next_after(const xc_book_children *page, uint64_t *out);
 void xc_book_children_release(xc_book_children *page);
+/* Exact typed book source, existing tab/module engine policy, no history visit.
+ * render_body is strict 0/1; metadata-only avoids rendering the note body.
+ * Ordinary SDK note IDs only; no verse URI or heading-note dispatch is added.
+ * Content/tree getters borrow from the owned book-note: do not release them. */
+xc_status xc_worker_book_note(xc_worker *worker, uint64_t tab, const char *module, uint64_t offset,
+                              const char *identifier, int render_body, xc_request **out);
+xc_book_note *xc_request_take_book_note(xc_request *request);
+const xc_book_tree *xc_book_note_tree(const xc_book_note *note);
+const xc_note *xc_book_note_content(const xc_book_note *note);
+void xc_book_note_release(xc_book_note *note);
 xc_status xc_worker_modules(xc_worker *worker, xc_request **out);
 xc_status xc_worker_create_tab(xc_worker *worker, xc_request **out);
 xc_status xc_worker_close_tab(xc_worker *worker, uint64_t tab, xc_request **out);

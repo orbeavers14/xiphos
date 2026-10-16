@@ -210,6 +210,11 @@ BookEntry StudySession::read_book(const std::string &module, std::uint64_t offse
   const auto options = module_engine_options(module);
   return options ? reader_.read_book(module, offset, *options) : reader_.read_book(module, offset);
 }
+BookNote StudySession::book_note(const std::string &module, std::uint64_t offset, const std::string &identifier, bool render_body) {
+  const auto options = module_engine_options(module);
+  return options ? reader_.book_note(module, offset, identifier, *options, render_body)
+                 : reader_.book_note(module, offset, identifier, render_body);
+}
 ReferenceList StudySession::read_reference_list(const std::string &module, const std::string &expression,
                                               const std::string &context) {
   const auto options = module_engine_options(module);

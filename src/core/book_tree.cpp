@@ -149,4 +149,20 @@ BookChildren capture_book_children(sword::SWModule &module, std::uint64_t parent
   }
   return result;
 }
+BookNote capture_book_note(sword::SWModule &module, std::uint64_t offset,
+                           const std::string &identifier, bool render_body) {
+  if (identifier.empty() || identifier.find('\0') != std::string::npos)
+    throw std::invalid_argument("Book note requires a valid identifier");
+  BookNote result;
+  result.tree = capture_book_tree(module, offset);
+  auto *key = dynamic_cast<sword::TreeKeyIdx *>(module.getKey());
+  if (!key) throw std::invalid_argument("General book has no live indexed key");
+  position(*key, offset);
+  result.note = capture_study_note_at_key(module, identifier, render_body);
+  if (module.getKey() != key || key->getOffset() != offset ||
+      result.tree.node.path != key->getText() || key->getError() ||
+      result.note.reference != result.tree.node.path)
+    throw std::runtime_error("Book note changed the requested source");
+  return result;
+}
 }

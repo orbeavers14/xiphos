@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
+#include "study_note.hpp"
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -21,6 +22,10 @@ struct BookEntry {
   BookTree tree;
   bool has_entry = false;
   std::string html;
+};
+struct BookNote {
+  BookTree tree;
+  StudyNote note;
 };
 struct BookChildren {
   std::string module;

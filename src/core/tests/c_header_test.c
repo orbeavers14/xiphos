@@ -8,7 +8,9 @@ int c_header_test(void) {
   xc_lexical_presentation layout = {"stale", 1, 1};
   uint64_t book_cursor = 123;
   xc_book_node book_node = {4, "stale", "stale", 1, 1};
-  return !xc_catalog_has_book_tree(NULL, 0) && !xc_module_has_book_tree(NULL, 0) &&
+  return xc_book_note_tree(NULL) == NULL && xc_book_note_content(NULL) == NULL && xc_request_take_book_note(NULL) == NULL &&
+         xc_worker_book_note(NULL, 0, "Book", 4, "1", 1, &request) == XC_INVALID_ARGUMENT && request == NULL &&
+         !xc_catalog_has_book_tree(NULL, 0) && !xc_module_has_book_tree(NULL, 0) &&
          xc_book_children_count(NULL) == 0 && xc_book_children_module(NULL) == NULL &&
          xc_book_children_parent(NULL, &book_node) == XC_INVALID_ARGUMENT && !book_node.present &&
          xc_book_children_get_node(NULL, 0, &book_node) == XC_INVALID_ARGUMENT && !book_node.path &&

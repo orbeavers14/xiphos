@@ -6,12 +6,20 @@
 #include <stdexcept>
 namespace xiphos { namespace core {
 namespace {
-StudyNote read_note(sword::SWModule &module, const std::string &reference,
-                    const std::string &identifier, bool render_body) {
-  if (reference.empty() || identifier.empty() || reference.find('\0') != std::string::npos || identifier.find('\0') != std::string::npos)
-    throw std::invalid_argument("Note requires a valid passage and identifier");
-  module.setKey(reference.c_str());
-  detail::render_sdk_entry(module); // Entry attributes belong to this exact verse, not the last rendered chapter verse.
+struct CaptureAttributes {
+  sword::SWModule &module;
+  bool saved;
+  explicit CaptureAttributes(sword::SWModule &value) : module(value), saved(value.isProcessEntryAttributes()) {
+    module.setProcessEntryAttributes(true);
+  }
+  ~CaptureAttributes() { module.setProcessEntryAttributes(saved); }
+};
+}
+StudyNote capture_study_note_at_key(sword::SWModule &module, const std::string &identifier, bool render_body) {
+  if (identifier.empty() || identifier.find('\0') != std::string::npos)
+    throw std::invalid_argument("Note requires a valid identifier");
+  CaptureAttributes attributes_scope(module);
+  detail::render_sdk_entry(module); // Refresh the exact source, not stale chapter/book attributes.
   if (module.getKey()->getError()) throw std::invalid_argument("SWORD could not resolve the note passage");
   const auto &attributes = module.getEntryAttributes();
   const auto group = attributes.find("Footnote");
@@ -35,6 +43,14 @@ StudyNote read_note(sword::SWModule &module, const std::string &reference,
     result.html = detail::render_sdk_buffer(module, body.c_str()).c_str();
   }
   return result;
+}
+namespace {
+StudyNote read_note(sword::SWModule &module, const std::string &reference,
+                    const std::string &identifier, bool render_body) {
+  if (reference.empty() || identifier.empty() || reference.find('\0') != std::string::npos || identifier.find('\0') != std::string::npos)
+    throw std::invalid_argument("Note requires a valid passage and identifier");
+  module.setKey(reference.c_str());
+  return capture_study_note_at_key(module, identifier, render_body);
 }
 }
 StudyNote render_study_note(sword::SWModule &module, const std::string &reference,

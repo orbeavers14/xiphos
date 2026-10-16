@@ -112,6 +112,12 @@ std::future<BookTree> StudyWorker::book_tree_path(std::string module, std::strin
 std::future<BookEntry> StudyWorker::read_book(StudyTab tab, std::string module, std::uint64_t offset) {
   return impl_->submit([tab, module = std::move(module), offset](Impl::State &s) { return s.tab(tab).read_book(module, offset); });
 }
+std::future<BookNote> StudyWorker::book_note(StudyTab tab, std::string module, std::uint64_t offset,
+                                          std::string identifier, bool render_body) {
+  return impl_->submit([tab, module = std::move(module), offset, identifier = std::move(identifier), render_body](Impl::State &s) {
+    return s.tab(tab).book_note(module, offset, identifier, render_body);
+  });
+}
 std::future<BookChildren> StudyWorker::book_children(std::string module, std::uint64_t parent,
                                                     std::optional<std::uint64_t> after, std::uint32_t limit) {
   return impl_->submit([module = std::move(module), parent, after, limit](Impl::State &s) {

@@ -50,6 +50,11 @@ public:
   BookEntry read_book(const std::string &module, std::uint64_t offset, const EngineOptions &options);
   // Unconfigured overload retains the manager baseline, as other Reader reads do.
   BookEntry read_book(const std::string &module, std::uint64_t offset);
+  // Owned ordinary book-note source; does not parse a verse URI or heading ID.
+  BookNote book_note(const std::string &module, std::uint64_t offset, const std::string &identifier,
+                     const EngineOptions &options, bool render_body = true);
+  BookNote book_note(const std::string &module, std::uint64_t offset, const std::string &identifier,
+                     bool render_body = true);
   ReferenceChoices reference_choices(const std::string &module, const std::string &reference);
   PassageLink resolve_link(const std::string &current_module, const std::string &url);
   // Owned targets/guard metadata from the existing parser, without rendering
@@ -107,6 +112,8 @@ public:
   std::string adjacent_chapter(const std::string &module, const std::string &reference,
                                int direction);
 private:
+  BookNote book_note_impl(const std::string &module, std::uint64_t offset, const std::string &identifier,
+                          const EngineOptions *options, bool render_body);
   BookEntry book_impl(const std::string &module, std::uint64_t offset, const EngineOptions *options);
   DictionaryEntry dictionary_impl(const std::string &module, const std::string &key, const EngineOptions *options, int direction = 0);
   ReferenceList reference_list_impl(const std::string &module, const std::string &expression,

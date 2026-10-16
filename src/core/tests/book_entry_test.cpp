@@ -51,7 +51,7 @@ int main(int argc,char **argv) {
         sword::RawGenBook writer(prefix.c_str());
         writer.setKey("/Part One");
         writer.setEntry(std::string(id)=="OSISBook" ?
-          "<p>Original café <q who=\"Jesus\">colored word</q><note n=\"a\">Original book note.</note></p>" :
+          "<p>Original café <q who=\"Jesus\">colored word</q><note n=\"a\"><q who=\"Jesus\">Original book note.</q></note></p>" :
           "<p>Original café <i>emphasis</i><note n=\"a\">Original book note.</note><img src=\"local.png\" /></p>");
         writer.setKey("/Part One/Leaf"); writer.setEntry("Original leaf prose.");
         writer.setKey("/Empty Branch/Leaf"); writer.setEntry("Original branch leaf.");

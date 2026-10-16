@@ -31,6 +31,12 @@ struct xc_book_entry {
     : tree{std::move(value.tree)}, has_entry(value.has_entry), html(std::move(value.html)) {}
 };
 struct xc_note { xiphos::core::StudyNote value; };
+struct xc_book_note {
+  xc_book_tree tree;
+  xc_note content;
+  explicit xc_book_note(xiphos::core::BookNote value)
+    : tree{std::move(value.tree)}, content{std::move(value.note)} {}
+};
 struct xc_passage { xiphos::core::StudyPassage value; };
 struct xc_entry { xiphos::core::Entry value; };
 struct xc_worker { xiphos::core::StudyWorker value; explicit xc_worker(const char *root) : value(root ? root : "") {} };
@@ -50,6 +56,7 @@ struct xc_request {
   std::unique_ptr<xc_book_tree> book_tree;
   std::unique_ptr<xc_book_entry> book_entry;
   std::unique_ptr<xc_book_children> book_children;
+  std::unique_ptr<xc_book_note> book_note;
   std::unique_ptr<xc_lexical_entry> lexical;
   std::unique_ptr<xc_lexicons> lexicons;
   std::unique_ptr<xc_note> note;
@@ -80,6 +87,7 @@ struct xc_request {
   void store(xiphos::core::BookTree v) { book_tree = std::make_unique<xc_book_tree>(xc_book_tree{std::move(v)}); }
   void store(xiphos::core::BookEntry v) { book_entry = std::make_unique<xc_book_entry>(std::move(v)); }
   void store(xiphos::core::BookChildren v) { book_children = std::make_unique<xc_book_children>(xc_book_children{std::move(v)}); }
+  void store(xiphos::core::BookNote v) { book_note = std::make_unique<xc_book_note>(std::move(v)); }
   void store(xiphos::core::StudyNote v) { note = std::make_unique<xc_note>(xc_note{std::move(v)}); }
   void store(xiphos::core::Entry v) { entry = std::make_unique<xc_entry>(xc_entry{std::move(v)}); }
   void store(xiphos::core::Chapter v) { chapter = std::make_unique<xc_chapter>(xc_chapter{std::move(v)}); }
@@ -189,6 +197,17 @@ const xiphos::core::Module *module_at(const xc_reader *r, size_t i) {
 }
 }
 extern "C" {
+xc_status xc_worker_book_note(xc_worker *w, uint64_t tab, const char *id, uint64_t offset,
+                              const char *identifier, int render_body, xc_request **out) {
+  if (!id || !*id || !identifier || !*identifier || (render_body != 0 && render_body != 1)) {
+    if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w, out, [=](auto &worker) { return worker.book_note(tab, id, offset, identifier, render_body != 0); });
+}
+xc_book_note *xc_request_take_book_note(xc_request *r) { return r && r->status == XC_OK ? r->book_note.release() : nullptr; }
+const xc_book_tree *xc_book_note_tree(const xc_book_note *note) { return note ? &note->tree : nullptr; }
+const xc_note *xc_book_note_content(const xc_book_note *note) { return note ? &note->content : nullptr; }
+void xc_book_note_release(xc_book_note *note) { delete note; }
 xc_status xc_worker_book_children(xc_worker *w, const char *id, uint64_t parent,
                                   int has_after, uint64_t after, uint32_t limit, xc_request **out) {
   if (!id || !*id || (has_after != 0 && has_after != 1) || !limit || limit > 256) {
