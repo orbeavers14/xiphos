@@ -33,7 +33,7 @@ struct ModuleOptionInfo: Sendable {
     static let unknown = Self(declared: [], hasHeadings: false, transliterationAvailable: false)
 }
 // Nil carries the core's unknown content state; no display defaults live here.
-struct ContentDisplayOptions: Sendable {
+struct ContentDisplayOptions: Sendable, Equatable {
     let images: Bool?, fontFaces: Bool?, doubleSpace: Bool?, noteNumbers: Bool?
     init(images: Bool?, fontFaces: Bool?, doubleSpace: Bool? = nil, noteNumbers: Bool? = nil) {
         self.images = images; self.fontFaces = fontFaces; self.doubleSpace = doubleSpace; self.noteNumbers = noteNumbers
@@ -94,11 +94,20 @@ struct RenderedBookDocumentSection: Sendable, Equatable {
     let depth: UInt32
     let rendered: Bool
 }
+struct RenderedBookPresentation: Sendable, Equatable {
+    let html: String
+    let lexical: RenderedLexicalPresentation
+    let options: ContentDisplayOptions
+    let cleanupDiagnostics: [RenderedCleanupDiagnostic]
+}
 struct RenderedBookDocument: Sendable, Equatable {
     let tree: BookTree
     let displayLevel: UInt32
     let sections: [RenderedBookDocumentSection]
     let html: String
+    let presentation: RenderedBookPresentation?
+    var displayHTML: String { presentation?.html ?? html }
+    var lexical: RenderedLexicalPresentation { presentation?.lexical ?? .plain }
 }
 struct RenderedBookNote: Sendable {
     let tree: BookTree
@@ -141,7 +150,7 @@ struct RenderedStudyPassage: Sendable {
     let text: RenderedEntry
     let commentary: RenderedEntry?
 }
-struct RenderedCleanupDiagnostic: Sendable {
+struct RenderedCleanupDiagnostic: Sendable, Equatable {
     enum Kind: Int32, Sendable { case image = 0, fontFace = 1 }
     let kind: Kind
     let suffix: String
@@ -343,9 +352,20 @@ enum CoreValues {
             precondition(xc_book_document_get_section(result, index, &value) == XC_OK)
             return RenderedBookDocumentSection(entry: bookEntry(value.entry!), depth: value.depth, rendered: value.rendered != 0)
         }
+        let presentation = xc_book_document_presentation_html(result).map { html in
+            var options = xc_book_document_display_options()
+            precondition(xc_book_document_get_display_options(result, &options) == XC_OK &&
+                (-1...1).contains(options.images) && (-1...1).contains(options.font_faces) && (0...1).contains(options.double_space))
+            return RenderedBookPresentation(html: String(cString: html),
+                lexical: lexicalLayout { xc_book_document_lexical_layout(result, $0) },
+                options: ContentDisplayOptions(images: options.images == -1 ? nil : options.images != 0,
+                    fontFaces: options.font_faces == -1 ? nil : options.font_faces != 0, doubleSpace: options.double_space != 0),
+                cleanupDiagnostics: cleanupDiagnostics(count: xc_book_document_cleanup_count(result),
+                    kind: { xc_book_document_cleanup_kind(result, $0) }, suffix: { xc_book_document_cleanup_suffix(result, $0) }))
+        }
         return RenderedBookDocument(tree: bookTree(xc_book_document_tree(result)!),
             displayLevel: xc_book_document_display_level(result), sections: sections,
-            html: String(cString: xc_book_document_html(result)!))
+            html: String(cString: xc_book_document_html(result)!), presentation: presentation)
     }
     static func withSavedBookSelection<R>(_ saved: SavedBookSelection, _ body: (UnsafePointer<xc_saved_book_selection>) -> R) throws -> R {
         guard ![saved.module, saved.key, saved.offsetText].compactMap({ $0 }).contains(where: { $0.utf8.contains(0) }) else {

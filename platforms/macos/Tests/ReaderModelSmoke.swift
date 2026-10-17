@@ -23,6 +23,45 @@ struct ReaderModelSmoke {
             try await Task.sleep(nanoseconds: 1_000_000)
         }
     }
+    @MainActor static func bookPresentation(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let model = ReaderModel(worker: worker, startupError: nil)
+        let other = ReaderModel(worker: worker, startupError: nil)
+        try await idle(model); try await idle(other)
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("xiphos-book-options-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let profile = folder.appendingPathComponent("modops.conf")
+        try Data("[StyledBook]\nStrong's Numbers=On\n".utf8).write(to: profile)
+        model.importReadingOptions(path: profile.path); try await idle(model)
+        model.chooseBook("StyledBook"); try await idle(model)
+        guard let initial = model.bookDocument, initial.lexical.requested, initial.lexical.applied,
+              initial.presentation?.options.images == true, initial.presentation?.options.fontFaces == true else { fatalError("native document consumes matching shared presentation") }
+        model.bookKey = "unsubmitted draft"
+        model.setBookImageContent(false); model.setBookImageContent(true); try await idle(model)
+        guard model.bookDocument?.presentation?.options.images == false, model.bookDocument?.displayHTML.contains("<img ") == false,
+              model.bookDocument?.html == initial.html, model.bookDocument?.tree == initial.tree,
+              model.bookKey == "unsubmitted draft" else { fatalError("book image toggle refreshes committed source, retains raw/draft and rejects busy edits") }
+        model.setBookRespectFontFaces(false); try await idle(model)
+        model.setBookDoubleSpace(true); try await idle(model)
+        guard model.bookDocument?.presentation?.options.fontFaces == false, model.bookDocument?.displayHTML.contains("Original Book Font") == false,
+              model.bookDocument?.presentation?.options.doubleSpace == true, model.bookDocument?.lexical.css.contains("line-height: 2.7em") == true,
+              model.bookKey == "unsubmitted draft", !model.canBack else { fatalError("native book controls use shared combined cleanup/CSS without navigating") }
+        other.chooseBook("StyledBook"); try await idle(other)
+        guard other.bookDocument?.presentation?.options.images == true, other.bookDocument?.presentation?.options.fontFaces == true,
+              other.bookDocument?.presentation?.options.doubleSpace == false else { fatalError("native presentation options isolate windows") }
+        model.bookKey = "/"; model.readBookKey(); try await idle(model)
+        model.bookKey = "root draft"; model.setBookImageContent(true); try await idle(model)
+        guard model.bookDocument?.tree.node.offset == 0, model.bookKey == "root draft" else { fatalError("book display refresh preserves explicit path root and current draft") }
+        model.bookKey = "/Malformed"; model.readBookKey(); try await idle(model)
+        guard model.bookDocument?.presentation?.cleanupDiagnostics.first?.kind == .fontFace else { fatalError("native owns shared cleanup diagnostics") }
+        let committed = model.bookDocument
+        model.refreshBookDisplay(); model.close(); other.close()
+        try await Task.sleep(nanoseconds: 50_000_000)
+        guard model.bookDocument == committed else { fatalError("closed display refresh cannot republish") }
+        await worker.shutdown()
+        print("Native book presentation controls, CSS, source/draft retention and window isolation passed")
+    }
     @MainActor static func bookDocuments(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let model = ReaderModel(worker: worker, startupError: nil)
@@ -1094,6 +1133,9 @@ struct ReaderModelSmoke {
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--options" {
             try await readingOptions(root: CommandLine.arguments[2]); return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--book-presentation" {
+            try await bookPresentation(root: CommandLine.arguments[2]); return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--book-documents" {
             try await bookDocuments(root: CommandLine.arguments[2]); return

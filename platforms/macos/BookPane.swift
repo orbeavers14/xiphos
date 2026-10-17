@@ -8,6 +8,22 @@ struct BookPane: View {
             HStack {
                 Text("General book").font(.headline)
                 Spacer()
+                Menu {
+                    if let options = model.bookDocument?.presentation?.options {
+                        if let spacing = options.doubleSpace {
+                            Toggle("Double space", isOn: Binding(get: { spacing }, set: { model.setBookDoubleSpace($0) }))
+                        }
+                        if let images = options.images {
+                            Toggle("Image content", isOn: Binding(get: { images }, set: { model.setBookImageContent($0) }))
+                        }
+                        if let fonts = options.fontFaces {
+                            Toggle("Respect font faces", isOn: Binding(get: { fonts }, set: { model.setBookRespectFontFaces($0) }))
+                        }
+                    }
+                    Button("Refresh reading") { model.refreshBookDisplay() }
+                } label: { Image(systemName: "textformat") }
+                    .menuStyle(.borderlessButton).fixedSize()
+                    .accessibilityLabel("Book display options").help("Book display options")
                 Button("Close") { model.closeBook() }
             }.padding(8)
             Picker("Book module", selection: Binding(
@@ -65,9 +81,9 @@ struct BookPane: View {
             Divider()
             if let entry = model.bookEntry {
                 Text(entry.tree.node.path.isEmpty ? entry.tree.module : entry.tree.node.path).font(.caption).padding(8)
-                PassageView(html: model.bookDocument?.html ?? entry.html, anchor: nil, onScrollFailure: { model.message = $0 },
+                PassageView(html: model.bookDocument?.displayHTML ?? entry.html, css: model.bookDocument?.lexical.css ?? "", anchor: nil, onScrollFailure: { model.message = $0 },
                     onLink: { model.showBookNoteLink($0) })
-                if !entry.hasEntry && (model.bookDocument?.html.isEmpty ?? true) {
+                if !entry.hasEntry && (model.bookDocument?.displayHTML.isEmpty ?? true) {
                     Text("This section has no text. Browse its children to continue reading.")
                         .foregroundStyle(.secondary).padding(8)
                 }

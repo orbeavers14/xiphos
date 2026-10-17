@@ -65,6 +65,7 @@ They are excluded from normal builds/CI. For an already checked build/fixture:
 sh platforms/macos/launch-fixture.sh build/macos reader
 sh platforms/macos/launch-fixture.sh build/macos books
 sh platforms/macos/launch-fixture.sh build/macos book-documents
+sh platforms/macos/launch-fixture.sh build/macos book-presentation
 sh platforms/macos/launch-fixture.sh build/macos reading-options
 sh platforms/macos/launch-fixture.sh build/macos lexicons
 sh platforms/macos/launch-fixture.sh build/macos lexical
@@ -285,3 +286,20 @@ corpus/platform acceptance remain pending. No complete parity is implied.
 Book controls live in `BookPane.swift`; `ReaderApp.swift` retains the window model
 and composition. The view move preserves the checked control implementation;
 app/model builds and six focused book/adapter checks pass after extraction.
+
+## Book display snapshots and controls
+
+Selected book documents now also copy a separate shared presentation: visible
+HTML, matching annotation/spacing CSS, image/font states and cleanup diagnostics.
+Raw combined and per-section SDK HTML remains available. Raw document reads have
+no presentation. The book pane consumes the matching HTML/CSS packet and exposes
+Double space, Image content, Respect font faces and Refresh reading through native
+controls. Core refresh retains the committed requested target, including explicit
+root paths; controls preserve an unsubmitted key and do not visit history.
+
+The full local Mac/core suite passed 105/105; the compact menu adjustment then
+passed app/model builds and nine focused checks. A disposable original-prose
+window checked menu state, image/font toggles, spacing, explicit-root refresh with
+an unsubmitted draft, and the compact header layout. Actual image/resource loading,
+book note numbering, generalized book links and full font/RTL/corpus acceptance
+remain pending. No installed content or personal profiles were used.

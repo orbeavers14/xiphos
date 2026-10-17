@@ -170,6 +170,11 @@ actor CoreWorker {
         let status = xc_worker_book_document_selection(try worker(), tab, &request)
         return try await bookDocumentValue(status, request, optional: true)
     }
+    func refreshBookDocument(tab: UInt64) async throws -> RenderedBookDocument? {
+        var request: OpaquePointer?
+        let status = xc_worker_refresh_book_document(try worker(), tab, &request)
+        return try await bookDocumentValue(status, request, optional: true)
+    }
     func navigateBookDocument(tab: UInt64, direction: BookNavigation) async throws -> RenderedBookDocument? {
         var request: OpaquePointer?
         let status = xc_worker_navigate_book_document(try worker(), tab, direction.rawValue, &request)

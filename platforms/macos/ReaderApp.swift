@@ -369,10 +369,40 @@ final class ReaderModel: ObservableObject {
             self.presentBook(entry)
         }
     }
-    private func presentBook(_ entry: RenderedBookDocument) {
+    private func presentBook(_ entry: RenderedBookDocument, updateInput: Bool = true) {
         bookNote = nil
-        bookDocument = entry; bookKey = entry.tree.node.path
+        bookDocument = entry
+        if updateInput { bookKey = entry.tree.node.path }
         showingBook = true; message = ""
+    }
+    private enum BookDisplayOption { case images, fontFaces, doubleSpace }
+    func setBookDoubleSpace(_ enabled: Bool) { refreshBookDisplay(option: .doubleSpace, enabled: enabled) }
+    func setBookImageContent(_ enabled: Bool) { refreshBookDisplay(option: .images, enabled: enabled) }
+    func setBookRespectFontFaces(_ enabled: Bool) { refreshBookDisplay(option: .fontFaces, enabled: enabled) }
+    func refreshBookDisplay() { refreshBookDisplay(option: nil, enabled: false) }
+    private func refreshBookDisplay(option: BookDisplayOption?, enabled: Bool) {
+        guard !closed, !isBusy, let worker, let tab, let document = bookDocument else { return }
+        if let option {
+            let options = document.presentation?.options
+            let available: Bool?
+            switch option {
+            case .images: available = options?.images
+            case .fontFaces: available = options?.fontFaces
+            case .doubleSpace: available = options?.doubleSpace
+            }
+            guard available != nil else { return }
+        }
+        run { token in
+            switch option {
+            case .images: try await worker.setImageContent(tab: tab, module: document.tree.module, enabled: enabled)
+            case .fontFaces: try await worker.setRespectFontFaces(tab: tab, module: document.tree.module, enabled: enabled)
+            case .doubleSpace: try await worker.setDoubleSpace(tab: tab, module: document.tree.module, enabled: enabled)
+            case nil: break
+            }
+            let refreshed = try await worker.refreshBookDocument(tab: tab)
+            guard token == self.revision && !self.closed, let refreshed else { return }
+            self.presentBook(refreshed, updateInput: false)
+        }
     }
     func showBookNoteLink(_ uri: String) {
         guard !closed, !isBusy, let worker, let tab, bookDocument != nil else { return }
