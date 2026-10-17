@@ -23,6 +23,7 @@
 #endif
 #include <gtk/gtk.h>
 #include <regex.h>
+#include "xiphos/core/search_policy.hpp"
 #include <ctype.h>
 #include <swmodule.h>
 
@@ -177,7 +178,6 @@ GList *get_list_of_references()
 
 void main_do_sidebar_search(gpointer user_data)
 {
-	GString *new_search = g_string_new(NULL);
 	gint search_params, finds;
 	const char *search_string = NULL;
 	char *search_module;
@@ -238,27 +238,8 @@ void main_do_sidebar_search(gpointer user_data)
 	if (settings.searchType == -2)
 		settings.searchType = backendSearch->check_for_optimal_search(search_module);
 
-	// if we do lucene search (-4), we assume AND for simple sidebar search.
-	// therefore, we must prepend '+' to each word to force that semantic.
-	if (settings.searchType == -4) {
-		g_string_append_c(new_search, '+');
-		while (*search_string) {
-			while (((*search_string) != ' ') && ((*search_string) != '\0'))
-				g_string_append_c(new_search, *(search_string++));
-			if ((*search_string) == ' ') {
-				g_string_append_c(new_search, ' ');
-				search_string++;
-				if ((*search_string) != '\0')
-					g_string_append_c(new_search, '+');
-			}
-		}
-
-		// append an arbitrary space to search string end:
-		// workaround for sword search failure of single +TERM.
-		g_string_append_c(new_search, ' ');
-
-		search_string = new_search->str;
-	}
+    const auto prepared_search = xiphos::core::sidebar_search_text(search_string, settings.searchType == -4);
+    search_string = prepared_search.c_str();
 
 	search_params =
 	    gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(ss.ckbCaseSensitive)) ? 0 : REG_ICASE;
@@ -277,7 +258,6 @@ void main_do_sidebar_search(gpointer user_data)
 						settings.searchType,
 						search_params,
 						FALSE);
-	g_string_free(new_search, TRUE);
 
 	search_active = FALSE;
 

@@ -69,6 +69,7 @@ target_include_directories(main
 # specify libraries or flags to use when linking
 target_link_libraries(main
   PRIVATE
+  Xiphos::CoreRender
   Xiphos::CoreHistory
   Xiphos::CoreOptions
   Threads::Threads
