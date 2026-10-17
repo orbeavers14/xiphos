@@ -11,7 +11,7 @@ finished. Whole workflows and data compatibility remain the acceptance units.
 | Engine ownership and transport | FIFO worker, copied C/C++/Swift results, shutdown draining | Active-operation cancellation, native Windows compiler/SDK validation, stable dynamic packaging |
 | Scripture and commentary | Reference choices, chapter/navigation/history, sparse/linked sources and options | Complete display decorations, corpus/locale/versification workflows and restoration |
 | Dictionary and lexical content | Lookup/key steps/history, shared casing, lexical HTML/CSS and notes | Complete lookup/hover/search families and full corpus/locale acceptance |
-| General books | Tree/navigation/DisplayLevel documents, scoped restore, note/image clicks, bounded inline resources | Image sizing/CSS/formats, complete semantic links/numbering, book windows/tabs and saved workflows |
+| General books | Tree/navigation/DisplayLevel documents, scoped restore, note/image clicks, bounded inline resources/module CSS and shared geometry | Native sizing/global CSS/assets/formats, complete semantic links/numbering, book windows/tabs and saved workflows |
 | Parallel reading | Pending | Verse alignment, ordered translations, named sets, navigation and persistence |
 | Search | Pending | Simple/advanced/indexed/attribute searches, bounds, progress/cancel, results/preview/export |
 | Library and installation | Module metadata/discovery subset | Favorites/hiding/grouping, sources/install/uninstall/index/cipher workflows |

@@ -26,7 +26,7 @@ Complete document publication `6cb35cf`, worker/C `99056d7` and native consumpti
 rendered-section note routing. Earlier raw entry/read-only APIs remain stable.
 Latest inline URL resolver `56925fb`, owned image-prepared HTML `efcc544`, and
 Mac consumer `4137374` retain raw/presentation sources and expose bounded owned
-image output/issues. Local checks: **110/110 Mac/core**, **86/86 portable core
+image output/issues. Local checks: **113/113 Mac/core**, **88/88 portable core
 on Mac**, **6/6 focused ASan/UBSan**, strict C11; nine native/core focused checks
 also pass. Disposable Mac window verified PNG inline → preview → same section,
 image-off text retention and image accessibility label. Full corpus, sizing/CSS,
@@ -41,15 +41,18 @@ formats, sessions and current GTK/MSVC/WinUI acceptance remain pending. See
 | Earlier Fedora preview scope catch-up | PRs #82–89, `a80409b` | [Native Fedora evidence](handoff-linux.md); retain manual/corpus/renderer gates |
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
-Active Mac/shared task on master: characterize and extract legacy image sizing
-policy after the checked inline-resource slice. No hosted build or reset credit
+Shared geometry `48d5425` now serves the retained GTK adapter. Bounded module CSS
+`4611a9d` and Mac consumption `65b8ab6` preserve raw CSS and HTML-safe style text;
+three final focused sanitizer checks passed after style-escaping adjustment.
+Active Mac/shared task: characterize combined book note metadata and numbering.
+Native image sizing, global CSS and recursive assets remain pending. No hosted build or reset credit
 was used. No whole parity or retirement gate is accepted by scoped checks.
 
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Legacy image sizing policy extraction | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Combined book note source/numbering characterization | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

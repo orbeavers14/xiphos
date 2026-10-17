@@ -12,23 +12,29 @@ presentation HTML remain distinct. Image-off cleanup precedes resource loading;
 missing images retain text and expose issues. Bounds, parser normalization and
 format limitations are documented in [book workflows](book-tree-workflows.md).
 
-Active next slice: characterize/extract legacy image sizing as shared policy.
+Shared geometry `48d5425` serves the retained GTK adapter (native sizing pending).
+Module CSS `4611a9d` / native `65b8ab6` is checked: bounded preferred/default
+styles, empty/failed fallback and safe style text. Active next slice: characterize
+combined book note metadata/numbering using the real legacy DisplayLevel routine.
 Do not create separate frontend sizing algorithms. No hosted build or reset
 credit was used. Preserve Windows lane, unrelated `.DS_Store`, GTK3 and licenses.
 
 ## Actual local checks
 
-At `4137374`: 110/110 Mac/core, 86/86 portable Linux/core on this Mac, six focused
+At `65b8ab6`: 113/113 Mac/core, 88/88 portable Linux/core on this Mac, six focused
 ASan/UBSan including fixtures, strict C11 header compilation. Nine focused native/
-core checks passed before the full run. The initial sanitizer run lacked two
+core checks passed before the full run. Three final sanitizer checks passed after
+style-escaping refinement. Strict C++11 geometry and native-disabled render
+library checks passed; actual GTK geometry routine compiled with test stubs. The initial sanitizer run lacked two
 fixture executables; after building them all six passed. Dependencies are not
 fully instrumented and leak detection is off. Current Fedora GTK/MSVC/WinUI is
 unvalidated here; these Mac-hosted portable checks are not Linux desktop proof.
 
 Disposable original-prose window verified PNG inline, click to native preview,
 Close to same book section, image-off text retention, and image accessibility
-label. Temporary app/fixture was quit and removed. Full VoiceOver/keyboard,
-corpus, sizing, CSS assets, image formats/animation and whole workflow/visual
+label. CSS window checked preferred color/pseudo-element and unusable-style
+text retention. Temporary app/fixture was quit and removed. Full VoiceOver/keyboard,
+corpus, native sizing, global/recursive CSS assets, image formats/animation and whole workflow/visual
 acceptance remain pending. 0/38 whole groups and 0/3 native releases accepted.
 
 Environment: macOS 27.0.1 (26A434), ARM64; AppleClang 21.0.0; Swift 6.4 toolchain

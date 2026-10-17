@@ -1,9 +1,11 @@
 # Modernization status and acceptance
 
 Current checkpoint (2026-10-17): `56925fb` inline URL resolution, `efcc544`
-shared owned inline-image output, `4137374` Mac display. **110/110 Mac/core**,
-**86/86 portable core on Mac**, **6/6 focused ASan/UBSan**, strict C11 pass.
-PNG inline/click/Close/image-off and basic image accessibility label checked in
+shared owned inline-image output, `4137374` Mac display. **113/113 Mac/core**,
+**88/88 portable core on Mac**, **6/6 focused ASan/UBSan**, strict C11 pass.
+Shared image geometry `48d5425`, bounded CSS `4611a9d` and native styles
+`65b8ab6` are checked; three final sanitizer checks cover style embedding.
+PNG inline/click/Close/image-off, preferred CSS/fallback and image label checked in
 a disposable window. Whole corpus/sizing/CSS/formats/workflows remain pending.
 See [shared core remaining scope](shared-core-roadmap.md),
 [current handoff](handoff.md) and [book contract](book-tree-workflows.md).
@@ -287,7 +289,7 @@ a replacement for the weighted engineering estimate above.
 
 | New frontend | Initial evidence in ledger | Fully accepted groups | Main gaps |
 |---|---:|---:|---|
-| macOS/shared-core slice | 16 partial, 22 pending | 0/38 | Full pane layout, commentary, parallel views, search, bookmarks/annotations, editors, installation, complete settings/data migration, accessibility/translation and release packaging |
+| macOS/shared-core slice | 17 partial, 21 pending | 0/38 | Full pane layout, commentary, parallel views, search, bookmarks/annotations, editors, installation, complete settings/data migration, accessibility/translation and release packaging |
 | WinUI 3 | 0 initial frontend entries, 38 pending | 0/38 | Native frontend/tooling, shared-core integration, full workflows and validation |
 | GTK4 | Scoped existing macOS-preview capability set; see Linux handoff | 0/38 | Manual visual/input/accessibility/corpus validation, accelerated rendering and full workflows beyond both previews |
 

@@ -398,6 +398,8 @@ and owned inline image HTML now feed the Mac book pane. Raw SDK, ordinary
 presentation and resource-prepared HTML remain distinct; the latter may be
 normalized by libxml recovery. Native views allow data images only for this
 output and disable scripts/network/file subresources. Bounds, failures and
-actual evidence are in [book workflows](book-tree-workflows.md). Image sizing,
-CSS resources, full formats/corpus and other-platform consumption remain open.
+actual evidence are in [book workflows](book-tree-workflows.md). Pure legacy image geometry now serves the retained GTK adapter; native sizing
+is pending. Bounded preferred/default module CSS is owned by shared documents
+and consumed by Mac. Global CSS, recursive assets, full formats/corpus and
+other-platform consumption remain open.
 See [remaining core scope](shared-core-roadmap.md) for the larger service plan.
