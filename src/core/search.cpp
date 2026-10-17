@@ -66,6 +66,22 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
         sword::SWModule::SEARCHTYPE_EXTERNAL:sword::SWModule::SEARCHTYPE_MULTIWORD;break;
     default:throw std::invalid_argument("Unknown search mode");
   }
+  std::optional<sword::ListKey> range;
+  if(query.range){
+    const auto &requested=*query.range;
+    if(requested.module.empty()||requested.module.find('\0')!=std::string::npos||requested.expression.empty()||
+       requested.expression.size()>4096||requested.expression.find('\0')!=std::string::npos||
+       !g_utf8_validate(requested.expression.data(),requested.expression.size(),nullptr))
+      throw std::invalid_argument("Search range needs a module and nonempty UTF-8 bounds of at most 4096 bytes");
+    auto *source=manager.getModule(requested.module.c_str());
+    if(!source)throw std::out_of_range("Search range module is not installed");
+    auto *key=dynamic_cast<sword::VerseKey *>(source->getKey());
+    if(!key)throw std::invalid_argument("Search range source requires a verse-key module");
+    sword::VerseKey parser(*key);
+    parser.setText(source->getKeyText());
+    range=parser.parseVerseList(requested.expression.c_str(),"",true);
+    if(range->getCount()<0||range->getCount()>64)throw std::invalid_argument("Search range exceeds the interval limit");
+  }
   if(control&&control->cancel_requested()) {
     SearchResult result{std::move(query),{},engine_type,0,{},false};result.cancelled=true;return result;
   }
@@ -77,7 +93,7 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   }
   ProgressContext context{&module,control.get(),std::this_thread::get_id()};
   auto &list=module.search(stripped.c_str(),engine_type,query.case_sensitive?0:XIPHOS_SWORD_SEARCH_ICASE_FLAG,
-                           nullptr,nullptr,search_percent,&context);
+                           range?&*range:nullptr,nullptr,search_percent,&context);
   if(engine_type==sword::SWModule::SEARCHTYPE_EXTERNAL)list.sort();
   if(list.getCount()<0)throw std::runtime_error("SDK search returned an invalid count");
   SearchResult result{std::move(query),stripped,engine_type,static_cast<std::uint64_t>(list.getCount()),{},false};

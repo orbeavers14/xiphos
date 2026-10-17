@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <atomic>
 #include <memory>
+#include <optional>
 namespace xiphos::core {
 namespace detail { class SearchControlAccess; }
 enum class SearchPhase { queued=0, running=1, complete=2, cancelled=3, failed=4 };
@@ -25,10 +26,14 @@ public:
   SearchPhase phase() const noexcept{return phase_.load(std::memory_order_acquire);}
 };
 enum class SearchMode { regular_expression=0, phrase=1, words=2 };
+// Legacy sidebar range uses the designated Bible module's own VerseKey parser,
+// which may differ from the searched commentary module's versification.
+struct SearchRange { std::string module, expression; };
 struct SearchQuery {
   std::string module, expression;
   SearchMode mode=SearchMode::phrase;
   bool case_sensitive=false;
+  std::optional<SearchRange> range;
 };
 struct SearchLimits {
   std::size_t max_results=1000;
@@ -45,7 +50,8 @@ struct SearchResult {
   bool limited=false;
   bool cancelled=false,executed=false;
 };
-// This initial whole-module verse search bounds copied output only. SDK execution
+// This initial verse search bounds copied output only. SDK execution
 // time/internal result allocation are not bounded. Cooperative cancellation is
-// observed at SDK progress callbacks; range/last-search scopes remain separate.
+// observed at SDK progress callbacks. Explicit ranges stay as SDK interval keys,
+// not expanded verse lists. Last-search scopes remain a separate capability.
 }

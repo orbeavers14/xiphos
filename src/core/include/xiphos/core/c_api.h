@@ -293,7 +293,7 @@ const xc_note *xc_book_note_content(const xc_book_note *note);
 void xc_book_note_release(xc_book_note *note);
 xc_status xc_worker_modules(xc_worker *worker, xc_request **out);
 /* Initial whole-module Bible/regular-commentary search. Owned result only;
- * range/last-search scopes and native UI remain pending. Cooperative cancel and
+ * last-search scopes and native UI remain pending. Cooperative cancel and
  * progress are available on this request; no SDK pointer crosses the boundary.
  * Limits bound copied references, not SDK execution/internal result memory.
  * options NULL uses defaults; otherwise initialize defaults before overriding.
@@ -304,6 +304,15 @@ typedef struct { int mode, case_sensitive; size_t max_results, max_reference_byt
 void xc_search_options_default(xc_search_options *out);
 xc_status xc_worker_search_module(xc_worker *worker,uint64_t tab,const char *module,const char *expression,
                                   const xc_search_options *options,xc_request **out);
+/* Explicit bounds use range_module's cloned VerseKey parser and empty default
+ * context as legacy set_range does. At most 4096 UTF-8 bytes/64 interval keys;
+ * no 2000-verse preview expansion limit. SDK invalid/empty range semantics remain.
+ * Range/target module keys and caller histories are not published as navigation. */
+xc_status xc_worker_search_module_in_range(xc_worker *worker,uint64_t tab,const char *module,
+    const char *expression,const char *range_module,const char *range_expression,
+    const xc_search_options *options,xc_request **out);
+const char *xc_search_range_module(const xc_search *result);
+const char *xc_search_range_expression(const xc_search *result);
 xc_search *xc_request_take_search(xc_request *request);
 typedef struct {
   int mode, engine_type, case_sensitive, limited;

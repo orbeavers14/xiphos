@@ -274,6 +274,27 @@ const xiphos::core::BookInlineImages *inline_images(const xc_book_document *docu
 }
 }
 
+namespace {
+xc_status queue_search_module(xc_worker *w,uint64_t tab,const char *module,const char *expression,
+                                  const xc_search_options *options,xc_request **out,const char *range_module,const char *range_expression) {
+  xc_search_options copy;xc_search_options_default(&copy);if(options)copy=*options;
+  if(!module||!expression||copy.mode<XC_SEARCH_REGEX||copy.mode>XC_SEARCH_WORDS||
+     (copy.case_sensitive!=0&&copy.case_sensitive!=1)||!copy.max_results||copy.max_results>xiphos::core::maximum_search_results||
+     !copy.max_reference_bytes||copy.max_reference_bytes>xiphos::core::maximum_search_reference_bytes){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
+  if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;if(!w)return XC_INVALID_ARGUMENT;
+  try{
+    // Observe before acceptance, as other core jobs do. A discarded observer
+    // does not own SDK lifetime; the worker retains the control until completion.
+    auto request=std::make_unique<Request<xiphos::core::SearchResult>>();
+    xiphos::core::SearchQuery query{module,expression,static_cast<xiphos::core::SearchMode>(copy.mode),copy.case_sensitive!=0};
+    if(range_module)query.range=xiphos::core::SearchRange{range_module,range_expression};
+    auto task=w->value.search_module_task(tab,std::move(query),
+      {copy.max_results,copy.max_reference_bytes});
+    request->search_control=std::move(task.control);request->future=std::move(task.result);
+    *out=request.release();return XC_OK;
+  }catch(...){return failure();}
+}
+}
 extern "C" {
 xc_status xc_worker_restore_book_profile(xc_worker *w, uint64_t tab, const char *path, int mode, xc_request **out) {
   if (!path || !*path || (mode != XC_BOOK_RESTORE_DISPLAY_KEY && mode != XC_BOOK_RESTORE_INITIAL_WINDOW)) {
@@ -585,24 +606,16 @@ xc_status xc_worker_modules(xc_worker *w, xc_request **out) {
 void xc_search_options_default(xc_search_options *out) {
   if(out){const xiphos::core::SearchLimits limits;*out={XC_SEARCH_PHRASE,0,limits.max_results,limits.max_reference_bytes};}
 }
+
 xc_status xc_worker_search_module(xc_worker *w,uint64_t tab,const char *module,const char *expression,
-                                  const xc_search_options *options,xc_request **out) {
-  xc_search_options copy;xc_search_options_default(&copy);if(options)copy=*options;
-  if(!module||!expression||copy.mode<XC_SEARCH_REGEX||copy.mode>XC_SEARCH_WORDS||
-     (copy.case_sensitive!=0&&copy.case_sensitive!=1)||!copy.max_results||copy.max_results>xiphos::core::maximum_search_results||
-     !copy.max_reference_bytes||copy.max_reference_bytes>xiphos::core::maximum_search_reference_bytes){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
-  if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;if(!w)return XC_INVALID_ARGUMENT;
-  try{
-    // Observe before acceptance, as other core jobs do. A discarded observer
-    // does not own SDK lifetime; the worker retains the control until completion.
-    auto request=std::make_unique<Request<xiphos::core::SearchResult>>();
-    auto task=w->value.search_module_task(tab,
-      {module,expression,static_cast<xiphos::core::SearchMode>(copy.mode),copy.case_sensitive!=0},
-      {copy.max_results,copy.max_reference_bytes});
-    request->search_control=std::move(task.control);request->future=std::move(task.result);
-    *out=request.release();return XC_OK;
-  }catch(...){return failure();}
+    const xc_search_options *options,xc_request **out){return queue_search_module(w,tab,module,expression,options,out,nullptr,nullptr);}
+xc_status xc_worker_search_module_in_range(xc_worker *w,uint64_t tab,const char *module,const char *expression,
+    const char *range_module,const char *range_expression,const xc_search_options *options,xc_request **out){
+  if(!range_module||!range_expression){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
+  return queue_search_module(w,tab,module,expression,options,out,range_module,range_expression);
 }
+const char *xc_search_range_module(const xc_search *r){return r&&r->value.requested.range?r->value.requested.range->module.c_str():nullptr;}
+const char *xc_search_range_expression(const xc_search *r){return r&&r->value.requested.range?r->value.requested.range->expression.c_str():nullptr;}
 xc_search *xc_request_take_search(xc_request *r){return r&&r->status==XC_OK?r->search_result.release():nullptr;}
 xc_status xc_search_get_info(const xc_search *result,xc_search_info *out){
   if(!out)return XC_INVALID_ARGUMENT;*out={};if(!result)return XC_INVALID_ARGUMENT;

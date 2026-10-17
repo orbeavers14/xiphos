@@ -129,7 +129,7 @@ interruption, pre-execution stop, failed initialization/tab lookup, completion
 races and successful search after cancellation. Existing whole-module results
 and history/source neutrality remain covered. Final counts/checkpoints are in
 the rolling handoff; dependency instrumentation is partial, and multiple SDK
-regex/index backends, Windows/Fedora, range/last-search, attributes, full progress
+regex/index backends, Windows/Fedora, last-search, attributes, full progress
 UI/preview/export and corpus/locale workflows still need acceptance.
 
 Control checkpoint evidence: 121/121 Mac/core and 94/94 portable core on Mac
@@ -138,3 +138,34 @@ focused core/Swift checks, four ASan/UBSan and two TSan checks passed. A control
 foreign-thread SDK callback verified it can report progress but cannot set the
 stop flag; the subsequent owner callback performs interruption. All tests are
 local, with SDK dependency instrumentation limits retained.
+
+## Explicit search bounds
+
+`SearchQuery.range` optionally owns a source module and a UTF-8 bounds expression.
+The source module supplies its VerseKey/versification, independently of the
+searched Bible or regular commentary. The core clones that key and uses the
+legacy `parseVerseList(expression, "", true)` contract. Bounds stay as interval
+keys: Gen–Rev is not expanded through the preview's 2,000-verse limit. Expressions
+are capped at 4,096 bytes and 64 parsed intervals; SDK empty/unrecognized-range
+semantics remain unchanged. These checks do not bound SDK execution time.
+
+The C range request copies both inputs before acceptance. Range getters borrow
+from the owned search result, return NULL for unscoped results, and survive worker
+shutdown until result release. Swift copies the optional range and otherwise uses
+the same cancellation/draining path. A later unscoped search never inherits bounds.
+Search does not publish reading selection or history.
+
+Tests extract the actual retained legacy range setup and compare ordered matches
+for Bible/commentary targets, different source versifications, disjoint/whole-Bible
+and unrecognized bounds. An isolated fixture avoids mutating another test's SDK
+catalog. Cases also cover output truncation, pre-execution cancellation, invalid
+inputs and C/Swift ownership. ASan found the legacy setup assigning a key from its
+own borrowed text buffer; copying that text first fixes the observed use-after-free
+in the retained GTK path. The extracted actual routine is exercised with sanitizers;
+a full GTK3 build/runtime is still pending on its dependency environment.
+
+Next: characterize per-tab last-search scope. It must retain complete owned SDK
+keys independently of the bounded public result prefix, and publish atomically
+with an explicit failure/cancellation policy. Do not implement it by reusing the
+visible truncated reference array. Native search controls, advanced/multiple-module/
+attribute/index management, preview/navigation/export and full corpus remain open.

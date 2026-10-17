@@ -37,6 +37,7 @@
 #include <versekey.h>
 #include <regex.h>
 #include <string.h>
+#include <string>
 #include <utf8html.h>
 #include <url.h>
 
@@ -981,7 +982,9 @@ int BackEnd::set_range(const char *module_name, const char *list)
 
 	VerseKey *key = (VerseKey *)(SWKey *)(*mod);
 
-	key->setText(mod->getKeyText());
+	// setText can release this key's own getText buffer before copying it.
+	const std::string context = mod->getKeyText();
+	key->setText(context.c_str());
 	search_range = key->parseVerseList(list, "", true);
 	return search_range.getCount();
 }
