@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 #include "xiphos/core/book_tree.hpp"
+#include "xiphos/core/book_document.hpp"
 namespace sword { class SWModule; }
 namespace xiphos::core::detail {
 // Runtime indexed-tree capability, not a claim of complete book UI support.
@@ -13,6 +14,7 @@ BookTree capture_book_display_path(sword::SWModule &module, const std::string &p
 // Validates source first, selects that exact live tree offset, and renders it.
 // Caller owns engine-option scoping and serialization, as for ordinary reads.
 BookEntry capture_book_entry(sword::SWModule &module, std::uint64_t offset);
+BookDocument capture_book_document(sword::SWModule &module, std::uint64_t offset, const BookDocumentLimits &limits);
 BookNote capture_book_note(sword::SWModule &module, std::uint64_t offset,
                            const std::string &identifier, bool render_body);
 BookChildren capture_book_children(sword::SWModule &module, std::uint64_t parent,

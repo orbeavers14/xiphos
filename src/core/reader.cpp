@@ -136,6 +136,23 @@ BookChildren Reader::book_children(const std::string &id, std::uint64_t parent,
 BookEntry Reader::read_book(const std::string &id, std::uint64_t offset) {
   return book_impl(id, offset, nullptr);
 }
+BookDocument Reader::read_book_document(const std::string &id, std::uint64_t offset,
+                                        const EngineOptions &options, const BookDocumentLimits &limits) {
+  return book_document_impl(id, offset, &options, limits);
+}
+BookDocument Reader::read_book_document(const std::string &id, std::uint64_t offset, const BookDocumentLimits &limits) {
+  return book_document_impl(id, offset, nullptr, limits);
+}
+BookDocument Reader::book_document_impl(const std::string &id, std::uint64_t offset,
+                                       const EngineOptions *options, const BookDocumentLimits &limits) {
+  if (id.empty() || id.find('\0') != std::string::npos) throw std::invalid_argument("Invalid general-book module ID");
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto *module = impl_->manager->getModule(id.c_str());
+  if (!module) throw std::out_of_range("Module is not installed");
+  std::unique_ptr<ScopedEngineOptions> scope;
+  if (options) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *options);
+  return detail::capture_book_document(*module, offset, limits);
+}
 BookNote Reader::book_note(const std::string &id, std::uint64_t offset, const std::string &identifier,
                            const EngineOptions &options, bool render_body) {
   return book_note_impl(id, offset, identifier, &options, render_body);

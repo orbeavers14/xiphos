@@ -10,6 +10,7 @@
 #include "navigation.hpp"
 #include "lexical.hpp"
 #include "book_tree.hpp"
+#include "book_document.hpp"
 #include "book_selection.hpp"
 #include <memory>
 #include <string>
@@ -54,6 +55,12 @@ public:
   BookEntry read_book(const std::string &module, std::uint64_t offset, const EngineOptions &options);
   // Unconfigured overload retains the manager baseline, as other Reader reads do.
   BookEntry read_book(const std::string &module, std::uint64_t offset);
+  // Configured DisplayLevel depth-first document. Every section owns its exact
+  // source; bounded failures publish nothing. Raw single-entry APIs stay stable.
+  BookDocument read_book_document(const std::string &module, std::uint64_t offset,
+                                  const EngineOptions &options, const BookDocumentLimits &limits = {});
+  BookDocument read_book_document(const std::string &module, std::uint64_t offset,
+                                  const BookDocumentLimits &limits = {});
   // Owned ordinary book-note source; does not parse a verse URI or heading ID.
   BookNote book_note(const std::string &module, std::uint64_t offset, const std::string &identifier,
                      const EngineOptions &options, bool render_body = true);
@@ -118,6 +125,7 @@ public:
 private:
   BookNote book_note_impl(const std::string &module, std::uint64_t offset, const std::string &identifier,
                           const EngineOptions *options, bool render_body);
+  BookDocument book_document_impl(const std::string &module, std::uint64_t offset, const EngineOptions *options, const BookDocumentLimits &limits);
   BookEntry book_impl(const std::string &module, std::uint64_t offset, const EngineOptions *options);
   DictionaryEntry dictionary_impl(const std::string &module, const std::string &key, const EngineOptions *options, int direction = 0);
   ReferenceList reference_list_impl(const std::string &module, const std::string &expression,
