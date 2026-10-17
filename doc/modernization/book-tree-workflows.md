@@ -541,3 +541,29 @@ were used. Platform decoders still determine image validity; the MIME table is
 a suffix hint. Network resources, uppercase suffixes, responsive srcset/picture,
 CSS resources, full-size/animated formats, resizing and whole-corpus/visual
 workflow acceptance remain pending.
+
+### Shared image sizing arithmetic — 2026-10-17
+
+`image_size.h` exposes pure C-compatible viewport and image-fit calculations in
+the C++11 legacy-linked render library. Hosts supply measured viewport/image
+pixels; the core preserves legacy column width reduction, the 200-pixel padding
+threshold, width-then-height fit, single-precision ratio/truncation, and no
+upscaling. Extreme aspect ratios can still truncate one dimension to zero.
+Invalid/unrepresentable geometry returns a status and clears output. No image
+decoding, viewport access, files, GTK or process state enters these helpers.
+
+The actual GTK AnalyzeForImageSize routine delegates arithmetic to these helpers.
+An unusable viewport now returns the original unresized source; invalid decoder
+geometry retains that image without adding dimensions. Normal-domain behavior
+is compared against a frozen independent copy from `e193cf6` across 114,244
+window/column/image combinations. A configure-time extraction compiles/tests the
+actual updated GTK routine with injected viewport/decoder functions: image URI
+spelling, small-image no-upscale, original bytes, trailing text, missing-image
+warning-once and unusable viewports are checked. Attribute formatting now uses
+a bounded 64-byte buffer, accommodating two ten-digit dimensions instead of
+the previous 32-byte sprintf buffer. A large-dimension regression exercises it.
+
+Focused normal and ASan/UBSan checks pass; strict C++11 helper/C11 header checks
+and the native-disabled legacy render-library build pass. This is not a full
+GTK desktop build/run. Native viewport integration, resize preference import
+and corpus/visual behavior remain separate acceptance gates.

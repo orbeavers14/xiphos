@@ -42,6 +42,7 @@
 
 #include "gui/utilities.h"
 #include "xiphos/core/variant.h"
+#include "xiphos/core/image_size.h"
 #include "gui/preferences_dialog.h"
 #include "gui/xiphos.h"
 #include "gui/mod_mgr.h"
@@ -478,6 +479,7 @@ static void add_module_to_prayerlist_folder(GtkTreeModel *model,
  * Synopsis
  *   #include "gui/utilities.h"
 #include "xiphos/core/variant.h"
+#include "xiphos/core/image_size.h"
  *
  *   void add_module_to_language_folder(GtkTreeModel * model,
  *		      GtkTreeIter iter, gchar * language, gchar * module_name)
@@ -545,6 +547,7 @@ static void add_module_to_language_folder(GtkTreeModel *model,
  * Synopsis
  *   #include "gui/utilities.h"
 #include "xiphos/core/variant.h"
+#include "xiphos/core/image_size.h"
  *
  *   void load_module_tree(GtkWidget * tree)
  *
@@ -875,6 +878,7 @@ void free_font(MOD_FONT *mf)
  * Synopsis
  *   #include "gui/utilities.h"
 #include "xiphos/core/variant.h"
+#include "xiphos/core/image_size.h"
  *
  *   void add_mods_2_gtk_menu(gchar * mod_type, GtkMenu * menu,
 				GCallback callback)
@@ -1921,7 +1925,7 @@ const char *AnalyzeForImageSize(const char *origtext, int columns, GdkWindow *wi
 	const char *trail; // "trail" trails behind ...
 	char *path;	// ... the current "path".
 	char *end;	 // "end" is the path's end.
-	char buf[32];      // for preparing new width+height spec.
+	char buf[64];      // two full signed-int dimensions plus attribute text.
 	gint image_x, image_y, window_x = -999, window_y = -999;
 	int image_retval;
 	gboolean warned_once = FALSE;
@@ -1952,20 +1956,11 @@ const char *AnalyzeForImageSize(const char *origtext, int columns, GdkWindow *wi
 					      &window_y);
 #endif
 
-			/* in a world of multi-column output, */
-			/* we must constrain by column width. */
-			if (columns != 1) {
-				window_x /= columns;
-				window_x = (int)((float)window_x * 0.85);
-			}
-
-			if ((window_x > 200) || (window_y > 200)) {
-				window_x -= 23;
-				window_y -= 23;
-			} else {
-				window_x = (window_x * 93) / 100;
-				window_y = (window_y * 93) / 100;
-			}
+            xc_image_size bounds;
+            if (xc_image_viewport_size(window_x, window_y, columns, &bounds) != 0)
+                return origtext; // No usable viewport; retain unresized content.
+            window_x = bounds.width;
+            window_y = bounds.height;
 		}
 
 		/* add the working segment, with annotation added */
@@ -2031,20 +2026,12 @@ const char *AnalyzeForImageSize(const char *origtext, int columns, GdkWindow *wi
 			}
 			continue;
 		}
-		// knowing image size & window size, adjust to fit.
-		if (image_x > window_x) {
-			float proportion =
-			    (float)window_x / (float)image_x;
-			image_x = window_x;
-			image_y = (int)((float)image_y * proportion);
-		}
-		if (image_y > window_y) {
-			float proportion =
-			    (float)window_y / (float)image_y;
-			image_y = window_y;
-			image_x = (int)((float)image_x * proportion);
-		}
-		sprintf(buf, " width=\"%d\" height=\"%d\"", image_x,
+        xc_image_size fitted;
+        if (xc_fit_image_size(image_x, image_y, window_x, window_y, &fitted) != 0)
+            continue; // Invalid decoder geometry leaves this image unresized.
+        image_x = fitted.width;
+        image_y = fitted.height;
+		g_snprintf(buf, sizeof(buf), " width=\"%d\" height=\"%d\"", image_x,
 			image_y);
 		resized = g_string_append(resized, buf);
 	}

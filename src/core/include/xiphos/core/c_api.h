@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 #ifndef XIPHOS_CORE_C_API_H
 #define XIPHOS_CORE_C_API_H
+#include "image_size.h"
 #include <stddef.h>
 #include <stdint.h>
 #include "variant.h"
