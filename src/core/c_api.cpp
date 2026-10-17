@@ -30,6 +30,24 @@ struct xc_book_entry {
   explicit xc_book_entry(xiphos::core::BookEntry value)
     : tree{std::move(value.tree)}, has_entry(value.has_entry), html(std::move(value.html)) {}
 };
+struct xc_book_document {
+  struct Section {
+    xc_book_entry entry;
+    std::uint32_t depth;
+    bool rendered;
+    explicit Section(xiphos::core::BookDocumentSection value)
+      : entry(std::move(value.entry)), depth(value.depth), rendered(value.rendered) {}
+  };
+  xc_book_tree tree;
+  std::uint32_t display_level;
+  std::vector<Section> sections;
+  std::string html;
+  explicit xc_book_document(xiphos::core::BookDocument value)
+    : tree{std::move(value.tree)}, display_level(value.display_level), html(std::move(value.html)) {
+    sections.reserve(value.sections.size());
+    for (auto &section : value.sections) sections.emplace_back(std::move(section));
+  }
+};
 struct xc_note { xiphos::core::StudyNote value; };
 struct xc_book_note {
   xc_book_tree tree;
@@ -56,6 +74,7 @@ struct xc_request {
   std::unique_ptr<xc_dictionary_entry> dictionary;
   std::unique_ptr<xc_book_tree> book_tree;
   std::unique_ptr<xc_book_entry> book_entry;
+  std::unique_ptr<xc_book_document> book_document;
   std::unique_ptr<xc_book_children> book_children;
   std::unique_ptr<xc_book_note> book_note;
   std::unique_ptr<xc_lexical_entry> lexical;
@@ -85,6 +104,7 @@ struct xc_request {
   void store(xiphos::core::DictionaryChoices v) { dictionary_choices = std::make_unique<xc_dictionary_choices>(xc_dictionary_choices{std::move(v)}); }
   void store(xiphos::core::DictionaryHistorySnapshot v) { dictionary_history = std::make_unique<xc_dictionary_history>(xc_dictionary_history{std::move(v)}); }
   void store(xiphos::core::DictionaryEntry v) { dictionary = std::make_unique<xc_dictionary_entry>(xc_dictionary_entry{std::move(v)}); }
+  void store(xiphos::core::BookDocument v) { book_document = std::make_unique<xc_book_document>(std::move(v)); }
   void store(xiphos::core::BookTree v) { book_tree = std::make_unique<xc_book_tree>(xc_book_tree{std::move(v)}); }
   void store(std::optional<xiphos::core::BookTree> v) {
     book_selection_result = true;
@@ -283,6 +303,24 @@ xc_book_note *xc_request_take_book_note(xc_request *r) { return r && r->status =
 const xc_book_tree *xc_book_note_tree(const xc_book_note *note) { return note ? &note->tree : nullptr; }
 const xc_note *xc_book_note_content(const xc_book_note *note) { return note ? &note->content : nullptr; }
 void xc_book_note_release(xc_book_note *note) { delete note; }
+xc_status xc_worker_read_book_document(xc_worker *w, uint64_t tab, const char *id, uint64_t offset, xc_request **out) {
+  if (!id || !*id) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.read_book_document(tab, id, offset); });
+}
+xc_book_document *xc_request_take_book_document(xc_request *r) { return r && r->status == XC_OK ? r->book_document.release() : nullptr; }
+const xc_book_tree *xc_book_document_tree(const xc_book_document *document) { return document ? &document->tree : nullptr; }
+const char *xc_book_document_html(const xc_book_document *document) { return document ? document->html.c_str() : nullptr; }
+uint32_t xc_book_document_display_level(const xc_book_document *document) { return document ? document->display_level : 0; }
+size_t xc_book_document_count(const xc_book_document *document) { return document ? document->sections.size() : 0; }
+xc_status xc_book_document_get_section(const xc_book_document *document, size_t index, xc_book_document_section *out) {
+  if (!out) return XC_INVALID_ARGUMENT;
+  *out = {};
+  if (!document || index >= document->sections.size()) return XC_INVALID_ARGUMENT;
+  const auto &section = document->sections[index];
+  *out = {&section.entry, section.depth, section.rendered ? 1 : 0};
+  return XC_OK;
+}
+void xc_book_document_release(xc_book_document *document) { delete document; }
 xc_status xc_worker_book_children(xc_worker *w, const char *id, uint64_t parent,
                                   int has_after, uint64_t after, uint32_t limit, xc_request **out) {
   if (!id || !*id || (has_after != 0 && has_after != 1) || !limit || limit > 256) {

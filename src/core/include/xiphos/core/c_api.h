@@ -17,6 +17,7 @@ typedef struct xc_dictionary_history xc_dictionary_history;
 typedef struct xc_dictionary_entry xc_dictionary_entry;
 typedef struct xc_book_tree xc_book_tree;
 typedef struct xc_book_entry xc_book_entry;
+typedef struct xc_book_document xc_book_document;
 typedef struct xc_book_children xc_book_children;
 typedef struct xc_book_note xc_book_note;
 /* Submission-only borrowed strings, copied before return. NULL is absent;
@@ -145,6 +146,23 @@ const xc_book_tree *xc_book_entry_tree(const xc_book_entry *entry);
 const char *xc_book_entry_html(const xc_book_entry *entry);
 int xc_book_entry_has_entry(const xc_book_entry *entry);
 void xc_book_entry_release(xc_book_entry *entry);
+/* Read-only configured DisplayLevel document; exact raw source offset (root 0
+ * stays root), existing tab/module engine options, no selection/history visit.
+ * Bounds: 64 levels, 4096 visited nodes, 8 MiB combined HTML; failure publishes
+ * no partial document. All data copied; take-once result outlives tab/worker. */
+xc_status xc_worker_read_book_document(xc_worker *worker, uint64_t tab, const char *module, uint64_t offset, xc_request **out);
+xc_book_document *xc_request_take_book_document(xc_request *request);
+/* Borrowed root/section entry and strings live until document release. Do not
+ * release borrowed trees/entries. Sections retain SDK depth-first order and
+ * exact source identities, including skipped empty branches and linked nodes. */
+typedef struct { const xc_book_entry *entry; uint32_t depth; int rendered; } xc_book_document_section;
+const xc_book_tree *xc_book_document_tree(const xc_book_document *document);
+const char *xc_book_document_html(const xc_book_document *document);
+uint32_t xc_book_document_display_level(const xc_book_document *document);
+size_t xc_book_document_count(const xc_book_document *document);
+/* Invalid document/index clears a non-NULL out and returns INVALID_ARGUMENT. */
+xc_status xc_book_document_get_section(const xc_book_document *document, size_t index, xc_book_document_section *out);
+void xc_book_document_release(xc_book_document *document);
 /* Read-only SDK child order, page limit 1..256; has_after is strict 0/1.
  * after is ignored when has_after=0; otherwise it must identify a direct child
  * of parent. All node strings borrow from the owned page. Out-of-range indices

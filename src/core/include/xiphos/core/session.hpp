@@ -53,6 +53,7 @@ public:
   // Raw book source/HTML with existing effective engine options. No visit or
   // book-specific presentation/history/persistence policy is introduced yet.
   BookEntry read_book(const std::string &module, std::uint64_t offset);
+  BookDocument read_book_document(const std::string &module, std::uint64_t offset);
   // Publish only after target validation and configured entry rendering succeed.
   // Read-only book/notes/restore-resolution calls do not update this state.
   BookEntry select_book(const BookSelectionTarget &target);

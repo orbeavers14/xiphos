@@ -211,6 +211,10 @@ BookEntry StudySession::read_book(const std::string &module, std::uint64_t offse
   const auto options = module_engine_options(module);
   return options ? reader_.read_book(module, offset, *options) : reader_.read_book(module, offset);
 }
+BookDocument StudySession::read_book_document(const std::string &module, std::uint64_t offset) {
+  const auto options = module_engine_options(module);
+  return options ? reader_.read_book_document(module, offset, *options) : reader_.read_book_document(module, offset);
+}
 BookEntry StudySession::select_book(const BookSelectionTarget &target) {
   const auto resolved = reader_.resolve_book_target(book_reading_target(target));
   auto result = read_book(resolved.module, resolved.node.offset);
