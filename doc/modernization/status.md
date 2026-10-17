@@ -166,6 +166,15 @@ controls and complete saved-tab XML/visibility/fallback/write integration remain
 pending. No hosted builds or new full parity acceptance. This checkpoint is
 handed off near the usage ceiling with no active shared task claim.
 
+Shared navigation `0b81ec5` resolves fresh parent/child/sibling relationships from
+committed tab state and reuses configured publication, including legacy numeric
+root handling and optional no-op boundaries. Swift transport `aa3b307` copies
+book capability, nodes, pages, optional selections and profile restores without
+replicating core policy. Local navigation checkpoint: **95/95 Mac/core**,
+**78/78 portable Linux/core on Mac**, focused **ASan/UBSan 3/3** and C11 pass.
+Native controls are in progress. The usage window refreshed automatically; no
+reset credit was used. No new whole parity gate or percentage is accepted.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three

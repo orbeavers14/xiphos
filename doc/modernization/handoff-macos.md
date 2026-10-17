@@ -5,8 +5,9 @@ Updated 2026-10-16. Read [AGENTS.md](../../AGENTS.md), the
 
 ## Checked shared-core handoff
 
-Branch `master`, fork `orbeavers14/xiphos`. Handed off near the usage ceiling;
-no active shared claim. Preserve Windows lane, `.DS_Store`, GTK3, tests and
+Branch `master`, fork `orbeavers14/xiphos`. Active shared/native claim: book navigation controls
+consuming the checked shared operations. The usage window refreshed automatically;
+no reset credit was consumed. Preserve Windows lane, `.DS_Store`, GTK3, tests and
 licenses. Keep all checks local; fetch before overlapping edits.
 
 Latest `106577b` shares the legacy numeric reading minimum of 4 across typed
@@ -49,9 +50,9 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At `106577b`: **93/93 Mac/core**, **77/77 portable Linux/core on this Mac**,
-focused selection/entry/profile-restore/session **ASan/UBSan 4/4**, strict C11
-and strict C++17 decoder checks pass. Latest full runs are clean. Prior `eb33f2a`
+At navigation `0b81ec5` and Swift transport `aa3b307`: **95/95 Mac/core**,
+**78/78 portable Linux/core on this Mac**, focused navigation/entry/session
+**ASan/UBSan 3/3** and strict C11 pass. Latest full runs are clean. Prior `eb33f2a`
 had a Mac paging timeout and sanitizer fixture timeout despite success output;
 isolated reruns passed without source or timeout changes. Preserve that evidence
 in status/history. SDK dependencies are not fully instrumented; leaks are off.
@@ -96,7 +97,7 @@ No complete functional or visual parity is claimed.
 
 ## Next bounded work
 
-1. Next unclaimed shared/native milestone: book tree/navigation controls consuming
+1. Active shared/native milestone: book tree/navigation controls consuming
    shared selection, with Swift adapters containing no duplicate core policy.
    Full saved-tab XML, visibility/fallback context and round-trip profile writes
    remain separate acceptance gates; explicit file restore is now implemented.

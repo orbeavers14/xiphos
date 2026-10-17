@@ -341,8 +341,32 @@ missing/malformed/DTD/overflow rejection, absent-book retention, C argument/resu
 ownership and shutdown draining. Successful/failed imports retain source profile
 bytes and permissions. No personal profiles or installed content are tested.
 
-The next slices are native tree/navigation controls and saved-tab/visibility integration,
-then image/resource routing,
-links, history/persistent selection, additional book windows and editors. Preserve
-the GTK3 app and all its write paths. No F10 group, native GUI, corpus, platform or
-legacy-retirement gate is accepted by source queries alone.
+## Shared navigation and Swift transport
+
+`StudySession::navigate_book` and queued/C counterparts resolve parent, first
+child, previous sibling and next sibling from the committed tab source. They
+capture fresh SDK relations, reject changed source identity and publish through
+configured selection. Missing selection/relation is successful optional absence,
+with no state change. Parent-to-root uses the same legacy numeric reading minimum
+of four; explicit root paths and low-level source queries retain root zero.
+FIFO commands use the last successfully committed source, including when an
+observer was released. No Bible/dictionary history or preference writes occur.
+
+`core_book_navigation` checks SDK order, entryless branches, linked entry source,
+configured HTML, boundaries, invalid commands, tab isolation and C ownership/
+shutdown. Alias HTML is compared at the alias source: its note links legitimately
+carry a different path than the linked entry's original node.
+
+Swift transport copies capability flags, node relationships, child pages,
+configured selections and optional restores before releasing C results. Strings
+reject embedded NUL; numeric prefix/default/path interpretation remains in C++.
+`swift_book_adapter` checks both restore modes, explicit profile import, root
+identity, paging, isolation, failure neutrality and copies surviving shutdown.
+Native controls are in progress; complete saved-tab restoration, visibility and
+round-trip writes remain separate gates.
+
+The next slices include native tree/navigation controls and saved-tab/visibility
+integration, image/resource routing, links, history/persistent selection,
+additional book windows and editors. Preserve the GTK3 app and all its write
+paths. No complete F10, corpus, platform or legacy-retirement gate is accepted
+by these scoped checks.

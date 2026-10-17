@@ -21,8 +21,9 @@ publication `0af4593`, SDK resolution `eb33f2a` and typed restore contexts `929c
 Latest `106577b` applies the legacy numeric reading minimum at the shared selection
 boundary while preserving explicit root-path reads. Failed imports/rendering retain
 committed state; read-only calls and absent restore are neutral.
-Latest checks: **93/93 Mac/core**, **77/77 portable Linux/core on Mac**, focused
-**ASan/UBSan 4/4**, strict C11 and C++17. All checks ran locally. Native book
+Latest shared navigation `0b81ec5` and Swift transport `aa3b307` pass
+**95/95 Mac/core**, **78/78 portable Linux/core on Mac**, focused
+**ASan/UBSan 3/3**, and strict C11. All checks ran locally. Native book
 controls, complete saved-tab integration and profile writes remain pending.
 See [book workflows](book-tree-workflows.md). Current GTK runtime/MSVC/WinUI
 remain unvalidated; preserve the Windows lane. Earlier timeout/rerun evidence
@@ -36,8 +37,8 @@ remains in status/history; the latest full runs are clean.
 | Earlier Fedora preview scope catch-up | PRs #82–89, `a80409b` | [Native Fedora evidence](handoff-linux.md); retain manual/corpus/renderer gates |
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
-The owner renewed continued shared-core work until usage runs out. This checkpoint
-is handed off near the usage ceiling, with no active task claim. No reset
+The owner renewed continued shared-core work until usage runs out. The five-hour window refreshed automatically; active Mac
+work is native book navigation controls consuming the checked shared operations. No reset
 credit or hosted builds are authorized by this continuation. No whole parity or
 legacy-retirement gate is accepted by scoped checks.
 
