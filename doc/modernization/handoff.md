@@ -24,11 +24,11 @@ committed state; read-only calls and absent restore are neutral.
 Complete document publication `6cb35cf`, worker/C `99056d7` and native consumption
 `e52a497` preserve configured DisplayLevel depth/order, atomic selection and exact
 rendered-section note routing. Earlier raw entry/read-only APIs remain stable.
-Checks: **107/107 Mac/core**, **85/85 portable Linux/core on Mac**, focused
+Checks: **109/109 Mac/core**, **85/85 portable Linux/core on Mac**, focused
 **ASan/UBSan 9/9** and C11. Shared presentation `86e4ad0` and native controls `614a81d` retain raw sources and
 consume matching visible HTML/CSS. The final compact menu adjustment passed
 app/model builds and nine focused checks. All checks are local. Full workflow/corpus/visual
-acceptance, resources, saved tabs and writes remain pending. See
+acceptance, inline resources, saved tabs and writes remain pending. See
 [book workflows](book-tree-workflows.md). Current GTK/MSVC/WinUI remain unvalidated.
 
 | Implemented area | Checkpoints | Contract / limits |
@@ -39,16 +39,16 @@ acceptance, resources, saved tabs and writes remain pending. See
 | Earlier Fedora preview scope catch-up | PRs #82–89, `a80409b` | [Native Fedora evidence](handoff-linux.md); retain manual/corpus/renderer gates |
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
-The owner renewed continued shared-core work until usage runs out. The five-hour window refreshed automatically; active Mac
-work is native separate-image preview using shared dispatch and bounded bytes. No reset
-credit or hosted builds are authorized by this continuation. No whole parity or
+The native separate-image preview is checked and handed off at `1af7207`, using
+shared dispatch `57cf632` and bounded bytes. No active edit claim is held.
+No reset credit or hosted build was used. No whole parity or
 legacy-retirement gate is accepted by scoped checks.
 
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Native image preview using shared click dispatch/bytes | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Inline book resources using shared resource policy | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 
@@ -139,3 +139,28 @@ coordinate ownership before changing shared-core APIs, run checks locally, and
 update/push the handoff with the tested commit and evidence. Preserve the GTK3 app
 and one shared C++ core. Do not trigger or enable hosted GitHub builds.
 ```
+
+## Native book image checkpoint — 2026-10-16
+
+Core dispatch `57cf632` returns an owned note or image result through the same
+queued worker/C boundary. Native preview `1af7207` copies bytes before releasing
+C ownership, decodes an ImageIO thumbnail off the UI thread (2048-pixel limit),
+and presents a native sheet with Close. Failed loads and late completions after
+window closure retain committed reading state. A generated original-prose PNG
+opened in the Mac window; closing it returned to the same book section. The
+subsequent accessibility label compiled and passed focused model checks; full
+VoiceOver acceptance remains open.
+
+Local validation: **109/109 Mac/core**, **85/85 portable Linux/core on Mac**,
+**9/9 ASan/UBSan**, and strict C11 header compilation. After the image label
+adjustment, app/model builds and **8/8 focused checks** passed. No hosted builds
+or reset credits were used. Portable checks on Mac do not validate current
+Fedora GTK or native Windows/MSVC/WinUI.
+
+Next bounded task: characterize and implement inline book resource routing using
+the same shared resource policy. Inline images, sizing/CSS, other formats and
+animation, full-size viewing, corpus/visual workflows, note numbering and saved
+tabs/writes remain pending. Preserve GTK3 and all retirement gates. Overall
+planning estimate remains about **8% (6–10%)**, **0/38** whole feature groups
+accepted, **0/3** release-ready native apps. This checkpoint is handed off near
+the usage ceiling; no active edit ownership is held.
