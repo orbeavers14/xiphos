@@ -85,3 +85,20 @@ against each actual SDK before accepting case behavior; do not guess another
 OS's dependency build settings. The initial failed fixture lacked its RawText
 data directories; fixture reads now verify stored text before comparing search
 results. This was corrected before source acceptance.
+
+## Queued result transport
+
+The same read-only search now runs through StudySession/StudyWorker and owned C
+results. Query/options are copied before return; pending requests expose no
+payload, successful payload transfer is once, and borrowed metadata/reference
+strings outlive later jobs and worker shutdown until result release. Invalid
+mode/case/limits/NULL inputs clear the output; accepted SDK/source failures have
+no partial payload. Search leaves reading, book selection and Bible/dictionary
+histories independent across tabs. Swift actor adapters copy the same result
+without parsing, scanning modules or managing a separate search engine. No
+native search controls or active cancellation/progress are introduced yet.
+
+At this checkpoint: 120/120 Mac/core, 93/93 portable Linux/core checks on Mac,
+three focused ASan/UBSan checks, and strict C11 pass locally. Three focused
+core/Swift adapter checks also pass. SDK dependencies are not fully instrumented;
+leak detection is off. Current Fedora/Windows acceptance remains pending.

@@ -36,6 +36,7 @@ public:
   StudyWorker &operator=(const StudyWorker &) = delete;
   std::future<std::vector<Module>> modules();
   // Owned, read-only source queries use the same engine thread, without a tab.
+  std::future<SearchResult> search_module(StudyTab tab,SearchQuery query,SearchLimits limits = {});
   std::future<BookTree> book_tree(std::string module, std::uint64_t offset);
   std::future<BookTree> book_tree_path(std::string module, std::string path);
   std::future<std::optional<BookTree>> resolve_saved_book_selection(SavedBookSelection saved, BookRestoreMode mode);

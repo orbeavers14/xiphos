@@ -207,6 +207,9 @@ DictionaryEntry StudySession::read_dictionary(const std::string &module, const s
   const auto options = module_engine_options(module);
   return options ? reader_.read_dictionary(module, key, *options) : reader_.read_dictionary(module, key);
 }
+SearchResult StudySession::search_module(SearchQuery query,const SearchLimits &limits) {
+  return reader_.search_module(std::move(query),limits);
+}
 BookEntry StudySession::read_book(const std::string &module, std::uint64_t offset) {
   const auto options = module_engine_options(module);
   return options ? reader_.read_book(module, offset, *options) : reader_.read_book(module, offset);

@@ -42,6 +42,7 @@ typedef struct xc_link xc_link;
 typedef struct xc_choices xc_choices;
 typedef struct xc_worker xc_worker;
 typedef struct xc_request xc_request;
+typedef struct xc_search xc_search;
 typedef struct xc_catalog xc_catalog;
 typedef struct xc_history xc_history;
 typedef enum xc_status { XC_OK = 0, XC_INVALID_ARGUMENT = 1,
@@ -291,6 +292,31 @@ const xc_book_tree *xc_book_note_tree(const xc_book_note *note);
 const xc_note *xc_book_note_content(const xc_book_note *note);
 void xc_book_note_release(xc_book_note *note);
 xc_status xc_worker_modules(xc_worker *worker, xc_request **out);
+/* Initial whole-module Bible/regular-commentary search. Owned result only;
+ * range/last-search scopes, active cancel/progress and native UI remain pending.
+ * Limits bound copied references, not SDK execution/internal result memory.
+ * options NULL uses defaults; otherwise initialize defaults before overriding.
+ * Boolean/mode/limit errors reject and clear out. Query/module are copied before
+ * return; accepted failures surface on polling without publishing partial data. */
+typedef enum xc_search_mode { XC_SEARCH_REGEX=0, XC_SEARCH_PHRASE=1, XC_SEARCH_WORDS=2 } xc_search_mode;
+typedef struct { int mode, case_sensitive; size_t max_results, max_reference_bytes; } xc_search_options;
+void xc_search_options_default(xc_search_options *out);
+xc_status xc_worker_search_module(xc_worker *worker,uint64_t tab,const char *module,const char *expression,
+                                  const xc_search_options *options,xc_request **out);
+xc_search *xc_request_take_search(xc_request *request);
+typedef struct {
+  int mode, engine_type, case_sensitive, limited;
+  uint64_t total_results;
+  size_t result_count;
+} xc_search_info;
+/* All strings borrow search ownership until release, survive later jobs/worker
+ * close. Info invalid input clears a non-NULL out. Invalid strings/index = NULL. */
+xc_status xc_search_get_info(const xc_search *result,xc_search_info *out);
+const char *xc_search_module(const xc_search *result);
+const char *xc_search_expression(const xc_search *result);
+const char *xc_search_effective_expression(const xc_search *result);
+const char *xc_search_reference(const xc_search *result,size_t index);
+void xc_search_release(xc_search *result);
 xc_status xc_worker_create_tab(xc_worker *worker, xc_request **out);
 xc_status xc_worker_close_tab(xc_worker *worker, uint64_t tab, xc_request **out);
 /* Consumer migration capability, not a saved module preference. Accepts exactly

@@ -103,6 +103,9 @@ StudyWorker::~StudyWorker() = default;
 std::future<std::vector<Module>> StudyWorker::modules() {
   return impl_->submit([](Impl::State &s) { return s.reader.modules(); });
 }
+std::future<SearchResult> StudyWorker::search_module(StudyTab tab,SearchQuery query,SearchLimits limits) {
+  return impl_->submit([tab,query=std::move(query),limits](Impl::State &s){return s.tab(tab).search_module(query,limits);});
+}
 std::future<BookTree> StudyWorker::book_tree(std::string module, std::uint64_t offset) {
   return impl_->submit([module = std::move(module), offset](Impl::State &s) { return s.reader.book_tree(module, offset); });
 }

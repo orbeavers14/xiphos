@@ -25,6 +25,8 @@ struct StudyPassage {
 class StudySession {
 public:
   explicit StudySession(Reader &reader) : reader_(reader) {}
+  // Read-only initial search: no reading/history publication or last-search scope.
+  SearchResult search_module(SearchQuery query,const SearchLimits &limits = {});
   // Migration opt-in for consumers that copy/apply snapshot HTML and CSS together.
   // Not a saved study preference. Existing consumers retain plain snapshots.
   void set_lexical_layout_enabled(bool enabled) { lexical_layout_enabled_ = enabled; }

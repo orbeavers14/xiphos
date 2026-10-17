@@ -6,6 +6,7 @@
 #include <rawtext.h>
 #include <rawcom.h>
 #include <rawld.h>
+#include <rawgenbook.h>
 #include <markupfiltmgr.h>
 #include <swoptfilter.h>
 #include <swfilter.h>
@@ -42,6 +43,8 @@ int main(int argc,char **argv){try{
   std::ofstream conf(root/"mods.d"/(id+".conf"));conf<<'['<<id<<"]\nDataPath=./data/"<<path<<"/\nModDrv="<<driver<<"\nSourceType=OSIS\nEncoding=UTF-8\nGlobalOptionFilter=UTF8GreekAccents\nGlobalOptionFilter=UTF8HebrewPoints\nGlobalOptionFilter=UTF8ArabicPoints\n";
  }
  check(RawLD::createModule((root/"data/dictionary").string().c_str())==0,"Create excluded search module family");{std::ofstream conf(root/"mods.d/Dictionary.conf");conf<<"[Dictionary]\nDataPath=./data/dictionary\nModDrv=RawLD\n";}
+ check(RawGenBook::createModule((root/"data/book").string().c_str())==0,"Create search-neutral book source");
+ {RawGenBook book((root/"data/book").string().c_str());book.setKey("/Entry");book.setEntry("Original independent book reading.");std::ofstream conf(root/"mods.d/Book.conf");conf<<"[Book]\nDataPath=./data/book\nModDrv=RawGenBook\nSourceType=ThML\nEncoding=UTF-8\n";}
  fs::remove(root/"mods.d/modules-conf.cache");const auto before=bytes(root/"data");SearchResult held;
  Fault fault;Reader reader(root.string());EngineManager legacy(root.string().c_str(),true,new MarkupFilterMgr(FMT_XHTML),false,false);BackEnd backend{&legacy};
  check(reader.read("Text","John1:1").html.find("Original Alpha")!=std::string::npos && reader.read_commentary_entry("Commentary","John1:1").html.find("Original Alpha")!=std::string::npos,"Search fixture data is present before comparing engine results");

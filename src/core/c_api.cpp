@@ -15,6 +15,7 @@ struct xc_session {
 struct xc_chapter { xiphos::core::Chapter value; };
 struct xc_choices { xiphos::core::ReferenceChoices value; };
 struct xc_link { xiphos::core::PassageLink value; };
+struct xc_search { xiphos::core::SearchResult value; };
 struct xc_reference_list { xiphos::core::ReferenceList value; };
 struct xc_lexicons { std::optional<xiphos::core::LexiconPreferences> value; };
 struct xc_lexical_entry { xiphos::core::LexicalEntry value; };
@@ -83,6 +84,7 @@ struct xc_request {
   std::unique_ptr<xc_dictionary_entry> dictionary;
   std::unique_ptr<xc_book_tree> book_tree;
   std::unique_ptr<xc_book_entry> book_entry;
+  std::unique_ptr<xc_search> search_result;
   std::unique_ptr<xc_book_document> book_document;
   std::unique_ptr<xc_book_image> book_image;
   std::unique_ptr<xc_book_image_data> book_image_data;
@@ -100,6 +102,7 @@ struct xc_request {
   std::unique_ptr<xc_history> history;
   virtual ~xc_request() = default;
   virtual void update() = 0;
+  void store(xiphos::core::SearchResult v) { search_result = std::make_unique<xc_search>(xc_search{std::move(v)}); }
   void store(xiphos::core::StudyPassage v) { passage = std::make_unique<xc_passage>(xc_passage{std::move(v)}); }
   void store(xiphos::core::ModulePresentationOptions v) { presentation = v; }
   void store(uint64_t v) { tab = v; }
@@ -577,6 +580,31 @@ void xc_worker_close(xc_worker *w) { delete w; }
 xc_status xc_worker_modules(xc_worker *w, xc_request **out) {
   return queue_request(w, out, [](auto &worker) { return worker.modules(); });
 }
+void xc_search_options_default(xc_search_options *out) {
+  if(out){const xiphos::core::SearchLimits limits;*out={XC_SEARCH_PHRASE,0,limits.max_results,limits.max_reference_bytes};}
+}
+xc_status xc_worker_search_module(xc_worker *w,uint64_t tab,const char *module,const char *expression,
+                                  const xc_search_options *options,xc_request **out) {
+  xc_search_options copy;xc_search_options_default(&copy);if(options)copy=*options;
+  if(!module||!expression||copy.mode<XC_SEARCH_REGEX||copy.mode>XC_SEARCH_WORDS||
+     (copy.case_sensitive!=0&&copy.case_sensitive!=1)||!copy.max_results||copy.max_results>xiphos::core::maximum_search_results||
+     !copy.max_reference_bytes||copy.max_reference_bytes>xiphos::core::maximum_search_reference_bytes){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
+  return queue_request(w,out,[=](auto &worker){return worker.search_module(tab,
+      {module,expression,static_cast<xiphos::core::SearchMode>(copy.mode),copy.case_sensitive!=0},
+      {copy.max_results,copy.max_reference_bytes});});
+}
+xc_search *xc_request_take_search(xc_request *r){return r&&r->status==XC_OK?r->search_result.release():nullptr;}
+xc_status xc_search_get_info(const xc_search *result,xc_search_info *out){
+  if(!out)return XC_INVALID_ARGUMENT;*out={};if(!result)return XC_INVALID_ARGUMENT;
+  const auto &value=result->value;
+  *out={static_cast<int>(value.requested.mode),value.engine_type,value.requested.case_sensitive?1:0,
+        value.limited?1:0,value.total_results,value.references.size()};return XC_OK;
+}
+const char *xc_search_module(const xc_search *r){return r?r->value.requested.module.c_str():nullptr;}
+const char *xc_search_expression(const xc_search *r){return r?r->value.requested.expression.c_str():nullptr;}
+const char *xc_search_effective_expression(const xc_search *r){return r?r->value.effective_expression.c_str():nullptr;}
+const char *xc_search_reference(const xc_search *r,size_t index){return r&&index<r->value.references.size()?r->value.references[index].c_str():nullptr;}
+void xc_search_release(xc_search *result){delete result;}
 xc_status xc_worker_create_tab(xc_worker *w, xc_request **out) {
   return queue_request(w, out, [](auto &worker) { return worker.create_tab(); });
 }
