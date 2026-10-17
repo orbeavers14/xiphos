@@ -281,3 +281,7 @@ entryless-branch content and retained reading after a document-limit failure.
 The current full local Mac/core suite passes 102/102. Display cleanup/annotation
 layout, images/resources, generalized book links, saved tabs and complete visual/
 corpus/platform acceptance remain pending. No complete parity is implied.
+
+Book controls live in `BookPane.swift`; `ReaderApp.swift` retains the window model
+and composition. The view move preserves the checked control implementation;
+app/model builds and six focused book/adapter checks pass after extraction.
