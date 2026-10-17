@@ -196,6 +196,17 @@ xc_status xc_book_document_get_display_options(const xc_book_document *document,
 size_t xc_book_document_cleanup_count(const xc_book_document *document);
 int xc_book_document_cleanup_kind(const xc_book_document *document, size_t index);
 const char *xc_book_document_cleanup_suffix(const xc_book_document *document, size_t index);
+/* Separate resource-prepared HTML can be normalized by libxml HTML recovery.
+ * Raw/presentation HTML stays unchanged. Up to 64 images, 16 MiB per image,
+ * 32 MiB final HTML; failures retain text and report per-source issues. MIME
+ * hints/base64 do not validate formats. Host must disable scripts/network/file
+ * subresources and may allow data: images for this output only. All returned
+ * strings borrow document ownership; NULL/invalid index yields NULL or zero. */
+const char *xc_book_document_inline_html(const xc_book_document *document);
+size_t xc_book_document_inline_image_count(const xc_book_document *document);
+size_t xc_book_document_inline_issue_count(const xc_book_document *document);
+const char *xc_book_document_inline_issue_source(const xc_book_document *document, size_t index);
+const char *xc_book_document_inline_issue_message(const xc_book_document *document, size_t index);
 void xc_book_document_release(xc_book_document *document);
 /* Image-command/resource-context characterization only. Requires a committed
  * document, preserves the legacy filename/file: suffix behavior, and copies SDK

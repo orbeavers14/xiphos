@@ -261,6 +261,13 @@ const xiphos::core::Module *module_at(const xc_reader *r, size_t i) {
   return r && i < r->value->modules().size() ? &r->value->modules()[i] : nullptr;
 }
 }
+namespace {
+const xiphos::core::BookInlineImages *inline_images(const xc_book_document *document) {
+  return document && document->presentation && document->presentation->inline_images
+    ? &*document->presentation->inline_images : nullptr;
+}
+}
+
 extern "C" {
 xc_status xc_worker_restore_book_profile(xc_worker *w, uint64_t tab, const char *path, int mode, xc_request **out) {
   if (!path || !*path || (mode != XC_BOOK_RESTORE_DISPLAY_KEY && mode != XC_BOOK_RESTORE_INITIAL_WINDOW)) {
@@ -402,6 +409,21 @@ int xc_book_document_cleanup_kind(const xc_book_document *document, size_t index
 const char *xc_book_document_cleanup_suffix(const xc_book_document *document, size_t index) {
   return document && document->presentation && index < document->presentation->cleanup_diagnostics.size()
     ? document->presentation->cleanup_diagnostics[index].suffix.c_str() : nullptr;
+}
+const char *xc_book_document_inline_html(const xc_book_document *document) {
+  const auto *value = inline_images(document); return value ? value->html.c_str() : nullptr;
+}
+size_t xc_book_document_inline_image_count(const xc_book_document *document) {
+  const auto *value = inline_images(document); return value ? value->embedded : 0;
+}
+size_t xc_book_document_inline_issue_count(const xc_book_document *document) {
+  const auto *value = inline_images(document); return value ? value->issues.size() : 0;
+}
+const char *xc_book_document_inline_issue_source(const xc_book_document *document, size_t index) {
+  const auto *value = inline_images(document); return value && index < value->issues.size() ? value->issues[index].source.c_str() : nullptr;
+}
+const char *xc_book_document_inline_issue_message(const xc_book_document *document, size_t index) {
+  const auto *value = inline_images(document); return value && index < value->issues.size() ? value->issues[index].message.c_str() : nullptr;
 }
 void xc_book_document_release(xc_book_document *document) { delete document; }
 xc_status xc_worker_book_image_link(xc_worker *w, uint64_t tab, const char *uri, xc_request **out) {

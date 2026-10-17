@@ -2,6 +2,7 @@
 #pragma once
 #include "book_tree.hpp"
 #include "content.hpp"
+#include "book_resource.hpp"
 #include <cstddef>
 namespace xiphos::core {
 // Resource bounds reject the whole result rather than publishing a partial book.
@@ -22,6 +23,7 @@ struct BookDocumentPresentation {
   ContentPreference image_content = ContentPreference::unknown;
   ContentPreference respect_font_faces = ContentPreference::unknown;
   bool double_space = false;
+  std::optional<BookInlineImages> inline_images;
 };
 struct BookDocument {
   BookTree tree; // Selected source, distinct from descendant/linked section sources.

@@ -243,6 +243,10 @@ BookDocument StudySession::select_book_document(const BookSelectionTarget &targe
   present_document({&visible}, options, module_engine_options(resolved.module), lexical_layout_enabled_);
   result.presentation = BookDocumentPresentation{std::move(visible.html), std::move(visible.lexical),
       std::move(visible.cleanup_diagnostics), options.image_content, options.respect_font_faces, options.double_space};
+  result.presentation->inline_images = prepare_book_inline_images(result.presentation->html,
+      [&](const std::string &source, std::size_t maximum_bytes) {
+        return reader_.read_book_inline_image(resolved.module, source, maximum_bytes);
+      });
   std::optional<BookSelectionState> next{BookSelectionState{target, result.tree, result}};
   static_assert(std::is_nothrow_move_assignable_v<decltype(book_selection_)>,
                 "Book document publication must not throw after staging owned copies");

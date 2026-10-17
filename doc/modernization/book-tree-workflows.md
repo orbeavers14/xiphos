@@ -512,3 +512,32 @@ inputs reject. No HTML rewriting, viewer, network or persistence is added here.
 The same lowercase suffix/MIME table serves both paths; format decoding and
 uppercase suffix support are not claimed. Two focused original-prose fixture
 checks passed locally, including legacy showImage characterization.
+
+### Owned inline-image presentation — 2026-10-17
+
+`prepare_book_inline_images` uses the existing libxml dependency to parse actual
+image elements and HTML entity values, then loads local sources through the
+shared bounded resource reader. It returns separate owned HTML with base64 data
+images plus embedded-count and per-source issues. Raw SDK HTML and ordinary
+presentation HTML remain unchanged. Recovery/serialization can normalize markup;
+this new output is explicitly distinct and requires corpus/visual acceptance.
+Recovered initial head styles are retained in the prepared fragment. Scripts and
+comments are not scanned for fake image tags. No network/file browser access is
+needed for the embedded output. Native hosts must disable those subresources
+and scripts, and allow only data images when consuming this capability.
+
+Bounds: 64 image elements, 16 MiB per resource, 8 MiB source HTML, 32 MiB prepared
+HTML. Missing/unsupported/over-limit resources are reported independently while
+retaining text; serialization overflow falls back to the whole original HTML.
+If no images embed successfully, the source HTML stays byte-identical. Resource
+preparation follows image-off cleanup and precedes atomic document publication.
+C getters borrow complete document ownership, with NULL/zero invalid contracts.
+
+Checked locally: 86 portable Linux/core tests on Mac, six focused ASan/UBSan
+checks (including required fixtures), strict C11 header compilation, and native
+model/Swift transport checks. The initial sanitizer invocation omitted two
+fixture executables; after building them, all six checks passed. No hosted builds
+were used. Platform decoders still determine image validity; the MIME table is
+a suffix hint. Network resources, uppercase suffixes, responsive srcset/picture,
+CSS resources, full-size/animated formats, resizing and whole-corpus/visual
+workflow acceptance remain pending.

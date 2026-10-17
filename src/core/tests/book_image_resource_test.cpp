@@ -38,6 +38,9 @@ int main(int argc,char **argv){try{
   check(reader.read_book_inline_image("StyledBook","file://"+encode(file.u8string())).data==svg,"Encoded file URI remains contained");
   for(const auto &source:std::vector<std::string>{"http://host/image.png","data:image/png;base64,a","//host/image.png","file://host/image.png","../outside.svg","%2e%2e/outside.svg","bad%.png","bad%0a.png","bad%00.png","file:file:bad.png","","caf%C3%A9.PNG"})
     rejects<std::invalid_argument>([&]{reader.read_book_inline_image("StyledBook",source);});
+  const auto raw_inline=reader.read_book_document("StyledBook",4);
+  const auto prepared=prepare_book_inline_images(raw_inline.html,[&](const std::string &source,std::size_t limit){return reader.read_book_inline_image("StyledBook",source,limit);});
+  check(prepared.embedded==1 && prepared.issues.empty() && prepared.html.find("data:image/png;base64,iVBORw0KGgo")!=std::string::npos && raw_inline.html.find("data:image/")==std::string::npos,"Actual SDK inline file URL resolves against exact owned module data context; raw output remains unchanged");
   check(reader.read_book_image("StyledBook",base+"empty.png").data.empty(),"Empty files remain empty byte resources, not validated image content");
   check(reader.read_book_image("StyledBook",base+"binary.png").data==binary_bytes,"Binary and NUL bytes remain intact; extension MIME does not claim decoding");
   check(reader.read_book_image("StyledBook",base+encode("café.svg"),svg.size()).data==svg,"Exact byte limit succeeds");
@@ -50,6 +53,7 @@ int main(int argc,char **argv){try{
   for(const auto *id:{"Dictionary","VerseBook"})rejects<std::invalid_argument>([&]{reader.read_book_image(id,base+"binary.png");});
   rejects<std::out_of_range>([&]{reader.read_book_image("Missing",base+"binary.png");});
   StudySession a(reader),b(reader);rejects<std::invalid_argument>([&]{a.read_book_image_link(base+"binary.png");});auto selected=a.select_book_document({"StyledBook",std::uint64_t(4)});
+  check(selected.presentation && selected.presentation->inline_images && selected.presentation->inline_images->embedded==1 && selected.html==raw_inline.html,"Atomic selection owns resource-prepared output without changing raw source");
   auto resource=a.read_book_image_link(base+encode("café.svg")+"&module=OtherBook");check(resource.data==svg && resource.target.context.module=="StyledBook" && a.book_selection()->document->html==selected.html && !b.book_selection(),"Image read uses committed source without publishing or following declared module");
   check(a.history().entries().empty()&&a.dictionary_history().entries().empty(),"Image reads do not create history visits");
  }
@@ -58,7 +62,9 @@ int main(int argc,char **argv){try{
  check(drained.get().data==svg && held.data==svg,"Owned image bytes survive Reader/worker shutdown");
  xc_worker *worker=nullptr;xc_request *request=nullptr;check(xc_worker_open(root.string().c_str(),&worker)==XC_OK,"Open C resource worker");
  check(xc_worker_create_tab(worker,&request)==XC_OK&&wait(request)==XC_OK,"Create C image tab");const auto tab=xc_request_tab(request);xc_request_release(request);
- check(xc_worker_select_book_document(worker,tab,"StyledBook",4,&request)==XC_OK&&wait(request)==XC_OK,"Select C image source");xc_request_release(request);
+ check(xc_worker_select_book_document(worker,tab,"StyledBook",4,&request)==XC_OK&&wait(request)==XC_OK,"Select C image source");auto *c_document=xc_request_take_book_document(request);xc_request_release(request);
+ check(c_document && xc_book_document_inline_image_count(c_document)==1 && !xc_book_document_inline_issue_count(c_document) && std::string(xc_book_document_inline_html(c_document)).find("data:image/png;base64,iVBORw0KGgo")!=std::string::npos,"C document owns matching inline image HTML");
+ check(!xc_book_document_inline_html(nullptr) && !xc_book_document_inline_image_count(nullptr) && !xc_book_document_inline_issue_count(nullptr) && !xc_book_document_inline_issue_source(c_document,1) && !xc_book_document_inline_issue_message(nullptr,0),"Invalid inline getter contracts");
  std::string copied=base+encode("café.svg");check(xc_worker_read_book_image_link(worker,tab,copied.c_str(),&request)==XC_OK&&!xc_request_take_book_image_data(request),"Pending data unavailable");copied.assign("unrelated");
  check(wait(request)==XC_OK&&!xc_request_take_book_image(request),"Image data is a separate owned result kind");auto *data=xc_request_take_book_image_data(request);check(data&&!xc_request_take_book_image_data(request),"Image data take-once");xc_request_release(request);
  check(xc_book_image_data_size(data)==svg.size()&&std::string(reinterpret_cast<const char *>(xc_book_image_data_bytes(data)),xc_book_image_data_size(data))==svg&&std::string(xc_book_image_media_type(xc_book_image_data_source(data)))=="image/svg+xml","C borrowed data/source copies match original bytes and MIME hint");
@@ -69,6 +75,7 @@ int main(int argc,char **argv){try{
  check(xc_worker_read_book_image_link(worker,tab,(base+"empty.png").c_str(),&request)==XC_OK&&wait(request)==XC_OK,"Read empty C resource");auto *empty=xc_request_take_book_image_data(request);xc_request_release(request);check(empty&&!xc_book_image_data_size(empty)&&!xc_book_image_data_bytes(empty),"Zero-size bytes use NULL without implying missing owned result");xc_book_image_data_release(empty);
  check(xc_worker_read_book_image_link(worker,tab,(base+"binary.png").c_str(),&request)==XC_OK,"Queue binary image before close");xc_worker_close(worker);check(wait(request)==XC_OK,"Close drains bounded read");auto *last=xc_request_take_book_image_data(request);xc_request_release(request);
  check(last&&std::string(reinterpret_cast<const char *>(xc_book_image_data_bytes(last)),xc_book_image_data_size(last))==binary_bytes&&std::string(reinterpret_cast<const char *>(xc_book_image_data_bytes(data)),xc_book_image_data_size(data))==svg,"Binary/source copies outlive later reads and shutdown");xc_book_image_data_release(data);xc_book_image_data_release(last);
+ check(std::string(xc_book_document_inline_html(c_document)).find("base64,iVBORw0KGgo")!=std::string::npos,"Prepared HTML owns bytes after resource reads and worker close");xc_book_document_release(c_document);
  check(bytes(root)==before,"Resource reads do not modify data/config/profile bytes");
  std::cout<<"Bounded module-directory image bytes, path constraints, state neutrality and owned C transport passed\n";return 0;
  }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}
