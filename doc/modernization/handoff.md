@@ -39,7 +39,7 @@ remains in status/history; the latest full runs are clean.
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
 The owner renewed continued shared-core work until usage runs out. The five-hour window refreshed automatically; active Mac
-work is native book footnote clicks consuming the checked shared note operation. No reset
+work is shared configured DisplayLevel document characterization. No reset
 credit or hosted builds are authorized by this continuation. No whole parity or
 legacy-retirement gate is accepted by scoped checks.
 
@@ -47,7 +47,7 @@ legacy-retirement gate is accepted by scoped checks.
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Book footnote clicks using the shared exact-source note command | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Configured DisplayLevel document characterization | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

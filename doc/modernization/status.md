@@ -185,6 +185,14 @@ Full local Mac/core suite passes **96/96**. F10 now has scoped partial Mac evide
 the active next slice; image routing, full saved-tab restore/writes and corpus/
 visual/keyboard/VoiceOver acceptance remain pending. No hosted builds ran.
 
+Native ordinary book notes `bb6b2a7` reuse shared exact-source validation, copied
+body ownership and the sidebar. Model/adapter checks cover mismatched-command
+retention, reading/history neutrality, verse/book preview replacement and stale
+note removal; a disposable window confirmed marker/body and navigation cleanup.
+Mac/core passes **96/96**, all locally. Active next seam: legacy configured
+`DisplayLevel` descendant rendering, characterized against the extracted helper.
+No whole parity or completion-percentage increase is accepted.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three

@@ -374,3 +374,25 @@ integration, image/resource routing, links, history/persistent selection,
 additional book windows and editors. Preserve the GTK3 app and all its write
 paths. No complete F10, corpus, platform or legacy-retirement gate is accepted
 by these scoped checks.
+
+## Native ordinary book notes
+
+Mac `bb6b2a7` copies the shared exact-source book-note result into the sidebar.
+Book markers and note-body clicks use the book command, with no verse-parser
+fallback. Mismatched/unsupported commands retain the previous preview and reading.
+A successful new book read clears stale notes; browsing contents retains them.
+Book and verse-reference sidebar previews replace each other. Model/adapter tests
+and an original-prose disposable window verified marker → correct body and
+navigation cleanup. Full Mac/core suite: 96/96; no new core policy or whole parity.
+
+## Active next seam: configured display depth
+
+Legacy `GTKEntryDisp::display` reads `DisplayLevel` (absent defaults to one).
+For values above one, actual `_render_display_level` walks selected node and
+children depth-first in SDK sibling order, adds `<br/><hr/>` between nonempty
+rendered sections, and restores the selected cursor. Empty branches still lead
+to descendants; linked entries retain their own tree source. This workflow is
+not implemented by the single-entry native read yet. The next shared seam will
+compare copied document sections and combined HTML against the extracted legacy
+helper, with explicit bounds/failure behavior. Descendant note routing, shared
+display cleanup and native document publication remain separate integration gates.
