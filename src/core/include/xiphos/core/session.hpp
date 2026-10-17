@@ -7,6 +7,7 @@
 #include <optional>
 #include <map>
 namespace xiphos::core {
+using BookFollowLink = std::variant<BookNote, BookImageResource>;
 struct BookSelectionState {
   BookSelectionTarget requested;
   BookTree tree;
@@ -65,6 +66,7 @@ public:
   BookNote book_document_note_link(const std::string &uri, bool render_body = true);
   BookImageTarget book_image_link(const std::string &uri);
   BookImageResource read_book_image_link(const std::string &uri);
+  BookFollowLink follow_book_link(const std::string &uri);
   // Missing selection/relation is a no-op; relationship lookup and reading policy stay in core.
   std::optional<BookEntry> navigate_book(BookNavigation direction);
   // No saved module is a successful no-op, retaining any existing selection.

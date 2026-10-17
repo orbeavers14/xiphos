@@ -222,6 +222,10 @@ void xc_book_image_release(xc_book_image *image);
  * Files are not frozen across requests; observed read-time changes reject.
  * Does not decode/validate image formats or launch a viewer; MIME is a suffix hint.
  * No selection/history/profile writes. Result bytes/context outlive worker close. */
+/* Core click dispatch for the supported book subset: take_book_note or
+ * take_book_image_data on success. Native hosts do not parse command strings.
+ * Both results retain their source and do not replace the selected root. */
+xc_status xc_worker_follow_book_link(xc_worker *worker, uint64_t tab, const char *uri, xc_request **out);
 xc_status xc_worker_read_book_image_link(xc_worker *worker, uint64_t tab, const char *uri, xc_request **out);
 xc_book_image_data *xc_request_take_book_image_data(xc_request *request);
 /* Borrowed source/bytes until data release; do not release the source separately. */

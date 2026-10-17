@@ -170,6 +170,12 @@ BookDocumentNoteTarget book_document_note_link(const std::string &url, const Boo
   if (!offset) throw std::invalid_argument("Book-note command is outside the rendered document");
   return {*offset, result};
 }
+BookLinkKind book_link_kind(const std::string &url) {
+  const auto action = parameter(command_parameters(url), "action");
+  if (action == "showNote") return BookLinkKind::note;
+  if (action == "showImage") return BookLinkKind::image;
+  throw std::invalid_argument("Unsupported book link command");
+}
 BookImageLink book_image_link(const std::string &url) {
   const auto parameters = command_parameters(url);
   if (parameter(parameters, "action") != "showImage")

@@ -36,6 +36,8 @@ struct BookDocumentNoteTarget { std::uint64_t offset; StudyNoteLink command; };
 BookDocumentNoteTarget book_document_note_link(const std::string &url, const BookDocument &document);
 // Typed legacy image command only; no filesystem reads or viewer launch.
 BookImageLink book_image_link(const std::string &url);
+enum class BookLinkKind { note, image };
+BookLinkKind book_link_kind(const std::string &url);
 // Scoped single-reference subset of main/url.cc sword_uri + hex_decode.
 // Module abbreviations, ranges and fragments remain pending.
 PassageLink passage_link(const std::string &url, const std::string &current_module);

@@ -284,6 +284,13 @@ BookImageResource StudySession::read_book_image_link(const std::string &uri) {
     throw std::invalid_argument("Select a book document before reading its image");
   return reader_.read_book_image(book_selection_->tree.module, uri);
 }
+BookFollowLink StudySession::follow_book_link(const std::string &uri) {
+  switch (xiphos::core::book_link_kind(uri)) {
+    case BookLinkKind::note: return book_document_note_link(uri);
+    case BookLinkKind::image: return read_book_image_link(uri);
+  }
+  throw std::invalid_argument("Unsupported book link command");
+}
 std::optional<BookSelectionTarget> StudySession::book_navigation_target(BookNavigation direction) {
   switch (direction) {
     case BookNavigation::parent: case BookNavigation::first_child:

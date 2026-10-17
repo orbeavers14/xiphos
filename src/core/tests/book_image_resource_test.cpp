@@ -25,6 +25,7 @@ int main(int argc,char **argv){try{
  fs::create_directories(root/"data/sub");fs::create_directories(root/"data/folder.svg");
  std::error_code error;fs::remove(link,error);fs::create_symlink(outside,link,error);const bool outside_symlink=!error;
  fs::remove(inside_link,error);fs::create_symlink(file,inside_link,error);const bool inside_symlink=!error;
+ const std::string original_png("\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49\x48\x44\x52\x00\x00\x00\x08\x00\x00\x00\x08\x08\x06\x00\x00\x00\xc4\x0f\xbe\x8b\x00\x00\x00\x12\x49\x44\x41\x54\x78\x9c\x63\x50\xc9\x58\xf3\x1f\x1f\x66\x18\x19\x0a\x00\xc1\xa0\x8d\xc1\xf4\xd5\x38\xd1\x00\x00\x00\x00\x49\x45\x4e\x44\xae\x42\x60\x82",75);write(root/"data"/fs::u8path("café.png"),original_png);
  const auto before=bytes(root);BookImageResource held;
  {
   Reader reader(root.string());
@@ -58,6 +59,7 @@ int main(int argc,char **argv){try{
  request=reinterpret_cast<xc_request *>(1);check(xc_worker_read_book_image_link(worker,tab,nullptr,&request)==XC_INVALID_ARGUMENT&&!request,"NULL resource URI clears output");
  check(!xc_book_image_data_source(nullptr)&&!xc_book_image_data_bytes(nullptr)&&!xc_book_image_data_size(nullptr)&&!xc_book_image_media_type(nullptr),"NULL data getter contracts");xc_book_image_data_release(nullptr);
  check(xc_worker_read_book_image_link(worker,tab,(base+"..%2Foutside.svg").c_str(),&request)==XC_OK&&wait(request)==XC_INVALID_ARGUMENT&&!xc_request_take_book_image_data(request),"Outside path rejects without partial result");xc_request_release(request);
+ check(xc_worker_follow_book_link(worker,tab,(base+"caf%C3%A9.png").c_str(),&request)==XC_OK&&wait(request)==XC_OK&&!xc_request_take_book_note(request),"Core click dispatch selects image resource result");auto *followed=xc_request_take_book_image_data(request);xc_request_release(request);check(followed&&std::string(reinterpret_cast<const char *>(xc_book_image_data_bytes(followed)),xc_book_image_data_size(followed))==original_png,"Dispatched original PNG bytes match");xc_book_image_data_release(followed);
  check(xc_worker_read_book_image_link(worker,tab,(base+"empty.png").c_str(),&request)==XC_OK&&wait(request)==XC_OK,"Read empty C resource");auto *empty=xc_request_take_book_image_data(request);xc_request_release(request);check(empty&&!xc_book_image_data_size(empty)&&!xc_book_image_data_bytes(empty),"Zero-size bytes use NULL without implying missing owned result");xc_book_image_data_release(empty);
  check(xc_worker_read_book_image_link(worker,tab,(base+"binary.png").c_str(),&request)==XC_OK,"Queue binary image before close");xc_worker_close(worker);check(wait(request)==XC_OK,"Close drains bounded read");auto *last=xc_request_take_book_image_data(request);xc_request_release(request);
  check(last&&std::string(reinterpret_cast<const char *>(xc_book_image_data_bytes(last)),xc_book_image_data_size(last))==binary_bytes&&std::string(reinterpret_cast<const char *>(xc_book_image_data_bytes(data)),xc_book_image_data_size(data))==svg,"Binary/source copies outlive later reads and shutdown");xc_book_image_data_release(data);xc_book_image_data_release(last);

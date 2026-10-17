@@ -119,6 +119,7 @@ struct xc_request {
     book_selection_present = v.has_value();
     if (v) book_document = std::make_unique<xc_book_document>(std::move(*v));
   }
+  void store(xiphos::core::BookFollowLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::BookImageResource v) { book_image_data = std::make_unique<xc_book_image_data>(std::move(v)); }
   void store(xiphos::core::BookImageTarget v) { book_image = std::make_unique<xc_book_image>(xc_book_image{std::move(v)}); }
   void store(xiphos::core::BookDocument v) { book_document = std::make_unique<xc_book_document>(std::move(v)); }
@@ -428,6 +429,10 @@ const char *xc_book_image_resource_field(const xc_book_image *image, int field) 
   return *value ? (*value)->c_str() : nullptr;
 }
 void xc_book_image_release(xc_book_image *image) { delete image; }
+xc_status xc_worker_follow_book_link(xc_worker *w, uint64_t tab, const char *uri, xc_request **out) {
+  if (!uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.follow_book_link(tab, uri); });
+}
 xc_status xc_worker_read_book_image_link(xc_worker *w, uint64_t tab, const char *uri, xc_request **out) {
   if (!uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.read_book_image_link(tab, uri); });
