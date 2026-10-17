@@ -89,6 +89,17 @@ struct RenderedBookEntry: Sendable, Equatable {
     let html: String
     let hasEntry: Bool
 }
+struct RenderedBookDocumentSection: Sendable, Equatable {
+    let entry: RenderedBookEntry
+    let depth: UInt32
+    let rendered: Bool
+}
+struct RenderedBookDocument: Sendable, Equatable {
+    let tree: BookTree
+    let displayLevel: UInt32
+    let sections: [RenderedBookDocumentSection]
+    let html: String
+}
 struct RenderedBookNote: Sendable {
     let tree: BookTree
     let content: RenderedStudyNote
@@ -325,6 +336,29 @@ enum CoreValues {
     static func bookEntry(_ result: OpaquePointer) -> RenderedBookEntry {
         RenderedBookEntry(tree: bookTree(xc_book_entry_tree(result)!),
             html: String(cString: xc_book_entry_html(result)!), hasEntry: xc_book_entry_has_entry(result) != 0)
+    }
+    static func bookDocument(_ result: OpaquePointer) -> RenderedBookDocument {
+        let sections = (0..<xc_book_document_count(result)).map { index in
+            var value = xc_book_document_section()
+            precondition(xc_book_document_get_section(result, index, &value) == XC_OK)
+            return RenderedBookDocumentSection(entry: bookEntry(value.entry!), depth: value.depth, rendered: value.rendered != 0)
+        }
+        return RenderedBookDocument(tree: bookTree(xc_book_document_tree(result)!),
+            displayLevel: xc_book_document_display_level(result), sections: sections,
+            html: String(cString: xc_book_document_html(result)!))
+    }
+    static func withSavedBookSelection<R>(_ saved: SavedBookSelection, _ body: (UnsafePointer<xc_saved_book_selection>) -> R) throws -> R {
+        guard ![saved.module, saved.key, saved.offsetText].compactMap({ $0 }).contains(where: { $0.utf8.contains(0) }) else {
+            throw CoreError(status: XC_INVALID_ARGUMENT)
+        }
+        return withOptionalCString(saved.module) { module in
+            withOptionalCString(saved.key) { key in
+                withOptionalCString(saved.offsetText) { offset in
+                    var value = xc_saved_book_selection(module: module, key: key, offset_text: offset)
+                    return body(&value)
+                }
+            }
+        }
     }
     static func lexicalLayout(_ load: (UnsafeMutablePointer<xc_lexical_presentation>) -> xc_status) -> RenderedLexicalPresentation {
         var value = xc_lexical_presentation()

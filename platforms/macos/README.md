@@ -64,6 +64,7 @@ They are excluded from normal builds/CI. For an already checked build/fixture:
 ```sh
 sh platforms/macos/launch-fixture.sh build/macos reader
 sh platforms/macos/launch-fixture.sh build/macos books
+sh platforms/macos/launch-fixture.sh build/macos book-documents
 sh platforms/macos/launch-fixture.sh build/macos reading-options
 sh platforms/macos/launch-fixture.sh build/macos lexicons
 sh platforms/macos/launch-fixture.sh build/macos lexical
@@ -262,3 +263,21 @@ restoration remain subsequent work. No installed module library or personal prof
 
 `preview_books_fixture` is opt-in and local, like the other fixture launch targets;
 it never runs as part of a normal build or enables GitHub Actions.
+
+## Configured book documents
+
+The book pane now presents complete shared-core DisplayLevel documents. Swift
+copies selected root, ordered sections, combined HTML and optional results; depth,
+traversal, publication and descendant-note routing remain in C++. Raw single-entry
+and read-only document APIs keep their existing behavior. A traversal/render
+failure retains the previous reading, contents and note; successful navigation
+clears stale note previews. Entryless branches can display their descendants.
+
+`swift_book_document_adapter` checks ownership, depth/order, exact note context,
+restore modes, explicit read-only XML import and failure/window isolation.
+`reader_model_book_documents` checks the pane and core-owned workflow. A disposable
+original-prose window verified combined text/separators, a descendant marker/body,
+entryless-branch content and retained reading after a document-limit failure.
+The current full local Mac/core suite passes 102/102. Display cleanup/annotation
+layout, images/resources, generalized book links, saved tabs and complete visual/
+corpus/platform acceptance remain pending. No complete parity is implied.

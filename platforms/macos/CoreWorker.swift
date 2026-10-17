@@ -127,18 +127,10 @@ actor CoreWorker {
         return try await bookEntryValue(status, request, optional: true)
     }
     func restoreBookSelection(tab: UInt64, saved: SavedBookSelection, mode: BookRestoreMode) async throws -> RenderedBookEntry? {
-        guard ![saved.module, saved.key, saved.offsetText].compactMap({ $0 }).contains(where: { $0.utf8.contains(0) }) else {
-            throw CoreError(status: XC_INVALID_ARGUMENT)
-        }
         var request: OpaquePointer?
         let handle = try worker()
-        let status = CoreValues.withOptionalCString(saved.module) { module in
-            CoreValues.withOptionalCString(saved.key) { key in
-                CoreValues.withOptionalCString(saved.offsetText) { offset in
-                    var value = xc_saved_book_selection(module: module, key: key, offset_text: offset)
-                    return xc_worker_restore_book_selection(handle, tab, &value, mode.rawValue, &request)
-                }
-            }
+        let status = try CoreValues.withSavedBookSelection(saved) {
+            xc_worker_restore_book_selection(handle, tab, $0, mode.rawValue, &request)
         }
         return try await bookEntryValue(status, request, optional: true)
     }
@@ -157,6 +149,63 @@ actor CoreWorker {
         let status = module.withCString { id in
             uri.withCString { xc_worker_book_note_link_at(handle, tab, id, offset, $0, renderBody ? 1 : 0, &request) }
         }
+        return try await bookNoteValue(status, request)
+    }
+    func readBookDocument(tab: UInt64, module: String, offset: UInt64) async throws -> RenderedBookDocument {
+        guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { xc_worker_read_book_document(handle, tab, $0, offset, &request) }
+        return try await bookDocumentValue(status, request, optional: false)!
+    }
+    func selectBookDocument(tab: UInt64, module: String, offset: UInt64) async throws -> RenderedBookDocument {
+        guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { xc_worker_select_book_document(handle, tab, $0, offset, &request) }
+        return try await bookDocumentValue(status, request, optional: false)!
+    }
+    func bookDocumentSelection(tab: UInt64) async throws -> RenderedBookDocument? {
+        var request: OpaquePointer?
+        let status = xc_worker_book_document_selection(try worker(), tab, &request)
+        return try await bookDocumentValue(status, request, optional: true)
+    }
+    func navigateBookDocument(tab: UInt64, direction: BookNavigation) async throws -> RenderedBookDocument? {
+        var request: OpaquePointer?
+        let status = xc_worker_navigate_book_document(try worker(), tab, direction.rawValue, &request)
+        return try await bookDocumentValue(status, request, optional: true)
+    }
+    func restoreBookDocumentSelection(tab: UInt64, saved: SavedBookSelection, mode: BookRestoreMode) async throws -> RenderedBookDocument? {
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = try CoreValues.withSavedBookSelection(saved) {
+            xc_worker_restore_book_document_selection(handle, tab, $0, mode.rawValue, &request)
+        }
+        return try await bookDocumentValue(status, request, optional: true)
+    }
+    func restoreBookDocumentProfile(tab: UInt64, path: String, mode: BookRestoreMode) async throws -> RenderedBookDocument? {
+        guard !path.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = path.withCString { xc_worker_restore_book_document_profile(handle, tab, $0, mode.rawValue, &request) }
+        return try await bookDocumentValue(status, request, optional: true)
+    }
+    private func bookDocumentValue(_ status: xc_status, _ request: OpaquePointer?, optional: Bool) async throws -> RenderedBookDocument? {
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        if optional && xc_request_book_selection_present(completed) == 0 { return nil }
+        guard let result = xc_request_take_book_document(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_book_document_release(result) }
+        return CoreValues.bookDocument(result)
+    }
+    func bookDocumentNoteLink(tab: UInt64, uri: String, renderBody: Bool = true) async throws -> RenderedBookNote {
+        guard !uri.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = uri.withCString { xc_worker_book_document_note_link(handle, tab, $0, renderBody ? 1 : 0, &request) }
+        return try await bookNoteValue(status, request)
+    }
+    private func bookNoteValue(_ status: xc_status, _ request: OpaquePointer?) async throws -> RenderedBookNote {
         let completed = try await wait(status, request)
         defer { xc_request_release(completed) }
         guard let result = xc_request_take_book_note(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }

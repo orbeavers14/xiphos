@@ -18,7 +18,7 @@ private struct BookSelectionError: LocalizedError {
 }
 
 private struct BookNoteError: LocalizedError {
-    var errorDescription: String? { "Unable to open this link as a note for the current book section." }
+    var errorDescription: String? { "Unable to open this link as a note in the displayed book." }
 }
 
 private struct ReadingOptionImportError: LocalizedError {
@@ -48,7 +48,8 @@ final class ReaderModel: ObservableObject {
     @Published private(set) var commentaryContentOptions = ContentDisplayOptions.unknown
     @Published private(set) var showingBook = false
     @Published private(set) var bookNote: RenderedBookNote?
-    @Published private(set) var bookEntry: RenderedBookEntry?
+    @Published private(set) var bookDocument: RenderedBookDocument?
+    var bookEntry: RenderedBookEntry? { bookDocument?.sections.first?.entry }
     @Published private(set) var bookBrowser: BookTree?
     @Published private(set) var bookChildren: BookChildren?
     @Published var bookKey = ""
@@ -362,22 +363,22 @@ final class ReaderModel: ObservableObject {
         run { token in
             let browser = try await worker.bookTree(module: module, offset: 0)
             let children = try await worker.bookChildren(module: module, parent: 0)
-            let entry = try await worker.selectBook(tab: tab, module: module, offset: 0)
+            let entry = try await worker.selectBookDocument(tab: tab, module: module, offset: 0)
             guard token == self.revision && !self.closed else { return }
             self.bookBrowser = browser; self.bookChildren = children
             self.presentBook(entry)
         }
     }
-    private func presentBook(_ entry: RenderedBookEntry) {
+    private func presentBook(_ entry: RenderedBookDocument) {
         bookNote = nil
-        bookEntry = entry; bookKey = entry.tree.node.path
+        bookDocument = entry; bookKey = entry.tree.node.path
         showingBook = true; message = ""
     }
     func showBookNoteLink(_ uri: String) {
-        guard !closed, !isBusy, let worker, let tab, let source = bookEntry?.tree else { return }
+        guard !closed, !isBusy, let worker, let tab, bookDocument != nil else { return }
         run { token in
             let note: RenderedBookNote
-            do { note = try await worker.bookNoteLink(tab: tab, module: source.module, offset: source.node.offset, uri: uri) }
+            do { note = try await worker.bookDocumentNoteLink(tab: tab, uri: uri) }
             catch { throw BookNoteError() }
             guard token == self.revision && !self.closed else { return }
             self.studyNote = nil; self.referencePreview = nil
@@ -389,9 +390,9 @@ final class ReaderModel: ObservableObject {
         guard !closed, !isBusy, let worker, let tab, let source = bookEntry?.tree else { return }
         let key = bookKey
         run { token in
-            let entry: RenderedBookEntry?
+            let entry: RenderedBookDocument?
             do {
-                entry = try await worker.restoreBookSelection(tab: tab,
+                entry = try await worker.restoreBookDocumentSelection(tab: tab,
                     saved: .init(module: source.module, key: key, offsetText: nil), mode: .displayKey)
             } catch { throw BookSelectionError() }
             guard token == self.revision && !self.closed, let entry else { return }
@@ -401,7 +402,7 @@ final class ReaderModel: ObservableObject {
     func navigateBook(_ direction: BookNavigation) {
         guard !closed, !isBusy, let worker, let tab, bookEntry != nil else { return }
         run { token in
-            let entry = try await worker.navigateBook(tab: tab, direction: direction)
+            let entry = try await worker.navigateBookDocument(tab: tab, direction: direction)
             guard token == self.revision && !self.closed, let entry else { return }
             self.presentBook(entry)
         }
@@ -410,7 +411,7 @@ final class ReaderModel: ObservableObject {
         guard !closed, !isBusy, let worker, let tab, let page = bookChildren,
               page.nodes.contains(node) else { return }
         run { token in
-            let entry = try await worker.selectBook(tab: tab, module: page.module, offset: node.offset)
+            let entry = try await worker.selectBookDocument(tab: tab, module: page.module, offset: node.offset)
             guard token == self.revision && !self.closed else { return }
             self.presentBook(entry)
         }
@@ -852,9 +853,9 @@ private struct BookPane: View {
             Divider()
             if let entry = model.bookEntry {
                 Text(entry.tree.node.path.isEmpty ? entry.tree.module : entry.tree.node.path).font(.caption).padding(8)
-                PassageView(html: entry.html, anchor: nil, onScrollFailure: { model.message = $0 },
+                PassageView(html: model.bookDocument?.html ?? entry.html, anchor: nil, onScrollFailure: { model.message = $0 },
                     onLink: { model.showBookNoteLink($0) })
-                if !entry.hasEntry {
+                if !entry.hasEntry && (model.bookDocument?.html.isEmpty ?? true) {
                     Text("This section has no text. Browse its children to continue reading.")
                         .foregroundStyle(.secondary).padding(8)
                 }

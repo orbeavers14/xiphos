@@ -23,6 +23,41 @@ struct ReaderModelSmoke {
             try await Task.sleep(nanoseconds: 1_000_000)
         }
     }
+    @MainActor static func bookDocuments(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let model = ReaderModel(worker: worker, startupError: nil)
+        let other = ReaderModel(worker: worker, startupError: nil)
+        try await idle(model); try await idle(other)
+        let mainHTML = model.html, mainSelection = model.selection, mainBack = model.canBack
+        model.chooseBook("Document5"); try await idle(model)
+        guard let document = model.bookDocument, document.displayLevel == 3, document.sections.count == 5,
+              document.html.contains("Original deep section"), document.html.contains("empty-branch child"),
+              model.bookEntry?.tree.node.offset == 4, model.html == mainHTML, model.selection == mainSelection,
+              model.canBack == mainBack else { fatalError("native document renders configured descendants without replacing Bible") }
+        let uri = "xiphos-preview://study/passagestudy.jsp?action=showNote&type=n&value=1&module=Document5&passage=%2FBranch%2FLeaf"
+        model.showBookNoteLink(uri); try await idle(model)
+        guard model.bookNote?.tree.node.offset == 8, model.bookNote?.content.html.contains("Original descendant note") == true,
+              model.bookEntry?.tree.node.offset == 4, model.bookDocument == document else { fatalError("native descendant note retains selected document root") }
+        model.browseBook(0); try await idle(model)
+        let page = model.bookChildren
+        model.chooseBook("TooDeep"); try await idle(model)
+        guard model.bookDocument == document, model.bookChildren == page, model.bookNote?.tree.node.offset == 8,
+              !model.message.isEmpty else { fatalError("failed complete-document render preserves reading, contents and note") }
+        model.showBookNoteLink(uri.replacingOccurrences(of: "%2FBranch%2FLeaf", with: "%2FLinked")); try await idle(model)
+        guard model.bookDocument == document, model.bookNote?.tree.node.offset == 8 else { fatalError("outside-document note preserves presentation") }
+        model.navigateBook(.firstChild); try await idle(model)
+        guard model.bookDocument?.tree.node.offset == 8, model.bookDocument?.sections.count == 2, model.bookNote == nil else { fatalError("native navigation publishes new complete document and clears stale note") }
+        model.bookKey = "/Branch/Empty"; model.readBookKey(); try await idle(model)
+        guard model.bookEntry?.hasEntry == false, model.bookDocument?.html.contains("empty-branch child") == true else { fatalError("entryless branch displays configured descendants") }
+        model.bookKey = "Missing/path"; let preserved = model.bookDocument; model.readBookKey(); try await idle(model)
+        guard model.bookDocument == preserved else { fatalError("failed document key keeps reading") }
+        other.chooseBook("Document4"); try await idle(other)
+        guard other.bookDocument?.displayLevel == 2, other.bookDocument?.sections.count == 3,
+              other.bookDocument?.html.contains("Original deep section") == false,
+              model.bookDocument == preserved else { fatalError("native document depth and windows remain independent") }
+        model.close(); other.close(); await worker.shutdown()
+        print("Native configured document, descendant note and atomic failure model checks passed")
+    }
     @MainActor static func books(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let model = ReaderModel(worker: worker, startupError: nil)
@@ -53,7 +88,7 @@ struct ReaderModelSmoke {
         guard model.bookNote != nil else { fatalError("contents browsing preserves a valid book note") }
         model.showBookNoteLink(noteURI.replacingOccurrences(of: "%2FPart+One", with: "%2FLinked")); try await idle(model)
         guard model.bookNote?.tree.node.offset == 4, model.bookEntry == sourceBeforeNote,
-              model.message.contains("current book section") else { fatalError("mismatched note preserves preview and reading") }
+              model.message.contains("displayed book") else { fatalError("mismatched note preserves preview and reading") }
         model.closeStudyNote()
         guard model.bookNote == nil else { fatalError("native close book note") }
         model.showBookNoteLink(noteURI); try await idle(model)
@@ -1059,6 +1094,9 @@ struct ReaderModelSmoke {
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--options" {
             try await readingOptions(root: CommandLine.arguments[2]); return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--book-documents" {
+            try await bookDocuments(root: CommandLine.arguments[2]); return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--books" {
             try await books(root: CommandLine.arguments[2]); return
