@@ -63,6 +63,7 @@ They are excluded from normal builds/CI. For an already checked build/fixture:
 
 ```sh
 sh platforms/macos/launch-fixture.sh build/macos reader
+sh platforms/macos/launch-fixture.sh build/macos books
 sh platforms/macos/launch-fixture.sh build/macos reading-options
 sh platforms/macos/launch-fixture.sh build/macos lexicons
 sh platforms/macos/launch-fixture.sh build/macos lexical
@@ -100,6 +101,7 @@ The synchronous adapter is retained for characterization tests.
 | Reading | Module sidebar, reference input, core Book/Chapter/Verse choices, Back/Forward/Clear, whole chapter, adjacent chapters, verse-number navigation and selected-verse scroll |
 | Rendering | Declared options for red words, Strong's, morphology, footnotes, cross-references, Greek accents, Hebrew vowels/cantillation, lemmas, transliteration, glosses, segmentation and textual variants |
 | Reading preferences | Explicit native import/save for 18 modops.conf engine fields; per-module/window state and unknown/uninstalled values preserved |
+| General books | Core-eligible module selection, direct key/path entry, parent/first-child/previous/next sibling commands and bounded contents browsing in the lower-right pane; failed input retains reading; full visual/corpus/resource/restore acceptance pending |
 | Dictionary | Separate module/key input, previous/next key, nine nearby keys retaining repeats, recorded lexical-click history and Back/Forward/Clear |
 | Lexicons | Five role-filtered choices with unavailable saved names retained; -- Select -- keeps the prior value, Cancel discards a draft, Apply changes this window only |
 | Lexicon XML | Explicit Import/Save lexicon choices pickers using the shared reader/verified writer; five values updated while other settings survive |
@@ -236,3 +238,23 @@ sh platforms/macos/launch-fixture.sh build/macos notes
 
 The [note contract](../../doc/modernization/note-numbering-workflows.md) records
 remaining WORD lexical markup, heading/TEI identifiers and full corpus limits.
+
+## General-book navigation checkpoint
+
+The Mac adapter copies core tree/entry/page values before releasing C results.
+Swift owns controls and visibility only; typed key interpretation, navigation,
+SDK relations and successful selection publication stay in the shared worker.
+The book pane uses the dictionary/book area below any commentary pane. Browsing
+contents does not change the reading selection. Closing/reopening the current
+book retains its source and draft key; window selections remain isolated.
+
+`reader_model_books` covers module routing, hierarchy, shared commands, entryless
+branches, rejected input, preserved Bible presentation and closed-window results.
+A disposable original-prose window checked parent/child/sibling controls,
+individually accessible contents buttons, branch browsing and reading, and rejected
+key retention. Complete keyboard/VoiceOver, pagination/corpus, layout and platform
+acceptance remain open. Book links/resources and full saved-tab restoration are
+subsequent work. No installed module library or personal profile was used.
+
+`preview_books_fixture` is opt-in and local, like the other fixture launch targets;
+it never runs as part of a normal build or enables GitHub Actions.

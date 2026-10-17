@@ -7,6 +7,7 @@ app="$build_dir/XiphosNativePreview.app"
 kind="${2:-reader}"
 case "$kind" in
   reader) fixture="$build_dir/core/fixture"; config="test.conf" ;;
+  books) fixture="$build_dir/core/book-entry-fixture"; config="OSISBook.conf" ;;
   lexicons) fixture="$build_dir/core/dictionary-fixture"; config="bible.conf" ;;
   headings) fixture="$build_dir/core/heading-fixture"; config="notes.conf" ;;
   notes) fixture="$build_dir/core/note-snapshots-fixture"; config="text.conf" ;;

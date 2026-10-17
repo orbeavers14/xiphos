@@ -106,6 +106,8 @@ if(BUILD_TESTING)
   add_custom_target(macos_reader_model_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke")
   add_test(NAME reader_model COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/fixture")
   set_tests_properties(reader_model PROPERTIES FIXTURES_REQUIRED sword_fixture)
+  add_test(NAME reader_model_books COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --books "${CMAKE_CURRENT_BINARY_DIR}/core/book-entry-fixture")
+  set_tests_properties(reader_model_books PROPERTIES FIXTURES_REQUIRED book_entry_fixture TIMEOUT 30)
   add_test(NAME reader_model_content COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --content "${CMAKE_CURRENT_BINARY_DIR}/core/heading-fixture")
   set_tests_properties(reader_model_content PROPERTIES FIXTURES_REQUIRED heading_fixture)
   add_test(NAME reader_model_heading_notes COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --heading-notes "${CMAKE_CURRENT_BINARY_DIR}/core/heading-snapshots-fixture")
@@ -232,6 +234,12 @@ if(BUILD_TESTING)
       -R "^core_reader$" --output-on-failure
     COMMAND /bin/sh "${CMAKE_CURRENT_SOURCE_DIR}/launch-fixture.sh" "${CMAKE_CURRENT_BINARY_DIR}"
     DEPENDS macos_preview core_reader_test
+    VERBATIM)
+  add_custom_target(preview_books_fixture
+    COMMAND ${CMAKE_CTEST_COMMAND} --test-dir "${CMAKE_CURRENT_BINARY_DIR}"
+      -R "^(reader_model_books|swift_book_adapter)$" --no-tests=error --output-on-failure
+    COMMAND /bin/sh "${CMAKE_CURRENT_SOURCE_DIR}/launch-fixture.sh" "${CMAKE_CURRENT_BINARY_DIR}" books
+    DEPENDS macos_preview macos_reader_model_test macos_book_adapter_test core_book_entry_test
     VERBATIM)
   add_custom_target(preview_reading_options_fixture
     COMMAND ${CMAKE_CTEST_COMMAND} --test-dir "${CMAKE_CURRENT_BINARY_DIR}"

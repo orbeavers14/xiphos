@@ -23,6 +23,58 @@ struct ReaderModelSmoke {
             try await Task.sleep(nanoseconds: 1_000_000)
         }
     }
+    @MainActor static func books(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let model = ReaderModel(worker: worker, startupError: nil)
+        let other = ReaderModel(worker: worker, startupError: nil)
+        try await idle(model); try await idle(other)
+        guard model.bookEntry == nil, !model.showingBook,
+              model.modules.filter(\.hasBookTree).map(\.id).sorted() == ["OSISBook", "ThMLBook"] else { fatalError("book capability/initial state") }
+        let mainSelection = model.selection, mainHTML = model.html, mainBack = model.canBack
+        model.selection = "OSISBook"; model.selectionChanged()
+        model.chooseBook("ThMLBook") // busy actions must not replace the accepted module
+        try await idle(model)
+        guard model.bookEntry?.tree.module == "OSISBook", model.bookEntry?.tree.node.offset == 4,
+              model.bookEntry?.html.contains("café") == true, model.showingBook, model.selection == mainSelection,
+              model.bookBrowser?.node.offset == 0, model.bookChildren?.nodes.count == 3,
+              model.html == mainHTML, model.canBack == mainBack else { fatalError("book opens separate lower-right pane through core") }
+        model.navigateBook(.firstChild); try await idle(model)
+        guard model.bookEntry?.tree.node.offset == 8 else { fatalError("native first child command") }
+        let leaf = model.bookEntry
+        model.navigateBook(.firstChild); try await idle(model)
+        guard model.bookEntry == leaf else { fatalError("native boundary no-op") }
+        model.navigateBook(.parent); try await idle(model)
+        model.navigateBook(.nextSibling); try await idle(model)
+        guard model.bookEntry?.tree.node.offset == 12, model.bookEntry?.hasEntry == false else { fatalError("entryless branch stays selectable") }
+        model.browseBook(12); try await idle(model)
+        guard model.bookChildren?.nodes.map(\.offset) == [16], model.bookEntry?.tree.node.offset == 12 else { fatalError("hierarchy browse is separate from reading") }
+        model.chooseBookNode(model.bookChildren!.nodes[0]); try await idle(model)
+        guard model.bookEntry?.tree.node.offset == 16 else { fatalError("native contents selection") }
+        model.bookKey = "Part One"; model.readBookKey(); try await idle(model)
+        guard model.bookEntry?.tree.node.offset == 4 else { fatalError("direct key interpretation stays in core") }
+        let preserved = model.bookEntry, page = model.bookChildren
+        model.bookKey = "Missing/path"; model.readBookKey(); try await idle(model)
+        guard model.bookEntry == preserved, model.bookChildren == page, model.message.contains("key or path") else { fatalError("bad key preserves committed presentation") }
+        model.browseBook(40000); try await idle(model)
+        guard model.bookEntry == preserved, model.bookChildren == page else { fatalError("bad browse preserves tree and reading") }
+        model.bookKey = "/"; model.readBookKey(); try await idle(model)
+        guard model.bookEntry?.tree.node.offset == 0 else { fatalError("direct explicit path root stays root") }
+        model.navigateBook(.firstChild); try await idle(model)
+        model.bookKey = "unsubmitted draft"; model.browseBook(0); try await idle(model)
+        guard model.bookKey == "unsubmitted draft", model.bookEntry?.tree.node.offset == 4 else { fatalError("contents browsing preserves reading draft") }
+        model.closeBook(); model.chooseBook("OSISBook"); try await idle(model)
+        guard model.showingBook, model.bookKey == "unsubmitted draft", model.bookEntry?.tree.node.offset == 4 else { fatalError("pane reopen keeps current source") }
+        other.chooseBook("ThMLBook"); try await idle(other)
+        guard other.bookEntry?.tree.module == "ThMLBook", model.bookEntry?.tree.module == "OSISBook" else { fatalError("native windows isolate book selection") }
+        model.chooseBook("VerseBook"); try await idle(model)
+        guard model.bookEntry?.tree.module == "OSISBook" else { fatalError("unsupported book capability not selectable") }
+        let committed = model.bookEntry
+        model.navigateBook(.firstChild); model.close(); other.close()
+        try await Task.sleep(nanoseconds: 50_000_000)
+        guard model.bookEntry == committed else { fatalError("closed book pane cannot publish queued UI results") }
+        await worker.shutdown()
+        print("Native book model routing, hierarchy, core commands and stale presentation checks passed")
+    }
     @MainActor static func content(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let model = ReaderModel(worker: worker, startupError: nil)
@@ -988,6 +1040,9 @@ struct ReaderModelSmoke {
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--options" {
             try await readingOptions(root: CommandLine.arguments[2]); return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--books" {
+            try await books(root: CommandLine.arguments[2]); return
         }
         guard CommandLine.arguments.count == 2 else { fatalError("fixture root required") }
         let worker = try CoreWorker(root: CommandLine.arguments[1])

@@ -13,6 +13,10 @@ func initializePreviewLocale() -> String? {
     return String(cString: locale)
 }
 
+private struct BookSelectionError: LocalizedError {
+    var errorDescription: String? { "Unable to read this book section. Check the module and key or path." }
+}
+
 private struct ReadingOptionImportError: LocalizedError {
     var errorDescription: String? { "Unable to import reading options. Choose a readable Xiphos modops.conf file." }
 }
@@ -38,6 +42,11 @@ final class ReaderModel: ObservableObject {
     @Published private(set) var commentaryHeadings = true
     @Published private(set) var contentOptions = ContentDisplayOptions.unknown
     @Published private(set) var commentaryContentOptions = ContentDisplayOptions.unknown
+    @Published private(set) var showingBook = false
+    @Published private(set) var bookEntry: RenderedBookEntry?
+    @Published private(set) var bookBrowser: BookTree?
+    @Published private(set) var bookChildren: BookChildren?
+    @Published var bookKey = ""
     @Published var dictionarySelection: String?
     @Published var dictionaryKey = ""
     @Published private(set) var dictionaryEntry: RenderedDictionaryEntry?
@@ -235,9 +244,15 @@ final class ReaderModel: ObservableObject {
     }
     func selectionChanged() {
         guard !closed, !isBusy, selection != displayedModule else { return }
+        if let chosen = selection, modules.contains(where: { $0.id == chosen && $0.hasBookTree }) {
+            selection = displayedModule
+            chooseBook(chosen)
+            return
+        }
         if let chosen = selection, modules.contains(where: { $0.id == chosen && $0.isDictionary }) {
             selection = displayedModule
             dictionarySelection = chosen
+            showingBook = false
             if !dictionaryKey.isEmpty { lookupDictionary() }
             return
         }
@@ -329,10 +344,77 @@ final class ReaderModel: ObservableObject {
         guard let worker, let tab else { return }
         let choices = try await worker.dictionaryChoices(tab: tab, module: entry.module, key: entry.key)
         guard token == revision && !closed else { return }
+        showingBook = false
         dictionaryEntry = entry; dictionaryKey = entry.key; dictionarySelection = entry.module
         dictionarySource = source; dictionaryChoices = choices; lexicalPreview = lexical
         if let history { dictionaryHistory = history }
         message = ""
+    }
+    func chooseBook(_ module: String) {
+        guard !closed, !isBusy, let worker, let tab,
+              modules.contains(where: { $0.id == module && $0.hasBookTree }) else { return }
+        if bookEntry?.tree.module == module { showingBook = true; return }
+        run { token in
+            let browser = try await worker.bookTree(module: module, offset: 0)
+            let children = try await worker.bookChildren(module: module, parent: 0)
+            let entry = try await worker.selectBook(tab: tab, module: module, offset: 0)
+            guard token == self.revision && !self.closed else { return }
+            self.bookBrowser = browser; self.bookChildren = children
+            self.presentBook(entry)
+        }
+    }
+    private func presentBook(_ entry: RenderedBookEntry) {
+        bookEntry = entry; bookKey = entry.tree.node.path
+        showingBook = true; message = ""
+    }
+    func closeBook() { guard !closed, !isBusy else { return }; showingBook = false }
+    func readBookKey() {
+        guard !closed, !isBusy, let worker, let tab, let source = bookEntry?.tree else { return }
+        let key = bookKey
+        run { token in
+            let entry: RenderedBookEntry?
+            do {
+                entry = try await worker.restoreBookSelection(tab: tab,
+                    saved: .init(module: source.module, key: key, offsetText: nil), mode: .displayKey)
+            } catch { throw BookSelectionError() }
+            guard token == self.revision && !self.closed, let entry else { return }
+            self.presentBook(entry)
+        }
+    }
+    func navigateBook(_ direction: BookNavigation) {
+        guard !closed, !isBusy, let worker, let tab, bookEntry != nil else { return }
+        run { token in
+            let entry = try await worker.navigateBook(tab: tab, direction: direction)
+            guard token == self.revision && !self.closed, let entry else { return }
+            self.presentBook(entry)
+        }
+    }
+    func chooseBookNode(_ node: BookNode) {
+        guard !closed, !isBusy, let worker, let tab, let page = bookChildren,
+              page.nodes.contains(node) else { return }
+        run { token in
+            let entry = try await worker.selectBook(tab: tab, module: page.module, offset: node.offset)
+            guard token == self.revision && !self.closed else { return }
+            self.presentBook(entry)
+        }
+    }
+    func browseBook(_ offset: UInt64) {
+        guard !closed, !isBusy, let worker, let module = bookEntry?.tree.module else { return }
+        run { token in
+            let browser = try await worker.bookTree(module: module, offset: offset)
+            let children = try await worker.bookChildren(module: module, parent: offset)
+            guard token == self.revision && !self.closed else { return }
+            self.bookBrowser = browser; self.bookChildren = children; self.message = ""
+        }
+    }
+    func moreBookChildren() {
+        guard !closed, !isBusy, let worker, let page = bookChildren, let after = page.nextAfter else { return }
+        run { token in
+            let next = try await worker.bookChildren(module: page.module, parent: page.parent.offset, after: after)
+            guard token == self.revision && !self.closed else { return }
+            self.bookChildren = BookChildren(module: next.module, parent: next.parent,
+                nodes: page.nodes + next.nodes, nextAfter: next.nextAfter)
+        }
     }
     func chooseDictionaryKey(_ key: String) {
         guard !closed, !isBusy, let choices = dictionaryChoices,
@@ -688,6 +770,81 @@ struct PassageView: NSViewRepresentable {
     }
 }
 
+private struct BookPane: View {
+    @ObservedObject var model: ReaderModel
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("General book").font(.headline)
+                Spacer()
+                Button("Close") { model.closeBook() }
+            }.padding(8)
+            Picker("Book module", selection: Binding(
+                get: { model.bookEntry?.tree.module ?? "" }, set: { model.chooseBook($0) })) {
+                ForEach(model.modules.filter(\.hasBookTree)) { module in Text(module.id).tag(module.id) }
+            }.padding(.horizontal, 8)
+            HStack {
+                TextField("Book key or path", text: $model.bookKey).onSubmit { model.readBookKey() }
+                    .accessibilityLabel("Book key or path")
+                Button("Read") { model.readBookKey() }
+            }.padding(8)
+            HStack {
+                Button { model.navigateBook(.parent) } label: { Image(systemName: "arrow.left") }
+                    .accessibilityLabel("Book parent").help("Parent")
+                    .disabled(model.bookEntry?.tree.parent == nil)
+                Button { model.navigateBook(.firstChild) } label: { Image(systemName: "arrow.right") }
+                    .accessibilityLabel("Book first child").help("First child")
+                    .disabled(model.bookEntry?.tree.firstChild == nil)
+                Button { model.navigateBook(.previousSibling) } label: { Image(systemName: "arrow.up") }
+                    .accessibilityLabel("Book previous sibling").help("Previous sibling")
+                    .disabled(model.bookEntry?.tree.previousSibling == nil)
+                Button { model.navigateBook(.nextSibling) } label: { Image(systemName: "arrow.down") }
+                    .accessibilityLabel("Book next sibling").help("Next sibling")
+                    .disabled(model.bookEntry?.tree.nextSibling == nil)
+            }.padding(.horizontal, 8).padding(.bottom, 8)
+            if let page = model.bookChildren {
+                HStack {
+                    Button("Contents") { model.browseBook(0) }
+                    if let parent = model.bookBrowser?.parent {
+                        Button("Up a level") { model.browseBook(parent.offset) }
+                    }
+                    Text(page.parent.path.isEmpty ? page.module : page.parent.path).font(.caption).lineLimit(1)
+                }.padding(.horizontal, 8)
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 4) {
+                        ForEach(page.nodes) { node in
+                            HStack {
+                                Button(node.title) { model.chooseBookNode(node) }
+                                    .accessibilityLabel("Read book section \(node.title)")
+                                Spacer()
+                                if node.hasChildren {
+                                    Button { model.browseBook(node.offset) } label: { Image(systemName: "folder") }
+                                        .accessibilityLabel("Browse book section \(node.title)").help("Browse children")
+                                }
+                            }.buttonStyle(.borderless)
+                            Divider()
+                        }
+                    }.padding(.horizontal, 8)
+                }.frame(minHeight: 60, idealHeight: 110, maxHeight: 170)
+                    .accessibilityLabel("Book contents")
+                if page.nextAfter != nil {
+                    Button("More sections") { model.moreBookChildren() }.padding(.horizontal, 8)
+                }
+            }
+            Divider()
+            if let entry = model.bookEntry {
+                Text(entry.tree.node.path.isEmpty ? entry.tree.module : entry.tree.node.path).font(.caption).padding(8)
+                PassageView(html: entry.html, anchor: nil, onScrollFailure: { model.message = $0 },
+                    onLink: { _ in model.message = "Book links are not available in this preview yet." })
+                if !entry.hasEntry {
+                    Text("This section has no text. Browse its children to continue reading.")
+                        .foregroundStyle(.secondary).padding(8)
+                }
+            }
+        }.frame(minWidth: 230, idealWidth: 300, minHeight: 200).disabled(model.isBusy)
+    }
+}
+
 struct ReferenceMenu: View {
     let title: String
     let label: String
@@ -988,7 +1145,7 @@ struct ReaderWindow: View {
                 Divider()
                 Text("Xiphos native preview • Chapter reading and history slice").font(.caption).foregroundStyle(.secondary).padding(8)
             }.frame(minWidth: 450)
-            if model.modules.contains(where: { $0.type == "Commentaries" }) || model.dictionarySelection != nil {
+            if model.modules.contains(where: { $0.type == "Commentaries" }) || model.dictionarySelection != nil || model.showingBook {
                 VSplitView {
                     if model.modules.contains(where: { $0.type == "Commentaries" }) {
                         VStack(alignment: .leading, spacing: 0) {
@@ -1044,7 +1201,10 @@ struct ReaderWindow: View {
                             }
                         }.frame(minHeight: 140)
                     }
-            if model.dictionarySelection != nil {
+            if model.showingBook {
+                BookPane(model: model)
+            }
+            if model.dictionarySelection != nil && !model.showingBook {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack {
                         Text("Dictionary").font(.headline)
