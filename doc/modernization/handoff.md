@@ -32,10 +32,15 @@ cooperative cancellation. Checkpoints: policy `2682d18`, Reader `06286b7`, worke
 `47401f0`, Swift `a413a21`, controls `bb1d8bb`/`c75b187`, ranges `1dae0e9`/`d77d61c`.
 The range work also fixes an observed legacy key-text use-after-free.
 
-Local full suites passed **122/122 Mac/core** and **95/95 portable core on Mac**
-before the final legacy range buffer fix. After it: **3 focused Mac/core/Swift**,
-**2 portable**, **5 ASan/UBSan**, **3 TSan** pass. Strict C11 passes. See
-[Mac commands/environment](handoff-macos.md), [search limits](search-workflows.md)
+Latest shared result-copy boundary `d5bb059` separates owned bounded output
+from future complete stored scope. Dedicated checks cover long/Unicode keys,
+exact budgets and interval-versus-expanded counts; last-search characterization
+`1b806f1` covers narrowing, resets and empty/failure/partial-return policy.
+Local full suites pass **123/123 Mac/core** and **96/96 portable core on Mac**;
+focused search checks pass **6 Mac/core/Swift**, **5 portable**, **5 ASan/UBSan**,
+plus one final result-copy sanitizer check after default initialization. The prior
+range/control checkpoint also passed **3 TSan** checks. Strict C11 passed.
+See [Mac commands/environment](handoff-macos.md), [search limits](search-workflows.md)
 and [core scope](shared-core-roadmap.md). These are not Fedora/MSVC/WinUI checks.
 
 | Implemented area | Checkpoints | Contract / limits |
@@ -46,7 +51,7 @@ and [core scope](shared-core-roadmap.md). These are not Fedora/MSVC/WinUI checks
 | Earlier Fedora preview scope catch-up | PRs #82–89, `a80409b` | [Native Fedora evidence](handoff-linux.md); retain manual/corpus/renderer gates |
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
-Next shared slice: characterize and implement per-tab last-search scope with
+Next shared slice: implement per-tab last-search scope after checked characterization with
 complete owned SDK keys, independent of the bounded visible prefix, and explicit
 atomic failure/cancellation publication semantics. Native search UI is still
 pending. Book corpus/session/native sizing/global CSS/recursive assets remain

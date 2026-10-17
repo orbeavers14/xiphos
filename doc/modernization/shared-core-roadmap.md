@@ -27,7 +27,8 @@ implementation of these services. The detailed requirements remain in the
 with a consuming frontend to expose boundary problems early. Existing GTK3 is
 the behavior/design reference; keep it operational and retain retirement gates.
 
-Current next slice: complete owned per-tab last-search scope with explicit atomic
+Current next slice: complete owned per-tab last-search scope (legacy narrowing,
+empty/failure/partial-return semantics characterized in `1b806f1`) with explicit atomic
 publication/failure/cancellation semantics, independently of truncated public results. Book link/session, native
 sizing and corpus acceptance remain tracked work alongside the existing reading
 seams. Parallel reading and complete persistence remain later core services.

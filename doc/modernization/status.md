@@ -3,11 +3,13 @@
 Current checkpoint (2026-10-17): initial shared search spans pure legacy query
 policy `2682d18`, Reader `06286b7`, worker/C `47401f0`, Swift `a413a21`, owner-safe
 progress/cancel `bb1d8bb`, Swift draining `c75b187`, explicit intervals/legacy memory
-fix `1dae0e9`, and Swift range ownership `d77d61c`. Full local suites passed
-**122/122 Mac/core** and **95/95 portable core on Mac** before the legacy range
-buffer fix; afterward **3 focused Mac/core/Swift**, **2 portable**, **5 ASan/UBSan**
-and **3 TSan** checks pass. Strict C11 passed. Dependency instrumentation is
-partial and sanitizer leak detection is off. No hosted workflow was dispatched.
+fix `1dae0e9`, and Swift range ownership `d77d61c`. Last-search narrowing/failure/partial-return characterization `1b806f1` and owned
+result-copy boundary `d5bb059` are checked. Full local suites pass **123/123 Mac/core**
+and **96/96 portable core on Mac**. Six focused Mac/core/Swift, five portable and
+five ASan/UBSan search checks pass, plus one final result-copy sanitizer check.
+Earlier range/control TSan checks pass 3/3; control logic is unchanged by the
+copy extraction. Strict C11 passed. Dependency instrumentation is partial and
+sanitizer leak detection is off. No hosted workflow was dispatched.
 Search is still an initial Bible/regular-commentary service, without native search
 controls, last-search scope, advanced workflow or validated indexed execution.
 

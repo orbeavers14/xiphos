@@ -21,19 +21,24 @@ worker/C, `a413a21` Swift, `bb1d8bb` cooperative owner-safe controls, `c75b187`
 Swift cancellation draining, `1dae0e9` explicit intervals/legacy memory fix,
 `d77d61c` Swift ranges. Shared search owns queries/results and SDK scopes; no native
 search UI exists. See [search contract](search-workflows.md).
+Last-scope characterization `1b806f1` covers cross-module/repeated narrowing,
+empty/missing/failed/partial-return policy, clear/reset and 64/65 interval bounds.
+Two focused Mac, two portable and two ASan checks passed.
 Next bounded slice: owned per-tab last-search keys and atomic publication semantics.
 Do not create separate frontend sizing algorithms. No hosted build or reset
 credit was used. Preserve Windows lane, unrelated `.DS_Store`, GTK3 and licenses.
 
 ## Actual local checks
 
-At `d77d61c`, full suites passed 122/122 Mac/core and 95/95 portable Linux/core
-on this Mac before the final legacy range buffer fix. After the fix: three focused
-Mac/core/Swift, two portable, five ASan/UBSan and three TSan checks pass. Strict C11
-header compilation passed. The initial range ASan failure exposed a real legacy
-self-buffer use-after-free; copied context fixes it, and the extracted actual
-retained routine now passes. An initially mistyped Swift build target was corrected
-before the passing focused run. No full GTK3 build/runtime claim is made.
+Latest implementation `d5bb059`: owned result-copy boundary with long/Unicode,
+interval-count and exact-budget coverage. Full local suites pass 123/123 Mac/core
+and 96/96 portable core on Mac. Six focused Mac/core/Swift, five portable and five
+ASan/UBSan search checks pass; a final result-copy sanitizer check passes after
+default initialization. Three TSan range/control checks passed before the later
+result-copy extraction (thread control logic unchanged). Strict C11 passed.
+The initial range ASan failure exposed a real legacy key-text self-buffer
+use-after-free, fixed in `1dae0e9`; its extracted actual routine passes. No full
+GTK3 build/runtime claim is made. New targets require CMake configuration first.
 Earlier book geometry C++11/native-disabled helper, module CSS and combined-note
 sanitizer/GUI evidence remains in the workflow documents/version history.
 Dependencies are not fully instrumented and leak detection is off. Current Fedora
@@ -60,8 +65,8 @@ cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -D
 cmake --build build/linux-models --parallel 2
 ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
 cmake -S src/core -B build/sanitized
-cmake --build build/sanitized --target core_search_test core_search_range_test core_search_control_test core_search_worker_test core_sidebar_search_text_test --parallel 2
-ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/sanitized -R '^core_(search|search_range|search_control|search_worker|sidebar_search_text)$' --no-tests=error --output-on-failure
+cmake --build build/sanitized --target core_search_test core_search_range_test core_search_control_test core_search_worker_test core_search_results_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/sanitized -R '^core_search(_results|_range|_control|_worker)?$' --no-tests=error --output-on-failure
 ```
 
 Focused post-fix commands use targets `core_search_range_test` and
@@ -85,3 +90,11 @@ spacing, heading and SDK recovery evidence remains in the linked workflow
 documents and [versioned prior handoff](https://github.com/orbeavers14/xiphos/blob/e193cf6/doc/modernization/handoff-macos.md).
 Older next-task statements are historical; prior intermittent paging/fixture
 timeouts and passing isolated reruns remain in history. No legacy source retires.
+
+Final whole-suite commands are the full Mac and portable build/ctest commands
+above. Focused search build targets include `core_search_results_test` plus
+search/range/control/worker and `macos_search_adapter_test`; focused Mac regex is
+`^(core_search(_results|_range|_control|_worker)?|swift_search_adapter)$`.
+The final default-initialization sanitizer check builds `core_search_results_test`
+and runs `^core_search_results$`. No hosted job or reset credit was used. Work is
+at a pushed checkpoint near the usage ceiling; no active ownership lease is held.
