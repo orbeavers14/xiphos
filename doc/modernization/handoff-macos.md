@@ -14,14 +14,17 @@ format limitations are documented in [book workflows](book-tree-workflows.md).
 
 Shared geometry `48d5425` serves the retained GTK adapter (native sizing pending).
 Module CSS `4611a9d` / native `65b8ab6` is checked: bounded preferred/default
-styles, empty/failed fallback and safe style text. Active next slice: characterize
-combined book note metadata/numbering using the real legacy DisplayLevel routine.
+styles, empty/failed fallback and safe style text. Combined note source `652d8e1`, shared numbering `43ce5ee` and native controls
+`a5d9488` now preserve exact legacy terminal-label/whole-document counter scope.
+Active next slice: characterize legacy search requests and extract a bounded
+read-only shared search service.
 Do not create separate frontend sizing algorithms. No hosted build or reset
 credit was used. Preserve Windows lane, unrelated `.DS_Store`, GTK3 and licenses.
 
 ## Actual local checks
 
-At `65b8ab6`: 113/113 Mac/core, 88/88 portable Linux/core on this Mac, six focused
+At `a5d9488`: 116/116 Mac/core, 90/90 portable Linux/core on this Mac; three focused
+book-numbering ASan/UBSan checks and twelve native/core focused checks pass. Earlier six focused
 ASan/UBSan including fixtures, strict C11 header compilation. Nine focused native/
 core checks passed before the full run. Three final sanitizer checks passed after
 style-escaping refinement. Strict C++11 geometry and native-disabled render
@@ -33,7 +36,8 @@ unvalidated here; these Mac-hosted portable checks are not Linux desktop proof.
 Disposable original-prose window verified PNG inline, click to native preview,
 Close to same book section, image-off text retention, and image accessibility
 label. CSS window checked preferred color/pseudo-element and unusable-style
-text retention. Temporary app/fixture was quit and removed. Full VoiceOver/keyboard,
+text retention. Numbering window verified n1/x1/n2/x2 across sections, exact
+descendant note body, and Off/On with the same selected root. Temporary app/fixture was quit and removed. Full VoiceOver/keyboard,
 corpus, native sizing, global/recursive CSS assets, image formats/animation and whole workflow/visual
 acceptance remain pending. 0/38 whole groups and 0/3 native releases accepted.
 

@@ -1,14 +1,18 @@
 # Modernization status and acceptance
 
 Current checkpoint (2026-10-17): `56925fb` inline URL resolution, `efcc544`
-shared owned inline-image output, `4137374` Mac display. **113/113 Mac/core**,
-**88/88 portable core on Mac**, **6/6 focused ASan/UBSan**, strict C11 pass.
+shared owned inline-image output, `4137374` Mac display. **116/116 Mac/core**,
+**90/90 portable core on Mac**, **6/6 focused ASan/UBSan**, strict C11 pass.
 Shared image geometry `48d5425`, bounded CSS `4611a9d` and native styles
 `65b8ab6` are checked; three final sanitizer checks cover style embedding.
 PNG inline/click/Close/image-off, preferred CSS/fallback and image label checked in
 a disposable window. Whole corpus/sizing/CSS/formats/workflows remain pending.
 See [shared core remaining scope](shared-core-roadmap.md),
 [current handoff](handoff.md) and [book contract](book-tree-workflows.md).
+Combined book note sources `652d8e1`, shared numbering `43ce5ee` and native
+controls `a5d9488` passed three focused sanitizers/twelve focused native/core
+checks. Window evidence covers independent cross-section counters, exact
+descendant note body and Off/On without changing the selected root.
 The following chronological checkpoints retain their original scoped evidence;
 older next-task descriptions are superseded by the current handoff.
 

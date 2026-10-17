@@ -639,5 +639,5 @@ The Mac book menu adds the native footnote/cross-reference number control using
 shared settings and refresh. Its original-prose window showed *n1/*x1 then
 *n2/*x2 across two sections; a descendant marker opened its own note body while
 retaining the selected root. Off removed digits, On restored counters from one.
-Draft/history/source/closed-owner behavior is model-checked. Whole corpus, hover,
+Draft/history/source behavior is model-checked; generic closed-owner guards are retained. Whole corpus, hover,
 fonts/RTL, saved-tab/visibility workflows and other-platform UI remain pending.
