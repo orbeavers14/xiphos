@@ -24,9 +24,10 @@ committed state; read-only calls and absent restore are neutral.
 Complete document publication `6cb35cf`, worker/C `99056d7` and native consumption
 `e52a497` preserve configured DisplayLevel depth/order, atomic selection and exact
 rendered-section note routing. Earlier raw entry/read-only APIs remain stable.
-Checks: **102/102 Mac/core**, **82/82 portable Linux/core on Mac**, focused
-**ASan/UBSan 6/6** and C11. Native view extraction `49e4561` then passed app/model
-builds and six focused checks. All checks are local. Full workflow/corpus/visual
+Checks: **105/105 Mac/core**, **83/83 portable Linux/core on Mac**, focused
+**ASan/UBSan 7/7** and C11. Shared presentation `86e4ad0` and native controls `614a81d` retain raw sources and
+consume matching visible HTML/CSS. The final compact menu adjustment passed
+app/model builds and nine focused checks. All checks are local. Full workflow/corpus/visual
 acceptance, resources, saved tabs and writes remain pending. See
 [book workflows](book-tree-workflows.md). Current GTK/MSVC/WinUI remain unvalidated.
 
@@ -39,7 +40,7 @@ acceptance, resources, saved tabs and writes remain pending. See
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
 The owner renewed continued shared-core work until usage runs out. The five-hour window refreshed automatically; active Mac
-work is shared book-document display cleanup and annotation layout. No reset
+work is legacy image-command/resource-context characterization. No reset
 credit or hosted builds are authorized by this continuation. No whole parity or
 legacy-retirement gate is accepted by scoped checks.
 
@@ -47,7 +48,7 @@ legacy-retirement gate is accepted by scoped checks.
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Shared book-document display cleanup and annotation layout | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Legacy image commands and copied SDK resource context | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

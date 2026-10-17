@@ -422,3 +422,29 @@ a bounds failure. Full Mac/core: 102/102; portable core: 82/82 on Mac; focused
 ASan/UBSan 6/6 and C11 pass. View extraction `49e4561` then passed app/model builds
 and six focused checks without changing control logic. Shared display cleanup and
 annotation layout are the next seam; raw SDK sources remain available.
+
+## Shared book display presentation and refresh
+
+Core `86e4ad0` reuses the existing combined lexical/cleanup stage for application
+book selection. A separate optional presentation owns visible HTML, matching CSS,
+cleanup diagnostics and image/font/double-space states. Raw combined and section
+HTML stay unchanged; read-only document calls do not add presentation. Unsupported
+annotation grammar retains the whole-document fallback with spacing-only CSS.
+Discovery is committed with successful selection after all owned copies are staged.
+Refresh reuses the committed requested target, preserving explicit root paths.
+
+C getters copy presentation metadata while borrowed strings remain owned by the
+document. Mac `614a81d` copies the packet and uses native display controls; raw
+HTML is not substituted for formatted HTML with different CSS. Controls refresh
+through the worker and retain the unsubmitted key. The full local Mac/core suite
+passed 105/105; the final compact menu adjustment passed app/model builds and nine
+focused checks. Portable Linux/core on Mac passed 83/83; focused ASan/UBSan 7/7
+and C11 pass. Disposable window checks cover menu state, image/font toggles,
+spacing, root/draft refresh and compact header. Real resource loading, note
+numbering and full font/RTL/corpus/platform acceptance remain pending.
+
+The next seam characterizes legacy showImage commands and copied SDK resource
+configuration before implementing resource I/O/native viewers. Legacy strips a
+leading `file:` and accepts eight lowercase image suffixes; clicked images go to
+a platform viewer and hover shows the filename. Relative/file-prefix/base-path
+semantics must be recorded rather than guessed. No asset loading is claimed yet.

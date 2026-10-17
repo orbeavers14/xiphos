@@ -382,7 +382,11 @@ within explicit bounds. Read-only worker/C transport retains the same option pol
 selection stages the complete document before publication; rendered-section note
 routing resolves exact descendant/alias context while keeping the selected root.
 Mac consumes owned document/section values and these shared commands. Raw entry
-APIs stay stable. Shared display cleanup/annotation layout, full saved-tab restore
-and remaining book display/link/history rules are subsequent seams. No additional
+APIs stay stable. Selected documents additionally own separate visible HTML/CSS and copied cleanup/
+discovery options through the existing common presentation stage; raw source HTML
+remains available. Staged discovery and selection publish together. Native controls
+refresh through the core's committed target, preserving root-path intent. Image
+command/resource context, actual asset loading, book note numbering, full saved-tab
+restore and remaining book display/link/history rules are subsequent seams. No additional
 engine or frontend navigation policy is introduced; GTK3 book/editor paths remain
 intact.

@@ -212,6 +212,16 @@ Native view extraction `49e4561` then passed app/model builds and six focused ch
 Next: shared document cleanup/annotation layout. Remaining corpus/visual/platform,
 resource, generalized-link and saved-tab gates keep whole parity and estimates unchanged.
 
+Shared book presentation `86e4ad0` reuses combined annotation layout and image/font
+cleanup while preserving raw SDK documents/sections. Atomic selection carries
+matching visible HTML/CSS, discovery states and diagnostics; refresh keeps typed
+root intent. Mac `614a81d` consumes the packet and offers native display controls
+with draft/history retention. Full local Mac/core **105/105**, portable Linux/core
+on Mac **83/83**, focused **ASan/UBSan 7/7**, C11 pass; final compact menu change
+then passed app/model builds and nine focused checks. Window controls/spacing/root
+refresh/header were checked; actual asset loading and full font/corpus/RTL were
+not. Next: image-command/resource-context characterization. Whole parity unchanged.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three

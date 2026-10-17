@@ -5,8 +5,8 @@ Updated 2026-10-16. Read [AGENTS.md](../../AGENTS.md), the
 
 ## Checked shared-core handoff
 
-Branch `master`, fork `orbeavers14/xiphos`. Active shared claim: book-document
-display cleanup and annotation layout using existing common presentation helpers.
+Branch `master`, fork `orbeavers14/xiphos`. Active shared claim: legacy image-command
+and copied SDK resource-context characterization before resource I/O.
 No reset credit or hosted build was used. Preserve Windows lane, `.DS_Store`, GTK3,
 tests and licenses.
 
@@ -16,7 +16,9 @@ DisplayLevel, successful-only state and exact rendered-section note routing.
 Native `e52a497` consumes these values without duplicating core policy. View
 extraction `49e4561` separates `BookPane.swift` from the main window source.
 Raw single-entry and read-only document APIs remain stable. Shared display
-cleanup/annotation layout, resources and full saved tabs/writes remain pending.
+presentation `86e4ad0` and native controls `614a81d` preserve raw sources, matching
+visible HTML/CSS and root/draft refresh. Resources, book note numbering, general
+links and full saved tabs/writes remain pending.
 
 Native key/tree/navigation controls `d65aabc` and ordinary note clicks `bb6b2a7`
 consume shared operations; disposable windows checked their scoped behavior.
@@ -49,11 +51,12 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At native document consumption `e52a497`: **102/102 Mac/core**.
-At queued publication `99056d7`: **82/82 portable Linux/core on this Mac**,
-focused document/publication/navigation/session **ASan/UBSan 6/6** and C11 pass.
-View extraction `49e4561` then passed app/model builds and six focused book checks.
-Latest full runs are clean. Prior `eb33f2a`
+At shared presentation `86e4ad0` and native controls `614a81d`: full local
+**105/105 Mac/core**, **83/83 portable Linux/core on this Mac**, focused
+**ASan/UBSan 7/7** and C11 pass. The final compact menu adjustment then passed
+app/model builds and nine focused book/adapter checks. Disposable windows checked
+controls, spacing, root/draft refresh and header layout; real asset loading was not
+checked. Latest full runs are clean. Prior `eb33f2a`
 had a Mac paging timeout and sanitizer fixture timeout despite success output;
 isolated reruns passed without source or timeout changes. Preserve that evidence
 in status/history. SDK dependencies are not fully instrumented; leaks are off.
@@ -72,8 +75,8 @@ cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -D
 cmake --build build/linux-models --parallel 2
 ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
 cmake -S platforms/linux -B build/linux-models-sanitized -C build/linux-model-sdk.cmake -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
-cmake --build build/linux-models-sanitized --target core_book_selection_test core_book_session_test core_book_entry_test core_book_profile_restore_test --parallel 1
-ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_book_(selection|session|profile_restore)$' --no-tests=error --output-on-failure
+cmake --build build/linux-models-sanitized --target core_book_document_test core_book_document_session_test core_book_document_publication_test core_book_document_presentation_test core_book_navigation_test core_book_session_test core_book_entry_test --parallel 1
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_book_(document|document_session|document_publication|document_presentation|navigation|session)$' --no-tests=error --output-on-failure
 ```
 
 The ignored SDK seed is copied from this Mac's cache, not a portable file. The
@@ -98,10 +101,10 @@ No complete functional or visual parity is claimed.
 
 ## Next bounded work
 
-1. Active shared milestone: book-document display cleanup/annotation layout,
-   reusing existing common helpers with raw SDK source retained. Complete native
-   documents and descendant note routing are checked. Resources, generalized
-   book links, full saved-tab XML/visibility/fallback and writes remain separate gates.
+1. Active shared milestone: characterize showImage commands and copied SDK
+   resource context. Preserve actual `file:`/suffix behavior and record base-path
+   differences before implementing I/O/native viewers. Display snapshots/controls
+   are checked; resource loading, note numbering, full saved tabs and writes remain open.
 2. Fedora: rebuild default-ON GTK; verify heading click/hover and source/body
    separation, linked chapters, numbering/spacing, profiles and real input.
 3. Windows: continue native compiler/dependency/core setup in its own lane.
