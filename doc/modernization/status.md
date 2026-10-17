@@ -156,7 +156,15 @@ Per-tab publication `0af4593` commits owned source state after successful target
 validation/rendering, keeping failed/absent restore and read-only calls neutral.
 Suites pass 92/92 Mac/core, 76/76 portable Linux/core on Mac and focused
 publication/restore/decoder ASan/UBSan 5/5; C11 passes. This later full run is clean.
-Explicit profile-file restore is next; native controls and full F10 remain pending.
+Explicit profile-file restore `47fc462` now queues bounded XML import through the
+same per-tab publication, preserving source bytes/permissions and prior state on
+failure. Latest `106577b` enforces the shared numeric reading minimum of 4 while
+preserving explicit root paths and raw source queries. Latest local checks:
+**93/93 Mac/core**, **77/77 portable Linux/core on Mac**, focused selection/entry/
+profile-restore/session **ASan/UBSan 4/4**, strict C11 and C++17. Native book
+controls and complete saved-tab XML/visibility/fallback/write integration remain
+pending. No hosted builds or new full parity acceptance. This checkpoint is
+handed off near the usage ceiling with no active shared task claim.
 
 ## Overall completion estimate
 

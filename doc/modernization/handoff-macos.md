@@ -5,39 +5,30 @@ Updated 2026-10-16. Read [AGENTS.md](../../AGENTS.md), the
 
 ## Checked shared-core handoff
 
-Branch `master`, fork `orbeavers14/xiphos`. Active shared claim: resolve typed
-explicit profile-file book restore through shared selection publication. Initial-window
-and tab/display restore remain distinct. Preserve Windows lane, `.DS_Store`, GTK3,
-tests and licenses. Keep all checks local; fetch before overlapping edits.
+Branch `master`, fork `orbeavers14/xiphos`. Handed off near the usage ceiling;
+no active shared claim. Preserve Windows lane, `.DS_Store`, GTK3, tests and
+licenses. Keep all checks local; fetch before overlapping edits.
 
-Latest `0af4593` publishes per-tab requested/resolved book sources only after
-validation/rendering and staging owned copies. Read-only requests and absent
-restore do not replace the previous selection. New C entry/optional restore/tree
-snapshot requests retain FIFO, option policy and ownership contracts. Native
-book controls and profile writes remain pending.
+Latest `106577b` shares the legacy numeric reading minimum of 4 across typed
+selection and decoded restores. Explicit root paths and low-level source queries
+retain root 0; requested intent remains available in the per-tab snapshot.
+Profile-file restore `47fc462` queues bounded XML import and selection on the
+single engine worker, copying the explicit path before returning to C callers.
+Malformed/missing/unsupported inputs preserve committed state and source files.
+No home/profile discovery, writes, locale changes or native controls are included.
 
-Latest SDK resolution `eb33f2a` preserves successful relative/root normalization,
-rejects missing snaps before copying stale nodes and queues copied optional tree
-results with explicit C presence. Live keys, attributes and module bytes remain
-unchanged. Pure decoder remains `929c8d8`. No UI/tab publication or writes yet.
-
-Read-only profile `1a19c1d` imports raw saved book module/key/offset values
-through the existing bounded XML parser. Actual legacy getters, duplicates/nulls,
-Unicode, source ownership/bytes and parser guards are tested. It does not apply
-startup defaults, resolve numeric/path ambiguity or write profiles. Legacy numeric
-reading clamps to 4; path reads may leave an older saved offset. Those startup
-semantics need a separate typed resolution decision before native integration.
-
-Decoder `929c8d8` now owns candidate/default/prefix rules for the two explicit
-contexts, with bounded, overflow-safe numeric handling. The extracted actual
-legacy display function is compared headlessly. No SDK selection or UI publication
-occurs yet.
+Per-tab publication `0af4593` commits owned requested/resolved sources only after
+validation, configured rendering and staging. SDK resolution `eb33f2a` checks
+errors before copying nodes and preserves successful relative/root normalization.
+Decoder `929c8d8` keeps initial-window offsets distinct from tab/display keys;
+read-only profile import `1a19c1d` preserves raw values. Optional queued C results
+retain explicit presence and take-once ownership. Absent restore is a no-op.
 
 Book sources/render/worker-C/paging/capability/notes/URI contracts are in
 [book workflows](book-tree-workflows.md), with implementations `6f61997`, `6b2399c`,
 `b9c0a34`, `f35b6dd`, `b49c823`, `9888bf0`, `045f27e`. One engine/FIFO, owned
 results and existing module/tab option precedence remain intact. Native book
-controls, URI presentation, images, saved selection application and editors are
+controls, URI presentation, images, full saved-tab integration and editors are
 pending. Existing verse URI validation remains strict. No full F10 acceptance.
 
 Prior lexical, spacing, note-numbering, native heading-link and SDK recovery
@@ -58,12 +49,13 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At `0af4593`: **92/92 Mac/core**, **76/76 portable Linux/core on this Mac**,
-focused publication/restore/decoder **ASan/UBSan 5/5**, strict C11 passes. This full
-run is clean. Prior `eb33f2a` had a Mac paging timeout and sanitizer fixture timeout
-(despite success output); isolated reruns passed 1/1 and 3/3 without source or
-timeout changes. Preserve that evidence in status/history. SDKs are not fully
-instrumented; leaks are off. All checks are local; Fedora GTK/MSVC is unvalidated.
+At `106577b`: **93/93 Mac/core**, **77/77 portable Linux/core on this Mac**,
+focused selection/entry/profile-restore/session **ASan/UBSan 4/4**, strict C11
+and strict C++17 decoder checks pass. Latest full runs are clean. Prior `eb33f2a`
+had a Mac paging timeout and sanitizer fixture timeout despite success output;
+isolated reruns passed without source or timeout changes. Preserve that evidence
+in status/history. SDK dependencies are not fully instrumented; leaks are off.
+All checks are local; current Fedora GTK/MSVC and native book UI are unvalidated.
 
 Environment: macOS 27.0.1 (26A434), ARM64; AppleClang 21.0.0; Swift 6.4 toolchain
 in Swift 6 language mode; SWORD 1.9.0.3916; GLib 2.86.5; configured libxml2 SDK.
@@ -78,8 +70,8 @@ cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -D
 cmake --build build/linux-models --parallel 2
 ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
 cmake -S platforms/linux -B build/linux-models-sanitized -C build/linux-model-sdk.cmake -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
-cmake --build build/linux-models-sanitized --target core_book_selection_test core_book_tree_test core_book_restore_test core_book_entry_test core_book_session_test --parallel 2
-ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_book_(session|restore|selection)$' --no-tests=error --output-on-failure
+cmake --build build/linux-models-sanitized --target core_book_selection_test core_book_session_test core_book_entry_test core_book_profile_restore_test --parallel 1
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/linux-models-sanitized -R '^core_book_(selection|session|profile_restore)$' --no-tests=error --output-on-failure
 ```
 
 The ignored SDK seed is copied from this Mac's cache, not a portable file. The
@@ -104,10 +96,10 @@ No complete functional or visual parity is claimed.
 
 ## Next bounded work
 
-1. Active shared task: explicit queued profile-file restore through existing
-   XML parsing and successful per-tab publication. Keep source files unchanged;
-   malformed/missing/unsupported imports must preserve committed state. Native
-   controls, full saved-tab XML, visibility and writes remain separate gates.
+1. Next unclaimed shared/native milestone: book tree/navigation controls consuming
+   shared selection, with Swift adapters containing no duplicate core policy.
+   Full saved-tab XML, visibility/fallback context and round-trip profile writes
+   remain separate acceptance gates; explicit file restore is now implemented.
 2. Fedora: rebuild default-ON GTK; verify heading click/hover and source/body
    separation, linked chapters, numbering/spacing, profiles and real input.
 3. Windows: continue native compiler/dependency/core setup in its own lane.

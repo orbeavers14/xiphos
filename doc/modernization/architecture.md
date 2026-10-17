@@ -371,7 +371,12 @@ invalid SDK snaps cannot publish stale nodes. Actual tree root remains distinct
 from legacy initial reading offset 4. Configured raw entry rendering and queued worker/C transport now retain these
 source identities and existing tab/module option policy. Bounded child pages
 keep lazy-tree order/cursor rules in core and travel as owned queued C snapshots.
-Native controls and
+Typed restore contexts keep initial-window offsets distinct from display keys.
+The shared selection boundary applies the legacy numeric reading minimum;
+explicit root paths retain root identity. Per-tab publication stages owned source
+state after successful configured rendering. Explicit profile-file restore queues
+read-only XML import through this same operation on the single worker; failure
+retains committed state. Native controls, complete saved-tab restoration and
 book-specific display/link/history rules remain subsequent seams. No additional
 engine or frontend navigation policy is introduced; GTK3 book/editor paths remain
 intact.
