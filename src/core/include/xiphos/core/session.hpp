@@ -56,6 +56,8 @@ public:
   // Publish only after target validation and configured entry rendering succeed.
   // Read-only book/notes/restore-resolution calls do not update this state.
   BookEntry select_book(const BookSelectionTarget &target);
+  // Missing selection/relation is a no-op; relationship lookup and reading policy stay in core.
+  std::optional<BookEntry> navigate_book(BookNavigation direction);
   // No saved module is a successful no-op, retaining any existing selection.
   std::optional<BookEntry> restore_book_selection(const SavedBookSelection &saved, BookRestoreMode mode);
   const std::optional<BookSelectionState> &book_selection() const { return book_selection_; }

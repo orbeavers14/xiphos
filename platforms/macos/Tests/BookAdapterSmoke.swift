@@ -22,6 +22,10 @@ import Foundation
         guard entry.tree.node.offset == 4, entry.tree.parent?.offset == 0, entry.tree.firstChild?.offset == 8,
               entry.hasEntry, entry.html.contains("café"), entry.html.contains("wordsOfJesus"),
               !plain.html.contains("wordsOfJesus") else { fatalError("shared numeric reading and isolated configured rendering") }
+        guard try await worker.navigateBook(tab: a, direction: .firstChild)?.tree.node.offset == 8,
+              try await worker.navigateBook(tab: a, direction: .firstChild) == nil,
+              try await worker.navigateBook(tab: a, direction: .parent)?.tree.node.offset == 4,
+              try await worker.navigateBook(tab: a, direction: .previousSibling) == nil else { fatalError("shared directional commands and optional boundary") }
         let saved = SavedBookSelection(module: "OSISBook", key: "Part One", offsetText: "20")
         let initial = try await worker.restoreBookSelection(tab: a, saved: saved, mode: .initialWindow)
         let display = try await worker.restoreBookSelection(tab: a, saved: saved, mode: .displayKey)

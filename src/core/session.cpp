@@ -225,6 +225,28 @@ BookEntry StudySession::select_book(const BookSelectionTarget &target) {
   book_selection_ = std::move(next);
   return result;
 }
+std::optional<BookEntry> StudySession::navigate_book(BookNavigation direction) {
+  switch (direction) {
+    case BookNavigation::parent: case BookNavigation::first_child:
+    case BookNavigation::previous_sibling: case BookNavigation::next_sibling: break;
+    default: throw std::invalid_argument("Unknown book navigation direction");
+  }
+  if (!book_selection_) return std::nullopt;
+  const auto &source = book_selection_->tree;
+  const auto current = reader_.book_tree(source.module, source.node.offset);
+  if (current.node.path != source.node.path)
+    throw std::runtime_error("Committed book source changed before navigation");
+  std::optional<BookTreeNode> target;
+  switch (direction) {
+    case BookNavigation::parent: target = current.parent; break;
+    case BookNavigation::first_child: target = current.first_child; break;
+    case BookNavigation::previous_sibling: target = current.previous_sibling; break;
+    case BookNavigation::next_sibling: target = current.next_sibling; break;
+    default: throw std::invalid_argument("Unknown book navigation direction");
+  }
+  if (!target) return std::nullopt;
+  return select_book({current.module, target->offset});
+}
 std::optional<BookEntry> StudySession::restore_book_selection(const SavedBookSelection &saved, BookRestoreMode mode) {
   const auto target = saved_book_target(saved, mode);
   if (!target) return std::nullopt;

@@ -95,6 +95,7 @@ struct BookChildren: Sendable, Equatable {
     let nodes: [BookNode]
     let nextAfter: UInt64?
 }
+enum BookNavigation: Int32, Sendable { case parent = 0, firstChild = 1, previousSibling = 2, nextSibling = 3 }
 enum BookRestoreMode: Int32, Sendable { case displayKey = 0, initialWindow = 1 }
 struct SavedBookSelection: Sendable {
     var module: String?, key: String?, offsetText: String?

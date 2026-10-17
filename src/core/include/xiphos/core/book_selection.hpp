@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <variant>
 namespace xiphos::core {
+enum class BookNavigation { parent, first_child, previous_sibling, next_sibling };
 enum class BookRestoreMode { display_key, initial_window };
 struct BookSelectionTarget {
   std::string module;

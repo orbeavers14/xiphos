@@ -44,6 +44,7 @@ public:
   // Read with existing tab/module engine policy; no history visit.
   std::future<BookEntry> read_book(StudyTab tab, std::string module, std::uint64_t offset);
   std::future<BookEntry> select_book(StudyTab tab, BookSelectionTarget target);
+  std::future<std::optional<BookEntry>> navigate_book(StudyTab tab, BookNavigation direction);
   std::future<std::optional<BookEntry>> restore_book_selection(StudyTab tab, SavedBookSelection saved, BookRestoreMode mode);
   // Explicit read-only file import on the engine thread. Uses only saved book
   // fields, retaining current engine preferences and existing profile bytes.

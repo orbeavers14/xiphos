@@ -114,6 +114,11 @@ actor CoreWorker {
         let status = module.withCString { xc_worker_select_book(handle, tab, $0, offset, &request) }
         return try await bookEntryValue(status, request, optional: false)!
     }
+    func navigateBook(tab: UInt64, direction: BookNavigation) async throws -> RenderedBookEntry? {
+        var request: OpaquePointer?
+        let status = xc_worker_navigate_book(try worker(), tab, direction.rawValue, &request)
+        return try await bookEntryValue(status, request, optional: true)
+    }
     func restoreBookProfile(tab: UInt64, path: String, mode: BookRestoreMode) async throws -> RenderedBookEntry? {
         guard !path.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?

@@ -227,6 +227,18 @@ xc_status xc_worker_select_book(xc_worker *w, uint64_t tab, const char *id, uint
   if (!id || !*id) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.select_book(tab, {id, offset}); });
 }
+xc_status xc_worker_navigate_book(xc_worker *w, uint64_t tab, int direction, xc_request **out) {
+  using xiphos::core::BookNavigation;
+  BookNavigation target;
+  switch (direction) {
+    case XC_BOOK_PARENT_DIRECTION: target = BookNavigation::parent; break;
+    case XC_BOOK_FIRST_CHILD_DIRECTION: target = BookNavigation::first_child; break;
+    case XC_BOOK_PREVIOUS_SIBLING_DIRECTION: target = BookNavigation::previous_sibling; break;
+    case XC_BOOK_NEXT_SIBLING_DIRECTION: target = BookNavigation::next_sibling; break;
+    default: if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w, out, [=](auto &worker) { return worker.navigate_book(tab, target); });
+}
 xc_status xc_worker_restore_book_selection(xc_worker *w, uint64_t tab, const xc_saved_book_selection *saved,
                                           int mode, xc_request **out) {
   if (!saved || (mode != XC_BOOK_RESTORE_DISPLAY_KEY && mode != XC_BOOK_RESTORE_INITIAL_WINDOW)) {

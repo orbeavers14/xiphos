@@ -122,6 +122,9 @@ std::future<BookEntry> StudyWorker::read_book(StudyTab tab, std::string module, 
 std::future<BookEntry> StudyWorker::select_book(StudyTab tab, BookSelectionTarget target) {
   return impl_->submit([tab, target = std::move(target)](Impl::State &s) { return s.tab(tab).select_book(target); });
 }
+std::future<std::optional<BookEntry>> StudyWorker::navigate_book(StudyTab tab, BookNavigation direction) {
+  return impl_->submit([tab, direction](Impl::State &s) { return s.tab(tab).navigate_book(direction); });
+}
 std::future<std::optional<BookEntry>> StudyWorker::restore_book_selection(StudyTab tab, SavedBookSelection saved, BookRestoreMode mode) {
   return impl_->submit([tab, saved = std::move(saved), mode](Impl::State &s) {
     return s.tab(tab).restore_book_selection(saved, mode);

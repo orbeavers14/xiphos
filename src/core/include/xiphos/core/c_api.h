@@ -93,6 +93,15 @@ int xc_request_book_selection_present(const xc_request *request);
  * result, no Bible/dictionary history visit or preference writes. Numeric
  * reading offsets below four use four; low-level source queries retain root 0. */
 xc_status xc_worker_select_book(xc_worker *worker, uint64_t tab, const char *module, uint64_t offset, xc_request **out);
+typedef enum xc_book_navigation {
+  XC_BOOK_PARENT_DIRECTION = 0, XC_BOOK_FIRST_CHILD_DIRECTION = 1,
+  XC_BOOK_PREVIOUS_SIBLING_DIRECTION = 2, XC_BOOK_NEXT_SIBLING_DIRECTION = 3
+} xc_book_navigation;
+/* Navigate from the committed tab source on the FIFO worker; fresh SDK relations
+ * and the same legacy numeric reading policy as select_book. Successful presence
+ * 0 means no selected book/relation and no state change; 1 -> take_book_entry.
+ * Unknown directions reject immediately. Failed rendering retains prior state. */
+xc_status xc_worker_navigate_book(xc_worker *worker, uint64_t tab, int direction, xc_request **out);
 /* Same explicit context rules as read-only resolution, but successful rendering
  * publishes the tab selection. Presence 1 -> take_book_entry, 0 -> no saved book
  * and no state change. Failure retains the previous committed tab selection. */
