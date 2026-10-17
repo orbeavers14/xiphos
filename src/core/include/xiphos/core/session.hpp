@@ -10,6 +10,7 @@ namespace xiphos::core {
 struct BookSelectionState {
   BookSelectionTarget requested;
   BookTree tree;
+  std::optional<BookDocument> document; // Present only after atomic document selection.
 };
 // One instance per study tab/window. Calls and lifetime must be serialized.
 // The reader must outlive this C++ session; C ABI sessions retain their reader.
@@ -57,6 +58,10 @@ public:
   // Publish only after target validation and configured entry rendering succeed.
   // Read-only book/notes/restore-resolution calls do not update this state.
   BookEntry select_book(const BookSelectionTarget &target);
+  BookDocument select_book_document(const BookSelectionTarget &target);
+  std::optional<BookDocument> navigate_book_document(BookNavigation direction);
+  std::optional<BookDocument> restore_book_document_selection(const SavedBookSelection &saved, BookRestoreMode mode);
+  BookNote book_document_note_link(const std::string &uri, bool render_body = true);
   // Missing selection/relation is a no-op; relationship lookup and reading policy stay in core.
   std::optional<BookEntry> navigate_book(BookNavigation direction);
   // No saved module is a successful no-op, retaining any existing selection.
@@ -132,6 +137,7 @@ private:
   std::map<std::string, EngineOptions> module_options_;
   ModulePresentationPreferences presentation_options_;
   void require_module(const std::string &module) const;
+  std::optional<BookSelectionTarget> book_navigation_target(BookNavigation direction);
   std::vector<std::vector<std::string>> heading_note_html(const std::string &module,
       const std::vector<Entry *> &entries, const ModulePresentationOptions &options,
       const std::optional<EngineOptions> &engine);

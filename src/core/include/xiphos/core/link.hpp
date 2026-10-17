@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 #include <string>
+#include <cstdint>
 #include <variant>
 namespace xiphos::core {
 enum class LexicalLinkKind { strongs, morphology };
@@ -27,6 +28,11 @@ StudyNoteLink study_note_link(const std::string &url, const std::string &current
 // Exact source-bound book command. Context comes from an owned SDK tree node;
 // slash paths are never fed to the verse parser or short-passage fallback.
 StudyNoteLink book_note_link(const std::string &url, const std::string &module, const std::string &path);
+struct BookDocument;
+struct BookDocumentNoteTarget { std::uint64_t offset; StudyNoteLink command; };
+// Parse once, then require an exact rendered section in the owned document.
+// Skipped/foreign/ambiguous paths are rejected; no verse or relative fallback.
+BookDocumentNoteTarget book_document_note_link(const std::string &url, const BookDocument &document);
 // Scoped single-reference subset of main/url.cc sword_uri + hex_decode.
 // Module abbreviations, ranges and fragments remain pending.
 PassageLink passage_link(const std::string &url, const std::string &current_module);

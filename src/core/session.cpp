@@ -223,13 +223,39 @@ BookEntry StudySession::select_book(const BookSelectionTarget &target) {
     throw std::runtime_error("Book source changed before selection could be published");
   // Prepare every owned copy first. Failure to resolve/render/copy leaves the
   // previously published tab selection intact; SDK cursor position is ephemeral.
-  std::optional<BookSelectionState> next{BookSelectionState{target, result.tree}};
+  std::optional<BookSelectionState> next{BookSelectionState{target, result.tree, std::nullopt}};
   static_assert(std::is_nothrow_move_assignable_v<decltype(book_selection_)>,
                 "Book selection publication must not throw after staging owned copies");
   book_selection_ = std::move(next);
   return result;
 }
-std::optional<BookEntry> StudySession::navigate_book(BookNavigation direction) {
+BookDocument StudySession::select_book_document(const BookSelectionTarget &target) {
+  const auto resolved = reader_.resolve_book_target(book_reading_target(target));
+  auto result = read_book_document(resolved.module, resolved.node.offset);
+  if (result.tree.module != resolved.module || result.tree.node.offset != resolved.node.offset ||
+      result.tree.node.path != resolved.node.path)
+    throw std::runtime_error("Book source changed before document publication");
+  std::optional<BookSelectionState> next{BookSelectionState{target, result.tree, result}};
+  static_assert(std::is_nothrow_move_assignable_v<decltype(book_selection_)>,
+                "Book document publication must not throw after staging owned copies");
+  book_selection_ = std::move(next);
+  return result;
+}
+std::optional<BookDocument> StudySession::navigate_book_document(BookNavigation direction) {
+  const auto target = book_navigation_target(direction);
+  return target ? std::make_optional(select_book_document(*target)) : std::nullopt;
+}
+std::optional<BookDocument> StudySession::restore_book_document_selection(const SavedBookSelection &saved, BookRestoreMode mode) {
+  const auto target = saved_book_target(saved, mode);
+  return target ? std::make_optional(select_book_document(*target)) : std::nullopt;
+}
+BookNote StudySession::book_document_note_link(const std::string &uri, bool render_body) {
+  if (!book_selection_ || !book_selection_->document)
+    throw std::invalid_argument("Select a book document before opening its notes");
+  const auto target = xiphos::core::book_document_note_link(uri, *book_selection_->document);
+  return book_note_link_at(target.command.module, target.offset, uri, render_body);
+}
+std::optional<BookSelectionTarget> StudySession::book_navigation_target(BookNavigation direction) {
   switch (direction) {
     case BookNavigation::parent: case BookNavigation::first_child:
     case BookNavigation::previous_sibling: case BookNavigation::next_sibling: break;
@@ -249,7 +275,11 @@ std::optional<BookEntry> StudySession::navigate_book(BookNavigation direction) {
     default: throw std::invalid_argument("Unknown book navigation direction");
   }
   if (!target) return std::nullopt;
-  return select_book({current.module, target->offset});
+  return BookSelectionTarget{current.module, target->offset};
+}
+std::optional<BookEntry> StudySession::navigate_book(BookNavigation direction) {
+  const auto target = book_navigation_target(direction);
+  return target ? std::make_optional(select_book(*target)) : std::nullopt;
 }
 std::optional<BookEntry> StudySession::restore_book_selection(const SavedBookSelection &saved, BookRestoreMode mode) {
   const auto target = saved_book_target(saved, mode);

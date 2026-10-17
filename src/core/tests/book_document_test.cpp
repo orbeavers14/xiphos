@@ -27,12 +27,15 @@ int main(int argc,char **argv){try{
  for(const auto &value:std::vector<std::optional<std::string>>{std::nullopt,"","0","1","2","3","  +3trailing","-2","2147483647"}){
   const std::string id="Document"+std::to_string(fixture_index++);const auto prefix=(root/"data"/id).string();check(RawGenBook::createModule(prefix.c_str())==0,"Create original document module");
   {RawGenBook writer(prefix.c_str());writer.setKey("/Branch");writer.setEntry("<p>Original <q who=\"Jesus\">branch</q><note>Original branch note.</note></p>");
-   writer.setKey("/Branch/Leaf");writer.setEntry("Original café leaf.");writer.setKey("/Branch/Leaf/Deep");writer.setEntry("Original deep section.");
+   writer.setKey("/Branch/Leaf");writer.setEntry("<p>Original café leaf.<note>Original descendant note.</note></p>");writer.setKey("/Branch/Leaf/Deep");writer.setEntry("Original deep section.");
    writer.setKey("/Branch/Empty/Twig");writer.setEntry("Original empty-branch child.");
    std::unique_ptr<SWKey> linked(writer.createKey());linked->setText("/Branch");(void)linked->getText();writer.setKey("/Linked");writer.linkEntry(linked.get());}
   std::ofstream config(root/"mods.d"/(id+".conf"));config<<'['<<id<<"]\nDataPath=./data/"<<id<<"\nModDrv=RawGenBook\nEncoding=UTF-8\nSourceType=OSIS\nGlobalOptionFilter=OSISFootnotes\nGlobalOptionFilter=OSISRedLetterWords\n";
   if(value)config<<"DisplayLevel="<<*value<<'\n';
  }
+ {const auto prefix=(root/"data/too-deep").string();check(RawGenBook::createModule(prefix.c_str())==0,"Create bounded document depth fixture");
+  RawGenBook writer(prefix.c_str());std::string path;for(unsigned i=0;i<65;++i)path+="/n";writer.setKey(path.c_str());writer.setEntry("Original deep bound prose.");
+  std::ofstream config(root/"mods.d/too-deep.conf");config<<"[TooDeep]\nDataPath=./data/too-deep\nModDrv=RawGenBook\nDisplayLevel=2147483647\n";}
  {std::ofstream config(root/"mods.d/verse-book.conf");config<<"[VerseBook]\nDataPath=./data/Document0\nModDrv=RawGenBook\nKeyType=VerseKey\n";}
  fs::remove(root/"mods.d/modules-conf.cache");const auto before=bytes(root/"data");
  check(book_display_level(std::nullopt)==1 && book_display_level("")==1 && book_display_level("none")==1 && book_display_level("-2147483648")==1 && book_display_level("  +02trailing")==2 && book_display_level("2147483647")==2147483647u,"Defined atoi sign/prefix/default cases");
@@ -41,6 +44,7 @@ int main(int argc,char **argv){try{
  {
   Reader reader(root.string());EngineManager legacy(root.string().c_str(),true,new MarkupFilterMgr(FMT_XHTML),false,false);
   for(const auto &info:reader.modules()){
+   if(info.id=="TooDeep"){rejects<std::runtime_error>([&]{reader.read_book_document(info.id,4);});continue;}
    if(!info.indexed_book){rejects<std::invalid_argument>([&]{reader.read_book_document(info.id,0);});continue;}
    auto &module=*legacy.getModule(info.id.c_str());auto &key=dynamic_cast<TreeKeyIdx &>(*module.getKey());
    const auto *configured=module.getConfigEntry("DisplayLevel");const auto depth=book_display_level(configured?std::make_optional(std::string(configured)):std::nullopt);

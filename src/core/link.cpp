@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/link.hpp"
+#include "xiphos/core/book_document.hpp"
 #include <stdexcept>
 #include <map>
 namespace xiphos::core {
@@ -135,17 +136,39 @@ LexicalLink lexical_link(const std::string &url, const std::string &current_modu
 StudyNoteLink study_note_link(const std::string &url, const std::string &current_module) {
   return note_target(command_parameters(url), current_module);
 }
-StudyNoteLink book_note_link(const std::string &url, const std::string &module, const std::string &path) {
-  if (module.empty() || module.find('\0') != std::string::npos || path.size() > 4096 ||
-      path.find('\0') != std::string::npos || (!path.empty() && path.front() != '/'))
-    throw std::invalid_argument("Invalid book-note source context");
+namespace {
+StudyNoteLink book_note_fields(const std::string &url, const std::string &module) {
+  if (module.empty() || module.find('\0') != std::string::npos)
+    throw std::invalid_argument("Invalid book-note module context");
   const auto parameters = command_parameters(url);
   const auto result = note_fields(parameters, module);
+  if (!parameters.count("passage") || result.module != module || result.reference.size() > 4096 ||
+      result.reference.find('\0') != std::string::npos || (!result.reference.empty() && result.reference.front() != '/'))
+    throw std::invalid_argument("Book-note command does not match a canonical source");
+  return result;
+}
+}
+StudyNoteLink book_note_link(const std::string &url, const std::string &module, const std::string &path) {
+  if (path.size() > 4096 || path.find('\0') != std::string::npos || (!path.empty() && path.front() != '/'))
+    throw std::invalid_argument("Invalid book-note source context");
+  const auto result = book_note_fields(url, module);
   // Book titles can contain verse-parser delimiters. Compare the entire decoded
   // SDK path instead of reinterpreting it as a verse or using short-text fallback.
-  if (!parameters.count("passage") || result.module != module || result.reference != path)
+  if (result.reference != path)
     throw std::invalid_argument("Book-note command does not match the captured source");
   return result;
+}
+BookDocumentNoteTarget book_document_note_link(const std::string &url, const BookDocument &document) {
+  const auto result = book_note_fields(url, document.tree.module);
+  std::optional<std::uint64_t> offset;
+  for (const auto &section : document.sections) {
+    const auto &source = section.entry.tree;
+    if (!section.rendered || source.module != result.module || source.node.path != result.reference) continue;
+    if (offset) throw std::invalid_argument("Book-note document source is ambiguous");
+    offset = source.node.offset;
+  }
+  if (!offset) throw std::invalid_argument("Book-note command is outside the rendered document");
+  return {*offset, result};
 }
 StudyCommandLink study_link(const std::string &url, const std::string &current_module) {
   if (url.compare(0, 8, "sword://") == 0 || url.compare(0, 8, "bible://") == 0)
