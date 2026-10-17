@@ -63,11 +63,11 @@ file(MAKE_DIRECTORY "${app}/Contents/MacOS" "${swift_cache}")
 configure_file(Info.plist "${app}/Contents/Info.plist" @ONLY)
 add_custom_command(OUTPUT "${app}/Contents/MacOS/XiphosNativePreview"
   COMMAND ${SWIFTC} -swift-version 6 -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
-    -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/ReaderApp.swift" "${CMAKE_CURRENT_SOURCE_DIR}/BookPane.swift"
+    -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/ReaderApp.swift" "${CMAKE_CURRENT_SOURCE_DIR}/BookPane.swift" "${CMAKE_CURRENT_SOURCE_DIR}/BookImagePreview.swift"
     "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
     ${sword_link_flags} -lc++ -framework SwiftUI -framework AppKit -framework WebKit
     -o "${app}/Contents/MacOS/XiphosNativePreview"
-  DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift ReaderApp.swift BookPane.swift Bridge/module.modulemap
+  DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift ReaderApp.swift BookPane.swift BookImagePreview.swift Bridge/module.modulemap
     ../../src/core/include/xiphos/core/c_api.h
   VERBATIM)
 add_custom_target(macos_preview ALL DEPENDS "${app}/Contents/MacOS/XiphosNativePreview")
@@ -96,16 +96,18 @@ if(BUILD_TESTING)
   set_tests_properties(swift_async_adapter PROPERTIES FIXTURES_REQUIRED sword_fixture)
   add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke"
     COMMAND ${SWIFTC} -swift-version 6 -D XIPHOS_PREVIEW_TEST -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
-      -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/ReaderApp.swift" "${CMAKE_CURRENT_SOURCE_DIR}/BookPane.swift" "${CMAKE_CURRENT_SOURCE_DIR}/Tests/ReaderModelSmoke.swift"
+      -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/ReaderApp.swift" "${CMAKE_CURRENT_SOURCE_DIR}/BookPane.swift" "${CMAKE_CURRENT_SOURCE_DIR}/BookImagePreview.swift" "${CMAKE_CURRENT_SOURCE_DIR}/Tests/ReaderModelSmoke.swift"
       "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
       ${sword_link_flags} -lc++ -framework SwiftUI -framework AppKit -framework WebKit
       -o "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke"
-    DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift ReaderApp.swift BookPane.swift Tests/ReaderModelSmoke.swift
+    DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift ReaderApp.swift BookPane.swift BookImagePreview.swift Tests/ReaderModelSmoke.swift
       Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h
     VERBATIM)
   add_custom_target(macos_reader_model_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke")
   add_test(NAME reader_model COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/fixture")
   set_tests_properties(reader_model PROPERTIES FIXTURES_REQUIRED sword_fixture)
+  add_test(NAME reader_model_book_images COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --book-images "${CMAKE_CURRENT_BINARY_DIR}/core/book-image-fixture")
+  set_tests_properties(reader_model_book_images PROPERTIES FIXTURES_REQUIRED book_image_resource_fixture TIMEOUT 30)
   add_test(NAME reader_model_book_presentation COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --book-presentation "${CMAKE_CURRENT_BINARY_DIR}/core/book-document-presentation-fixture")
   set_tests_properties(reader_model_book_presentation PROPERTIES FIXTURES_REQUIRED book_document_presentation_fixture TIMEOUT 30)
   add_test(NAME reader_model_book_documents COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --book-documents "${CMAKE_CURRENT_BINARY_DIR}/core/book-document-fixture")
@@ -150,6 +152,17 @@ if(BUILD_TESTING)
   add_custom_target(macos_option_adapter_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/option_adapter_smoke")
   add_test(NAME swift_option_adapter COMMAND "${CMAKE_CURRENT_BINARY_DIR}/option_adapter_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/options-fixture")
   set_tests_properties(swift_option_adapter PROPERTIES FIXTURES_REQUIRED options_fixture)
+  add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/book_image_adapter_smoke"
+    COMMAND ${SWIFTC} -swift-version 6 -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
+      -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/BookImageAdapterSmoke.swift"
+      "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
+      ${sword_link_flags} -lc++ -o "${CMAKE_CURRENT_BINARY_DIR}/book_image_adapter_smoke"
+    DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift Tests/BookImageAdapterSmoke.swift
+      Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h
+    VERBATIM)
+  add_custom_target(macos_book_image_adapter_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/book_image_adapter_smoke")
+  add_test(NAME swift_book_image_adapter COMMAND "${CMAKE_CURRENT_BINARY_DIR}/book_image_adapter_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/book-image-fixture")
+  set_tests_properties(swift_book_image_adapter PROPERTIES FIXTURES_REQUIRED book_image_resource_fixture)
   add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/book_presentation_adapter_smoke"
     COMMAND ${SWIFTC} -swift-version 6 -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
       -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/BookPresentationAdapterSmoke.swift"

@@ -109,6 +109,11 @@ struct RenderedBookDocument: Sendable, Equatable {
     var displayHTML: String { presentation?.html ?? html }
     var lexical: RenderedLexicalPresentation { presentation?.lexical ?? .plain }
 }
+struct RenderedBookImage: Sendable, Equatable {
+    let module: String, filename: String, mediaType: String
+    let data: Data
+}
+enum RenderedBookLink: Sendable { case note(RenderedBookNote), image(RenderedBookImage) }
 struct RenderedBookNote: Sendable {
     let tree: BookTree
     let content: RenderedStudyNote
@@ -345,6 +350,13 @@ enum CoreValues {
     static func bookEntry(_ result: OpaquePointer) -> RenderedBookEntry {
         RenderedBookEntry(tree: bookTree(xc_book_entry_tree(result)!),
             html: String(cString: xc_book_entry_html(result)!), hasEntry: xc_book_entry_has_entry(result) != 0)
+    }
+    static func bookImage(_ result: OpaquePointer) -> RenderedBookImage {
+        let source = xc_book_image_data_source(result)!
+        let count = xc_book_image_data_size(result)
+        let data = count == 0 ? Data() : Data(bytes: xc_book_image_data_bytes(result)!, count: count)
+        return RenderedBookImage(module: String(cString: xc_book_image_module(source)!),
+            filename: String(cString: xc_book_image_filename(source)!), mediaType: String(cString: xc_book_image_media_type(source)!), data: data)
     }
     static func bookDocument(_ result: OpaquePointer) -> RenderedBookDocument {
         let sections = (0..<xc_book_document_count(result)).map { index in

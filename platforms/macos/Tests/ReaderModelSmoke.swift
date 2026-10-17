@@ -23,6 +23,28 @@ struct ReaderModelSmoke {
             try await Task.sleep(nanoseconds: 1_000_000)
         }
     }
+    @MainActor static func bookImages(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let model = ReaderModel(worker: worker, startupError: nil)
+        try await idle(model); model.chooseBook("StyledBook"); try await idle(model)
+        let document = model.bookDocument, main = model.html
+        model.bookKey = "unsubmitted image draft"
+        let uri = "xiphos-preview://study/passagestudy.jsp?action=showImage&value=file%3Acaf%C3%A9.png&module=StyledBook"
+        model.followBookLink(uri); try await idle(model)
+        guard let preview = model.bookImage, preview.source.filename == "café.png", preview.source.mediaType == "image/png",
+              preview.thumbnail.image.width > 0, preview.thumbnail.image.width <= 2048,
+              preview.thumbnail.image.height > 0, preview.thumbnail.image.height <= 2048,
+              model.bookDocument == document, model.bookKey == "unsubmitted image draft", model.html == main,
+              !model.canBack else { fatalError("native background image preview retains reading/draft/history") }
+        model.followBookLink("passagestudy.jsp?action=showImage&value=binary.png"); try await idle(model)
+        guard model.bookImage?.id == preview.id, model.bookDocument == document, !model.message.isEmpty else { fatalError("failed decode preserves previous image and reading") }
+        model.closeBookImage(); guard model.bookImage == nil else { fatalError("native close image preview") }
+        model.followBookLink(uri); model.close()
+        try await Task.sleep(nanoseconds: 50_000_000)
+        guard model.bookImage == nil else { fatalError("closed window cannot publish background image decode") }
+        await worker.shutdown()
+        print("Native book image preview, background decode, failure retention and closed-window checks passed")
+    }
     @MainActor static func bookPresentation(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let model = ReaderModel(worker: worker, startupError: nil)
@@ -1133,6 +1155,9 @@ struct ReaderModelSmoke {
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--options" {
             try await readingOptions(root: CommandLine.arguments[2]); return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--book-images" {
+            try await bookImages(root: CommandLine.arguments[2]); return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--book-presentation" {
             try await bookPresentation(root: CommandLine.arguments[2]); return

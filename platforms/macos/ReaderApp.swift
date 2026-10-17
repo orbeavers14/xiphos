@@ -17,8 +17,8 @@ private struct BookSelectionError: LocalizedError {
     var errorDescription: String? { "Unable to read this book section. Check the module and key or path." }
 }
 
-private struct BookNoteError: LocalizedError {
-    var errorDescription: String? { "Unable to open this link as a note in the displayed book." }
+private struct BookLinkError: LocalizedError {
+    var errorDescription: String? { "Unable to open this link in the displayed book." }
 }
 
 private struct ReadingOptionImportError: LocalizedError {
@@ -47,6 +47,7 @@ final class ReaderModel: ObservableObject {
     @Published private(set) var contentOptions = ContentDisplayOptions.unknown
     @Published private(set) var commentaryContentOptions = ContentDisplayOptions.unknown
     @Published private(set) var showingBook = false
+    @Published private(set) var bookImage: BookImagePreview?
     @Published private(set) var bookNote: RenderedBookNote?
     @Published private(set) var bookDocument: RenderedBookDocument?
     var bookEntry: RenderedBookEntry? { bookDocument?.sections.first?.entry }
@@ -110,6 +111,7 @@ final class ReaderModel: ObservableObject {
         isPreviewLoading = false
         informationPreview = nil
         informationNote = nil
+        bookImage = nil
         if let worker, let tab {
             self.tab = nil
             Task { try? await worker.closeTab(tab) }
@@ -404,15 +406,26 @@ final class ReaderModel: ObservableObject {
             self.presentBook(refreshed, updateInput: false)
         }
     }
-    func showBookNoteLink(_ uri: String) {
+    func showBookNoteLink(_ uri: String) { followBookLink(uri) }
+    func closeBookImage() { guard !closed, !isBusy else { return }; bookImage = nil }
+    func followBookLink(_ uri: String) {
         guard !closed, !isBusy, let worker, let tab, bookDocument != nil else { return }
         run { token in
-            let note: RenderedBookNote
-            do { note = try await worker.bookDocumentNoteLink(tab: tab, uri: uri) }
-            catch { throw BookNoteError() }
+            let link: RenderedBookLink
+            do { link = try await worker.followBookLink(tab: tab, uri: uri) }
+            catch { throw BookLinkError() }
             guard token == self.revision && !self.closed else { return }
-            self.studyNote = nil; self.referencePreview = nil
-            self.bookNote = note; self.message = ""
+            switch link {
+            case .note(let note):
+                self.studyNote = nil; self.referencePreview = nil
+                self.bookNote = note; self.message = ""
+            case .image(let image):
+                let preview: BookImagePreview
+                do { preview = try await BookImagePreview.decode(image) }
+                catch { throw BookLinkError() }
+                guard token == self.revision && !self.closed else { return }
+                self.bookImage = preview; self.message = ""
+            }
         }
     }
     func closeBook() { guard !closed, !isBusy else { return }; showingBook = false }
@@ -966,7 +979,7 @@ struct ReaderWindow: View {
                         if let note = model.bookNote {
                             Text("\(note.tree.module) • \(note.tree.node.path)").font(.caption).padding(.horizontal, 8)
                             PassageView(html: note.content.html, anchor: nil, onScrollFailure: { model.message = $0 },
-                                onLink: { model.showBookNoteLink($0) })
+                                onLink: { model.followBookLink($0) })
                         } else if let references = model.referencePreview {
                             Text("\(references.module) • \(references.context)").font(.caption).padding(.horizontal, 8)
                             HStack {

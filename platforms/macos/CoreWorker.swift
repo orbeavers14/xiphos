@@ -218,6 +218,22 @@ actor CoreWorker {
         return RenderedBookNote(tree: CoreValues.bookTree(xc_book_note_tree(result)!),
             content: noteValue(xc_book_note_content(result)!))
     }
+    func followBookLink(tab: UInt64, uri: String) async throws -> RenderedBookLink {
+        guard !uri.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = uri.withCString { xc_worker_follow_book_link(handle, tab, $0, &request) }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        if let note = xc_request_take_book_note(completed) {
+            defer { xc_book_note_release(note) }
+            return .note(RenderedBookNote(tree: CoreValues.bookTree(xc_book_note_tree(note)!),
+                content: noteValue(xc_book_note_content(note)!)))
+        }
+        guard let image = xc_request_take_book_image_data(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_book_image_data_release(image) }
+        return .image(CoreValues.bookImage(image))
+    }
     func bookChildren(module: String, parent: UInt64, after: UInt64? = nil, limit: UInt32 = 64) async throws -> BookChildren {
         guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?

@@ -303,3 +303,15 @@ window checked menu state, image/font toggles, spacing, explicit-root refresh wi
 an unsubmitted draft, and the compact header layout. Actual image/resource loading,
 book note numbering, generalized book links and full font/RTL/corpus acceptance
 remain pending. No installed content or personal profiles were used.
+
+### Separate book image preview (local checkpoint)
+
+Book image commands now use shared-core typed link dispatch and bounded local
+resource bytes. Swift copies the result, decodes an ImageIO thumbnail off the UI
+thread (maximum 2048 pixels), and presents a native sheet with Close. Failed
+loads retain the current reading and existing preview. This does not yet provide
+inline book images, full-size/animated viewing, or validated support for every
+legacy image format. Run `sh platforms/macos/launch-fixture.sh build/macos book-images`
+for the original-prose PNG fixture. The separate preview opened and closed in a
+local window; the accessibility label subsequently compiled and passed focused
+model checks, but full VoiceOver acceptance remains pending.

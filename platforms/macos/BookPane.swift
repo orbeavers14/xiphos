@@ -82,13 +82,16 @@ struct BookPane: View {
             if let entry = model.bookEntry {
                 Text(entry.tree.node.path.isEmpty ? entry.tree.module : entry.tree.node.path).font(.caption).padding(8)
                 PassageView(html: model.bookDocument?.displayHTML ?? entry.html, css: model.bookDocument?.lexical.css ?? "", anchor: nil, onScrollFailure: { model.message = $0 },
-                    onLink: { model.showBookNoteLink($0) })
+                    onLink: { model.followBookLink($0) })
                 if !entry.hasEntry && (model.bookDocument?.displayHTML.isEmpty ?? true) {
                     Text("This section has no text. Browse its children to continue reading.")
                         .foregroundStyle(.secondary).padding(8)
                 }
             }
         }.frame(minWidth: 230, idealWidth: 300, minHeight: 200).disabled(model.isBusy)
+            .sheet(item: Binding(get: { model.bookImage }, set: { if $0 == nil { model.closeBookImage() } })) { image in
+                BookImagePreviewView(image: image, close: model.closeBookImage)
+            }
     }
 }
 
