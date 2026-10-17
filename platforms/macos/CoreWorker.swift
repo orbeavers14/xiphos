@@ -83,8 +83,87 @@ actor CoreWorker {
                     transliterationAvailable: xc_catalog_transliteration_available(catalog, index) != 0),
                 isDictionary: xc_catalog_is_dictionary(catalog, index) != 0,
                 isRegularCommentary: xc_catalog_is_regular_commentary(catalog, index) != 0,
-                lexiconRoles: LexiconRoles(rawValue: xc_catalog_lexicon_roles(catalog, index)))
+                lexiconRoles: LexiconRoles(rawValue: xc_catalog_lexicon_roles(catalog, index)),
+                hasBookTree: xc_catalog_has_book_tree(catalog, index) != 0)
         }
+    }
+    func bookTree(module: String, offset: UInt64) async throws -> BookTree {
+        guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { xc_worker_book_tree(handle, $0, offset, &request) }
+        return try await bookTreeValue(status, request, optional: false)!
+    }
+    func bookSelection(tab: UInt64) async throws -> BookTree? {
+        var request: OpaquePointer?
+        let status = xc_worker_book_selection(try worker(), tab, &request)
+        return try await bookTreeValue(status, request, optional: true)
+    }
+    private func bookTreeValue(_ status: xc_status, _ request: OpaquePointer?, optional: Bool) async throws -> BookTree? {
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        if optional && xc_request_book_selection_present(completed) == 0 { return nil }
+        guard let result = xc_request_take_book_tree(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_book_tree_release(result) }
+        return CoreValues.bookTree(result)
+    }
+    func selectBook(tab: UInt64, module: String, offset: UInt64) async throws -> RenderedBookEntry {
+        guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { xc_worker_select_book(handle, tab, $0, offset, &request) }
+        return try await bookEntryValue(status, request, optional: false)!
+    }
+    func restoreBookProfile(tab: UInt64, path: String, mode: BookRestoreMode) async throws -> RenderedBookEntry? {
+        guard !path.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = path.withCString { xc_worker_restore_book_profile(handle, tab, $0, mode.rawValue, &request) }
+        return try await bookEntryValue(status, request, optional: true)
+    }
+    func restoreBookSelection(tab: UInt64, saved: SavedBookSelection, mode: BookRestoreMode) async throws -> RenderedBookEntry? {
+        guard ![saved.module, saved.key, saved.offsetText].compactMap({ $0 }).contains(where: { $0.utf8.contains(0) }) else {
+            throw CoreError(status: XC_INVALID_ARGUMENT)
+        }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = CoreValues.withOptionalCString(saved.module) { module in
+            CoreValues.withOptionalCString(saved.key) { key in
+                CoreValues.withOptionalCString(saved.offsetText) { offset in
+                    var value = xc_saved_book_selection(module: module, key: key, offset_text: offset)
+                    return xc_worker_restore_book_selection(handle, tab, &value, mode.rawValue, &request)
+                }
+            }
+        }
+        return try await bookEntryValue(status, request, optional: true)
+    }
+    private func bookEntryValue(_ status: xc_status, _ request: OpaquePointer?, optional: Bool) async throws -> RenderedBookEntry? {
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        if optional && xc_request_book_selection_present(completed) == 0 { return nil }
+        guard let result = xc_request_take_book_entry(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_book_entry_release(result) }
+        return CoreValues.bookEntry(result)
+    }
+    func bookChildren(module: String, parent: UInt64, after: UInt64? = nil, limit: UInt32 = 64) async throws -> BookChildren {
+        guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { xc_worker_book_children(handle, $0, parent, after == nil ? 0 : 1, after ?? 0, limit, &request) }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_book_children(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_book_children_release(result) }
+        var parent = xc_book_node(), next: UInt64 = 0
+        precondition(xc_book_children_parent(result, &parent) == XC_OK)
+        let nodes = (0..<xc_book_children_count(result)).map { index in
+            var value = xc_book_node()
+            precondition(xc_book_children_get_node(result, index, &value) == XC_OK)
+            return CoreValues.bookNode(value)!
+        }
+        let more = xc_book_children_next_after(result, &next) != 0
+        return BookChildren(module: String(cString: xc_book_children_module(result)!),
+            parent: CoreValues.bookNode(parent)!, nodes: nodes, nextAfter: more ? next : nil)
     }
     func createTab() async throws -> UInt64 {
         var request: OpaquePointer?

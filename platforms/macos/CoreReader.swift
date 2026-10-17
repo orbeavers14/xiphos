@@ -49,9 +49,10 @@ struct InstalledModule: Identifiable, Sendable {
     let isDictionary: Bool
     let isRegularCommentary: Bool
     let lexiconRoles: LexiconRoles
-    init(id: String, description: String, type: String, language: String, options: ModuleOptionInfo = .unknown, isDictionary: Bool = false, isRegularCommentary: Bool = false, lexiconRoles: LexiconRoles = []) {
+    let hasBookTree: Bool
+    init(id: String, description: String, type: String, language: String, options: ModuleOptionInfo = .unknown, isDictionary: Bool = false, isRegularCommentary: Bool = false, lexiconRoles: LexiconRoles = [], hasBookTree: Bool = false) {
         self.id = id; self.description = description; self.type = type; self.language = language; self.options = options
-        self.isDictionary = isDictionary; self.isRegularCommentary = isRegularCommentary; self.lexiconRoles = lexiconRoles
+        self.isDictionary = isDictionary; self.isRegularCommentary = isRegularCommentary; self.lexiconRoles = lexiconRoles; self.hasBookTree = hasBookTree
     }
 }
 struct LexiconRoles: OptionSet, Sendable {
@@ -70,6 +71,33 @@ struct RenderedLexicalEntry: Sendable {
     let kind: LexicalKind
     let module: String, type: String, value: String, passage: String, sourceReference: String
     let entry: RenderedDictionaryEntry
+}
+// Owned values copied before releasing C results; no SDK handles cross actors.
+struct BookNode: Sendable, Equatable, Identifiable {
+    let offset: UInt64
+    let path: String, title: String
+    let hasChildren: Bool
+    var id: UInt64 { offset }
+}
+struct BookTree: Sendable, Equatable {
+    let module: String
+    let node: BookNode
+    let parent: BookNode?, firstChild: BookNode?, previousSibling: BookNode?, nextSibling: BookNode?
+}
+struct RenderedBookEntry: Sendable, Equatable {
+    let tree: BookTree
+    let html: String
+    let hasEntry: Bool
+}
+struct BookChildren: Sendable, Equatable {
+    let module: String
+    let parent: BookNode
+    let nodes: [BookNode]
+    let nextAfter: UInt64?
+}
+enum BookRestoreMode: Int32, Sendable { case displayKey = 0, initialWindow = 1 }
+struct SavedBookSelection: Sendable {
+    var module: String?, key: String?, offsetText: String?
 }
 struct DictionaryChoices: Sendable, Equatable { let module: String; let key: String; let keys: [String] }
 struct RenderedDictionaryEntry: Sendable { let module: String; let key: String; let html: String }
@@ -185,7 +213,8 @@ final class CoreReader {
                 language: String(cString: xc_module_language(opened, index)!),
                 isDictionary: xc_module_is_dictionary(opened, index) != 0,
                 isRegularCommentary: xc_module_is_regular_commentary(opened, index) != 0,
-                lexiconRoles: LexiconRoles(rawValue: xc_module_lexicon_roles(opened, index)))
+                lexiconRoles: LexiconRoles(rawValue: xc_module_lexicon_roles(opened, index)),
+                hasBookTree: xc_module_has_book_tree(opened, index) != 0)
         }
     }
     deinit { xc_close(handle) }
@@ -273,6 +302,25 @@ final class CoreSession {
 // Shared copying helpers for synchronous and asynchronous adapters. They add
 // no canon, display, navigation or history policy to either Swift interface.
 enum CoreValues {
+    static func bookNode(_ value: xc_book_node) -> BookNode? {
+        guard value.present != 0 else { return nil }
+        return BookNode(offset: value.offset, path: String(cString: value.path!),
+                        title: String(cString: value.title!), hasChildren: value.has_children != 0)
+    }
+    static func bookTree(_ result: OpaquePointer) -> BookTree {
+        func node(_ kind: xc_book_node_kind) -> BookNode? {
+            var value = xc_book_node()
+            precondition(xc_book_tree_get_node(result, Int32(kind.rawValue), &value) == XC_OK)
+            return bookNode(value)
+        }
+        return BookTree(module: String(cString: xc_book_tree_module(result)!), node: node(XC_BOOK_CURRENT)!,
+            parent: node(XC_BOOK_PARENT), firstChild: node(XC_BOOK_FIRST_CHILD),
+            previousSibling: node(XC_BOOK_PREVIOUS_SIBLING), nextSibling: node(XC_BOOK_NEXT_SIBLING))
+    }
+    static func bookEntry(_ result: OpaquePointer) -> RenderedBookEntry {
+        RenderedBookEntry(tree: bookTree(xc_book_entry_tree(result)!),
+            html: String(cString: xc_book_entry_html(result)!), hasEntry: xc_book_entry_has_entry(result) != 0)
+    }
     static func lexicalLayout(_ load: (UnsafeMutablePointer<xc_lexical_presentation>) -> xc_status) -> RenderedLexicalPresentation {
         var value = xc_lexical_presentation()
         let status = load(&value)
