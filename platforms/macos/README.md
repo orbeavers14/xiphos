@@ -336,3 +336,13 @@ CSS and recursive assets/fonts/imports remain pending. Unusable styles retain
 reading text with a status message. `book-stylesheets` launches an original-prose
 fixture; its preferred color/pseudo-element and unavailable-style text fallback
 were checked in a local window. Full fonts/RTL/corpus/design acceptance is open.
+
+### Combined book note numbering
+
+The book display menu now controls shared footnote/cross-reference numbering.
+The core preserves Xiphos's combined-document counters and terminal-label
+suppression; Swift only copies metadata, toggles the existing setting and
+requests refresh. `book-note-numbers` launches the generated original-prose
+fixture. A local window checked cross-section n1/x1/n2/x2, descendant-note body
+identity, and Off/On refresh with the same selected root. Full corpus, hover and
+saved-tab/visibility acceptance remain pending.

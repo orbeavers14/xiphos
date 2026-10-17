@@ -20,6 +20,9 @@ struct BookPane: View {
                             Toggle("Respect font faces", isOn: Binding(get: { fonts }, set: { model.setBookRespectFontFaces($0) }))
                         }
                     }
+                    if let numbers = model.bookDocument?.presentation?.noteNumbers {
+                        Toggle("Footnote and cross-reference numbers", isOn: Binding(get: { numbers }, set: { model.setBookNoteNumbers($0) }))
+                    }
                     Button("Refresh reading") { model.refreshBookDisplay() }
                 } label: { Image(systemName: "textformat") }
                     .menuStyle(.borderlessButton).fixedSize()

@@ -109,13 +109,16 @@ struct RenderedBookPresentation: Sendable, Equatable {
     var inlineImages: RenderedBookInlineImages? = nil
     var stylesheet: RenderedBookStylesheet? = nil
     var stylesheetIssue: String? = nil
+    var noteNumbers: Bool? = nil
 }
+struct RenderedBookNoteSource: Sendable, Equatable { let reportedLabel: String; let lastRenderedOffset: UInt64? }
 struct RenderedBookDocument: Sendable, Equatable {
     let tree: BookTree
     let displayLevel: UInt32
     let sections: [RenderedBookDocumentSection]
     let html: String
     let presentation: RenderedBookPresentation?
+    var noteSource: RenderedBookNoteSource? = nil
     var displayHTML: String { presentation?.html ?? html }
     var lexical: RenderedLexicalPresentation { presentation?.lexical ?? .plain }
     var resourceHTML: String { presentation?.inlineImages?.html ?? displayHTML }
@@ -380,6 +383,8 @@ enum CoreValues {
             var options = xc_book_document_display_options()
             precondition(xc_book_document_get_display_options(result, &options) == XC_OK &&
                 (-1...1).contains(options.images) && (-1...1).contains(options.font_faces) && (0...1).contains(options.double_space))
+            let numbers = xc_book_document_note_numbers(result)
+            precondition((-1...1).contains(numbers))
             return RenderedBookPresentation(html: String(cString: html),
                 lexical: lexicalLayout { xc_book_document_lexical_layout(result, $0) },
                 options: ContentDisplayOptions(images: options.images == -1 ? nil : options.images != 0,
@@ -398,11 +403,17 @@ enum CoreValues {
                     RenderedBookStylesheet(filename: String(cString: xc_book_document_stylesheet_filename(result)!),
                         css: String(cString: css), inlineCSS: String(cString: xc_book_document_stylesheet_inline_css(result)!))
                 },
-                stylesheetIssue: xc_book_document_stylesheet_issue(result).map { String(cString: $0) })
+                stylesheetIssue: xc_book_document_stylesheet_issue(result).map { String(cString: $0) },
+                noteNumbers: numbers == -1 ? nil : numbers != 0)
         }
         return RenderedBookDocument(tree: bookTree(xc_book_document_tree(result)!),
             displayLevel: xc_book_document_display_level(result), sections: sections,
-            html: String(cString: xc_book_document_html(result)!), presentation: presentation)
+            html: String(cString: xc_book_document_html(result)!), presentation: presentation,
+            noteSource: xc_book_document_note_source_label(result).map { label in
+                var offset: UInt64 = 0
+                let status = xc_book_document_note_source_offset(result, &offset)
+                return RenderedBookNoteSource(reportedLabel: String(cString: label), lastRenderedOffset: status == XC_OK ? offset : nil)
+            })
     }
     static func withSavedBookSelection<R>(_ saved: SavedBookSelection, _ body: (UnsafePointer<xc_saved_book_selection>) -> R) throws -> R {
         guard ![saved.module, saved.key, saved.offsetText].compactMap({ $0 }).contains(where: { $0.utf8.contains(0) }) else {

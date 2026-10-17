@@ -377,7 +377,8 @@ final class ReaderModel: ObservableObject {
         if updateInput { bookKey = entry.tree.node.path }
         showingBook = true; message = ""
     }
-    private enum BookDisplayOption { case images, fontFaces, doubleSpace }
+    private enum BookDisplayOption { case images, fontFaces, doubleSpace, noteNumbers }
+    func setBookNoteNumbers(_ enabled: Bool) { refreshBookDisplay(option: .noteNumbers, enabled: enabled) }
     func setBookDoubleSpace(_ enabled: Bool) { refreshBookDisplay(option: .doubleSpace, enabled: enabled) }
     func setBookImageContent(_ enabled: Bool) { refreshBookDisplay(option: .images, enabled: enabled) }
     func setBookRespectFontFaces(_ enabled: Bool) { refreshBookDisplay(option: .fontFaces, enabled: enabled) }
@@ -391,6 +392,7 @@ final class ReaderModel: ObservableObject {
             case .images: available = options?.images
             case .fontFaces: available = options?.fontFaces
             case .doubleSpace: available = options?.doubleSpace
+            case .noteNumbers: available = document.presentation?.noteNumbers
             }
             guard available != nil else { return }
         }
@@ -399,6 +401,7 @@ final class ReaderModel: ObservableObject {
             case .images: try await worker.setImageContent(tab: tab, module: document.tree.module, enabled: enabled)
             case .fontFaces: try await worker.setRespectFontFaces(tab: tab, module: document.tree.module, enabled: enabled)
             case .doubleSpace: try await worker.setDoubleSpace(tab: tab, module: document.tree.module, enabled: enabled)
+            case .noteNumbers: try await worker.setNoteNumbers(tab: tab, module: document.tree.module, enabled: enabled)
             case nil: break
             }
             let refreshed = try await worker.refreshBookDocument(tab: tab)

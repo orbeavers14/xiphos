@@ -23,6 +23,34 @@ struct ReaderModelSmoke {
             try await Task.sleep(nanoseconds: 1_000_000)
         }
     }
+    @MainActor static func bookNoteNumbers(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let model = ReaderModel(worker: worker, startupError: nil)
+        try await idle(model); model.chooseBook("FirstLabel"); try await idle(model)
+        guard let numbered = model.bookDocument, numbered.presentation?.noteNumbers == true,
+              numbered.noteSource?.reportedLabel == "", numbered.noteSource?.lastRenderedOffset != nil,
+              numbered.displayHTML.contains("*n1first-label"), numbered.displayHTML.contains("*n2"),
+              !numbered.html.contains("*n2") else { fatalError("native combines legacy note scope once while retaining raw SDK source") }
+        let main = model.html
+        model.bookKey = "unsubmitted note-number draft"
+        model.setBookNoteNumbers(false); try await idle(model)
+        guard model.bookDocument?.presentation?.noteNumbers == false, model.bookDocument?.displayHTML.contains("*n2") == false,
+              model.bookDocument?.tree == numbered.tree, model.bookKey == "unsubmitted note-number draft", model.html == main,
+              !model.canBack else { fatalError("native note-number toggle preserves selected source, main pane, draft and history") }
+        model.setBookNoteNumbers(true); try await idle(model)
+        guard model.bookDocument?.displayHTML == numbered.displayHTML else { fatalError("note number refresh resets counters and restores on mode") }
+        model.followBookLink("passagestudy.jsp?action=showNote&type=n&value=1&module=FirstLabel&passage=%2FBranch%2FLeaf"); try await idle(model)
+        guard model.bookNote?.tree.node.path == "/Branch/Leaf", model.bookNote?.content.html.contains("Original tail note") == true,
+              model.bookDocument?.tree == numbered.tree else { fatalError("numbered descendant click keeps exact source identity") }
+        model.chooseBook("TailLabel"); try await idle(model)
+        guard model.bookDocument?.noteSource?.reportedLabel == "tail-label", model.bookDocument?.displayHTML.contains("*ntail-label") == true,
+              model.bookDocument?.displayHTML.contains("*n2") == false else { fatalError("last rendered label suppresses combined auto-numbering") }
+        model.chooseBook("CrossRefs"); try await idle(model)
+        guard model.bookDocument?.displayHTML.contains("*n2") == true, model.bookDocument?.displayHTML.contains("*x2") == true else { fatalError("independent combined note/xref counters") }
+        model.close(); await worker.shutdown()
+        guard numbered.noteSource?.reportedLabel == "", numbered.displayHTML.contains("*n2") else { fatalError("copied source/numbered HTML survives shutdown") }
+        print("Native combined book numbering, exact descendant links, controls and state/source ownership passed")
+    }
     @MainActor static func bookStylesheets(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let model = ReaderModel(worker: worker, startupError: nil)
@@ -1186,6 +1214,9 @@ struct ReaderModelSmoke {
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--options" {
             try await readingOptions(root: CommandLine.arguments[2]); return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--book-note-numbers" {
+            try await bookNoteNumbers(root: CommandLine.arguments[2]); return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--book-stylesheets" {
             try await bookStylesheets(root: CommandLine.arguments[2]); return

@@ -7,6 +7,7 @@ app="$build_dir/XiphosNativePreview.app"
 kind="${2:-reader}"
 case "$kind" in
   reader) fixture="$build_dir/core/fixture"; config="test.conf" ;;
+  book-note-numbers) fixture="$build_dir/core/book-note-document-fixture"; config="TailLabel.conf" ;;
   book-stylesheets) fixture="$build_dir/core/book-stylesheet-fixture"; config="Preferred.conf" ;;
   book-images) fixture="$build_dir/core/book-image-fixture"; config="StyledBook.conf" ;;
   book-presentation) fixture="$build_dir/core/book-document-presentation-fixture"; config="book.conf" ;;
