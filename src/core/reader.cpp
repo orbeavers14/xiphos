@@ -177,6 +177,13 @@ BookImageResource Reader::read_book_inline_image(const std::string &id, const st
   if (!module) throw std::out_of_range("Module is not installed");
   return detail::capture_book_image_resource(*module, std::move(command), maximum_bytes);
 }
+std::optional<BookStylesheetResource> Reader::read_book_stylesheet(const std::string &id, std::size_t maximum_bytes) {
+  if (id.empty() || id.find('\0') != std::string::npos) throw std::invalid_argument("Invalid general-book module ID");
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto *module = impl_->manager->getModule(id.c_str());
+  if (!module) throw std::out_of_range("Module is not installed");
+  return detail::capture_book_stylesheet_resource(*module, maximum_bytes);
+}
 BookNote Reader::book_note(const std::string &id, std::uint64_t offset, const std::string &identifier,
                            const EngineOptions &options, bool render_body) {
   return book_note_impl(id, offset, identifier, &options, render_body);

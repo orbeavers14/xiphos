@@ -24,6 +24,8 @@ struct BookDocumentPresentation {
   ContentPreference respect_font_faces = ContentPreference::unknown;
   bool double_space = false;
   std::optional<BookInlineImages> inline_images;
+  std::optional<BookStylesheetResource> stylesheet;
+  std::optional<std::string> stylesheet_issue;
 };
 struct BookDocument {
   BookTree tree; // Selected source, distinct from descendant/linked section sources.

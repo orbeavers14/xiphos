@@ -30,6 +30,13 @@ struct BookImageResource {
   std::string data; // Binary bytes, including NUL; no retained file/SDK handles.
 };
 
+inline constexpr std::size_t maximum_book_stylesheet_bytes = 1024 * 1024;
+struct BookStylesheetResource {
+  BookResourceContext context;
+  std::string filename; // Raw config path; no URI/query percent decoding.
+  std::string css; // Valid UTF-8 without NUL, including explicitly empty files.
+  std::string inline_css; // Style closing-tag openers escaped for HTML embedding.
+};
 // Resource-prepared output is distinct from raw SDK and ordinary presentation
 // HTML. libxml HTML recovery/serialization can normalize markup; retain both.
 struct BookInlineImageIssue { std::string source, message; };

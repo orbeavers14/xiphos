@@ -247,6 +247,9 @@ BookDocument StudySession::select_book_document(const BookSelectionTarget &targe
       [&](const std::string &source, std::size_t maximum_bytes) {
         return reader_.read_book_inline_image(resolved.module, source, maximum_bytes);
       });
+  try { result.presentation->stylesheet = reader_.read_book_stylesheet(resolved.module); }
+  catch (const std::invalid_argument &error) { result.presentation->stylesheet_issue = error.what(); }
+  catch (const std::runtime_error &error) { result.presentation->stylesheet_issue = error.what(); }
   std::optional<BookSelectionState> next{BookSelectionState{target, result.tree, result}};
   static_assert(std::is_nothrow_move_assignable_v<decltype(book_selection_)>,
                 "Book document publication must not throw after staging owned copies");

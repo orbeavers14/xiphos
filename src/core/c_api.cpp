@@ -425,6 +425,22 @@ const char *xc_book_document_inline_issue_source(const xc_book_document *documen
 const char *xc_book_document_inline_issue_message(const xc_book_document *document, size_t index) {
   const auto *value = inline_images(document); return value && index < value->issues.size() ? value->issues[index].message.c_str() : nullptr;
 }
+const char *xc_book_document_stylesheet_css(const xc_book_document *document) {
+  return document && document->presentation && document->presentation->stylesheet
+    ? document->presentation->stylesheet->css.c_str() : nullptr;
+}
+const char *xc_book_document_stylesheet_inline_css(const xc_book_document *document) {
+  return document && document->presentation && document->presentation->stylesheet
+    ? document->presentation->stylesheet->inline_css.c_str() : nullptr;
+}
+const char *xc_book_document_stylesheet_filename(const xc_book_document *document) {
+  return document && document->presentation && document->presentation->stylesheet
+    ? document->presentation->stylesheet->filename.c_str() : nullptr;
+}
+const char *xc_book_document_stylesheet_issue(const xc_book_document *document) {
+  return document && document->presentation && document->presentation->stylesheet_issue
+    ? document->presentation->stylesheet_issue->c_str() : nullptr;
+}
 void xc_book_document_release(xc_book_document *document) { delete document; }
 xc_status xc_worker_book_image_link(xc_worker *w, uint64_t tab, const char *uri, xc_request **out) {
   if (!uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }

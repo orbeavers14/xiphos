@@ -208,6 +208,15 @@ size_t xc_book_document_inline_image_count(const xc_book_document *document);
 size_t xc_book_document_inline_issue_count(const xc_book_document *document);
 const char *xc_book_document_inline_issue_source(const xc_book_document *document, size_t index);
 const char *xc_book_document_inline_issue_message(const xc_book_document *document, size_t index);
+/* Bounded module CSS is separate from lexical CSS and raw/presented HTML.
+ * NULL means missing/no presentation. Explicit empty files return empty strings.
+ * inline_css escapes style end-tag openers; css retains original UTF-8 bytes.
+ * No recursive imports/fonts/CSS image assets/global profile CSS are loaded.
+ * Read failure retains the reading and exposes an optional borrowed issue. */
+const char *xc_book_document_stylesheet_css(const xc_book_document *document);
+const char *xc_book_document_stylesheet_inline_css(const xc_book_document *document);
+const char *xc_book_document_stylesheet_filename(const xc_book_document *document);
+const char *xc_book_document_stylesheet_issue(const xc_book_document *document);
 void xc_book_document_release(xc_book_document *document);
 /* Image-command/resource-context characterization only. Requires a committed
  * document, preserves the legacy filename/file: suffix behavior, and copies SDK

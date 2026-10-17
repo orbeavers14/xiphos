@@ -70,6 +70,12 @@ public:
   // Uses the same bounded module-directory file policy and owned byte result.
   BookImageResource read_book_inline_image(const std::string &module, const std::string &source,
                                            std::size_t maximum_bytes = maximum_book_image_bytes);
+  // Missing module stylesheet is ordinary absence. Config chooses
+  // PreferredCSSXHTML exactly (including empty), otherwise style.css. Local
+  // regular files are bounded to the module data directory; no global CSS or
+  // recursive CSS imports/assets are discovered by this read-only operation.
+  std::optional<BookStylesheetResource> read_book_stylesheet(const std::string &module,
+      std::size_t maximum_bytes = maximum_book_stylesheet_bytes);
   // Owned ordinary book-note source; does not parse a verse URI or heading ID.
   BookNote book_note(const std::string &module, std::uint64_t offset, const std::string &identifier,
                      const EngineOptions &options, bool render_body = true);

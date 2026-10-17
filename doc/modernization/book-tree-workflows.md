@@ -555,8 +555,8 @@ decoding, viewport access, files, GTK or process state enters these helpers.
 The actual GTK AnalyzeForImageSize routine delegates arithmetic to these helpers.
 An unusable viewport now returns the original unresized source; invalid decoder
 geometry retains that image without adding dimensions. Normal-domain behavior
-is compared against a frozen independent copy from `e193cf6` across 114,244
-window/column/image combinations. A configure-time extraction compiles/tests the
+is compared against a frozen independent copy from `e193cf6` across a grid of 13 window/image sizes and four column counts (169 image
+pairs for each usable viewport). A configure-time extraction compiles/tests the
 actual updated GTK routine with injected viewport/decoder functions: image URI
 spelling, small-image no-upscale, original bytes, trailing text, missing-image
 warning-once and unusable viewports are checked. Attribute formatting now uses
@@ -567,3 +567,30 @@ Focused normal and ASan/UBSan checks pass; strict C++11 helper/C11 header checks
 and the native-disabled legacy render-library build pass. This is not a full
 GTK desktop build/run. Native viewport integration, resize preference import
 and corpus/visual behavior remain separate acceptance gates.
+
+### Module stylesheet snapshot — 2026-10-17
+
+`Reader::read_book_stylesheet` copies the module's preferred stylesheet (or
+`style.css` when PreferredCSSXHTML is missing). Explicit empty config is not
+replaced by the default. It uses legacy GLib filename joining, characterized
+against a configure-time extraction of actual `get_css_references`: Unicode,
+absolute-looking later path components, literal percent and plus remain filename
+semantics rather than URL decoding. File reads reuse the image resource
+containment, regular-file, byte-bound and observed-change checks. CSS is at most
+1 MiB, valid UTF-8 without NUL. Missing files are normal absence; empty files
+remain present owned CSS. Outside paths/symlinks, directories, invalid encoding
+and over-limit files reject. This subset does not load global profile CSS or
+recursive imports/fonts/CSS image assets. External/network assets remain blocked
+by the host's resource policy.
+
+Application documents stage owned stylesheet bytes/filename separately from raw
+SDK HTML, ordinary presentation HTML and lexical CSS. Missing/unusable styles do
+not discard the reading; an optional issue is copied. HTML-embedded style text
+escapes matching end-tag openers by CSS-escaping the slash, preserving ordinary
+less-than characters, existing escapes and CDO syntax. Raw CSS remains available.
+Worker/C snapshots own all copies after later publication and shutdown, including
+explicit empty-file versus absent getters. Strict C11, focused normal/core/Swift
+and ASan/UBSan checks passed; broad local suites are recorded in the handoff.
+The Mac window verified the generated preferred stylesheet's color/pseudo-element
+and unusable-style text retention. Other encodings, global CSS, recursive assets,
+full fonts/RTL/corpus/visual acceptance and other-platform consumption remain open.
