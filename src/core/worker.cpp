@@ -125,6 +125,9 @@ std::future<BookDocument> StudyWorker::read_book_document(StudyTab tab, std::str
 std::future<BookDocument> StudyWorker::select_book_document(StudyTab tab, BookSelectionTarget target) {
   return impl_->submit([tab, target = std::move(target)](Impl::State &s) { return s.tab(tab).select_book_document(target); });
 }
+std::future<std::optional<BookDocument>> StudyWorker::refresh_book_document(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s) { return s.tab(tab).refresh_book_document(); });
+}
 std::future<std::optional<BookDocument>> StudyWorker::navigate_book_document(StudyTab tab, BookNavigation direction) {
   return impl_->submit([tab, direction](Impl::State &s) { return s.tab(tab).navigate_book_document(direction); });
 }

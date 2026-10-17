@@ -160,6 +160,9 @@ xc_status xc_worker_select_book_document(xc_worker *worker, uint64_t tab, const 
  * Navigation uses the existing direction constants and fresh shared relations.
  * No saved book/missing relation is a no-op. File restore reads only an explicit
  * XML path on the FIFO worker and retains current engine preferences. */
+/* Re-render the committed requested target with current core options. Retains
+ * explicit path-root versus numeric reading intent; absent document is a no-op. */
+xc_status xc_worker_refresh_book_document(xc_worker *worker, uint64_t tab, xc_request **out);
 xc_status xc_worker_navigate_book_document(xc_worker *worker, uint64_t tab, int direction, xc_request **out);
 xc_status xc_worker_restore_book_document_selection(xc_worker *worker, uint64_t tab, const xc_saved_book_selection *saved, int mode, xc_request **out);
 xc_status xc_worker_restore_book_document_profile(xc_worker *worker, uint64_t tab, const char *path, int mode, xc_request **out);
@@ -179,6 +182,18 @@ uint32_t xc_book_document_display_level(const xc_book_document *document);
 size_t xc_book_document_count(const xc_book_document *document);
 /* Invalid document/index clears a non-NULL out and returns INVALID_ARGUMENT. */
 xc_status xc_book_document_get_section(const xc_book_document *document, size_t index, xc_book_document_section *out);
+/* Application selection additionally owns matching visible HTML/CSS and copied
+ * cleanup/discovery options. Raw document/section HTML stays unchanged. Raw reads
+ * have no presentation (NULL HTML, INVALID_ARGUMENT layout/options, zero diagnostics).
+ * Double-space CSS requires the existing lexical-layout consumer opt-in. Note
+ * numbering, resource routing and general book links are separate capabilities. */
+typedef struct { int images, font_faces, double_space; } xc_book_document_display_options;
+const char *xc_book_document_presentation_html(const xc_book_document *document);
+xc_status xc_book_document_lexical_layout(const xc_book_document *document, xc_lexical_presentation *out);
+xc_status xc_book_document_get_display_options(const xc_book_document *document, xc_book_document_display_options *out);
+size_t xc_book_document_cleanup_count(const xc_book_document *document);
+int xc_book_document_cleanup_kind(const xc_book_document *document, size_t index);
+const char *xc_book_document_cleanup_suffix(const xc_book_document *document, size_t index);
 void xc_book_document_release(xc_book_document *document);
 /* Read-only SDK child order, page limit 1..256; has_after is strict 0/1.
  * after is ignored when has_after=0; otherwise it must identify a direct child

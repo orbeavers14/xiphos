@@ -59,6 +59,7 @@ public:
   // Read-only book/notes/restore-resolution calls do not update this state.
   BookEntry select_book(const BookSelectionTarget &target);
   BookDocument select_book_document(const BookSelectionTarget &target);
+  std::optional<BookDocument> refresh_book_document();
   std::optional<BookDocument> navigate_book_document(BookNavigation direction);
   std::optional<BookDocument> restore_book_document_selection(const SavedBookSelection &saved, BookRestoreMode mode);
   BookNote book_document_note_link(const std::string &uri, bool render_body = true);

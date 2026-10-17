@@ -42,8 +42,9 @@ struct xc_book_document {
   std::uint32_t display_level;
   std::vector<Section> sections;
   std::string html;
+  std::optional<xiphos::core::BookDocumentPresentation> presentation;
   explicit xc_book_document(xiphos::core::BookDocument value)
-    : tree{std::move(value.tree)}, display_level(value.display_level), html(std::move(value.html)) {
+    : tree{std::move(value.tree)}, display_level(value.display_level), html(std::move(value.html)), presentation(std::move(value.presentation)) {
     sections.reserve(value.sections.size());
     for (auto &section : value.sections) sections.emplace_back(std::move(section));
   }
@@ -319,6 +320,9 @@ xc_status xc_worker_select_book_document(xc_worker *w, uint64_t tab, const char 
   if (!id || !*id) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.select_book_document(tab, {id, offset}); });
 }
+xc_status xc_worker_refresh_book_document(xc_worker *w, uint64_t tab, xc_request **out) {
+  return queue_request(w, out, [=](auto &worker) { return worker.refresh_book_document(tab); });
+}
 xc_status xc_worker_navigate_book_document(xc_worker *w, uint64_t tab, int direction, xc_request **out) {
   const auto target = copy_book_navigation(direction);
   if (!target) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
@@ -361,6 +365,31 @@ xc_status xc_book_document_get_section(const xc_book_document *document, size_t 
   const auto &section = document->sections[index];
   *out = {&section.entry, section.depth, section.rendered ? 1 : 0};
   return XC_OK;
+}
+const char *xc_book_document_presentation_html(const xc_book_document *document) {
+  return document && document->presentation ? document->presentation->html.c_str() : nullptr;
+}
+xc_status xc_book_document_lexical_layout(const xc_book_document *document, xc_lexical_presentation *out) {
+  return borrow_lexical_presentation(document && document->presentation ? &document->presentation->lexical : nullptr, out);
+}
+xc_status xc_book_document_get_display_options(const xc_book_document *document, xc_book_document_display_options *out) {
+  if (!out) return XC_INVALID_ARGUMENT;
+  *out = {-1, -1, 0};
+  if (!document || !document->presentation) return XC_INVALID_ARGUMENT;
+  const auto &value = *document->presentation;
+  *out = {static_cast<int>(value.image_content), static_cast<int>(value.respect_font_faces), value.double_space ? 1 : 0};
+  return XC_OK;
+}
+size_t xc_book_document_cleanup_count(const xc_book_document *document) {
+  return document && document->presentation ? document->presentation->cleanup_diagnostics.size() : 0;
+}
+int xc_book_document_cleanup_kind(const xc_book_document *document, size_t index) {
+  if (!document || !document->presentation || index >= document->presentation->cleanup_diagnostics.size()) return -1;
+  return document->presentation->cleanup_diagnostics[index].kind == xiphos::core::ContentCleanupKind::image ? 0 : 1;
+}
+const char *xc_book_document_cleanup_suffix(const xc_book_document *document, size_t index) {
+  return document && document->presentation && index < document->presentation->cleanup_diagnostics.size()
+    ? document->presentation->cleanup_diagnostics[index].suffix.c_str() : nullptr;
 }
 void xc_book_document_release(xc_book_document *document) { delete document; }
 xc_status xc_worker_book_children(xc_worker *w, const char *id, uint64_t parent,

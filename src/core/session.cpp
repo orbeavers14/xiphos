@@ -235,11 +235,29 @@ BookDocument StudySession::select_book_document(const BookSelectionTarget &targe
   if (result.tree.module != resolved.module || result.tree.node.offset != resolved.node.offset ||
       result.tree.node.path != resolved.node.path)
     throw std::runtime_error("Book source changed before document publication");
+  auto options = module_presentation_options(resolved.module);
+  Entry visible;
+  visible.html = result.html;
+  // Legacy general-book display formats the combined document before cleanup.
+  // Reuse the same atomic lexical/cleanup stage as other native reading panes.
+  present_document({&visible}, options, module_engine_options(resolved.module), lexical_layout_enabled_);
+  result.presentation = BookDocumentPresentation{std::move(visible.html), std::move(visible.lexical),
+      std::move(visible.cleanup_diagnostics), options.image_content, options.respect_font_faces, options.double_space};
   std::optional<BookSelectionState> next{BookSelectionState{target, result.tree, result}};
   static_assert(std::is_nothrow_move_assignable_v<decltype(book_selection_)>,
                 "Book document publication must not throw after staging owned copies");
+  static_assert(std::is_nothrow_copy_assignable_v<ModulePresentationOptions>,
+                "Presentation discovery assignment must not fail after map insertion");
+  // Map insertion failure leaves prior discovery/selection intact. Once staged
+  // state and this scalar option value exist, publication cannot throw.
+  presentation_options_.insert_or_assign(resolved.module, options);
   book_selection_ = std::move(next);
   return result;
+}
+std::optional<BookDocument> StudySession::refresh_book_document() {
+  if (!book_selection_ || !book_selection_->document) return std::nullopt;
+  const auto target = book_selection_->requested;
+  return select_book_document(target);
 }
 std::optional<BookDocument> StudySession::navigate_book_document(BookNavigation direction) {
   const auto target = book_navigation_target(direction);

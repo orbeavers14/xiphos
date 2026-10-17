@@ -45,6 +45,7 @@ public:
   std::future<BookEntry> read_book(StudyTab tab, std::string module, std::uint64_t offset);
   std::future<BookDocument> read_book_document(StudyTab tab, std::string module, std::uint64_t offset);
   std::future<BookDocument> select_book_document(StudyTab tab, BookSelectionTarget target);
+  std::future<std::optional<BookDocument>> refresh_book_document(StudyTab tab);
   std::future<std::optional<BookDocument>> navigate_book_document(StudyTab tab, BookNavigation direction);
   std::future<std::optional<BookDocument>> restore_book_document_selection(StudyTab tab, SavedBookSelection saved, BookRestoreMode mode);
   std::future<std::optional<BookDocument>> restore_book_document_profile(StudyTab tab, std::string path, BookRestoreMode mode);
