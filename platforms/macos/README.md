@@ -346,3 +346,12 @@ requests refresh. `book-note-numbers` launches the generated original-prose
 fixture. A local window checked cross-section n1/x1/n2/x2, descendant-note body
 identity, and Off/On refresh with the same selected root. Full corpus, hover and
 saved-tab/visibility acceptance remain pending.
+
+### Shared search adapter
+
+`CoreWorker.searchModule` copies shared query/mode/case, optional explicit range,
+ordered bounded references and execution/cancellation metadata. Task cancellation
+signals the core, drains the request, then throws. This is adapter support; native
+search controls/progress/results/preview/export are still pending. The local SDK
+uses `XIPHOS_SWORD_SEARCH_ICASE_FLAG=2`; validate that dependency choice when
+building with another SDK. See [search contracts](../../doc/modernization/search-workflows.md).

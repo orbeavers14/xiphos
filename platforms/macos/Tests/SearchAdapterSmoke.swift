@@ -13,6 +13,10 @@ import Foundation
               prefix.totalResults == 3, prefix.references.count == 1, !prefix.cancelled, prefix.executed,
               try await worker.history(tab).count == 1, try await worker.history(other).count == 0,
               try await worker.bookDocumentSelection(tab: tab) == book else { fatalError("Swift owns bounded search context without changing reading/history") }
+        let scope = CoreSearchRange(module: "Text", expression: "John1:2-John1:3")
+        let bounded = try await worker.searchModule(tab: tab, module: "Text", expression: "Original", range: scope)
+        guard bounded.references.count == 2, bounded.totalResults == 2, bounded.range == scope,
+              prefix.range == nil else { fatalError("Swift preserves explicit SDK range source and keeps unscoped requests distinct") }
         let sensitive = try await worker.searchModule(tab: tab, module: "Text", expression: "Alpha", caseSensitive: true)
         let insensitive = try await worker.searchModule(tab: tab, module: "Text", expression: "Alpha")
         guard sensitive.references.count == 1, insensitive.references.count == 2 else { fatalError("Search case behavior matches checked SDK") }
@@ -26,7 +30,7 @@ import Foundation
         guard commentary.references.count == 3, try await worker.bookDocumentSelection(tab: tab) == book,
               try await worker.dictionaryHistory(tab: tab).entries.isEmpty else { fatalError("Search queue recovers after failures and remains state-neutral") }
         try await worker.closeTab(tab); try await worker.closeTab(other); await worker.shutdown()
-        guard prefix.references.count == 1, prefix.module == "Text", commentary.references.count == 3 else { fatalError("Swift search copies outlive worker destruction") }
+        guard prefix.references.count == 1, prefix.module == "Text", commentary.references.count == 3, bounded.range == scope else { fatalError("Swift search copies outlive worker destruction") }
         print("Swift owned search snapshots, modes/case, bounds, failure recovery and reading neutrality passed")
     }
 }

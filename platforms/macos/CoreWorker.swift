@@ -227,8 +227,9 @@ actor CoreWorker {
     }
     func searchModule(tab: UInt64, module: String, expression: String, mode: CoreSearchMode = .phrase,
                       caseSensitive: Bool = false, maxResults: Int = 1000,
-                      maxReferenceBytes: Int = 1024 * 1024) async throws -> RenderedSearchResult {
-        guard ![module, expression].contains(where: { $0.utf8.contains(0) }), maxResults > 0, maxReferenceBytes > 0 else {
+                      maxReferenceBytes: Int = 1024 * 1024, range: CoreSearchRange? = nil) async throws -> RenderedSearchResult {
+        let inputs = [module, expression] + (range.map { [$0.module, $0.expression] } ?? [])
+        guard !inputs.contains(where: { $0.utf8.contains(0) }), maxResults > 0, maxReferenceBytes > 0 else {
             throw CoreError(status: XC_INVALID_ARGUMENT)
         }
         var options = xc_search_options()
@@ -238,7 +239,16 @@ actor CoreWorker {
         var request: OpaquePointer?
         let handle = try worker()
         let status = module.withCString { id in
-            expression.withCString { query in xc_worker_search_module(handle, tab, id, query, &options, &request) }
+            expression.withCString { query in
+                if let range {
+                    return range.module.withCString { scope in
+                        range.expression.withCString { bounds in
+                            xc_worker_search_module_in_range(handle, tab, id, query, scope, bounds, &options, &request)
+                        }
+                    }
+                }
+                return xc_worker_search_module(handle, tab, id, query, &options, &request)
+            }
         }
         let completed = try await wait(status, request, cancellingSearch: true)
         defer { xc_request_release(completed) }

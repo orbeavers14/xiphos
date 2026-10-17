@@ -125,6 +125,7 @@ struct RenderedBookDocument: Sendable, Equatable {
     var resourceCSS: String { lexical.css + "\n" + (presentation?.stylesheet?.inlineCSS ?? "") }
 }
 enum CoreSearchMode: Int32, Sendable { case regularExpression=0, phrase=1, words=2 }
+struct CoreSearchRange: Sendable, Equatable { let module: String; let expression: String }
 struct RenderedSearchResult: Sendable, Equatable {
     let module: String, expression: String, effectiveExpression: String
     let mode: CoreSearchMode
@@ -132,6 +133,7 @@ struct RenderedSearchResult: Sendable, Equatable {
     let caseSensitive: Bool, limited: Bool, cancelled: Bool, executed: Bool
     let totalResults: UInt64
     let references: [String]
+    var range: CoreSearchRange? = nil
 }
 struct RenderedBookImage: Sendable, Equatable {
     let module: String, filename: String, mediaType: String
@@ -384,7 +386,9 @@ enum CoreValues {
             effectiveExpression: String(cString: xc_search_effective_expression(result)!),
             mode: mode, engineType: info.engine_type, caseSensitive: info.case_sensitive != 0,
             limited: info.limited != 0, cancelled: info.cancelled != 0, executed: info.executed != 0, totalResults: info.total_results,
-            references: (0..<info.result_count).map { String(cString: xc_search_reference(result, $0)!) })
+            references: (0..<info.result_count).map { String(cString: xc_search_reference(result, $0)!) },
+            range: xc_search_range_module(result).map { CoreSearchRange(module: String(cString: $0),
+                expression: String(cString: xc_search_range_expression(result)!)) })
     }
     static func bookImage(_ result: OpaquePointer) -> RenderedBookImage {
         let source = xc_book_image_data_source(result)!
