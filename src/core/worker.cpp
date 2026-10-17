@@ -122,6 +122,32 @@ std::future<BookEntry> StudyWorker::read_book(StudyTab tab, std::string module, 
 std::future<BookDocument> StudyWorker::read_book_document(StudyTab tab, std::string module, std::uint64_t offset) {
   return impl_->submit([tab, module = std::move(module), offset](Impl::State &s) { return s.tab(tab).read_book_document(module, offset); });
 }
+std::future<BookDocument> StudyWorker::select_book_document(StudyTab tab, BookSelectionTarget target) {
+  return impl_->submit([tab, target = std::move(target)](Impl::State &s) { return s.tab(tab).select_book_document(target); });
+}
+std::future<std::optional<BookDocument>> StudyWorker::navigate_book_document(StudyTab tab, BookNavigation direction) {
+  return impl_->submit([tab, direction](Impl::State &s) { return s.tab(tab).navigate_book_document(direction); });
+}
+std::future<std::optional<BookDocument>> StudyWorker::restore_book_document_selection(StudyTab tab, SavedBookSelection saved, BookRestoreMode mode) {
+  return impl_->submit([tab, saved = std::move(saved), mode](Impl::State &s) { return s.tab(tab).restore_book_document_selection(saved, mode); });
+}
+std::future<std::optional<BookDocument>> StudyWorker::restore_book_document_profile(StudyTab tab, std::string path, BookRestoreMode mode) {
+  return impl_->submit([tab, path = std::move(path), mode](Impl::State &s) {
+    auto &session = s.tab(tab);
+    if (mode != BookRestoreMode::display_key && mode != BookRestoreMode::initial_window)
+      throw std::invalid_argument("Unknown book restore mode");
+    return session.restore_book_document_selection(read_saved_book_selection(path), mode);
+  });
+}
+std::future<std::optional<BookDocument>> StudyWorker::book_document_selection(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s) -> std::optional<BookDocument> {
+    const auto &selected = s.tab(tab).book_selection();
+    return selected ? selected->document : std::nullopt;
+  });
+}
+std::future<BookNote> StudyWorker::book_document_note_link(StudyTab tab, std::string uri, bool render_body) {
+  return impl_->submit([tab, uri = std::move(uri), render_body](Impl::State &s) { return s.tab(tab).book_document_note_link(uri, render_body); });
+}
 std::future<BookEntry> StudyWorker::select_book(StudyTab tab, BookSelectionTarget target) {
   return impl_->submit([tab, target = std::move(target)](Impl::State &s) { return s.tab(tab).select_book(target); });
 }

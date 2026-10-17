@@ -44,6 +44,12 @@ public:
   // Read with existing tab/module engine policy; no history visit.
   std::future<BookEntry> read_book(StudyTab tab, std::string module, std::uint64_t offset);
   std::future<BookDocument> read_book_document(StudyTab tab, std::string module, std::uint64_t offset);
+  std::future<BookDocument> select_book_document(StudyTab tab, BookSelectionTarget target);
+  std::future<std::optional<BookDocument>> navigate_book_document(StudyTab tab, BookNavigation direction);
+  std::future<std::optional<BookDocument>> restore_book_document_selection(StudyTab tab, SavedBookSelection saved, BookRestoreMode mode);
+  std::future<std::optional<BookDocument>> restore_book_document_profile(StudyTab tab, std::string path, BookRestoreMode mode);
+  std::future<std::optional<BookDocument>> book_document_selection(StudyTab tab);
+  std::future<BookNote> book_document_note_link(StudyTab tab, std::string uri, bool render_body = true);
   std::future<BookEntry> select_book(StudyTab tab, BookSelectionTarget target);
   std::future<std::optional<BookEntry>> navigate_book(StudyTab tab, BookNavigation direction);
   std::future<std::optional<BookEntry>> restore_book_selection(StudyTab tab, SavedBookSelection saved, BookRestoreMode mode);

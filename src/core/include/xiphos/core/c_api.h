@@ -88,7 +88,7 @@ xc_status xc_worker_resolve_saved_book_selection(xc_worker *worker, const xc_sav
                                                 int mode, xc_request **out);
 /* -1 unless this is a successful selection resolution/restore/snapshot result;
  * otherwise 0/1. The called operation determines tree versus entry payload.
- * Presence remains stable after taking the tree; take itself is still once. */
+ * Presence remains stable after taking the payload; take itself is still once. */
 int xc_request_book_selection_present(const xc_request *request);
 /* Explicit per-tab publication after validation/render success; owned entry
  * result, no Bible/dictionary history visit or preference writes. Numeric
@@ -152,6 +152,23 @@ void xc_book_entry_release(xc_book_entry *entry);
  * no partial document. All data copied; take-once result outlives tab/worker. */
 xc_status xc_worker_read_book_document(xc_worker *worker, uint64_t tab, const char *module, uint64_t offset, xc_request **out);
 xc_book_document *xc_request_take_book_document(xc_request *request);
+/* Atomic application selection of the complete document, using the same numeric
+ * reading minimum as select_book. Bounds/render failures retain prior state.
+ * Nonoptional owned document result; no Bible/dictionary visit or file writes. */
+xc_status xc_worker_select_book_document(xc_worker *worker, uint64_t tab, const char *module, uint64_t offset, xc_request **out);
+/* These return optional documents through book_selection_present and take_doc.
+ * Navigation uses the existing direction constants and fresh shared relations.
+ * No saved book/missing relation is a no-op. File restore reads only an explicit
+ * XML path on the FIFO worker and retains current engine preferences. */
+xc_status xc_worker_navigate_book_document(xc_worker *worker, uint64_t tab, int direction, xc_request **out);
+xc_status xc_worker_restore_book_document_selection(xc_worker *worker, uint64_t tab, const xc_saved_book_selection *saved, int mode, xc_request **out);
+xc_status xc_worker_restore_book_document_profile(xc_worker *worker, uint64_t tab, const char *path, int mode, xc_request **out);
+/* Copied optional committed document; absent after single-entry selection. */
+xc_status xc_worker_book_document_selection(xc_worker *worker, uint64_t tab, xc_request **out);
+/* Exact note source must belong to a rendered section of the committed document.
+ * Returns an owned xc_book_note, including its descendant/alias source; never
+ * changes the selected root. render_body is strict 0/1. No verse fallback. */
+xc_status xc_worker_book_document_note_link(xc_worker *worker, uint64_t tab, const char *uri, int render_body, xc_request **out);
 /* Borrowed root/section entry and strings live until document release. Do not
  * release borrowed trees/entries. Sections retain SDK depth-first order and
  * exact source identities, including skipped empty branches and linked nodes. */

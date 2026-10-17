@@ -104,6 +104,11 @@ struct xc_request {
   void store(xiphos::core::DictionaryChoices v) { dictionary_choices = std::make_unique<xc_dictionary_choices>(xc_dictionary_choices{std::move(v)}); }
   void store(xiphos::core::DictionaryHistorySnapshot v) { dictionary_history = std::make_unique<xc_dictionary_history>(xc_dictionary_history{std::move(v)}); }
   void store(xiphos::core::DictionaryEntry v) { dictionary = std::make_unique<xc_dictionary_entry>(xc_dictionary_entry{std::move(v)}); }
+  void store(std::optional<xiphos::core::BookDocument> v) {
+    book_selection_result = true;
+    book_selection_present = v.has_value();
+    if (v) book_document = std::make_unique<xc_book_document>(std::move(*v));
+  }
   void store(xiphos::core::BookDocument v) { book_document = std::make_unique<xc_book_document>(std::move(v)); }
   void store(xiphos::core::BookTree v) { book_tree = std::make_unique<xc_book_tree>(xc_book_tree{std::move(v)}); }
   void store(std::optional<xiphos::core::BookTree> v) {
@@ -133,6 +138,16 @@ xiphos::core::SavedBookSelection copy_book_selection(const xc_saved_book_selecti
     return text ? std::optional<std::string>(text) : std::nullopt;
   };
   return {copy(saved.module), copy(saved.key), copy(saved.offset_text)};
+}
+std::optional<xiphos::core::BookNavigation> copy_book_navigation(int direction) {
+  using xiphos::core::BookNavigation;
+  switch (direction) {
+    case XC_BOOK_PARENT_DIRECTION: return BookNavigation::parent;
+    case XC_BOOK_FIRST_CHILD_DIRECTION: return BookNavigation::first_child;
+    case XC_BOOK_PREVIOUS_SIBLING_DIRECTION: return BookNavigation::previous_sibling;
+    case XC_BOOK_NEXT_SIBLING_DIRECTION: return BookNavigation::next_sibling;
+    default: return std::nullopt;
+  }
 }
 xc_status borrow_lexical_presentation(const xiphos::core::LexicalPresentation *value,
                                       xc_lexical_presentation *out) {
@@ -248,16 +263,9 @@ xc_status xc_worker_select_book(xc_worker *w, uint64_t tab, const char *id, uint
   return queue_request(w, out, [=](auto &worker) { return worker.select_book(tab, {id, offset}); });
 }
 xc_status xc_worker_navigate_book(xc_worker *w, uint64_t tab, int direction, xc_request **out) {
-  using xiphos::core::BookNavigation;
-  BookNavigation target;
-  switch (direction) {
-    case XC_BOOK_PARENT_DIRECTION: target = BookNavigation::parent; break;
-    case XC_BOOK_FIRST_CHILD_DIRECTION: target = BookNavigation::first_child; break;
-    case XC_BOOK_PREVIOUS_SIBLING_DIRECTION: target = BookNavigation::previous_sibling; break;
-    case XC_BOOK_NEXT_SIBLING_DIRECTION: target = BookNavigation::next_sibling; break;
-    default: if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
-  }
-  return queue_request(w, out, [=](auto &worker) { return worker.navigate_book(tab, target); });
+  const auto target = copy_book_navigation(direction);
+  if (!target) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.navigate_book(tab, *target); });
 }
 xc_status xc_worker_restore_book_selection(xc_worker *w, uint64_t tab, const xc_saved_book_selection *saved,
                                           int mode, xc_request **out) {
@@ -306,6 +314,40 @@ void xc_book_note_release(xc_book_note *note) { delete note; }
 xc_status xc_worker_read_book_document(xc_worker *w, uint64_t tab, const char *id, uint64_t offset, xc_request **out) {
   if (!id || !*id) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.read_book_document(tab, id, offset); });
+}
+xc_status xc_worker_select_book_document(xc_worker *w, uint64_t tab, const char *id, uint64_t offset, xc_request **out) {
+  if (!id || !*id) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.select_book_document(tab, {id, offset}); });
+}
+xc_status xc_worker_navigate_book_document(xc_worker *w, uint64_t tab, int direction, xc_request **out) {
+  const auto target = copy_book_navigation(direction);
+  if (!target) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.navigate_book_document(tab, *target); });
+}
+xc_status xc_worker_restore_book_document_selection(xc_worker *w, uint64_t tab, const xc_saved_book_selection *saved, int mode, xc_request **out) {
+  if (!saved || (mode != XC_BOOK_RESTORE_DISPLAY_KEY && mode != XC_BOOK_RESTORE_INITIAL_WINDOW)) {
+    if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w, out, [=](auto &worker) {
+    return worker.restore_book_document_selection(tab, copy_book_selection(*saved),
+      mode == XC_BOOK_RESTORE_DISPLAY_KEY ? xiphos::core::BookRestoreMode::display_key : xiphos::core::BookRestoreMode::initial_window);
+  });
+}
+xc_status xc_worker_restore_book_document_profile(xc_worker *w, uint64_t tab, const char *path, int mode, xc_request **out) {
+  if (!path || !*path || (mode != XC_BOOK_RESTORE_DISPLAY_KEY && mode != XC_BOOK_RESTORE_INITIAL_WINDOW)) {
+    if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w, out, [=](auto &worker) {
+    return worker.restore_book_document_profile(tab, path,
+      mode == XC_BOOK_RESTORE_DISPLAY_KEY ? xiphos::core::BookRestoreMode::display_key : xiphos::core::BookRestoreMode::initial_window);
+  });
+}
+xc_status xc_worker_book_document_selection(xc_worker *w, uint64_t tab, xc_request **out) {
+  return queue_request(w, out, [=](auto &worker) { return worker.book_document_selection(tab); });
+}
+xc_status xc_worker_book_document_note_link(xc_worker *w, uint64_t tab, const char *uri, int render_body, xc_request **out) {
+  if (!uri || (render_body != 0 && render_body != 1)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.book_document_note_link(tab, uri, render_body != 0); });
 }
 xc_book_document *xc_request_take_book_document(xc_request *r) { return r && r->status == XC_OK ? r->book_document.release() : nullptr; }
 const xc_book_tree *xc_book_document_tree(const xc_book_document *document) { return document ? &document->tree : nullptr; }
