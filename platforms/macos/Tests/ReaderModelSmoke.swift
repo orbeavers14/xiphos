@@ -23,6 +23,26 @@ struct ReaderModelSmoke {
             try await Task.sleep(nanoseconds: 1_000_000)
         }
     }
+    @MainActor static func bookStylesheets(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let model = ReaderModel(worker: worker, startupError: nil)
+        try await idle(model); model.chooseBook("Preferred"); try await idle(model)
+        guard let document = model.bookDocument, let style = document.presentation?.stylesheet,
+              style.filename == "style café.css", style.css.contains("</style>"), !style.inlineCSS.contains("</style"),
+              style.inlineCSS.contains("<\\/style>"), document.resourceCSS.contains(style.inlineCSS),
+              !document.html.contains("rgb(36, 104, 172)"), document.presentation?.stylesheetIssue == nil else { fatalError("native copied CSS and HTML-safe style text remain distinct from raw reading") }
+        let browser = PassageView.documentHTML(html: document.resourceHTML, css: document.resourceCSS, allowsInlineImages: true)
+        guard browser.contains("style-src 'unsafe-inline'"), browser.contains("default-src 'none'"),
+              browser.contains(style.inlineCSS), !browser.contains("</style> */") else { fatalError("native style transport does not terminate the host style element") }
+        model.chooseBook("Empty"); try await idle(model)
+        guard model.bookDocument?.presentation?.stylesheet == nil, model.bookDocument?.presentation?.stylesheetIssue != nil,
+              model.bookDocument?.html.isEmpty == false, !model.canBack else { fatalError("unusable CSS reports issue while retaining the reading") }
+        model.chooseBook("Default"); try await idle(model)
+        guard model.bookDocument?.presentation?.stylesheet?.css == "", model.bookDocument?.presentation?.stylesheetIssue == nil else { fatalError("explicit empty stylesheet remains present") }
+        model.close(); await worker.shutdown()
+        guard style.css.contains("Original café"), document.resourceCSS.contains(style.inlineCSS) else { fatalError("Swift CSS survives publication changes and shutdown") }
+        print("Native module stylesheet ownership, safe inline CSS, empty/failed fallback and source separation passed")
+    }
     @MainActor static func bookImages(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let model = ReaderModel(worker: worker, startupError: nil)
@@ -1166,6 +1186,9 @@ struct ReaderModelSmoke {
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--options" {
             try await readingOptions(root: CommandLine.arguments[2]); return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--book-stylesheets" {
+            try await bookStylesheets(root: CommandLine.arguments[2]); return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--book-images" {
             try await bookImages(root: CommandLine.arguments[2]); return

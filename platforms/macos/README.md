@@ -326,3 +326,13 @@ retaining book text. The `book-images` fixture verified the PNG inline, its
 native preview click/Close, image-off text retention, and the preview image's
 accessibility label. Arbitrary corpus, sizing, CSS assets and full format/visual
 acceptance remain pending; libxml recovery can normalize prepared markup.
+
+### Module stylesheets
+
+Book documents now consume core-owned module CSS, including PreferredCSSXHTML
+and the legacy style.css fallback. The adapter copies raw CSS and separately
+prepared style text; it performs no path selection or file reads. Global profile
+CSS and recursive assets/fonts/imports remain pending. Unusable styles retain
+reading text with a status message. `book-stylesheets` launches an original-prose
+fixture; its preferred color/pseudo-element and unavailable-style text fallback
+were checked in a local window. Full fonts/RTL/corpus/design acceptance is open.

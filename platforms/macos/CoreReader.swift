@@ -100,12 +100,15 @@ struct RenderedBookInlineImages: Sendable, Equatable {
     let embedded: Int
     let issues: [RenderedBookImageIssue]
 }
+struct RenderedBookStylesheet: Sendable, Equatable { let filename: String; let css: String; let inlineCSS: String }
 struct RenderedBookPresentation: Sendable, Equatable {
     let html: String
     let lexical: RenderedLexicalPresentation
     let options: ContentDisplayOptions
     let cleanupDiagnostics: [RenderedCleanupDiagnostic]
     var inlineImages: RenderedBookInlineImages? = nil
+    var stylesheet: RenderedBookStylesheet? = nil
+    var stylesheetIssue: String? = nil
 }
 struct RenderedBookDocument: Sendable, Equatable {
     let tree: BookTree
@@ -116,6 +119,7 @@ struct RenderedBookDocument: Sendable, Equatable {
     var displayHTML: String { presentation?.html ?? html }
     var lexical: RenderedLexicalPresentation { presentation?.lexical ?? .plain }
     var resourceHTML: String { presentation?.inlineImages?.html ?? displayHTML }
+    var resourceCSS: String { lexical.css + "\n" + (presentation?.stylesheet?.inlineCSS ?? "") }
 }
 struct RenderedBookImage: Sendable, Equatable {
     let module: String, filename: String, mediaType: String
@@ -389,7 +393,12 @@ enum CoreValues {
                             RenderedBookImageIssue(source: String(cString: xc_book_document_inline_issue_source(result, index)!),
                                 message: String(cString: xc_book_document_inline_issue_message(result, index)!))
                         })
-                })
+                },
+                stylesheet: xc_book_document_stylesheet_css(result).map { css in
+                    RenderedBookStylesheet(filename: String(cString: xc_book_document_stylesheet_filename(result)!),
+                        css: String(cString: css), inlineCSS: String(cString: xc_book_document_stylesheet_inline_css(result)!))
+                },
+                stylesheetIssue: xc_book_document_stylesheet_issue(result).map { String(cString: $0) })
         }
         return RenderedBookDocument(tree: bookTree(xc_book_document_tree(result)!),
             displayLevel: xc_book_document_display_level(result), sections: sections,

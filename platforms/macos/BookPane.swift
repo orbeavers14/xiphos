@@ -81,10 +81,14 @@ struct BookPane: View {
             Divider()
             if let entry = model.bookEntry {
                 Text(entry.tree.node.path.isEmpty ? entry.tree.module : entry.tree.node.path).font(.caption).padding(8)
-                PassageView(html: model.bookDocument?.resourceHTML ?? entry.html, css: model.bookDocument?.lexical.css ?? "", anchor: nil, onScrollFailure: { model.message = $0 },
+                PassageView(html: model.bookDocument?.resourceHTML ?? entry.html, css: model.bookDocument?.resourceCSS ?? "", anchor: nil, onScrollFailure: { model.message = $0 },
                     onLink: { model.followBookLink($0) }, allowsInlineImages: model.bookDocument?.presentation?.inlineImages != nil)
                 if let issues = model.bookDocument?.presentation?.inlineImages?.issues, !issues.isEmpty {
                     Text("Some book images could not be loaded (\(issues.count)).")
+                        .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 8)
+                }
+                if model.bookDocument?.presentation?.stylesheetIssue != nil {
+                    Text("The module’s stylesheet could not be loaded.")
                         .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 8)
                 }
                 if !entry.hasEntry && (model.bookDocument?.displayHTML.isEmpty ?? true) {
