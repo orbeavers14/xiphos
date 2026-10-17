@@ -391,27 +391,13 @@ restore and remaining book display/link/history rules are subsequent seams. No a
 engine or frontend navigation policy is introduced; GTK3 book/editor paths remain
 intact.
 
-## Native book image checkpoint — 2026-10-16
+## Book resource output
 
-Core dispatch `57cf632` returns an owned note or image result through the same
-queued worker/C boundary. Native preview `1af7207` copies bytes before releasing
-C ownership, decodes an ImageIO thumbnail off the UI thread (2048-pixel limit),
-and presents a native sheet with Close. Failed loads and late completions after
-window closure retain committed reading state. A generated original-prose PNG
-opened in the Mac window; closing it returned to the same book section. The
-subsequent accessibility label compiled and passed focused model checks; full
-VoiceOver acceptance remains open.
-
-Local validation: **109/109 Mac/core**, **85/85 portable Linux/core on Mac**,
-**9/9 ASan/UBSan**, and strict C11 header compilation. After the image label
-adjustment, app/model builds and **8/8 focused checks** passed. No hosted builds
-or reset credits were used. Portable checks on Mac do not validate current
-Fedora GTK or native Windows/MSVC/WinUI.
-
-Next bounded task: characterize and implement inline book resource routing using
-the same shared resource policy. Inline images, sizing/CSS, other formats and
-animation, full-size viewing, corpus/visual workflows, note numbering and saved
-tabs/writes remain pending. Preserve GTK3 and all retirement gates. Overall
-planning estimate remains about **8% (6–10%)**, **0/38** whole feature groups
-accepted, **0/3** release-ready native apps. This checkpoint is handed off near
-the usage ceiling; no active edit ownership is held.
+Shared resource context, bounded module-directory bytes, typed click dispatch
+and owned inline image HTML now feed the Mac book pane. Raw SDK, ordinary
+presentation and resource-prepared HTML remain distinct; the latter may be
+normalized by libxml recovery. Native views allow data images only for this
+output and disable scripts/network/file subresources. Bounds, failures and
+actual evidence are in [book workflows](book-tree-workflows.md). Image sizing,
+CSS resources, full formats/corpus and other-platform consumption remain open.
+See [remaining core scope](shared-core-roadmap.md) for the larger service plan.

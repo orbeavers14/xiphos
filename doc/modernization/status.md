@@ -1,4 +1,15 @@
 # Modernization status and acceptance
+
+Current checkpoint (2026-10-17): `56925fb` inline URL resolution, `efcc544`
+shared owned inline-image output, `4137374` Mac display. **110/110 Mac/core**,
+**86/86 portable core on Mac**, **6/6 focused ASan/UBSan**, strict C11 pass.
+PNG inline/click/Close/image-off and basic image accessibility label checked in
+a disposable window. Whole corpus/sizing/CSS/formats/workflows remain pending.
+See [shared core remaining scope](shared-core-roadmap.md),
+[current handoff](handoff.md) and [book contract](book-tree-workflows.md).
+The following chronological checkpoints retain their original scoped evidence;
+older next-task descriptions are superseded by the current handoff.
+
 Updated 2026-10-16. Goal: preserve Xiphos functionality, visual composition,
 data and workflows through one shared C++ application core and separate
 SwiftUI/AppKit, WinUI 3 and GTK4 frontends. Native enhancements supplement
@@ -709,28 +720,3 @@ Keep regression tests after features are checked off. Keep current parity
 requirements, architecture, supported user documentation and required license/
 attribution files. Git history and linked PRs preserve removed implementation
 and detailed review history; avoid a growing archive of duplicate work notes.
-
-## Native book image checkpoint — 2026-10-16
-
-Core dispatch `57cf632` returns an owned note or image result through the same
-queued worker/C boundary. Native preview `1af7207` copies bytes before releasing
-C ownership, decodes an ImageIO thumbnail off the UI thread (2048-pixel limit),
-and presents a native sheet with Close. Failed loads and late completions after
-window closure retain committed reading state. A generated original-prose PNG
-opened in the Mac window; closing it returned to the same book section. The
-subsequent accessibility label compiled and passed focused model checks; full
-VoiceOver acceptance remains open.
-
-Local validation: **109/109 Mac/core**, **85/85 portable Linux/core on Mac**,
-**9/9 ASan/UBSan**, and strict C11 header compilation. After the image label
-adjustment, app/model builds and **8/8 focused checks** passed. No hosted builds
-or reset credits were used. Portable checks on Mac do not validate current
-Fedora GTK or native Windows/MSVC/WinUI.
-
-Next bounded task: characterize and implement inline book resource routing using
-the same shared resource policy. Inline images, sizing/CSS, other formats and
-animation, full-size viewing, corpus/visual workflows, note numbering and saved
-tabs/writes remain pending. Preserve GTK3 and all retirement gates. Overall
-planning estimate remains about **8% (6–10%)**, **0/38** whole feature groups
-accepted, **0/3** release-ready native apps. This checkpoint is handed off near
-the usage ceiling; no active edit ownership is held.
