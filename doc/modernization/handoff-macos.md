@@ -5,15 +5,18 @@ Updated 2026-10-16. Read [AGENTS.md](../../AGENTS.md), the
 
 ## Checked shared-core handoff
 
-Branch `master`, fork `orbeavers14/xiphos`. Active shared claim: atomic book
-document publication and rendered-section note routing. No reset credit or hosted
-build was used. Preserve Windows lane, `.DS_Store`, GTK3, tests and licenses.
+Branch `master`, fork `orbeavers14/xiphos`. Active shared claim: book-document
+display cleanup and annotation layout using existing common presentation helpers.
+No reset credit or hosted build was used. Preserve Windows lane, `.DS_Store`, GTK3,
+tests and licenses.
 
-Latest source `219d299` captures configured DisplayLevel documents against the
-actual legacy traversal. Worker/C `799ab02` copies root, sections and raw combined
-HTML with existing tab/module option precedence. It is read-only and does not
-replace committed book selection. Bounds reject the whole result. Native document
-publication, descendant note routing and display cleanup remain separate gates.
+Source `219d299`, worker/C `799ab02`, atomic publication `6cb35cf` and queued
+publication `99056d7` retain selected/descendant/alias sources, bounded configured
+DisplayLevel, successful-only state and exact rendered-section note routing.
+Native `e52a497` consumes these values without duplicating core policy. View
+extraction `49e4561` separates `BookPane.swift` from the main window source.
+Raw single-entry and read-only document APIs remain stable. Shared display
+cleanup/annotation layout, resources and full saved tabs/writes remain pending.
 
 Native key/tree/navigation controls `d65aabc` and ordinary note clicks `bb6b2a7`
 consume shared operations; disposable windows checked their scoped behavior.
@@ -46,9 +49,11 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At document source `219d299` and worker/C `799ab02`: **98/98 Mac/core**,
-**80/80 portable Linux/core on this Mac**, focused document/worker/entry/session
-**ASan/UBSan 4/4**, C11 and strict C++17 decoder checks pass. Latest full runs are clean. Prior `eb33f2a`
+At native document consumption `e52a497`: **102/102 Mac/core**.
+At queued publication `99056d7`: **82/82 portable Linux/core on this Mac**,
+focused document/publication/navigation/session **ASan/UBSan 6/6** and C11 pass.
+View extraction `49e4561` then passed app/model builds and six focused book checks.
+Latest full runs are clean. Prior `eb33f2a`
 had a Mac paging timeout and sanitizer fixture timeout despite success output;
 isolated reruns passed without source or timeout changes. Preserve that evidence
 in status/history. SDK dependencies are not fully instrumented; leaks are off.
@@ -93,10 +98,10 @@ No complete functional or visual parity is claimed.
 
 ## Next bounded work
 
-1. Active shared milestone: atomic document selection and rendered-section note
-   routing. Keep raw single-entry and read-only document APIs stable. Follow with
-   matching native document consumption, display cleanup and resources. Full saved-tab
-   XML, visibility/fallback and round-trip writes remain separate gates.
+1. Active shared milestone: book-document display cleanup/annotation layout,
+   reusing existing common helpers with raw SDK source retained. Complete native
+   documents and descendant note routing are checked. Resources, generalized
+   book links, full saved-tab XML/visibility/fallback and writes remain separate gates.
 2. Fedora: rebuild default-ON GTK; verify heading click/hover and source/body
    separation, linked chapters, numbering/spacing, profiles and real input.
 3. Windows: continue native compiler/dependency/core setup in its own lane.

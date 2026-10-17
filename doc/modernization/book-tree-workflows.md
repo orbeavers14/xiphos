@@ -407,5 +407,18 @@ checks existing module-over-tab options, FIFO policy, read-only selection/histor
 borrowed section getters, take-once C ownership and copies surviving shutdown.
 At `799ab02`: 98/98 Mac/core, 80/80 portable Linux/core on Mac and focused
 ASan/UBSan 4/4; C11 and strict C++17 decoder checks pass. These checks are local.
-Atomic document publication and rendered-section note routing are the active
-next shared seam. Display cleanup and native document consumption remain pending.
+Atomic publication `6cb35cf` stages the complete owned document before replacing
+tab state. Missing restore/navigation is a no-op; a traversal failure retains the
+previous document. Raw entry selection invalidates old document context. The
+common book parser resolves note sources only among rendered document sections,
+rejecting skipped, outside, foreign-module or ambiguous paths. Worker/C `99056d7`
+transports these operations, explicit read-only profile restore and optional owned
+snapshots on the existing FIFO. No verse fallback or extra engine is introduced.
+
+Mac `e52a497` copies/presents these documents and descendant notes. Window checks
+verified combined text/separators, a descendant note with its own path while the
+selected root stayed fixed, entryless-branch content and retained reading after
+a bounds failure. Full Mac/core: 102/102; portable core: 82/82 on Mac; focused
+ASan/UBSan 6/6 and C11 pass. View extraction `49e4561` then passed app/model builds
+and six focused checks without changing control logic. Shared display cleanup and
+annotation layout are the next seam; raw SDK sources remain available.

@@ -378,9 +378,11 @@ state after successful configured rendering. Explicit profile-file restore queue
 read-only XML import through this same operation on the single worker; failure
 retains committed state. Shared configured DisplayLevel documents now capture
 owned root/section sources and combined raw HTML, matching actual legacy traversal
-within explicit bounds. Worker/C transport uses the same option policy without
-publishing a selection. Scoped Mac navigation and ordinary note controls are checked;
-atomic document publication, descendant-note routing, full saved-tab restoration
+within explicit bounds. Read-only worker/C transport retains the same option policy. Atomic application
+selection stages the complete document before publication; rendered-section note
+routing resolves exact descendant/alias context while keeping the selected root.
+Mac consumes owned document/section values and these shared commands. Raw entry
+APIs stay stable. Shared display cleanup/annotation layout, full saved-tab restore
 and remaining book display/link/history rules are subsequent seams. No additional
 engine or frontend navigation policy is introduced; GTK3 book/editor paths remain
 intact.

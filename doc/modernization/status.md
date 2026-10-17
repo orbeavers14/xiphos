@@ -202,6 +202,16 @@ results; no partial document is accepted. Atomic publication and rendered-sectio
 note routing are active next; native multi-section consumption, display cleanup,
 resources and full parity remain pending.
 
+Atomic document publication `6cb35cf`, queued/C operations `99056d7` and Mac
+consumption `e52a497` now preserve complete configured documents and resolve notes
+only to exact rendered sections. Traversal/restore failure retains prior state.
+Window checks verified descendant text/separators, descendant note/root separation,
+entryless-branch content and bounds failure retention. Full Mac/core **102/102**;
+portable Linux/core on Mac **82/82**; focused **ASan/UBSan 6/6** and C11 pass.
+Native view extraction `49e4561` then passed app/model builds and six focused checks.
+Next: shared document cleanup/annotation layout. Remaining corpus/visual/platform,
+resource, generalized-link and saved-tab gates keep whole parity and estimates unchanged.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three
