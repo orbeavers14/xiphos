@@ -89,6 +89,10 @@ struct RenderedBookEntry: Sendable, Equatable {
     let html: String
     let hasEntry: Bool
 }
+struct RenderedBookNote: Sendable {
+    let tree: BookTree
+    let content: RenderedStudyNote
+}
 struct BookChildren: Sendable, Equatable {
     let module: String
     let parent: BookNode

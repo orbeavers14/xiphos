@@ -253,8 +253,12 @@ branches, rejected input, preserved Bible presentation and closed-window results
 A disposable original-prose window checked parent/child/sibling controls,
 individually accessible contents buttons, branch browsing and reading, and rejected
 key retention. Complete keyboard/VoiceOver, pagination/corpus, layout and platform
-acceptance remain open. Book links/resources and full saved-tab restoration are
-subsequent work. No installed module library or personal profile was used.
+acceptance remain open. Book ordinary footnote clicks now use the shared exact-source command and the
+sidebar preview. Failed/mismatched links retain the previous preview; successful
+reading removes stale notes. Book-note and verse-reference previews replace each
+other without changing the reading source. A disposable window verified the
+marker/body and navigation cleanup. Other book links/resources and full saved-tab
+restoration remain subsequent work. No installed module library or personal profile was used.
 
 `preview_books_fixture` is opt-in and local, like the other fixture launch targets;
 it never runs as part of a normal build or enables GitHub Actions.

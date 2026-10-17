@@ -17,6 +17,10 @@ private struct BookSelectionError: LocalizedError {
     var errorDescription: String? { "Unable to read this book section. Check the module and key or path." }
 }
 
+private struct BookNoteError: LocalizedError {
+    var errorDescription: String? { "Unable to open this link as a note for the current book section." }
+}
+
 private struct ReadingOptionImportError: LocalizedError {
     var errorDescription: String? { "Unable to import reading options. Choose a readable Xiphos modops.conf file." }
 }
@@ -43,6 +47,7 @@ final class ReaderModel: ObservableObject {
     @Published private(set) var contentOptions = ContentDisplayOptions.unknown
     @Published private(set) var commentaryContentOptions = ContentDisplayOptions.unknown
     @Published private(set) var showingBook = false
+    @Published private(set) var bookNote: RenderedBookNote?
     @Published private(set) var bookEntry: RenderedBookEntry?
     @Published private(set) var bookBrowser: BookTree?
     @Published private(set) var bookChildren: BookChildren?
@@ -183,7 +188,7 @@ final class ReaderModel: ObservableObject {
                 case .note(let note):
                     self.informationNote = note; self.informationPreview = nil
                 case .references(let references):
-                    self.referencePreview = references; self.studyNote = nil
+                    self.bookNote = nil; self.referencePreview = references; self.studyNote = nil
                 }
             } catch { /* Unsupported links/failed hovers retain the last preview. */ }
         }
@@ -364,8 +369,20 @@ final class ReaderModel: ObservableObject {
         }
     }
     private func presentBook(_ entry: RenderedBookEntry) {
+        bookNote = nil
         bookEntry = entry; bookKey = entry.tree.node.path
         showingBook = true; message = ""
+    }
+    func showBookNoteLink(_ uri: String) {
+        guard !closed, !isBusy, let worker, let tab, let source = bookEntry?.tree else { return }
+        run { token in
+            let note: RenderedBookNote
+            do { note = try await worker.bookNoteLink(tab: tab, module: source.module, offset: source.node.offset, uri: uri) }
+            catch { throw BookNoteError() }
+            guard token == self.revision && !self.closed else { return }
+            self.studyNote = nil; self.referencePreview = nil
+            self.bookNote = note; self.message = ""
+        }
     }
     func closeBook() { guard !closed, !isBusy else { return }; showingBook = false }
     func readBookKey() {
@@ -499,6 +516,7 @@ final class ReaderModel: ObservableObject {
         guard token == revision && !closed else { return }
         referencePreview = nil
         studyNote = nil
+        bookNote = nil
         commentarySelection = pair?.commentaryModule ?? ""
         commentaryEntry = pair?.commentary
         self.commentaryChapter = commentaryChapter
@@ -615,11 +633,11 @@ final class ReaderModel: ObservableObject {
             case .note(let note):
                 guard token == self.revision && !self.closed else { return }
                 self.referencePreview = nil
-                self.studyNote = note; self.message = ""
+                self.bookNote = nil; self.studyNote = note; self.message = ""
             case .references(let references):
                 guard token == self.revision && !self.closed else { return }
                 if currentReference == nil { self.studyNote = nil }
-                self.referencePreview = references; self.message = ""
+                self.bookNote = nil; self.referencePreview = references; self.message = ""
             case .lexical(let lexical):
                 let history = try await worker.dictionaryHistory(tab: tab)
                 try await self.presentDictionary(lexical.entry,
@@ -640,12 +658,12 @@ final class ReaderModel: ObservableObject {
             let references = try await worker.readReferenceList(tab: tab, module: note.module,
                 expression: note.referenceList, context: note.reference)
             guard token == self.revision && !self.closed else { return }
-            self.referencePreview = references; self.message = ""
+            self.bookNote = nil; self.referencePreview = references; self.message = ""
         }
     }
     func showStudyNoteBody() { referencePreview = nil }
     func closeLexicalPreview() { guard !closed, !isBusy else { return }; lexicalPreview = nil; dictionaryEntry = nil; dictionarySource = nil; dictionarySelection = nil; dictionaryChoices = nil }
-    func closeStudyNote() { referencePreview = nil; studyNote = nil }
+    func closeStudyNote() { referencePreview = nil; studyNote = nil; bookNote = nil }
     func clearHistory() {
         guard let worker, let tab else { return }
         run { token in
@@ -835,7 +853,7 @@ private struct BookPane: View {
             if let entry = model.bookEntry {
                 Text(entry.tree.node.path.isEmpty ? entry.tree.module : entry.tree.node.path).font(.caption).padding(8)
                 PassageView(html: entry.html, anchor: nil, onScrollFailure: { model.message = $0 },
-                    onLink: { _ in model.message = "Book links are not available in this preview yet." })
+                    onLink: { model.showBookNoteLink($0) })
                 if !entry.hasEntry {
                     Text("This section has no text. Browse its children to continue reading.")
                         .foregroundStyle(.secondary).padding(8)
@@ -982,14 +1000,18 @@ struct ReaderWindow: View {
                 }.frame(minHeight: 120)
                     .disabled(model.isBusy)
                     .accessibilityLabel("Installed SWORD modules")
-                if model.studyNote != nil || model.referencePreview != nil {
+                if model.studyNote != nil || model.referencePreview != nil || model.bookNote != nil {
                     VStack(alignment: .leading, spacing: 0) {
                         HStack {
-                            Text(model.referencePreview != nil ? "Referenced passages" : (model.studyNote?.type == "crossReference" ? "Cross-reference" : "Study note")).font(.headline)
+                            Text(model.bookNote != nil ? "Book note" : model.referencePreview != nil ? "Referenced passages" : (model.studyNote?.type == "crossReference" ? "Cross-reference" : "Study note")).font(.headline)
                             Spacer()
                             Button("Close") { model.closeStudyNote() }.disabled(model.isBusy)
                         }.padding(8)
-                        if let references = model.referencePreview {
+                        if let note = model.bookNote {
+                            Text("\(note.tree.module) • \(note.tree.node.path)").font(.caption).padding(.horizontal, 8)
+                            PassageView(html: note.content.html, anchor: nil, onScrollFailure: { model.message = $0 },
+                                onLink: { model.showBookNoteLink($0) })
+                        } else if let references = model.referencePreview {
                             Text("\(references.module) • \(references.context)").font(.caption).padding(.horizontal, 8)
                             HStack {
                                 Text("\(references.entries.count) \(references.entries.count == 1 ? "passage" : "passages")").font(.caption)

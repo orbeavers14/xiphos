@@ -64,11 +64,22 @@ import Foundation
         guard try await worker.bookSelection(tab: a) == initial?.tree,
               try await worker.history(a).count == 0,
               try await worker.dictionaryHistory(tab: a).entries.isEmpty else { fatalError("failure/source-query/history neutrality") }
+        let uri = "passagestudy.jsp?action=showNote&type=n&value=1&module=OSISBook&passage=%2FPart%20One"
+        let note = try await worker.bookNoteLink(tab: a, module: "OSISBook", offset: 4, uri: uri)
+        let metadata = try await worker.bookNoteLink(tab: a, module: "OSISBook", offset: 4, uri: uri, renderBody: false)
+        guard note.tree == entry.tree, note.content.module == "OSISBook", note.content.reference == "/Part One",
+              note.content.html.contains("Original book note"), metadata.content.html.isEmpty,
+              metadata.content.identifier == note.content.identifier else { fatalError("copied exact-source book note/body policy") }
+        for bad in [uri + "\0ignored", uri.replacingOccurrences(of: "%2FPart%20One", with: "%2FLinked"), "https://example.invalid"] {
+            do { _ = try await worker.bookNoteLink(tab: a, module: "OSISBook", offset: 4, uri: bad); fatalError("invalid book note command accepted") }
+            catch is CoreError { }
+        }
+        guard try await worker.bookSelection(tab: a) == initial?.tree else { fatalError("book note query never changes committed selection") }
         try await worker.closeTab(a)
         do { _ = try await worker.bookSelection(tab: a); fatalError("closed tab accepted") }
         catch is CoreError { }
         try await worker.closeTab(b); await worker.shutdown()
-        guard entry.tree.node.title == "Part One", page.nodes[0].path == "/Part One", initial?.html.contains("café") == true else { fatalError("owned values after shutdown") }
+        guard note.content.html.contains("Original book note"), note.tree.node.offset == 4, entry.tree.node.title == "Part One", page.nodes[0].path == "/Part One", initial?.html.contains("café") == true else { fatalError("owned values after shutdown") }
         print("Swift book ownership, paging, restore contexts, configured selection and file restore passed")
     }
 }

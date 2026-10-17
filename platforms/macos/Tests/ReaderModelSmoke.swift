@@ -38,8 +38,27 @@ struct ReaderModelSmoke {
               model.bookEntry?.html.contains("café") == true, model.showingBook, model.selection == mainSelection,
               model.bookBrowser?.node.offset == 0, model.bookChildren?.nodes.count == 3,
               model.html == mainHTML, model.canBack == mainBack else { fatalError("book opens separate lower-right pane through core") }
+        let noteURI = "xiphos-preview://study/passagestudy.jsp?action=showNote&type=n&value=1&module=OSISBook&passage=%2FPart+One"
+        let sourceBeforeNote = model.bookEntry
+        model.showBookNoteLink(noteURI); try await idle(model)
+        guard model.bookNote?.tree.node.offset == 4, model.bookNote?.content.html.contains("Original book note") == true,
+              model.bookEntry == sourceBeforeNote, model.html == mainHTML, model.canBack == mainBack else { fatalError("native exact-source book note preview is state neutral") }
+        model.followLink("passagestudy.jsp?action=showRef&type=scripRef&value=John.3.16&module=",
+            currentModule: mainSelection, currentReference: "John 3:16")
+        try await idle(model)
+        guard model.bookNote == nil, model.referencePreview != nil else { fatalError("verse reference preview replaces book-note sidebar") }
+        model.showBookNoteLink(noteURI); try await idle(model)
+        guard model.bookNote != nil, model.referencePreview == nil, model.studyNote == nil else { fatalError("book note replaces verse sidebar without changing source") }
+        model.browseBook(0); try await idle(model)
+        guard model.bookNote != nil else { fatalError("contents browsing preserves a valid book note") }
+        model.showBookNoteLink(noteURI.replacingOccurrences(of: "%2FPart+One", with: "%2FLinked")); try await idle(model)
+        guard model.bookNote?.tree.node.offset == 4, model.bookEntry == sourceBeforeNote,
+              model.message.contains("current book section") else { fatalError("mismatched note preserves preview and reading") }
+        model.closeStudyNote()
+        guard model.bookNote == nil else { fatalError("native close book note") }
+        model.showBookNoteLink(noteURI); try await idle(model)
         model.navigateBook(.firstChild); try await idle(model)
-        guard model.bookEntry?.tree.node.offset == 8 else { fatalError("native first child command") }
+        guard model.bookEntry?.tree.node.offset == 8, model.bookNote == nil else { fatalError("native first child clears stale book note") }
         let leaf = model.bookEntry
         model.navigateBook(.firstChild); try await idle(model)
         guard model.bookEntry == leaf else { fatalError("native boundary no-op") }
