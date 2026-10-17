@@ -129,7 +129,7 @@ struct RenderedSearchResult: Sendable, Equatable {
     let module: String, expression: String, effectiveExpression: String
     let mode: CoreSearchMode
     let engineType: Int32
-    let caseSensitive: Bool, limited: Bool
+    let caseSensitive: Bool, limited: Bool, cancelled: Bool, executed: Bool
     let totalResults: UInt64
     let references: [String]
 }
@@ -383,7 +383,7 @@ enum CoreValues {
             expression: String(cString: xc_search_expression(result)!),
             effectiveExpression: String(cString: xc_search_effective_expression(result)!),
             mode: mode, engineType: info.engine_type, caseSensitive: info.case_sensitive != 0,
-            limited: info.limited != 0, totalResults: info.total_results,
+            limited: info.limited != 0, cancelled: info.cancelled != 0, executed: info.executed != 0, totalResults: info.total_results,
             references: (0..<info.result_count).map { String(cString: xc_search_reference(result, $0)!) })
     }
     static func bookImage(_ result: OpaquePointer) -> RenderedBookImage {

@@ -46,13 +46,16 @@ actor CoreWorker {
         guard let handle else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         return handle.value
     }
-    private func wait(_ status: xc_status, _ request: OpaquePointer?) async throws -> OpaquePointer {
+    private func wait(_ status: xc_status, _ request: OpaquePointer?, cancellingSearch: Bool = false) async throws -> OpaquePointer {
         guard status == XC_OK, let request else { throw CoreError(status: status) }
-        // Accepted core actions are not canceled by dropping a Swift task. Keep
-        // observing until completion so tab IDs/results can always be released.
+        // Search tasks may signal cooperative cancellation, then still drain.
+        // Other accepted actions retain their original cancellation behavior so
+        // tab IDs/results are always observed and released.
         // Hosts guard stale presentation separately. This sleep yields the actor
         // and never waits on an engine future or blocks a UI thread.
+        if cancellingSearch && Task.isCancelled { _ = xc_request_cancel_search(request) }
         while xc_request_poll(request) == XC_PENDING {
+            if cancellingSearch && Task.isCancelled { _ = xc_request_cancel_search(request) }
             await withCheckedContinuation { continuation in
                 DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + .milliseconds(5)) {
                     continuation.resume()
@@ -63,6 +66,10 @@ actor CoreWorker {
         guard result == XC_OK else {
             xc_request_release(request)
             throw CoreError(status: result)
+        }
+        if cancellingSearch && Task.isCancelled {
+            xc_request_release(request)
+            throw CancellationError()
         }
         return request
     }
@@ -233,7 +240,7 @@ actor CoreWorker {
         let status = module.withCString { id in
             expression.withCString { query in xc_worker_search_module(handle, tab, id, query, &options, &request) }
         }
-        let completed = try await wait(status, request)
+        let completed = try await wait(status, request, cancellingSearch: true)
         defer { xc_request_release(completed) }
         guard let result = xc_request_take_search(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
         defer { xc_search_release(result) }
