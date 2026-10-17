@@ -191,6 +191,13 @@ xc_status xc_book_document_get_section(const xc_book_document *document, size_t 
  * Double-space CSS requires the existing lexical-layout consumer opt-in. Note
  * numbering, resource routing and general book links are separate capabilities. */
 typedef struct { int images, font_faces, double_space; } xc_book_document_display_options;
+/* Optional copied terminal render source: NULL label = capture unavailable,
+ * empty label = captured without a reported label. Offset getter clears out,
+ * returning INVALID_ARGUMENT for unavailable/all-skipped source or NULL out.
+ * Applied note_numbers is -1 unavailable/no presentation, 0 off, 1 on. */
+const char *xc_book_document_note_source_label(const xc_book_document *document);
+xc_status xc_book_document_note_source_offset(const xc_book_document *document, uint64_t *out);
+int xc_book_document_note_numbers(const xc_book_document *document);
 const char *xc_book_document_presentation_html(const xc_book_document *document);
 xc_status xc_book_document_lexical_layout(const xc_book_document *document, xc_lexical_presentation *out);
 xc_status xc_book_document_get_display_options(const xc_book_document *document, xc_book_document_display_options *out);

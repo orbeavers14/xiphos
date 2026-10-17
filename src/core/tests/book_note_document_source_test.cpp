@@ -18,23 +18,28 @@ namespace fs=std::filesystem;
 void check(bool ok,const char *message){if(!ok)throw std::runtime_error(message);}
 int main(int argc,char **argv){try{
  check(argc==2,"Original combined note fixture required");const fs::path root(argv[1]);fs::create_directories(root/"mods.d");fs::create_directories(root/"data");
- for(const auto *id:{"TailLabel","FirstLabel","EmptyTail","NoNotes","AllEmpty","SingleLabel","SingleEmpty"}){
+ for(const auto *id:{"TailLabel","FirstLabel","EmptyTail","NoNotes","AllEmpty","SingleLabel","SingleEmpty","CrossRefs","ThMLTail"}){
   const auto prefix=(root/"data"/id).string();check(RawGenBook::createModule(prefix.c_str())==0,"Create original combined note book");
-  const bool first=std::string(id)=="FirstLabel"||std::string(id)=="SingleLabel",tail=std::string(id)=="TailLabel"||std::string(id)=="EmptyTail",none=std::string(id)=="NoNotes";
+  const bool first=std::string(id)=="FirstLabel"||std::string(id)=="SingleLabel",tail=std::string(id)=="TailLabel"||std::string(id)=="EmptyTail"||std::string(id)=="ThMLTail",none=std::string(id)=="NoNotes";
   const bool empty=std::string(id)=="AllEmpty"||std::string(id)=="SingleEmpty";
-  {RawGenBook writer(prefix.c_str());writer.setKey("/Branch");writer.setEntry((empty?std::string():std::string("Original branch ")+(none?"plain":first?"<note n='first-label'>Original first note</note>":"<note>Original first note</note>")).c_str());writer.setKey("/Branch/Leaf");writer.setEntry((empty?std::string():std::string("Original leaf ")+(none?"plain":tail?"<note n='tail-label'>Original tail note</note>":"<note>Original tail note</note>")).c_str());if(std::string(id)=="EmptyTail"){writer.setKey("/Branch/Empty");writer.setEntry("");}}
-  std::ofstream config(root/"mods.d"/(std::string(id)+".conf"));config<<'['<<id<<"]\nDataPath=./data/"<<id<<"\nModDrv=RawGenBook\nSourceType=OSIS\nEncoding=UTF-8\nGlobalOptionFilter=OSISFootnotes\nDisplayLevel="<<(std::string(id).find("Single")==0?1:2)<<'\n';
+  const bool cross=std::string(id)=="CrossRefs",thml=std::string(id)=="ThMLTail";
+  std::string branch=empty?"":std::string("Original branch ")+(none?"plain":first?"<note n='first-label'>Original first note</note>":"<note>Original first note</note>");
+  std::string leaf=empty?"":std::string("Original leaf ")+(none?"plain":tail?"<note n='tail-label'>Original tail note</note>":"<note>Original tail note</note>");
+  if(cross){branch+="<note type='crossReference' osisRef='John.3.16'>Original branch cross-reference</note>";leaf+="<note type='crossReference' osisRef='John.3.17'>Original leaf cross-reference</note>";}
+  {RawGenBook writer(prefix.c_str());writer.setKey("/Branch");writer.setEntry(branch.c_str());writer.setKey("/Branch/Leaf");writer.setEntry(leaf.c_str());if(std::string(id)=="EmptyTail"){writer.setKey("/Branch/Empty");writer.setEntry("");}}
+  std::ofstream config(root/"mods.d"/(std::string(id)+".conf"));config<<'['<<id<<"]\nDataPath=./data/"<<id<<"\nModDrv=RawGenBook\nSourceType="<<(thml?"ThML":"OSIS")<<"\nEncoding=UTF-8\nGlobalOptionFilter="<<(thml?"ThMLFootnotes":"OSISFootnotes")<<"\nDisplayLevel="<<(std::string(id).find("Single")==0?1:2)<<'\n';
+
  }
  fs::remove(root/"mods.d/modules-conf.cache");
  Reader reader(root.string());
  EngineManager legacy(root.string().c_str(),true,new MarkupFilterMgr(FMT_XHTML),false,false);
- EngineOptions options;options.footnotes=true;ScopedEngineOptions scope(legacy,options);
- for(const auto *id:{"TailLabel","FirstLabel","EmptyTail","NoNotes","AllEmpty","SingleLabel","SingleEmpty"}){
+ EngineOptions options;options.footnotes=true;options.scripturerefs=true;ScopedEngineOptions scope(legacy,options);
+ for(const auto *id:{"TailLabel","FirstLabel","EmptyTail","NoNotes","AllEmpty","SingleLabel","SingleEmpty","CrossRefs","ThMLTail"}){
   auto &module=*legacy.getModule(id);set_render_note_numbers(module,true);auto &key=dynamic_cast<TreeKeyIdx &>(*module.getKey());key.setText("/Branch");(void)key.getText();const auto offset=key.getOffset();
   const bool single=std::string(id).find("Single")==0,all_empty=std::string(id)=="AllEmpty";
   SWBuf combined;if(single)combined=module.renderText();else _render_display_level(module,offset,2,1,combined);key.setOffset(offset);module.getRawEntry();
   const auto label=entry_attribute(module,"Footnote","1","n",false);
-  const bool tail=std::string(id)=="TailLabel"||std::string(id)=="EmptyTail";
+  const bool tail=std::string(id)=="TailLabel"||std::string(id)=="EmptyTail"||std::string(id)=="ThMLTail";
   check(label==(tail?"tail-label":std::string(id)=="SingleLabel"?"first-label":""),"Actual legacy combined cleanup sees last rendered attributes after root restoration, not first section label");
   const auto baseline=reader.read_book_document(id,offset,options);
   check(!baseline.note_source,"Existing Reader document overload retains unavailable metadata");

@@ -26,6 +26,7 @@ struct BookDocumentPresentation {
   std::optional<BookInlineImages> inline_images;
   std::optional<BookStylesheetResource> stylesheet;
   std::optional<std::string> stylesheet_issue;
+  std::optional<bool> note_numbers; // Applied only when owned note capture is available.
 };
 // Legacy combined CleanupContent reads the live final render's Footnote/1/n
 // after traversal restores the selected key. Empty skipped nodes do not replace

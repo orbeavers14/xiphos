@@ -213,6 +213,9 @@ BookEntry StudySession::read_book(const std::string &module, std::uint64_t offse
 }
 BookDocument StudySession::read_book_document(const std::string &module, std::uint64_t offset) {
   const auto options = module_engine_options(module);
+  const auto presentation = module_presentation_options(module);
+  if (presentation.note_numbering_available)
+    return reader_.read_book_document(module, offset, *options, presentation.note_numbers);
   return options ? reader_.read_book_document(module, offset, *options) : reader_.read_book_document(module, offset);
 }
 BookEntry StudySession::select_book(const BookSelectionTarget &target) {
@@ -240,9 +243,16 @@ BookDocument StudySession::select_book_document(const BookSelectionTarget &targe
   visible.html = result.html;
   // Legacy general-book display formats the combined document before cleanup.
   // Reuse the same atomic lexical/cleanup stage as other native reading panes.
-  present_document({&visible}, options, module_engine_options(resolved.module), lexical_layout_enabled_);
+  present_document({&visible}, options, module_engine_options(resolved.module), lexical_layout_enabled_, [&](Entry &piece) {
+    if (!options.note_numbering_available) return;
+    if (!result.note_source) throw std::logic_error("Book numbering requires owned terminal source metadata");
+    auto numbered = number_note_markers(std::move(piece.html), options.note_numbers,
+                                        !result.note_source->reported_label.empty(), {});
+    piece.html = std::move(numbered.html);
+  });
   result.presentation = BookDocumentPresentation{std::move(visible.html), std::move(visible.lexical),
       std::move(visible.cleanup_diagnostics), options.image_content, options.respect_font_faces, options.double_space};
+  if (options.note_numbering_available) result.presentation->note_numbers = options.note_numbers;
   result.presentation->inline_images = prepare_book_inline_images(result.presentation->html,
       [&](const std::string &source, std::size_t maximum_bytes) {
         return reader_.read_book_inline_image(resolved.module, source, maximum_bytes);

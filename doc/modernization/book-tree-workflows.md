@@ -615,3 +615,29 @@ Source capture does not run numbering or publish a session. Two focused normal
 and two ASan/UBSan checks passed, comparing owned HTML/metadata to the actual
 legacy traversal and checking baseline restoration after success/bounded failure.
 Session numbering, queued/C metadata and native controls are the next layer.
+
+### Shared combined numbering and native control — 2026-10-17
+
+Configured opted-in sessions now request owned SDK labels/source for book
+documents and run the existing shared numbering helper once after combined
+lexical layout and image/font cleanup. One fresh pair of counters serves the
+whole document; the captured terminal label supplies legacy suppression. Raw
+combined/section HTML retains the configured SDK result, with presentation
+numbering separate. Unopted/unconfigured reads retain their prior behavior.
+
+Applied on/off availability and terminal source label/offset are copied through
+worker/C ownership; all-empty capture has an empty label without an offset.
+The ordinary shared profile save/import path retains per-module number settings.
+Normal tests compare the entire presentation with the independently frozen
+CleanupContent for OSIS and ThML, including first/last labels, skipped empty tail,
+no notes, all-empty/single-entry, and independent footnote/xref counters. C
+snapshots retain data after later publications and shutdown. Twelve focused
+core/native checks and three ASan/UBSan checks pass; broad results are in the
+handoff. Strict C11 header compilation passes.
+
+The Mac book menu adds the native footnote/cross-reference number control using
+shared settings and refresh. Its original-prose window showed *n1/*x1 then
+*n2/*x2 across two sections; a descendant marker opened its own note body while
+retaining the selected root. Off removed digits, On restored counters from one.
+Draft/history/source/closed-owner behavior is model-checked. Whole corpus, hover,
+fonts/RTL, saved-tab/visibility workflows and other-platform UI remain pending.

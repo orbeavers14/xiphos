@@ -43,8 +43,9 @@ struct xc_book_document {
   std::vector<Section> sections;
   std::string html;
   std::optional<xiphos::core::BookDocumentPresentation> presentation;
+  std::optional<xiphos::core::BookDocumentNoteSource> note_source;
   explicit xc_book_document(xiphos::core::BookDocument value)
-    : tree{std::move(value.tree)}, display_level(value.display_level), html(std::move(value.html)), presentation(std::move(value.presentation)) {
+    : tree{std::move(value.tree)}, display_level(value.display_level), html(std::move(value.html)), presentation(std::move(value.presentation)), note_source(std::move(value.note_source)) {
     sections.reserve(value.sections.size());
     for (auto &section : value.sections) sections.emplace_back(std::move(section));
   }
@@ -384,6 +385,19 @@ xc_status xc_book_document_get_section(const xc_book_document *document, size_t 
   const auto &section = document->sections[index];
   *out = {&section.entry, section.depth, section.rendered ? 1 : 0};
   return XC_OK;
+}
+const char *xc_book_document_note_source_label(const xc_book_document *document) {
+  return document && document->note_source ? document->note_source->reported_label.c_str() : nullptr;
+}
+xc_status xc_book_document_note_source_offset(const xc_book_document *document, uint64_t *out) {
+  if (!out) return XC_INVALID_ARGUMENT;
+  *out = 0;
+  if (!document || !document->note_source || !document->note_source->last_rendered_offset) return XC_INVALID_ARGUMENT;
+  *out = *document->note_source->last_rendered_offset; return XC_OK;
+}
+int xc_book_document_note_numbers(const xc_book_document *document) {
+  return document && document->presentation && document->presentation->note_numbers
+    ? (*document->presentation->note_numbers ? 1 : 0) : -1;
 }
 const char *xc_book_document_presentation_html(const xc_book_document *document) {
   return document && document->presentation ? document->presentation->html.c_str() : nullptr;
