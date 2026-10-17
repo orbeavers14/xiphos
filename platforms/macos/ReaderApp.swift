@@ -726,9 +726,11 @@ struct PassageView: NSViewRepresentable {
     var onScrollFailure: (String) -> Void
     var onLink: (String) -> Void
     var onLinkHover: ((String) -> Void)? = nil
+    var allowsInlineImages = false
     @MainActor final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var loaded: String?
         var loadedCSS: String?
+        var loadedInlineImages = false
         var anchor: String?
         var navigation: WKNavigation?
         var onScrollFailure: ((String) -> Void)?
@@ -799,19 +801,20 @@ struct PassageView: NSViewRepresentable {
         context.coordinator.onLinkHover = onLinkHover
         let changedAnchor = context.coordinator.anchor != anchor
         context.coordinator.anchor = anchor
-        guard context.coordinator.loaded != html || context.coordinator.loadedCSS != css else {
+        guard context.coordinator.loaded != html || context.coordinator.loadedCSS != css || context.coordinator.loadedInlineImages != allowsInlineImages else {
             if changedAnchor { context.coordinator.scrollToAnchor(view) }
             return
         }
         context.coordinator.loaded = html
         context.coordinator.loadedCSS = css
-        context.coordinator.navigation = view.loadHTMLString(Self.documentHTML(html: html, css: css), baseURL: nil)
+        context.coordinator.loadedInlineImages = allowsInlineImages
+        context.coordinator.navigation = view.loadHTMLString(Self.documentHTML(html: html, css: css, allowsInlineImages: allowsInlineImages), baseURL: nil)
     }
-    static func documentHTML(html: String, css: String) -> String {
+    static func documentHTML(html: String, css: String, allowsInlineImages: Bool = false) -> String {
         """
             <!doctype html><html><head><meta charset="utf-8">
             <base href="xiphos-preview://study/">
-            <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
+            <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src \(allowsInlineImages ? "data:" : "'none'")">
             <style>:root { color-scheme: light dark; } body { font: 18px Georgia, serif; line-height: 1.55; margin: 24px; }
             /* Existing Xiphos editor/template.h styles this SWORD class red. */
             span.wordsOfJesus { color: red; }

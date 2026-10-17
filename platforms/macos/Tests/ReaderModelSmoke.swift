@@ -27,6 +27,17 @@ struct ReaderModelSmoke {
         let worker = try CoreWorker(root: root)
         let model = ReaderModel(worker: worker, startupError: nil)
         try await idle(model); model.chooseBook("StyledBook"); try await idle(model)
+        guard let inline = model.bookDocument?.presentation?.inlineImages, inline.embedded == 1,
+              inline.issues.isEmpty, inline.html.contains("data:image/png;base64,iVBORw0KGgo"),
+              PassageView.documentHTML(html: inline.html, css: "", allowsInlineImages: true).contains("img-src data:"),
+              PassageView.documentHTML(html: inline.html, css: "").contains("img-src 'none'") else { fatalError("native book view consumes shared inline HTML with data-only image policy") }
+        let beforeToggle = model.bookDocument
+        model.setBookImageContent(false); try await idle(model)
+        guard model.bookDocument?.presentation?.inlineImages?.embedded == 0,
+              model.bookDocument?.resourceHTML.contains("data:image/") == false,
+              model.bookDocument?.html == beforeToggle?.html else { fatalError("image-off reuses shared cleanup and retains raw source") }
+        model.setBookImageContent(true); try await idle(model)
+        guard model.bookDocument?.presentation?.inlineImages?.embedded == 1 else { fatalError("image-on refresh restores inline bytes") }
         let document = model.bookDocument, main = model.html
         model.bookKey = "unsubmitted image draft"
         let uri = "xiphos-preview://study/passagestudy.jsp?action=showImage&value=file%3Acaf%C3%A9.png&module=StyledBook"

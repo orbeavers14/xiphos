@@ -94,11 +94,18 @@ struct RenderedBookDocumentSection: Sendable, Equatable {
     let depth: UInt32
     let rendered: Bool
 }
+struct RenderedBookImageIssue: Sendable, Equatable { let source: String; let message: String }
+struct RenderedBookInlineImages: Sendable, Equatable {
+    let html: String
+    let embedded: Int
+    let issues: [RenderedBookImageIssue]
+}
 struct RenderedBookPresentation: Sendable, Equatable {
     let html: String
     let lexical: RenderedLexicalPresentation
     let options: ContentDisplayOptions
     let cleanupDiagnostics: [RenderedCleanupDiagnostic]
+    var inlineImages: RenderedBookInlineImages? = nil
 }
 struct RenderedBookDocument: Sendable, Equatable {
     let tree: BookTree
@@ -108,6 +115,7 @@ struct RenderedBookDocument: Sendable, Equatable {
     let presentation: RenderedBookPresentation?
     var displayHTML: String { presentation?.html ?? html }
     var lexical: RenderedLexicalPresentation { presentation?.lexical ?? .plain }
+    var resourceHTML: String { presentation?.inlineImages?.html ?? displayHTML }
 }
 struct RenderedBookImage: Sendable, Equatable {
     let module: String, filename: String, mediaType: String
@@ -373,7 +381,15 @@ enum CoreValues {
                 options: ContentDisplayOptions(images: options.images == -1 ? nil : options.images != 0,
                     fontFaces: options.font_faces == -1 ? nil : options.font_faces != 0, doubleSpace: options.double_space != 0),
                 cleanupDiagnostics: cleanupDiagnostics(count: xc_book_document_cleanup_count(result),
-                    kind: { xc_book_document_cleanup_kind(result, $0) }, suffix: { xc_book_document_cleanup_suffix(result, $0) }))
+                    kind: { xc_book_document_cleanup_kind(result, $0) }, suffix: { xc_book_document_cleanup_suffix(result, $0) }),
+                inlineImages: xc_book_document_inline_html(result).map { resourceHTML in
+                    RenderedBookInlineImages(html: String(cString: resourceHTML),
+                        embedded: xc_book_document_inline_image_count(result),
+                        issues: (0..<xc_book_document_inline_issue_count(result)).map { index in
+                            RenderedBookImageIssue(source: String(cString: xc_book_document_inline_issue_source(result, index)!),
+                                message: String(cString: xc_book_document_inline_issue_message(result, index)!))
+                        })
+                })
         }
         return RenderedBookDocument(tree: bookTree(xc_book_document_tree(result)!),
             displayLevel: xc_book_document_display_level(result), sections: sections,

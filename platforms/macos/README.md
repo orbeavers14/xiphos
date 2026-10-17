@@ -315,3 +315,14 @@ legacy image format. Run `sh platforms/macos/launch-fixture.sh build/macos book-
 for the original-prose PNG fixture. The separate preview opened and closed in a
 local window; the accessibility label subsequently compiled and passed focused
 model checks, but full VoiceOver acceptance remains pending.
+
+### Inline book images
+
+The book pane consumes shared-core resource-prepared HTML separately from raw
+SDK and ordinary display HTML. Only this pane permits data images; scripts,
+network and file subresources remain disabled. The shared image-content control
+refreshes cleanup/resource preparation. Missing resources report a count while
+retaining book text. The `book-images` fixture verified the PNG inline, its
+native preview click/Close, image-off text retention, and the preview image's
+accessibility label. Arbitrary corpus, sizing, CSS assets and full format/visual
+acceptance remain pending; libxml recovery can normalize prepared markup.

@@ -6,6 +6,10 @@ import Foundation
         let worker = try CoreWorker(root: CommandLine.arguments[1])
         let tab = try await worker.createTab()
         let selected = try await worker.selectBookDocument(tab: tab, module: "StyledBook", offset: 4)
+        guard let inline = selected.presentation?.inlineImages, inline.embedded == 1, inline.issues.isEmpty,
+              inline.html.contains("data:image/png;base64,iVBORw0KGgo"),
+              selected.resourceHTML == inline.html, !selected.html.contains("data:image/"),
+              !selected.displayHTML.contains("data:image/") else { fatalError("Swift owns distinct raw, visible and resource-prepared book HTML") }
         let uri = "xiphos-preview://study/passagestudy.jsp?action=showImage&value=file%3Acaf%C3%A9.png&module=OtherBook"
         let result = try await worker.followBookLink(tab: tab, uri: uri)
         guard case .image(let image) = result, image.module == "StyledBook", image.filename == "café.png",
@@ -19,6 +23,7 @@ import Foundation
               try await worker.bookDocumentSelection(tab: tab) == selected else { fatalError("failed image links retain reading and history") }
         try await worker.closeTab(tab); await worker.shutdown()
         guard image.data.prefix(8) == Data([137,80,78,71,13,10,26,10]), image.filename == "café.png" else { fatalError("image data/source copies survive shutdown") }
+        guard inline.html.contains("base64,iVBORw0KGgo") else { fatalError("inline HTML copy survives worker shutdown") }
         print("Swift core-owned book link dispatch, image byte ownership and state neutrality passed")
     }
 }
