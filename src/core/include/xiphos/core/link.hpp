@@ -36,6 +36,10 @@ struct BookDocumentNoteTarget { std::uint64_t offset; StudyNoteLink command; };
 BookDocumentNoteTarget book_document_note_link(const std::string &url, const BookDocument &document);
 // Typed legacy image command only; no filesystem reads or viewer launch.
 BookImageLink book_image_link(const std::string &url);
+// HTML-decoded img src URL, not a showImage query parameter. Percent escapes
+// decode once; literal '+' stays '+'. Query/fragment are URL components, not
+// filename bytes. Only local relative/file/absolute paths are supported.
+BookImageLink book_inline_image_link(const std::string &source);
 enum class BookLinkKind { note, image };
 BookLinkKind book_link_kind(const std::string &url);
 // Scoped single-reference subset of main/url.cc sword_uri + hex_decode.

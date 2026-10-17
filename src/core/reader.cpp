@@ -169,6 +169,14 @@ BookImageResource Reader::read_book_image(const std::string &id, const std::stri
   if (!module) throw std::out_of_range("Module is not installed");
   return detail::capture_book_image_resource(*module, std::move(command), maximum_bytes);
 }
+BookImageResource Reader::read_book_inline_image(const std::string &id, const std::string &source, std::size_t maximum_bytes) {
+  if (id.empty() || id.find('\0') != std::string::npos) throw std::invalid_argument("Invalid general-book module ID");
+  auto command = xiphos::core::book_inline_image_link(source);
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto *module = impl_->manager->getModule(id.c_str());
+  if (!module) throw std::out_of_range("Module is not installed");
+  return detail::capture_book_image_resource(*module, std::move(command), maximum_bytes);
+}
 BookNote Reader::book_note(const std::string &id, std::uint64_t offset, const std::string &identifier,
                            const EngineOptions &options, bool render_body) {
   return book_note_impl(id, offset, identifier, &options, render_body);

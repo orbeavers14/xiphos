@@ -26,12 +26,18 @@ int main(int argc,char **argv){try{
  std::error_code error;fs::remove(link,error);fs::create_symlink(outside,link,error);const bool outside_symlink=!error;
  fs::remove(inside_link,error);fs::create_symlink(file,inside_link,error);const bool inside_symlink=!error;
  const std::string original_png("\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49\x48\x44\x52\x00\x00\x00\x08\x00\x00\x00\x08\x08\x06\x00\x00\x00\xc4\x0f\xbe\x8b\x00\x00\x00\x12\x49\x44\x41\x54\x78\x9c\x63\x50\xc9\x58\xf3\x1f\x1f\x66\x18\x19\x0a\x00\xc1\xa0\x8d\xc1\xf4\xd5\x38\xd1\x00\x00\x00\x00\x49\x45\x4e\x44\xae\x42\x60\x82",75);write(root/"data"/fs::u8path("café.png"),original_png);
+ write(root/"data/a+b.png",original_png);write(root/"data/literal%20.png",original_png);
  const auto before=bytes(root);BookImageResource held;
  {
   Reader reader(root.string());
   for(const auto &value:std::vector<std::string>{"café.svg","file:café.svg",file.u8string(),"file:"+file.u8string(),"file://"+file.u8string(),"sub/../café.svg"}){
    auto resource=reader.read_book_image("StyledBook",base+encode(value));check(resource.data==svg && resource.target.context.module=="StyledBook" && resource.target.command.media_type=="image/svg+xml","Relative/contained absolute/file URI paths use SDK resource directory with exact owned bytes");held=std::move(resource);
   }
+  for (const auto &source : std::vector<std::string>{"caf%C3%A9.png", "file:caf%C3%A9.png", "caf%C3%A9.png?size=small#section", "a+b.png", "literal%2520.png"})
+    check(reader.read_book_inline_image("StyledBook",source).data==original_png,"Inline URL decoding preserves plus, decodes percent once, ignores URL query/fragment");
+  check(reader.read_book_inline_image("StyledBook","file://"+encode(file.u8string())).data==svg,"Encoded file URI remains contained");
+  for(const auto &source:std::vector<std::string>{"http://host/image.png","data:image/png;base64,a","//host/image.png","file://host/image.png","../outside.svg","%2e%2e/outside.svg","bad%.png","bad%0a.png","bad%00.png","file:file:bad.png","","caf%C3%A9.PNG"})
+    rejects<std::invalid_argument>([&]{reader.read_book_inline_image("StyledBook",source);});
   check(reader.read_book_image("StyledBook",base+"empty.png").data.empty(),"Empty files remain empty byte resources, not validated image content");
   check(reader.read_book_image("StyledBook",base+"binary.png").data==binary_bytes,"Binary and NUL bytes remain intact; extension MIME does not claim decoding");
   check(reader.read_book_image("StyledBook",base+encode("café.svg"),svg.size()).data==svg,"Exact byte limit succeeds");

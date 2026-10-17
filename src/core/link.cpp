@@ -176,12 +176,8 @@ BookLinkKind book_link_kind(const std::string &url) {
   if (action == "showImage") return BookLinkKind::image;
   throw std::invalid_argument("Unsupported book link command");
 }
-BookImageLink book_image_link(const std::string &url) {
-  const auto parameters = command_parameters(url);
-  if (parameter(parameters, "action") != "showImage")
-    throw std::invalid_argument("Expected a book image command");
-  auto filename = parameter(parameters, "value");
-  if (filename.compare(0, 5, "file:") == 0) filename.erase(0, 5);
+namespace {
+std::string image_media_type(const std::string &filename) {
   std::string media_type;
   const std::pair<const char *, const char *> formats[] = {{".png","image/png"},{".jpg","image/jpeg"},
     {".jpeg","image/jpeg"},{".gif","image/gif"},{".bmp","image/bmp"},{".svg","image/svg+xml"},
@@ -194,8 +190,46 @@ BookImageLink book_image_link(const std::string &url) {
     }
   }
   if (media_type.empty()) throw std::invalid_argument("Unsupported book image filename");
+  return media_type;
+}
+}
+BookImageLink book_image_link(const std::string &url) {
+  const auto parameters = command_parameters(url);
+  if (parameter(parameters, "action") != "showImage")
+    throw std::invalid_argument("Expected a book image command");
+  auto filename = parameter(parameters, "value");
+  if (filename.compare(0, 5, "file:") == 0) filename.erase(0, 5);
+  auto media_type = image_media_type(filename);
   const auto module = parameters.find("module");
   return {std::move(filename), module == parameters.end() ? std::nullopt : std::make_optional(module->second), std::move(media_type)};
+}
+BookImageLink book_inline_image_link(const std::string &source) {
+  if (source.empty() || source.size() > 32768 || source.find('\0') != std::string::npos)
+    throw std::invalid_argument("Invalid inline image source");
+  auto path = source.substr(0, source.find_first_of("?#"));
+  if (path.compare(0, 5, "file:") == 0) path.erase(0, 5);
+  // Keep drive names for the filesystem layer on Windows. No other scheme is
+  // implicitly treated as a relative filename or contacted over the network.
+  const auto colon = path.find(':');
+  if (colon != std::string::npos && !(colon == 1 && path.size() > 2 &&
+      ((path[0] >= 'A' && path[0] <= 'Z') || (path[0] >= 'a' && path[0] <= 'z')) &&
+      (path[2] == '/' || path[2] == '\\')))
+    throw std::invalid_argument("Inline image source is not a local path");
+  std::string decoded;
+  for (std::size_t i = 0; i < path.size(); ++i) {
+    if (static_cast<unsigned char>(path[i]) < 32 || path[i] == 127)
+      throw std::invalid_argument("Control character in inline image filename");
+    if (path[i] != '%') { decoded += path[i]; continue; }
+    if (i + 2 >= path.size() || hex(path[i+1]) < 0 || hex(path[i+2]) < 0)
+      throw std::invalid_argument("Invalid inline image percent escape");
+    const auto value = static_cast<char>((hex(path[i+1]) << 4) | hex(path[i+2]));
+    if (static_cast<unsigned char>(value) < 32 || value == 127)
+      throw std::invalid_argument("Control character in inline image filename");
+    decoded += value;
+    i += 2;
+  }
+  auto media_type = image_media_type(decoded);
+  return {std::move(decoded), std::nullopt, std::move(media_type)};
 }
 StudyCommandLink study_link(const std::string &url, const std::string &current_module) {
   if (url.compare(0, 8, "sword://") == 0 || url.compare(0, 8, "bible://") == 0)

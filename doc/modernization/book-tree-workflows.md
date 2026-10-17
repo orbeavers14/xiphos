@@ -500,3 +500,15 @@ tabs/writes remain pending. Preserve GTK3 and all retirement gates. Overall
 planning estimate remains about **8% (6–10%)**, **0/38** whole feature groups
 accepted, **0/3** release-ready native apps. This checkpoint is handed off near
 the usage ceiling; no active edit ownership is held.
+
+### Inline image URL resolution — 2026-10-17
+
+`Reader::read_book_inline_image` accepts an HTML-decoded image source URL,
+separate from showImage query decoding. Percent escapes decode exactly once;
+`+` remains a literal filename byte. Query and fragment components are excluded
+before decoding. Local files reuse the bounded module-directory policy; missing,
+outside, authority, unsupported scheme, malformed escape and control-character
+inputs reject. No HTML rewriting, viewer, network or persistence is added here.
+The same lowercase suffix/MIME table serves both paths; format decoding and
+uppercase suffix support are not claimed. Two focused original-prose fixture
+checks passed locally, including legacy showImage characterization.
