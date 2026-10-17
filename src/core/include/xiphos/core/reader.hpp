@@ -64,6 +64,8 @@ public:
                                   const BookDocumentLimits &limits = {});
   // Exact SDK path/CSS metadata only; no path rebasing, resource reads or writes.
   BookResourceContext book_resource_context(const std::string &module);
+  BookImageResource read_book_image(const std::string &module, const std::string &uri,
+                                    std::size_t maximum_bytes = maximum_book_image_bytes);
   // Owned ordinary book-note source; does not parse a verse URI or heading ID.
   BookNote book_note(const std::string &module, std::uint64_t offset, const std::string &identifier,
                      const EngineOptions &options, bool render_body = true);

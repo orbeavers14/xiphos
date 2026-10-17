@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 #include <optional>
+#include <cstddef>
 #include <string>
 namespace xiphos::core {
 // Exact copied SDK configuration, not a filesystem authorization or resolved
@@ -15,9 +16,16 @@ struct BookResourceContext {
 struct BookImageLink {
   std::string filename;
   std::optional<std::string> declared_module;
+  std::string media_type; // Filename-extension hint, not a decoder/validation result.
 };
 struct BookImageTarget {
   BookResourceContext context;
   BookImageLink command;
 };
+inline constexpr std::size_t maximum_book_image_bytes = 16 * 1024 * 1024;
+struct BookImageResource {
+  BookImageTarget target;
+  std::string data; // Binary bytes, including NUL; no retained file/SDK handles.
+};
+
 }

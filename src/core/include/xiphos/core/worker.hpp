@@ -52,6 +52,7 @@ public:
   std::future<std::optional<BookDocument>> book_document_selection(StudyTab tab);
   std::future<BookNote> book_document_note_link(StudyTab tab, std::string uri, bool render_body = true);
   std::future<BookImageTarget> book_image_link(StudyTab tab, std::string uri);
+  std::future<BookImageResource> read_book_image_link(StudyTab tab, std::string uri);
   std::future<BookEntry> select_book(StudyTab tab, BookSelectionTarget target);
   std::future<std::optional<BookEntry>> navigate_book(StudyTab tab, BookNavigation direction);
   std::future<std::optional<BookEntry>> restore_book_selection(StudyTab tab, SavedBookSelection saved, BookRestoreMode mode);

@@ -19,6 +19,7 @@ typedef struct xc_book_tree xc_book_tree;
 typedef struct xc_book_entry xc_book_entry;
 typedef struct xc_book_document xc_book_document;
 typedef struct xc_book_image xc_book_image;
+typedef struct xc_book_image_data xc_book_image_data;
 typedef struct xc_book_children xc_book_children;
 typedef struct xc_book_note xc_book_note;
 /* Submission-only borrowed strings, copied before return. NULL is absent;
@@ -211,9 +212,23 @@ typedef enum xc_book_resource_field {
  * declared module is copied separately because the legacy image branch ignores it. */
 const char *xc_book_image_module(const xc_book_image *image);
 const char *xc_book_image_filename(const xc_book_image *image);
+const char *xc_book_image_media_type(const xc_book_image *image);
 const char *xc_book_image_declared_module(const xc_book_image *image);
 const char *xc_book_image_resource_field(const xc_book_image *image, int field);
 void xc_book_image_release(xc_book_image *image);
+/* Initial local image-byte reader: canonical regular files inside the source
+ * module's SDK AbsoluteDataPath, relative or contained absolute local paths.
+ * Authorities/UNC and drive-relative forms reject. Maximum 16 MiB, no truncation.
+ * Files are not frozen across requests; observed read-time changes reject.
+ * Does not decode/validate image formats or launch a viewer; MIME is a suffix hint.
+ * No selection/history/profile writes. Result bytes/context outlive worker close. */
+xc_status xc_worker_read_book_image_link(xc_worker *worker, uint64_t tab, const char *uri, xc_request **out);
+xc_book_image_data *xc_request_take_book_image_data(xc_request *request);
+/* Borrowed source/bytes until data release; do not release the source separately. */
+const xc_book_image *xc_book_image_data_source(const xc_book_image_data *image);
+const unsigned char *xc_book_image_data_bytes(const xc_book_image_data *image);
+size_t xc_book_image_data_size(const xc_book_image_data *image);
+void xc_book_image_data_release(xc_book_image_data *image);
 /* Read-only SDK child order, page limit 1..256; has_after is strict 0/1.
  * after is ignored when has_after=0; otherwise it must identify a direct child
  * of parent. All node strings borrow from the owned page. Out-of-range indices

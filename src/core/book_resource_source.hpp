@@ -4,4 +4,5 @@
 namespace sword { class SWModule; }
 namespace xiphos::core::detail {
 BookResourceContext capture_book_resource_context(sword::SWModule &module);
+BookImageResource capture_book_image_resource(sword::SWModule &module, BookImageLink command, std::size_t maximum_bytes);
 }

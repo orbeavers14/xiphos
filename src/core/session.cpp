@@ -279,6 +279,11 @@ BookImageTarget StudySession::book_image_link(const std::string &uri) {
   const auto command = xiphos::core::book_image_link(uri);
   return {reader_.book_resource_context(book_selection_->tree.module), command};
 }
+BookImageResource StudySession::read_book_image_link(const std::string &uri) {
+  if (!book_selection_ || !book_selection_->document)
+    throw std::invalid_argument("Select a book document before reading its image");
+  return reader_.read_book_image(book_selection_->tree.module, uri);
+}
 std::optional<BookSelectionTarget> StudySession::book_navigation_target(BookNavigation direction) {
   switch (direction) {
     case BookNavigation::parent: case BookNavigation::first_child:

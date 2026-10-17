@@ -154,6 +154,9 @@ std::future<BookNote> StudyWorker::book_document_note_link(StudyTab tab, std::st
 std::future<BookImageTarget> StudyWorker::book_image_link(StudyTab tab, std::string uri) {
   return impl_->submit([tab, uri = std::move(uri)](Impl::State &s) { return s.tab(tab).book_image_link(uri); });
 }
+std::future<BookImageResource> StudyWorker::read_book_image_link(StudyTab tab, std::string uri) {
+  return impl_->submit([tab, uri = std::move(uri)](Impl::State &s) { return s.tab(tab).read_book_image_link(uri); });
+}
 std::future<BookEntry> StudyWorker::select_book(StudyTab tab, BookSelectionTarget target) {
   return impl_->submit([tab, target = std::move(target)](Impl::State &s) { return s.tab(tab).select_book(target); });
 }

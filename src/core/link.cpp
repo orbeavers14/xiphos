@@ -176,17 +176,20 @@ BookImageLink book_image_link(const std::string &url) {
     throw std::invalid_argument("Expected a book image command");
   auto filename = parameter(parameters, "value");
   if (filename.compare(0, 5, "file:") == 0) filename.erase(0, 5);
-  bool image = false;
-  for (const auto *suffix : {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".tiff", ".webp"}) {
-    const std::string ending(suffix);
+  std::string media_type;
+  const std::pair<const char *, const char *> formats[] = {{".png","image/png"},{".jpg","image/jpeg"},
+    {".jpeg","image/jpeg"},{".gif","image/gif"},{".bmp","image/bmp"},{".svg","image/svg+xml"},
+    {".tiff","image/tiff"},{".webp","image/webp"}};
+  for (const auto &format : formats) {
+    const std::string ending(format.first);
     if (filename.size() >= ending.size() && filename.compare(filename.size() - ending.size(), ending.size(), ending) == 0) {
-      image = true;
+      media_type = format.second;
       break;
     }
   }
-  if (!image) throw std::invalid_argument("Unsupported book image filename");
+  if (media_type.empty()) throw std::invalid_argument("Unsupported book image filename");
   const auto module = parameters.find("module");
-  return {std::move(filename), module == parameters.end() ? std::nullopt : std::make_optional(module->second)};
+  return {std::move(filename), module == parameters.end() ? std::nullopt : std::make_optional(module->second), std::move(media_type)};
 }
 StudyCommandLink study_link(const std::string &url, const std::string &current_module) {
   if (url.compare(0, 8, "sword://") == 0 || url.compare(0, 8, "bible://") == 0)
