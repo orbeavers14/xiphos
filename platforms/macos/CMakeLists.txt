@@ -72,6 +72,16 @@ add_custom_command(OUTPUT "${app}/Contents/MacOS/XiphosNativePreview"
   VERBATIM)
 add_custom_target(macos_preview ALL DEPENDS "${app}/Contents/MacOS/XiphosNativePreview")
 if(BUILD_TESTING)
+  add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/search_adapter_smoke"
+    COMMAND ${SWIFTC} -swift-version 6 -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
+      -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/SearchAdapterSmoke.swift"
+      "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
+      ${sword_link_flags} -lc++ -o "${CMAKE_CURRENT_BINARY_DIR}/search_adapter_smoke"
+    DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift Tests/SearchAdapterSmoke.swift
+      Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h VERBATIM)
+  add_custom_target(macos_search_adapter_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/search_adapter_smoke")
+  add_test(NAME swift_search_adapter COMMAND "${CMAKE_CURRENT_BINARY_DIR}/search_adapter_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/search-fixture")
+  set_tests_properties(swift_search_adapter PROPERTIES FIXTURES_REQUIRED search_fixture TIMEOUT 30)
   add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/adapter_smoke"
     COMMAND ${SWIFTC} -swift-version 6 -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
       -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/AdapterSmoke.swift"

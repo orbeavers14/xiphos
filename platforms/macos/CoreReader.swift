@@ -124,6 +124,15 @@ struct RenderedBookDocument: Sendable, Equatable {
     var resourceHTML: String { presentation?.inlineImages?.html ?? displayHTML }
     var resourceCSS: String { lexical.css + "\n" + (presentation?.stylesheet?.inlineCSS ?? "") }
 }
+enum CoreSearchMode: Int32, Sendable { case regularExpression=0, phrase=1, words=2 }
+struct RenderedSearchResult: Sendable, Equatable {
+    let module: String, expression: String, effectiveExpression: String
+    let mode: CoreSearchMode
+    let engineType: Int32
+    let caseSensitive: Bool, limited: Bool
+    let totalResults: UInt64
+    let references: [String]
+}
 struct RenderedBookImage: Sendable, Equatable {
     let module: String, filename: String, mediaType: String
     let data: Data
@@ -365,6 +374,17 @@ enum CoreValues {
     static func bookEntry(_ result: OpaquePointer) -> RenderedBookEntry {
         RenderedBookEntry(tree: bookTree(xc_book_entry_tree(result)!),
             html: String(cString: xc_book_entry_html(result)!), hasEntry: xc_book_entry_has_entry(result) != 0)
+    }
+    static func search(_ result: OpaquePointer) -> RenderedSearchResult {
+        var info = xc_search_info()
+        precondition(xc_search_get_info(result, &info) == XC_OK)
+        guard let mode = CoreSearchMode(rawValue: info.mode) else { preconditionFailure("Unknown core search mode") }
+        return RenderedSearchResult(module: String(cString: xc_search_module(result)!),
+            expression: String(cString: xc_search_expression(result)!),
+            effectiveExpression: String(cString: xc_search_effective_expression(result)!),
+            mode: mode, engineType: info.engine_type, caseSensitive: info.case_sensitive != 0,
+            limited: info.limited != 0, totalResults: info.total_results,
+            references: (0..<info.result_count).map { String(cString: xc_search_reference(result, $0)!) })
     }
     static func bookImage(_ result: OpaquePointer) -> RenderedBookImage {
         let source = xc_book_image_data_source(result)!

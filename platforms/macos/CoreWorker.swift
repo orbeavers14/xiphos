@@ -218,6 +218,27 @@ actor CoreWorker {
         return RenderedBookNote(tree: CoreValues.bookTree(xc_book_note_tree(result)!),
             content: noteValue(xc_book_note_content(result)!))
     }
+    func searchModule(tab: UInt64, module: String, expression: String, mode: CoreSearchMode = .phrase,
+                      caseSensitive: Bool = false, maxResults: Int = 1000,
+                      maxReferenceBytes: Int = 1024 * 1024) async throws -> RenderedSearchResult {
+        guard ![module, expression].contains(where: { $0.utf8.contains(0) }), maxResults > 0, maxReferenceBytes > 0 else {
+            throw CoreError(status: XC_INVALID_ARGUMENT)
+        }
+        var options = xc_search_options()
+        xc_search_options_default(&options)
+        options.mode = mode.rawValue; options.case_sensitive = caseSensitive ? 1 : 0
+        options.max_results = maxResults; options.max_reference_bytes = maxReferenceBytes
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = module.withCString { id in
+            expression.withCString { query in xc_worker_search_module(handle, tab, id, query, &options, &request) }
+        }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_search(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_search_release(result) }
+        return CoreValues.search(result)
+    }
     func followBookLink(tab: UInt64, uri: String) async throws -> RenderedBookLink {
         guard !uri.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?
