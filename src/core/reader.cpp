@@ -7,6 +7,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/reader.hpp"
 #include "book_tree_source.hpp"
+#include "book_resource_source.hpp"
 #include "xiphos/core/reference_list.hpp"
 #include <markupfiltmgr.h>
 #include "xiphos/core/engine_manager.hpp"
@@ -152,6 +153,13 @@ BookDocument Reader::book_document_impl(const std::string &id, std::uint64_t off
   std::unique_ptr<ScopedEngineOptions> scope;
   if (options) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *options);
   return detail::capture_book_document(*module, offset, limits);
+}
+BookResourceContext Reader::book_resource_context(const std::string &id) {
+  if (id.empty() || id.find('\0') != std::string::npos) throw std::invalid_argument("Invalid general-book module ID");
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto *module = impl_->manager->getModule(id.c_str());
+  if (!module) throw std::out_of_range("Module is not installed");
+  return detail::capture_book_resource_context(*module);
 }
 BookNote Reader::book_note(const std::string &id, std::uint64_t offset, const std::string &identifier,
                            const EngineOptions &options, bool render_body) {

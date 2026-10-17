@@ -18,6 +18,7 @@ typedef struct xc_dictionary_entry xc_dictionary_entry;
 typedef struct xc_book_tree xc_book_tree;
 typedef struct xc_book_entry xc_book_entry;
 typedef struct xc_book_document xc_book_document;
+typedef struct xc_book_image xc_book_image;
 typedef struct xc_book_children xc_book_children;
 typedef struct xc_book_note xc_book_note;
 /* Submission-only borrowed strings, copied before return. NULL is absent;
@@ -195,6 +196,24 @@ size_t xc_book_document_cleanup_count(const xc_book_document *document);
 int xc_book_document_cleanup_kind(const xc_book_document *document, size_t index);
 const char *xc_book_document_cleanup_suffix(const xc_book_document *document, size_t index);
 void xc_book_document_release(xc_book_document *document);
+/* Image-command/resource-context characterization only. Requires a committed
+ * document, preserves the legacy filename/file: suffix behavior, and copies SDK
+ * metadata on the FIFO worker. Does not read/authorize resource files, rebase
+ * paths, follow the declared module, launch viewers or publish a selection. */
+xc_status xc_worker_book_image_link(xc_worker *worker, uint64_t tab, const char *uri, xc_request **out);
+xc_book_image *xc_request_take_book_image(xc_request *request);
+typedef enum xc_book_resource_field {
+  XC_BOOK_RESOURCE_DATA_PATH = 0, XC_BOOK_RESOURCE_ABSOLUTE_DATA_PATH = 1,
+  XC_BOOK_RESOURCE_PREFIX_PATH = 2, XC_BOOK_RESOURCE_PREFERRED_CSS_XHTML = 3
+} xc_book_resource_field;
+/* Borrowed UTF-8 strings until image release. NULL = missing/invalid field;
+ * explicit empty values stay empty. Source module is the committed book; a URI's
+ * declared module is copied separately because the legacy image branch ignores it. */
+const char *xc_book_image_module(const xc_book_image *image);
+const char *xc_book_image_filename(const xc_book_image *image);
+const char *xc_book_image_declared_module(const xc_book_image *image);
+const char *xc_book_image_resource_field(const xc_book_image *image, int field);
+void xc_book_image_release(xc_book_image *image);
 /* Read-only SDK child order, page limit 1..256; has_after is strict 0/1.
  * after is ignored when has_after=0; otherwise it must identify a direct child
  * of parent. All node strings borrow from the owned page. Out-of-range indices

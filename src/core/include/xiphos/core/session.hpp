@@ -63,6 +63,7 @@ public:
   std::optional<BookDocument> navigate_book_document(BookNavigation direction);
   std::optional<BookDocument> restore_book_document_selection(const SavedBookSelection &saved, BookRestoreMode mode);
   BookNote book_document_note_link(const std::string &uri, bool render_body = true);
+  BookImageTarget book_image_link(const std::string &uri);
   // Missing selection/relation is a no-op; relationship lookup and reading policy stay in core.
   std::optional<BookEntry> navigate_book(BookNavigation direction);
   // No saved module is a successful no-op, retaining any existing selection.

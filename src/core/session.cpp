@@ -273,6 +273,12 @@ BookNote StudySession::book_document_note_link(const std::string &uri, bool rend
   const auto target = xiphos::core::book_document_note_link(uri, *book_selection_->document);
   return book_note_link_at(target.command.module, target.offset, uri, render_body);
 }
+BookImageTarget StudySession::book_image_link(const std::string &uri) {
+  if (!book_selection_ || !book_selection_->document)
+    throw std::invalid_argument("Select a book document before resolving image context");
+  const auto command = xiphos::core::book_image_link(uri);
+  return {reader_.book_resource_context(book_selection_->tree.module), command};
+}
 std::optional<BookSelectionTarget> StudySession::book_navigation_target(BookNavigation direction) {
   switch (direction) {
     case BookNavigation::parent: case BookNavigation::first_child:

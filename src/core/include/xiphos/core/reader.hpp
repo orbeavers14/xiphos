@@ -11,6 +11,7 @@
 #include "lexical.hpp"
 #include "book_tree.hpp"
 #include "book_document.hpp"
+#include "book_resource.hpp"
 #include "book_selection.hpp"
 #include <memory>
 #include <string>
@@ -61,6 +62,8 @@ public:
                                   const EngineOptions &options, const BookDocumentLimits &limits = {});
   BookDocument read_book_document(const std::string &module, std::uint64_t offset,
                                   const BookDocumentLimits &limits = {});
+  // Exact SDK path/CSS metadata only; no path rebasing, resource reads or writes.
+  BookResourceContext book_resource_context(const std::string &module);
   // Owned ordinary book-note source; does not parse a verse URI or heading ID.
   BookNote book_note(const std::string &module, std::uint64_t offset, const std::string &identifier,
                      const EngineOptions &options, bool render_body = true);

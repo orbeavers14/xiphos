@@ -170,6 +170,24 @@ BookDocumentNoteTarget book_document_note_link(const std::string &url, const Boo
   if (!offset) throw std::invalid_argument("Book-note command is outside the rendered document");
   return {*offset, result};
 }
+BookImageLink book_image_link(const std::string &url) {
+  const auto parameters = command_parameters(url);
+  if (parameter(parameters, "action") != "showImage")
+    throw std::invalid_argument("Expected a book image command");
+  auto filename = parameter(parameters, "value");
+  if (filename.compare(0, 5, "file:") == 0) filename.erase(0, 5);
+  bool image = false;
+  for (const auto *suffix : {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".tiff", ".webp"}) {
+    const std::string ending(suffix);
+    if (filename.size() >= ending.size() && filename.compare(filename.size() - ending.size(), ending.size(), ending) == 0) {
+      image = true;
+      break;
+    }
+  }
+  if (!image) throw std::invalid_argument("Unsupported book image filename");
+  const auto module = parameters.find("module");
+  return {std::move(filename), module == parameters.end() ? std::nullopt : std::make_optional(module->second)};
+}
 StudyCommandLink study_link(const std::string &url, const std::string &current_module) {
   if (url.compare(0, 8, "sword://") == 0 || url.compare(0, 8, "bible://") == 0)
     return passage_link(url, current_module);

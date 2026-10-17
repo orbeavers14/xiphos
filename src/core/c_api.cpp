@@ -49,6 +49,7 @@ struct xc_book_document {
     for (auto &section : value.sections) sections.emplace_back(std::move(section));
   }
 };
+struct xc_book_image { xiphos::core::BookImageTarget value; };
 struct xc_note { xiphos::core::StudyNote value; };
 struct xc_book_note {
   xc_book_tree tree;
@@ -76,6 +77,7 @@ struct xc_request {
   std::unique_ptr<xc_book_tree> book_tree;
   std::unique_ptr<xc_book_entry> book_entry;
   std::unique_ptr<xc_book_document> book_document;
+  std::unique_ptr<xc_book_image> book_image;
   std::unique_ptr<xc_book_children> book_children;
   std::unique_ptr<xc_book_note> book_note;
   std::unique_ptr<xc_lexical_entry> lexical;
@@ -110,6 +112,7 @@ struct xc_request {
     book_selection_present = v.has_value();
     if (v) book_document = std::make_unique<xc_book_document>(std::move(*v));
   }
+  void store(xiphos::core::BookImageTarget v) { book_image = std::make_unique<xc_book_image>(xc_book_image{std::move(v)}); }
   void store(xiphos::core::BookDocument v) { book_document = std::make_unique<xc_book_document>(std::move(v)); }
   void store(xiphos::core::BookTree v) { book_tree = std::make_unique<xc_book_tree>(xc_book_tree{std::move(v)}); }
   void store(std::optional<xiphos::core::BookTree> v) {
@@ -392,6 +395,30 @@ const char *xc_book_document_cleanup_suffix(const xc_book_document *document, si
     ? document->presentation->cleanup_diagnostics[index].suffix.c_str() : nullptr;
 }
 void xc_book_document_release(xc_book_document *document) { delete document; }
+xc_status xc_worker_book_image_link(xc_worker *w, uint64_t tab, const char *uri, xc_request **out) {
+  if (!uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.book_image_link(tab, uri); });
+}
+xc_book_image *xc_request_take_book_image(xc_request *r) { return r && r->status == XC_OK ? r->book_image.release() : nullptr; }
+const char *xc_book_image_module(const xc_book_image *image) { return image ? image->value.context.module.c_str() : nullptr; }
+const char *xc_book_image_filename(const xc_book_image *image) { return image ? image->value.command.filename.c_str() : nullptr; }
+const char *xc_book_image_declared_module(const xc_book_image *image) {
+  return image && image->value.command.declared_module ? image->value.command.declared_module->c_str() : nullptr;
+}
+const char *xc_book_image_resource_field(const xc_book_image *image, int field) {
+  if (!image) return nullptr;
+  const auto &context = image->value.context;
+  const std::optional<std::string> *value;
+  switch (field) {
+    case XC_BOOK_RESOURCE_DATA_PATH: value = &context.data_path; break;
+    case XC_BOOK_RESOURCE_ABSOLUTE_DATA_PATH: value = &context.absolute_data_path; break;
+    case XC_BOOK_RESOURCE_PREFIX_PATH: value = &context.prefix_path; break;
+    case XC_BOOK_RESOURCE_PREFERRED_CSS_XHTML: value = &context.preferred_css_xhtml; break;
+    default: return nullptr;
+  }
+  return *value ? (*value)->c_str() : nullptr;
+}
+void xc_book_image_release(xc_book_image *image) { delete image; }
 xc_status xc_worker_book_children(xc_worker *w, const char *id, uint64_t parent,
                                   int has_after, uint64_t after, uint32_t limit, xc_request **out) {
   if (!id || !*id || (has_after != 0 && has_after != 1) || !limit || limit > 256) {

@@ -2,6 +2,7 @@
 #pragma once
 #include <string>
 #include <cstdint>
+#include "book_resource.hpp"
 #include <variant>
 namespace xiphos::core {
 enum class LexicalLinkKind { strongs, morphology };
@@ -33,6 +34,8 @@ struct BookDocumentNoteTarget { std::uint64_t offset; StudyNoteLink command; };
 // Parse once, then require an exact rendered section in the owned document.
 // Skipped/foreign/ambiguous paths are rejected; no verse or relative fallback.
 BookDocumentNoteTarget book_document_note_link(const std::string &url, const BookDocument &document);
+// Typed legacy image command only; no filesystem reads or viewer launch.
+BookImageLink book_image_link(const std::string &url);
 // Scoped single-reference subset of main/url.cc sword_uri + hex_decode.
 // Module abbreviations, ranges and fragments remain pending.
 PassageLink passage_link(const std::string &url, const std::string &current_module);
