@@ -12,6 +12,7 @@
 #include "book_tree.hpp"
 #include "book_document.hpp"
 #include "book_resource.hpp"
+#include "search.hpp"
 #include "book_selection.hpp"
 #include <memory>
 #include <string>
@@ -38,6 +39,10 @@ public:
   Reader(const Reader &) = delete;
   Reader &operator=(const Reader &) = delete;
   const std::vector<Module> &modules() const;
+  // Initial whole-module Bible/regular-commentary search, with copied bounded
+  // output and scoped accent/vowel filter settings. No history, session scope,
+  // index creation, native UI or active cancellation is introduced here.
+  SearchResult search_module(SearchQuery query,const SearchLimits &limits = {});
   // Read-only owned one-hop tree sources. Neither call selects/renders a book,
   // changes history, or writes missing paths. Root offset 0 is not reading
   // startup's legacy offset-4 selection. Unsupported drivers are rejected.

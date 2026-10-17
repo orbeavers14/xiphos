@@ -8,6 +8,7 @@
 #include "xiphos/core/reader.hpp"
 #include "book_tree_source.hpp"
 #include "book_resource_source.hpp"
+#include "search_source.hpp"
 #include "xiphos/core/reference_list.hpp"
 #include <markupfiltmgr.h>
 #include "xiphos/core/engine_manager.hpp"
@@ -136,6 +137,13 @@ BookChildren Reader::book_children(const std::string &id, std::uint64_t parent,
 }
 BookEntry Reader::read_book(const std::string &id, std::uint64_t offset) {
   return book_impl(id, offset, nullptr);
+}
+SearchResult Reader::search_module(SearchQuery query,const SearchLimits &limits) {
+  if(query.module.empty()||query.module.find('\0')!=std::string::npos)throw std::invalid_argument("Invalid search module");
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto *module=impl_->manager->getModule(query.module.c_str());
+  if(!module)throw std::out_of_range("Search module is not installed");
+  return detail::capture_module_search(*impl_->manager,*module,std::move(query),limits);
 }
 BookDocument Reader::read_book_document(const std::string &id, std::uint64_t offset,
                                         const EngineOptions &options, const BookDocumentLimits &limits) {

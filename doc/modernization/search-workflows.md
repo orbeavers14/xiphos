@@ -55,3 +55,33 @@ The [official SDK source](https://www.crosswire.org/sword/apiref/swmodule_8cpp_s
 helps identify search ownership and backend-dependent case flags, but is an older
 revision than the installed 1.9.0.3916 SDK. Validate actual behavior with local
 original-prose fixtures; do not infer platform acceptance from that source page.
+
+## Initial owned Reader execution
+
+`Reader::search_module` now executes whole-module Bible and regular-commentary
+phrase/regex/word searches. It copies requested/effective query, actual SDK mode,
+SDK result count and complete ordered references. Indexed word selection uses
+the legacy capability probe and shared AND preparation; external results sort
+as the backend does. Actual indexed execution remains unvalidated here. Output
+is at most 10,000 copied references/8 MiB, with smaller defaults (1,000/1 MiB).
+When a bound is reached, only complete prefix references are returned and the
+limited flag is set; the SDK's own execution/internal results are not bounded.
+Queries are nonempty UTF-8 without NUL, at most 32 KiB. No range/last-search,
+active cancellation, progress exposure, index creation or UI is added yet.
+
+The three temporary accent/vowel settings restore per-filter values, including
+strip failures. Attribute processing and skip-link flags restore as well. The
+checked SDK restores the key value but can replace its internal key object;
+SDK pointers must never escape or be held across core operations. Search results
+are owned values. Original-prose tests compare modes, case, ordered keys and
+queries with an extraction of actual BackEnd::do_module_search, check copied
+limits/no matches and unchanged data, and verify settings/recovery.
+
+SWORD's case-insensitive flag depends on its compiled regex backend and is not
+exported as a public constant. Native-core CMake exposes
+`XIPHOS_SWORD_SEARCH_ICASE_FLAG` (GNU/ICU 2, C++11-regex 1). The local SDK is
+checked with 2 and explicit upper/lower phrase-hit expectations. Run core_search
+against each actual SDK before accepting case behavior; do not guess another
+OS's dependency build settings. The initial failed fixture lacked its RawText
+data directories; fixture reads now verify stored text before comparing search
+results. This was corrected before source acceptance.
