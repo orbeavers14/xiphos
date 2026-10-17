@@ -175,6 +175,16 @@ replicating core policy. Local navigation checkpoint: **95/95 Mac/core**,
 Native controls are in progress. The usage window refreshed automatically; no
 reset credit was used. No new whole parity gate or percentage is accepted.
 
+Native general-book controls `d65aabc` use the shared navigation/selection APIs
+in the lower-right dictionary/book area. The model preserves main Bible content,
+window isolation, rejected-key reading and stale-result guards; browsing is
+read-only. A disposable original-prose Mac window verified child/parent/sibling,
+entryless branches, accessible contents actions and rejected-input retention.
+Full local Mac/core suite passes **96/96**. F10 now has scoped partial Mac evidence;
+**0/38** whole groups and **0/3** releases remain accepted. Native note clicks are
+the active next slice; image routing, full saved-tab restore/writes and corpus/
+visual/keyboard/VoiceOver acceptance remain pending. No hosted builds ran.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three
@@ -220,7 +230,7 @@ a replacement for the weighted engineering estimate above.
 
 | New frontend | Initial evidence in ledger | Fully accepted groups | Main gaps |
 |---|---:|---:|---|
-| macOS/shared-core slice | 15 partial, 23 pending | 0/38 | Full pane layout, commentary, parallel views, search, bookmarks/annotations, editors, installation, complete settings/data migration, accessibility/translation and release packaging |
+| macOS/shared-core slice | 16 partial, 22 pending | 0/38 | Full pane layout, commentary, parallel views, search, bookmarks/annotations, editors, installation, complete settings/data migration, accessibility/translation and release packaging |
 | WinUI 3 | 0 initial frontend entries, 38 pending | 0/38 | Native frontend/tooling, shared-core integration, full workflows and validation |
 | GTK4 | Scoped existing macOS-preview capability set; see Linux handoff | 0/38 | Manual visual/input/accessibility/corpus validation, accelerated rendering and full workflows beyond both previews |
 

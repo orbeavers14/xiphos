@@ -5,8 +5,8 @@ Updated 2026-10-16. Read [AGENTS.md](../../AGENTS.md), the
 
 ## Checked shared-core handoff
 
-Branch `master`, fork `orbeavers14/xiphos`. Active shared/native claim: book navigation controls
-consuming the checked shared operations. The usage window refreshed automatically;
+Branch `master`, fork `orbeavers14/xiphos`. Active native claim: book footnote clicks
+consuming the checked shared note operation. The usage window refreshed automatically;
 no reset credit was consumed. Preserve Windows lane, `.DS_Store`, GTK3, tests and
 licenses. Keep all checks local; fetch before overlapping edits.
 
@@ -50,7 +50,7 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At navigation `0b81ec5` and Swift transport `aa3b307`: **95/95 Mac/core**,
+At native controls `d65aabc`, navigation `0b81ec5` and Swift transport `aa3b307`: **96/96 Mac/core**,
 **78/78 portable Linux/core on this Mac**, focused navigation/entry/session
 **ASan/UBSan 3/3** and strict C11 pass. Latest full runs are clean. Prior `eb33f2a`
 had a Mac paging timeout and sanitizer fixture timeout despite success output;
@@ -97,10 +97,10 @@ No complete functional or visual parity is claimed.
 
 ## Next bounded work
 
-1. Active shared/native milestone: book tree/navigation controls consuming
-   shared selection, with Swift adapters containing no duplicate core policy.
-   Full saved-tab XML, visibility/fallback context and round-trip profile writes
-   remain separate acceptance gates; explicit file restore is now implemented.
+1. Active native milestone: exact-source book footnote clicks through the shared
+   note command. Native tree/key/navigation controls `d65aabc` passed model and
+   disposable-window checks. Full saved-tab XML, visibility/fallback context and
+   round-trip writes remain separate gates; explicit file restore is implemented.
 2. Fedora: rebuild default-ON GTK; verify heading click/hover and source/body
    separation, linked chapters, numbering/spacing, profiles and real input.
 3. Windows: continue native compiler/dependency/core setup in its own lane.

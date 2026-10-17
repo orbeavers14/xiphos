@@ -362,10 +362,14 @@ configured selections and optional restores before releasing C results. Strings
 reject embedded NUL; numeric prefix/default/path interpretation remains in C++.
 `swift_book_adapter` checks both restore modes, explicit profile import, root
 identity, paging, isolation, failure neutrality and copies surviving shutdown.
-Native controls are in progress; complete saved-tab restoration, visibility and
+Mac native controls now route eligible modules into the lower-right book pane,
+with core commands and bounded, read-only contents browsing. Direct input uses
+the display-key decoder; failed reads retain presentation. Model and disposable
+window checks cover this subset. Full visual/corpus/accessibility acceptance,
+complete saved-tab restoration, visibility and
 round-trip writes remain separate gates.
 
-The next slices include native tree/navigation controls and saved-tab/visibility
+The next slices include native note clicks and saved-tab/visibility
 integration, image/resource routing, links, history/persistent selection,
 additional book windows and editors. Preserve the GTK3 app and all its write
 paths. No complete F10, corpus, platform or legacy-retirement gate is accepted
