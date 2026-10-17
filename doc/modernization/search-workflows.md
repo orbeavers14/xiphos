@@ -28,10 +28,10 @@ UI write to SDK state. No second search manager belongs in a native frontend.
 
 | Requirement | Source | Native status |
 |---|---|---|
-| Sidebar mode/case/bounds/last scope | src/main/search_sidebar.cc | Indexed text policy extracted; service work active |
-| Backend results/index/scopes/cancel | src/backend/sword_main.cc | Extraction pending |
+| Sidebar mode/case/bounds/last scope | src/main/search_sidebar.cc | Shared policy/modes/case/bounds checked; last-scope characterization checked, implementation pending |
+| Backend results/index/scopes/cancel | src/backend/sword_main.cc | Owned results/explicit bounds/cooperative cancel checked; complete scopes/index workflows pending |
 | Multi-module/index/attribute/result handling | src/main/search_dialog.cc | Pending |
-| Progress/events/native preview/export | src/gtk/search_dialog.c; src/main/search_sidebar.cc | Pending |
+| Progress/events/native preview/export | src/gtk/search_dialog.c; src/main/search_sidebar.cc | Core progress/cancel checked; native controls/preview/export pending |
 
 ## First shared policy
 
@@ -44,12 +44,11 @@ history. Removing the old early GString allocation also avoids retaining it on
 the sidebar's empty-input return. Focused normal, sanitizer and native-disabled
 legacy-library evidence is recorded with the implementation checkpoint.
 
-The first execution seam should copy bounded results under the existing FIFO
-worker, retain requested/effective query/mode/case context, restore temporary
-filter settings, and keep reading/history/session state independent. Result
-limits alone do not bound SDK search execution or internal result memory.
-Bounds/last-search, complete cancellation/progress, advanced/indexed execution,
-all module families, corpus/locale and native workflow acceptance remain gates.
+The initial FIFO execution seam copies bounded results and query context, restores
+temporary settings and leaves reading/history/session publication independent.
+Bounds on copied output do not bound SDK execution or internal result memory.
+Complete last-search, advanced/indexed execution, all module families, corpus/
+locale and native workflow acceptance remain gates.
 
 The [official SDK source](https://www.crosswire.org/sword/apiref/swmodule_8cpp_source.html)
 helps identify search ownership and backend-dependent case flags, but is an older
@@ -66,8 +65,9 @@ as the backend does. Actual indexed execution remains unvalidated here. Output
 is at most 10,000 copied references/8 MiB, with smaller defaults (1,000/1 MiB).
 When a bound is reached, only complete prefix references are returned and the
 limited flag is set; the SDK's own execution/internal results are not bounded.
-Queries are nonempty UTF-8 without NUL, at most 32 KiB. No range/last-search,
-active cancellation, progress exposure, index creation or UI is added yet.
+Queries are nonempty UTF-8 without NUL, at most 32 KiB. Optional bounds and
+cooperative controls are described below. Last-search, index creation and native
+UI remain pending.
 
 The three temporary accent/vowel settings restore per-filter values, including
 strip failures. Attribute processing and skip-link flags restore as well. The
@@ -95,13 +95,12 @@ strings outlive later jobs and worker shutdown until result release. Invalid
 mode/case/limits/NULL inputs clear the output; accepted SDK/source failures have
 no partial payload. Search leaves reading, book selection and Bible/dictionary
 histories independent across tabs. Swift actor adapters copy the same result
-without parsing, scanning modules or managing a separate search engine. No
-native search controls or active cancellation/progress are introduced yet.
+without parsing, scanning modules or managing a separate search engine. Native
+search controls remain pending; core cancellation/progress is described below.
 
-At this checkpoint: 120/120 Mac/core, 93/93 portable Linux/core checks on Mac,
-three focused ASan/UBSan checks, and strict C11 pass locally. Three focused
-core/Swift adapter checks also pass. SDK dependencies are not fully instrumented;
-leak detection is off. Current Fedora/Windows acceptance remains pending.
+Current consolidated commands, checked revisions and counts are in the
+[Mac handoff](handoff-macos.md). Dependency instrumentation is partial; leak
+checks are off. Mac-hosted portable tests do not validate Fedora/Windows.
 
 ## Cooperative search control (current implementation)
 
@@ -132,12 +131,9 @@ the rolling handoff; dependency instrumentation is partial, and multiple SDK
 regex/index backends, Windows/Fedora, last-search, attributes, full progress
 UI/preview/export and corpus/locale workflows still need acceptance.
 
-Control checkpoint evidence: 121/121 Mac/core and 94/94 portable core on Mac
-passed before the final owner-thread callback guard. After that guard, four
-focused core/Swift checks, four ASan/UBSan and two TSan checks passed. A controlled
-foreign-thread SDK callback verified it can report progress but cannot set the
-stop flag; the subsequent owner callback performs interruption. All tests are
-local, with SDK dependency instrumentation limits retained.
+A controlled foreign-thread callback verifies atomic progress without SDK stop
+writes, followed by owner-thread interruption. See the handoff for normal,
+address/undefined and thread sanitizer evidence.
 
 ## Explicit search bounds
 
@@ -164,8 +160,42 @@ own borrowed text buffer; copying that text first fixes the observed use-after-f
 in the retained GTK path. The extracted actual routine is exercised with sanitizers;
 a full GTK3 build/runtime is still pending on its dependency environment.
 
-Next: characterize per-tab last-search scope. It must retain complete owned SDK
+Next: implement per-tab last-search scope after the characterization below. It
+must retain complete owned SDK
 keys independently of the bounded public result prefix, and publish atomically
 with an explicit failure/cancellation policy. Do not implement it by reusing the
 visible truncated reference array. Native search controls, advanced/multiple-module/
 attribute/index management, preview/navigation/export and full corpus remain open.
+
+## Last-search scope characterization (implementation pending)
+
+The range test now extracts the actual `clear_search_list`, `set_range`,
+`set_scope2range`, `set_scope2last_search` and backend execution routines.
+Original-prose tests establish this sequence on the installed SDK:
+
+| Trigger | Current visible results | Next legacy last-search scope |
+|---|---|---|
+| Successful unscoped or bounded search | Returned SDK keys | Full copied SDK result keys |
+| Search within last results | Matches within previous keys, including another verse module | Newly narrowed full keys |
+| Executed search with no matches | Empty | Empty |
+| Last-search requested when scope empty | Empty; SDK search skipped | Remains empty |
+| Missing module | Empty; error | Previous keys retained |
+| SDK throws before returning | Empty; exception | Previous keys retained |
+| SDK returns partial keys with stop flag set | Partial keys | Those partial keys replace previous scope |
+| Explicit clear | Existing results unaffected by clear itself | Empty |
+
+Repeated narrowing and independent copied lists are checked. The deterministic
+partial-return/exception cases inject a test-only SDK module on the engine owner;
+they establish backend assignment policy, not actual indexed cancellation latency.
+No native last-search request exists yet. Legacy storage is backend-global;
+native per-tab ownership is a design boundary that must be explicit and tested.
+
+Sidebar setup clears the selected scope pointer before choosing bounds/last,
+clears stored last results for explicit bounds, and uses the main Bible as bounds
+source even for a commentary target. Advanced setup uses its first selected verse
+module for custom bounds; unbounded mode clears stored keys and mixed non-verse
+selections disable custom ranges. The two UIs must not be treated as identical
+reset policies. A native atomic command may improve failure publication, but any
+deliberate difference from the table needs documented rationale and tests. In
+particular, do not silently keep the previous scope on every cancelled execution
+and claim that reproduces the legacy partial-return policy.
