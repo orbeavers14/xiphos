@@ -448,3 +448,30 @@ configuration before implementing resource I/O/native viewers. Legacy strips a
 leading `file:` and accepts eight lowercase image suffixes; clicked images go to
 a platform viewer and hover shows the filename. Relative/file-prefix/base-path
 semantics must be recorded rather than guessed. No asset loading is claimed yet.
+
+## Image command context and bounded local resources
+
+`b3f1198` compares typed image filenames against the extracted actual legacy
+showImage branch, for clicked/hover paths, file-prefix forms, Unicode and all eight
+case-sensitive suffixes. Declared URI modules are retained as metadata; the legacy
+image branch does not rebase the filename using them. Worker/C results own copied
+SDK DataPath, AbsoluteDataPath, PrefixPath and PreferredCSSXHTML values, preserving
+missing/empty distinctions and leaving selection/history/SDK attributes unchanged.
+
+The SDK metadata test confirms that AbsoluteDataPath supplies the directory even
+for a RawGenBook file-prefix DataPath. The [CrossWire SWMgr source](https://www.crosswire.org/sword/apiref/swmgr_8cpp_source.html)
+describes this distinction; local tests validate the installed SDK behavior.
+
+`bd487b4` reads local regular image files inside that canonical SDK directory,
+with a 16 MiB cap and no truncation. Relative and contained absolute/file forms
+are supported; outside paths, escaping symlinks, authorities/UNC, drive-relative
+forms and nonregular files reject. Contained symlinks work. The shared bounded
+binary reader also backs preferences with their existing error behavior retained.
+Observed path/size/time changes reject; files are not locked/frozen across requests.
+MIME is a filename hint, not an image decoder result. Empty/binary/NUL data and
+owned C copies survive worker shutdown; module/config/profile bytes stay unchanged.
+
+Local checks: 107/107 Mac/core, 85/85 portable Linux/core on Mac, focused
+ASan/UBSan 9/9 and C11. Native separate-image preview is next. Inline resource
+routing, image sizing, CSS files, other formats/corpus, Windows/GTK runtime and
+remaining full book workflows stay pending. No complete F10 acceptance.

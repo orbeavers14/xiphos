@@ -222,6 +222,15 @@ then passed app/model builds and nine focused checks. Window controls/spacing/ro
 refresh/header were checked; actual asset loading and full font/corpus/RTL were
 not. Next: image-command/resource-context characterization. Whole parity unchanged.
 
+Image command/resource context `b3f1198` matches actual legacy file-prefix/suffix
+handling and copies SDK resource metadata. Bounded local bytes `bd487b4` use the
+SDK directory, a 16 MiB cap, canonical path constraints and shared binary reading
+also reused by preferences. Owned byte/source results survive shutdown; reads do
+not publish selections or modify module/profile bytes. Local **107/107 Mac/core**,
+**85/85 portable Linux/core on Mac**, focused **ASan/UBSan 9/9** and C11 pass.
+Native separate-image preview is active next; inline images, sizing, CSS, decoder/
+corpus and cross-platform GUI acceptance remain pending. Whole parity unchanged.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three

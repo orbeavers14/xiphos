@@ -5,8 +5,8 @@ Updated 2026-10-16. Read [AGENTS.md](../../AGENTS.md), the
 
 ## Checked shared-core handoff
 
-Branch `master`, fork `orbeavers14/xiphos`. Active shared claim: legacy image-command
-and copied SDK resource-context characterization before resource I/O.
+Branch `master`, fork `orbeavers14/xiphos`. Active shared/native claim: separate image preview
+using core-owned click dispatch and bounded image bytes.
 No reset credit or hosted build was used. Preserve Windows lane, `.DS_Store`, GTK3,
 tests and licenses.
 
@@ -51,12 +51,9 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At shared presentation `86e4ad0` and native controls `614a81d`: full local
-**105/105 Mac/core**, **83/83 portable Linux/core on this Mac**, focused
-**ASan/UBSan 7/7** and C11 pass. The final compact menu adjustment then passed
-app/model builds and nine focused book/adapter checks. Disposable windows checked
-controls, spacing, root/draft refresh and header layout; real asset loading was not
-checked. Latest full runs are clean. Prior `eb33f2a`
+At image context `b3f1198` and local bytes `bd487b4`: **107/107 Mac/core**,
+**85/85 portable Linux/core on this Mac**, focused **ASan/UBSan 9/9** and C11 pass.
+The native image viewer/inline resource loading are not implemented yet. Latest full runs are clean. Prior `eb33f2a`
 had a Mac paging timeout and sanitizer fixture timeout despite success output;
 isolated reruns passed without source or timeout changes. Preserve that evidence
 in status/history. SDK dependencies are not fully instrumented; leaks are off.
@@ -101,10 +98,10 @@ No complete functional or visual parity is claimed.
 
 ## Next bounded work
 
-1. Active shared milestone: characterize showImage commands and copied SDK
-   resource context. Preserve actual `file:`/suffix behavior and record base-path
-   differences before implementing I/O/native viewers. Display snapshots/controls
-   are checked; resource loading, note numbering, full saved tabs and writes remain open.
+1. Active shared/native milestone: typed core click dispatch into a separate
+   native image preview, with image decode off the UI thread. Bounded local bytes
+   and exact SDK base context are checked. Inline resources, CSS, remaining image
+   formats/corpus, note numbering and saved-tab/write acceptance remain pending.
 2. Fedora: rebuild default-ON GTK; verify heading click/hover and source/body
    separation, linked chapters, numbering/spacing, profiles and real input.
 3. Windows: continue native compiler/dependency/core setup in its own lane.
