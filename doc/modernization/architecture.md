@@ -376,7 +376,11 @@ The shared selection boundary applies the legacy numeric reading minimum;
 explicit root paths retain root identity. Per-tab publication stages owned source
 state after successful configured rendering. Explicit profile-file restore queues
 read-only XML import through this same operation on the single worker; failure
-retains committed state. Native controls, complete saved-tab restoration and
-book-specific display/link/history rules remain subsequent seams. No additional
+retains committed state. Shared configured DisplayLevel documents now capture
+owned root/section sources and combined raw HTML, matching actual legacy traversal
+within explicit bounds. Worker/C transport uses the same option policy without
+publishing a selection. Scoped Mac navigation and ordinary note controls are checked;
+atomic document publication, descendant-note routing, full saved-tab restoration
+and remaining book display/link/history rules are subsequent seams. No additional
 engine or frontend navigation policy is introduced; GTK3 book/editor paths remain
 intact.

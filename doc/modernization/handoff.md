@@ -21,9 +21,9 @@ publication `0af4593`, SDK resolution `eb33f2a` and typed restore contexts `929c
 Latest `106577b` applies the legacy numeric reading minimum at the shared selection
 boundary while preserving explicit root-path reads. Failed imports/rendering retain
 committed state; read-only calls and absent restore are neutral.
-Latest shared navigation `0b81ec5` and Swift transport `aa3b307` pass
-**96/96 Mac/core**, **78/78 portable Linux/core on Mac**, focused
-**ASan/UBSan 3/3**, and strict C11. All checks ran locally. Native book
+Latest configured document source `219d299` and worker/C transport `799ab02` pass
+**98/98 Mac/core**, **80/80 portable Linux/core on Mac**, focused
+**ASan/UBSan 4/4**, and strict C11. All checks ran locally. Native book
 controls `d65aabc` now have scoped model/window evidence; full workflow, saved-tab
 integration and profile writes remain pending.
 See [book workflows](book-tree-workflows.md). Current GTK runtime/MSVC/WinUI
@@ -39,7 +39,7 @@ remains in status/history; the latest full runs are clean.
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
 The owner renewed continued shared-core work until usage runs out. The five-hour window refreshed automatically; active Mac
-work is shared configured DisplayLevel document characterization. No reset
+work is atomic book document publication and rendered-section note routing. No reset
 credit or hosted builds are authorized by this continuation. No whole parity or
 legacy-retirement gate is accepted by scoped checks.
 
@@ -47,7 +47,7 @@ legacy-retirement gate is accepted by scoped checks.
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Configured DisplayLevel document characterization | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Atomic document selection and rendered-section note routing | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

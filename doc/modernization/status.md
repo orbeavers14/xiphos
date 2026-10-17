@@ -193,6 +193,15 @@ Mac/core passes **96/96**, all locally. Active next seam: legacy configured
 `DisplayLevel` descendant rendering, characterized against the extracted helper.
 No whole parity or completion-percentage increase is accepted.
 
+Configured DisplayLevel source `219d299` matches extracted legacy traversal and
+retains owned section identities through empty/linked nodes. Read-only worker/C
+transport `799ab02` keeps module/tab options and selection/history neutrality.
+Local checks: **98/98 Mac/core**, **80/80 portable Linux/core on Mac**, focused
+**ASan/UBSan 4/4**, strict C11 and C++17 decoder. Explicit bounds reject whole
+results; no partial document is accepted. Atomic publication and rendered-section
+note routing are active next; native multi-section consumption, display cleanup,
+resources and full parity remain pending.
+
 ## Overall completion estimate
 
 Last pre-Linux-catch-up estimate: approximately **8% complete** toward a validated native release on all three

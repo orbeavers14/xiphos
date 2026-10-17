@@ -385,14 +385,27 @@ Book and verse-reference sidebar previews replace each other. Model/adapter test
 and an original-prose disposable window verified marker → correct body and
 navigation cleanup. Full Mac/core suite: 96/96; no new core policy or whole parity.
 
-## Active next seam: configured display depth
+## Configured display-depth source and transport
 
 Legacy `GTKEntryDisp::display` reads `DisplayLevel` (absent defaults to one).
 For values above one, actual `_render_display_level` walks selected node and
 children depth-first in SDK sibling order, adds `<br/><hr/>` between nonempty
 rendered sections, and restores the selected cursor. Empty branches still lead
 to descendants; linked entries retain their own tree source. This workflow is
-not implemented by the single-entry native read yet. The next shared seam will
-compare copied document sections and combined HTML against the extracted legacy
-helper, with explicit bounds/failure behavior. Descendant note routing, shared
-display cleanup and native document publication remain separate integration gates.
+not applied by the single-entry native read yet. Shared source `219d299` and
+queued transport `799ab02` now return owned root/section sources and raw combined
+HTML. The SDK traversal is iterative; limits are 64 relative levels, 4096 visited
+nodes and 8 MiB combined HTML, with smaller limits available to direct C++ readers.
+Bound failures reject the whole document. Selected cursor and processing flags
+are restored across tested bounds and injected descendant-render failures; module
+data bytes remain unchanged. The bounded DisplayLevel decoder preserves defined
+atoi prefixes/defaults/signs and rejects overflow/NUL/oversized input.
+
+`core_book_document` compares actual legacy rendering across depths, roots,
+entryless branches, linked entries and engine options. `core_book_document_worker`
+checks existing module-over-tab options, FIFO policy, read-only selection/history,
+borrowed section getters, take-once C ownership and copies surviving shutdown.
+At `799ab02`: 98/98 Mac/core, 80/80 portable Linux/core on Mac and focused
+ASan/UBSan 4/4; C11 and strict C++17 decoder checks pass. These checks are local.
+Atomic document publication and rendered-section note routing are the active
+next shared seam. Display cleanup and native document consumption remain pending.

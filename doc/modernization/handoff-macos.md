@@ -5,32 +5,28 @@ Updated 2026-10-16. Read [AGENTS.md](../../AGENTS.md), the
 
 ## Checked shared-core handoff
 
-Branch `master`, fork `orbeavers14/xiphos`. Active shared claim: configured DisplayLevel document
-characterization against the actual legacy traversal. The usage window refreshed automatically;
-no reset credit was consumed. Preserve Windows lane, `.DS_Store`, GTK3, tests and
-licenses. Keep all checks local; fetch before overlapping edits.
+Branch `master`, fork `orbeavers14/xiphos`. Active shared claim: atomic book
+document publication and rendered-section note routing. No reset credit or hosted
+build was used. Preserve Windows lane, `.DS_Store`, GTK3, tests and licenses.
 
-Latest `106577b` shares the legacy numeric reading minimum of 4 across typed
-selection and decoded restores. Explicit root paths and low-level source queries
-retain root 0; requested intent remains available in the per-tab snapshot.
-Profile-file restore `47fc462` queues bounded XML import and selection on the
-single engine worker, copying the explicit path before returning to C callers.
-Malformed/missing/unsupported inputs preserve committed state and source files.
-No home/profile discovery, writes, locale changes or native controls are included.
+Latest source `219d299` captures configured DisplayLevel documents against the
+actual legacy traversal. Worker/C `799ab02` copies root, sections and raw combined
+HTML with existing tab/module option precedence. It is read-only and does not
+replace committed book selection. Bounds reject the whole result. Native document
+publication, descendant note routing and display cleanup remain separate gates.
 
-Per-tab publication `0af4593` commits owned requested/resolved sources only after
-validation, configured rendering and staging. SDK resolution `eb33f2a` checks
-errors before copying nodes and preserves successful relative/root normalization.
-Decoder `929c8d8` keeps initial-window offsets distinct from tab/display keys;
-read-only profile import `1a19c1d` preserves raw values. Optional queued C results
-retain explicit presence and take-once ownership. Absent restore is a no-op.
+Native key/tree/navigation controls `d65aabc` and ordinary note clicks `bb6b2a7`
+consume shared operations; disposable windows checked their scoped behavior.
+Shared navigation `0b81ec5` retains legacy numeric reading minimum four and root
+path distinction. Explicit file restore `47fc462`, selection `0af4593`, SDK
+resolution `eb33f2a`, decoder `929c8d8` and raw profile import `1a19c1d` preserve
+separate initial-window/display contexts and successful-only per-tab publication.
+No profile discovery/writes or full saved-tab/visibility workflow is implemented.
 
-Book sources/render/worker-C/paging/capability/notes/URI contracts are in
-[book workflows](book-tree-workflows.md), with implementations `6f61997`, `6b2399c`,
-`b9c0a34`, `f35b6dd`, `b49c823`, `9888bf0`, `045f27e`. One engine/FIFO, owned
-results and existing module/tab option precedence remain intact. Native book
-controls, URI presentation, images, full saved-tab integration and editors are
-pending. Existing verse URI validation remains strict. No full F10 acceptance.
+Contracts and earlier source/render/paging/note checkpoints are in
+[book workflows](book-tree-workflows.md). One engine/FIFO, owned copies and strict
+verse URI validation remain intact. Full corpus/visual/platform acceptance,
+images/resources, generalized book links and editors remain pending. No full F10.
 
 Prior lexical, spacing, note-numbering, native heading-link and SDK recovery
 behavior/evidence remains in the linked contracts and versioned handoffs.
@@ -50,9 +46,9 @@ and the linked workflow documents. Their older next-task statements are historic
 
 ## Actual local checks
 
-At native controls `d65aabc`, navigation `0b81ec5` and Swift transport `aa3b307`: **96/96 Mac/core**,
-**78/78 portable Linux/core on this Mac**, focused navigation/entry/session
-**ASan/UBSan 3/3** and strict C11 pass. Latest full runs are clean. Prior `eb33f2a`
+At document source `219d299` and worker/C `799ab02`: **98/98 Mac/core**,
+**80/80 portable Linux/core on this Mac**, focused document/worker/entry/session
+**ASan/UBSan 4/4**, C11 and strict C++17 decoder checks pass. Latest full runs are clean. Prior `eb33f2a`
 had a Mac paging timeout and sanitizer fixture timeout despite success output;
 isolated reruns passed without source or timeout changes. Preserve that evidence
 in status/history. SDK dependencies are not fully instrumented; leaks are off.
@@ -97,11 +93,10 @@ No complete functional or visual parity is claimed.
 
 ## Next bounded work
 
-1. Active shared milestone: configured DisplayLevel document characterization.
-   Native note clicks `bb6b2a7` passed 96/96 Mac/core plus disposable marker/body
-   and stale-note cleanup checks. Use the actual legacy traversal as oracle;
-   keep raw single-entry APIs stable. Native document publication, cleanup and
-   descendant link routing follow after owned source tests.
+1. Active shared milestone: atomic document selection and rendered-section note
+   routing. Keep raw single-entry and read-only document APIs stable. Follow with
+   matching native document consumption, display cleanup and resources. Full saved-tab
+   XML, visibility/fallback and round-trip writes remain separate gates.
 2. Fedora: rebuild default-ON GTK; verify heading click/hover and source/body
    separation, linked chapters, numbering/spacing, profiles and real input.
 3. Windows: continue native compiler/dependency/core setup in its own lane.
