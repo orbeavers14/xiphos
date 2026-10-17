@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/worker.hpp"
 #include "xiphos/core/profile.hpp"
+#include "search_control.hpp"
 #include "xiphos/core/note_presentation.h"
 #include <condition_variable>
 #include <deque>
@@ -81,11 +82,11 @@ struct StudyWorker::Impl {
     }
     // State, then sessions/reader, are destroyed here on the engine thread.
   }
-  template<class F> auto submit(F operation) {
+  template<class F> auto submit(F operation,std::shared_ptr<SearchControl> failure_control = {}) {
     using Result = std::invoke_result_t<F, State &>;
     auto task = std::make_shared<std::packaged_task<Result(State *, std::exception_ptr)>>(
-      [operation = std::move(operation)](State *state, std::exception_ptr error) mutable -> Result {
-        if (error) std::rethrow_exception(error);
+      [operation = std::move(operation),failure_control=std::move(failure_control)](State *state, std::exception_ptr error) mutable -> Result {
+        if (error) { detail::SearchControlAccess::fail_if_queued(failure_control); std::rethrow_exception(error); }
         return operation(*state);
       });
     auto future = task->get_future();
@@ -103,8 +104,15 @@ StudyWorker::~StudyWorker() = default;
 std::future<std::vector<Module>> StudyWorker::modules() {
   return impl_->submit([](Impl::State &s) { return s.reader.modules(); });
 }
+StudySearch StudyWorker::search_module_task(StudyTab tab,SearchQuery query,SearchLimits limits) {
+  StudySearch task{std::make_shared<SearchControl>(),{}};
+  task.result=impl_->submit([tab,query=std::move(query),limits,control=task.control](Impl::State &s){
+    try{return s.tab(tab).search_module(query,limits,control);}
+    catch(...){detail::SearchControlAccess::fail_if_queued(control);throw;}
+  },task.control);return task;
+}
 std::future<SearchResult> StudyWorker::search_module(StudyTab tab,SearchQuery query,SearchLimits limits) {
-  return impl_->submit([tab,query=std::move(query),limits](Impl::State &s){return s.tab(tab).search_module(query,limits);});
+  return search_module_task(tab,std::move(query),limits).result;
 }
 std::future<BookTree> StudyWorker::book_tree(std::string module, std::uint64_t offset) {
   return impl_->submit([module = std::move(module), offset](Impl::State &s) { return s.reader.book_tree(module, offset); });

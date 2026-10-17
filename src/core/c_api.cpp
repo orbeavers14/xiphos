@@ -6,6 +6,7 @@
 #include <type_traits>
 #include "xiphos/core/worker.hpp"
 #include "xiphos/core/session.hpp"
+#include "search_control.hpp"
 struct xc_reader { std::shared_ptr<xiphos::core::Reader> value; explicit xc_reader(const char *p) : value(std::make_shared<xiphos::core::Reader>(p ? p : "")) {} };
 struct xc_session {
   std::shared_ptr<xiphos::core::Reader> owner;
@@ -84,6 +85,7 @@ struct xc_request {
   std::unique_ptr<xc_dictionary_entry> dictionary;
   std::unique_ptr<xc_book_tree> book_tree;
   std::unique_ptr<xc_book_entry> book_entry;
+  std::shared_ptr<xiphos::core::SearchControl> search_control;
   std::unique_ptr<xc_search> search_result;
   std::unique_ptr<xc_book_document> book_document;
   std::unique_ptr<xc_book_image> book_image;
@@ -232,7 +234,7 @@ template<class T> struct Request final : xc_request {
       if constexpr (std::is_void_v<T>) future.get();
       else store(future.get());
       status = XC_OK;
-    } catch (...) { status = failure(); }
+    } catch (...) { xiphos::core::detail::SearchControlAccess::fail_if_queued(search_control); status = failure(); }
   }
 };
 template<class F> struct FutureValue;
@@ -589,16 +591,34 @@ xc_status xc_worker_search_module(xc_worker *w,uint64_t tab,const char *module,c
   if(!module||!expression||copy.mode<XC_SEARCH_REGEX||copy.mode>XC_SEARCH_WORDS||
      (copy.case_sensitive!=0&&copy.case_sensitive!=1)||!copy.max_results||copy.max_results>xiphos::core::maximum_search_results||
      !copy.max_reference_bytes||copy.max_reference_bytes>xiphos::core::maximum_search_reference_bytes){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
-  return queue_request(w,out,[=](auto &worker){return worker.search_module(tab,
+  if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;if(!w)return XC_INVALID_ARGUMENT;
+  try{
+    // Observe before acceptance, as other core jobs do. A discarded observer
+    // does not own SDK lifetime; the worker retains the control until completion.
+    auto request=std::make_unique<Request<xiphos::core::SearchResult>>();
+    auto task=w->value.search_module_task(tab,
       {module,expression,static_cast<xiphos::core::SearchMode>(copy.mode),copy.case_sensitive!=0},
-      {copy.max_results,copy.max_reference_bytes});});
+      {copy.max_results,copy.max_reference_bytes});
+    request->search_control=std::move(task.control);request->future=std::move(task.result);
+    *out=request.release();return XC_OK;
+  }catch(...){return failure();}
 }
 xc_search *xc_request_take_search(xc_request *r){return r&&r->status==XC_OK?r->search_result.release():nullptr;}
 xc_status xc_search_get_info(const xc_search *result,xc_search_info *out){
   if(!out)return XC_INVALID_ARGUMENT;*out={};if(!result)return XC_INVALID_ARGUMENT;
   const auto &value=result->value;
   *out={static_cast<int>(value.requested.mode),value.engine_type,value.requested.case_sensitive?1:0,
-        value.limited?1:0,value.total_results,value.references.size()};return XC_OK;
+        value.limited?1:0,value.total_results,value.references.size(),value.cancelled?1:0,value.executed?1:0};return XC_OK;
+}
+xc_status xc_request_cancel_search(xc_request *request){
+  if(!request||!request->search_control)return XC_INVALID_ARGUMENT;
+  request->search_control->request_cancel();return XC_OK;
+}
+xc_status xc_request_search_progress(const xc_request *request,xc_search_progress *out){
+  if(!out)return XC_INVALID_ARGUMENT;*out={};
+  if(!request||!request->search_control)return XC_INVALID_ARGUMENT;
+  const auto &control=*request->search_control;
+  *out={static_cast<int>(control.phase()),control.percent(),control.cancel_requested()?1:0};return XC_OK;
 }
 const char *xc_search_module(const xc_search *r){return r?r->value.requested.module.c_str():nullptr;}
 const char *xc_search_expression(const xc_search *r){return r?r->value.requested.expression.c_str():nullptr;}

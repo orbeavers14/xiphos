@@ -5,5 +5,5 @@ namespace sword { class SWModule; }
 namespace xiphos::core { class EngineManager;
 namespace detail {
 SearchResult capture_module_search(EngineManager &manager,sword::SWModule &module,
-                                  SearchQuery query,const SearchLimits &limits);
+                                  SearchQuery query,const SearchLimits &limits,const std::shared_ptr<SearchControl> &control = {});
 }}

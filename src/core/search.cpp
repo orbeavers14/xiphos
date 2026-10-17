@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "search_source.hpp"
+#include "search_control.hpp"
 #include "xiphos/core/search_policy.hpp"
 #include "xiphos/core/engine_manager.hpp"
 #include "xiphos/core/presentation.hpp"
@@ -9,6 +10,7 @@
 #include <listkey.h>
 #include <glib.h>
 #include <stdexcept>
+#include <thread>
 namespace xiphos::core::detail {
 namespace {
 class ScopedSearchFilters {
@@ -33,9 +35,17 @@ struct ScopedSearchModule {
   explicit ScopedSearchModule(sword::SWModule &m):module(m),attributes(m.isProcessEntryAttributes()),skip_links(m.isSkipConsecutiveLinks()){}
   ~ScopedSearchModule(){module.setProcessEntryAttributes(attributes);module.setSkipConsecutiveLinks(skip_links);module.terminateSearch=false;}
 };
+struct ProgressContext {sword::SWModule *module;SearchControl *control;std::thread::id owner;};
+void search_percent(char percent,void *user) noexcept {
+  auto &context=*static_cast<ProgressContext *>(user);
+  if(!context.control)return;
+  SearchControlAccess::progress(*context.control,static_cast<unsigned char>(percent));
+  // Only the owning engine callback touches the SDK's non-atomic flag.
+  if(std::this_thread::get_id()==context.owner&&context.control->cancel_requested())context.module->terminateSearch=true;
+}
 }
 SearchResult capture_module_search(EngineManager &manager,sword::SWModule &module,
-                                  SearchQuery query,const SearchLimits &limits) {
+                                  SearchQuery query,const SearchLimits &limits,const std::shared_ptr<SearchControl> &control) {
   if(query.module.empty()||query.module.find('\0')!=std::string::npos||query.expression.empty()||
      query.expression.size()>32768||query.expression.find('\0')!=std::string::npos||
      !g_utf8_validate(query.expression.data(),query.expression.size(),nullptr))
@@ -56,10 +66,18 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
         sword::SWModule::SEARCHTYPE_EXTERNAL:sword::SWModule::SEARCHTYPE_MULTIWORD;break;
     default:throw std::invalid_argument("Unknown search mode");
   }
+  if(control&&control->cancel_requested()) {
+    SearchResult result{std::move(query),{},engine_type,0,{},false};result.cancelled=true;return result;
+  }
   ScopedSearchFilters filters(manager);ScopedSearchModule state(module);
   auto prepared=sidebar_search_text(query.expression,engine_type==sword::SWModule::SEARCHTYPE_EXTERNAL);
   const std::string stripped=module.stripText(prepared.c_str()).c_str();
-  auto &list=module.search(stripped.c_str(),engine_type,query.case_sensitive?0:XIPHOS_SWORD_SEARCH_ICASE_FLAG);
+  if(control&&control->cancel_requested()) {
+    SearchResult result{std::move(query),stripped,engine_type,0,{},false};result.cancelled=true;return result;
+  }
+  ProgressContext context{&module,control.get(),std::this_thread::get_id()};
+  auto &list=module.search(stripped.c_str(),engine_type,query.case_sensitive?0:XIPHOS_SWORD_SEARCH_ICASE_FLAG,
+                           nullptr,nullptr,search_percent,&context);
   if(engine_type==sword::SWModule::SEARCHTYPE_EXTERNAL)list.sort();
   if(list.getCount()<0)throw std::runtime_error("SDK search returned an invalid count");
   SearchResult result{std::move(query),stripped,engine_type,static_cast<std::uint64_t>(list.getCount()),{},false};
@@ -70,6 +88,7 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
     if(result.references.size()==limits.max_results||reference.size()>limits.max_reference_bytes-bytes){result.limited=true;break;}
     bytes+=reference.size();result.references.push_back(reference);list++;
   }
+  result.executed=true;result.cancelled=control&&control->cancel_requested();
   return result;
 }
 }

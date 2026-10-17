@@ -41,8 +41,8 @@ public:
   const std::vector<Module> &modules() const;
   // Initial whole-module Bible/regular-commentary search, with copied bounded
   // output and scoped accent/vowel filter settings. No history, session scope,
-  // index creation, native UI or active cancellation is introduced here.
-  SearchResult search_module(SearchQuery query,const SearchLimits &limits = {});
+  // index creation or native UI. Optional cooperative controls never expose SDK state.
+  SearchResult search_module(SearchQuery query,const SearchLimits &limits = {},std::shared_ptr<SearchControl> control = {});
   // Read-only owned one-hop tree sources. Neither call selects/renders a book,
   // changes history, or writes missing paths. Root offset 0 is not reading
   // startup's legacy offset-4 selection. Unsupported drivers are rejected.

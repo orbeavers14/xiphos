@@ -102,3 +102,39 @@ At this checkpoint: 120/120 Mac/core, 93/93 portable Linux/core checks on Mac,
 three focused ASan/UBSan checks, and strict C11 pass locally. Three focused
 core/Swift adapter checks also pass. SDK dependencies are not fully instrumented;
 leak detection is off. Current Fedora/Windows acceptance remains pending.
+
+## Cooperative search control (current implementation)
+
+Each queued search owns an atomic-only control: queued/running/complete/cancelled/
+failed phase, monotonic 0–100 progress, and a cancellation request. Reader scopes
+mark success/failure, including source validation; worker initialization/unknown
+tab failures cannot strand a queued control. Search cancellation is observed
+before execution and at SDK progress callbacks. Only callbacks on the engine
+owner may change the SDK's non-atomic stop flag; foreign callbacks may update
+atomic progress. Result cancelled/executed fields distinguish a skipped search
+from interrupted execution. A late completion can win; results remain owned and
+state-neutral, with a possibly partial bounded reference prefix.
+
+This is cooperative interruption, not a hard deadline: an SDK backend or a long
+individual operation may not issue callbacks promptly. A percent of 100 alone
+does not establish successful completion; inspect phase and request status. C
+request controls remain available through pending/completed observation, with
+explicit owner lifetime/serialization. Swift search task cancellation signals
+the core and drains the accepted request before discarding its data; other
+accepted operations retain their original cancellation behavior (including
+observing created tab IDs). No native search controls are claimed here.
+
+Deterministic controlled-SDK tests isolate cross-thread requests from owner-only
+interruption, pre-execution stop, failed initialization/tab lookup, completion
+races and successful search after cancellation. Existing whole-module results
+and history/source neutrality remain covered. Final counts/checkpoints are in
+the rolling handoff; dependency instrumentation is partial, and multiple SDK
+regex/index backends, Windows/Fedora, range/last-search, attributes, full progress
+UI/preview/export and corpus/locale workflows still need acceptance.
+
+Control checkpoint evidence: 121/121 Mac/core and 94/94 portable core on Mac
+passed before the final owner-thread callback guard. After that guard, four
+focused core/Swift checks, four ASan/UBSan and two TSan checks passed. A controlled
+foreign-thread SDK callback verified it can report progress but cannot set the
+stop flag; the subsequent owner callback performs interruption. All tests are
+local, with SDK dependency instrumentation limits retained.

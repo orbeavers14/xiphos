@@ -293,7 +293,8 @@ const xc_note *xc_book_note_content(const xc_book_note *note);
 void xc_book_note_release(xc_book_note *note);
 xc_status xc_worker_modules(xc_worker *worker, xc_request **out);
 /* Initial whole-module Bible/regular-commentary search. Owned result only;
- * range/last-search scopes, active cancel/progress and native UI remain pending.
+ * range/last-search scopes and native UI remain pending. Cooperative cancel and
+ * progress are available on this request; no SDK pointer crosses the boundary.
  * Limits bound copied references, not SDK execution/internal result memory.
  * options NULL uses defaults; otherwise initialize defaults before overriding.
  * Boolean/mode/limit errors reject and clear out. Query/module are copied before
@@ -308,7 +309,21 @@ typedef struct {
   int mode, engine_type, case_sensitive, limited;
   uint64_t total_results;
   size_t result_count;
+  int cancelled, executed;
 } xc_search_info;
+typedef enum xc_search_phase {
+  XC_SEARCH_QUEUED=0, XC_SEARCH_RUNNING=1, XC_SEARCH_COMPLETE=2,
+  XC_SEARCH_CANCELLED=3, XC_SEARCH_FAILED=4
+} xc_search_phase;
+typedef struct { int phase; unsigned percent; int cancel_requested; } xc_search_progress;
+/* Best-effort, idempotent stop request. Engine callbacks alone touch SWORD's
+ * non-atomic flag. A late completion may win; copied result cancelled/executed
+ * flags are authoritative. SDK callback frequency limits cancellation latency.
+ * Progress can be terminal before poll transfers data; take still requires OK.
+ * Invalid/non-search request or NULL out returns INVALID_ARGUMENT and clears out.
+ * Request lifetime must be retained/serialized with poll/release by its owner. */
+xc_status xc_request_cancel_search(xc_request *request);
+xc_status xc_request_search_progress(const xc_request *request,xc_search_progress *out);
 /* All strings borrow search ownership until release, survive later jobs/worker
  * close. Info invalid input clears a non-NULL out. Invalid strings/index = NULL. */
 xc_status xc_search_get_info(const xc_search *result,xc_search_info *out);
