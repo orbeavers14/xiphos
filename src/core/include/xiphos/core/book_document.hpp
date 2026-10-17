@@ -27,6 +27,13 @@ struct BookDocumentPresentation {
   std::optional<BookStylesheetResource> stylesheet;
   std::optional<std::string> stylesheet_issue;
 };
+// Legacy combined CleanupContent reads the live final render's Footnote/1/n
+// after traversal restores the selected key. Empty skipped nodes do not replace
+// that metadata. Absent source means the Reader capture capability was not used.
+struct BookDocumentNoteSource {
+  std::string reported_label;
+  std::optional<std::uint64_t> last_rendered_offset;
+};
 struct BookDocument {
   BookTree tree; // Selected source, distinct from descendant/linked section sources.
   std::uint32_t display_level = 1;
@@ -34,6 +41,7 @@ struct BookDocument {
   std::string html; // Raw combined SDK HTML remains available for comparison.
   // Only application document selection adds presentation; raw reads leave it absent.
   std::optional<BookDocumentPresentation> presentation;
+  std::optional<BookDocumentNoteSource> note_source;
 };
 // Legacy atoi-defined prefix/default/sign behavior, with explicit overflow/NUL
 // rejection. Values <=1 (including missing/nonnumeric) mean single-entry display.

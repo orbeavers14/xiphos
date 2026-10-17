@@ -144,15 +144,21 @@ BookDocument Reader::read_book_document(const std::string &id, std::uint64_t off
 BookDocument Reader::read_book_document(const std::string &id, std::uint64_t offset, const BookDocumentLimits &limits) {
   return book_document_impl(id, offset, nullptr, limits);
 }
+BookDocument Reader::read_book_document(const std::string &id, std::uint64_t offset,
+    const EngineOptions &options, bool labels, const BookDocumentLimits &limits) {
+  return book_document_impl(id, offset, &options, limits, &labels);
+}
 BookDocument Reader::book_document_impl(const std::string &id, std::uint64_t offset,
-                                       const EngineOptions *options, const BookDocumentLimits &limits) {
+                                       const EngineOptions *options, const BookDocumentLimits &limits, const bool *labels) {
   if (id.empty() || id.find('\0') != std::string::npos) throw std::invalid_argument("Invalid general-book module ID");
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto *module = impl_->manager->getModule(id.c_str());
   if (!module) throw std::out_of_range("Module is not installed");
   std::unique_ptr<ScopedEngineOptions> scope;
   if (options) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *options);
-  return detail::capture_book_document(*module, offset, limits);
+  std::unique_ptr<ScopedNoteNumbers> note_scope;
+  if (labels) note_scope = std::make_unique<ScopedNoteNumbers>(impl_->note_rendering, *module, *labels);
+  return detail::capture_book_document(*module, offset, limits, labels != nullptr);
 }
 BookResourceContext Reader::book_resource_context(const std::string &id) {
   if (id.empty() || id.find('\0') != std::string::npos) throw std::invalid_argument("Invalid general-book module ID");

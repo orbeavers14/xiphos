@@ -62,6 +62,10 @@ public:
                                   const EngineOptions &options, const BookDocumentLimits &limits = {});
   BookDocument read_book_document(const std::string &module, std::uint64_t offset,
                                   const BookDocumentLimits &limits = {});
+  // Opt-in SDK note-label scope and terminal attribute capture for later
+  // combined-document numbering. Neither overload runs presentation numbering.
+  BookDocument read_book_document(const std::string &module, std::uint64_t offset,
+      const EngineOptions &options, bool labels, const BookDocumentLimits &limits = {});
   // Exact SDK path/CSS metadata only; no path rebasing, resource reads or writes.
   BookResourceContext book_resource_context(const std::string &module);
   BookImageResource read_book_image(const std::string &module, const std::string &uri,
@@ -140,7 +144,7 @@ public:
 private:
   BookNote book_note_impl(const std::string &module, std::uint64_t offset, const std::string &identifier,
                           const EngineOptions *options, bool render_body);
-  BookDocument book_document_impl(const std::string &module, std::uint64_t offset, const EngineOptions *options, const BookDocumentLimits &limits);
+  BookDocument book_document_impl(const std::string &module, std::uint64_t offset, const EngineOptions *options, const BookDocumentLimits &limits, const bool *labels = nullptr);
   BookEntry book_impl(const std::string &module, std::uint64_t offset, const EngineOptions *options);
   DictionaryEntry dictionary_impl(const std::string &module, const std::string &key, const EngineOptions *options, int direction = 0);
   ReferenceList reference_list_impl(const std::string &module, const std::string &expression,

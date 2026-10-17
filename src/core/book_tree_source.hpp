@@ -14,7 +14,7 @@ BookTree capture_book_display_path(sword::SWModule &module, const std::string &p
 // Validates source first, selects that exact live tree offset, and renders it.
 // Caller owns engine-option scoping and serialization, as for ordinary reads.
 BookEntry capture_book_entry(sword::SWModule &module, std::uint64_t offset);
-BookDocument capture_book_document(sword::SWModule &module, std::uint64_t offset, const BookDocumentLimits &limits);
+BookDocument capture_book_document(sword::SWModule &module, std::uint64_t offset, const BookDocumentLimits &limits, bool capture_note_source = false);
 BookNote capture_book_note(sword::SWModule &module, std::uint64_t offset,
                            const std::string &identifier, bool render_body);
 BookChildren capture_book_children(sword::SWModule &module, std::uint64_t parent,

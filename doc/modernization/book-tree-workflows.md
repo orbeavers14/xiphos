@@ -594,3 +594,24 @@ and ASan/UBSan checks passed; broad local suites are recorded in the handoff.
 The Mac window verified the generated preferred stylesheet's color/pseudo-element
 and unusable-style text retention. Other encodings, global CSS, recursive assets,
 full fonts/RTL/corpus/visual acceptance and other-platform consumption remain open.
+
+### Combined book note source — 2026-10-17
+
+The actual `_render_display_level` traversal plus selected-key restoration was
+characterized for first/last explicit note labels, skipped empty tail nodes,
+no-note/all-empty trees and single-entry empty/labelled reads. CleanupContent
+reads the final rendered section's Footnote/1/n after restoring the selected
+key. A skipped empty tail does not clear that metadata. Its nonempty label
+suppresses automatic numbering for the entire combined document; a first-only
+label does not suppress it when the final rendered section has no label. Keep
+this legacy behavior until an explicit compatibility decision changes it.
+
+A new configured Reader overload scopes SDK note-label rendering through the
+existing owned filter-state policy and copies optional document note source
+(label and last-rendered offset). Existing overloads remain unchanged and expose
+no source capture. All-empty combined trees retain captured empty source without
+a last-rendered offset; single-entry empty reads still record the selected node.
+Source capture does not run numbering or publish a session. Two focused normal
+and two ASan/UBSan checks passed, comparing owned HTML/metadata to the actual
+legacy traversal and checking baseline restoration after success/bounded failure.
+Session numbering, queued/C metadata and native controls are the next layer.

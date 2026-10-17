@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "book_tree_source.hpp"
+#include "xiphos/core/entry_attribute.hpp"
 #include "sdk_render.hpp"
 #include <swmodule.h>
 #include <treekeyidx.h>
@@ -126,7 +127,7 @@ BookEntry capture_entry(sword::SWModule &module, std::uint64_t offset, bool *ren
 BookEntry capture_book_entry(sword::SWModule &module, std::uint64_t offset) {
   return capture_entry(module, offset, nullptr);
 }
-BookDocument capture_book_document(sword::SWModule &module, std::uint64_t offset, const BookDocumentLimits &limits) {
+BookDocument capture_book_document(sword::SWModule &module, std::uint64_t offset, const BookDocumentLimits &limits, bool capture_note_source) {
   const BookDocumentLimits maximum;
   if (!limits.max_depth || limits.max_depth > maximum.max_depth || !limits.max_nodes ||
       limits.max_nodes > maximum.max_nodes || !limits.max_html_bytes || limits.max_html_bytes > maximum.max_html_bytes)
@@ -134,6 +135,7 @@ BookDocument capture_book_document(sword::SWModule &module, std::uint64_t offset
   BookDocument result;
   result.tree = capture_book_tree(module, offset);
   const auto *configured = module.getConfigEntry("DisplayLevel");
+  if (capture_note_source) result.note_source = BookDocumentNoteSource{};
   result.display_level = book_display_level(configured ? std::make_optional(std::string(configured)) : std::nullopt);
   auto *key = dynamic_cast<sword::TreeKeyIdx *>(module.getKey());
   if (!key) throw std::invalid_argument("General book has no live indexed key");
@@ -162,6 +164,7 @@ BookDocument capture_book_document(sword::SWModule &module, std::uint64_t offset
     section.entry = capture_entry(module, next.offset, result.display_level > 1 ? &section.rendered : nullptr);
     const auto &tree = section.entry.tree;
     if (section.rendered) {
+      if (result.note_source) result.note_source->last_rendered_offset = tree.node.offset;
       const std::string separator = result.html.empty() ? "" : "<br/><hr/>";
       if (section.entry.html.size() > limits.max_html_bytes ||
           separator.size() > limits.max_html_bytes - section.entry.html.size() ||
@@ -181,6 +184,8 @@ BookDocument capture_book_document(sword::SWModule &module, std::uint64_t offset
   if (module.getKey() != key || key->getOffset() != offset || key->popError() ||
       result.tree.node.path != key->getText())
     throw std::runtime_error("General-book document changed the selected source");
+  if (result.note_source && result.note_source->last_rendered_offset)
+    result.note_source->reported_label = entry_attribute(module, "Footnote", "1", "n", false);
   return result;
 }
 BookChildren capture_book_children(sword::SWModule &module, std::uint64_t parent,
