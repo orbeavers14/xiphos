@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "search_source.hpp"
 #include "search_control.hpp"
+#include "search_results.hpp"
 #include "xiphos/core/search_policy.hpp"
 #include "xiphos/core/engine_manager.hpp"
 #include "xiphos/core/presentation.hpp"
@@ -95,15 +96,8 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   auto &list=module.search(stripped.c_str(),engine_type,query.case_sensitive?0:XIPHOS_SWORD_SEARCH_ICASE_FLAG,
                            range?&*range:nullptr,nullptr,search_percent,&context);
   if(engine_type==sword::SWModule::SEARCHTYPE_EXTERNAL)list.sort();
-  if(list.getCount()<0)throw std::runtime_error("SDK search returned an invalid count");
-  SearchResult result{std::move(query),stripped,engine_type,static_cast<std::uint64_t>(list.getCount()),{},false};
-  std::size_t bytes=0;list.setPosition(sword::TOP);
-  while(list.getCount()&&!list.popError()) {
-    const std::string reference=list.getText();
-    if(reference.empty())throw std::runtime_error("SDK search returned an empty reference");
-    if(result.references.size()==limits.max_results||reference.size()>limits.max_reference_bytes-bytes){result.limited=true;break;}
-    bytes+=reference.size();result.references.push_back(reference);list++;
-  }
+  auto copied=copy_search_references(list,limits);
+  SearchResult result{std::move(query),stripped,engine_type,copied.engine_count,std::move(copied.references),copied.limited};
   result.executed=true;result.cancelled=control&&control->cancel_requested();
   return result;
 }

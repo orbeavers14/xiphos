@@ -199,3 +199,50 @@ reset policies. A native atomic command may improve failure publication, but any
 deliberate difference from the table needs documented rationale and tests. In
 particular, do not silently keep the previous scope on every cancelled execution
 and claim that reproduces the legacy partial-return policy.
+
+## Owned result-copy boundary
+
+The production search path uses `copy_search_references` on the engine owner.
+Its separate owned value contains the SDK element count, complete copied prefix
+strings and a limited flag. Traversal advances the SDK list; no borrowed key or
+string escapes. Limits are validated independently at this internal boundary.
+This extraction does not create or persist last-search scope.
+
+Dedicated tests retain 300-byte and Unicode keys beyond the legacy iterator's
+128-byte buffer, enforce byte limits without splitting UTF-8/reference strings,
+and distinguish exact budgets from actual truncation. An interval SDK element
+can expand to three returned verses: `total_results` remains the SDK element
+count (one), not a guaranteed expanded match count. A frontend must not present
+that field as an exact expanded verse total. Empty lists and empty-key failures
+are checked, and copied strings survive SDK-list destruction.
+
+## Next implementation boundaries
+
+Keep stored last-search data private to the shared engine/session, not in Swift
+or a C result handle. Session ownership must be independent across tabs, with
+all SDK key traversal/copy/destruction on the serialized owner. Preserve full key
+semantics/versification and interval bounds; reparsing the visible prefix loses
+both omitted matches and potentially source-key metadata. Never retain a pointer
+into a module's reusable SDK search-result list.
+
+Implement and check in bounded steps:
+
+1. Reader execution returns an internal complete owned scope alongside the bounded
+   public result. Stage all allocations/copies before replacing committed scope.
+   Define limits for retained scope separately from public display limits; report
+   overflow explicitly rather than silently reducing future searches.
+2. Session owns the committed scope and selects unbounded, explicit range or last
+   scope mutually exclusively. Add independent-tab, zero-match, reset, source-
+   module/versification and following-search tests. Keep reading/history untouched.
+3. Distinguish a request cancelled before SDK execution from a partial returned
+   execution. Match characterized legacy partial publication where applicable;
+   document deliberate improvements for failed native result preparation. Test
+   successful recovery and late-completion races before exposing the command.
+4. Add copied C request/scope metadata and Swift adaptation with take-once,
+   shutdown and cancellation tests, then native scope controls. Advanced dialog
+   multi-module state has its own reset/aggregation contract and remains separate.
+
+This sequence is a proposed implementation plan. The stored scope and commands
+are not implemented or accepted at this checkpoint; no public API is promised by
+this design note. Review the actual SDK key representation before choosing the
+private storage type, and retain existing unscoped/range requests compatibly.
