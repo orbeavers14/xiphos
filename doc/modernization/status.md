@@ -1,18 +1,25 @@
 # Modernization status and acceptance
 
-Current checkpoint (2026-10-17): `56925fb` inline URL resolution, `efcc544`
-shared owned inline-image output, `4137374` Mac display. **116/116 Mac/core**,
-**90/90 portable core on Mac**, **6/6 focused ASan/UBSan**, strict C11 pass.
-Shared image geometry `48d5425`, bounded CSS `4611a9d` and native styles
-`65b8ab6` are checked; three final sanitizer checks cover style embedding.
-PNG inline/click/Close/image-off, preferred CSS/fallback and image label checked in
-a disposable window. Whole corpus/sizing/CSS/formats/workflows remain pending.
-See [shared core remaining scope](shared-core-roadmap.md),
-[current handoff](handoff.md) and [book contract](book-tree-workflows.md).
-Combined book note sources `652d8e1`, shared numbering `43ce5ee` and native
-controls `a5d9488` passed three focused sanitizers/twelve focused native/core
-checks. Window evidence covers independent cross-section counters, exact
-descendant note body and Off/On without changing the selected root.
+Current checkpoint (2026-10-17): initial shared search spans pure legacy query
+policy `2682d18`, Reader `06286b7`, worker/C `47401f0`, Swift `a413a21`, owner-safe
+progress/cancel `bb1d8bb`, Swift draining `c75b187`, explicit intervals/legacy memory
+fix `1dae0e9`, and Swift range ownership `d77d61c`. Full local suites passed
+**122/122 Mac/core** and **95/95 portable core on Mac** before the legacy range
+buffer fix; afterward **3 focused Mac/core/Swift**, **2 portable**, **5 ASan/UBSan**
+and **3 TSan** checks pass. Strict C11 passed. Dependency instrumentation is
+partial and sanitizer leak detection is off. No hosted workflow was dispatched.
+Search is still an initial Bible/regular-commentary service, without native search
+controls, last-search scope, advanced workflow or validated indexed execution.
+
+Book images/module CSS/combined numbering remain checked partial work: shared
+geometry `48d5425`, CSS `4611a9d`/`65b8ab6`, notes `652d8e1`/`43ce5ee`/`a5d9488`.
+Disposable Mac windows checked inline PNG/preview/Close/image-off, preferred CSS/
+fallback and cross-section n1/x1/n2/x2, descendant note identity and Off/On.
+Full corpus, native sizing, global/recursive CSS assets, formats and saved workflows
+remain open. See [remaining core scope](shared-core-roadmap.md),
+[search contracts](search-workflows.md), [handoff](handoff.md) and
+[book contract](book-tree-workflows.md). The overall planning estimate stays about
+8% (6–10%); no reliable core-only percentage or whole-group acceptance is claimed.
 The following chronological checkpoints retain their original scoped evidence;
 older next-task descriptions are superseded by the current handoff.
 
@@ -284,8 +291,8 @@ implementation integration, not full native feature parity or legacy retirement.
 
 ## Parity coverage snapshot
 
-The ledger currently has **15 of 38 groups with some initial shared-core/macOS
-implementation evidence**, and **23 pending groups**. None of the 15 is fully
+The ledger currently has **19 of 38 groups with some initial shared-core/macOS
+implementation evidence**, and **19 pending groups**. None of the 19 is fully
 accepted: groups bundle many capabilities, and reading a verse does not complete
 whole-book rendering, commentary synchronization, tabs/session restore or visual
 composition. This is a count of groups touched, not a parity percentage and not
@@ -293,7 +300,7 @@ a replacement for the weighted engineering estimate above.
 
 | New frontend | Initial evidence in ledger | Fully accepted groups | Main gaps |
 |---|---:|---:|---|
-| macOS/shared-core slice | 17 partial, 21 pending | 0/38 | Full pane layout, commentary, parallel views, search, bookmarks/annotations, editors, installation, complete settings/data migration, accessibility/translation and release packaging |
+| macOS/shared-core slice | 19 partial, 19 pending | 0/38 | Full pane layout, commentary, parallel views, search, bookmarks/annotations, editors, installation, complete settings/data migration, accessibility/translation and release packaging |
 | WinUI 3 | 0 initial frontend entries, 38 pending | 0/38 | Native frontend/tooling, shared-core integration, full workflows and validation |
 | GTK4 | Scoped existing macOS-preview capability set; see Linux handoff | 0/38 | Manual visual/input/accessibility/corpus validation, accelerated rendering and full workflows beyond both previews |
 

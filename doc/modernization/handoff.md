@@ -24,14 +24,19 @@ committed state; read-only calls and absent restore are neutral.
 Complete document publication `6cb35cf`, worker/C `99056d7` and native consumption
 `e52a497` preserve configured DisplayLevel depth/order, atomic selection and exact
 rendered-section note routing. Earlier raw entry/read-only APIs remain stable.
-Latest inline URL resolver `56925fb`, owned image-prepared HTML `efcc544`, and
-Mac consumer `4137374` retain raw/presentation sources and expose bounded owned
-image output/issues. Local checks: **116/116 Mac/core**, **90/90 portable core
-on Mac**, **6/6 focused ASan/UBSan**, strict C11; nine native/core focused checks
-also pass. Disposable Mac window verified PNG inline → preview → same section,
-image-off text retention and image accessibility label. Full corpus, sizing/CSS,
-formats, sessions and current GTK/MSVC/WinUI acceptance remain pending. See
-[book workflows](book-tree-workflows.md) and [core scope](shared-core-roadmap.md).
+Book resources/geometry/module CSS/combined note counters now have shared
+implementations and Mac consumers; see [book workflows](book-tree-workflows.md).
+Initial shared search now supports Bible/regular-commentary phrase/regex/words,
+case, explicit SDK interval bounds, owned C/Swift results, atomic progress and
+cooperative cancellation. Checkpoints: policy `2682d18`, Reader `06286b7`, worker/C
+`47401f0`, Swift `a413a21`, controls `bb1d8bb`/`c75b187`, ranges `1dae0e9`/`d77d61c`.
+The range work also fixes an observed legacy key-text use-after-free.
+
+Local full suites passed **122/122 Mac/core** and **95/95 portable core on Mac**
+before the final legacy range buffer fix. After it: **3 focused Mac/core/Swift**,
+**2 portable**, **5 ASan/UBSan**, **3 TSan** pass. Strict C11 passes. See
+[Mac commands/environment](handoff-macos.md), [search limits](search-workflows.md)
+and [core scope](shared-core-roadmap.md). These are not Fedora/MSVC/WinUI checks.
 
 | Implemented area | Checkpoints | Contract / limits |
 |---|---|---|
@@ -41,23 +46,19 @@ formats, sessions and current GTK/MSVC/WinUI acceptance remain pending. See
 | Earlier Fedora preview scope catch-up | PRs #82–89, `a80409b` | [Native Fedora evidence](handoff-linux.md); retain manual/corpus/renderer gates |
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
-Shared geometry `48d5425` now serves the retained GTK adapter. Bounded module CSS
-`4611a9d` and Mac consumption `65b8ab6` preserve raw CSS and HTML-safe style text;
-three final focused sanitizer checks passed after style-escaping adjustment.
-Book note source `652d8e1`, shared numbering/C ownership `43ce5ee`, and native
-controls `a5d9488` now match combined legacy scope, independent counters and
-terminal-label suppression. Three focused sanitizer and twelve native/core
-checks pass; the Mac window verified n1/x1/n2/x2, exact descendant note and Off/On.
-Active Mac/shared task: characterize legacy search requests and extract the first
-read-only shared search seam. Full book links/corpus/session gates remain open.
-Native image sizing, global CSS and recursive assets remain pending. No hosted build or reset credit
-was used. No whole parity or retirement gate is accepted by scoped checks.
+Next shared slice: characterize and implement per-tab last-search scope with
+complete owned SDK keys, independent of the bounded visible prefix, and explicit
+atomic failure/cancellation publication semantics. Native search UI is still
+pending. Book corpus/session/native sizing/global CSS/recursive assets remain
+open. No whole parity/retirement gate is accepted. No hosted build or reset credit
+was used. Read-only workflow inspection confirmed `builds`/`native-core` disabled
+administratively and `linux-core` active but manual-only; do not enable/dispatch.
 
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Legacy search request/source characterization | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Owned per-tab last-search scope and publication semantics | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

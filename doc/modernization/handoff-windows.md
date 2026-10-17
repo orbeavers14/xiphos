@@ -1,5 +1,14 @@
 # Native Windows chat handoff
 
+Shared API notice (2026-10-17): initial verse search now owns query/results,
+optional explicit range-source module/bounds, atomic cooperative progress/cancel,
+and copied C/Swift values (`06286b7` through `d77d61c`). No native search UI or
+full search parity is claimed. Validate `XIPHOS_SWORD_SEARCH_ICASE_FLAG` against
+this platform's SDK (tested Mac SDK uses 2; C++11 regex backend uses 1). These
+Mac checks do not change this platform's recorded results below. See
+[search contracts](search-workflows.md) before consuming the new APIs.
+
+
 Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md) and the
 [shared handoff](handoff.md) first.
 

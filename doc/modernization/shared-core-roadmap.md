@@ -8,12 +8,12 @@ finished. Whole workflows and data compatibility remain the acceptance units.
 
 | Core area | Current evidence | Remaining shared work |
 |---|---|---|
-| Engine ownership and transport | FIFO worker, copied C/C++/Swift results, shutdown draining | Active-operation cancellation, native Windows compiler/SDK validation, stable dynamic packaging |
+| Engine ownership and transport | FIFO worker, copied C/C++/Swift results, shutdown draining | Cancellation for other active operations, native Windows compiler/SDK validation, stable dynamic packaging |
 | Scripture and commentary | Reference choices, chapter/navigation/history, sparse/linked sources and options | Complete display decorations, corpus/locale/versification workflows and restoration |
 | Dictionary and lexical content | Lookup/key steps/history, shared casing, lexical HTML/CSS and notes | Complete lookup/hover/search families and full corpus/locale acceptance |
 | General books | Tree/navigation/DisplayLevel documents, scoped restore, note/image clicks, bounded inline resources/module CSS, shared geometry and combined note numbering | Native sizing/global CSS/assets/formats, complete semantic links/corpus acceptance, book windows/tabs and saved workflows |
 | Parallel reading | Pending | Verse alignment, ordered translations, named sets, navigation and persistence |
-| Search | Pending | Simple/advanced/indexed/attribute searches, bounds, progress/cancel, results/preview/export |
+| Search | Initial Bible/commentary phrase/regex/words, explicit intervals, copied C/Swift results, cooperative progress/cancel | Last-search scope, advanced/multi-module/attribute/index workflows, native controls, preview/export and full backend/corpus acceptance |
 | Library and installation | Module metadata/discovery subset | Favorites/hiding/grouping, sources/install/uninstall/index/cipher workflows |
 | Bookmarks and annotations | Pending | Hierarchy/order/colors, XML round trips, AndBible import, rendering precedence |
 | Writing and editing | Pending | Personal commentary, study pads, journals/prayer lists, compatible document storage |
@@ -27,8 +27,8 @@ implementation of these services. The detailed requirements remain in the
 with a consuming frontend to expose boundary problems early. Existing GTK3 is
 the behavior/design reference; keep it operational and retain retirement gates.
 
-Current next service: characterize legacy search requests and extract bounded
-read-only search, followed by progress/cancellation. Book link/session, native
+Current next slice: complete owned per-tab last-search scope with explicit atomic
+publication/failure/cancellation semantics, independently of truncated public results. Book link/session, native
 sizing and corpus acceptance remain tracked work alongside the existing reading
 seams. Parallel reading and complete persistence remain later core services.
 Reorder only with evidence or owner steering; do not block all native work until

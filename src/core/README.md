@@ -35,8 +35,8 @@ for the Swift smoke test and manual preview; no live user data is modified.
 The default legacy build remains available with its get_render_text delegate
 calling the same rendering function; full GTK build/runtime acceptance is
 still required. The standalone core build avoids all GTK,
-WebKit, help and packaging dependencies. Search and complete user-data storage
-remain pending. The C ABI is experimental and documented in c_api.h.
+WebKit, help and packaging dependencies. Initial verse search is available; complete search workflows and user-data
+storage remain pending. The C ABI is experimental and documented in c_api.h.
 Follow the [architecture](../../doc/modernization/architecture.md) and
 [parity ledger](../../doc/modernization/parity-matrix.md) before expanding it.
 
@@ -539,3 +539,20 @@ parser remains intact. `lexical_block_style` provides owned C++11 CSS and replac
 three legacy renderer call sites. Frozen/current/helper comparisons cover 768
 call-site cases plus 2,048 concurrent selections; strict C++11/native-disabled
 builds pass. Broader grammar/corpus, native integration and visual acceptance remain pending. See [scope](../../doc/modernization/word-block-workflows.md).
+
+### Initial search service
+
+Reader/session/worker expose owned Bible/regular-commentary phrase, regex and word
+results with optional explicit range-source module/bounds. C requests and Swift
+copy this contract. Cooperative progress/cancel is atomic across threads; only
+engine-owner SDK callbacks set its stop flag. Swift cancellation drains accepted
+searches. Output limits cap copied references, not SDK work or internal allocation.
+Last-search scopes and native search UI remain pending. See
+[search contracts](../../doc/modernization/search-workflows.md).
+
+Configure `XIPHOS_SWORD_SEARCH_ICASE_FLAG` for the installed SDK regex backend:
+default 2 matches the tested GNU/ICU-style configuration; C++11 regex uses 1.
+SWORD does not export this build choice. Validate upper/lowercase search results
+on each target SDK; a successful compilation alone does not validate this flag.
+Indexed mode selection is characterized, but actual indexed execution and other
+backend/corpus combinations remain unvalidated.

@@ -123,8 +123,11 @@ native integration. Introduce these services incrementally with legacy tests.
   and testament filtering. The core preserves module position during discovery;
   native menus consume copied labels/targets. Full chapter decorations/options,
   number localization, selector composition and persistence remain pending. See status for characterized rules and validation limits.
-* Search seam: backend search plus main/search_* becomes an asynchronous
-  service with cancellation/progress/result sets; GUI callbacks become events.
+* Search seam: the initial FIFO service now owns verse search query/results,
+  explicit SDK interval bounds and cooperative atomic progress/cancellation.
+  C/Swift copy values; no SDK pointer crosses the worker boundary. Last-search
+  scopes, advanced search and native controls remain pending. See
+  [search contracts](search-workflows.md).
 * Storage seam: settings.c/configs.cc/xml.c and bookmark GTK data structures
   become repositories with read-compatible loaders. No migration writes until
   backup/round-trip tests validate settings, sessions, bookmarks and notes.
