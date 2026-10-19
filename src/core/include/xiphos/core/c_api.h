@@ -299,7 +299,8 @@ xc_status xc_worker_modules(xc_worker *worker, xc_request **out);
  * options NULL uses defaults; otherwise initialize defaults before overriding.
  * Boolean/mode/limit errors reject and clear out. Query/module are copied before
  * return; accepted failures surface on polling without publishing partial data. */
-typedef enum xc_search_mode { XC_SEARCH_REGEX=0, XC_SEARCH_PHRASE=1, XC_SEARCH_WORDS=2 } xc_search_mode;
+typedef enum xc_search_mode { XC_SEARCH_REGEX=0, XC_SEARCH_PHRASE=1, XC_SEARCH_WORDS=2,
+  XC_SEARCH_LEMMA=3, XC_SEARCH_MORPHOLOGY=4, XC_SEARCH_FOOTNOTE=5 } xc_search_mode;
 typedef struct { int mode, case_sensitive; size_t max_results, max_reference_bytes; } xc_search_options;
 void xc_search_options_default(xc_search_options *out);
 xc_status xc_worker_search_module(xc_worker *worker,uint64_t tab,const char *module,const char *expression,

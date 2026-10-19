@@ -280,7 +280,7 @@ namespace {
 xc_status queue_search_module(xc_worker *w,uint64_t tab,const char *module,const char *expression,
                                   const xc_search_options *options,xc_request **out,const char *range_module,const char *range_expression,bool within_last=false) {
   xc_search_options copy;xc_search_options_default(&copy);if(options)copy=*options;
-  if(!module||!expression||copy.mode<XC_SEARCH_REGEX||copy.mode>XC_SEARCH_WORDS||
+  if(!module||!expression||copy.mode<XC_SEARCH_REGEX||copy.mode>XC_SEARCH_FOOTNOTE||
      (copy.case_sensitive!=0&&copy.case_sensitive!=1)||!copy.max_results||copy.max_results>xiphos::core::maximum_search_results||
      !copy.max_reference_bytes||copy.max_reference_bytes>xiphos::core::maximum_search_reference_bytes){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
   if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;if(!w)return XC_INVALID_ARGUMENT;

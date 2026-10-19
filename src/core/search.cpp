@@ -67,12 +67,17 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   if(!supports_verse_search(module))
     throw std::invalid_argument("Initial search supports Bible and regular commentary verse modules");
   int engine_type;
+  bool whole_entry=false;
+  std::optional<AttributeSearch> attribute;
   switch(query.mode){
     case SearchMode::regular_expression:engine_type=sword::SWModule::SEARCHTYPE_REGEX;break;
     case SearchMode::phrase:engine_type=sword::SWModule::SEARCHTYPE_PHRASE;break;
     case SearchMode::words:
       engine_type=module.hasSearchFramework()&&module.isSearchOptimallySupported("God",-4,0,0)?
         sword::SWModule::SEARCHTYPE_EXTERNAL:sword::SWModule::SEARCHTYPE_MULTIWORD;break;
+    case SearchMode::lemma:attribute=AttributeSearch::lemma;engine_type=sword::SWModule::SEARCHTYPE_ENTRYATTR;break;
+    case SearchMode::morphology:attribute=AttributeSearch::morphology;engine_type=sword::SWModule::SEARCHTYPE_ENTRYATTR;break;
+    case SearchMode::footnote:attribute=AttributeSearch::footnote;engine_type=sword::SWModule::SEARCHTYPE_ENTRYATTR;break;
     default:throw std::invalid_argument("Unknown search mode");
   }
   std::optional<sword::ListKey> range;
@@ -97,6 +102,7 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   }
   ScopedSearchFilters filters(manager);ScopedSearchModule state(module);
   auto prepared=sidebar_search_text(query.expression,engine_type==sword::SWModule::SEARCHTYPE_EXTERNAL);
+  if(attribute){auto value=attribute_search_text(query.expression,*attribute);prepared=std::move(value.expression);whole_entry=value.whole_entry;}
   const std::string stripped=module.stripText(prepared.c_str()).c_str();
   if(control&&control->cancel_requested()) {
     SearchResult result{std::move(query),stripped,engine_type,0,{},false};result.cancelled=true;return result;
@@ -104,7 +110,8 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   if(query.within_last_results&&(!previous||!previous->info().element_count))
     return SearchResult{std::move(query),stripped,engine_type,0,{},false};
   ProgressContext context{&module,control.get(),std::this_thread::get_id()};
-  auto &list=module.search(stripped.c_str(),engine_type,query.case_sensitive?0:XIPHOS_SWORD_SEARCH_ICASE_FLAG,
+  const int flags=(query.case_sensitive?0:XIPHOS_SWORD_SEARCH_ICASE_FLAG)|(whole_entry?sword::SWModule::SEARCHFLAG_MATCHWHOLEENTRY:0);
+  auto &list=module.search(stripped.c_str(),engine_type,flags,
                            range?&*range:nullptr,nullptr,search_percent,&context);
   // Legacy copies the complete scope before sorting indexed display results.
   auto staged=next?std::make_shared<const SearchScope>(list,scope_limits):nullptr;

@@ -405,3 +405,29 @@ absent and strict C++11 enabled. A first standalone configuration's OFF argument
 was overridden by its existing unconditional native-ON setting; it still built
 only the requested C++11 render target, and the separate parent wrapper verified
 the actual native-disabled path. No full GTK desktop build is claimed.
+
+## Owned attribute execution and transport
+
+`SearchMode::lemma`, `morphology`, `footnote` (C modes 3/4/5) now use the same
+owned policy, SDK entry-attribute search, proper whole-entry/case flags and exact
+module stripText output. Requested raw text stays separate from effective SDK
+query. All existing limits, bounds, complete last scope, cancellation and ownership
+paths are reused. The current family gate remains runtime Bible/regular-commentary
+VerseKey modules; dictionaries/books/advanced module families are not added here.
+
+Original OSIS Bible and commentary fixtures compare all three modes/case settings
+with the extracted actual backend. They prove G140 excludes G1401/G1404 yet matches
+one component of a multi-lemma word, N-ASF excludes N-ASF1, footnote Alpha has
+sensitive/insensitive counts 1/2, and UTF-8 note text works. The cases cover caller
+annotation filters On/Off, exact position/processing/link/filter restoration,
+source-data byte identity, display-prefix versus full scope, cross-module last
+search, explicit bounds, copied mutable C input/options and shutdown lifetime.
+Swift adapters copy the same modes and metadata without preparing queries.
+
+Five focused core/Swift checks, four portable-on-Mac and five ASan/UBSan checks
+pass; strict C11 passes. Native basic sidebar keeps its original three match
+controls; advanced attribute controls, include-annotation checkbox workflows,
+multiple modules, explicit index fallback, dictionary families and full corpus/
+locale/backend/visual acceptance remain pending. Source compatibility retains
+existing options/info layouts; previously unsupported C mode values 3–5 are now
+valid and the invalid-enum regression checks moved beyond that range.

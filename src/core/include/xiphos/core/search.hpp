@@ -25,7 +25,8 @@ public:
   unsigned percent() const noexcept{return percent_.load(std::memory_order_relaxed);}
   SearchPhase phase() const noexcept{return phase_.load(std::memory_order_acquire);}
 };
-enum class SearchMode { regular_expression=0, phrase=1, words=2 };
+// Attribute modes use legacy SDK paths; lemma/morph require whole-entry matching.
+enum class SearchMode { regular_expression=0, phrase=1, words=2, lemma=3, morphology=4, footnote=5 };
 // Legacy sidebar range uses the designated Bible module's own VerseKey parser,
 // which may differ from the searched commentary module's versification.
 struct SearchRange { std::string module, expression; };
