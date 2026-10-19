@@ -487,3 +487,32 @@ Two normal checks and the later three-check ASan/UBSan group pass. This validate
 ordering and ownership, not actual CLucene/index execution. Words cancelled before
 preparation report the multiword fallback; inspect executed before treating an
 engine type as a backend that actually ran. SDK callback/time limits still apply.
+
+## Composable C and Swift request transport
+
+The additive `xc_search_query` descriptor combines raw module/text, base options,
+all/bounds/last scope and optional strict-boolean text choices. Defaults initialize
+all optional pointers to NULL; the call copies every pointed value before return.
+Stray/contradictory range inputs, unknown scopes and malformed booleans reject and
+clear the request output. Existing C request functions keep their layouts and
+route through the same factory. Native hosts can use one composable entry point
+instead of adding another frontend query engine.
+
+Completed result getters expose requested and prepared effective text policy plus
+whether the logical context changed. Query/reset metadata requests are separate,
+non-consuming, copied scalar results; pending/failed/wrong-kind/NULL getters reject
+and clear output. Scope clear and text reset remain independent. NULL text policy
+means preserve search context/baseline; explicit all-false policy means the legacy
+unchecked nonphrase choices. Exact phrase retains the prior policy as described
+above. Engine publication can precede a later C/Swift presentation failure; query
+scope/text state to resynchronize after such a failure.
+
+Swift now submits this descriptor for its existing search method, copies optional
+requested/effective policies and wraps text query/reset. It performs no SDK option
+mapping or sticky-state algorithm. Seven focused core/Swift checks and three
+ASan/UBSan checks pass, plus strict C11. Tests mutate descriptor buffers/options
+immediately after acceptance, combine attribute modes with bounds/last scope,
+verify phrase retention, independent tabs, strict validation and shutdown ownership.
+Interactive cancellation reports authoritative context updates even if preparation
+finished before SDK execution was skipped. The basic native sidebar retains its
+original three controls; advanced annotation controls and persistence remain gates.

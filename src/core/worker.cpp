@@ -120,6 +120,12 @@ std::future<SearchScopeInfo> StudyWorker::last_search_scope(StudyTab tab) {
 std::future<SearchScopeInfo> StudyWorker::clear_search_scope(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s){auto &session=s.tab(tab);session.clear_search_scope();return session.last_search_scope();});
 }
+std::future<SearchTextState> StudyWorker::search_text_options(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s){return s.tab(tab).search_text_options();});
+}
+std::future<SearchTextState> StudyWorker::clear_search_text_options(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s){auto &session=s.tab(tab);session.clear_search_text_options();return session.search_text_options();});
+}
 std::future<BookTree> StudyWorker::book_tree(std::string module, std::uint64_t offset) {
   return impl_->submit([module = std::move(module), offset](Impl::State &s) { return s.reader.book_tree(module, offset); });
 }

@@ -303,6 +303,33 @@ typedef enum xc_search_mode { XC_SEARCH_REGEX=0, XC_SEARCH_PHRASE=1, XC_SEARCH_W
   XC_SEARCH_LEMMA=3, XC_SEARCH_MORPHOLOGY=4, XC_SEARCH_FOOTNOTE=5 } xc_search_mode;
 typedef struct { int mode, case_sensitive; size_t max_results, max_reference_bytes; } xc_search_options;
 void xc_search_options_default(xc_search_options *out);
+/* Optional advanced annotation choices; strict 0/1. Exact phrase preserves prior
+ * search choices. Absence preserves logical context, or unconfigured SDK baseline. */
+typedef struct { int strongs, morphology, footnotes; } xc_search_text_options;
+typedef struct { int present, strongs, morphology, footnotes; } xc_search_text_info;
+typedef enum { XC_SEARCH_SCOPE_ALL=0, XC_SEARCH_SCOPE_BOUNDS=1, XC_SEARCH_SCOPE_LAST=2 } xc_search_scope_kind;
+typedef struct {
+  const char *module, *expression;
+  xc_search_scope_kind scope;
+  const char *range_module, *range_expression;
+  const xc_search_options *options;
+  const xc_search_text_options *text_options;
+} xc_search_query;
+void xc_search_text_options_default(xc_search_text_options *out);
+void xc_search_query_default(xc_search_query *out);
+/* Composable copied request. All pointed input is copied before return. Bounds
+ * require both range inputs; other scopes reject stray range inputs. Initialize
+ * defaults before overriding. Existing request functions remain compatible. */
+xc_status xc_worker_search(xc_worker *worker,uint64_t tab,const xc_search_query *query,xc_request **out);
+xc_status xc_worker_search_text_options(xc_worker *worker,uint64_t tab,xc_request **out);
+xc_status xc_worker_clear_search_text_options(xc_worker *worker,uint64_t tab,xc_request **out);
+/* Non-consuming completed query/reset metadata. Wrong kind/pending/failed/NULL
+ * rejects and clears out. Absence means SDK baseline, not inferred all-Off. */
+xc_status xc_request_search_text_options(const xc_request *request,xc_search_text_info *out);
+xc_status xc_search_requested_text_options(const xc_search *result,xc_search_text_info *out);
+xc_status xc_search_effective_text_options(const xc_search *result,xc_search_text_info *out);
+int xc_search_text_options_updated(const xc_search *result);
+
 xc_status xc_worker_search_module(xc_worker *worker,uint64_t tab,const char *module,const char *expression,
                                   const xc_search_options *options,xc_request **out);
 /* Explicit bounds use range_module's cloned VerseKey parser and empty default
