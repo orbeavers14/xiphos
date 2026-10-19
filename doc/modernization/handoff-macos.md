@@ -4,11 +4,11 @@ Updated 2026-10-18. Read [AGENTS.md](../../AGENTS.md), the
 [shared handoff](handoff.md), [core scope](shared-core-roadmap.md),
 [status](status.md) and relevant parity rows first.
 
-Active task (2026-10-18, master): shared search advances checked/pushed through
+Checked handoff (2026-10-18, master): shared search advances checked/pushed through
 `cf80541`, then export/advanced characterization `8c0a4ed`; next implement private
 retained search-result generations before bounded export. Continue
 bounded shared-core slices with local checks. Preserve unrelated files/GTK3.
-This note records intent, not a concurrent ownership lease.
+All source changes are committed/pushed at this checkpoint; no shared source edits remain in flight. This is not a concurrent ownership lease.
 
 ## Current checked source and active work
 

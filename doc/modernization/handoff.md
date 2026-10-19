@@ -155,3 +155,17 @@ coordinate ownership before changing shared-core APIs, run checks locally, and
 update/push the handoff with the tested commit and evidence. Preserve the GTK3 app
 and one shared C++ core. Do not trigger or enable hosted GitHub builds.
 ```
+
+## Hosted-build conservation verification (2026-10-18)
+
+Read-only GitHub inspection after the checked pushes confirms `builds` and
+`native-core` remain disabled_manually. `linux-core` remains active with only
+workflow_dispatch in its YAML. The latest repository runs returned by GitHub are
+from 2026-10-15; these 2026-10-18 pushes created no hosted jobs. No enable/dispatch
+or allowance reset was performed. Recheck these states before any future hosted
+run; an active manual workflow is not permission to dispatch it.
+
+At this checked handoff, source/docs are pushed sequentially to the fork's master;
+there are no shared source edits left in flight. Preserve unrelated local files
+and fetch before the next slice. The next shared service and explicit unresolved
+gates are recorded above and in the retained-result design.
