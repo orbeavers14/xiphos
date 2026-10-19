@@ -16,20 +16,22 @@ The [status ledger](status.md) is the detailed scope/evidence record; the
 about 8% (range 6–10%), with 0/38 feature groups fully accepted and 0/3 native
 release-ready applications. Do not turn passed build counts into parity scores.
 
-Current search checkpoint: complete private per-tab scope `c1b0a88`, queued C
-commands `c38cd8f`, Swift scope `ade4bdf`, shared capability `4e3402c` with verified
-SDK classification correction `76895f4`, progress/interactive stopped results
-`3181502`, and initial native controls `0ca0bab`. Display prefix limits never
-truncate the next search scope. Empty/clear, failures, pre-execution cancel and
-returned partial execution follow documented publication contracts. No SDK keys
-cross the worker boundary. See [search workflows](search-workflows.md).
+Current search checkpoint: shared attribute execution `572f539` / Swift `a83d3c4`,
+annotation context `8ebeddc` / probe ordering `92bacfc`, canonical copied C request
+`b71980b` / Swift `f4934b2`, explicit advanced multiword/raw-index dialects `69dea11`,
+and ordered bounded batches C++ `f86293b` / C `ad28750` / Swift `cf80541`. Basic
+native controls remain `0ca0bab`; advanced controls are not yet implemented.
+Complete typed last scope is independent of copied result prefixes. Search-only
+settings are per tab and physical SDK filters restore on every job. One FIFO
+owner handles batches, progress/Stop, scope and copied values. See the consolidated
+[current search contract](search-workflows.md); chronology remains in Git.
 
-Local full suites pass **126/126 Mac/core**, **98/98 portable core on Mac**,
-**8 focused ASan/UBSan**, **4 TSan**; strict C11 passes. Actual Mac window checks
-cover scopes, ordered preview, case, clear and physical double-click navigation.
-Slow-corpus GUI interruption, full keyboard/VoiceOver, indexed/advanced/attribute/
-multiple-module/export and full corpus/platform acceptance remain pending.
-[Mac handoff](handoff-macos.md) records exact environment/commands/limits.
+At `cf80541`, local full suites pass **136/136 Mac/core**, **105/105 portable core
+on Mac**. Batch/context search checks pass **8 ASan/UBSan**, **6 TSan** at `f86293b`;
+C transport then passes **3 ASan/UBSan**, **3 TSan** at `ad28750`. Strict C11/C++11
+and native-disabled helpers pass. These are scoped checks with partial dependency
+instrumentation and leaks off, not current Fedora/MSVC validation. Basic Mac
+window evidence remains `0ca0bab`; adapter changes are not advanced GUI acceptance.
 
 Book tree/restore/navigation/DisplayLevel, resources/styles and combined note
 counters remain checked partial services with native Mac consumption; detailed
@@ -46,17 +48,17 @@ and the independent platform evidence in view.
 | Earlier Fedora preview scope catch-up | PRs #82–89, `a80409b` | [Native Fedora evidence](handoff-linux.md); retain manual/corpus/renderer gates |
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
-Active next shared slice: characterize/extract attribute-search query and whole-
-entry rules from the advanced dialog, then add validated owned execution and
-transport. Complete advanced/multiple-module/index/export and settings workflows
-remain separate gates. Native book sizing/assets/corpus/session gates also remain.
-No hosted build/reset credit was used; do not enable or dispatch Actions.
+Active next shared slice: characterize advanced module/range setup and export
+before extracting their policies; retain actual indexed execution, mixed module
+families, advanced controls and saved settings as separate gates. Other large
+core services remain in the roadmap. No hosted build/reset credit was used.
+Do not enable or dispatch Actions.
 
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Shared attribute-search policy/execution and copied transport | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Advanced module/range setup and export policy characterization | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

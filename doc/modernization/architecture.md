@@ -408,3 +408,15 @@ is pending. Bounded preferred/default module CSS is owned by shared documents
 and consumed by Mac. Global CSS, recursive assets, full formats/corpus and
 other-platform consumption remain open.
 See [remaining core scope](shared-core-roadmap.md) for the larger service plan.
+
+## Current search boundary (2026-10-18)
+
+The shared search service now owns basic and exact attribute queries, search-only
+annotation context, advanced unindexed/raw indexed dialects, complete typed last
+scope and ordered bounded multi-module batches. One FIFO worker handles them;
+C/Swift copy values/status/progress, with no SDK keys or parallel frontend engine.
+C++11 policy helpers are also consumed by retained GTK. Per-module errors remain
+owned groups, and total copied output is bounded independently of complete final
+scope. See the consolidated [contract and validation gates](search-workflows.md).
+The experimental static C ABI is additive; this is not a stable dynamic binary
+compatibility or full advanced/native parity claim.

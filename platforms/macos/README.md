@@ -349,12 +349,17 @@ saved-tab/visibility acceptance remain pending.
 
 ### Shared search adapter
 
-`CoreWorker.searchModule` copies shared query/mode/case, optional explicit range,
-ordered bounded references and execution/cancellation metadata. Task cancellation
-signals the core, drains the request, then throws. This is adapter support; native
-search controls/progress/results/preview/export are still pending. The local SDK
-uses `XIPHOS_SWORD_SEARCH_ICASE_FLAG=2`; validate that dependency choice when
-building with another SDK. See [search contracts](../../doc/modernization/search-workflows.md).
+`CoreWorker.searchModule` submits the canonical copied query with mode/case,
+all/bounds/last scope and optional annotation choices. `searchModules` submits an
+ordered bounded batch through the same worker and copies per-module statuses,
+results and final scope/context. Query preparation and scope chaining stay in C++.
+Default task cancellation signals/drains then throws; interactive opt-in returns
+the authoritative stopped prefix. Progress carries changed-only copied scalars.
+
+The local SDK uses `XIPHOS_SWORD_SEARCH_ICASE_FLAG=2`; validate that dependency
+choice on each SDK. Shared services include attribute/advanced dialects and search
+context, but their complete native advanced interface is pending. See
+[search contracts](../../doc/modernization/search-workflows.md).
 
 ### Initial native search tab
 
@@ -366,4 +371,4 @@ uses the existing main-pane navigation. Clear last only clears retained scope.
 `launch-fixture.sh build/macos search` uses generated original prose. Model and
 window evidence, capacity limits and remaining search gates are in the
 [search contract](../../doc/modernization/search-workflows.md). Scope persistence,
-advanced/attribute/index/multiple-module workflows and export are still pending.
+advanced/attribute/index/multiple-module controls, settings and export are still pending.

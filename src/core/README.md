@@ -540,22 +540,29 @@ three legacy renderer call sites. Frozen/current/helper comparisons cover 768
 call-site cases plus 2,048 concurrent selections; strict C++11/native-disabled
 builds pass. Broader grammar/corpus, native integration and visual acceptance remain pending. See [scope](../../doc/modernization/word-block-workflows.md).
 
-### Initial search service
+### Shared search service
 
-Reader/session/worker expose owned Bible/regular-commentary phrase, regex and word
-results with optional explicit range-source module/bounds. C requests and Swift
-copy this contract. Cooperative progress/cancel is atomic across threads; only
-engine-owner SDK callbacks set its stop flag. Swift cancellation drains accepted
-searches. Output limits cap copied references, not SDK work or internal allocation.
-Last-search scopes and native search UI remain pending. See
-[search contracts](../../doc/modernization/search-workflows.md).
+Reader/session/worker expose owned verse-module phrase/regex/words, exact attribute
+search, advanced unindexed/raw indexed dialects, explicit bounds and complete
+private last-result scopes. Search-only annotation context is per tab; physical
+SDK filters restore after every job. Ordered bounded batches run as one worker
+job and continue complete scope capture after the displayed prefix fills. C and
+Swift copy results/settings/metadata without a second search implementation.
+
+Cooperative progress/cancel is atomic across threads; only engine-owner SDK
+callbacks touch its stop flag. Swift default cancellation drains then throws;
+interactive Stop can return authoritative partial results. C batch group results
+are borrowed const children: release only their owning batch. All output limits
+bound copied data, not SDK execution time/internal result allocation. Basic Mac
+controls/preview/navigation are checked; advanced controls, export, saved search
+settings and full module/backend/corpus acceptance remain pending. See the
+[current contract](../../doc/modernization/search-workflows.md).
 
 Configure `XIPHOS_SWORD_SEARCH_ICASE_FLAG` for the installed SDK regex backend:
 default 2 matches the tested GNU/ICU-style configuration; C++11 regex uses 1.
 SWORD does not export this build choice. Validate upper/lowercase search results
-on each target SDK; a successful compilation alone does not validate this flag.
-Indexed mode selection is characterized, but actual indexed execution and other
-backend/corpus combinations remain unvalidated.
+on each target SDK. Controlled indexed selection/fallback tests do not validate
+actual indexed execution or creation/maintenance.
 
 ### Helper-only standalone builds
 

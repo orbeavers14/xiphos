@@ -175,3 +175,22 @@ Diff, documentation-link checks and the unchanged shared-core/macOS diff pass.
 [#89](https://github.com/orbeavers14/xiphos/pull/89): shared-worker windows/scrolling.
 The final scope-audit implementation is identified above; Git history/PRs retain
 per-checkpoint commands, intermediate counts and acceptance limitations.
+
+## Shared API checkpoint to consume (2026-10-18)
+
+Pull checked shared work through `cf80541`: attribute modes 3–5, explicit multiword
+6/raw indexed 7, canonical `xc_search_query` with optional annotation context,
+complete per-tab last scope and ordered bounded multi-module requests. Core batches
+`f86293b`, C `ad28750`, Swift `cf80541` use one worker; do not duplicate scope/context
+or query preparation in the frontend. `xc_worker_search_modules` takes one common
+query (module NULL), ordered module IDs and optional total output limits. It returns
+owned batch/per-group status; successful child searches are borrowed const until
+batch release and must not be released separately. Existing C requests/layouts stay
+compatible. See [search contracts](search-workflows.md).
+
+Mac validation passed 136/136 Mac/core and 105/105 portable core/model tests on Mac,
+with focused ASan/UBSan/TSan and strict C11/C++11 checks. This does not update this
+platform's native compiler/GUI evidence above. Rebuild locally with the actual
+SDK/case flag before accepting target behavior; no hosted build should be enabled
+or dispatched. Basic Mac controls exist; advanced controls/indexed execution,
+mixed families, export/settings/full acceptance remain pending.

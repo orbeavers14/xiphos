@@ -4,38 +4,66 @@ Updated 2026-10-18. Read [AGENTS.md](../../AGENTS.md), the
 [shared handoff](handoff.md), [core scope](shared-core-roadmap.md),
 [status](status.md) and relevant parity rows first.
 
-Active task (2026-10-18, master): characterize/extract shared attribute-search
-rules, then owned execution/transport. Scope/native search `0ca0bab` is checked
-and pushed. Local validation only; preserve unrelated files and legacy. This note
-records intent, not a concurrent ownership lease.
+Active task (2026-10-18, master): shared search advances checked/pushed through
+`cf80541`; next characterize advanced module/range setup and export. Continue
+bounded shared-core slices with local checks. Preserve unrelated files/GTK3.
+This note records intent, not a concurrent ownership lease.
 
 ## Current checked source and active work
 
-Fork `orbeavers14/xiphos`, master. Complete private session scope `c1b0a88`,
-worker/C `c38cd8f`, Swift `ade4bdf`, shared search capability `4e3402c` / corrected
-SDK classification test `76895f4`, copied progress/interactive Stop `3181502`,
-and native search `0ca0bab` are pushed. See [search contracts](search-workflows.md).
-Shared snapshots retain complete typed SDK keys independently of public prefix;
-C/Swift expose copied metadata only. Basic native sidebar controls use that core.
-Next bounded task: shared attribute query/whole-entry policy, then execution.
-Book resources, CSS, combined numbering and earlier restore/DisplayLevel contracts
-remain in [book workflows](book-tree-workflows.md) and version history.
-Do not create separate frontend sizing algorithms. No hosted build or reset
-credit was used. Preserve Windows lane, unrelated `.DS_Store`, GTK3 and licenses.
+Fork `orbeavers14/xiphos`, master. Shared attribute policy/execution `9a932ab` /
+`572f539`, Swift `a83d3c4`, explicit native-OFF helper configuration `0d0f37a`,
+annotation-name policy `3645d4a`, private search context `8ebeddc`, scoped index
+probe `92bacfc`, canonical C request `b71980b` / Swift `f4934b2`, distinct advanced
+word dialects `69dea11`, and bounded ordered batches C++ `f86293b` / C `ad28750` /
+Swift `cf80541` are pushed. Existing basic native controls remain `0ca0bab`.
+See [current search contracts](search-workflows.md); full chronology is in Git.
+
+One query can search ordered modules through the same worker, with aggregate
+prefix limits, per-group errors and complete final scope/context. Last scope
+chains rather than unions. Advanced raw indexed syntax and forced unindexed
+multiword are distinct from sidebar automatic AND search. Annotation context is
+private per tab; phrase retains prior choices; physical SDK state always restores.
+No second frontend engine, SDK manager or scope reconstruction exists.
+
+Next bounded task: advanced module/range setup and export characterization before
+shared extraction; advanced controls, actual indexed execution, mixed families,
+saved settings and full corpus remain separate gates. Book/session/parallel and
+other core work remain in the [roadmap](shared-core-roadmap.md). No hosted job or
+reset credit used. Keep Windows lane, unrelated `.DS_Store`, GTK3 and licenses.
 
 ## Actual local checks
 
-At `0ca0bab`: 126/126 Mac/core and 98/98 portable core on this Mac pass; eight
-ASan/UBSan search/book checks and four TSan search/scope/control checks pass.
-Strict C11 header compilation passes. Focused native model checks cover scope,
-preview/navigation, immediate Stop/late completion and close/stale guards.
-The initial capability assertion wrongly treated VerseKey RawGenBook as runtime
-Generic Books; this SDK reports Biblical Texts. That assertion was prematurely
-pushed, then corrected and verified normal/ASan in `76895f4`; execution logic was
-already consistent with the SDK. See the workflow for the earlier legacy range
-memory fix and corrected fixture/C function-name mistakes.
-Dependencies are only partly instrumented; leak checks are off. Portable core
-checks on Mac do not establish current Fedora GTK or MSVC/WinUI acceptance.
+At `cf80541`: **136/136 Mac/core**, **105/105 portable core/model tests on this
+Mac** pass. Batch/context search checks at `f86293b` pass **8/8 ASan/UBSan** and
+**6/6 TSan** (fixtures included). C batch/canonical transport at `ad28750` passes
+**3/3 ASan/UBSan**, **3/3 TSan**. Six focused Swift search checks pass, including
+batch groups, copied failures/budgets, scope/context, progress and both cancellation
+modes. Strict C11 header/C++11 policy syntax and genuine native-OFF CoreRender
+build pass. Default native/actual parent helper configurations were checked.
+
+Commands for focused sanitizer groups (existing configured instrumentation):
+
+```sh
+cmake -S src/core -B build/sanitized
+cmake --build build/sanitized --target core_search_batch_c_test core_search_query_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/sanitized --output-on-failure --parallel 2 --timeout 60 -R 'core_search_batch_c$|core_search_query$'
+cmake -S src/core -B build/thread-sanitized
+cmake --build build/thread-sanitized --target core_search_batch_c_test core_search_query_test --parallel 2
+ctest --test-dir build/thread-sanitized --output-on-failure --parallel 2 --timeout 60 -R 'core_search_batch_c$|core_search_query$'
+cc -std=c11 -pedantic-errors -fsyntax-only -Isrc/core/include src/core/tests/c_header_test.c
+c++ -std=c++11 -pedantic-errors -fsyntax-only -Isrc/core/include src/core/search_policy.cpp
+cmake --build build/legacy-search-policy --target xiphos_core_render --parallel 2
+```
+
+Dependencies are partly instrumented; leak checks are off. Portable checks on Mac
+are not Fedora GTK/MSVC/WinUI acceptance. Actual CLucene execution remains pending;
+controlled SDK framework tests validate selection/context/restoration only. The
+initial capability assertion incorrectly assumed VerseKey RawGenBook remained
+Generic Books and was prematurely pushed; `76895f4` corrects it to observed runtime
+Biblical Texts and passes checks. Swift batch closure isolation and a test argument
+order were corrected before publication. See the consolidated workflow's correction
+record and Git history for earlier range/fixture evidence.
 
 Search fixture window checked eligibility, automatic/changed-row preview, ordered
 results, explicit bounds, last narrowing, clear then empty, case 1 versus 2,

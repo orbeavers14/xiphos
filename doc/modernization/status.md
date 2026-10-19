@@ -1,17 +1,20 @@
 # Modernization status and acceptance
 
-Current checkpoint (2026-10-18): complete private per-tab last-search scopes
-`c1b0a88`, worker/C `c38cd8f`, Swift `ade4bdf`, shared capability / corrected SDK
-classification `4e3402c` / `76895f4`, copied progress/interactive Stop `3181502`,
-and basic native search `0ca0bab`. Full local suites pass **126/126 Mac/core** and
-**98/98 portable core on Mac**; **8 focused ASan/UBSan**, **4 TSan**, strict C11 pass.
-GUI original-prose evidence covers scopes, case, preview/clear and main navigation.
-Full keyboard/VoiceOver, actual slow-corpus GUI interruption, saved search settings,
-advanced/attribute/index/multiple-module/export and complete platform/corpus gates
-remain. No hosted job or reset credit was used. See [current contracts](search-workflows.md).
-The first runtime book capability assertion failed and was prematurely pushed;
-`76895f4` corrects it using observed SDK classification and passes normal/sanitized
-checks. No SDK classification guess is treated as accepted parity.
+Current checkpoint (2026-10-18): shared search now includes exact attribute modes
+`572f539`, private annotation context `8ebeddc`, scoped capability probing `92bacfc`,
+composable C/Swift query `b71980b` / `f4934b2`, advanced multiword/raw indexed dialects
+`69dea11`, and ordered bounded batches `f86293b` / `ad28750` / `cf80541`. Basic native
+search remains `0ca0bab`; advanced controls/export/settings remain pending.
+Complete typed scopes and search context stay private per tab, with one FIFO SDK
+owner and copied transport. See [current contracts](search-workflows.md).
+
+At `cf80541`, **136/136 Mac/core**, **105/105 portable core/model tests on Mac**
+pass. Batch/context checks passed **8 ASan/UBSan**, **6 TSan**, then C transport
+passed **3 ASan/UBSan**, **3 TSan**; strict C11/C++11 and helper-only build pass.
+No hosted jobs/reset credit used. Actual indexed execution, advanced grouping/UI,
+mixed families, export, persistence, full keyboard/VoiceOver/corpus and target
+platform gates remain. Retain the correction record for the prematurely pushed
+capability assertion; subsequent runtime classification checks supersede it.
 
 Book images/module CSS/combined numbering remain checked partial work: shared
 geometry `48d5425`, CSS `4611a9d`/`65b8ab6`, notes `652d8e1`/`43ce5ee`/`a5d9488`.
@@ -293,8 +296,8 @@ implementation integration, not full native feature parity or legacy retirement.
 
 ## Parity coverage snapshot
 
-The ledger currently has **19 of 38 groups with some initial shared-core/macOS
-implementation evidence**, and **19 pending groups**. None of the 19 is fully
+The ledger currently has **20 of 38 groups with some initial shared-core/macOS
+implementation evidence**, and **18 pending groups**. None of the 20 is fully
 accepted: groups bundle many capabilities, and reading a verse does not complete
 whole-book rendering, commentary synchronization, tabs/session restore or visual
 composition. This is a count of groups touched, not a parity percentage and not
@@ -302,7 +305,7 @@ a replacement for the weighted engineering estimate above.
 
 | New frontend | Initial evidence in ledger | Fully accepted groups | Main gaps |
 |---|---:|---:|---|
-| macOS/shared-core slice | 19 partial, 19 pending | 0/38 | Full pane layout, commentary, parallel views, search, bookmarks/annotations, editors, installation, complete settings/data migration, accessibility/translation and release packaging |
+| macOS/shared-core slice | 20 partial, 18 pending | 0/38 | Full pane layout, commentary, parallel views, search, bookmarks/annotations, editors, installation, complete settings/data migration, accessibility/translation and release packaging |
 | WinUI 3 | 0 initial frontend entries, 38 pending | 0/38 | Native frontend/tooling, shared-core integration, full workflows and validation |
 | GTK4 | Scoped existing macOS-preview capability set; see Linux handoff | 0/38 | Manual visual/input/accessibility/corpus validation, accelerated rendering and full workflows beyond both previews |
 
