@@ -7,6 +7,7 @@
 #include <atomic>
 #include <memory>
 #include <optional>
+#include "search_policy.hpp"
 namespace xiphos::core {
 namespace detail { class SearchControlAccess; }
 enum class SearchPhase { queued=0, running=1, complete=2, cancelled=3, failed=4 };
@@ -36,6 +37,7 @@ struct SearchQuery {
   bool case_sensitive=false;
   std::optional<SearchRange> range;
   bool within_last_results=false; // Session-only; mutually exclusive with range.
+  std::optional<SearchTextOptions> text_options; // Exact phrase preserves prior search settings.
 };
 struct SearchLimits {
   std::size_t max_results=1000;
@@ -43,6 +45,7 @@ struct SearchLimits {
 };
 inline constexpr std::size_t maximum_search_results=10000;
 inline constexpr std::size_t maximum_search_reference_bytes=8*1024*1024;
+struct SearchTextState { std::optional<SearchTextOptions> options; };
 struct SearchScopeInfo { bool present=false; std::uint64_t element_count=0; };
 struct SearchResult {
   SearchQuery requested;
@@ -54,6 +57,8 @@ struct SearchResult {
   bool cancelled=false,executed=false;
   SearchScopeInfo scope; // Current session scope after this request; no SDK keys.
   bool scope_updated=false;
+  std::optional<SearchTextOptions> effective_text_options; // Named override policy prepared for this request.
+  bool text_options_updated=false;
 };
 // This initial verse search bounds copied output only. SDK execution
 // time/internal result allocation are not bounded. Cooperative cancellation is

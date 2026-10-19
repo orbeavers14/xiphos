@@ -209,7 +209,11 @@ DictionaryEntry StudySession::read_dictionary(const std::string &module, const s
   return options ? reader_.read_dictionary(module, key, *options) : reader_.read_dictionary(module, key);
 }
 SearchResult StudySession::search_module(SearchQuery query,const SearchLimits &limits,std::shared_ptr<SearchControl> control) {
-  return reader_.search_impl(std::move(query),limits,std::move(control),&search_scope_);
+  auto result=reader_.search_impl(std::move(query),limits,std::move(control),&search_scope_,search_text_options_);
+  if(result.effective_text_options&&result.requested.text_options&&result.requested.mode!=SearchMode::phrase){
+    search_text_options_=result.requested.text_options;result.text_options_updated=true;
+  }
+  return result;
 }
 SearchScopeInfo StudySession::last_search_scope() const {return search_scope_?search_scope_->info():SearchScopeInfo{};}
 void StudySession::clear_search_scope(){search_scope_.reset();}

@@ -443,3 +443,35 @@ checkbox combinations and phrase/nonphrase cases, including this sticky-state
 transition. Two policy checks pass normal and ASan/UBSan; strict C++11 syntax and
 helper-only CoreRender build pass. Native session materialization of that state
 is the next step; no native advanced-dialog acceptance is claimed.
+
+## Private per-session search-text context
+
+C++ queries can now supply optional `SearchTextOptions`. A nonphrase explicit
+choice updates that session's logical search-only context after successful
+preparation; exact phrase ignores changed checkbox input and uses the previous
+context. An absent input preserves that context too, matching sidebar reuse of
+the legacy search manager. No prior context means the SDK baseline, not an
+assumed all-Off setting. Ordinary standalone Reader calls remain stateless.
+
+For each job, the shared owner materializes that context into Strong's Numbers,
+Morphological Tags and Footnotes filters, then restores each actual filter/alias
+baseline. The context is not a reading/display preference and cannot leak into
+another tab or pane. `effective_text_options` records a prepared named override
+policy; `text_options_updated` reports a logical-context update independently of
+scope replacement and SDK execution. An empty last scope still prepares/commits
+nonphrase options before the legacy-style execution short-circuit. Cancellation
+before preparation leaves context unchanged; cancellation after preparation may
+update it even when SDK execution was skipped. Validation/failed preparation
+retain prior logical context atomically, a deliberate improvement over legacy
+mutating globals before subsequent failure. Returned partial execution follows
+normal prepared-context publication. Clear results does not clear text context;
+explicit context reset does not clear results. Nothing is saved to disk here.
+
+Frozen setup plus actual backend comparisons cover all eight flag combinations
+followed by phrase searches with opposite checkbox values. A controlled SDK
+search directly inspects all three real filter values during execution, including
+phrase use of retained values; tests also verify another session's baseline,
+empty/clear/reset, pre-cancel, missing source and per-filter restoration after an
+injected strip failure. Two final focused normal checks and four ASan/UBSan checks
+pass. A missing test-only VerseKey include was corrected before checks. C/Swift
+composable request transport is the next step; no frontend search engine is added.

@@ -15,21 +15,24 @@
 namespace xiphos::core::detail {
 namespace {
 class ScopedSearchFilters {
-  std::vector<std::pair<sword::SWOptionFilter *,std::string>> saved_;
+  struct Setting {sword::SWOptionFilter *filter;std::string prior,desired;};
+  std::vector<Setting> saved_;
 public:
-  explicit ScopedSearchFilters(EngineManager &manager) {
+  explicit ScopedSearchFilters(EngineManager &manager,const std::optional<SearchTextOptions> &text) {
     for(auto *filter:manager.option_filters()) {
-      const std::string name=filter->getOptionName();
-      if(name!="Greek Accents"&&name!="Hebrew Vowel Points"&&name!="Arabic Vowel Points")continue;
+      const std::string name=filter->getOptionName();const char *desired=nullptr;
+      if(name=="Greek Accents"||name=="Hebrew Vowel Points"||name=="Arabic Vowel Points")desired="Off";
+      else if(text){for(const auto &setting:search_text_settings(*text))if(name==setting.name)desired=setting.enabled?"On":"Off";}
+      if(!desired)continue;
       const auto *value=filter->getOptionValue();
       if(!value)throw std::runtime_error("Search filter has no restorable value");
-      saved_.emplace_back(filter,value);
+      saved_.push_back({filter,value,desired});
     }
-    try {for(auto &value:saved_)value.first->setOptionValue("Off");}
+    try {for(auto &value:saved_)value.filter->setOptionValue(value.desired.c_str());}
     catch(...){restore();throw;}
   }
   ~ScopedSearchFilters(){restore();}
-  void restore(){for(auto &value:saved_)value.first->setOptionValue(value.second.c_str());}
+  void restore(){for(auto &value:saved_)value.filter->setOptionValue(value.prior.c_str());}
 };
 struct ScopedSearchModule {
   sword::SWModule &module;bool attributes,skip_links;
@@ -53,7 +56,7 @@ bool supports_verse_search(sword::SWModule &module) {
 SearchResult capture_module_search(EngineManager &manager,sword::SWModule &module,
                                   SearchQuery query,const SearchLimits &limits,const std::shared_ptr<SearchControl> &control,
                                   const SearchScope *previous,std::shared_ptr<const SearchScope> *next,
-                                  const SearchScopeLimits &scope_limits) {
+                                  const SearchScopeLimits &scope_limits,const std::optional<SearchTextOptions> &previous_text) {
   if(next)next->reset();
   if(query.within_last_results&&(!next||query.range))
     throw std::invalid_argument("Last-search scope requires a session and excludes explicit range");
@@ -100,15 +103,17 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   if(control&&control->cancel_requested()) {
     SearchResult result{std::move(query),{},engine_type,0,{},false};result.cancelled=true;return result;
   }
-  ScopedSearchFilters filters(manager);ScopedSearchModule state(module);
+  const auto effective_text=query.mode!=SearchMode::phrase&&query.text_options?query.text_options:previous_text;
+  ScopedSearchFilters filters(manager,effective_text);ScopedSearchModule state(module);
   auto prepared=sidebar_search_text(query.expression,engine_type==sword::SWModule::SEARCHTYPE_EXTERNAL);
   if(attribute){auto value=attribute_search_text(query.expression,*attribute);prepared=std::move(value.expression);whole_entry=value.whole_entry;}
   const std::string stripped=module.stripText(prepared.c_str()).c_str();
   if(control&&control->cancel_requested()) {
-    SearchResult result{std::move(query),stripped,engine_type,0,{},false};result.cancelled=true;return result;
+    SearchResult result{std::move(query),stripped,engine_type,0,{},false};result.cancelled=true;result.effective_text_options=effective_text;return result;
   }
-  if(query.within_last_results&&(!previous||!previous->info().element_count))
-    return SearchResult{std::move(query),stripped,engine_type,0,{},false};
+  if(query.within_last_results&&(!previous||!previous->info().element_count)){
+    SearchResult result{std::move(query),stripped,engine_type,0,{},false};result.effective_text_options=effective_text;return result;
+  }
   ProgressContext context{&module,control.get(),std::this_thread::get_id()};
   const int flags=(query.case_sensitive?0:XIPHOS_SWORD_SEARCH_ICASE_FLAG)|(whole_entry?sword::SWModule::SEARCHFLAG_MATCHWHOLEENTRY:0);
   auto &list=module.search(stripped.c_str(),engine_type,flags,
@@ -119,6 +124,7 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   auto copied=copy_search_references(list,limits);
   SearchResult result{std::move(query),stripped,engine_type,copied.engine_count,std::move(copied.references),copied.limited};
   result.executed=true;result.cancelled=control&&control->cancel_requested();
+  result.effective_text_options=effective_text;
   if(next)*next=std::move(staged); // Publish only after all owned output is ready.
   return result;
 }

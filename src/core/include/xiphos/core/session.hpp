@@ -29,6 +29,8 @@ public:
   SearchResult search_module(SearchQuery query,const SearchLimits &limits = {},std::shared_ptr<SearchControl> control = {});
   SearchScopeInfo last_search_scope() const;
   void clear_search_scope();
+  SearchTextState search_text_options() const {return {search_text_options_};}
+  void clear_search_text_options(){search_text_options_.reset();}
   // Migration opt-in for consumers that copy/apply snapshot HTML and CSS together.
   // Not a saved study preference. Existing consumers retain plain snapshots.
   void set_lexical_layout_enabled(bool enabled) { lexical_layout_enabled_ = enabled; }
@@ -135,6 +137,7 @@ public:
   void clear_history() { history_.clear(); }
 private:
   std::shared_ptr<const detail::SearchScope> search_scope_;
+  std::optional<SearchTextOptions> search_text_options_;
   std::optional<BookSelectionState> book_selection_;
   Reader &reader_;
   std::optional<LexiconPreferences> lexicons_;
