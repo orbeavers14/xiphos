@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 import Foundation
+actor ProgressLog {
+    var items: [CoreSearchProgress] = []
+    func append(_ progress: CoreSearchProgress) { items.append(progress) }
+    func snapshot() -> [CoreSearchProgress] { items }
+}
 @main struct SearchAdapterSmoke {
     static func main() async throws {
         guard CommandLine.arguments.count == 2 else { fatalError("Original search fixture required") }
@@ -9,7 +14,12 @@ import Foundation
         let tab = try await worker.createTab(), other = try await worker.createTab()
         _ = try await worker.visit(tab: tab, module: "Text", reference: "John1:2")
         let book = try await worker.selectBookDocument(tab: tab, module: "Book", offset: 4)
-        let prefix = try await worker.searchModule(tab: tab, module: "Text", expression: "Original", maxResults: 1)
+        let progressLog = ProgressLog()
+        let prefix = try await worker.searchModule(tab: tab, module: "Text", expression: "Original", maxResults: 1,
+                                                   onProgress: { await progressLog.append($0) })
+        let progress = await progressLog.snapshot()
+        guard progress.last?.phase == .complete, progress.last?.percent == 100,
+              zip(progress, progress.dropFirst()).allSatisfy({ $0.percent <= $1.percent && $0 != $1 }) else { fatalError("Swift progress copies are monotonic, changed-only and terminal") }
         guard prefix.module == "Text", prefix.expression == "Original", prefix.mode == .phrase,
               prefix.engineType == -1, !prefix.caseSensitive, prefix.limited,
               prefix.totalResults == 3, prefix.references.count == 1, !prefix.cancelled, prefix.executed,
@@ -42,6 +52,17 @@ import Foundation
         let cancelled = Task { try await worker.searchModule(tab: tab, module: "Text", expression: "Original") }
         cancelled.cancel()
         do { _ = try await cancelled.value; fatalError("Cancelled Swift search published a result") } catch is CancellationError { }
+        let cancelledProgress = ProgressLog()
+        let returned = Task {
+            try await worker.searchModule(tab: tab, module: "Text", expression: "Original", returnCancelledResults: true,
+                                          onProgress: { await cancelledProgress.append($0) })
+        }
+        returned.cancel()
+        let stopped = try await returned.value
+        let stoppedProgress = await cancelledProgress.snapshot()
+        guard stoppedProgress.last?.phase == (stopped.cancelled ? .cancelled : .complete),
+              stopped.scope == (try await worker.lastSearchScope(tab: tab)),
+              stopped.executed || !stopped.scopeUpdated else { fatalError("Interactive stop drains and returns authoritative execution/scope disposition; late completion may win") }
         let commentary = try await worker.searchModule(tab: tab, module: "Commentary", expression: "Original")
         guard commentary.references.count == 3, try await worker.bookDocumentSelection(tab: tab) == book,
               try await worker.dictionaryHistory(tab: tab).entries.isEmpty else { fatalError("Search queue recovers after failures and remains state-neutral") }

@@ -331,3 +331,20 @@ inspected; the correction tests actual runtime classification and leaves the
 already matching shared execution predicate unchanged. The book workflow's older
 unverified type description is corrected too. Subsequent checks supersede the
 failed assertion; no full module/corpus acceptance is implied by capability.
+
+## Swift progress and interactive Stop
+
+Swift search optionally delivers changed-only `CoreSearchProgress` values with
+phase, monotonic percent and cancellation-request state. Callback values are copied
+scalars; request handles stay actor-owned and the SDK stays on its C++ owner.
+Callbacks may suspend without blocking the UI. Terminal phase can be observed
+before payload transfer; request polling remains authoritative for transfer/error.
+
+Existing task-cancellation behavior still drains then throws. Interactive controls
+can opt into `returnCancelledResults`: cancelling the Swift task signals the C
+request, drains it, and returns the authoritative owned result instead of discarding
+partial results. This keeps visible partial matches consistent with the committed
+next scope. Pre-execution stop and late successful completion remain distinct.
+SDK failures still throw. Two focused core/Swift checks pass, covering copied
+progress, changed-only delivery, terminal disposition, unchanged default throwing
+behavior, returned cancellation metadata and agreement with queried scope state.

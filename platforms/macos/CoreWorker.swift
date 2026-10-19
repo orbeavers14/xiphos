@@ -46,28 +46,41 @@ actor CoreWorker {
         guard let handle else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         return handle.value
     }
-    private func wait(_ status: xc_status, _ request: OpaquePointer?, cancellingSearch: Bool = false) async throws -> OpaquePointer {
+    private func searchProgressValue(_ request: OpaquePointer) -> CoreSearchProgress? {
+        var info = xc_search_progress()
+        guard xc_request_search_progress(request, &info) == XC_OK,
+              let phase = CoreSearchPhase(rawValue: info.phase) else { return nil }
+        return CoreSearchProgress(phase: phase, percent: info.percent, cancelRequested: info.cancel_requested != 0)
+    }
+    private func wait(_ status: xc_status, _ request: OpaquePointer?, cancellingSearch: Bool = false,
+                      returnCancelledSearch: Bool = false,
+                      onSearchProgress: (@Sendable (CoreSearchProgress) async -> Void)? = nil) async throws -> OpaquePointer {
         guard status == XC_OK, let request else { throw CoreError(status: status) }
-        // Search tasks may signal cooperative cancellation, then still drain.
-        // Other accepted actions retain their original cancellation behavior so
-        // tab IDs/results are always observed and released.
-        // Hosts guard stale presentation separately. This sleep yields the actor
-        // and never waits on an engine future or blocks a UI thread.
-        if cancellingSearch && Task.isCancelled { _ = xc_request_cancel_search(request) }
-        while xc_request_poll(request) == XC_PENDING {
+        // Accepted searches drain even after stop. Optional progress contains
+        // copied scalars only; callbacks never receive a request or SDK pointer.
+        // Other accepted actions retain their original cancellation behavior.
+        var delivered: CoreSearchProgress?
+        var result = XC_PENDING
+        repeat {
             if cancellingSearch && Task.isCancelled { _ = xc_request_cancel_search(request) }
-            await withCheckedContinuation { continuation in
-                DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + .milliseconds(5)) {
-                    continuation.resume()
+            result = xc_request_poll(request)
+            if let callback = onSearchProgress, let progress = searchProgressValue(request), progress != delivered {
+                delivered = progress
+                await callback(progress)
+            }
+            if result == XC_PENDING {
+                await withCheckedContinuation { continuation in
+                    DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + .milliseconds(5)) {
+                        continuation.resume()
+                    }
                 }
             }
-        }
-        let result = xc_request_poll(request)
+        } while result == XC_PENDING
         guard result == XC_OK else {
             xc_request_release(request)
             throw CoreError(status: result)
         }
-        if cancellingSearch && Task.isCancelled {
+        if cancellingSearch && Task.isCancelled && !returnCancelledSearch {
             xc_request_release(request)
             throw CancellationError()
         }
@@ -229,7 +242,8 @@ actor CoreWorker {
     func searchModule(tab: UInt64, module: String, expression: String, mode: CoreSearchMode = .phrase,
                       caseSensitive: Bool = false, maxResults: Int = 1000,
                       maxReferenceBytes: Int = 1024 * 1024, range: CoreSearchRange? = nil,
-                      withinLastResults: Bool = false) async throws -> RenderedSearchResult {
+                      withinLastResults: Bool = false, returnCancelledResults: Bool = false,
+                      onProgress: (@Sendable (CoreSearchProgress) async -> Void)? = nil) async throws -> RenderedSearchResult {
         let inputs = [module, expression] + (range.map { [$0.module, $0.expression] } ?? [])
         guard !inputs.contains(where: { $0.utf8.contains(0) }), maxResults > 0, maxReferenceBytes > 0,
               !(withinLastResults && range != nil) else {
@@ -256,7 +270,8 @@ actor CoreWorker {
                 return xc_worker_search_module(handle, tab, id, query, &options, &request)
             }
         }
-        let completed = try await wait(status, request, cancellingSearch: true)
+        let completed = try await wait(status, request, cancellingSearch: true,
+                                       returnCancelledSearch: returnCancelledResults, onSearchProgress: onProgress)
         defer { xc_request_release(completed) }
         guard let result = xc_request_take_search(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
         defer { xc_search_release(result) }

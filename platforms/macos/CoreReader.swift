@@ -126,6 +126,8 @@ struct RenderedBookDocument: Sendable, Equatable {
     var resourceCSS: String { lexical.css + "\n" + (presentation?.stylesheet?.inlineCSS ?? "") }
 }
 enum CoreSearchMode: Int32, Sendable { case regularExpression=0, phrase=1, words=2 }
+enum CoreSearchPhase: Int32, Sendable { case queued = 0, running, complete, cancelled, failed }
+struct CoreSearchProgress: Sendable, Equatable { let phase: CoreSearchPhase; let percent: UInt32; let cancelRequested: Bool }
 struct CoreSearchScope: Sendable, Equatable { let present: Bool; let elementCount: UInt64 }
 struct CoreSearchRange: Sendable, Equatable { let module: String; let expression: String }
 struct RenderedSearchResult: Sendable, Equatable {
