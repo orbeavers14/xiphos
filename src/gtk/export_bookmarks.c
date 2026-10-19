@@ -23,6 +23,7 @@
 #endif
 
 #include <gtk/gtk.h>
+#include "xiphos/core/export_item.h"
 #include <libxml/parser.h>
 
 #include "gui/export_bookmarks.h"
@@ -88,31 +89,19 @@ void gui_set_html_item(GString *str,
 
 		if (((modtype = main_get_mod_type(mod_tmp)) == TEXT_TYPE) || (modtype == COMMENTARY_TYPE)) {
 			gchar *text = main_get_rendered_text(mod_tmp, key);
-			scripture = g_strdup_printf("<li>%s</li>", text);
+			scripture = g_strdup_printf("%s", text);
 			g_free(text);
 		}
 
 		if (mod_tmp)
 			g_free(mod_tmp);
-	} else
-		scripture = g_strdup("");
-
-	{
-		gchar *desc_esc = g_markup_escape_text(description, -1);
-		gchar *mod_esc = g_markup_escape_text(module, -1);
-		gchar *key_esc = g_markup_escape_text(key, -1);
-
-		buf = g_strdup_printf("<li>%s<ul><li>%s %s</li>%s</ul><br/></li>",
-				      desc_esc,
-				      mod_esc, key_esc, (scripture ? scripture : ""));
-
-		g_free(desc_esc);
-		g_free(mod_esc);
-		g_free(key_esc);
 	}
 
+	buf = xiphos_export_item(description, module, key, scripture, 1);
+	if (!buf)
+		g_error("Unable to format export item");
 	g_string_append(str, buf);
-	g_free(buf);
+	xiphos_export_item_free(buf);
 	g_free(scripture);
 }
 
@@ -142,12 +131,11 @@ void gui_set_plain_text_item(GString *str,
 	} else
 		scripture = g_strdup("");
 
-	buf = g_strdup_printf("\t%s\n\t\t%s %s\n\t\t%s\n\n",
-			      description,
-			      module, key, (scripture ? scripture : ""));
-
+	buf = xiphos_export_item(description, module, key, scripture, 0);
+	if (!buf)
+		g_error("Unable to format export item");
 	g_string_append(str, buf);
-	g_free(buf);
+	xiphos_export_item_free(buf);
 	g_free(scripture);
 }
 

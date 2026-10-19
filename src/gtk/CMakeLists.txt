@@ -240,6 +240,7 @@ target_include_directories(xiphos
 target_link_libraries(xiphos
   PRIVATE
   Xiphos::CoreOptions
+  Xiphos::CoreRender
   Threads::Threads
   PkgConfig::Core
   PkgConfig::Gtk
