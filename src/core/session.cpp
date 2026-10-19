@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/session.hpp"
+#include "search_scope.hpp"
 #include <stdexcept>
 #include <type_traits>
 #include <functional>
@@ -208,8 +209,10 @@ DictionaryEntry StudySession::read_dictionary(const std::string &module, const s
   return options ? reader_.read_dictionary(module, key, *options) : reader_.read_dictionary(module, key);
 }
 SearchResult StudySession::search_module(SearchQuery query,const SearchLimits &limits,std::shared_ptr<SearchControl> control) {
-  return reader_.search_module(std::move(query),limits,std::move(control));
+  return reader_.search_impl(std::move(query),limits,std::move(control),&search_scope_);
 }
+SearchScopeInfo StudySession::last_search_scope() const {return search_scope_?search_scope_->info():SearchScopeInfo{};}
+void StudySession::clear_search_scope(){search_scope_.reset();}
 BookEntry StudySession::read_book(const std::string &module, std::uint64_t offset) {
   const auto options = module_engine_options(module);
   return options ? reader_.read_book(module, offset, *options) : reader_.read_book(module, offset);

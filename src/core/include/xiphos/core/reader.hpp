@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 namespace xiphos::core {
+namespace detail { class SearchScope; }
 struct Module {
   std::string id, description, type, language;
   ModuleOptions options;
@@ -147,6 +148,9 @@ public:
   std::string adjacent_chapter(const std::string &module, const std::string &reference,
                                int direction);
 private:
+  friend class StudySession;
+  SearchResult search_impl(SearchQuery query,const SearchLimits &limits,std::shared_ptr<SearchControl> control,
+                           std::shared_ptr<const detail::SearchScope> *scope);
   BookNote book_note_impl(const std::string &module, std::uint64_t offset, const std::string &identifier,
                           const EngineOptions *options, bool render_body);
   BookDocument book_document_impl(const std::string &module, std::uint64_t offset, const EngineOptions *options, const BookDocumentLimits &limits, const bool *labels = nullptr);

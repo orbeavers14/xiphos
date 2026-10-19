@@ -1,6 +1,6 @@
 # Search workflow characterization and seams
 
-Updated 2026-10-17. This is scoped source evidence, not accepted F18–F20 parity.
+Updated 2026-10-18. This is scoped source evidence, not accepted F18–F20 parity.
 Retain the GTK search interfaces/backend until complete replacements pass gates.
 
 ## Existing workflows
@@ -246,3 +246,45 @@ This sequence is a proposed implementation plan. The stored scope and commands
 are not implemented or accepted at this checkpoint; no public API is promised by
 this design note. Review the actual SDK key representation before choosing the
 private storage type, and retain existing unscoped/range requests compatibly.
+
+## Complete private session scope (2026-10-18)
+
+Sessions now retain complete SDK key snapshots independently of displayed result
+limits. `SearchQuery.within_last_results` is session-only and mutually exclusive
+with explicit bounds. Standalone Reader calls remain unscoped/stateless and
+reject this flag. The shared C++ worker transports the copied flag automatically;
+C/Swift scope commands and native controls are the next transport step.
+
+A private immutable snapshot clones each SDK key, including type, interval bounds
+and versification, before indexed display sorting. Each execution uses its own
+scope-key copy. No SDK object travels in a public result. Session copies share only
+an immutable snapshot; replacing/clearing one does not replace another's state.
+Calls/lifetimes remain serialized on the engine owner, including scope destruction.
+Reading, book selection, dictionary state and histories remain independent.
+
+Normal and explicit-bound searches reseed this tab's scope. Subsequent searches
+within it use all stored matches even when the earlier public prefix held only
+one. Returned zero matches commit a present empty scope; absent/empty last scopes
+skip SDK search and cannot fall back to whole-module execution. Pre-execution
+cancellation preserves the committed scope. Returned execution, including partial
+keys after cooperative cancellation, replaces it as characterized in legacy.
+Validation, SDK failure, retention overflow or failed owned output preparation
+retain the previous scope. The last case is a deliberate atomic-publication
+improvement over legacy clearing visible results before preparation.
+
+`SearchResult.scope` is copied current presence/SDK element count;
+`scope_updated` marks replacement by this request. Neither is an expanded verse
+total. Explicit `clear_search_scope` resets to absence; it does not navigate.
+Private retention is capped at 100,000 SDK elements and 16 MiB of accounted key
+text/range-text/versification bytes. These are logical capacity guards, not an
+exact heap/time bound. Overflow throws `length_error` without publishing a partial
+scope; the current C bridge maps such engine failures to XC_ENGINE_ERROR. Public
+reference-prefix limits remain separate. Larger/indexed/module-family acceptance
+and restoration/persistence of scopes remain pending.
+
+Tests cover full-prefix independence, cross-module/repeated narrowing, independent
+tabs, empty/clear/reset, rejected mixed scopes, source ownership/intervals/Vulg,
+pre-cancel and deterministic returned partial/exception/overflow behavior. Initial
+focused checks: three Mac, three portable-on-Mac, five ASan/UBSan and three TSan
+passed; the added alternate-versification assertion is checked separately before
+commit. Dependency instrumentation and existing platform acceptance limits apply.

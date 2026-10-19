@@ -34,6 +34,7 @@ struct SearchQuery {
   SearchMode mode=SearchMode::phrase;
   bool case_sensitive=false;
   std::optional<SearchRange> range;
+  bool within_last_results=false; // Session-only; mutually exclusive with range.
 };
 struct SearchLimits {
   std::size_t max_results=1000;
@@ -41,6 +42,7 @@ struct SearchLimits {
 };
 inline constexpr std::size_t maximum_search_results=10000;
 inline constexpr std::size_t maximum_search_reference_bytes=8*1024*1024;
+struct SearchScopeInfo { bool present=false; std::uint64_t element_count=0; };
 struct SearchResult {
   SearchQuery requested;
   std::string effective_expression; // Exact copied module stripText query.
@@ -49,9 +51,11 @@ struct SearchResult {
   std::vector<std::string> references; // Complete owned SDK keys, ordered, never byte-truncated.
   bool limited=false;
   bool cancelled=false,executed=false;
+  SearchScopeInfo scope; // Current session scope after this request; no SDK keys.
+  bool scope_updated=false;
 };
 // This initial verse search bounds copied output only. SDK execution
 // time/internal result allocation are not bounded. Cooperative cancellation is
 // observed at SDK progress callbacks. Explicit ranges stay as SDK interval keys,
-// not expanded verse lists. Last-search scopes remain a separate capability.
+// not expanded verse lists. Sessions retain complete scope independently of output.
 }

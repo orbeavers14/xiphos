@@ -46,7 +46,12 @@ void search_percent(char percent,void *user) noexcept {
 }
 }
 SearchResult capture_module_search(EngineManager &manager,sword::SWModule &module,
-                                  SearchQuery query,const SearchLimits &limits,const std::shared_ptr<SearchControl> &control) {
+                                  SearchQuery query,const SearchLimits &limits,const std::shared_ptr<SearchControl> &control,
+                                  const SearchScope *previous,std::shared_ptr<const SearchScope> *next,
+                                  const SearchScopeLimits &scope_limits) {
+  if(next)next->reset();
+  if(query.within_last_results&&(!next||query.range))
+    throw std::invalid_argument("Last-search scope requires a session and excludes explicit range");
   if(query.module.empty()||query.module.find('\0')!=std::string::npos||query.expression.empty()||
      query.expression.size()>32768||query.expression.find('\0')!=std::string::npos||
      !g_utf8_validate(query.expression.data(),query.expression.size(),nullptr))
@@ -83,6 +88,7 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
     range=parser.parseVerseList(requested.expression.c_str(),"",true);
     if(range->getCount()<0||range->getCount()>64)throw std::invalid_argument("Search range exceeds the interval limit");
   }
+  if(query.within_last_results&&previous)range=previous->keys();
   if(control&&control->cancel_requested()) {
     SearchResult result{std::move(query),{},engine_type,0,{},false};result.cancelled=true;return result;
   }
@@ -92,13 +98,18 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   if(control&&control->cancel_requested()) {
     SearchResult result{std::move(query),stripped,engine_type,0,{},false};result.cancelled=true;return result;
   }
+  if(query.within_last_results&&(!previous||!previous->info().element_count))
+    return SearchResult{std::move(query),stripped,engine_type,0,{},false};
   ProgressContext context{&module,control.get(),std::this_thread::get_id()};
   auto &list=module.search(stripped.c_str(),engine_type,query.case_sensitive?0:XIPHOS_SWORD_SEARCH_ICASE_FLAG,
                            range?&*range:nullptr,nullptr,search_percent,&context);
+  // Legacy copies the complete scope before sorting indexed display results.
+  auto staged=next?std::make_shared<const SearchScope>(list,scope_limits):nullptr;
   if(engine_type==sword::SWModule::SEARCHTYPE_EXTERNAL)list.sort();
   auto copied=copy_search_references(list,limits);
   SearchResult result{std::move(query),stripped,engine_type,copied.engine_count,std::move(copied.references),copied.limited};
   result.executed=true;result.cancelled=control&&control->cancel_requested();
+  if(next)*next=std::move(staged); // Publish only after all owned output is ready.
   return result;
 }
 }

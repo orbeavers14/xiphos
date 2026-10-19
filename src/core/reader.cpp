@@ -140,12 +140,20 @@ BookEntry Reader::read_book(const std::string &id, std::uint64_t offset) {
   return book_impl(id, offset, nullptr);
 }
 SearchResult Reader::search_module(SearchQuery query,const SearchLimits &limits,std::shared_ptr<SearchControl> control) {
+  return search_impl(std::move(query),limits,std::move(control),nullptr);
+}
+SearchResult Reader::search_impl(SearchQuery query,const SearchLimits &limits,std::shared_ptr<SearchControl> control,
+                                 std::shared_ptr<const detail::SearchScope> *scope) {
   detail::SearchControlScope progress(control);
   if(query.module.empty()||query.module.find('\0')!=std::string::npos)throw std::invalid_argument("Invalid search module");
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto *module=impl_->manager->getModule(query.module.c_str());
   if(!module)throw std::out_of_range("Search module is not installed");
-  auto result=detail::capture_module_search(*impl_->manager,*module,std::move(query),limits,control);
+  std::shared_ptr<const detail::SearchScope> staged;
+  auto result=detail::capture_module_search(*impl_->manager,*module,std::move(query),limits,control,
+    scope?scope->get():nullptr,scope?&staged:nullptr);
+  if(staged){*scope=std::move(staged);result.scope_updated=true;}
+  if(scope&&*scope)result.scope=(*scope)->info();
   progress.finish(result.cancelled);return result;
 }
 BookDocument Reader::read_book_document(const std::string &id, std::uint64_t offset,

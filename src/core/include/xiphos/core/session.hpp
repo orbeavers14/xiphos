@@ -25,8 +25,10 @@ struct StudyPassage {
 class StudySession {
 public:
   explicit StudySession(Reader &reader) : reader_(reader) {}
-  // Read-only initial search: no reading/history publication or last-search scope.
+  // Search updates only this session's complete last-result scope, never reading/history.
   SearchResult search_module(SearchQuery query,const SearchLimits &limits = {},std::shared_ptr<SearchControl> control = {});
+  SearchScopeInfo last_search_scope() const;
+  void clear_search_scope();
   // Migration opt-in for consumers that copy/apply snapshot HTML and CSS together.
   // Not a saved study preference. Existing consumers retain plain snapshots.
   void set_lexical_layout_enabled(bool enabled) { lexical_layout_enabled_ = enabled; }
@@ -132,6 +134,7 @@ public:
   const History &history() const { return history_; }
   void clear_history() { history_.clear(); }
 private:
+  std::shared_ptr<const detail::SearchScope> search_scope_;
   std::optional<BookSelectionState> book_selection_;
   Reader &reader_;
   std::optional<LexiconPreferences> lexicons_;
