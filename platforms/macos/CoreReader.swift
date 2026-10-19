@@ -128,6 +128,7 @@ struct RenderedBookDocument: Sendable, Equatable {
 enum CoreSearchMode: Int32, Sendable { case regularExpression=0, phrase=1, words=2, lemma=3, morphology=4, footnote=5 }
 enum CoreSearchPhase: Int32, Sendable { case queued = 0, running, complete, cancelled, failed }
 struct CoreSearchProgress: Sendable, Equatable { let phase: CoreSearchPhase; let percent: UInt32; let cancelRequested: Bool }
+struct CoreSearchTextOptions: Sendable, Equatable { var strongs = false; var morphology = false; var footnotes = false }
 struct CoreSearchScope: Sendable, Equatable { let present: Bool; let elementCount: UInt64 }
 struct CoreSearchRange: Sendable, Equatable { let module: String; let expression: String }
 struct RenderedSearchResult: Sendable, Equatable {
@@ -141,6 +142,9 @@ struct RenderedSearchResult: Sendable, Equatable {
     var withinLastResults = false
     var scope = CoreSearchScope(present: false, elementCount: 0)
     var scopeUpdated = false
+    var requestedTextOptions: CoreSearchTextOptions? = nil
+    var effectiveTextOptions: CoreSearchTextOptions? = nil
+    var textOptionsUpdated = false
 }
 struct RenderedBookImage: Sendable, Equatable {
     let module: String, filename: String, mediaType: String
@@ -385,12 +389,18 @@ enum CoreValues {
         RenderedBookEntry(tree: bookTree(xc_book_entry_tree(result)!),
             html: String(cString: xc_book_entry_html(result)!), hasEntry: xc_book_entry_has_entry(result) != 0)
     }
+    static func searchTextOptions(_ info: xc_search_text_info) -> CoreSearchTextOptions? {
+        info.present == 0 ? nil : CoreSearchTextOptions(strongs: info.strongs != 0, morphology: info.morphology != 0, footnotes: info.footnotes != 0)
+    }
     static func search(_ result: OpaquePointer) -> RenderedSearchResult {
         var info = xc_search_info()
         precondition(xc_search_get_info(result, &info) == XC_OK)
         guard let mode = CoreSearchMode(rawValue: info.mode) else { preconditionFailure("Unknown core search mode") }
         var scope = xc_search_scope_info()
         precondition(xc_search_get_scope(result, &scope) == XC_OK)
+        var requestedText = xc_search_text_info(), effectiveText = xc_search_text_info()
+        precondition(xc_search_requested_text_options(result, &requestedText) == XC_OK)
+        precondition(xc_search_effective_text_options(result, &effectiveText) == XC_OK)
         return RenderedSearchResult(module: String(cString: xc_search_module(result)!),
             expression: String(cString: xc_search_expression(result)!),
             effectiveExpression: String(cString: xc_search_effective_expression(result)!),
@@ -401,7 +411,9 @@ enum CoreValues {
                 expression: String(cString: xc_search_range_expression(result)!)) },
             withinLastResults: xc_search_within_last_results(result) == 1,
             scope: CoreSearchScope(present: scope.present != 0, elementCount: scope.element_count),
-            scopeUpdated: xc_search_scope_updated(result) == 1)
+            scopeUpdated: xc_search_scope_updated(result) == 1,
+            requestedTextOptions: searchTextOptions(requestedText), effectiveTextOptions: searchTextOptions(effectiveText),
+            textOptionsUpdated: xc_search_text_options_updated(result) == 1)
     }
     static func bookImage(_ result: OpaquePointer) -> RenderedBookImage {
         let source = xc_book_image_data_source(result)!

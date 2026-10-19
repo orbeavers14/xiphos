@@ -31,7 +31,43 @@ actor ProgressLog {
         guard owned[0].references == ["John 1:1", "John 1:4"], owned[2].expression == "Alpha" else { fatalError("Attribute copies survive shutdown") }
         print("Swift copied lemma/morph/footnote execution, scopes, bounds and shutdown passed")
     }
+    static func textOptions(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let tab = try await worker.createTab(), other = try await worker.createTab()
+        let wanted = CoreSearchTextOptions(strongs: true, morphology: false, footnotes: true)
+        let changed = CoreSearchTextOptions(strongs: false, morphology: true, footnotes: false)
+        let seed = try await worker.searchModule(tab: tab, module: "Text", expression: "G140", mode: .lemma, textOptions: wanted)
+        guard seed.requestedTextOptions == wanted, seed.effectiveTextOptions == wanted, seed.textOptionsUpdated,
+              try await worker.searchTextOptions(tab: tab) == wanted, try await worker.searchTextOptions(tab: other) == nil else { fatalError("Swift copies prepared search-only context and isolates tabs") }
+        let phrase = try await worker.searchModule(tab: tab, module: "Text", expression: "G140", mode: .phrase, textOptions: changed)
+        guard phrase.requestedTextOptions == changed, phrase.effectiveTextOptions == wanted, !phrase.textOptionsUpdated else { fatalError("Phrase keeps previous search context in core") }
+        let bounded = try await worker.searchModule(tab: tab, module: "Text", expression: "N-ASF", mode: .morphology,
+            range: CoreSearchRange(module: "Text", expression: "John1:2-John1:3"), textOptions: changed)
+        let last = try await worker.searchModule(tab: tab, module: "Commentary", expression: "Original", mode: .footnote, withinLastResults: true)
+        guard bounded.references == ["John 1:3"], last.references == ["John 1:3"],
+              last.requestedTextOptions == nil, last.effectiveTextOptions == changed else { fatalError("Composable descriptor unifies scopes and retained annotation settings") }
+        let before = try await worker.lastSearchScope(tab: tab)
+        guard try await worker.clearSearchTextOptions(tab: tab) == nil, try await worker.lastSearchScope(tab: tab) == before else { fatalError("Reset search text options preserves result scope") }
+        let ignored = try await worker.searchModule(tab: other, module: "Text", expression: "Alpha", mode: .phrase, textOptions: wanted)
+        guard ignored.effectiveTextOptions == nil, !ignored.textOptionsUpdated, try await worker.searchTextOptions(tab: other) == nil else { fatalError("Unconfigured phrase does not invent an all-Off context") }
+        _ = try await worker.searchModule(tab: tab, module: "Text", expression: "G140", mode: .lemma, textOptions: wanted)
+        do {
+            _ = try await worker.searchModule(tab: tab, module: "Missing", expression: "Original", mode: .words, textOptions: changed)
+            fatalError("Expected missing module")
+        } catch is CoreError {}
+        guard try await worker.searchTextOptions(tab: tab) == wanted else { fatalError("Failed query cannot overwrite committed context") }
+        let stopped = Task { try await worker.searchModule(tab: tab, module: "Text", expression: "Original", mode: .words,
+                                                          textOptions: changed, returnCancelledResults: true) }
+        stopped.cancel();let returned = try await stopped.value
+        guard try await worker.searchTextOptions(tab: tab) == (returned.textOptionsUpdated ? changed : wanted) else { fatalError("Cancelled/late completed query exposes authoritative context publication") }
+        try await worker.closeTab(tab); try await worker.closeTab(other);await worker.shutdown()
+        guard seed.requestedTextOptions == wanted, phrase.effectiveTextOptions == wanted else { fatalError("Copied text metadata survives shutdown") }
+        print("Swift composable scopes, requested/effective annotation context, phrase retention and lifetime passed")
+    }
     static func main() async throws {
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--text-options" {
+            try await textOptions(root: CommandLine.arguments[2]); return
+        }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--attributes" {
             try await attributes(root: CommandLine.arguments[2]); return
         }

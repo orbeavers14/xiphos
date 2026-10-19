@@ -242,7 +242,7 @@ actor CoreWorker {
     func searchModule(tab: UInt64, module: String, expression: String, mode: CoreSearchMode = .phrase,
                       caseSensitive: Bool = false, maxResults: Int = 1000,
                       maxReferenceBytes: Int = 1024 * 1024, range: CoreSearchRange? = nil,
-                      withinLastResults: Bool = false, returnCancelledResults: Bool = false,
+                      withinLastResults: Bool = false, textOptions: CoreSearchTextOptions? = nil, returnCancelledResults: Bool = false,
                       onProgress: (@Sendable (CoreSearchProgress) async -> Void)? = nil) async throws -> RenderedSearchResult {
         let inputs = [module, expression] + (range.map { [$0.module, $0.expression] } ?? [])
         guard !inputs.contains(where: { $0.utf8.contains(0) }), maxResults > 0, maxReferenceBytes > 0,
@@ -255,19 +255,34 @@ actor CoreWorker {
         options.max_results = maxResults; options.max_reference_bytes = maxReferenceBytes
         var request: OpaquePointer?
         let handle = try worker()
+        var annotations = xc_search_text_options()
+        xc_search_text_options_default(&annotations)
+        if let textOptions {
+            annotations.strongs = textOptions.strongs ? 1 : 0
+            annotations.morphology = textOptions.morphology ? 1 : 0
+            annotations.footnotes = textOptions.footnotes ? 1 : 0
+        }
         let status = module.withCString { id in
-            expression.withCString { query in
-                if withinLastResults {
-                    return xc_worker_search_module_in_last_results(handle, tab, id, query, &options, &request)
-                }
-                if let range {
-                    return range.module.withCString { scope in
-                        range.expression.withCString { bounds in
-                            xc_worker_search_module_in_range(handle, tab, id, query, scope, bounds, &options, &request)
+            expression.withCString { expression in
+                func queue(_ scopeModule: UnsafePointer<CChar>?, _ bounds: UnsafePointer<CChar>?) -> xc_status {
+                    var query = xc_search_query()
+                    xc_search_query_default(&query)
+                    query.module = id; query.expression = expression
+                    query.scope = withinLastResults ? XC_SEARCH_SCOPE_LAST : range != nil ? XC_SEARCH_SCOPE_BOUNDS : XC_SEARCH_SCOPE_ALL
+                    query.range_module = scopeModule; query.range_expression = bounds
+                    return withUnsafePointer(to: &options) { base in
+                        withUnsafePointer(to: &annotations) { flags in
+                            query.options = base; query.text_options = textOptions == nil ? nil : flags
+                            return xc_worker_search(handle, tab, &query, &request)
                         }
                     }
                 }
-                return xc_worker_search_module(handle, tab, id, query, &options, &request)
+                if let range {
+                    return range.module.withCString { scope in
+                        range.expression.withCString { bounds in queue(scope, bounds) }
+                    }
+                }
+                return queue(nil, nil)
             }
         }
         let completed = try await wait(status, request, cancellingSearch: true,
@@ -294,6 +309,24 @@ actor CoreWorker {
         let copied = xc_request_search_scope(completed, &info)
         guard copied == XC_OK else { throw CoreError(status: copied) }
         return CoreSearchScope(present: info.present != 0, elementCount: info.element_count)
+    }
+    func searchTextOptions(tab: UInt64) async throws -> CoreSearchTextOptions? {
+        var request: OpaquePointer?
+        let status = xc_worker_search_text_options(try worker(), tab, &request)
+        return try await searchTextStateValue(status, request)
+    }
+    func clearSearchTextOptions(tab: UInt64) async throws -> CoreSearchTextOptions? {
+        var request: OpaquePointer?
+        let status = xc_worker_clear_search_text_options(try worker(), tab, &request)
+        return try await searchTextStateValue(status, request)
+    }
+    private func searchTextStateValue(_ status: xc_status, _ request: OpaquePointer?) async throws -> CoreSearchTextOptions? {
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        var info = xc_search_text_info()
+        let copied = xc_request_search_text_options(completed, &info)
+        guard copied == XC_OK else { throw CoreError(status: copied) }
+        return CoreValues.searchTextOptions(info)
     }
     func followBookLink(tab: UInt64, uri: String) async throws -> RenderedBookLink {
         guard !uri.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
