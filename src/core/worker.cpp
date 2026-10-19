@@ -114,6 +114,12 @@ StudySearch StudyWorker::search_module_task(StudyTab tab,SearchQuery query,Searc
 std::future<SearchResult> StudyWorker::search_module(StudyTab tab,SearchQuery query,SearchLimits limits) {
   return search_module_task(tab,std::move(query),limits).result;
 }
+std::future<SearchScopeInfo> StudyWorker::last_search_scope(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s){return s.tab(tab).last_search_scope();});
+}
+std::future<SearchScopeInfo> StudyWorker::clear_search_scope(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s){auto &session=s.tab(tab);session.clear_search_scope();return session.last_search_scope();});
+}
 std::future<BookTree> StudyWorker::book_tree(std::string module, std::uint64_t offset) {
   return impl_->submit([module = std::move(module), offset](Impl::State &s) { return s.reader.book_tree(module, offset); });
 }

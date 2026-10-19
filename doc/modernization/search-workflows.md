@@ -288,3 +288,20 @@ pre-cancel and deterministic returned partial/exception/overflow behavior. Initi
 focused checks: three Mac, three portable-on-Mac, five ASan/UBSan and three TSan
 passed; the added alternate-versification assertion is checked separately before
 commit. Dependency instrumentation and existing platform acceptance limits apply.
+
+## Queued scope commands and copied C metadata
+
+Worker `last_search_scope` and `clear_search_scope` run on the existing FIFO
+owner. The additive C `xc_worker_search_module_in_last_results` uses the same
+copied query/options, cancellation control and take-once result path. Existing
+options/result-info layouts stay unchanged. `xc_search_get_scope`,
+`xc_search_scope_updated` and `xc_search_within_last_results` expose owned scalar
+metadata from the search result. Query/clear requests use non-consuming
+`xc_request_search_scope` after successful poll; pending, failed and wrong-kind
+requests reject and clear output. Counts are SDK elements, not expanded totals.
+
+Queued tests check truncated-display/full-scope independence, copied mutable input,
+separate tabs, clear/empty behavior, wrong-kind/NULL/unknown/closed-tab handling,
+FIFO ordering and result/metadata ownership after shutdown. Four focused Mac and
+four ASan/UBSan checks pass; strict C11 header compilation passes. C commands are
+available to all hosts; current Fedora/MSVC/WinUI validation is still pending.

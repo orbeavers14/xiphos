@@ -87,6 +87,7 @@ struct xc_request {
   std::unique_ptr<xc_book_entry> book_entry;
   std::shared_ptr<xiphos::core::SearchControl> search_control;
   std::unique_ptr<xc_search> search_result;
+  std::optional<xiphos::core::SearchScopeInfo> search_scope;
   std::unique_ptr<xc_book_document> book_document;
   std::unique_ptr<xc_book_image> book_image;
   std::unique_ptr<xc_book_image_data> book_image_data;
@@ -104,6 +105,7 @@ struct xc_request {
   std::unique_ptr<xc_history> history;
   virtual ~xc_request() = default;
   virtual void update() = 0;
+  void store(xiphos::core::SearchScopeInfo v) {search_scope=v;}
   void store(xiphos::core::SearchResult v) { search_result = std::make_unique<xc_search>(xc_search{std::move(v)}); }
   void store(xiphos::core::StudyPassage v) { passage = std::make_unique<xc_passage>(xc_passage{std::move(v)}); }
   void store(xiphos::core::ModulePresentationOptions v) { presentation = v; }
@@ -276,7 +278,7 @@ const xiphos::core::BookInlineImages *inline_images(const xc_book_document *docu
 
 namespace {
 xc_status queue_search_module(xc_worker *w,uint64_t tab,const char *module,const char *expression,
-                                  const xc_search_options *options,xc_request **out,const char *range_module,const char *range_expression) {
+                                  const xc_search_options *options,xc_request **out,const char *range_module,const char *range_expression,bool within_last=false) {
   xc_search_options copy;xc_search_options_default(&copy);if(options)copy=*options;
   if(!module||!expression||copy.mode<XC_SEARCH_REGEX||copy.mode>XC_SEARCH_WORDS||
      (copy.case_sensitive!=0&&copy.case_sensitive!=1)||!copy.max_results||copy.max_results>xiphos::core::maximum_search_results||
@@ -287,6 +289,7 @@ xc_status queue_search_module(xc_worker *w,uint64_t tab,const char *module,const
     // does not own SDK lifetime; the worker retains the control until completion.
     auto request=std::make_unique<Request<xiphos::core::SearchResult>>();
     xiphos::core::SearchQuery query{module,expression,static_cast<xiphos::core::SearchMode>(copy.mode),copy.case_sensitive!=0};
+    query.within_last_results=within_last;
     if(range_module)query.range=xiphos::core::SearchRange{range_module,range_expression};
     auto task=w->value.search_module_task(tab,std::move(query),
       {copy.max_results,copy.max_reference_bytes});
@@ -614,6 +617,27 @@ xc_status xc_worker_search_module_in_range(xc_worker *w,uint64_t tab,const char 
   if(!range_module||!range_expression){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
   return queue_search_module(w,tab,module,expression,options,out,range_module,range_expression);
 }
+xc_status xc_worker_search_module_in_last_results(xc_worker *w,uint64_t tab,const char *module,const char *expression,
+    const xc_search_options *options,xc_request **out){
+  return queue_search_module(w,tab,module,expression,options,out,nullptr,nullptr,true);
+}
+xc_status xc_worker_last_search_scope(xc_worker *w,uint64_t tab,xc_request **out){
+  return queue_request(w,out,[=](auto &worker){return worker.last_search_scope(tab);});
+}
+xc_status xc_worker_clear_search_scope(xc_worker *w,uint64_t tab,xc_request **out){
+  return queue_request(w,out,[=](auto &worker){return worker.clear_search_scope(tab);});
+}
+xc_status xc_request_search_scope(const xc_request *r,xc_search_scope_info *out){
+  if(!out)return XC_INVALID_ARGUMENT;*out={};
+  if(!r||r->status!=XC_OK||!r->search_scope)return XC_INVALID_ARGUMENT;
+  *out={r->search_scope->present?1:0,r->search_scope->element_count};return XC_OK;
+}
+xc_status xc_search_get_scope(const xc_search *r,xc_search_scope_info *out){
+  if(!out)return XC_INVALID_ARGUMENT;*out={};if(!r)return XC_INVALID_ARGUMENT;
+  *out={r->value.scope.present?1:0,r->value.scope.element_count};return XC_OK;
+}
+int xc_search_scope_updated(const xc_search *r){return r?(r->value.scope_updated?1:0):-1;}
+int xc_search_within_last_results(const xc_search *r){return r?(r->value.requested.within_last_results?1:0):-1;}
 const char *xc_search_range_module(const xc_search *r){return r&&r->value.requested.range?r->value.requested.range->module.c_str():nullptr;}
 const char *xc_search_range_expression(const xc_search *r){return r&&r->value.requested.range?r->value.requested.range->expression.c_str():nullptr;}
 xc_search *xc_request_take_search(xc_request *r){return r&&r->status==XC_OK?r->search_result.release():nullptr;}

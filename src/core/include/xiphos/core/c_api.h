@@ -293,7 +293,7 @@ const xc_note *xc_book_note_content(const xc_book_note *note);
 void xc_book_note_release(xc_book_note *note);
 xc_status xc_worker_modules(xc_worker *worker, xc_request **out);
 /* Initial whole-module Bible/regular-commentary search. Owned result only;
- * last-search scopes and native UI remain pending. Cooperative cancel and
+ * native UI remains pending. Cooperative cancel and
  * progress are available on this request; no SDK pointer crosses the boundary.
  * Limits bound copied references, not SDK execution/internal result memory.
  * options NULL uses defaults; otherwise initialize defaults before overriding.
@@ -311,6 +311,24 @@ xc_status xc_worker_search_module(xc_worker *worker,uint64_t tab,const char *mod
 xc_status xc_worker_search_module_in_range(xc_worker *worker,uint64_t tab,const char *module,
     const char *expression,const char *range_module,const char *range_expression,
     const xc_search_options *options,xc_request **out);
+/* Complete scope is private per tab, independent of displayed result limits.
+ * Empty/absent last scope skips SDK execution. Returned partial execution updates
+ * scope; pre-execution cancel/errors retain it. Retention capacity failure is
+ * XC_ENGINE_ERROR (100000 SDK elements / 16 MiB accounted key text).
+ * Existing whole-module/range requests reseed that tab's complete scope. */
+xc_status xc_worker_search_module_in_last_results(xc_worker *worker,uint64_t tab,const char *module,
+    const char *expression,const xc_search_options *options,xc_request **out);
+typedef struct { int present; uint64_t element_count; } xc_search_scope_info;
+xc_status xc_worker_last_search_scope(xc_worker *worker,uint64_t tab,xc_request **out);
+xc_status xc_worker_clear_search_scope(xc_worker *worker,uint64_t tab,xc_request **out);
+/* Copied scalars; request getter requires completed query/clear request, is
+ * non-consuming, and rejects pending/failed/wrong-kind requests. NULL/invalid
+ * getters clear out. Counts are SDK elements, not expanded verse totals. */
+xc_status xc_request_search_scope(const xc_request *request,xc_search_scope_info *out);
+xc_status xc_search_get_scope(const xc_search *result,xc_search_scope_info *out);
+/* Return strict 0/1, or -1 for NULL. No SDK pointer is exposed. */
+int xc_search_scope_updated(const xc_search *result);
+int xc_search_within_last_results(const xc_search *result);
 const char *xc_search_range_module(const xc_search *result);
 const char *xc_search_range_expression(const xc_search *result);
 xc_search *xc_request_take_search(xc_request *request);
