@@ -130,8 +130,11 @@ capability for these tree APIs, not a claim that every book driver or native boo
 workflow is supported. Frontends can use it rather than guessing from names,
 file layout, or platform-specific casts.
 
-An actual SDK `RawGenBook` configured with `KeyType=VerseKey` remains a Generic
-Book but is ineligible for these indexed-tree APIs. Fixtures verify that it and
+An actual SDK `RawGenBook` configured with `KeyType=VerseKey` is ineligible for
+these indexed-tree APIs. The installed SDK reports its runtime type as Biblical
+Texts, despite the driver name; the shared verse-search gate consequently permits
+it. A prior description that it remained runtime Generic Books was unverified
+and corrected during search-capability characterization (2026-10-18). Fixtures verify that it and
 dictionaries are excluded, eligible/empty/deep books are included, unsupported
 queries reject, synchronous/worker/C catalog copies agree, index/null getters are
 safe, and copied capability metadata survives worker shutdown. No existing C

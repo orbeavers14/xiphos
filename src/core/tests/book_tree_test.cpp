@@ -98,7 +98,8 @@ int main(int argc,char **argv) {
       for (const auto &item : reader.modules()) {
         const bool expected=item.id=="Book" || item.id=="Empty" || item.id=="Deep";
         check(item.indexed_book==expected,"Runtime indexed-book catalog capability");
-        check(!item.verse_search,"Generic books, including actual VerseKey books, are excluded from initial Bible/commentary search");
+        check(item.verse_search==(item.id=="VerseBook"),"Search capability follows SDK runtime Bible/VerseKey classification, independently of book-tree eligibility");
+        if(item.id=="VerseBook")check(item.type=="Biblical Texts","Installed SDK classifies VerseKey RawGenBook as Biblical Texts");
         if(item.indexed_book) ++indexed;
       }
       check(indexed==3,"All eligible indexed books discovered");

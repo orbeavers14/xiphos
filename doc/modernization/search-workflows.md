@@ -313,11 +313,21 @@ Module catalogs now copy `verse_search` (C synchronous/queued getters and Swift
 SDK predicate: VerseKey plus Biblical Texts or a regular commentary driver.
 Native pickers consume this flag instead of duplicating driver/type rules. This
 means initial verse-search eligibility, not indexed/advanced/attribute readiness.
-Dictionary and Generic Books remain excluded, including an actual SDK Generic
-Book configured with VerseKey. Source capability is checked at execution too.
+Dictionary and runtime Generic Books remain excluded. The installed SDK reports
+a RawGenBook configured with VerseKey as Biblical Texts, so it is eligible for
+this search gate while remaining ineligible for indexed book-tree APIs. Source
+capability is checked at execution too. Driver names alone do not decide it.
 
 Four focused core/Swift checks and three ASan/UBSan checks pass. The book-tree
-fixture separately verifies exclusion of actual VerseKey Generic Books. Strict
+fixture separately verifies the SDK runtime classification of VerseKey RawGenBook. Strict
 C11 passes. Owned C catalogs retain capability values after worker destruction.
 The first capability test compile used incorrect synchronous C function names;
 correcting them to the existing xc_open/xc_close API resolved it before checks.
+
+Capability correction: the initial book-tree assertion incorrectly assumed that
+RawGenBook plus VerseKey remained runtime Generic Books. It failed because this
+SDK reports Biblical Texts. That failing test was pushed before its result was
+inspected; the correction tests actual runtime classification and leaves the
+already matching shared execution predicate unchanged. The book workflow's older
+unverified type description is corrected too. Subsequent checks supersede the
+failed assertion; no full module/corpus acceptance is implied by capability.
