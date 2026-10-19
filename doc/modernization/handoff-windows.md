@@ -158,3 +158,22 @@ platform's native compiler/GUI evidence above. Rebuild locally with the actual
 SDK/case flag before accepting target behavior; no hosted build should be enabled
 or dispatched. Basic Mac controls exist; advanced controls/indexed execution,
 mixed families, export/settings/full acceptance remain pending.
+
+Latest follow-up: `8c0a4ed` shares the exact export item formatter with retained GTK
+(C++11 + C11 facade; free with `xiphos_export_item_free`) and characterizes advanced
+range/export/bookmark quirks. Full GTK3 desktop linking/runtime is not claimed by
+Mac C adapter tests. `a3dcae8` adds an actual-index diagnostic: default optional
+mode explicitly skips unavailable frameworks; set
+`XIPHOS_REQUIRE_INDEXED_SEARCH_TEST=ON` for a mandatory target gate. This Mac SDK
+returned creation status 0 without a usable index, so actual indexed execution
+remains unvalidated. The expected failing required-mode probe is not acceptance.
+Latest full local totals: 139 Mac/core passes + 1 skip; 108 portable passes + 1
+skip on Mac. Export focused normal/ASan checks pass 3/3; earlier search TSan evidence
+remains above. These do not replace this OS's native evidence.
+
+The next shared slice is [retained search-result generations](search-export-design.md),
+then bounded export. That proposal is not an implemented API. Display prefixes
+and final batch last scope cannot reconstruct every group's complete results;
+do not create a frontend workaround or implicitly rerun searches. Overall 21/38
+groups now have some core/Mac evidence, 0/38 are accepted and 0/3 native releases
+are ready. Keep local-only checks and preserve all legacy retirement gates.

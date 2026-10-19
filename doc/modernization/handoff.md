@@ -26,12 +26,17 @@ settings are per tab and physical SDK filters restore on every job. One FIFO
 owner handles batches, progress/Stop, scope and copied values. See the consolidated
 [current search contract](search-workflows.md); chronology remains in Git.
 
-At `cf80541`, local full suites pass **136/136 Mac/core**, **105/105 portable core
-on Mac**. Batch/context search checks pass **8 ASan/UBSan**, **6 TSan** at `f86293b`;
-C transport then passes **3 ASan/UBSan**, **3 TSan** at `ad28750`. Strict C11/C++11
-and native-disabled helpers pass. These are scoped checks with partial dependency
-instrumentation and leaks off, not current Fedora/MSVC validation. Basic Mac
-window evidence remains `0ca0bab`; adapter changes are not advanced GUI acceptance.
+Latest local suites: **139 Mac/core passes + 1 index skip** (140 registered),
+**108 portable/core model passes + 1 index skip** (109 registered, on Mac).
+Search batch/context checks passed **8 ASan/UBSan**, **6 TSan** at `f86293b`, then
+C transport **3 ASan/UBSan**, **3 TSan** at `ad28750`. Export item/C11/advanced setup
+checks at `8c0a4ed` pass **3 normal/ASan**; strict C11/pedantic C adapters, C++11
+native-disabled helpers pass. See [export evidence](export-workflows.md).
+Actual-index diagnostic `a3dcae8` is pushed. Its optional probe skips because this SDK supplies no usable
+framework despite creation status 0. Required-index mode correctly fails that
+negative control; real indexed execution remains unvalidated. No failed required
+probe is counted as feature acceptance. Basic window evidence remains `0ca0bab`;
+current Fedora/MSVC/native advanced GUI acceptance remains pending.
 
 Book tree/restore/navigation/DisplayLevel, resources/styles and combined note
 counters remain checked partial services with native Mac consumption; detailed
@@ -48,17 +53,18 @@ and the independent platform evidence in view.
 | Earlier Fedora preview scope catch-up | PRs #82–89, `a80409b` | [Native Fedora evidence](handoff-linux.md); retain manual/corpus/renderer gates |
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
-Active next shared slice: characterize advanced module/range setup and export
-before extracting their policies; retain actual indexed execution, mixed module
-families, advanced controls and saved settings as separate gates. Other large
-core services remain in the roadmap. No hosted build/reset credit was used.
-Do not enable or dispatch Actions.
+Active next shared slice: implement private retained search-result generations
+and capability metadata before complete export. Display prefixes and final last
+scope cannot reconstruct every batch group. The [concrete design](search-export-design.md)
+is a proposal, not an existing API. Reuse the checked export formatter; keep
+actual indexed execution, advanced controls/mixed families/settings and other
+core services as separate gates. No hosted build/reset credit used.
 
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Advanced module/range setup and export policy characterization | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Retained search-result generations/capability, then bounded export | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

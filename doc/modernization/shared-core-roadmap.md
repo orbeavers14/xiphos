@@ -27,10 +27,12 @@ implementation of these services. The detailed requirements remain in the
 with a consuming frontend to expose boundary problems early. Existing GTK3 is
 the behavior/design reference; keep it operational and retain retirement gates.
 
-Current next slice: characterize advanced module/range setup and result export
-before extracting shared policies. Attribute execution, private search context and
-ordered bounded batches are checked partial services. Actual indexed execution,
-mixed module families, native advanced controls and saved settings remain gates.
+Current next slice: [private retained search-result generations/capability](search-export-design.md)
+before bounded export. Exact [item formatting](export-workflows.md) is shared with
+GTK and advanced range/export/bookmark quirks are characterized. Complete document/
+selection/retention/native export is still pending. Attribute/context/ordered batch
+services remain partial. Actual indexed execution, mixed families, advanced native
+controls/settings and saved workflows remain gates.
 Book link/session, native
 sizing and corpus acceptance remain tracked work alongside the existing reading
 seams. Parallel reading and complete persistence remain later core services.

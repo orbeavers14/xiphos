@@ -575,3 +575,19 @@ The previous unconditional standalone ON assignment overrode an explicit OFF;
 correcting it was checked with generated target inventories, a strict C++11
 CoreRender build, default native-ON configuration and the actual legacy parent
 wrapper. This build-configuration fix does not retire any source or functionality.
+
+### Shared export item formatting
+
+C++11 `format_export_item` and the C11 `xiphos_export_item` facade share exact
+retained text/HTML item templates with GTK's export helpers. Metadata escapes in
+HTML; already-rendered scripture preserves markup. Absent versus empty HTML body
+is explicit. Free C-owned output only with `xiphos_export_item_free`. These helpers
+perform no SDK/file/clipboard work and impose no aggregate output bound. Full
+export/retention is pending: see [evidence](../../doc/modernization/export-workflows.md)
+and [next proposed slice](../../doc/modernization/search-export-design.md).
+
+`core_search_index` optionally tests an actual SDK-created original-prose index;
+an unavailable framework is an explicit skip. Configure
+`XIPHOS_REQUIRE_INDEXED_SEARCH_TEST=ON` for target acceptance so that condition
+fails. A skipped probe or successful creation status alone does not validate
+indexed execution.

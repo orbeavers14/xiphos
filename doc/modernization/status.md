@@ -8,13 +8,20 @@ search remains `0ca0bab`; advanced controls/export/settings remain pending.
 Complete typed scopes and search context stay private per tab, with one FIFO SDK
 owner and copied transport. See [current contracts](search-workflows.md).
 
-At `cf80541`, **136/136 Mac/core**, **105/105 portable core/model tests on Mac**
-pass. Batch/context checks passed **8 ASan/UBSan**, **6 TSan**, then C transport
-passed **3 ASan/UBSan**, **3 TSan**; strict C11/C++11 and helper-only build pass.
-No hosted jobs/reset credit used. Actual indexed execution, advanced grouping/UI,
-mixed families, export, persistence, full keyboard/VoiceOver/corpus and target
-platform gates remain. Retain the correction record for the prematurely pushed
-capability assertion; subsequent runtime classification checks supersede it.
+Latest export checkpoint `8c0a4ed` shares exact item formatting with retained GTK
+and characterizes actual advanced range/export/bookmark routines. Full local suites
+report **139 Mac/core passes + 1 explicit index skip**, **108 portable core/model
+passes + 1 index skip on Mac**. Three focused export checks pass normal/ASan/UBSan,
+including pedantic C11 adapters; batch/context and C transport sanitizer evidence
+remains in the handoffs. Diagnostic `a3dcae8`: the SDK creation call returned 0 without a usable index;
+optional normal/ASan probes skip and required-index negative control fails as
+expected. Actual indexed execution is unvalidated, not counted as passed.
+
+No hosted jobs/reset credit used. Advanced UI/mixed families/settings, complete
+export/printing and full platform/corpus gates remain. The next bounded core task
+is [retained result generations](search-export-design.md) before bounded export;
+that design is not implemented API. Keep the correction record for the prematurely
+pushed capability assertion; later SDK classification checks supersede it.
 
 Book images/module CSS/combined numbering remain checked partial work: shared
 geometry `48d5425`, CSS `4611a9d`/`65b8ab6`, notes `652d8e1`/`43ce5ee`/`a5d9488`.
@@ -296,8 +303,8 @@ implementation integration, not full native feature parity or legacy retirement.
 
 ## Parity coverage snapshot
 
-The ledger currently has **20 of 38 groups with some initial shared-core/macOS
-implementation evidence**, and **18 pending groups**. None of the 20 is fully
+The ledger currently has **21 of 38 groups with some initial shared-core/macOS
+implementation evidence**, and **17 pending groups**. None of the 21 is fully
 accepted: groups bundle many capabilities, and reading a verse does not complete
 whole-book rendering, commentary synchronization, tabs/session restore or visual
 composition. This is a count of groups touched, not a parity percentage and not
@@ -305,7 +312,7 @@ a replacement for the weighted engineering estimate above.
 
 | New frontend | Initial evidence in ledger | Fully accepted groups | Main gaps |
 |---|---:|---:|---|
-| macOS/shared-core slice | 20 partial, 18 pending | 0/38 | Full pane layout, commentary, parallel views, search, bookmarks/annotations, editors, installation, complete settings/data migration, accessibility/translation and release packaging |
+| macOS/shared-core slice | 21 partial, 17 pending | 0/38 | Full pane layout, commentary, parallel views, search, bookmarks/annotations, editors, installation, complete settings/data migration, accessibility/translation and release packaging |
 | WinUI 3 | 0 initial frontend entries, 38 pending | 0/38 | Native frontend/tooling, shared-core integration, full workflows and validation |
 | GTK4 | Scoped existing macOS-preview capability set; see Linux handoff | 0/38 | Manual visual/input/accessibility/corpus validation, accelerated rendering and full workflows beyond both previews |
 
