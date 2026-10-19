@@ -431,3 +431,15 @@ multiple modules, explicit index fallback, dictionary families and full corpus/
 locale/backend/visual acceptance remain pending. Source compatibility retains
 existing options/info layouts; previously unsupported C mode values 3–5 are now
 valid and the invalid-enum regression checks moved beyond that range.
+
+## Shared search-text option policy
+
+The retained advanced dialog now uses a C++11 table for the exact ordered names
+Strong's Numbers, Morphological Tags and Footnotes with copied checkbox booleans.
+Its exact-phrase branch still performs no mutation: it preserves the previous
+search-manager state rather than forcing visible checkboxes to apply. A complete
+frozen function from `0d0f37a` and extracted actual replacement compare all eight
+checkbox combinations and phrase/nonphrase cases, including this sticky-state
+transition. Two policy checks pass normal and ASan/UBSan; strict C++11 syntax and
+helper-only CoreRender build pass. Native session materialization of that state
+is the next step; no native advanced-dialog acceptance is claimed.

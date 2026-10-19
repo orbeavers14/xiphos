@@ -1108,14 +1108,14 @@ void main_comboboxentry2_changed(GtkComboBox *combobox, gpointer user_data)
 
 static void check_search_global_options(void)
 {
-	if (!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(search1.rb_exact_phrase)))
-	{
-		set_search_global_option("Strong's Numbers",
-			gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(search1.cb_include_strongs)));
-		set_search_global_option("Morphological Tags",
-			gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(search1.cb_include_morphs)));
-		set_search_global_option("Footnotes",
-			gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(search1.cb_include_footnotes)));
+	if (!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(search1.rb_exact_phrase))) {
+		const xiphos::core::SearchTextOptions options {
+			bool(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(search1.cb_include_strongs))),
+			bool(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(search1.cb_include_morphs))),
+			bool(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(search1.cb_include_footnotes)))
+		};
+		for (const auto &setting : xiphos::core::search_text_settings(options))
+			set_search_global_option(setting.name, setting.enabled);
 	}
 }
 

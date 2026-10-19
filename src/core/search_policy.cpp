@@ -22,4 +22,7 @@ AttributeSearchText attribute_search_text(const std::string &text,AttributeSearc
   }
   throw std::invalid_argument("Unknown attribute search kind");
 }
+std::array<SearchTextSetting,3> search_text_settings(const SearchTextOptions &options) {
+  return {{{"Strong's Numbers",options.strongs},{"Morphological Tags",options.morphology},{"Footnotes",options.footnotes}}};
+}
 }}
