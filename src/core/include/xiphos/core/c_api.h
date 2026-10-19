@@ -43,6 +43,7 @@ typedef struct xc_choices xc_choices;
 typedef struct xc_worker xc_worker;
 typedef struct xc_request xc_request;
 typedef struct xc_search xc_search;
+typedef struct xc_search_batch xc_search_batch;
 typedef struct xc_catalog xc_catalog;
 typedef struct xc_history xc_history;
 typedef enum xc_status { XC_OK = 0, XC_INVALID_ARGUMENT = 1,
@@ -391,6 +392,37 @@ const char *xc_search_expression(const xc_search *result);
 const char *xc_search_effective_expression(const xc_search *result);
 const char *xc_search_reference(const xc_search *result,size_t index);
 void xc_search_release(xc_search *result);
+/* Ordered multi-module form of one query. query.module MUST be NULL; the 1..32
+ * module IDs supply it. Other descriptor fields retain single-search meanings,
+ * including options' per-module output limits and strict text/scope validation.
+ * All pointed data is copied before return. Overall limits default to 10000/8MiB.
+ * Complete scopes chain through modules in order, independently of copied output.
+ * Missing/unsupported modules are per-group statuses; later modules continue.
+ * Fatal request errors publish no batch state; returned cancelled prefix commits.
+ * Poll can be OK even when groups failed. Inspect summary and each group status.
+ * Existing cancel/progress functions operate on the ONE batch request control. */
+typedef struct { size_t max_results,max_reference_bytes; } xc_search_batch_limits;
+typedef struct {
+  size_t requested_count,group_count,result_count,reference_bytes,failure_count;
+  int limited,cancelled,scope_updated,text_options_updated;
+} xc_search_batch_info;
+typedef struct { size_t request_index; xc_status status; int result_present; } xc_search_batch_group_info;
+void xc_search_batch_limits_default(xc_search_batch_limits *out);
+xc_status xc_worker_search_modules(xc_worker *worker,uint64_t tab,const char *const *modules,size_t count,
+  const xc_search_query *query,const xc_search_batch_limits *total,xc_request **out);
+/* Take once after OK poll. All batch getters borrow batch ownership until its
+ * release and survive later jobs/worker close. Invalid scalar getters clear out.
+ * group_result is BORROWED CONST: never release it or retain beyond batch release.
+ * It supports the existing const xc_search getters, without another allocation. */
+xc_search_batch *xc_request_take_search_batch(xc_request *request);
+xc_status xc_search_batch_get_info(const xc_search_batch *batch,xc_search_batch_info *out);
+xc_status xc_search_batch_get_group(const xc_search_batch *batch,size_t index,xc_search_batch_group_info *out);
+const xc_search *xc_search_batch_group_result(const xc_search_batch *batch,size_t index);
+const char *xc_search_batch_requested_module(const xc_search_batch *batch,size_t index);
+xc_status xc_search_batch_get_scope(const xc_search_batch *batch,xc_search_scope_info *out);
+xc_status xc_search_batch_get_text_options(const xc_search_batch *batch,xc_search_text_info *out);
+void xc_search_batch_release(xc_search_batch *batch);
+
 xc_status xc_worker_create_tab(xc_worker *worker, xc_request **out);
 xc_status xc_worker_close_tab(xc_worker *worker, uint64_t tab, xc_request **out);
 /* Consumer migration capability, not a saved module preference. Accepts exactly

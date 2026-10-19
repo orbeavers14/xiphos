@@ -576,3 +576,26 @@ callback cancellation/restoration, FIFO/tab isolation, mutable inputs and owned
 results after shutdown. This C++ service does not implement advanced-dialog module
 abbreviation resolution, mixed dictionary/book families, first-module/custom-range
 setup, saved settings, native grouping controls or export. Those remain gates.
+
+### Copied C multi-module adapter
+
+`xc_worker_search_modules` applies one common query to an explicit ordered array
+of 1–32 module IDs, matching advanced dialog input without abbreviation guessing.
+Initialize `xc_search_query` with its module pointer NULL; the array supplies module
+identity. Options carry per-module limits, and a separate optional total budget
+bounds the batch. It calls the same shared batch service; C adds no scope/context
+algorithm. All input arrays, strings and pointed options are copied synchronously.
+
+After OK poll, take the owned batch once and inspect summary/group statuses; OK
+can include failed groups. Each successful group borrows a const `xc_search` until
+batch release, supporting existing result getters without another consumer-side
+allocation. Never release that borrowed child. Batch metadata/strings survive
+later jobs and worker shutdown. Existing cancel/progress works on one batch control.
+Releasing an observer does not cancel accepted work. A later presentation-allocation
+failure can follow engine publication; re-query scope/context to resynchronize.
+
+Six focused normal and three each ASan/UBSan and TSan checks pass; strict C11 passes.
+Cases cover mutated input/array/options, bounded groups, per-module failures,
+range/last/context, NULL/wrong-kind/take-once/index bounds, cancellation races,
+detached observers and drain/borrowed lifetime. Existing single C requests now use
+the same input-copy factory, with their layouts and semantics retained.

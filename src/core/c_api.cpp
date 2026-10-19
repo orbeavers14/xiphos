@@ -17,6 +17,18 @@ struct xc_chapter { xiphos::core::Chapter value; };
 struct xc_choices { xiphos::core::ReferenceChoices value; };
 struct xc_link { xiphos::core::PassageLink value; };
 struct xc_search { xiphos::core::SearchResult value; };
+struct xc_search_batch {
+  xiphos::core::SearchBatchResult value;
+  std::vector<std::unique_ptr<xc_search>> results;
+  explicit xc_search_batch(xiphos::core::SearchBatchResult v):value(std::move(v)) {
+    results.reserve(value.groups.size());
+    for(auto &group:value.groups){
+      std::unique_ptr<xc_search> result;
+      if(group.result)result=std::make_unique<xc_search>(xc_search{std::move(*group.result)});
+      results.push_back(std::move(result));
+    }
+  }
+};
 struct xc_reference_list { xiphos::core::ReferenceList value; };
 struct xc_lexicons { std::optional<xiphos::core::LexiconPreferences> value; };
 struct xc_lexical_entry { xiphos::core::LexicalEntry value; };
@@ -87,6 +99,7 @@ struct xc_request {
   std::unique_ptr<xc_book_entry> book_entry;
   std::shared_ptr<xiphos::core::SearchControl> search_control;
   std::unique_ptr<xc_search> search_result;
+  std::unique_ptr<xc_search_batch> search_batch;
   std::optional<xiphos::core::SearchScopeInfo> search_scope;
   std::optional<xiphos::core::SearchTextState> search_text_state;
   std::unique_ptr<xc_book_document> book_document;
@@ -108,6 +121,7 @@ struct xc_request {
   virtual void update() = 0;
   void store(xiphos::core::SearchTextState v) {search_text_state=std::move(v);}
   void store(xiphos::core::SearchScopeInfo v) {search_scope=v;}
+  void store(xiphos::core::SearchBatchResult v) { search_batch=std::make_unique<xc_search_batch>(std::move(v)); }
   void store(xiphos::core::SearchResult v) { search_result = std::make_unique<xc_search>(xc_search{std::move(v)}); }
   void store(xiphos::core::StudyPassage v) { passage = std::make_unique<xc_passage>(xc_passage{std::move(v)}); }
   void store(xiphos::core::ModulePresentationOptions v) { presentation = v; }
@@ -279,28 +293,46 @@ const xiphos::core::BookInlineImages *inline_images(const xc_book_document *docu
 }
 
 namespace {
-xc_status queue_search_module(xc_worker *w,uint64_t tab,const char *module,const char *expression,
-                                  const xc_search_options *options,xc_request **out,const char *range_module,const char *range_expression,bool within_last=false,const xc_search_text_options *text=nullptr) {
+struct CopiedSearch {xiphos::core::SearchQuery query;xiphos::core::SearchLimits limits;};
+CopiedSearch copy_search_inputs(const char *module,const char *expression,const xc_search_options *options,
+  const char *range_module,const char *range_expression,bool within_last,const xc_search_text_options *text){
   xc_search_options copy;xc_search_options_default(&copy);if(options)copy=*options;
   if(!module||!expression||copy.mode<XC_SEARCH_REGEX||copy.mode>XC_SEARCH_INDEXED||
      (copy.case_sensitive!=0&&copy.case_sensitive!=1)||!copy.max_results||copy.max_results>xiphos::core::maximum_search_results||
-     !copy.max_reference_bytes||copy.max_reference_bytes>xiphos::core::maximum_search_reference_bytes){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
+     !copy.max_reference_bytes||copy.max_reference_bytes>xiphos::core::maximum_search_reference_bytes)
+    throw std::invalid_argument("Invalid search inputs");
   if(text&&((text->strongs!=0&&text->strongs!=1)||(text->morphology!=0&&text->morphology!=1)||
-            (text->footnotes!=0&&text->footnotes!=1))){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
+            (text->footnotes!=0&&text->footnotes!=1)))throw std::invalid_argument("Invalid search text flags");
+  xiphos::core::SearchQuery query{module,expression,static_cast<xiphos::core::SearchMode>(copy.mode),copy.case_sensitive!=0};
+  query.within_last_results=within_last;
+  if(text)query.text_options=xiphos::core::SearchTextOptions(text->strongs!=0,text->morphology!=0,text->footnotes!=0);
+  if(range_module){if(!range_expression)throw std::invalid_argument("Missing search range");query.range=xiphos::core::SearchRange{range_module,range_expression};}
+  return {std::move(query),{copy.max_results,copy.max_reference_bytes}};
+}
+bool valid_search_scope(const xc_search_query *query){
+  return query&&(query->scope==XC_SEARCH_SCOPE_ALL||query->scope==XC_SEARCH_SCOPE_BOUNDS||query->scope==XC_SEARCH_SCOPE_LAST)&&
+     (query->scope==XC_SEARCH_SCOPE_BOUNDS?(query->range_module&&query->range_expression):(!query->range_module&&!query->range_expression));
+}
+xc_status queue_search_module(xc_worker *w,uint64_t tab,const char *module,const char *expression,
+                                  const xc_search_options *options,xc_request **out,const char *range_module,const char *range_expression,bool within_last=false,const xc_search_text_options *text=nullptr) {
   if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;if(!w)return XC_INVALID_ARGUMENT;
   try{
-    // Observe before acceptance, as other core jobs do. A discarded observer
-    // does not own SDK lifetime; the worker retains the control until completion.
+    auto copied=copy_search_inputs(module,expression,options,range_module,range_expression,within_last,text);
+    // Allocate observer before accepting the job. The worker owns SDK/control lifetime.
     auto request=std::make_unique<Request<xiphos::core::SearchResult>>();
-    xiphos::core::SearchQuery query{module,expression,static_cast<xiphos::core::SearchMode>(copy.mode),copy.case_sensitive!=0};
-    query.within_last_results=within_last;
-    if(text)query.text_options=xiphos::core::SearchTextOptions(text->strongs!=0,text->morphology!=0,text->footnotes!=0);
-    if(range_module)query.range=xiphos::core::SearchRange{range_module,range_expression};
-    auto task=w->value.search_module_task(tab,std::move(query),
-      {copy.max_results,copy.max_reference_bytes});
+    auto task=w->value.search_module_task(tab,std::move(copied.query),copied.limits);
     request->search_control=std::move(task.control);request->future=std::move(task.result);
     *out=request.release();return XC_OK;
   }catch(...){return failure();}
+}
+xc_status batch_failure(xiphos::core::SearchBatchFailure failure){
+  switch(failure){
+    case xiphos::core::SearchBatchFailure::none:return XC_OK;
+    case xiphos::core::SearchBatchFailure::module_not_found:return XC_MODULE_NOT_FOUND;
+    case xiphos::core::SearchBatchFailure::invalid_request:return XC_INVALID_ARGUMENT;
+    case xiphos::core::SearchBatchFailure::engine_error:return XC_ENGINE_ERROR;
+  }
+  return XC_ENGINE_ERROR;
 }
 }
 namespace {
@@ -625,12 +657,62 @@ void xc_search_text_options_default(xc_search_text_options *out){if(out)*out={0,
 void xc_search_query_default(xc_search_query *out){if(out)*out={nullptr,nullptr,XC_SEARCH_SCOPE_ALL,nullptr,nullptr,nullptr,nullptr};}
 xc_status xc_worker_search(xc_worker *w,uint64_t tab,const xc_search_query *query,xc_request **out){
   if(out)*out=nullptr;
-  if(!query||(query->scope!=XC_SEARCH_SCOPE_ALL&&query->scope!=XC_SEARCH_SCOPE_BOUNDS&&query->scope!=XC_SEARCH_SCOPE_LAST)||
-     (query->scope==XC_SEARCH_SCOPE_BOUNDS&&(!query->range_module||!query->range_expression))||
-     (query->scope!=XC_SEARCH_SCOPE_BOUNDS&&(query->range_module||query->range_expression)))return XC_INVALID_ARGUMENT;
+  if(!valid_search_scope(query))return XC_INVALID_ARGUMENT;
   return queue_search_module(w,tab,query->module,query->expression,query->options,out,query->range_module,
     query->range_expression,query->scope==XC_SEARCH_SCOPE_LAST,query->text_options);
 }
+void xc_search_batch_limits_default(xc_search_batch_limits *out){
+  if(out)*out={xiphos::core::maximum_search_results,xiphos::core::maximum_search_reference_bytes};
+}
+xc_status xc_worker_search_modules(xc_worker *w,uint64_t tab,const char *const *modules,size_t count,
+    const xc_search_query *query,const xc_search_batch_limits *total,xc_request **out){
+  if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;
+  if(!w||!modules||!count||count>xiphos::core::maximum_search_batch_modules||!valid_search_scope(query)||query->module)
+    return XC_INVALID_ARGUMENT;
+  xc_search_batch_limits budget;xc_search_batch_limits_default(&budget);if(total)budget=*total;
+  if(!budget.max_results||budget.max_results>xiphos::core::maximum_search_results||!budget.max_reference_bytes||
+     budget.max_reference_bytes>xiphos::core::maximum_search_reference_bytes)return XC_INVALID_ARGUMENT;
+  try{
+    auto copied=copy_search_inputs(modules[0],query->expression,query->options,query->range_module,query->range_expression,
+      query->scope==XC_SEARCH_SCOPE_LAST,query->text_options);
+    std::vector<xiphos::core::SearchQuery> queries;queries.reserve(count);
+    for(size_t i=0;i<count;++i){
+      if(!modules[i])throw std::invalid_argument("NULL batch module");
+      auto item=copied.query;item.module=modules[i];queries.push_back(std::move(item));
+    }
+    auto request=std::make_unique<Request<xiphos::core::SearchBatchResult>>();
+    auto task=w->value.search_batch_task(tab,std::move(queries),{copied.limits,{budget.max_results,budget.max_reference_bytes}});
+    request->search_control=std::move(task.control);request->future=std::move(task.result);
+    *out=request.release();return XC_OK;
+  }catch(...){return failure();}
+}
+xc_search_batch *xc_request_take_search_batch(xc_request *r){return r&&r->status==XC_OK?r->search_batch.release():nullptr;}
+xc_status xc_search_batch_get_info(const xc_search_batch *batch,xc_search_batch_info *out){
+  if(!out)return XC_INVALID_ARGUMENT;*out={};if(!batch)return XC_INVALID_ARGUMENT;
+  const auto &value=batch->value;
+  *out={value.requested.size(),value.groups.size(),value.copied_results,value.copied_reference_bytes,value.failures,
+    value.limited?1:0,value.cancelled?1:0,value.scope_updated?1:0,value.text_options_updated?1:0};return XC_OK;
+}
+xc_status xc_search_batch_get_group(const xc_search_batch *batch,size_t index,xc_search_batch_group_info *out){
+  if(!out)return XC_INVALID_ARGUMENT;*out={};if(!batch||index>=batch->value.groups.size())return XC_INVALID_ARGUMENT;
+  const auto &group=batch->value.groups[index];
+  *out={group.request_index,batch_failure(group.failure),batch->results[index]?1:0};return XC_OK;
+}
+const xc_search *xc_search_batch_group_result(const xc_search_batch *batch,size_t index){
+  return batch&&index<batch->results.size()?batch->results[index].get():nullptr;
+}
+const char *xc_search_batch_requested_module(const xc_search_batch *batch,size_t index){
+  return batch&&index<batch->value.requested.size()?batch->value.requested[index].module.c_str():nullptr;
+}
+xc_status xc_search_batch_get_scope(const xc_search_batch *batch,xc_search_scope_info *out){
+  if(!out)return XC_INVALID_ARGUMENT;*out={};if(!batch)return XC_INVALID_ARGUMENT;
+  *out={batch->value.scope.present?1:0,batch->value.scope.element_count};return XC_OK;
+}
+xc_status xc_search_batch_get_text_options(const xc_search_batch *batch,xc_search_text_info *out){
+  if(!out)return XC_INVALID_ARGUMENT;*out={};if(!batch)return XC_INVALID_ARGUMENT;
+  return copy_search_text_info(batch->value.text_options.options,out);
+}
+void xc_search_batch_release(xc_search_batch *batch){delete batch;}
 xc_status xc_worker_search_text_options(xc_worker *w,uint64_t tab,xc_request **out){
   return queue_request(w,out,[=](auto &worker){return worker.search_text_options(tab);});
 }
