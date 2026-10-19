@@ -75,9 +75,7 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   switch(query.mode){
     case SearchMode::regular_expression:engine_type=sword::SWModule::SEARCHTYPE_REGEX;break;
     case SearchMode::phrase:engine_type=sword::SWModule::SEARCHTYPE_PHRASE;break;
-    case SearchMode::words:
-      engine_type=module.hasSearchFramework()&&module.isSearchOptimallySupported("God",-4,0,0)?
-        sword::SWModule::SEARCHTYPE_EXTERNAL:sword::SWModule::SEARCHTYPE_MULTIWORD;break;
+    case SearchMode::words:engine_type=sword::SWModule::SEARCHTYPE_MULTIWORD;break;
     case SearchMode::lemma:attribute=AttributeSearch::lemma;engine_type=sword::SWModule::SEARCHTYPE_ENTRYATTR;break;
     case SearchMode::morphology:attribute=AttributeSearch::morphology;engine_type=sword::SWModule::SEARCHTYPE_ENTRYATTR;break;
     case SearchMode::footnote:attribute=AttributeSearch::footnote;engine_type=sword::SWModule::SEARCHTYPE_ENTRYATTR;break;
@@ -105,6 +103,9 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   }
   const auto effective_text=query.mode!=SearchMode::phrase&&query.text_options?query.text_options:previous_text;
   ScopedSearchFilters filters(manager,effective_text);ScopedSearchModule state(module);
+  // Capability probing must see this request's search-only filter context too.
+  if(query.mode==SearchMode::words&&module.hasSearchFramework()&&module.isSearchOptimallySupported("God",-4,0,0))
+    engine_type=sword::SWModule::SEARCHTYPE_EXTERNAL;
   auto prepared=sidebar_search_text(query.expression,engine_type==sword::SWModule::SEARCHTYPE_EXTERNAL);
   if(attribute){auto value=attribute_search_text(query.expression,*attribute);prepared=std::move(value.expression);whole_entry=value.whole_entry;}
   const std::string stripped=module.stripText(prepared.c_str()).c_str();

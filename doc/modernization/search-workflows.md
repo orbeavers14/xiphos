@@ -475,3 +475,15 @@ empty/clear/reset, pre-cancel, missing source and per-filter restoration after a
 injected strip failure. Two final focused normal checks and four ASan/UBSan checks
 pass. A missing test-only VerseKey include was corrected before checks. C/Swift
 composable request transport is the next step; no frontend search engine is added.
+
+## Probe ordering under search context
+
+Automatic indexed-word capability probing now runs after the effective search
+filter context is installed and inside module-flag restoration. A controlled SDK
+module checks all three real annotation filters during the exact legacy God/-4/
+zero-flags/null-scope probe, then verifies indexed AND preparation and execution
+selection. Injected probe failure also restores processing/link/filter baselines.
+Two normal checks and the later three-check ASan/UBSan group pass. This validates
+ordering and ownership, not actual CLucene/index execution. Words cancelled before
+preparation report the multiword fallback; inspect executed before treating an
+engine type as a backend that actually ran. SDK callback/time limits still apply.

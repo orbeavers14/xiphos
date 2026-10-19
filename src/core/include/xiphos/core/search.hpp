@@ -50,7 +50,7 @@ struct SearchScopeInfo { bool present=false; std::uint64_t element_count=0; };
 struct SearchResult {
   SearchQuery requested;
   std::string effective_expression; // Exact copied module stripText query.
-  int engine_type=0; // Actual SDK type, including automatic indexed word choice.
+  int engine_type=0; // Selected SDK type; words cancelled before probing retain multiword fallback.
   std::uint64_t total_results=0; // SDK list count, not a promise about expanded ranges.
   std::vector<std::string> references; // Complete owned SDK keys, ordered, never byte-truncated.
   bool limited=false;

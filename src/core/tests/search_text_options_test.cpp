@@ -28,13 +28,25 @@ std::vector<std::string> refs(ListKey &list){std::vector<std::string> out;list.s
 bool same(const std::optional<SearchTextOptions> &a,const SearchTextOptions &b){return a&&a->strongs==b.strongs&&a->morphology==b.morphology&&a->footnotes==b.footnotes;}
 struct Fault:SWFilter{bool enabled=true;char processText(SWBuf &,const SWKey *,const SWModule *)override{if(enabled)throw std::runtime_error("Original search text strip failure");return 0;}};
 struct InspectingModule:RawText {
- EngineManager &manager;SearchTextOptions expected;ListKey result;bool called=false;
+ EngineManager &manager;SearchTextOptions expected;ListKey result;bool called=false,indexed=false,probed=false,fail_probe=false;
  InspectingModule(const char *path,EngineManager &owner,SearchTextOptions wanted):RawText(path),manager(owner),expected(wanted){VerseKey key("John1:1");result.add(key);}
- ListKey &search(const char *,int,int,SWKey *,bool *,void(*)(char,void *),void *)override{
+ void inspect_values(){
   std::array<bool,3> found{{false,false,false}};const auto settings=search_text_settings(expected);
-  for(auto *filter:manager.option_filters())for(std::size_t i=0;i<settings.size();++i)if(std::string(filter->getOptionName())==settings[i].name){found[i]=true;check(std::string(filter->getOptionValue())==(settings[i].enabled?"On":"Off"),"Actual SDK execution observes the requested search-only filter values");}
-  check(std::all_of(found.begin(),found.end(),[](bool item){return item;}),"Fixture contains all three real SDK annotation filters");called=true;return result;
+  for(auto *filter:manager.option_filters())for(std::size_t i=0;i<settings.size();++i)if(std::string(filter->getOptionName())==settings[i].name){found[i]=true;check(std::string(filter->getOptionValue())==(settings[i].enabled?"On":"Off"),"Actual SDK execution/probe observes requested search-only filter values");}
+  check(std::all_of(found.begin(),found.end(),[](bool item){return item;}),"Fixture contains all three real SDK annotation filters");
  }
+ bool hasSearchFramework()override{return indexed;}
+ bool isSearchOptimallySupported(const char *query,int type,int flags,SWKey *scope)override{
+  check(std::string(query)=="God"&&type==-4&&!flags&&!scope,"Index capability uses exact legacy probe arguments");
+  inspect_values();probed=true;
+  if(fail_probe){setProcessEntryAttributes(true);setSkipConsecutiveLinks(false);throw std::runtime_error("Original index probe failure");}
+  return true;
+ }
+ ListKey &search(const char *query,int type,int,SWKey *,bool *,void(*)(char,void *),void *)override{
+  inspect_values();if(indexed)check(probed&&type==SWModule::SEARCHTYPE_EXTERNAL&&std::string(query)=="+Original ","Owned indexed selection/preparation happens after scoped capability probing");
+  called=true;return result;
+ }
+
 };
 int main(int argc,char **argv){try{
  check(argc==2,"Original search-text fixture required");const std::string root=argv[1];Fault fault;
@@ -81,6 +93,13 @@ int main(int argc,char **argv){try{
  inspect.called=false;inspected.mode=SearchMode::phrase;inspected.text_options=SearchTextOptions(true,true,true);
  detail::capture_module_search(legacy,inspect,inspected,{}, {},nullptr,nullptr,{},SearchTextOptions(false,false,false));
  check(inspect.called,"Exact phrase materializes previous private settings rather than changed checkbox values");
+ InspectingModule indexed((std::filesystem::path(root)/"data/text").string().c_str(),legacy,SearchTextOptions(false,false,false));indexed.indexed=true;
+ inspected.mode=SearchMode::words;inspected.text_options=SearchTextOptions(false,false,false);
+ const auto planned=detail::capture_module_search(legacy,indexed,inspected,{});
+ check(indexed.called&&indexed.probed&&planned.engine_type==SWModule::SEARCHTYPE_EXTERNAL,"Controlled index capability sees effective flags before execution selection");
+ indexed.fail_probe=true;indexed.setProcessEntryAttributes(false);indexed.setSkipConsecutiveLinks(true);
+ try{detail::capture_module_search(legacy,indexed,inspected,{});throw std::logic_error("Expected capability failure");}catch(const std::runtime_error &){}
+ check(!indexed.isProcessEntryAttributes()&&indexed.isSkipConsecutiveLinks(),"Failed capability probe restores module flags too");
  for(const auto &filter:filters)check(filter.first->getOptionValue()==filter.second,"Inspection jobs restore each real SDK filter after scoped materialization");
  std::cout<<"Shared search-only options match legacy sticky phrase state, isolated tabs, resets and scoped restoration passed\n";return 0;
  }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}
