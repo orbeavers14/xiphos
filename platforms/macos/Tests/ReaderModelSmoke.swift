@@ -23,6 +23,51 @@ struct ReaderModelSmoke {
             try await Task.sleep(nanoseconds: 1_000_000)
         }
     }
+    @MainActor static func searchIdle(_ model: SearchModel) async throws {
+        let deadline = Date().addingTimeInterval(10)
+        while model.isBusy {
+            guard Date() < deadline else { fatalError("search model timeout") }
+            try await Task.sleep(nanoseconds: 1_000_000)
+        }
+    }
+    @MainActor static func search(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let first = ReaderModel(worker: worker, startupError: nil), second = ReaderModel(worker: worker, startupError: nil)
+        try await idle(first); try await idle(second)
+        let model = first.search, other = second.search
+        guard model.modules.map(\.id).sorted() == ["Commentary", "Text"], model.module == "Text" else { fatalError("Native picker consumes shared eligibility") }
+        first.reference = "John 1:3" // An unsubmitted draft must survive search/preview.
+        let html = first.html, reference = first.renderedReference, back = first.canBack
+        model.expression = "Original"; model.search(); try await searchIdle(model)
+        guard model.hits.count == 3, model.scope.elementCount == 3, model.preview?.html.contains("Original Alpha") == true,
+              first.html == html, first.renderedReference == reference, first.reference == "John 1:3", first.canBack == back,
+              other.hits.isEmpty, !other.scope.present else { fatalError("Native search/automatic preview preserve reading, draft and independent window state") }
+        model.scopeChoice = .bounds; model.boundsModule = "Text"; model.bounds = "John1:2-John1:3"
+        model.search(); try await searchIdle(model)
+        guard model.hits.map(\.reference) == ["John 1:2", "John 1:3"], model.result?.range?.expression == model.bounds else { fatalError("Native explicit bounds use core intervals") }
+        model.scopeChoice = .last; model.module = "Commentary"; model.expression = "beta"; model.search(); try await searchIdle(model)
+        guard model.hits.map(\.reference) == ["John 1:3"], model.result?.withinLastResults == true,
+              model.previewSource?.module == "Commentary", model.scope.elementCount == 1 else { fatalError("Native last-result selection uses shared complete scope and searched-module preview") }
+        let held = model.result
+        model.clearScope(); try await searchIdle(model)
+        guard !model.scope.present, model.result?.references == held?.references else { fatalError("Clear preserves visible matches but clears the shared next scope") }
+        model.search(); try await searchIdle(model)
+        guard model.hits.isEmpty, model.preview == nil, model.result?.executed == false else { fatalError("Native empty last search cannot become an unscoped search") }
+        model.scopeChoice = .all; model.module = "Text"; model.expression = "Alpha"; model.caseSensitive = true
+        model.search(); try await searchIdle(model); guard model.hits.count == 1 else { fatalError("Native case flag reaches shared request") }
+        model.caseSensitive = false; model.search(); try await searchIdle(model); guard model.hits.count == 2 else { fatalError("Native case-insensitive result") }
+        model.select(0); model.select(1); try await searchIdle(model); guard model.preview?.reference == "John 1:2" else { fatalError("Selected result previews without navigation") }
+        first.chooseReference("John 1:2"); try await idle(first)
+        guard first.renderedReference == "John 1:2" else { fatalError("Reading a search hit uses existing shared main-pane navigation") }
+        model.expression = "Original"; model.search(); model.stop(); try await searchIdle(model)
+        guard !model.isSearching, model.scope == model.result?.scope || model.result?.cancelled == false else { fatalError("Interactive stop drains authoritative shared result/scope") }
+        let beforeClose = model.hits
+        model.expression = "beta"; model.search(); first.close()
+        try await Task.sleep(nanoseconds: 50_000_000)
+        guard model.hits == beforeClose else { fatalError("Closed window cannot publish a later search/preview") }
+        second.close(); await worker.shutdown()
+        print("Native shared search, scopes, result preview, navigation, stop and closure passed")
+    }
     @MainActor static func bookNoteNumbers(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let model = ReaderModel(worker: worker, startupError: nil)
@@ -1190,6 +1235,9 @@ struct ReaderModelSmoke {
             guard recorded.entries.last?.key == expectedKey else { fatalError("locale snapshot lifetime") }
             print("Native environment locale startup/click checks passed")
             return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--search" {
+            try await search(root: CommandLine.arguments[2]); return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--lexicons" {
             try await lexicons(root: CommandLine.arguments[2]); return

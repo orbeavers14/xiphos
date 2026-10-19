@@ -37,6 +37,7 @@ private struct LexiconProfileSaveError: LocalizedError {
 
 @MainActor
 final class ReaderModel: ObservableObject {
+    let search = SearchModel()
     @Published var modules: [InstalledModule] = []
     @Published var selection: String?
     @Published private(set) var commentarySelection = ""
@@ -105,6 +106,7 @@ final class ReaderModel: ObservableObject {
     func close() {
         guard !closed else { return }
         closed = true
+        search.close()
         revision &+= 1
         hoverRevision &+= 1
         hoverTask?.cancel(); hoverTask = nil
@@ -138,6 +140,7 @@ final class ReaderModel: ObservableObject {
             crossReferencesInVerseList = previewList
             modules = discovered
             selection = modules.first(where: { $0.type == "Biblical Texts" })?.id
+            search.configure(worker: worker, tab: opened, modules: discovered, preferred: selection)
             if modules.isEmpty { message = "No installed SWORD modules found. Install modules with the existing Xiphos application, then reopen this preview." }
             else if let selection {
                 try await visitAndPresent(module: selection, reference: reference, token: revision)
@@ -661,6 +664,7 @@ final class ReaderModel: ObservableObject {
             }
         }
     }
+    var canOpenSearchResult: Bool { displayedModule != nil && displayedEntry != nil }
     func chooseReference(_ target: String) {
         guard worker != nil, tab != nil, let module = displayedModule else { return }
         run { token in
@@ -961,6 +965,7 @@ struct ReaderWindow: View {
     var body: some View {
         HSplitView {
             VSplitView {
+                TabView {
                 List(selection: $model.selection) {
                     ForEach(Array(Set(model.modules.map(\.type))).sorted(), id: \.self) { type in
                         Section(type) {
@@ -975,6 +980,12 @@ struct ReaderWindow: View {
                 }.frame(minHeight: 120)
                     .disabled(model.isBusy)
                     .accessibilityLabel("Installed SWORD modules")
+                    .tabItem { Text("Modules") }
+                    SearchPane(model: model.search, hostBusy: model.isBusy, canRead: model.canOpenSearchResult,
+                        onRead: model.chooseReference,
+                        onLink: { uri, module, reference in model.followLink(uri, currentModule: module, currentReference: reference) })
+                        .tabItem { Text("Search") }
+                }
                 if model.studyNote != nil || model.referencePreview != nil || model.bookNote != nil {
                     VStack(alignment: .leading, spacing: 0) {
                         HStack {

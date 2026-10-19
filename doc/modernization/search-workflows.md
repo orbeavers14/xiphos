@@ -348,3 +348,35 @@ next scope. Pre-execution stop and late successful completion remain distinct.
 SDK failures still throw. Two focused core/Swift checks pass, covering copied
 progress, changed-only delivery, terminal disposition, unchanged default throwing
 behavior, returned cancellation metadata and agreement with queried scope state.
+
+## Initial native search controls (2026-10-18)
+
+The Mac sidebar has native Modules/Search tabs. Search consumes shared capability,
+query/mode/case, explicit bounds/last-results scope, copied progress/Stop, complete
+scope metadata and bounded results. Its separate presentation model contains no
+SDK manager, range parser, query preparation, scope storage or search engine.
+Selection previews the searched module through configured history-neutral core
+reading; first results preview automatically. Read/double-click uses the existing
+main-pane navigation, matching sidebar's module-less verse navigation. Link clicks
+reuse shared semantic routing. Clear last resets scope while retaining visible
+matches, and closed windows suppress late results. Rapid preview changes invalidate
+old presentation without interrupting or dropping accepted core reads.
+
+Two focused native/core model checks pass after refining rapid-preview handling.
+Full local suites pass 126/126 Mac/core and 98/98 portable core on Mac; eight
+focused ASan/UBSan and four TSan checks pass, with partial SDK instrumentation and
+leaks off. The actual SDK case bit remains 2 here. GUI original-prose checks cover
+picker eligibility, ordered results/automatic and changed-row preview, explicit
+bounds, last-results narrowing, clear then empty search, case-sensitive 1 versus
+insensitive 2, searched commentary identity, Read and physical double-click to a
+new main reference. The refined short Clear last label fits the sidebar. AX row
+activation alone did not synthesize the double-click gesture; coordinate mouse
+checks verified it. The generated app/fixture was quit and removed.
+
+The initial sandboxed launch failed in Launch Services; launching the same test
+copy outside the shell sandbox succeeded. The fixture copy stayed in temporary
+storage, avoiding Documents access prompts. Model/control tests verify Stop and
+late-completion handling; actual slow-corpus GUI interruption, full keyboard/
+VoiceOver, saved defaults/settings, advanced/attribute/index/multi-module/export,
+full visual/corpus and other-platform controls remain gates. This is scoped
+functionality, not complete F18/F20 or 1:1 search acceptance.

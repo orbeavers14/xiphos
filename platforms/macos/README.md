@@ -355,3 +355,15 @@ signals the core, drains the request, then throws. This is adapter support; nati
 search controls/progress/results/preview/export are still pending. The local SDK
 uses `XIPHOS_SWORD_SEARCH_ICASE_FLAG=2`; validate that dependency choice when
 building with another SDK. See [search contracts](../../doc/modernization/search-workflows.md).
+
+### Initial native search tab
+
+The sidebar's Search tab uses shared module eligibility and search requests for
+phrase/words/regex, case, explicit bounds and last results. Progress and Stop use
+copied core controls; returned partial matches remain consistent with the next
+scope. Selecting a match previews it without navigating; Read or double-click
+uses the existing main-pane navigation. Clear last only clears retained scope.
+`launch-fixture.sh build/macos search` uses generated original prose. Model and
+window evidence, capacity limits and remaining search gates are in the
+[search contract](../../doc/modernization/search-workflows.md). Scope persistence,
+advanced/attribute/index/multiple-module workflows and export are still pending.

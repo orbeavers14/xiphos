@@ -6,6 +6,7 @@ build_dir=$(cd "${1:-build/macos}" && pwd)
 app="$build_dir/XiphosNativePreview.app"
 kind="${2:-reader}"
 case "$kind" in
+  search) fixture="$build_dir/core/search-fixture"; config="Text.conf" ;;
   reader) fixture="$build_dir/core/fixture"; config="test.conf" ;;
   book-note-numbers) fixture="$build_dir/core/book-note-document-fixture"; config="TailLabel.conf" ;;
   book-stylesheets) fixture="$build_dir/core/book-stylesheet-fixture"; config="Preferred.conf" ;;
