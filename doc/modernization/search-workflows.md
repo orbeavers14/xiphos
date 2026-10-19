@@ -31,9 +31,11 @@ warns/skips missing modules. Each returned SDK search replaces stored last keys
 before indexed display sorting. Thus last-results searches chain across modules;
 the next scope is the final successful module's result, not a union. Complete
 module-selection/range setup and supported dictionary/book families remain gates.
-Export/bookmark code is not yet a shared service. In particular, characterize its
-first-result/header handling before changing output rather than assuming the UI
-format directly represents the stored result list.
+Shared item formatting now serves the retained export helpers; complete export/
+bookmark orchestration remains outside the core. Actual range/export/bookmark
+routines are characterized, including first-result/header omission and destructive
+bookmark-list traversal. See [export evidence](export-workflows.md) and the
+[proposed retained-result/export slice](search-export-design.md).
 
 ## One owner, owned values and module capability
 
@@ -264,6 +266,24 @@ full locales/versifications/corpus, SDK backends, GTK4/MSVC/WinUI/native packagi
 No whole parity group or source-retirement gate is accepted. Local sanitizer
 instrumentation is partial and leaks are off; portable suites on Mac are not
 current Fedora desktop evidence. See handoffs for exact counts and revisions.
+
+## Actual index diagnostic and required gate
+
+`core_search_index` copies only the generated original-prose fixture to a separate
+index directory, checks its resolved SDK data path and creates a text-only index
+there. Source bytes remain unchanged. If the SDK supplies a usable framework,
+the test exercises actual raw OR/sidebar AND execution, ordered prefix versus
+complete scope, explicit bounds and last scope. This executed branch remains
+unvalidated here: the installed SDK returned creation status 0 but no usable
+framework. Normal and ASan/UBSan runs explicitly skip (return 77), not pass index
+acceptance. No cause is inferred from a success-looking creation status alone.
+
+Set `-DXIPHOS_REQUIRE_INDEXED_SEARCH_TEST=ON` when accepting an indexed target SDK.
+That adds `--require-index`; unavailable framework then fails rather than skips.
+The required configuration argument and expected failing local negative control
+are checked. A passing required run is still needed on a capable SDK, followed by
+annotation/index creation options, cancellation, module-family/corpus/backend and
+native workflow gates. Default optional skips never certify indexed execution.
 
 ## Corrections retained in the evidence record
 
