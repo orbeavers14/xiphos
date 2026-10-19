@@ -227,9 +227,11 @@ actor CoreWorker {
     }
     func searchModule(tab: UInt64, module: String, expression: String, mode: CoreSearchMode = .phrase,
                       caseSensitive: Bool = false, maxResults: Int = 1000,
-                      maxReferenceBytes: Int = 1024 * 1024, range: CoreSearchRange? = nil) async throws -> RenderedSearchResult {
+                      maxReferenceBytes: Int = 1024 * 1024, range: CoreSearchRange? = nil,
+                      withinLastResults: Bool = false) async throws -> RenderedSearchResult {
         let inputs = [module, expression] + (range.map { [$0.module, $0.expression] } ?? [])
-        guard !inputs.contains(where: { $0.utf8.contains(0) }), maxResults > 0, maxReferenceBytes > 0 else {
+        guard !inputs.contains(where: { $0.utf8.contains(0) }), maxResults > 0, maxReferenceBytes > 0,
+              !(withinLastResults && range != nil) else {
             throw CoreError(status: XC_INVALID_ARGUMENT)
         }
         var options = xc_search_options()
@@ -240,6 +242,9 @@ actor CoreWorker {
         let handle = try worker()
         let status = module.withCString { id in
             expression.withCString { query in
+                if withinLastResults {
+                    return xc_worker_search_module_in_last_results(handle, tab, id, query, &options, &request)
+                }
                 if let range {
                     return range.module.withCString { scope in
                         range.expression.withCString { bounds in
@@ -255,6 +260,24 @@ actor CoreWorker {
         guard let result = xc_request_take_search(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
         defer { xc_search_release(result) }
         return CoreValues.search(result)
+    }
+    func lastSearchScope(tab: UInt64) async throws -> CoreSearchScope {
+        var request: OpaquePointer?
+        let status = xc_worker_last_search_scope(try worker(), tab, &request)
+        return try await searchScopeValue(status, request)
+    }
+    func clearSearchScope(tab: UInt64) async throws -> CoreSearchScope {
+        var request: OpaquePointer?
+        let status = xc_worker_clear_search_scope(try worker(), tab, &request)
+        return try await searchScopeValue(status, request)
+    }
+    private func searchScopeValue(_ status: xc_status, _ request: OpaquePointer?) async throws -> CoreSearchScope {
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        var info = xc_search_scope_info()
+        let copied = xc_request_search_scope(completed, &info)
+        guard copied == XC_OK else { throw CoreError(status: copied) }
+        return CoreSearchScope(present: info.present != 0, elementCount: info.element_count)
     }
     func followBookLink(tab: UInt64, uri: String) async throws -> RenderedBookLink {
         guard !uri.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }

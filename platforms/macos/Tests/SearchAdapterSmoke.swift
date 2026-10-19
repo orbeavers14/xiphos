@@ -17,6 +17,20 @@ import Foundation
         let bounded = try await worker.searchModule(tab: tab, module: "Text", expression: "Original", range: scope)
         guard bounded.references.count == 2, bounded.totalResults == 2, bounded.range == scope,
               prefix.range == nil else { fatalError("Swift preserves explicit SDK range source and keeps unscoped requests distinct") }
+        guard prefix.scope == CoreSearchScope(present: true, elementCount: 3), prefix.scopeUpdated,
+              !prefix.withinLastResults, bounded.scope.elementCount == 2 else { fatalError("Swift owns complete scope metadata independently of displayed prefix") }
+        let narrowed = try await worker.searchModule(tab: tab, module: "Text", expression: "Original", withinLastResults: true)
+        guard narrowed.withinLastResults, narrowed.references.count == 2, narrowed.scopeUpdated,
+              try await worker.lastSearchScope(tab: tab).elementCount == 2 else { fatalError("Last scope uses complete bounded source keys") }
+        let otherEmpty = try await worker.searchModule(tab: other, module: "Text", expression: "Original", withinLastResults: true)
+        guard !otherEmpty.executed, !otherEmpty.scope.present, !otherEmpty.scopeUpdated,
+              try await worker.clearSearchScope(tab: tab) == CoreSearchScope(present: false, elementCount: 0) else { fatalError("Tab isolation and explicit clear stay in the shared core") }
+        let cleared = try await worker.searchModule(tab: tab, module: "Text", expression: "Original", withinLastResults: true)
+        guard !cleared.executed, cleared.references.isEmpty else { fatalError("Cleared scope never becomes whole-module search") }
+        do {
+            _ = try await worker.searchModule(tab: tab, module: "Text", expression: "Original", range: scope, withinLastResults: true)
+            fatalError("Expected mutually exclusive scope rejection")
+        } catch is CoreError {}
         let sensitive = try await worker.searchModule(tab: tab, module: "Text", expression: "Alpha", caseSensitive: true)
         let insensitive = try await worker.searchModule(tab: tab, module: "Text", expression: "Alpha")
         guard sensitive.references.count == 1, insensitive.references.count == 2 else { fatalError("Search case behavior matches checked SDK") }

@@ -125,6 +125,7 @@ struct RenderedBookDocument: Sendable, Equatable {
     var resourceCSS: String { lexical.css + "\n" + (presentation?.stylesheet?.inlineCSS ?? "") }
 }
 enum CoreSearchMode: Int32, Sendable { case regularExpression=0, phrase=1, words=2 }
+struct CoreSearchScope: Sendable, Equatable { let present: Bool; let elementCount: UInt64 }
 struct CoreSearchRange: Sendable, Equatable { let module: String; let expression: String }
 struct RenderedSearchResult: Sendable, Equatable {
     let module: String, expression: String, effectiveExpression: String
@@ -134,6 +135,9 @@ struct RenderedSearchResult: Sendable, Equatable {
     let totalResults: UInt64
     let references: [String]
     var range: CoreSearchRange? = nil
+    var withinLastResults = false
+    var scope = CoreSearchScope(present: false, elementCount: 0)
+    var scopeUpdated = false
 }
 struct RenderedBookImage: Sendable, Equatable {
     let module: String, filename: String, mediaType: String
@@ -381,6 +385,8 @@ enum CoreValues {
         var info = xc_search_info()
         precondition(xc_search_get_info(result, &info) == XC_OK)
         guard let mode = CoreSearchMode(rawValue: info.mode) else { preconditionFailure("Unknown core search mode") }
+        var scope = xc_search_scope_info()
+        precondition(xc_search_get_scope(result, &scope) == XC_OK)
         return RenderedSearchResult(module: String(cString: xc_search_module(result)!),
             expression: String(cString: xc_search_expression(result)!),
             effectiveExpression: String(cString: xc_search_effective_expression(result)!),
@@ -388,7 +394,10 @@ enum CoreValues {
             limited: info.limited != 0, cancelled: info.cancelled != 0, executed: info.executed != 0, totalResults: info.total_results,
             references: (0..<info.result_count).map { String(cString: xc_search_reference(result, $0)!) },
             range: xc_search_range_module(result).map { CoreSearchRange(module: String(cString: $0),
-                expression: String(cString: xc_search_range_expression(result)!)) })
+                expression: String(cString: xc_search_range_expression(result)!)) },
+            withinLastResults: xc_search_within_last_results(result) == 1,
+            scope: CoreSearchScope(present: scope.present != 0, elementCount: scope.element_count),
+            scopeUpdated: xc_search_scope_updated(result) == 1)
     }
     static func bookImage(_ result: OpaquePointer) -> RenderedBookImage {
         let source = xc_book_image_data_source(result)!
