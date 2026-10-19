@@ -516,3 +516,24 @@ verify phrase retention, independent tabs, strict validation and shutdown owners
 Interactive cancellation reports authoritative context updates even if preparation
 finished before SDK execution was skipped. The basic native sidebar retains its
 original three controls; advanced annotation controls and persistence remain gates.
+
+## Explicit advanced word dialects
+
+`multiword` (C/Swift mode 6) bypasses index probing. `indexed` (mode 7) preserves
+raw advanced syntax and reports `index_fallback` if the legacy capability probe
+selects ordinary multiword. Basic sidebar `words` (mode 2) retains automatic
+selection and indexed AND preparation without a fallback warning. Advanced raw
+indexed syntax receives neither sidebar + prefixes nor its trailing-space hack.
+The distinction follows the actual advanced-dialog input path and help syntax.
+
+The SDK capability predicate now lives in C++11 CoreRender and serves both retained
+BackEnd::check_for_optimal_search and native execution under scoped options. Tests
+inspect exact God/-4/zero/null probe arguments, force plain multiword despite an
+available controlled framework, preserve raw OR syntax, cover missing/unsupported
+framework fallback and restore flags on failed probing. Real generated modules
+verify unindexed fallback transport through C/Swift. Actual indexed execution and
+its backend/corpus behavior remain unvalidated; controlled framework tests do not
+remove that gate. Eight focused normal checks, five ASan/UBSan, then three final
+normal/sanitizer checks after unsupported-framework coverage pass. Strict C11 and
+native-disabled C++11 helper build pass. Existing source layouts stay unchanged;
+new mode values 6/7 are valid and invalid-enum checks moved to 8.

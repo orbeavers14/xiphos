@@ -75,7 +75,9 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   switch(query.mode){
     case SearchMode::regular_expression:engine_type=sword::SWModule::SEARCHTYPE_REGEX;break;
     case SearchMode::phrase:engine_type=sword::SWModule::SEARCHTYPE_PHRASE;break;
-    case SearchMode::words:engine_type=sword::SWModule::SEARCHTYPE_MULTIWORD;break;
+    case SearchMode::words:
+    case SearchMode::multiword:
+    case SearchMode::indexed:engine_type=sword::SWModule::SEARCHTYPE_MULTIWORD;break;
     case SearchMode::lemma:attribute=AttributeSearch::lemma;engine_type=sword::SWModule::SEARCHTYPE_ENTRYATTR;break;
     case SearchMode::morphology:attribute=AttributeSearch::morphology;engine_type=sword::SWModule::SEARCHTYPE_ENTRYATTR;break;
     case SearchMode::footnote:attribute=AttributeSearch::footnote;engine_type=sword::SWModule::SEARCHTYPE_ENTRYATTR;break;
@@ -104,16 +106,17 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   const auto effective_text=query.mode!=SearchMode::phrase&&query.text_options?query.text_options:previous_text;
   ScopedSearchFilters filters(manager,effective_text);ScopedSearchModule state(module);
   // Capability probing must see this request's search-only filter context too.
-  if(query.mode==SearchMode::words&&module.hasSearchFramework()&&module.isSearchOptimallySupported("God",-4,0,0))
+  if((query.mode==SearchMode::words||query.mode==SearchMode::indexed)&&supports_indexed_search(module))
     engine_type=sword::SWModule::SEARCHTYPE_EXTERNAL;
-  auto prepared=sidebar_search_text(query.expression,engine_type==sword::SWModule::SEARCHTYPE_EXTERNAL);
+  const bool index_fallback=query.mode==SearchMode::indexed&&engine_type!=sword::SWModule::SEARCHTYPE_EXTERNAL;
+  auto prepared=sidebar_search_text(query.expression,query.mode==SearchMode::words&&engine_type==sword::SWModule::SEARCHTYPE_EXTERNAL);
   if(attribute){auto value=attribute_search_text(query.expression,*attribute);prepared=std::move(value.expression);whole_entry=value.whole_entry;}
   const std::string stripped=module.stripText(prepared.c_str()).c_str();
   if(control&&control->cancel_requested()) {
-    SearchResult result{std::move(query),stripped,engine_type,0,{},false};result.cancelled=true;result.effective_text_options=effective_text;return result;
+    SearchResult result{std::move(query),stripped,engine_type,0,{},false};result.cancelled=true;result.effective_text_options=effective_text;result.index_fallback=index_fallback;return result;
   }
   if(query.within_last_results&&(!previous||!previous->info().element_count)){
-    SearchResult result{std::move(query),stripped,engine_type,0,{},false};result.effective_text_options=effective_text;return result;
+    SearchResult result{std::move(query),stripped,engine_type,0,{},false};result.effective_text_options=effective_text;result.index_fallback=index_fallback;return result;
   }
   ProgressContext context{&module,control.get(),std::this_thread::get_id()};
   const int flags=(query.case_sensitive?0:XIPHOS_SWORD_SEARCH_ICASE_FLAG)|(whole_entry?sword::SWModule::SEARCHFLAG_MATCHWHOLEENTRY:0);
@@ -125,7 +128,7 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   auto copied=copy_search_references(list,limits);
   SearchResult result{std::move(query),stripped,engine_type,copied.engine_count,std::move(copied.references),copied.limited};
   result.executed=true;result.cancelled=control&&control->cancel_requested();
-  result.effective_text_options=effective_text;
+  result.effective_text_options=effective_text;result.index_fallback=index_fallback;
   if(next)*next=std::move(staged); // Publish only after all owned output is ready.
   return result;
 }

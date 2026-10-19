@@ -28,22 +28,22 @@ std::vector<std::string> refs(ListKey &list){std::vector<std::string> out;list.s
 bool same(const std::optional<SearchTextOptions> &a,const SearchTextOptions &b){return a&&a->strongs==b.strongs&&a->morphology==b.morphology&&a->footnotes==b.footnotes;}
 struct Fault:SWFilter{bool enabled=true;char processText(SWBuf &,const SWKey *,const SWModule *)override{if(enabled)throw std::runtime_error("Original search text strip failure");return 0;}};
 struct InspectingModule:RawText {
- EngineManager &manager;SearchTextOptions expected;ListKey result;bool called=false,indexed=false,probed=false,fail_probe=false;
+ EngineManager &manager;SearchTextOptions expected;ListKey result;bool called=false,indexed=false,probed=false,fail_probe=false,expect_probe=true,optimal=true;int expected_type=SWModule::SEARCHTYPE_EXTERNAL,framework_checks=0;std::string expected_query="+Original ";
  InspectingModule(const char *path,EngineManager &owner,SearchTextOptions wanted):RawText(path),manager(owner),expected(wanted){VerseKey key("John1:1");result.add(key);}
  void inspect_values(){
   std::array<bool,3> found{{false,false,false}};const auto settings=search_text_settings(expected);
   for(auto *filter:manager.option_filters())for(std::size_t i=0;i<settings.size();++i)if(std::string(filter->getOptionName())==settings[i].name){found[i]=true;check(std::string(filter->getOptionValue())==(settings[i].enabled?"On":"Off"),"Actual SDK execution/probe observes requested search-only filter values");}
   check(std::all_of(found.begin(),found.end(),[](bool item){return item;}),"Fixture contains all three real SDK annotation filters");
  }
- bool hasSearchFramework()override{return indexed;}
+ bool hasSearchFramework()override{++framework_checks;return indexed;}
  bool isSearchOptimallySupported(const char *query,int type,int flags,SWKey *scope)override{
   check(std::string(query)=="God"&&type==-4&&!flags&&!scope,"Index capability uses exact legacy probe arguments");
   inspect_values();probed=true;
   if(fail_probe){setProcessEntryAttributes(true);setSkipConsecutiveLinks(false);throw std::runtime_error("Original index probe failure");}
-  return true;
+  return optimal;
  }
  ListKey &search(const char *query,int type,int,SWKey *,bool *,void(*)(char,void *),void *)override{
-  inspect_values();if(indexed)check(probed&&type==SWModule::SEARCHTYPE_EXTERNAL&&std::string(query)=="+Original ","Owned indexed selection/preparation happens after scoped capability probing");
+  inspect_values();if(indexed)check(probed==expect_probe&&type==expected_type&&std::string(query)==expected_query,"Selected word dialect and preparation follow scoped capability policy");
   called=true;return result;
  }
 
@@ -97,6 +97,22 @@ int main(int argc,char **argv){try{
  inspected.mode=SearchMode::words;inspected.text_options=SearchTextOptions(false,false,false);
  const auto planned=detail::capture_module_search(legacy,indexed,inspected,{});
  check(indexed.called&&indexed.probed&&planned.engine_type==SWModule::SEARCHTYPE_EXTERNAL,"Controlled index capability sees effective flags before execution selection");
+ InspectingModule advanced((std::filesystem::path(root)/"data/text").string().c_str(),legacy,SearchTextOptions(false,false,false));advanced.indexed=true;advanced.expected_query="Original OR beta";
+ inspected.mode=SearchMode::indexed;inspected.expression="Original OR beta";
+ const auto raw=detail::capture_module_search(legacy,advanced,inspected,{});
+ check(raw.engine_type==SWModule::SEARCHTYPE_EXTERNAL&&!raw.index_fallback&&raw.effective_expression=="Original OR beta","Explicit indexed dialect preserves advanced raw syntax, unlike sidebar AND");
+ InspectingModule plain((std::filesystem::path(root)/"data/text").string().c_str(),legacy,SearchTextOptions(false,false,false));plain.indexed=true;plain.expect_probe=false;plain.expected_type=SWModule::SEARCHTYPE_MULTIWORD;plain.expected_query="Original";
+ inspected.mode=SearchMode::multiword;inspected.expression="Original";
+ const auto forced=detail::capture_module_search(legacy,plain,inspected,{});
+ check(forced.engine_type==SWModule::SEARCHTYPE_MULTIWORD&&!forced.index_fallback&&!plain.probed&&!plain.framework_checks,"Explicit advanced multiword bypasses framework probing even when available");
+ InspectingModule unsupported((std::filesystem::path(root)/"data/text").string().c_str(),legacy,SearchTextOptions(false,false,false));unsupported.indexed=true;unsupported.optimal=false;unsupported.expected_type=SWModule::SEARCHTYPE_MULTIWORD;unsupported.expected_query="Original";
+ inspected.mode=SearchMode::indexed;inspected.expression="Original";
+ const auto not_supported=detail::capture_module_search(legacy,unsupported,inspected,{});
+ check(unsupported.probed&&not_supported.index_fallback&&not_supported.engine_type==SWModule::SEARCHTYPE_MULTIWORD,"Present framework with unsupported capability also reports explicit fallback");
+ InspectingModule unavailable((std::filesystem::path(root)/"data/text").string().c_str(),legacy,SearchTextOptions(false,false,false));inspected.mode=SearchMode::indexed;
+ const auto fallback=detail::capture_module_search(legacy,unavailable,inspected,{});
+ check(fallback.index_fallback&&fallback.engine_type==SWModule::SEARCHTYPE_MULTIWORD&&fallback.effective_expression=="Original","Missing framework yields explicit owned fallback without sidebar query rewriting");
+ inspected.mode=SearchMode::words;
  indexed.fail_probe=true;indexed.setProcessEntryAttributes(false);indexed.setSkipConsecutiveLinks(true);
  try{detail::capture_module_search(legacy,indexed,inspected,{});throw std::logic_error("Expected capability failure");}catch(const std::runtime_error &){}
  check(!indexed.isProcessEntryAttributes()&&indexed.isSkipConsecutiveLinks(),"Failed capability probe restores module flags too");

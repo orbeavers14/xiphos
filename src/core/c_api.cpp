@@ -282,7 +282,7 @@ namespace {
 xc_status queue_search_module(xc_worker *w,uint64_t tab,const char *module,const char *expression,
                                   const xc_search_options *options,xc_request **out,const char *range_module,const char *range_expression,bool within_last=false,const xc_search_text_options *text=nullptr) {
   xc_search_options copy;xc_search_options_default(&copy);if(options)copy=*options;
-  if(!module||!expression||copy.mode<XC_SEARCH_REGEX||copy.mode>XC_SEARCH_FOOTNOTE||
+  if(!module||!expression||copy.mode<XC_SEARCH_REGEX||copy.mode>XC_SEARCH_INDEXED||
      (copy.case_sensitive!=0&&copy.case_sensitive!=1)||!copy.max_results||copy.max_results>xiphos::core::maximum_search_results||
      !copy.max_reference_bytes||copy.max_reference_bytes>xiphos::core::maximum_search_reference_bytes){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
   if(text&&((text->strongs!=0&&text->strongs!=1)||(text->morphology!=0&&text->morphology!=1)||
@@ -650,6 +650,7 @@ xc_status xc_search_effective_text_options(const xc_search *r,xc_search_text_inf
   if(!out)return XC_INVALID_ARGUMENT;*out={};if(!r)return XC_INVALID_ARGUMENT;
   return copy_search_text_info(r->value.effective_text_options,out);
 }
+int xc_search_index_fallback(const xc_search *r){return r?(r->value.index_fallback?1:0):-1;}
 int xc_search_text_options_updated(const xc_search *r){return r?(r->value.text_options_updated?1:0):-1;}
 xc_status xc_worker_search_module(xc_worker *w,uint64_t tab,const char *module,const char *expression,
     const xc_search_options *options,xc_request **out){return queue_search_module(w,tab,module,expression,options,out,nullptr,nullptr);}

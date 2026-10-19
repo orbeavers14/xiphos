@@ -12,7 +12,7 @@ int main(int argc,char **argv){try{
  check(argc==2,"Original composable-query fixture required");const std::string root=argv[1];
  {StudyWorker worker(root);const auto a=worker.create_tab().get(),b=worker.create_tab().get();SearchQuery query{"Text","G140",SearchMode::lemma};query.text_options=SearchTextOptions(true,false,true);
   auto job=worker.search_module(a,query);auto state=worker.search_text_options(a);check(job.get().text_options_updated&&state.get().options->strongs&&!worker.search_text_options(b).get().options,"Worker state snapshots are FIFO and per-tab");
-  worker.clear_search_scope(a).get();check(worker.search_text_options(a).get().options->footnotes,"Scope clear is independent of text state");
+  (void)worker.clear_search_scope(a).get();check(worker.search_text_options(a).get().options->footnotes,"Scope clear is independent of text state");
   check(!worker.clear_search_text_options(a).get().options,"Explicit reset returns unconfigured state");
  }
  xc_worker *worker=nullptr;xc_request *request=nullptr;check(xc_worker_open(root.c_str(),&worker)==XC_OK,"Open composable C worker");
@@ -36,6 +36,12 @@ int main(int argc,char **argv){try{
  query.scope=XC_SEARCH_SCOPE_LAST;query.range_module=nullptr;query.range_expression=nullptr;options.mode=XC_SEARCH_FOOTNOTE;query.expression="Original";query.text_options=nullptr;
  check(xc_worker_search(worker,a,&query,&request)==XC_OK&&wait(request)==XC_OK,"Composable last scope with retained settings");auto *last=xc_request_take_search(request);xc_request_release(request);
  check(xc_search_get_info(last,&result)==XC_OK&&result.result_count==1&&xc_search_within_last_results(last)==1&&xc_search_requested_text_options(last,&info)==XC_OK&&!info.present&&xc_search_effective_text_options(last,&info)==XC_OK&&info.present&&info.morphology,"Absent annotation input preserves private context");
+ options.mode=XC_SEARCH_MULTIWORD;query.scope=XC_SEARCH_SCOPE_ALL;query.expression="Original";
+ check(xc_worker_search(worker,a,&query,&request)==XC_OK&&wait(request)==XC_OK,"Explicit C multiword mode");auto *plain=xc_request_take_search(request);xc_request_release(request);
+ check(xc_search_get_info(plain,&result)==XC_OK&&result.mode==XC_SEARCH_MULTIWORD&&result.engine_type==-2&&xc_search_index_fallback(plain)==0,"Forced multiword is distinct from automatic sidebar selection");
+ options.mode=XC_SEARCH_INDEXED;
+ check(xc_worker_search(worker,a,&query,&request)==XC_OK&&wait(request)==XC_OK,"Explicit C indexed request without fixture index");auto *fallback=xc_request_take_search(request);xc_request_release(request);
+ check(xc_search_get_info(fallback,&result)==XC_OK&&result.mode==XC_SEARCH_INDEXED&&result.engine_type==-2&&xc_search_index_fallback(fallback)==1&&std::string(xc_search_effective_expression(fallback))=="Original"&&xc_search_index_fallback(nullptr)==-1,"Owned C fallback preserves requested optimized dialect and raw expression");xc_search_release(plain);xc_search_release(fallback);
  xc_search_query invalid=query;invalid.scope=static_cast<xc_search_scope_kind>(99);request=reinterpret_cast<xc_request *>(1);
  check(xc_worker_search(worker,a,&invalid,&request)==XC_INVALID_ARGUMENT&&!request,"Unknown scope clears stale output");
  invalid=query;invalid.range_module="Text";check(xc_worker_search(worker,a,&invalid,&request)==XC_INVALID_ARGUMENT&&!request,"Stray range data contradicting last scope rejects");

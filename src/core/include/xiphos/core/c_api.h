@@ -300,7 +300,8 @@ xc_status xc_worker_modules(xc_worker *worker, xc_request **out);
  * Boolean/mode/limit errors reject and clear out. Query/module are copied before
  * return; accepted failures surface on polling without publishing partial data. */
 typedef enum xc_search_mode { XC_SEARCH_REGEX=0, XC_SEARCH_PHRASE=1, XC_SEARCH_WORDS=2,
-  XC_SEARCH_LEMMA=3, XC_SEARCH_MORPHOLOGY=4, XC_SEARCH_FOOTNOTE=5 } xc_search_mode;
+  XC_SEARCH_LEMMA=3, XC_SEARCH_MORPHOLOGY=4, XC_SEARCH_FOOTNOTE=5,
+  XC_SEARCH_MULTIWORD=6, XC_SEARCH_INDEXED=7 } xc_search_mode;
 typedef struct { int mode, case_sensitive; size_t max_results, max_reference_bytes; } xc_search_options;
 void xc_search_options_default(xc_search_options *out);
 /* Optional advanced annotation choices; strict 0/1. Exact phrase preserves prior
@@ -329,6 +330,9 @@ xc_status xc_request_search_text_options(const xc_request *request,xc_search_tex
 xc_status xc_search_requested_text_options(const xc_search *result,xc_search_text_info *out);
 xc_status xc_search_effective_text_options(const xc_search *result,xc_search_text_info *out);
 int xc_search_text_options_updated(const xc_search *result);
+/* Explicit indexed fallback only (0/1, -1 NULL); automatic sidebar words do not
+ * warn. Indexed preserves raw advanced syntax; auto words adds sidebar AND. */
+int xc_search_index_fallback(const xc_search *result);
 
 xc_status xc_worker_search_module(xc_worker *worker,uint64_t tab,const char *module,const char *expression,
                                   const xc_search_options *options,xc_request **out);

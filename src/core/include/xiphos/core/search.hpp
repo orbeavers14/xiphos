@@ -27,7 +27,7 @@ public:
   SearchPhase phase() const noexcept{return phase_.load(std::memory_order_acquire);}
 };
 // Attribute modes use legacy SDK paths; lemma/morph require whole-entry matching.
-enum class SearchMode { regular_expression=0, phrase=1, words=2, lemma=3, morphology=4, footnote=5 };
+enum class SearchMode { regular_expression=0, phrase=1, words=2, lemma=3, morphology=4, footnote=5, multiword=6, indexed=7 };
 // Legacy sidebar range uses the designated Bible module's own VerseKey parser,
 // which may differ from the searched commentary module's versification.
 struct SearchRange { std::string module, expression; };
@@ -59,6 +59,7 @@ struct SearchResult {
   bool scope_updated=false;
   std::optional<SearchTextOptions> effective_text_options; // Named override policy prepared for this request.
   bool text_options_updated=false;
+  bool index_fallback=false; // Explicit indexed request selected unindexed multiword instead.
 };
 // This initial verse search bounds copied output only. SDK execution
 // time/internal result allocation are not bounded. Cooperative cancellation is

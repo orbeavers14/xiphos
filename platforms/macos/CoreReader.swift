@@ -125,7 +125,7 @@ struct RenderedBookDocument: Sendable, Equatable {
     var resourceHTML: String { presentation?.inlineImages?.html ?? displayHTML }
     var resourceCSS: String { lexical.css + "\n" + (presentation?.stylesheet?.inlineCSS ?? "") }
 }
-enum CoreSearchMode: Int32, Sendable { case regularExpression=0, phrase=1, words=2, lemma=3, morphology=4, footnote=5 }
+enum CoreSearchMode: Int32, Sendable { case regularExpression=0, phrase=1, words=2, lemma=3, morphology=4, footnote=5, multiword=6, indexed=7 }
 enum CoreSearchPhase: Int32, Sendable { case queued = 0, running, complete, cancelled, failed }
 struct CoreSearchProgress: Sendable, Equatable { let phase: CoreSearchPhase; let percent: UInt32; let cancelRequested: Bool }
 struct CoreSearchTextOptions: Sendable, Equatable { var strongs = false; var morphology = false; var footnotes = false }
@@ -145,6 +145,7 @@ struct RenderedSearchResult: Sendable, Equatable {
     var requestedTextOptions: CoreSearchTextOptions? = nil
     var effectiveTextOptions: CoreSearchTextOptions? = nil
     var textOptionsUpdated = false
+    var indexFallback = false
 }
 struct RenderedBookImage: Sendable, Equatable {
     let module: String, filename: String, mediaType: String
@@ -413,7 +414,7 @@ enum CoreValues {
             scope: CoreSearchScope(present: scope.present != 0, elementCount: scope.element_count),
             scopeUpdated: xc_search_scope_updated(result) == 1,
             requestedTextOptions: searchTextOptions(requestedText), effectiveTextOptions: searchTextOptions(effectiveText),
-            textOptionsUpdated: xc_search_text_options_updated(result) == 1)
+            textOptionsUpdated: xc_search_text_options_updated(result) == 1, indexFallback: xc_search_index_fallback(result) == 1)
     }
     static func bookImage(_ result: OpaquePointer) -> RenderedBookImage {
         let source = xc_book_image_data_source(result)!

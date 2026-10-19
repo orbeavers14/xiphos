@@ -38,6 +38,7 @@
 #include <regex.h>
 #include <string.h>
 #include <string>
+#include "xiphos/core/search_policy.hpp"
 #include <utf8html.h>
 #include <url.h>
 
@@ -1035,8 +1036,7 @@ int BackEnd::check_for_optimal_search(char *module_name)
 
 	if (!search_mod)
 		return -2;
-	if (search_mod->hasSearchFramework() &&
-	    search_mod->isSearchOptimallySupported("God", -4, 0, 0))
+	if (xiphos::core::supports_indexed_search(*search_mod))
 		return -4; // ** indexed search - clucene **
 	else
 		return -2; // ** word search **

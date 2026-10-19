@@ -2,6 +2,7 @@
 #pragma once
 #include <string>
 #include <array>
+namespace sword { class SWModule; }
 namespace xiphos { namespace core {
 // Legacy sidebar external-index AND preparation: prefix + per ASCII-space word,
 // preserve literal spacing/tabs/punctuation, append workaround trailing space.
@@ -21,4 +22,6 @@ struct SearchTextSetting { const char *name;bool enabled; };
 // Legacy advanced-dialog annotation names/order. Exact phrase leaves the prior
 // search-manager state untouched; that state transition is handled by the caller.
 std::array<SearchTextSetting,3> search_text_settings(const SearchTextOptions &options);
+// Exact legacy SDK framework probe; caller owns serialization/filter context.
+bool supports_indexed_search(sword::SWModule &module);
 }}

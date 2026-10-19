@@ -27,6 +27,10 @@ actor ProgressLog {
         let bounded = try await worker.searchModule(tab: tab, module: "Text", expression: "Alpha", mode: .footnote,
                                                    range: CoreSearchRange(module: "Text", expression: "John1:2-John1:3"))
         guard bounded.references == ["John 1:2"], try await worker.history(tab).count == 0 else { fatalError("Attribute bounds do not navigate") }
+        let plain = try await worker.searchModule(tab: tab, module: "Text", expression: "Original", mode: .multiword)
+        let indexed = try await worker.searchModule(tab: tab, module: "Text", expression: "Original", mode: .indexed)
+        guard plain.engineType == -2, !plain.indexFallback, indexed.engineType == -2, indexed.indexFallback,
+              indexed.mode == .indexed, indexed.references == plain.references, indexed.effectiveExpression == "Original" else { fatalError("Explicit advanced dialects retain requested mode and report missing-index fallback without AND rewriting") }
         try await worker.closeTab(tab); try await worker.closeTab(other); await worker.shutdown()
         guard owned[0].references == ["John 1:1", "John 1:4"], owned[2].expression == "Alpha" else { fatalError("Attribute copies survive shutdown") }
         print("Swift copied lemma/morph/footnote execution, scopes, bounds and shutdown passed")
