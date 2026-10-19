@@ -84,6 +84,8 @@ if(BUILD_TESTING)
     DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift Tests/SearchAdapterSmoke.swift
       Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h VERBATIM)
   add_custom_target(macos_search_adapter_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/search_adapter_smoke")
+  add_test(NAME swift_attribute_search_adapter COMMAND "${CMAKE_CURRENT_BINARY_DIR}/search_adapter_smoke" --attributes "${CMAKE_CURRENT_BINARY_DIR}/core/attribute-search-fixture")
+  set_tests_properties(swift_attribute_search_adapter PROPERTIES FIXTURES_REQUIRED attribute_search_fixture TIMEOUT 30)
   add_test(NAME swift_search_adapter COMMAND "${CMAKE_CURRENT_BINARY_DIR}/search_adapter_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/search-fixture")
   set_tests_properties(swift_search_adapter PROPERTIES FIXTURES_REQUIRED search_fixture TIMEOUT 30)
   add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/adapter_smoke"

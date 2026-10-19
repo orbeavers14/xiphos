@@ -6,7 +6,35 @@ actor ProgressLog {
     func snapshot() -> [CoreSearchProgress] { items }
 }
 @main struct SearchAdapterSmoke {
+    static func attributes(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let tab = try await worker.createTab(), other = try await worker.createTab()
+        let cases: [(CoreSearchMode, String, [String])] = [
+            (.lemma, "G140", ["John 1:1", "John 1:4"]),
+            (.morphology, "N-ASF", ["John 1:1", "John 1:3"]),
+            (.footnote, "Alpha", ["John 1:1", "John 1:2"])]
+        var owned: [RenderedSearchResult] = []
+        for (mode, query, expected) in cases {
+            let result = try await worker.searchModule(tab: tab, module: "Text", expression: query, mode: mode)
+            guard result.mode == mode, result.engineType == -3, result.references == expected,
+                  result.scopeUpdated, result.scope.elementCount == 2 else { fatalError("Swift attribute mode/results match shared exact identifiers and copied scope") }
+            owned.append(result)
+        }
+        let prefix = try await worker.searchModule(tab: tab, module: "Text", expression: "N-ASF", mode: .morphology, maxResults: 1)
+        let narrowed = try await worker.searchModule(tab: tab, module: "Commentary", expression: "Original", mode: .footnote, withinLastResults: true)
+        guard prefix.references.count == 1, prefix.scope.elementCount == 2,
+              narrowed.references == ["John 1:1", "John 1:3"], !((try await worker.lastSearchScope(tab: other)).present) else { fatalError("Attribute modes share complete cross-module scopes and isolate tabs") }
+        let bounded = try await worker.searchModule(tab: tab, module: "Text", expression: "Alpha", mode: .footnote,
+                                                   range: CoreSearchRange(module: "Text", expression: "John1:2-John1:3"))
+        guard bounded.references == ["John 1:2"], try await worker.history(tab).count == 0 else { fatalError("Attribute bounds do not navigate") }
+        try await worker.closeTab(tab); try await worker.closeTab(other); await worker.shutdown()
+        guard owned[0].references == ["John 1:1", "John 1:4"], owned[2].expression == "Alpha" else { fatalError("Attribute copies survive shutdown") }
+        print("Swift copied lemma/morph/footnote execution, scopes, bounds and shutdown passed")
+    }
     static func main() async throws {
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--attributes" {
+            try await attributes(root: CommandLine.arguments[2]); return
+        }
         guard CommandLine.arguments.count == 2 else { fatalError("Original search fixture required") }
         let worker = try CoreWorker(root: CommandLine.arguments[1])
         let modules = try await worker.modules()
