@@ -249,12 +249,72 @@ actor CoreWorker {
               !(withinLastResults && range != nil) else {
             throw CoreError(status: XC_INVALID_ARGUMENT)
         }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = withSearchQuery(module: module, expression: expression, mode: mode, caseSensitive: caseSensitive,
+            maxResults: maxResults, maxReferenceBytes: maxReferenceBytes, range: range,
+            withinLastResults: withinLastResults, textOptions: textOptions) {
+                xc_worker_search(handle, tab, $0, &request)
+            }
+        let completed = try await wait(status, request, cancellingSearch: true,
+                                       returnCancelledSearch: returnCancelledResults, onSearchProgress: onProgress)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_search(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_search_release(result) }
+        return CoreValues.search(result)
+    }
+    // Copies one common advanced query across ordered modules; no frontend
+    // scope chaining, engine mode selection or search-option state lives here.
+    func searchModules(tab: UInt64, modules: [String], expression: String, mode: CoreSearchMode = .phrase,
+                       caseSensitive: Bool = false, maxResultsPerModule: Int = 1000,
+                       maxReferenceBytesPerModule: Int = 1024 * 1024,
+                       maxResults: Int = 10000, maxReferenceBytes: Int = 8 * 1024 * 1024,
+                       range: CoreSearchRange? = nil, withinLastResults: Bool = false,
+                       textOptions: CoreSearchTextOptions? = nil, returnCancelledResults: Bool = false,
+                       onProgress: (@Sendable (CoreSearchProgress) async -> Void)? = nil) async throws -> RenderedSearchBatch {
+        let inputs = modules + [expression] + (range.map { [$0.module, $0.expression] } ?? [])
+        guard (1...32).contains(modules.count), !inputs.contains(where: { $0.utf8.contains(0) }),
+              maxResultsPerModule > 0, maxReferenceBytesPerModule > 0, maxResults > 0, maxReferenceBytes > 0,
+              !(withinLastResults && range != nil) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        let handle = try worker()
+        var total = xc_search_batch_limits(max_results: maxResults, max_reference_bytes: maxReferenceBytes)
+        let (status, request) = withModuleStrings(modules) { ids in
+            withSearchQuery(module: nil, expression: expression, mode: mode, caseSensitive: caseSensitive,
+                maxResults: maxResultsPerModule, maxReferenceBytes: maxReferenceBytesPerModule,
+                range: range, withinLastResults: withinLastResults, textOptions: textOptions) { query in
+                    var request: OpaquePointer?
+                    let status = xc_worker_search_modules(handle, tab, ids.baseAddress, ids.count, query, &total, &request)
+                    return (status, request)
+                }
+        }
+        let completed = try await wait(status, request, cancellingSearch: true,
+            returnCancelledSearch: returnCancelledResults, onSearchProgress: onProgress)
+        defer { xc_request_release(completed) }
+        guard let batch = xc_request_take_search_batch(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_search_batch_release(batch) }
+        return CoreValues.searchBatch(batch)
+    }
+    private func withModuleStrings<T>(_ values: [String], _ body: (UnsafeBufferPointer<UnsafePointer<CChar>?>) -> T) -> T {
+        var pointers: [UnsafePointer<CChar>?] = []
+        // Nested withCString scopes retain every buffer until synchronous copying
+        // returns. This bounded recursion never crosses an await or escapes.
+        func append(_ index: Int) -> T {
+            if index == values.count { return pointers.withUnsafeBufferPointer(body) }
+            return values[index].withCString { pointer in
+                pointers.append(pointer); defer { pointers.removeLast() }
+                return append(index + 1)
+            }
+        }
+        return append(0)
+    }
+    private func withSearchQuery<T>(module: String?, expression: String, mode: CoreSearchMode, caseSensitive: Bool,
+                                 maxResults: Int, maxReferenceBytes: Int, range: CoreSearchRange?,
+                                 withinLastResults: Bool, textOptions: CoreSearchTextOptions?,
+                                 _ body: (UnsafePointer<xc_search_query>) -> T) -> T {
         var options = xc_search_options()
         xc_search_options_default(&options)
         options.mode = mode.rawValue; options.case_sensitive = caseSensitive ? 1 : 0
         options.max_results = maxResults; options.max_reference_bytes = maxReferenceBytes
-        var request: OpaquePointer?
-        let handle = try worker()
         var annotations = xc_search_text_options()
         xc_search_text_options_default(&annotations)
         if let textOptions {
@@ -262,9 +322,9 @@ actor CoreWorker {
             annotations.morphology = textOptions.morphology ? 1 : 0
             annotations.footnotes = textOptions.footnotes ? 1 : 0
         }
-        let status = module.withCString { id in
+        func queue(_ id: UnsafePointer<CChar>?) -> T {
             expression.withCString { expression in
-                func queue(_ scopeModule: UnsafePointer<CChar>?, _ bounds: UnsafePointer<CChar>?) -> xc_status {
+                func bounded(_ scopeModule: UnsafePointer<CChar>?, _ bounds: UnsafePointer<CChar>?) -> T {
                     var query = xc_search_query()
                     xc_search_query_default(&query)
                     query.module = id; query.expression = expression
@@ -273,24 +333,20 @@ actor CoreWorker {
                     return withUnsafePointer(to: &options) { base in
                         withUnsafePointer(to: &annotations) { flags in
                             query.options = base; query.text_options = textOptions == nil ? nil : flags
-                            return xc_worker_search(handle, tab, &query, &request)
+                            return withUnsafePointer(to: &query, body)
                         }
                     }
                 }
                 if let range {
                     return range.module.withCString { scope in
-                        range.expression.withCString { bounds in queue(scope, bounds) }
+                        range.expression.withCString { bounds in bounded(scope, bounds) }
                     }
                 }
-                return queue(nil, nil)
+                return bounded(nil, nil)
             }
         }
-        let completed = try await wait(status, request, cancellingSearch: true,
-                                       returnCancelledSearch: returnCancelledResults, onSearchProgress: onProgress)
-        defer { xc_request_release(completed) }
-        guard let result = xc_request_take_search(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
-        defer { xc_search_release(result) }
-        return CoreValues.search(result)
+        if let module { return module.withCString(queue) }
+        return queue(nil)
     }
     func lastSearchScope(tab: UInt64) async throws -> CoreSearchScope {
         var request: OpaquePointer?

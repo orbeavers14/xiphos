@@ -147,6 +147,20 @@ struct RenderedSearchResult: Sendable, Equatable {
     var textOptionsUpdated = false
     var indexFallback = false
 }
+enum CoreSearchGroupStatus: UInt32, Sendable { case success=0, invalidRequest=1, moduleNotFound=2, engineError=3 }
+struct RenderedSearchGroup: Sendable, Equatable {
+    let requestIndex: Int
+    let status: CoreSearchGroupStatus
+    let result: RenderedSearchResult?
+}
+struct RenderedSearchBatch: Sendable, Equatable {
+    let requestedModules: [String]
+    let groups: [RenderedSearchGroup]
+    let copiedResultCount: Int, copiedReferenceBytes: Int, failureCount: Int
+    let limited: Bool, cancelled: Bool, scopeUpdated: Bool, textOptionsUpdated: Bool
+    let scope: CoreSearchScope
+    let textOptions: CoreSearchTextOptions?
+}
 struct RenderedBookImage: Sendable, Equatable {
     let module: String, filename: String, mediaType: String
     let data: Data
@@ -415,6 +429,27 @@ enum CoreValues {
             scopeUpdated: xc_search_scope_updated(result) == 1,
             requestedTextOptions: searchTextOptions(requestedText), effectiveTextOptions: searchTextOptions(effectiveText),
             textOptionsUpdated: xc_search_text_options_updated(result) == 1, indexFallback: xc_search_index_fallback(result) == 1)
+    }
+    static func searchBatch(_ batch: OpaquePointer) -> RenderedSearchBatch {
+        var info = xc_search_batch_info(), scope = xc_search_scope_info(), text = xc_search_text_info()
+        precondition(xc_search_batch_get_info(batch, &info) == XC_OK)
+        precondition(xc_search_batch_get_scope(batch, &scope) == XC_OK)
+        precondition(xc_search_batch_get_text_options(batch, &text) == XC_OK)
+        let groups = (0..<info.group_count).map { index in
+            var group = xc_search_batch_group_info()
+            precondition(xc_search_batch_get_group(batch, index, &group) == XC_OK)
+            guard let status = CoreSearchGroupStatus(rawValue: group.status.rawValue) else { preconditionFailure("Unknown batch group status") }
+            let copied = xc_search_batch_group_result(batch, index).map { search($0) }
+            precondition((copied != nil) == (group.result_present != 0))
+            return RenderedSearchGroup(requestIndex: group.request_index, status: status, result: copied)
+        }
+        return RenderedSearchBatch(
+            requestedModules: (0..<info.requested_count).map { String(cString: xc_search_batch_requested_module(batch, $0)!) },
+            groups: groups, copiedResultCount: info.result_count, copiedReferenceBytes: info.reference_bytes,
+            failureCount: info.failure_count, limited: info.limited != 0, cancelled: info.cancelled != 0,
+            scopeUpdated: info.scope_updated != 0, textOptionsUpdated: info.text_options_updated != 0,
+            scope: CoreSearchScope(present: scope.present != 0, elementCount: scope.element_count),
+            textOptions: searchTextOptions(text))
     }
     static func bookImage(_ result: OpaquePointer) -> RenderedBookImage {
         let source = xc_book_image_data_source(result)!

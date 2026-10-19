@@ -68,7 +68,55 @@ actor ProgressLog {
         guard seed.requestedTextOptions == wanted, phrase.effectiveTextOptions == wanted else { fatalError("Copied text metadata survives shutdown") }
         print("Swift composable scopes, requested/effective annotation context, phrase retention and lifetime passed")
     }
+    static func batch(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let tab = try await worker.createTab(), other = try await worker.createTab()
+        let flags = CoreSearchTextOptions(strongs: true, morphology: false, footnotes: true)
+        let log = ProgressLog()
+        let result = try await worker.searchModules(tab: tab, modules: ["Text", "Missing", "Commentary", "Text"],
+            expression: "Original", mode: .multiword, maxResults: 1, textOptions: flags,
+            onProgress: { await log.append($0) })
+        guard result.requestedModules == ["Text", "Missing", "Commentary", "Text"], result.groups.map(\.requestIndex) == [0, 1, 2, 3],
+              result.groups.map(\.status) == [.success, .moduleNotFound, .success, .success],
+              result.groups[0].result?.references == ["John 1:1"], result.groups[1].result == nil,
+              result.groups[2].result?.references == [], result.groups[3].result?.executed == true,
+              result.copiedResultCount == 1, result.copiedReferenceBytes == 8, result.failureCount == 1,
+              result.limited, result.scope.elementCount == 4, result.scopeUpdated, result.textOptions == flags,
+              result.textOptionsUpdated, try await worker.searchTextOptions(tab: tab) == flags,
+              !(try await worker.lastSearchScope(tab: other)).present else { fatalError("Swift copies ordered bounded batch groups and complete isolated state") }
+        let events = await log.snapshot()
+        guard events.last?.phase == .complete, events.last?.percent == 100,
+              zip(events, events.dropFirst()).allSatisfy({ $0.percent <= $1.percent && $0 != $1 }) else { fatalError("Batch progress is changed-only and monotonic across modules") }
+        _ = try await worker.searchModule(tab: tab, module: "Text", expression: "N-ASF", mode: .morphology)
+        let narrowed = try await worker.searchModules(tab: tab, modules: ["Text", "Commentary"], expression: "G140", mode: .lemma,
+                                                       maxResults: 1, withinLastResults: true)
+        guard narrowed.scope.elementCount == 1, narrowed.groups[0].result?.references == ["John 1:1"],
+              narrowed.groups[1].result?.references == [], narrowed.groups[1].result?.executed == true else { fatalError("Batch last scope chains in core even after copied prefix fills") }
+        let bounded = try await worker.searchModules(tab: other, modules: ["Commentary", "Text"], expression: "Original",
+            range: CoreSearchRange(module: "Text", expression: "John1:2-John1:3"))
+        guard bounded.groups.allSatisfy({ $0.result?.references == ["John 1:2", "John 1:3"] }),
+              try await worker.history(tab).count == 0 else { fatalError("Shared batch range remains history neutral") }
+        for modules in [[], Array(repeating: "Text", count: 33), ["Text\0bad"]] {
+            do { _ = try await worker.searchModules(tab: tab, modules: modules, expression: "Original"); fatalError("Expected invalid modules") }
+            catch is CoreError {}
+        }
+        do { _ = try await worker.searchModules(tab: tab, modules: ["Text"], expression: "Original", maxResults: 0); fatalError("Expected invalid limit") }
+        catch is CoreError {}
+        let defaultStop = Task { try await worker.searchModules(tab: tab, modules: ["Text", "Commentary"], expression: "Original") }
+        defaultStop.cancel()
+        do { _ = try await defaultStop.value; fatalError("Default cancellation must drain then throw") } catch is CancellationError {}
+        let stop = Task { try await worker.searchModules(tab: tab, modules: Array(repeating: "Text", count: 32), expression: "Original", returnCancelledResults: true) }
+        stop.cancel();let stopped = try await stop.value
+        guard stopped.groups.count <= 32, try await worker.lastSearchScope(tab: tab) == stopped.scope else { fatalError("Interactive batch stop returns authoritative committed prefix state") }
+        guard try await worker.searchModules(tab: tab, modules: ["Text"], expression: "Original").scope.elementCount == 4 else { fatalError("Fresh batch recovers after stop") }
+        try await worker.closeTab(tab);try await worker.closeTab(other);await worker.shutdown()
+        guard result.groups[0].result?.expression == "Original", narrowed.groups[0].result?.references == ["John 1:1"] else { fatalError("All batch copies outlive C batch and worker") }
+        print("Swift ordered batch copies, per-module failures, budgets, scopes, progress, cancellation and lifetime passed")
+    }
     static func main() async throws {
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--batch" {
+            try await batch(root: CommandLine.arguments[2]); return
+        }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--text-options" {
             try await textOptions(root: CommandLine.arguments[2]); return
         }

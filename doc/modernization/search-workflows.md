@@ -599,3 +599,23 @@ Cases cover mutated input/array/options, bounded groups, per-module failures,
 range/last/context, NULL/wrong-kind/take-once/index bounds, cancellation races,
 detached observers and drain/borrowed lifetime. Existing single C requests now use
 the same input-copy factory, with their layouts and semantics retained.
+
+### Swift multi-module adapter
+
+`CoreWorker.searchModules` copies Sendable ordered groups, per-module status/result,
+aggregate limits and final scope/context through the C command. One common query
+covers mode/case/bounds/last/text choices; it shares synchronous descriptor setup
+with single-module search. Bounded nested CString scopes last only through input
+copying and never cross await. Batch handles/borrowed children remain actor-owned;
+only copied Swift values leave it. Existing changed-only progress and default
+drain-then-throw cancellation are reused. Interactive opt-in returns the stopped
+prefix and its authoritative committed state. No native advanced controls are
+claimed by adapter work.
+
+Six focused checks including fixtures pass. Tests cover mixed success/missing
+modules, whole-batch prefix independent of scope, ordered narrowing, bounds,
+context/tab/history neutrality, progress, invalid input, both cancellation modes,
+recovery and owned lifetime. Swift 6 initially rejected capturing the request
+observer through two helper closures; returning the locally created observer with
+its status resolves isolation without unchecked Sendable pointers. A test argument
+order typo was corrected before validation. No failed Swift build was published.
