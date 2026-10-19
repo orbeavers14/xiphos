@@ -25,6 +25,7 @@
 #include <regex.h>
 #include <swbuf.h>
 #include <swmodule.h>
+#include "xiphos/core/search_policy.hpp"
 
 #include "xiphos_html/xiphos_html.h"
 
@@ -1358,24 +1359,17 @@ void main_do_dialog_search(void)
 	search_params =
 	    gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(search1.cb_case_sensitive)) ? 0 : REG_ICASE;
 
-	// For attribute-based searches, e.g. "Word//Lemma/G140",
-	// we must constrain the match to whole words.  Otherwise,
-	// we will inadvertently return e.g. 140 plus 1401 and 1404.
+	// Shared byte-preserving attribute grammar and whole-entry matching policy.
 	if (search_type == -3) {
-		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(search1.rb_strongs))) {
-			search_params |= SpecialSearchFlag;
-			attribute_search_string = g_strdup_printf(
-			    "Word//Lemma./%s",
-			    search_string);
-		} else if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(search1.rb_morphs))) {
-			search_params |= SpecialSearchFlag;
-			attribute_search_string = g_strdup_printf(
-			    "Word//Morph/%s",
-			    search_string);
-		} else if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(search1.rb_footnotes))) {
-			attribute_search_string = g_strdup_printf(
-			    "Footnote//body/%s",
-			    search_string);
+		const bool strongs = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(search1.rb_strongs));
+		const bool morphs = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(search1.rb_morphs));
+		const bool footnotes = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(search1.rb_footnotes));
+		if (strongs || morphs || footnotes) {
+			const auto kind = strongs ? xiphos::core::AttributeSearch::lemma
+			    : morphs ? xiphos::core::AttributeSearch::morphology : xiphos::core::AttributeSearch::footnote;
+			const auto prepared = xiphos::core::attribute_search_text(search_string, kind);
+			if (prepared.whole_entry) search_params |= SpecialSearchFlag;
+			attribute_search_string = g_strdup(prepared.expression.c_str());
 		}
 		XI_message(("%s", attribute_search_string));
 	}

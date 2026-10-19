@@ -13,4 +13,13 @@ std::string sidebar_search_text(std::string text, bool indexed) {
   prepared+=' ';
   return prepared;
 }
+AttributeSearchText attribute_search_text(const std::string &text,AttributeSearch kind) {
+  if(text.find('\0')!=std::string::npos)throw std::invalid_argument("Attribute search text contains NUL");
+  switch(kind){
+    case AttributeSearch::lemma:return {"Word//Lemma./"+text,true};
+    case AttributeSearch::morphology:return {"Word//Morph/"+text,true};
+    case AttributeSearch::footnote:return {"Footnote//body/"+text,false};
+  }
+  throw std::invalid_argument("Unknown attribute search kind");
+}
 }}

@@ -380,3 +380,28 @@ late-completion handling; actual slow-corpus GUI interruption, full keyboard/
 VoiceOver, saved defaults/settings, advanced/attribute/index/multi-module/export,
 full visual/corpus and other-platform controls remain gates. This is scoped
 functionality, not complete F18/F20 or 1:1 search acceptance.
+
+## Shared attribute query policy
+
+`attribute_search_text` is an owned C++11 policy used by the retained advanced
+dialog. Lemma builds `Word//Lemma./`, morphology `Word//Morph/`, and footnotes
+`Footnote//body/` before unchanged raw query bytes. Lemma/morphology require SDK
+whole-entry matching; footnote bodies retain substring/regex semantics. This
+prevents a lemma identifier such as G140 from unintentionally matching G1401.
+No trimming, escaping, case handling, UTF-8 interpretation, SDK search or UI state
+is implemented in this formatting rule. NUL/unknown kind reject at the owned API.
+
+A frozen verbatim conditional at `0d2e73f` is compared with the extracted actual
+retained adapter over explicit long/Unicode/slash/regex/whitespace cases plus 200
+byte mutations, every radio combination, case-flag baseline and nonattribute
+mode. The original strongs/morphology/footnote precedence and no-selection path
+are retained. Normal and ASan/UBSan policy checks and strict C++11 syntax pass.
+This extracts policy only; owned attribute execution/transport and complete
+advanced-dialog behavior remain the next boundaries. GTK adapter compilation is
+characterized with stubs; full GTK3 runtime requires its desktop dependencies.
+
+The real parent-project legacy route also builds CoreRender with native core
+absent and strict C++11 enabled. A first standalone configuration's OFF argument
+was overridden by its existing unconditional native-ON setting; it still built
+only the requested C++11 render target, and the separate parent wrapper verified
+the actual native-disabled path. No full GTK desktop build is claimed.
