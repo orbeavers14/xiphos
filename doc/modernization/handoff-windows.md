@@ -1,12 +1,14 @@
 # Native Windows chat handoff
 
-Shared API notice (2026-10-17): initial verse search now owns query/results,
-optional explicit range-source module/bounds, atomic cooperative progress/cancel,
-and copied C/Swift values (`06286b7` through `d77d61c`). No native search UI or
-full search parity is claimed. Validate `XIPHOS_SWORD_SEARCH_ICASE_FLAG` against
-this platform's SDK (tested Mac SDK uses 2; C++11 regex backend uses 1). These
-Mac checks do not change this platform's recorded results below. See
-[search contracts](search-workflows.md) before consuming the new APIs.
+Shared API notice (2026-10-18): complete per-tab last-search scope is now private
+to the shared core (`c1b0a88`); worker/C query/clear and scalar metadata commands
+are in `c38cd8f`. Existing normal/range searches reseed this tab's complete scope,
+independent of display limits. Search capabilities copy from the shared runtime
+predicate (`4e3402c`, SDK classification correction `76895f4`). Basic Mac controls
+`0ca0bab` use copied scope/progress; other hosts should adapt the same APIs.
+Validate `XIPHOS_SWORD_SEARCH_ICASE_FLAG` against this platform's SDK (tested Mac
+uses 2; C++11 regex uses 1). Mac-hosted portable 98/98 is not new native-platform
+acceptance; preserve the actual results below. See [search contracts](search-workflows.md).
 
 
 Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md) and the

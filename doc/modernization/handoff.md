@@ -1,6 +1,6 @@
 # Shared project handoff: start here in every chat
 
-Updated 2026-10-17. These files replace missing conversation context with a
+Updated 2026-10-18. These files replace missing conversation context with a
 versioned record. They do not transfer chat messages or synchronize themselves:
 each chat must fetch/pull Git and read them before working.
 
@@ -16,32 +16,27 @@ The [status ledger](status.md) is the detailed scope/evidence record; the
 about 8% (range 6–10%), with 0/38 feature groups fully accepted and 0/3 native
 release-ready applications. Do not turn passed build counts into parity scores.
 
-Shared book restore now includes explicit profile-file import `47fc462`, per-tab
-publication `0af4593`, SDK resolution `eb33f2a` and typed restore contexts `929c8d8`.
-Latest `106577b` applies the legacy numeric reading minimum at the shared selection
-boundary while preserving explicit root-path reads. Failed imports/rendering retain
-committed state; read-only calls and absent restore are neutral.
-Complete document publication `6cb35cf`, worker/C `99056d7` and native consumption
-`e52a497` preserve configured DisplayLevel depth/order, atomic selection and exact
-rendered-section note routing. Earlier raw entry/read-only APIs remain stable.
-Book resources/geometry/module CSS/combined note counters now have shared
-implementations and Mac consumers; see [book workflows](book-tree-workflows.md).
-Initial shared search now supports Bible/regular-commentary phrase/regex/words,
-case, explicit SDK interval bounds, owned C/Swift results, atomic progress and
-cooperative cancellation. Checkpoints: policy `2682d18`, Reader `06286b7`, worker/C
-`47401f0`, Swift `a413a21`, controls `bb1d8bb`/`c75b187`, ranges `1dae0e9`/`d77d61c`.
-The range work also fixes an observed legacy key-text use-after-free.
+Current search checkpoint: complete private per-tab scope `c1b0a88`, queued C
+commands `c38cd8f`, Swift scope `ade4bdf`, shared capability `4e3402c` with verified
+SDK classification correction `76895f4`, progress/interactive stopped results
+`3181502`, and initial native controls `0ca0bab`. Display prefix limits never
+truncate the next search scope. Empty/clear, failures, pre-execution cancel and
+returned partial execution follow documented publication contracts. No SDK keys
+cross the worker boundary. See [search workflows](search-workflows.md).
 
-Latest shared result-copy boundary `d5bb059` separates owned bounded output
-from future complete stored scope. Dedicated checks cover long/Unicode keys,
-exact budgets and interval-versus-expanded counts; last-search characterization
-`1b806f1` covers narrowing, resets and empty/failure/partial-return policy.
-Local full suites pass **123/123 Mac/core** and **96/96 portable core on Mac**;
-focused search checks pass **6 Mac/core/Swift**, **5 portable**, **5 ASan/UBSan**,
-plus one final result-copy sanitizer check after default initialization. The prior
-range/control checkpoint also passed **3 TSan** checks. Strict C11 passed.
-See [Mac commands/environment](handoff-macos.md), [search limits](search-workflows.md)
-and [core scope](shared-core-roadmap.md). These are not Fedora/MSVC/WinUI checks.
+Local full suites pass **126/126 Mac/core**, **98/98 portable core on Mac**,
+**8 focused ASan/UBSan**, **4 TSan**; strict C11 passes. Actual Mac window checks
+cover scopes, ordered preview, case, clear and physical double-click navigation.
+Slow-corpus GUI interruption, full keyboard/VoiceOver, indexed/advanced/attribute/
+multiple-module/export and full corpus/platform acceptance remain pending.
+[Mac handoff](handoff-macos.md) records exact environment/commands/limits.
+
+Book tree/restore/navigation/DisplayLevel, resources/styles and combined note
+counters remain checked partial services with native Mac consumption; detailed
+contracts and earlier hashes live in [book workflows](book-tree-workflows.md).
+These search advances accept no whole parity group or retirement gate and do not
+create a reliable core-only completion percentage. Keep [core scope](shared-core-roadmap.md)
+and the independent platform evidence in view.
 
 | Implemented area | Checkpoints | Contract / limits |
 |---|---|---|
@@ -51,19 +46,17 @@ and [core scope](shared-core-roadmap.md). These are not Fedora/MSVC/WinUI checks
 | Earlier Fedora preview scope catch-up | PRs #82–89, `a80409b` | [Native Fedora evidence](handoff-linux.md); retain manual/corpus/renderer gates |
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
-Next shared slice: implement per-tab last-search scope after checked characterization with
-complete owned SDK keys, independent of the bounded visible prefix, and explicit
-atomic failure/cancellation publication semantics. Native search UI is still
-pending. Book corpus/session/native sizing/global CSS/recursive assets remain
-open. No whole parity/retirement gate is accepted. No hosted build or reset credit
-was used. Read-only workflow inspection confirmed `builds`/`native-core` disabled
-administratively and `linux-core` active but manual-only; do not enable/dispatch.
+Active next shared slice: characterize/extract attribute-search query and whole-
+entry rules from the advanced dialog, then add validated owned execution and
+transport. Complete advanced/multiple-module/index/export and settings workflows
+remain separate gates. Native book sizing/assets/corpus/session gates also remain.
+No hosted build/reset credit was used; do not enable or dispatch Actions.
 
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Owned per-tab last-search scope and publication semantics | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Shared attribute-search policy/execution and copied transport | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

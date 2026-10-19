@@ -1,48 +1,51 @@
 # macOS chat handoff
 
-Updated 2026-10-17. Read [AGENTS.md](../../AGENTS.md), the
+Updated 2026-10-18. Read [AGENTS.md](../../AGENTS.md), the
 [shared handoff](handoff.md), [core scope](shared-core-roadmap.md),
 [status](status.md) and relevant parity rows first.
 
+Active task (2026-10-18, master): characterize/extract shared attribute-search
+rules, then owned execution/transport. Scope/native search `0ca0bab` is checked
+and pushed. Local validation only; preserve unrelated files and legacy. This note
+records intent, not a concurrent ownership lease.
+
 ## Current checked source and active work
 
-Fork `orbeavers14/xiphos`, master. Inline URL resolver `56925fb`, core-owned
-resource-prepared HTML `efcc544`, Mac consumption `4137374`. Raw SDK and ordinary
-presentation HTML remain distinct. Image-off cleanup precedes resource loading;
-missing images retain text and expose issues. Bounds, parser normalization and
-format limitations are documented in [book workflows](book-tree-workflows.md).
-
-Shared geometry `48d5425` serves the retained GTK adapter (native sizing pending).
-Module CSS `4611a9d` / native `65b8ab6` is checked: bounded preferred/default
-styles, empty/failed fallback and safe style text. Combined note source `652d8e1`, shared numbering `43ce5ee` and native controls
-`a5d9488` now preserve exact legacy terminal-label/whole-document counter scope.
-Search checkpoints: `2682d18` pure query policy, `06286b7` Reader, `47401f0`
-worker/C, `a413a21` Swift, `bb1d8bb` cooperative owner-safe controls, `c75b187`
-Swift cancellation draining, `1dae0e9` explicit intervals/legacy memory fix,
-`d77d61c` Swift ranges. Shared search owns queries/results and SDK scopes; no native
-search UI exists. See [search contract](search-workflows.md).
-Last-scope characterization `1b806f1` covers cross-module/repeated narrowing,
-empty/missing/failed/partial-return policy, clear/reset and 64/65 interval bounds.
-Two focused Mac, two portable and two ASan checks passed.
-Next bounded slice: owned per-tab last-search keys and atomic publication semantics.
+Fork `orbeavers14/xiphos`, master. Complete private session scope `c1b0a88`,
+worker/C `c38cd8f`, Swift `ade4bdf`, shared search capability `4e3402c` / corrected
+SDK classification test `76895f4`, copied progress/interactive Stop `3181502`,
+and native search `0ca0bab` are pushed. See [search contracts](search-workflows.md).
+Shared snapshots retain complete typed SDK keys independently of public prefix;
+C/Swift expose copied metadata only. Basic native sidebar controls use that core.
+Next bounded task: shared attribute query/whole-entry policy, then execution.
+Book resources, CSS, combined numbering and earlier restore/DisplayLevel contracts
+remain in [book workflows](book-tree-workflows.md) and version history.
 Do not create separate frontend sizing algorithms. No hosted build or reset
 credit was used. Preserve Windows lane, unrelated `.DS_Store`, GTK3 and licenses.
 
 ## Actual local checks
 
-Latest implementation `d5bb059`: owned result-copy boundary with long/Unicode,
-interval-count and exact-budget coverage. Full local suites pass 123/123 Mac/core
-and 96/96 portable core on Mac. Six focused Mac/core/Swift, five portable and five
-ASan/UBSan search checks pass; a final result-copy sanitizer check passes after
-default initialization. Three TSan range/control checks passed before the later
-result-copy extraction (thread control logic unchanged). Strict C11 passed.
-The initial range ASan failure exposed a real legacy key-text self-buffer
-use-after-free, fixed in `1dae0e9`; its extracted actual routine passes. No full
-GTK3 build/runtime claim is made. New targets require CMake configuration first.
-Earlier book geometry C++11/native-disabled helper, module CSS and combined-note
-sanitizer/GUI evidence remains in the workflow documents/version history.
-Dependencies are not fully instrumented and leak detection is off. Current Fedora
-GTK/MSVC/WinUI is unvalidated here; Mac portable checks are not Linux desktop proof.
+At `0ca0bab`: 126/126 Mac/core and 98/98 portable core on this Mac pass; eight
+ASan/UBSan search/book checks and four TSan search/scope/control checks pass.
+Strict C11 header compilation passes. Focused native model checks cover scope,
+preview/navigation, immediate Stop/late completion and close/stale guards.
+The initial capability assertion wrongly treated VerseKey RawGenBook as runtime
+Generic Books; this SDK reports Biblical Texts. That assertion was prematurely
+pushed, then corrected and verified normal/ASan in `76895f4`; execution logic was
+already consistent with the SDK. See the workflow for the earlier legacy range
+memory fix and corrected fixture/C function-name mistakes.
+Dependencies are only partly instrumented; leak checks are off. Portable core
+checks on Mac do not establish current Fedora GTK or MSVC/WinUI acceptance.
+
+Search fixture window checked eligibility, automatic/changed-row preview, ordered
+results, explicit bounds, last narrowing, clear then empty, case 1 versus 2,
+commentary source, Read and physical double-click to a new main reference. A shorter
+Clear last label fits; rapid previews keep the list enabled and suppress stale
+output. Stop is covered by model/control tests, not a slow-corpus GUI timing claim.
+The app/fixture was quit/removed. Sandboxed Launch Services initially rejected the
+launch; the same temporary copy launched outside that shell sandbox. No Documents
+access prompt was needed. Full keyboard/VoiceOver/corpus/advanced/index/export gates
+remain open.
 
 Disposable original-prose window verified PNG inline, click to native preview,
 Close to same book section, image-off text retention, and image accessibility
@@ -65,8 +68,8 @@ cmake -S platforms/linux -B build/linux-models -C build/linux-model-sdk.cmake -D
 cmake --build build/linux-models --parallel 2
 ctest --test-dir build/linux-models --no-tests=error --output-on-failure --parallel 2 --timeout 30
 cmake -S src/core -B build/sanitized
-cmake --build build/sanitized --target core_search_test core_search_range_test core_search_control_test core_search_worker_test core_search_results_test --parallel 2
-ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/sanitized -R '^core_search(_results|_range|_control|_worker)?$' --no-tests=error --output-on-failure
+cmake --build build/sanitized --target core_search_test core_search_range_test core_search_control_test core_search_worker_test core_search_results_test core_search_scope_test core_search_scope_worker_test core_book_tree_test --parallel 2
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/sanitized -R '^(core_search(_results|_range|_scope|_scope_worker|_control|_worker)?|core_book_tree)$' --no-tests=error --output-on-failure
 ```
 
 Focused post-fix commands use targets `core_search_range_test` and
@@ -92,9 +95,9 @@ Older next-task statements are historical; prior intermittent paging/fixture
 timeouts and passing isolated reruns remain in history. No legacy source retires.
 
 Final whole-suite commands are the full Mac and portable build/ctest commands
-above. Focused search build targets include `core_search_results_test` plus
-search/range/control/worker and `macos_search_adapter_test`; focused Mac regex is
-`^(core_search(_results|_range|_control|_worker)?|swift_search_adapter)$`.
-The final default-initialization sanitizer check builds `core_search_results_test`
-and runs `^core_search_results$`. No hosted job or reset credit was used. Work is
-at a pushed checkpoint near the usage ceiling; no active ownership lease is held.
+above. Current focused native commands build `macos_reader_model_test` /
+`macos_preview` and run `^(core_search|reader_model_search)$`. Thread checks build
+core_search_test/core_search_scope_test/core_search_scope_worker_test/
+core_search_control_test and run `^core_search(_scope|_scope_worker|_control)?$`.
+The older focused command examples retain their narrower historical scope.
+No hosted job or reset credit was used; current active work is recorded above.

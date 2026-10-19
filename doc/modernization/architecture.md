@@ -125,8 +125,9 @@ native integration. Introduce these services incrementally with legacy tests.
   number localization, selector composition and persistence remain pending. See status for characterized rules and validation limits.
 * Search seam: the initial FIFO service now owns verse search query/results,
   explicit SDK interval bounds and cooperative atomic progress/cancellation.
-  C/Swift copy values; no SDK pointer crosses the worker boundary. Last-search
-  scopes, advanced search and native controls remain pending. See
+  C/Swift copy values; no SDK pointer crosses the worker boundary. Complete private
+  per-tab scopes and basic native Mac controls now consume this service. Advanced
+  search, full settings/export/backend/corpus acceptance remain pending. See
   [search contracts](search-workflows.md).
 * Storage seam: settings.c/configs.cc/xml.c and bookmark GTK data structures
   become repositories with read-compatible loaders. No migration writes until
@@ -150,7 +151,7 @@ through a Swift actor and shares one worker across windows, each with a core
 study tab. Main-actor presentation guards closed-window results and serializes
 window actions. Worker shutdown drains/joins on a background queue. Callers
 must not wait on futures or join shutdown on a UI thread. Cancellation and
-interruption of an active SWORD operation remain separate work.
+interruption of active operations beyond cooperative search remain separate work.
 
 C ABI v1 is experimental, static-linked, and exposes opaque handles, status
 codes and UTF-8 borrowed strings with explicit lifetimes. It is not yet a
@@ -174,7 +175,8 @@ keyboard equivalents, focus/accessibility, file dialogs, appearance, window
 restoration and platform packaging may differ without dropping capabilities.
 The initial macOS shell presents a module sidebar and verse pane only. It is
 not a replacement design or a reproduction of the full screenshot.
-Windows and GTK4 frontends are planned, not implemented by placeholder code.
+GTK4 has a scoped reading preview with platform-specific validation gates; Windows
+frontend/tooling remains pending. None is a complete parity/release replacement.
 
 ## Reviewable sequence and release gates
 
