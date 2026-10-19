@@ -305,3 +305,19 @@ separate tabs, clear/empty behavior, wrong-kind/NULL/unknown/closed-tab handling
 FIFO ordering and result/metadata ownership after shutdown. Four focused Mac and
 four ASan/UBSan checks pass; strict C11 header compilation passes. C commands are
 available to all hosts; current Fedora/MSVC/WinUI validation is still pending.
+
+## Shared search capability
+
+Module catalogs now copy `verse_search` (C synchronous/queued getters and Swift
+`hasVerseSearch`). Catalog discovery and actual execution call the same shared
+SDK predicate: VerseKey plus Biblical Texts or a regular commentary driver.
+Native pickers consume this flag instead of duplicating driver/type rules. This
+means initial verse-search eligibility, not indexed/advanced/attribute readiness.
+Dictionary and Generic Books remain excluded, including an actual SDK Generic
+Book configured with VerseKey. Source capability is checked at execution too.
+
+Four focused core/Swift checks and three ASan/UBSan checks pass. The book-tree
+fixture separately verifies exclusion of actual VerseKey Generic Books. Strict
+C11 passes. Owned C catalogs retain capability values after worker destruction.
+The first capability test compile used incorrect synchronous C function names;
+correcting them to the existing xc_open/xc_close API resolved it before checks.

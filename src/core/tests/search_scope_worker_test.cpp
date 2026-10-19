@@ -13,6 +13,7 @@ int main(int argc,char **argv){try{
  std::future<SearchScopeInfo> drained;
  {
   StudyWorker worker(root);const auto a=worker.create_tab().get(),b=worker.create_tab().get();
+  const auto catalog=worker.modules().get();for(const auto &module:catalog)check(module.verse_search==(module.id=="Text"||module.id=="Commentary"),"Shared catalog capability matches actual initial verse-search gate");
   auto seed=worker.search_module(a,{"Text","Original"},{1,1024});auto info=worker.last_search_scope(a);auto other=worker.last_search_scope(b);
   check(seed.get().references.size()==1&&info.get().element_count==3&&!other.get().present,"FIFO complete scope does not inherit display truncation or another tab's state");
   SearchQuery last{"Commentary","beta"};last.within_last_results=true;
@@ -23,8 +24,16 @@ int main(int argc,char **argv){try{
   worker.search_module(b,{"Text","Original"}).get();drained=worker.last_search_scope(b);
  }
  check(drained.get().element_count==3,"Copied scope metadata drains and survives worker shutdown");
+ {
+  xc_reader *reader=nullptr;check(xc_open(root.c_str(),&reader)==XC_OK,"Open sync capability reader");
+  for(std::size_t i=0;i<xc_module_count(reader);++i){const std::string id=xc_module_id(reader,i);check(xc_module_has_verse_search(reader,i)==(id=="Text"||id=="Commentary"),"Sync C catalog exposes shared capability");}
+  check(!xc_module_has_verse_search(nullptr,0)&&!xc_module_has_verse_search(reader,999),"Invalid sync capability getters are safe");xc_close(reader);
+ }
  xc_worker *worker=nullptr;xc_request *request=nullptr;check(xc_worker_open(root.c_str(),&worker)==XC_OK,"Open C scope worker");
  auto tab=[&]{check(xc_worker_create_tab(worker,&request)==XC_OK&&wait(request)==XC_OK,"Create C tab");const auto id=xc_request_tab(request);xc_request_release(request);return id;};const auto a=tab(),b=tab();
+ check(xc_worker_modules(worker,&request)==XC_OK&&wait(request)==XC_OK,"Queue copied capability catalog");auto *catalog=xc_request_take_catalog(request);xc_request_release(request);
+ for(std::size_t i=0;i<xc_catalog_count(catalog);++i){const std::string id=xc_catalog_id(catalog,i);check(xc_catalog_has_verse_search(catalog,i)==(id=="Text"||id=="Commentary"),"Queued C catalog preserves shared capability");}
+ check(!xc_catalog_has_verse_search(nullptr,0)&&!xc_catalog_has_verse_search(catalog,999),"Invalid copied capability getters are safe");
  xc_search_scope_info info{9,9};
  check(xc_worker_last_search_scope(worker,a,&request)==XC_OK&&xc_request_search_scope(request,&info)==XC_INVALID_ARGUMENT&&!info.present&&!info.element_count,"Pending scope metadata cannot escape before poll");
  check(wait(request)==XC_OK&&xc_request_search_scope(request,&info)==XC_OK&&!info.present&&!info.element_count&&!xc_request_take_search(request),"Empty scope metadata has a distinct, non-consuming request kind");
@@ -42,6 +51,8 @@ int main(int argc,char **argv){try{
  check(xc_worker_search_module_in_last_results(worker,a,nullptr,"Original",nullptr,&request)==XC_INVALID_ARGUMENT&&!request,"NULL last-scope query source rejects");
  check(xc_search_get_scope(nullptr,&info)==XC_INVALID_ARGUMENT&&!info.present&&!info.element_count&&xc_search_get_scope(seed,nullptr)==XC_INVALID_ARGUMENT&&xc_request_search_scope(nullptr,&info)==XC_INVALID_ARGUMENT&&xc_search_scope_updated(nullptr)==-1&&xc_search_within_last_results(nullptr)==-1,"Null metadata getter contracts");
  check(xc_worker_last_search_scope(worker,a,&request)==XC_OK,"Queue final metadata before close");xc_worker_close(worker);check(wait(request)==XC_OK&&xc_request_search_scope(request,&info)==XC_OK&&!info.present,"Metadata request survives worker shutdown");xc_request_release(request);
- check(xc_search_get_scope(seed,&info)==XC_OK&&info.element_count==3&&xc_search_get_scope(last,&info)==XC_OK&&info.element_count==2,"Earlier result scope copies survive subsequent clear and worker destruction");xc_search_release(seed);xc_search_release(last);
+ check(xc_search_get_scope(seed,&info)==XC_OK&&info.element_count==3&&xc_search_get_scope(last,&info)==XC_OK&&info.element_count==2,"Earlier result scope copies survive subsequent clear and worker destruction");check(xc_catalog_count(catalog)==4,"Copied capability catalog survives worker destruction");
+ for(std::size_t i=0;i<xc_catalog_count(catalog);++i){const std::string id=xc_catalog_id(catalog,i);check(xc_catalog_has_verse_search(catalog,i)==(id=="Text"||id=="Commentary"),"Capability values retain their owned catalog after shutdown");}xc_catalog_release(catalog);
+ xc_search_release(seed);xc_search_release(last);
  std::cout<<"Queued complete scope, copied C metadata, clear, tab isolation and shutdown passed\n";return 0;
  }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}

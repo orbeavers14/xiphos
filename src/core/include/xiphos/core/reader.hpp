@@ -27,6 +27,7 @@ struct Module {
   unsigned lexicon_roles = 0;
   bool regular_commentary = false;
   bool indexed_book = false;
+  bool verse_search = false;
 };
 
 

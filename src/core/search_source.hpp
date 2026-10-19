@@ -5,6 +5,7 @@
 namespace sword { class SWModule; }
 namespace xiphos::core { class EngineManager;
 namespace detail {
+bool supports_verse_search(sword::SWModule &module);
 SearchResult capture_module_search(EngineManager &manager,sword::SWModule &module,
                                   SearchQuery query,const SearchLimits &limits,const std::shared_ptr<SearchControl> &control = {},
                                   const SearchScope *previous=nullptr,std::shared_ptr<const SearchScope> *next=nullptr,

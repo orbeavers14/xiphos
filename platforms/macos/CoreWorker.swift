@@ -91,7 +91,8 @@ actor CoreWorker {
                 isDictionary: xc_catalog_is_dictionary(catalog, index) != 0,
                 isRegularCommentary: xc_catalog_is_regular_commentary(catalog, index) != 0,
                 lexiconRoles: LexiconRoles(rawValue: xc_catalog_lexicon_roles(catalog, index)),
-                hasBookTree: xc_catalog_has_book_tree(catalog, index) != 0)
+                hasBookTree: xc_catalog_has_book_tree(catalog, index) != 0,
+                hasVerseSearch: xc_catalog_has_verse_search(catalog, index) != 0)
         }
     }
     func bookTree(module: String, offset: UInt64) async throws -> BookTree {

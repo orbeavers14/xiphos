@@ -45,6 +45,11 @@ void search_percent(char percent,void *user) noexcept {
   if(std::this_thread::get_id()==context.owner&&context.control->cancel_requested())context.module->terminateSearch=true;
 }
 }
+bool supports_verse_search(sword::SWModule &module) {
+  const std::string type=module.getType();
+  return dynamic_cast<sword::VerseKey *>(module.getKey())&&
+    (type=="Biblical Texts"||regular_commentary(type.c_str(),module.getConfigEntry("ModDrv")));
+}
 SearchResult capture_module_search(EngineManager &manager,sword::SWModule &module,
                                   SearchQuery query,const SearchLimits &limits,const std::shared_ptr<SearchControl> &control,
                                   const SearchScope *previous,std::shared_ptr<const SearchScope> *next,
@@ -59,9 +64,7 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   if(!limits.max_results||limits.max_results>maximum_search_results||!limits.max_reference_bytes||
      limits.max_reference_bytes>maximum_search_reference_bytes)
     throw std::invalid_argument("Unsupported search output limits");
-  const std::string type=module.getType();const auto *driver=module.getConfigEntry("ModDrv");
-  if(!dynamic_cast<sword::VerseKey *>(module.getKey())||
-     (type!="Biblical Texts"&&!regular_commentary(type.c_str(),driver)))
+  if(!supports_verse_search(module))
     throw std::invalid_argument("Initial search supports Bible and regular commentary verse modules");
   int engine_type;
   switch(query.mode){

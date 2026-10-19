@@ -4,6 +4,8 @@ import Foundation
     static func main() async throws {
         guard CommandLine.arguments.count == 2 else { fatalError("Original search fixture required") }
         let worker = try CoreWorker(root: CommandLine.arguments[1])
+        let modules = try await worker.modules()
+        guard modules.filter(\.hasVerseSearch).map(\.id).sorted() == ["Commentary", "Text"] else { fatalError("Swift copies core search capabilities") }
         let tab = try await worker.createTab(), other = try await worker.createTab()
         _ = try await worker.visit(tab: tab, module: "Text", reference: "John1:2")
         let book = try await worker.selectBookDocument(tab: tab, module: "Book", offset: 4)
