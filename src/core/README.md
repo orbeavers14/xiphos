@@ -556,3 +556,15 @@ SWORD does not export this build choice. Validate upper/lowercase search results
 on each target SDK; a successful compilation alone does not validate this flag.
 Indexed mode selection is characterized, but actual indexed execution and other
 backend/corpus combinations remain unvalidated.
+
+### Helper-only standalone builds
+
+Standalone core configuration defaults `XIPHOS_BUILD_NATIVE_CORE` to ON. Explicit
+`-DXIPHOS_BUILD_NATIVE_CORE=OFF` now honors the caller's choice, producing only
+legacy-compatible render/history/options helpers and avoiding Reader/session/
+worker/C API and their native XML dependency lookup. For strict compatibility
+validation, add `-DCMAKE_CXX_STANDARD=11`. Parent-project defaults are unchanged.
+The previous unconditional standalone ON assignment overrode an explicit OFF;
+correcting it was checked with generated target inventories, a strict C++11
+CoreRender build, default native-ON configuration and the actual legacy parent
+wrapper. This build-configuration fix does not retire any source or functionality.
