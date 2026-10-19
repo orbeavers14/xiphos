@@ -19,9 +19,9 @@ int main(int argc,char **argv){try{
   SearchQuery last{"Commentary","beta"};last.within_last_results=true;
   auto next=worker.search_module(a,last).get();check(next.scope_updated&&next.scope.element_count==2&&next.references.size()==2,"Worker executes shared complete last scope");
   check(!worker.clear_search_scope(a).get().present&&!worker.search_module(a,last).get().executed,"Clear and next query are FIFO serialized");
-  auto invalid=worker.last_search_scope(999);try{invalid.get();throw std::logic_error("Expected invalid tab");}catch(const std::invalid_argument &){}
-  worker.close_tab(a).get();try{worker.clear_search_scope(a).get();throw std::logic_error("Expected closed tab");}catch(const std::invalid_argument &){}
-  worker.search_module(b,{"Text","Original"}).get();drained=worker.last_search_scope(b);
+  auto invalid=worker.last_search_scope(999);try{(void)invalid.get();throw std::logic_error("Expected invalid tab");}catch(const std::invalid_argument &){}
+  worker.close_tab(a).get();try{(void)worker.clear_search_scope(a).get();throw std::logic_error("Expected closed tab");}catch(const std::invalid_argument &){}
+  (void)worker.search_module(b,{"Text","Original"}).get();drained=worker.last_search_scope(b);
  }
  check(drained.get().element_count==3,"Copied scope metadata drains and survives worker shutdown");
  {
