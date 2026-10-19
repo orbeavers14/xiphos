@@ -10,5 +10,6 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
                                   SearchQuery query,const SearchLimits &limits,const std::shared_ptr<SearchControl> &control = {},
                                   const SearchScope *previous=nullptr,std::shared_ptr<const SearchScope> *next=nullptr,
                                   const SearchScopeLimits &scope_limits = {},
-                                  const std::optional<SearchTextOptions> &previous_text = {});
+                                  const std::optional<SearchTextOptions> &previous_text = {},
+                                  unsigned progress_begin=0,unsigned progress_end=100,bool allow_empty_output=false);
 }}

@@ -143,18 +143,20 @@ SearchResult Reader::search_module(SearchQuery query,const SearchLimits &limits,
   return search_impl(std::move(query),limits,std::move(control),nullptr);
 }
 SearchResult Reader::search_impl(SearchQuery query,const SearchLimits &limits,std::shared_ptr<SearchControl> control,
-                                 std::shared_ptr<const detail::SearchScope> *scope,const std::optional<SearchTextOptions> &previous_text) {
-  detail::SearchControlScope progress(control);
+                                 std::shared_ptr<const detail::SearchScope> *scope,const std::optional<SearchTextOptions> &previous_text,
+                                 bool nested_batch,unsigned progress_begin,unsigned progress_end) {
+  std::optional<detail::SearchControlScope> progress;
+  if(!nested_batch)progress.emplace(control);
   if(query.module.empty()||query.module.find('\0')!=std::string::npos)throw std::invalid_argument("Invalid search module");
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto *module=impl_->manager->getModule(query.module.c_str());
   if(!module)throw std::out_of_range("Search module is not installed");
   std::shared_ptr<const detail::SearchScope> staged;
   auto result=detail::capture_module_search(*impl_->manager,*module,std::move(query),limits,control,
-    scope?scope->get():nullptr,scope?&staged:nullptr,{},previous_text);
+    scope?scope->get():nullptr,scope?&staged:nullptr,{},previous_text,progress_begin,progress_end,nested_batch);
   if(staged){*scope=std::move(staged);result.scope_updated=true;}
   if(scope&&*scope)result.scope=(*scope)->info();
-  progress.finish(result.cancelled);return result;
+  if(progress)progress->finish(result.cancelled);return result;
 }
 BookDocument Reader::read_book_document(const std::string &id, std::uint64_t offset,
                                         const EngineOptions &options, const BookDocumentLimits &limits) {

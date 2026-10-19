@@ -27,6 +27,10 @@ public:
   explicit StudySession(Reader &reader) : reader_(reader) {}
   // Search updates only this session's complete last-result scope, never reading/history.
   SearchResult search_module(SearchQuery query,const SearchLimits &limits = {},std::shared_ptr<SearchControl> control = {});
+  // Up to 32 validated queries. Output budgets span all groups; execution and
+  // complete next scope continue when the copied prefix budget is exhausted.
+  // Per-module errors are owned group statuses; fatal failure publishes no state.
+  SearchBatchResult search_batch(std::vector<SearchQuery> queries,const SearchBatchLimits &limits = {},std::shared_ptr<SearchControl> control = {});
   SearchScopeInfo last_search_scope() const;
   void clear_search_scope();
   SearchTextState search_text_options() const {return {search_text_options_};}

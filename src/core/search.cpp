@@ -12,6 +12,7 @@
 #include <glib.h>
 #include <stdexcept>
 #include <thread>
+#include <algorithm>
 namespace xiphos::core::detail {
 namespace {
 class ScopedSearchFilters {
@@ -39,11 +40,12 @@ struct ScopedSearchModule {
   explicit ScopedSearchModule(sword::SWModule &m):module(m),attributes(m.isProcessEntryAttributes()),skip_links(m.isSkipConsecutiveLinks()){}
   ~ScopedSearchModule(){module.setProcessEntryAttributes(attributes);module.setSkipConsecutiveLinks(skip_links);module.terminateSearch=false;}
 };
-struct ProgressContext {sword::SWModule *module;SearchControl *control;std::thread::id owner;};
+struct ProgressContext {sword::SWModule *module;SearchControl *control;std::thread::id owner;unsigned begin,end;};
 void search_percent(char percent,void *user) noexcept {
   auto &context=*static_cast<ProgressContext *>(user);
   if(!context.control)return;
-  SearchControlAccess::progress(*context.control,static_cast<unsigned char>(percent));
+  const auto value=std::min(100u,static_cast<unsigned>(static_cast<unsigned char>(percent)));
+  SearchControlAccess::progress(*context.control,context.begin+(context.end-context.begin)*value/100);
   // Only the owning engine callback touches the SDK's non-atomic flag.
   if(std::this_thread::get_id()==context.owner&&context.control->cancel_requested())context.module->terminateSearch=true;
 }
@@ -56,7 +58,9 @@ bool supports_verse_search(sword::SWModule &module) {
 SearchResult capture_module_search(EngineManager &manager,sword::SWModule &module,
                                   SearchQuery query,const SearchLimits &limits,const std::shared_ptr<SearchControl> &control,
                                   const SearchScope *previous,std::shared_ptr<const SearchScope> *next,
-                                  const SearchScopeLimits &scope_limits,const std::optional<SearchTextOptions> &previous_text) {
+                                  const SearchScopeLimits &scope_limits,const std::optional<SearchTextOptions> &previous_text,
+                                  unsigned progress_begin,unsigned progress_end,bool allow_empty_output) {
+  if(progress_begin>progress_end||progress_end>100)throw std::invalid_argument("Invalid search progress interval");
   if(next)next->reset();
   if(query.within_last_results&&(!next||query.range))
     throw std::invalid_argument("Last-search scope requires a session and excludes explicit range");
@@ -64,7 +68,7 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
      query.expression.size()>32768||query.expression.find('\0')!=std::string::npos||
      !g_utf8_validate(query.expression.data(),query.expression.size(),nullptr))
     throw std::invalid_argument("Search needs a nonempty UTF-8 query of at most 32768 bytes");
-  if(!limits.max_results||limits.max_results>maximum_search_results||!limits.max_reference_bytes||
+  if((!allow_empty_output&&(!limits.max_results||!limits.max_reference_bytes))||limits.max_results>maximum_search_results||
      limits.max_reference_bytes>maximum_search_reference_bytes)
     throw std::invalid_argument("Unsupported search output limits");
   if(!supports_verse_search(module))
@@ -118,14 +122,14 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   if(query.within_last_results&&(!previous||!previous->info().element_count)){
     SearchResult result{std::move(query),stripped,engine_type,0,{},false};result.effective_text_options=effective_text;result.index_fallback=index_fallback;return result;
   }
-  ProgressContext context{&module,control.get(),std::this_thread::get_id()};
+  ProgressContext context{&module,control.get(),std::this_thread::get_id(),progress_begin,progress_end};
   const int flags=(query.case_sensitive?0:XIPHOS_SWORD_SEARCH_ICASE_FLAG)|(whole_entry?sword::SWModule::SEARCHFLAG_MATCHWHOLEENTRY:0);
   auto &list=module.search(stripped.c_str(),engine_type,flags,
                            range?&*range:nullptr,nullptr,search_percent,&context);
   // Legacy copies the complete scope before sorting indexed display results.
   auto staged=next?std::make_shared<const SearchScope>(list,scope_limits):nullptr;
   if(engine_type==sword::SWModule::SEARCHTYPE_EXTERNAL)list.sort();
-  auto copied=copy_search_references(list,limits);
+  auto copied=copy_search_references(list,limits,allow_empty_output);
   SearchResult result{std::move(query),stripped,engine_type,copied.engine_count,std::move(copied.references),copied.limited};
   result.executed=true;result.cancelled=control&&control->cancel_requested();
   result.effective_text_options=effective_text;result.index_fallback=index_fallback;

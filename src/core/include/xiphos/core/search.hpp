@@ -61,6 +61,27 @@ struct SearchResult {
   bool text_options_updated=false;
   bool index_fallback=false; // Explicit indexed request selected unindexed multiword instead.
 };
+// One serialized job, in explicit request order (including duplicate modules).
+// Last-results requests chain through earlier successful groups, never a union.
+inline constexpr std::size_t maximum_search_batch_modules=32;
+enum class SearchBatchFailure { none, module_not_found, invalid_request, engine_error };
+struct SearchBatchGroup {
+  std::size_t request_index=0;
+  std::optional<SearchResult> result;
+  SearchBatchFailure failure=SearchBatchFailure::none;
+};
+struct SearchBatchLimits {
+  SearchLimits per_module;
+  SearchLimits total{maximum_search_results,maximum_search_reference_bytes};
+};
+struct SearchBatchResult {
+  std::vector<SearchQuery> requested;
+  std::vector<SearchBatchGroup> groups; // Attempted prefix; failures keep their index.
+  std::size_t copied_results=0,copied_reference_bytes=0,failures=0;
+  bool limited=false,cancelled=false,scope_updated=false,text_options_updated=false;
+  SearchScopeInfo scope;
+  SearchTextState text_options;
+};
 // This initial verse search bounds copied output only. SDK execution
 // time/internal result allocation are not bounded. Cooperative cancellation is
 // observed at SDK progress callbacks. Explicit ranges stay as SDK interval keys,

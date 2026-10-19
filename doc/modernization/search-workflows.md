@@ -537,3 +537,42 @@ remove that gate. Eight focused normal checks, five ASan/UBSan, then three final
 normal/sanitizer checks after unsupported-framework coverage pass. Strict C11 and
 native-disabled C++11 helper build pass. Existing source layouts stay unchanged;
 new mode values 6/7 are valid and invalid-enum checks moved to 8.
+
+## Ordered bounded batch execution
+
+`StudySession::search_batch` and `StudyWorker::search_batch_task` accept 1–32 owned
+queries as one FIFO job. Module order and duplicates are preserved. Last-results
+queries use the preceding successful group's complete typed scope; final scope is
+that of the last executed group, never a union of displayed matches. Input shape,
+UTF-8, modes, mutually exclusive scopes and output limits are validated for the
+whole batch before execution. Missing modules/range providers and recoverable
+per-module errors are owned statuses at their original request indices; later
+modules continue. No exception text, SDK key or SDK pointer crosses the boundary.
+
+Per-module defaults remain 1,000 references/1 MiB. A separate whole-batch cap
+defaults to 10,000 references/8 MiB; both limits must be positive and within the
+single-search maxima. Even when that display budget is exhausted, later modules
+still execute and retain complete next scopes. An internal zero-output path is
+allowed only for batch execution; public single-search zero limits still reject.
+Private scope copying also rejects an empty SDK key, so exhausted output cannot
+hide invalid retained references. SDK allocations/time are still not bounded.
+
+Search scope and annotation context are staged privately across the batch, then
+committed with completed owned output. Recoverable group failures preserve the
+preceding successful stage; fatal allocation/input errors publish no batch state.
+Cooperative cancellation returns/commits the completed or SDK-returned partial
+prefix; pre-cancel leaves state unchanged. Requested input retains all queries;
+groups contain the attempted prefix. One control spans the job. SDK percent is
+mapped into each module's equal progress interval, not an ETA. Individual group
+failures do not mark that overall control failed; inspect group failure statuses.
+Only the SDK owner callback writes the non-atomic stop flag. Histories, reading
+selection and other tabs remain untouched; shutdown drains accepted batches.
+
+Original fixtures compare ordered attribute/phrase chaining against the extracted
+actual backend. Cases cover duplicates, all 32 requests, total result/byte budgets,
+continued execution with no remaining display space, missing providers/modules,
+whole-input rejection, sticky annotation state, pre-cancel/control reuse, mapped
+callback cancellation/restoration, FIFO/tab isolation, mutable inputs and owned
+results after shutdown. This C++ service does not implement advanced-dialog module
+abbreviation resolution, mixed dictionary/book families, first-module/custom-range
+setup, saved settings, native grouping controls or export. Those remain gates.

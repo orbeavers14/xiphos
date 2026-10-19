@@ -7,6 +7,7 @@
 #include <variant>
 namespace xiphos::core {
 using StudyTab = std::uint64_t;
+struct StudyBatchSearch { std::shared_ptr<SearchControl> control; std::future<SearchBatchResult> result; };
 struct StudySearch { std::shared_ptr<SearchControl> control; std::future<SearchResult> result; };
 using ContextualStudyLink = std::variant<PassageLink, StudyNote, ReferenceList, LexicalEntry>;
 using ResolvedStudyLink = std::variant<PassageLink, StudyNote>;
@@ -39,6 +40,8 @@ public:
   // Owned, read-only source queries use the same engine thread, without a tab.
   StudySearch search_module_task(StudyTab tab,SearchQuery query,SearchLimits limits = {});
   std::future<SearchResult> search_module(StudyTab tab,SearchQuery query,SearchLimits limits = {});
+  StudyBatchSearch search_batch_task(StudyTab tab,std::vector<SearchQuery> queries,SearchBatchLimits limits = {});
+  std::future<SearchBatchResult> search_batch(StudyTab tab,std::vector<SearchQuery> queries,SearchBatchLimits limits = {});
   std::future<SearchScopeInfo> last_search_scope(StudyTab tab);
   std::future<SearchScopeInfo> clear_search_scope(StudyTab tab);
   std::future<SearchTextState> search_text_options(StudyTab tab);

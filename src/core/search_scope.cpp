@@ -18,6 +18,7 @@ SearchScope::SearchScope(const sword::ListKey &keys,const SearchScopeLimits &lim
   for(int i=0;i<keys.getCount();++i){
     const auto *key=keys.getElement(i);
     if(!key)throw std::runtime_error("SDK scope has a missing element");
+    if(!key->getText()||!*key->getText())throw std::runtime_error("SDK scope has an empty reference");
     account(key->getText());account(key->getRangeText());
     if(const auto *verse=dynamic_cast<const sword::VerseKey *>(key))account(verse->getVersificationSystem());
     keys_.add(*key); // SDK clone retains key type, bounds, flags and versification.

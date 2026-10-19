@@ -10,5 +10,5 @@ struct SearchReferences {
 };
 // Engine-owner only. Traverses the SDK list; owns every returned string.
 // engine_count counts SDK elements, not expanded verses in interval elements.
-SearchReferences copy_search_references(sword::ListKey &list,const SearchLimits &limits);
+SearchReferences copy_search_references(sword::ListKey &list,const SearchLimits &limits,bool allow_empty_output=false);
 }
