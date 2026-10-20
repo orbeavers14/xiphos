@@ -13,7 +13,7 @@ Current functionality, evidence and acceptance gates are in the
 ## Build and dependencies
 
 Requires a Swift 6-capable Xcode toolchain, CMake >=3.16, SWORD >=1.8.1,
-GLib >=2.32 and libxml2 headers/library. Swift compiles in Swift 6 language mode;
+GLib >=2.32, libxml2, libpng >=1.6 with simplified reading and zlib headers/libraries. Swift compiles in Swift 6 language mode;
 the native application core requires C++17 and legacy-linked helpers retain
 C++11 compatibility. GLib/libxml2 reuse existing legacy dependencies without GTK.
 
@@ -24,6 +24,13 @@ local runs do not validate macOS 13. Existing compatible onChange calls emit
 newer-SDK deprecation warnings. The app is unsigned/unnotarized and linked to
 local SDKs; release bundling, applicable notices/source/relink material, signing
 and minimum-version validation remain pending.
+
+The inspected Homebrew libpng1.6.59 bottle targets macOS27. For local target26
+checks, a pinned official-source static libpng SDK is built under ignored build
+storage; no source/binary is vendored. Point CMake at that SDK rather than assuming
+a newly installed package supports older macOS. Exact provenance, checksum and
+validation limits are in the [PNG contract](../../doc/modernization/png-export-workflows.md).
+The requested macOS13 minimum remains unvalidated.
 
 With normal pkg-config-enabled SWORD/GLib SDKs and discoverable libxml2:
 

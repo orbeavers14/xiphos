@@ -85,3 +85,9 @@ Owned source implementation now passes 5/5 normal, ASan/UBSan, TSan and portable
 on-Mac focused checks. The [contract](verse-image-workflows.md) records exact
 bounds, copied ownership and OSIS native-prefix versus URI-suffix handling.
 Document image embedding and native/browser acceptance remain pending.
+
+
+Shared static PNG validation/encoding is now checked in
+[its scoped contract](png-export-workflows.md), using libpng/zlib and original
+fixtures. It does not yet enable images in search HTML. Next wire an explicit
+complete-or-failure per-document policy with aggregate budgets and default reject.

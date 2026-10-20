@@ -37,16 +37,16 @@ if $install; then
   case "$distro" in
     ubuntu|debian)
       "${elevate[@]}" apt-get update
-      "${elevate[@]}" apt-get install -y build-essential cmake ninja-build pkg-config libsword-dev libglib2.0-dev libxml2-dev ;;
+      "${elevate[@]}" apt-get install -y build-essential cmake ninja-build pkg-config libsword-dev libglib2.0-dev libxml2-dev libpng-dev zlib1g-dev ;;
     fedora)
-      "${elevate[@]}" dnf install -y gcc gcc-c++ cmake ninja-build pkgconf-pkg-config sword-devel glib2-devel libxml2-devel ;;
-    *) echo "Install CMake >=3.16, Ninja, a C++17 compiler, pkg-config, SWORD >=1.8.1, GLib >=2.32 and libxml2 development packages for $distro." >&2; exit 2 ;;
+      "${elevate[@]}" dnf install -y gcc gcc-c++ cmake ninja-build pkgconf-pkg-config sword-devel glib2-devel libxml2-devel libpng-devel zlib-devel ;;
+    *) echo "Install CMake >=3.16, Ninja, a C++17 compiler, pkg-config, SWORD >=1.8.1, GLib >=2.32, libxml2, libpng >=1.6 and zlib development packages for $distro." >&2; exit 2 ;;
   esac
 fi
 for tool in cmake ctest ninja pkg-config; do
   command -v "$tool" >/dev/null || { echo "Missing $tool; run with --install-deps." >&2; exit 1; }
 done
-pkg-config --exists 'sword >= 1.8.1' 'glib-2.0 >= 2.32' libxml-2.0 || {
+pkg-config --exists 'sword >= 1.8.1' 'glib-2.0 >= 2.32' libxml-2.0 'libpng >= 1.6' zlib || {
   echo 'Missing core development dependencies; run with --install-deps.' >&2; exit 1;
 }
 flags=()

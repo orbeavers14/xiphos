@@ -29,6 +29,10 @@ otherwise warns that notes/journal editing is unavailable.
 Existing Actions build Linux distributions and cross-compile Win32/Win64;
 Windows packaging uses a Fedora 30 Docker image and MinGW/GTK, not WinUI.
 Existing jobs also build help and release packages. They remain intact.
+Native core additionally uses libpng >=1.6 (simplified read API) and zlib for
+[shared PNG export preparation](png-export-workflows.md). Legacy native-disabled
+C++11 helper builds do not acquire those dependencies. SDK versions, deployment
+targets and notices require target validation; no PNG source is vendored.
 The new standalone core build avoids desktop/help dependencies and permits
 engine integration tests on macOS and Linux. Windows can use SWORD include/
 library SDK paths; an actual MSVC SWORD SDK and WinUI build remain unvalidated.

@@ -197,3 +197,18 @@ select ThMLText, Read John1:8, click image, Close, leave draft John1:7, choose
 OSISNotes and click its John1:8 image, Escape, then click the invalid John1:1 image.
 Labels, original PNG, retained source/draft and failure message checked. App quit
 and only the disposable temp copy removed. No export-HTML browser workarounds.
+
+## PNG preparation and dependency checkpoint
+
+Native image controls are pushed at `b335db5`; its full160/122 registered suites
+are the latest complete Mac/portable checks. New private static-PNG validator now
+passes normal3/3 (codec/Swift image/source fixture), ASan/UBSan1/1, TSan1/1 and
+portable-on-Mac1/1. Native-OFF C++11 configure/build passes with PNG discovery
+explicitly disabled; shell syntax/C11 pass. No new full-suite claim here.
+Use the [PNG contract](png-export-workflows.md) for exact local static SDK source,
+SHA/license/deployment/provenance, limits and build commands. All native caches
+select that SDK via `PNG_PNG_INCLUDE_DIR` / `PNG_LIBRARY_RELEASE`; source/static
+archive live only under ignored build. PNG/zlib are new explicit native-core
+requirements; target Linux/MSVC acceptance is pending. Next shared document
+resource/cache policy, preserving current default rejection and no partial output.
+No hosted jobs/reset credit or browser workaround used.

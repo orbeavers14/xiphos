@@ -46,7 +46,8 @@ that shell, so it does not guess a Visual Studio generator/version or accept
 MinGW as native MSVC evidence. Use a new build directory when changing the
 compiler, target, runtime, dependency set or generator.
 
-Build/provide SWORD >=1.8.1, GLib >=2.32 and libxml2 development SDKs for the
+Build/provide SWORD >=1.8.1, GLib >=2.32, libxml2, libpng >=1.6 (simplified read)
+and zlib development SDKs for the
 same target/compiler/runtime/configuration. Do not use Linux or MinGW libraries.
 Record actual upstream versions, source URLs/revisions, checksums, license terms,
 compiler/runtime and build flags. SWORD and bundled dependencies/modules retain
@@ -60,6 +61,11 @@ this script. SDK discovery inputs are described in the
   `XIPHOS_GLIB_EXTRA_LIBRARIES`.
 - libxml2: `LIBXML2_INCLUDE_DIR`, `LIBXML2_LIBRARY`; supply its static transitive
   libraries through the SDK's supported CMake configuration as required.
+
+- libpng/zlib: CMake `PNG::PNG` and `ZLIB::ZLIB`, or explicit
+  `PNG_PNG_INCLUDE_DIR`, `PNG_LIBRARY_RELEASE`, `ZLIB_INCLUDE_DIR` and
+  `ZLIB_LIBRARY_RELEASE` discovery inputs. The inventory is not proof that these
+  SDKs are installed; configuration/linking/tests must validate the chosen set.
 
 Prefer a coherent SDK prefix or toolchain over mixing individual binaries.
 pkg-config is optional; when used, its metadata must describe the Windows target

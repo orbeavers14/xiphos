@@ -10,7 +10,7 @@ cmake --build build/core --parallel
 ctest --test-dir build/core --output-on-failure
 ```
 
-Requires CMake >=3.16, C++17, SWORD >=1.8.1, GLib >=2.32 and libxml2 headers/library. Legacy-linked helpers retain
+Requires CMake >=3.16, C++17, SWORD >=1.8.1, GLib >=2.32, libxml2, libpng >=1.6 (simplified read API) and zlib headers/libraries. Legacy-linked helpers retain
 C++11 compatibility. pkg-config discovery is preferred; SDKs can instead supply
 `SWORD_INCLUDE_DIR` and `SWORD_LIBRARY`, with
 `XIPHOS_SWORD_EXTRA_LIBRARIES` for static SDK transitive libraries. The fallback
@@ -25,6 +25,15 @@ SDK providers must verify the binary version/architecture and deployment target.
 Host locale initialization must happen before engine work starts; changing the
 process locale concurrently with workers is unsupported. The core does not
 silently change the application's locale.
+
+PNG export validation uses the same cross-platform libpng/zlib implementation
+on all native targets. It checks complete static PNG chunks/checksums and actually
+decodes pixels under logical byte/pixel limits before original-byte encoding.
+This adds no GTK dependency. CMake discovers `PNG::PNG`/`ZLIB::ZLIB`; nonstandard
+SDKs can set `PNG_PNG_INCLUDE_DIR`, `PNG_LIBRARY_RELEASE`, `ZLIB_INCLUDE_DIR` and
+`ZLIB_LIBRARY_RELEASE`. Verify SDK architecture, configuration, notices and minimum
+runtime. Native-disabled C++11 legacy helper builds do not require libpng.
+See the [PNG contract](../../doc/modernization/png-export-workflows.md).
 
 Tests generate a small on-disk RawText OSIS module with original prose.
 They validate discovery isolation, UTF-8 XHTML, legacy setKey/renderText

@@ -11,7 +11,7 @@ platforms/linux/core.sh --sanitize
 ```
 
 The first command installs the compiler, CMake, Ninja, pkg-config, SWORD,
-GLib and libxml2 development packages using sudo when necessary. Installation
+GLib, libxml2, libpng >=1.6 and zlib development packages using sudo when necessary. Installation
 requires administrator privileges and network access. Omit `--install-deps`
 when the dependencies are already installed. No GTK packages are needed.
 
