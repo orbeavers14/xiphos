@@ -79,3 +79,18 @@ tab, exact owned size, cooperative cancellation, detached observer and shutdown.
 Normal export+fixture pass 2/2; C export/generation+fixture pass 3/3 ASan/UBSan and
 3/3 TSan. Strict C11/pedantic public-header compilation passes. Dependencies remain
 partly instrumented and leaks off. This does not accept a native dialog workflow.
+
+## Swift export adapter checkpoint
+
+Swift 6 accepts copied visible-row values and returns a copied typed disposition,
+source metadata, failed ordinal and complete text. It validates negative ordinals,
+NUL titles and positive byte limits before conversion to unsigned C values.
+The adapter copies all borrowed fields before release and assembles no document.
+Default cancelled tasks drain then throw; interactive callers may request the
+authoritative cancelled/completed payload disposition and copied progress.
+
+Five focused local checks pass: Swift text-export/generation, C/C++ export and
+attribute fixture. Cases cover original text/Unicode title, exact UTF-8 byte cap,
+no partial failure document, stale/invalid identity, negative/NUL input,
+progress/cancellation and ownership after worker shutdown. Actual native
+save/copy, complete-result/HTML and platform/corpus gates remain pending.

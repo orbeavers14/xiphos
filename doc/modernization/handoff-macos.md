@@ -13,6 +13,13 @@ retained search-result generations before bounded export. Continue
 bounded shared-core slices with local checks. Preserve unrelated files/GTK3.
 All source changes are committed/pushed at this checkpoint; no shared source edits remain in flight. This is not a concurrent ownership lease.
 
+## Swift selected text export checkpoint (2026-10-20)
+
+C export bridge pushed at `6f0e3c1`. Swift 6 copied selected-row text adapter passes
+5/5 focused C++/C/Swift export/generation+fixture checks, including exact Unicode
+byte budgets and cancellation. Full local Mac/portable rechecks follow. Next
+native save/copy consumption, then full retained results/HTML and broader parity.
+
 ## C selected text export checkpoint (2026-10-20)
 
 Core selected visible export pushed at `3faadea`. Additive C11 owned request/result

@@ -348,6 +348,36 @@ actor CoreWorker {
         if let module { return module.withCString(queue) }
         return queue(nil)
     }
+    func exportSearchVisibleText(tab: UInt64, generation: UInt64, rows: [CoreSearchVisibleRow],
+                                 title: String = "Search results", includeScripture: Bool = false,
+                                 maxBytes: Int = 1024 * 1024, returnCancelledResults: Bool = false,
+                                 onProgress: (@Sendable (CoreSearchProgress) async -> Void)? = nil) async throws -> RenderedSearchTextExport {
+        guard !rows.isEmpty, rows.count <= 10_000, rows.allSatisfy({ $0.group >= 0 && $0.row >= 0 }),
+              !title.utf8.contains(0), title.utf8.count <= 32768, maxBytes > 0 else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        let handle = try worker()
+        let copiedRows = rows.map { xc_search_visible_row(group: $0.group, row: $0.row) }
+        let queued = title.withCString { label in copiedRows.withUnsafeBufferPointer { buffer in
+            var request: OpaquePointer?
+            var input = xc_search_text_export_request(generation: generation, rows: buffer.baseAddress,
+                row_count: buffer.count, title: label, include_scripture: includeScripture ? 1 : 0, max_bytes: maxBytes)
+            let status = xc_worker_export_search_visible_text(handle, tab, &input, &request)
+            return (status, request)
+        } }
+        let completed = try await wait(queued.0, queued.1, cancellingSearch: true,
+            returnCancelledSearch: returnCancelledResults, onSearchProgress: onProgress)
+        defer { xc_request_release(completed) }
+        guard let owned = xc_request_take_search_text_export(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_search_text_export_release(owned) }
+        var info = xc_search_text_export_info(), generation = xc_search_generation_info()
+        guard xc_search_text_export_get_info(owned, &info) == XC_OK,
+              xc_search_text_export_get_generation(owned, &generation) == XC_OK,
+              let disposition = CoreSearchExportStatus(rawValue: info.disposition) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        let text = String(cString: xc_search_text_export_text(owned)!)
+        precondition(text.utf8.count == xc_search_text_export_size(owned))
+        return RenderedSearchTextExport(status: disposition, generation: CoreValues.searchGeneration(generation),
+            rowCount: info.row_count, failedRow: info.failed_row_present != 0 ? info.failed_row : nil,
+            includesScripture: info.includes_scripture != 0, text: text)
+    }
     func searchGeneration(tab: UInt64) async throws -> CoreSearchGeneration {
         var request: OpaquePointer?
         let status = xc_worker_search_generation(try worker(), tab, &request)

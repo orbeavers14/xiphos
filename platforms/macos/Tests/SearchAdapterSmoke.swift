@@ -165,7 +165,44 @@ actor ProgressLog {
         guard full.result?.references.count == 4, copied.query?.textOptions == wanted else { fatalError("Swift strings/metadata outlive request, tab and worker") }
         print("Swift shared generation identity, capacity, stale reads, original queries and copied lifetime passed")
     }
+    static func textExport(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let tab = try await worker.createTab()
+        let search = try await worker.searchModule(tab: tab, module: "Text", expression: "Original")
+        let id = search.generation.id
+        let rows = [CoreSearchVisibleRow(group: 0, row: 2), CoreSearchVisibleRow(group: 0, row: 0), CoreSearchVisibleRow(group: 0, row: 2)]
+        let log = ProgressLog()
+        let copied = try await worker.exportSearchVisibleText(tab: tab, generation: id, rows: rows, title: "Selected café", includeScripture: true,
+            onProgress: { await log.append($0) })
+        guard copied.status == .success, copied.rowCount == 3, copied.includesScripture, copied.generation == search.generation,
+              copied.text.hasPrefix("Selected café\n\n"), copied.text.contains("John 1:3 Text"), copied.text.contains("Original"),
+              (await log.snapshot()).last?.phase == .complete, try await worker.history(tab).count == 0 else { fatalError("Swift copies complete selected text and shared progress without navigating") }
+        let exact = try await worker.exportSearchVisibleText(tab: tab, generation: id, rows: rows, title: "Selected café", includeScripture: true, maxBytes: copied.text.utf8.count)
+        let limited = try await worker.exportSearchVisibleText(tab: tab, generation: id, rows: rows, title: "Selected café", includeScripture: true, maxBytes: copied.text.utf8.count - 1)
+        guard exact.text == copied.text, limited.status == .outputLimit, limited.text.isEmpty, limited.rowCount == 0 else { fatalError("UTF-8 byte budgets produce all-or-nothing payloads") }
+        let invalid = try await worker.exportSearchVisibleText(tab: tab, generation: id, rows: [CoreSearchVisibleRow(group: 0, row: 99)])
+        let stale = try await worker.exportSearchVisibleText(tab: tab, generation: id + 1, rows: rows)
+        guard invalid.status == .invalidSelection, invalid.failedRow == 0, invalid.text.isEmpty,
+              stale.status == .stale, stale.generation.id == id, stale.text.isEmpty else { fatalError("Typed failures never silently export a substitute") }
+        for bad in [[], [CoreSearchVisibleRow(group: -1, row: 0)], [CoreSearchVisibleRow(group: 0, row: -1)]] {
+            do { _ = try await worker.exportSearchVisibleText(tab: tab, generation: id, rows: bad); fatalError("Expected invalid selection shape") }
+            catch is CoreError {}
+        }
+        do { _ = try await worker.exportSearchVisibleText(tab: tab, generation: id, rows: rows, title: "bad\0tail"); fatalError("Expected NUL rejection") }
+        catch is CoreError {}
+        let cancel = Task { try await worker.exportSearchVisibleText(tab: tab, generation: id, rows: rows) };cancel.cancel()
+        do { _ = try await cancel.value; fatalError("Default cancellation drains then throws") } catch is CancellationError {}
+        let stop = Task { try await worker.exportSearchVisibleText(tab: tab, generation: id, rows: rows, returnCancelledResults: true) };stop.cancel()
+        let stopped = try await stop.value
+        guard (stopped.status == .cancelled && stopped.text.isEmpty) || stopped.status == .success else { fatalError("Interactive stop returns authoritative completion race") }
+        try await worker.closeTab(tab);await worker.shutdown()
+        guard copied.text.hasPrefix("Selected café"), copied.generation.id == id else { fatalError("Copied Swift export outlives worker") }
+        print("Swift selected text export, exact UTF-8 caps, typed failures, cancellation and lifetime passed")
+    }
     static func main() async throws {
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--export" {
+            try await textExport(root: CommandLine.arguments[2]); return
+        }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--generation" {
             try await generations(root: CommandLine.arguments[2]); return
         }

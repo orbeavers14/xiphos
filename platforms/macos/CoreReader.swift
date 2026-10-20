@@ -164,6 +164,16 @@ struct RenderedSearchGenerationRead: Sendable, Equatable {
     let failure: CoreSearchGroupStatus
     let result: RenderedSearchResult?
 }
+struct CoreSearchVisibleRow: Sendable, Equatable {let group: Int, row: Int}
+enum CoreSearchExportStatus: Int32, Sendable {case success=0, stale=1, invalidSelection=2, outputLimit=3, cancelled=4, moduleNotFound=5, engineError=6}
+struct RenderedSearchTextExport: Sendable, Equatable {
+    let status: CoreSearchExportStatus
+    let generation: CoreSearchGeneration
+    let rowCount: Int
+    let failedRow: Int?
+    let includesScripture: Bool
+    let text: String
+}
 struct RenderedSearchResult: Sendable, Equatable {
     let module: String, expression: String, effectiveExpression: String
     let mode: CoreSearchMode
