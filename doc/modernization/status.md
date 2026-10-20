@@ -6,16 +6,19 @@ text save/copy at `5d52a11` consumes the same services. Source failure/cancellat
 stale IDs, capacity/output caps, order/duplicates and state neutrality remain
 explicit; see [retention](search-retention-workflows.md) and [text export](search-text-export-workflows.md).
 
-Full Mac suite: 148 passes + 1 index skip (149 registered) at the native text
-checkpoint, with desktop access for its isolated named-pasteboard test. Portable
-core/model suite on Mac at the reference-guard checkpoint: 113 passes + 1 skip
-(114 registered), 83.93 s, GTK runtime OFF. Scoped sanitizer/C11 evidence remains in the contracts/handoff;
+Full Mac suite: 150 passes + 1 index skip (151 registered) at the configured
+HTML-source/ThML checkpoint, with desktop access for its isolated named-pasteboard test. Portable
+core/model suite on Mac at the same checkpoint: 115 passes + 1 skip
+(116 registered), 86.92 s, GTK runtime OFF. Scoped sanitizer/C11 evidence remains in the contracts/handoff;
 SDK dependencies are partly instrumented and ASan leaks off. Current Fedora/MSVC,
 actual SDK index execution and full corpus acceptance remain open.
 
 SDK reference/range UTF-8 guards pass six normal, six ASan/UBSan and six TSan
-focused checks including two fixture setups each. Next boundary: configured HTML
-source/document seams. Advanced controls/mixed families,
+focused checks including two fixture setups each. Configured HTML
+source snapshots are now checked, with 10/10 ASan/UBSan and 10/10 TSan
+regressions. They reuse live rendering without publishing learned display choices;
+the earlier strict guard now handles ThML’s counted terminal NUL correctly.
+Next bounded HTML document/CSS/asset policy. Advanced controls/mixed families,
 HTML/print, saved workflows and native platform acceptance remain. No whole parity
 group, platform release or legacy retirement accepted. Planning estimate remains
 about 8% (6–10%); no reliable core-only percentage follows from test counts.

@@ -26,10 +26,11 @@ settings are per tab and physical SDK filters restore on every job. One FIFO
 owner handles batches, progress/Stop, scope and copied values. See the consolidated
 [current search contract](search-workflows.md); chronology remains in Git.
 
-Latest full Mac checkpoint `5d52a11`: **148 passes + 1 explicit index skip**
-(149 registered), with desktop access for the isolated AppKit pasteboard test.
-Current reference-guard checkpoint, portable/core models on Mac: **113 passes
-+ 1 index skip** (114 registered), 83.93 s, GTK runtime OFF. Current Fedora/MSVC acceptance remains separate.
+Latest configured-HTML-source/ThML checkpoint, full Mac: **150 passes + 1
+explicit index skip** (151 registered), 127.53 s, with desktop access for the
+isolated AppKit pasteboard test.
+Current configured-HTML-source/ThML checkpoint, portable/core models on Mac:
+**115 passes + 1 index skip** (116 registered), 86.92 s, GTK runtime OFF. Current Fedora/MSVC acceptance remains separate.
 Detailed normal/sanitizer/C11 evidence lives in the contracts and platform handoff.
 Actual-index diagnostic `a3dcae8` still has no usable SDK framework; optional probe
 skips, required-index negative control fails as expected. No actual indexed
@@ -60,9 +61,12 @@ partial-source choice, cancellation, state neutrality and owned lifetime are
 checked. Native window/save evidence is scoped; the user's general clipboard was
 untouched by tests. No complete HTML/print or whole feature group is accepted.
 
-SDK reference/range UTF-8 validation before owned publication now passes six
-normal, six ASan/UBSan and six TSan focused checks (two fixture setups each).
-Next bounded work: configured HTML source/document seams in [the remaining plan](search-export-design.md).
+SDK reference/range guards are pushed at `c3218e6` (six focused checks each in
+normal/ASan/UBSan/TSan). Configured C++ HTML/CSS source snapshots now share live
+rendering without publishing auto-discovered image/font choices. Real ThML
+regressions corrected the earlier query/scripture guard's terminal-NUL convention;
+[the source contract](html-source-workflows.md) records the correction and 10/10
+ASan/UBSan plus 10/10 TSan checks. Next bounded HTML document/CSS/asset policies.
 Keep actual indexed execution, advanced controls/mixed families/settings and other
 core services separate. No hosted jobs or reset credit used.
 

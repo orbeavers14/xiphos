@@ -4,6 +4,7 @@
 #include "search_results.hpp"
 #include "search_generation.hpp"
 #include "search_validation.hpp"
+#include "sdk_text.hpp"
 #include "xiphos/core/search_policy.hpp"
 #include "xiphos/core/engine_manager.hpp"
 #include "xiphos/core/presentation.hpp"
@@ -11,7 +12,6 @@
 #include <swoptfilter.h>
 #include <versekey.h>
 #include <listkey.h>
-#include <glib.h>
 #include <stdexcept>
 #include <thread>
 #include <algorithm>
@@ -113,10 +113,7 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   auto prepared=sidebar_search_text(query.expression,query.mode==SearchMode::words&&engine_type==sword::SWModule::SEARCHTYPE_EXTERNAL);
   if(attribute){auto value=attribute_search_text(query.expression,*attribute);prepared=std::move(value.expression);whole_entry=value.whole_entry;}
   const auto &stripped_buffer=module.stripText(prepared.c_str());
-  if(stripped_buffer.size()>maximum_search_effective_bytes)throw std::length_error("Prepared SDK query exceeds copied metadata capacity");
-  const std::string stripped(stripped_buffer.c_str(),stripped_buffer.size());
-  if(stripped.find('\0')!=std::string::npos||!g_utf8_validate(stripped.data(),stripped.size(),nullptr))
-    throw std::runtime_error("Prepared SDK query is not NUL-free UTF-8");
+  const auto stripped=copy_sdk_text(stripped_buffer,maximum_search_effective_bytes);
   if(control&&control->cancel_requested()) {
     SearchResult result{std::move(query),stripped,engine_type,0,{},false};result.cancelled=true;result.effective_text_options=effective_text;result.index_fallback=index_fallback;return result;
   }

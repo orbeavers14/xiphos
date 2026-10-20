@@ -4,10 +4,11 @@ Updated 2026-10-20. Read [AGENTS.md](../../AGENTS.md), the
 [shared handoff](handoff.md), [core scope](shared-core-roadmap.md),
 [status](status.md) and relevant parity rows first.
 
-Active task (2026-10-20, master): native selected/all text save/copy checked/pushed
-at `5d52a11`; shared SDK reference/range UTF-8 guards now pass 6 normal, 6 ASan/UBSan
-and 6 TSan focused checks, including two fixture setups each. Current portable-on-Mac full recheck: 113 passes + 1 index skip (114 registered),
-83.93 s, GTK runtime OFF. Next configured HTML source/document seams; local checks only.
+Active task (2026-10-20, master): configured HTML/CSS source snapshots and ThML
+SDK text compatibility now pass full Mac 150 + 1 index skip (151 registered),
+portable-on-Mac 115 + 1 skip (116), ASan/UBSan 10/10 and TSan 10/10 focused checks.
+They share live rendering without publishing learned display choices; C++ only.
+Next bounded HTML output/CSS/asset policy; local checks only.
 Checkpoint sections below preserve original scoped evidence; earlier next steps
 are superseded by this active entry.
 
@@ -16,6 +17,22 @@ Previous checked handoff (2026-10-18, master): shared search advances checked/pu
 retained search-result generations before bounded export. Continue
 bounded shared-core slices with local checks. Preserve unrelated files/GTK3.
 All source changes are committed/pushed at this checkpoint; no shared source edits remain in flight. This is not a concurrent ownership lease.
+
+## Configured HTML source / ThML checkpoint (2026-10-20)
+
+Reference guards are pushed at `c3218e6`. C++ configured body/commentary snapshots
+now share the live renderer with non-publishing image/font discovery. Source
+HTML/CSS/notes remain owned and profile/history/search neutral. Initial source
+checks exposed the earlier guard wrongly rejecting ThML's counted terminal NUL;
+a shared copier now accepts that SDK convention and still rejects embedded NUL/
+malformed Unicode. Real ThML query and scripture regression cases pass.
+ASan/UBSan 10/10 and TSan 10/10 pass with prerequisite fixtures/options/spacing
+checks (partial instrumentation/leaks off). Initial ASan setup omitted one fixture
+executable, leaving three dependents Not Run; the corrected complete rerun passes.
+Full normal Mac: 150 passes + 1 index skip (151 registered), 127.53 s, with
+desktop access for the isolated clipboard test. Current portable-on-Mac full recheck: 115 passes + 1 index skip
+(116 registered), 86.92 s, GTK runtime OFF. See [source contracts](html-source-workflows.md).
+Next bounded HTML document/CSS/asset policies; no HTML save/print parity yet.
 
 ## Native text actions checkpoint (2026-10-20)
 

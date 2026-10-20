@@ -170,3 +170,9 @@ row establishes atomic scope failure rather than truncation/replacement recovery
 Six normal, six ASan/UBSan and six TSan focused reference/scope/generation/C-export
 checks (including two fixture setups each) pass. SDK instrumentation remains
 partial/leaks off. This does not add dictionary/book search-family support.
+
+SDK text compatibility follow-up: the source checks found ThMLPlain counts one
+terminal NUL in its SWBuf size. The earlier generic NUL rejection was too strict
+for valid ThML queries. The [shared SDK text copier](html-source-workflows.md)
+excludes exactly that counted terminator while retaining interior-NUL/UTF-8 and
+content-byte limits. Real ThML search/scripture regression cases now pass.

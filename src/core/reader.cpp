@@ -11,6 +11,7 @@
 #include "search_source.hpp"
 #include "xiphos/core/search_export.hpp"
 #include "search_validation.hpp"
+#include "sdk_text.hpp"
 #include "search_control.hpp"
 #include "xiphos/core/reference_list.hpp"
 #include <markupfiltmgr.h>
@@ -21,8 +22,6 @@
 #include <swld.h>
 #include <versekey.h>
 #include <filesystem>
-#include <string_view>
-#include <glib.h>
 #include <mutex>
 #include <stdexcept>
 
@@ -461,11 +460,7 @@ std::string Reader::read_stripped(const std::string &id,const std::string &refer
   module.setKey(reference.c_str());
   if(module.getKey()->getError())throw std::invalid_argument("SWORD could not resolve the export reference");
   const auto stripped=module.stripText();
-  const auto size=static_cast<std::size_t>(stripped.size());
-  const auto *text=stripped.c_str();
-  if(size>max_bytes)throw std::length_error("Stripped entry exceeds export budget");
-  if(std::string_view(text,size).find('\0')!=std::string_view::npos||!g_utf8_validate(text,static_cast<gssize>(size),nullptr))throw std::runtime_error("Invalid stripped entry UTF-8");
-  return {text,size};
+  return detail::copy_sdk_text(stripped,max_bytes);
 }
 Entry Reader::read_impl(const std::string &id, const std::string &reference, const EngineOptions *options,
                         bool headings, bool commentary_only, const bool *labels) {

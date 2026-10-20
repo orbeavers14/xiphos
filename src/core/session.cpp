@@ -136,13 +136,13 @@ std::vector<std::vector<std::string>> StudySession::heading_note_html(const std:
   }
   return result;
 }
-Entry StudySession::present_content(const std::string &module, Entry entry) {
+Entry StudySession::present_content(const std::string &module, Entry entry,bool publish_presentation) {
   auto options = module_presentation_options(module);
   const auto engine = module_engine_options(module);
   const auto headings = heading_note_html(module, {&entry}, options, engine);
   if (options.note_numbering_available) present_numbered_document({&entry}, options, engine, lexical_layout_enabled_, headings.empty() ? nullptr : &headings);
   else present_document({&entry}, options, engine, lexical_layout_enabled_);
-  presentation_options_[module] = options;
+  if(publish_presentation)presentation_options_[module] = options;
   return entry;
 }
 Chapter StudySession::present_content(const std::string &module, Chapter chapter, const DisplayOptions &display, bool commentary) {
@@ -377,20 +377,29 @@ StudyNote StudySession::study_note_metadata(const std::string &module, const std
                  : reader_.study_note_metadata(module, reference, identifier);
 }
 Entry StudySession::read_commentary_entry(const std::string &module, const std::string &reference) {
-  const auto options = module_engine_options(module);
-  const auto presentation = module_presentation_options(module);
-  auto entry = presentation.note_numbering_available
-      ? reader_.read_commentary_entry(module, reference, presentation.headings, *options, presentation.note_numbers)
-      : options ? reader_.read_commentary_entry(module, reference, presentation.headings, *options)
-                : reader_.read_commentary_entry(module, reference, presentation.headings);
-  return present_content(module, std::move(entry));
+  return read_entry_impl(module,reference,true,true);
 }
 Entry StudySession::read_entry(const std::string &module, const std::string &reference) {
-  const auto options = module_engine_options(module);
-  const auto presentation = module_presentation_options(module);
-  auto entry = presentation.note_numbering_available ? reader_.read(module, reference, *options, presentation.note_numbers)
-      : options ? reader_.read(module, reference, *options) : reader_.read(module, reference);
-  return present_content(module, std::move(entry));
+  return read_entry_impl(module,reference,false,true);
+}
+Entry StudySession::read_entry_snapshot(const std::string &module,const std::string &reference){
+  return read_entry_impl(module,reference,false,false);
+}
+Entry StudySession::read_commentary_entry_snapshot(const std::string &module,const std::string &reference){
+  return read_entry_impl(module,reference,true,false);
+}
+Entry StudySession::read_entry_impl(const std::string &module,const std::string &reference,bool commentary,bool publish_presentation){
+  const auto options=module_engine_options(module);
+  const auto presentation=module_presentation_options(module);
+  auto entry=[&]{
+    if(commentary)return presentation.note_numbering_available
+      ? reader_.read_commentary_entry(module,reference,presentation.headings,*options,presentation.note_numbers)
+      : options?reader_.read_commentary_entry(module,reference,presentation.headings,*options)
+               :reader_.read_commentary_entry(module,reference,presentation.headings);
+    return presentation.note_numbering_available?reader_.read(module,reference,*options,presentation.note_numbers)
+      : options?reader_.read(module,reference,*options):reader_.read(module,reference);
+  }();
+  return present_content(module,std::move(entry),publish_presentation);
 }
 ModulePresentationOptions StudySession::module_presentation_options(const std::string &id) const {
   require_module(id);

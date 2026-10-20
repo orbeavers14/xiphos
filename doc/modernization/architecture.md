@@ -105,6 +105,11 @@ native integration. Introduce these services incrementally with legacy tests.
 * Reader/module seam: SWMgr/SWModule and owned immutable metadata/results.
   Extracted `render_entry` is called by BOTH legacy BackEnd and new Reader.
   The legacy call retains its strdup ownership and module-key side effect.
+  Configured C++ [entry snapshots](html-source-workflows.md) reuse live rendering
+  without publishing auto-discovered image/font choices; existing live behavior
+  stays unchanged. They carry source HTML/matching CSS, not an exported page.
+  Shared SDK text copying handles ThML's counted terminal NUL while rejecting
+  embedded NUL and invalid UTF-8 before copied query/scripture publication.
 * Display seam: split `src/main/display.cc`, modulecache/global_ops and URL
   handling into content + semantic actions, then native web renderers. Raw
   The shared content service now produces chapter fragments with verse anchors,
