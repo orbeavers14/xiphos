@@ -102,6 +102,9 @@ struct xc_request {
   std::unique_ptr<xc_search_batch> search_batch;
   std::optional<xiphos::core::SearchScopeInfo> search_scope;
   std::optional<xiphos::core::SearchTextState> search_text_state;
+  std::optional<xiphos::core::SearchGenerationInfo> search_generation;
+  std::optional<xiphos::core::SearchRetentionLimits> search_retention_limits;
+  std::optional<xiphos::core::SearchGenerationRead> search_generation_read;
   std::unique_ptr<xc_book_document> book_document;
   std::unique_ptr<xc_book_image> book_image;
   std::unique_ptr<xc_book_image_data> book_image_data;
@@ -119,6 +122,12 @@ struct xc_request {
   std::unique_ptr<xc_history> history;
   virtual ~xc_request() = default;
   virtual void update() = 0;
+  void store(xiphos::core::SearchGenerationInfo v){search_generation=v;}
+  void store(xiphos::core::SearchRetentionLimits v){search_retention_limits=v;}
+  void store(xiphos::core::SearchGenerationRead v){
+    if(v.result)search_result=std::make_unique<xc_search>(xc_search{std::move(*v.result)});
+    v.result.reset();search_generation=v.generation;search_generation_read=std::move(v);
+  }
   void store(xiphos::core::SearchTextState v) {search_text_state=std::move(v);}
   void store(xiphos::core::SearchScopeInfo v) {search_scope=v;}
   void store(xiphos::core::SearchBatchResult v) { search_batch=std::make_unique<xc_search_batch>(std::move(v)); }
@@ -340,6 +349,12 @@ xc_status copy_search_text_info(const std::optional<xiphos::core::SearchTextOpti
   if(!out)return XC_INVALID_ARGUMENT;*out={};
   if(value)*out={1,value->strongs?1:0,value->morphology?1:0,value->footnotes?1:0};return XC_OK;
 }
+xc_status copy_search_generation_info(const xiphos::core::SearchGenerationInfo &value,xc_search_generation_info *out){
+  if(!out)return XC_INVALID_ARGUMENT;
+  *out={value.id,static_cast<int>(value.retention),value.requested_count,value.group_count,value.failed_groups,value.visible_results,
+    value.matched_elements,value.retained_elements,value.accounted_key_bytes,value.cancelled?1:0};return XC_OK;
+}
+
 }
 extern "C" {
 xc_status xc_worker_restore_book_profile(xc_worker *w, uint64_t tab, const char *path, int mode, xc_request **out) {
@@ -713,6 +728,65 @@ xc_status xc_search_batch_get_text_options(const xc_search_batch *batch,xc_searc
   return copy_search_text_info(batch->value.text_options.options,out);
 }
 void xc_search_batch_release(xc_search_batch *batch){delete batch;}
+void xc_search_retention_limits_default(xc_search_retention_limits *out){
+  if(out)*out={xiphos::core::maximum_search_retained_elements,xiphos::core::maximum_search_retained_key_bytes};
+}
+void xc_search_generation_read_options_default(xc_search_generation_read_options *out){
+  if(out){const xiphos::core::SearchLimits limits;*out={XC_SEARCH_REFERENCES_COMPLETE,limits.max_results,limits.max_reference_bytes};}
+}
+xc_status xc_worker_search_generation(xc_worker *w,uint64_t tab,xc_request **out){
+  return queue_request(w,out,[=](auto &worker){return worker.search_generation(tab);});
+}
+xc_status xc_worker_search_retention_limits(xc_worker *w,uint64_t tab,xc_request **out){
+  return queue_request(w,out,[=](auto &worker){return worker.search_retention_limits(tab);});
+}
+xc_status xc_worker_set_search_retention_limits(xc_worker *w,uint64_t tab,const xc_search_retention_limits *limits,xc_request **out){
+  if(out)*out=nullptr;
+  if(!limits||!limits->max_elements||limits->max_elements>xiphos::core::maximum_search_retained_elements||
+     !limits->max_key_bytes||limits->max_key_bytes>xiphos::core::maximum_search_retained_key_bytes)return XC_INVALID_ARGUMENT;
+  const xiphos::core::SearchRetentionLimits copied{limits->max_elements,limits->max_key_bytes};
+  return queue_request(w,out,[=](auto &worker){return worker.set_search_retention_limits(tab,copied);});
+}
+xc_status xc_worker_read_search_generation(xc_worker *w,uint64_t tab,uint64_t id,size_t group,const xc_search_generation_read_options *options,xc_request **out){
+  if(out)*out=nullptr;
+  xc_search_generation_read_options copied;xc_search_generation_read_options_default(&copied);if(options)copied=*options;
+  if((copied.source!=XC_SEARCH_REFERENCES_VISIBLE&&copied.source!=XC_SEARCH_REFERENCES_COMPLETE)||!copied.max_results||
+     copied.max_results>xiphos::core::maximum_search_results||!copied.max_reference_bytes||copied.max_reference_bytes>xiphos::core::maximum_search_reference_bytes)return XC_INVALID_ARGUMENT;
+  return queue_request(w,out,[=](auto &worker){return worker.read_search_generation(tab,id,group,
+    static_cast<xiphos::core::SearchReferenceSource>(copied.source),{copied.max_results,copied.max_reference_bytes});});
+}
+xc_status xc_request_search_retention_limits(const xc_request *r,xc_search_retention_limits *out){
+  if(!out)return XC_INVALID_ARGUMENT;*out={};
+  if(!r||r->status!=XC_OK||!r->search_retention_limits)return XC_INVALID_ARGUMENT;
+  *out={r->search_retention_limits->max_elements,r->search_retention_limits->max_key_bytes};return XC_OK;
+}
+xc_status xc_request_search_generation(const xc_request *r,xc_search_generation_info *out){
+  if(!out)return XC_INVALID_ARGUMENT;*out={};if(!r||r->status!=XC_OK||!r->search_generation)return XC_INVALID_ARGUMENT;
+  return copy_search_generation_info(*r->search_generation,out);
+}
+xc_status xc_search_get_generation(const xc_search *r,xc_search_generation_info *out){
+  if(!out)return XC_INVALID_ARGUMENT;*out={};if(!r)return XC_INVALID_ARGUMENT;
+  return copy_search_generation_info(r->value.generation,out);
+}
+xc_status xc_search_batch_get_generation(const xc_search_batch *r,xc_search_generation_info *out){
+  if(!out)return XC_INVALID_ARGUMENT;*out={};if(!r)return XC_INVALID_ARGUMENT;
+  return copy_search_generation_info(r->value.generation,out);
+}
+int xc_search_generation_updated(const xc_search *r){return r?(r->value.generation_updated?1:0):-1;}
+int xc_search_batch_generation_updated(const xc_search_batch *r){return r?(r->value.generation_updated?1:0):-1;}
+xc_status xc_request_search_generation_read(const xc_request *r,xc_search_generation_read_info *out){
+  if(!out)return XC_INVALID_ARGUMENT;*out={};if(!r||r->status!=XC_OK||!r->search_generation_read)return XC_INVALID_ARGUMENT;
+  const auto &value=*r->search_generation_read;
+  *out={static_cast<int>(value.status),batch_failure(value.failure),value.status==xiphos::core::SearchGenerationReadStatus::ok?1:0};return XC_OK;
+}
+xc_status xc_request_search_generation_query(const xc_request *r,xc_search_query_metadata *out){
+  if(!out)return XC_INVALID_ARGUMENT;*out={};
+  if(!r||r->status!=XC_OK||!r->search_generation_read||!r->search_generation_read->requested)return XC_INVALID_ARGUMENT;
+  const auto &query=*r->search_generation_read->requested;
+  *out={query.module.c_str(),query.expression.c_str(),static_cast<int>(query.mode),query.case_sensitive?1:0,query.within_last_results?1:0,
+    query.range?query.range->module.c_str():nullptr,query.range?query.range->expression.c_str():nullptr,{}};
+  return copy_search_text_info(query.text_options,&out->text_options);
+}
 xc_status xc_worker_search_text_options(xc_worker *w,uint64_t tab,xc_request **out){
   return queue_request(w,out,[=](auto &worker){return worker.search_text_options(tab);});
 }

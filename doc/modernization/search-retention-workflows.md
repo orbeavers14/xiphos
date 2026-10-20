@@ -1,7 +1,7 @@
 # Retained search-result generations
 
-Updated 2026-10-19. Initial checked C++ session/worker service; C/Swift generation
-transport and complete export are the next boundaries. No whole F18–F20/F32 parity
+Updated 2026-10-20. Checked C++ session/worker service and additive C transport;
+Swift generation transport and complete export are the next boundaries. No whole F18–F20/F32 parity
 or legacy source retirement is accepted. See [search](search-workflows.md),
 [export](export-workflows.md) and the [remaining export proposal](search-export-design.md).
 
@@ -111,3 +111,27 @@ Initial concurrent local runs hit elapsed-time limits (including a reported 910 
 portable timeout); quiet/serial rechecks separate those from behavior. Sanitizer
 instrumentation is partial and leaks are off. Current Fedora/MSVC/GTK/WinUI,
 representative corpus/locales and full native export remain unvalidated.
+
+## C transport checkpoint (2026-10-20)
+
+The additive C11 API exposes current generation metadata, future-only retention
+policy and bounded visible/complete reads through the same FIFO worker. Existing
+struct layouts and single/batch functions are unchanged. Search and batch handles
+identify their originating generation and whether that search published it.
+
+Read request success is separate from its disposition: stale ID, invalid group,
+unattempted group, failed module and capacity-exceeded outcomes do not fabricate
+a result. Successful reads transfer an owned `xc_search` once. Non-consuming query
+metadata borrows the request until release and remains available after taking the
+result; copy its strings before releasing the request. Failure/unattempted query
+metadata retains requested mode, case, bounds, last-scope and annotation options
+without inventing output limits. Metadata getters reject wrong/pending/failed
+request types and clear output values. Read flags describe the originating job.
+
+Original-prose C integration checks cover omitted/duplicate groups, independent
+tabs, query metadata, bounded copying, future-only copied policy, stale replacement,
+capacity fallback, invalid/null access, take-once and drain/shutdown lifetime.
+Strict C11/pedantic header check passes. Focused C generation/batch/canonical query
+plus fixture pass 4/4 under ASan/UBSan and 4/4 under TSan (partial dependency
+instrumentation, ASan leaks off). Swift transport and actual export have separate
+acceptance gates. No hosted jobs or reset credit used.

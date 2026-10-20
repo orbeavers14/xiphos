@@ -423,6 +423,60 @@ xc_status xc_search_batch_get_scope(const xc_search_batch *batch,xc_search_scope
 xc_status xc_search_batch_get_text_options(const xc_search_batch *batch,xc_search_text_info *out);
 void xc_search_batch_release(xc_search_batch *batch);
 
+/* Ephemeral generation IDs are scoped to this live worker/tab. Never persist or
+ * silently substitute a newer ID for an export. Complete retains returned keys;
+ * inspect cancelled/failed/attempted counts before claiming all modules completed.
+ * Key bytes/elements are logical guards, not total SDK heap/time bounds. */
+typedef enum { XC_SEARCH_RETENTION_NONE=0, XC_SEARCH_RETENTION_COMPLETE=1,
+  XC_SEARCH_RETENTION_CAPACITY_EXCEEDED=2 } xc_search_retention_status;
+typedef struct {
+  uint64_t id;
+  int retention;
+  size_t requested_count,group_count,failed_groups,visible_results;
+  uint64_t matched_elements,retained_elements;
+  size_t accounted_key_bytes;
+  int cancelled;
+} xc_search_generation_info;
+typedef struct { size_t max_elements,max_key_bytes; } xc_search_retention_limits;
+void xc_search_retention_limits_default(xc_search_retention_limits *out);
+xc_status xc_worker_search_generation(xc_worker *worker,uint64_t tab,xc_request **out);
+xc_status xc_worker_search_retention_limits(xc_worker *worker,uint64_t tab,xc_request **out);
+/* Strict positive bounded limits; copies before return. Future generations only.
+ * Existing generation/scope/history are unchanged by a policy update. */
+xc_status xc_worker_set_search_retention_limits(xc_worker *worker,uint64_t tab,const xc_search_retention_limits *limits,xc_request **out);
+xc_status xc_request_search_retention_limits(const xc_request *request,xc_search_retention_limits *out);
+/* Non-consuming metadata on successful generation query or retained-read request.
+ * Search/batch result metadata uses its own getters. Wrong/pending/failed/NULL
+ * access rejects and clears out. All strings below borrow request until release. */
+xc_status xc_request_search_generation(const xc_request *request,xc_search_generation_info *out);
+xc_status xc_search_get_generation(const xc_search *result,xc_search_generation_info *out);
+xc_status xc_search_batch_get_generation(const xc_search_batch *result,xc_search_generation_info *out);
+int xc_search_generation_updated(const xc_search *result); /* strict 0/1, -1 NULL */
+int xc_search_batch_generation_updated(const xc_search_batch *result);
+typedef enum { XC_SEARCH_REFERENCES_VISIBLE=0, XC_SEARCH_REFERENCES_COMPLETE=1 } xc_search_reference_source;
+typedef enum { XC_SEARCH_READ_OK=0, XC_SEARCH_READ_STALE=1, XC_SEARCH_READ_INVALID_GROUP=2,
+  XC_SEARCH_READ_NOT_ATTEMPTED=3, XC_SEARCH_READ_FAILED_GROUP=4, XC_SEARCH_READ_CAPACITY_EXCEEDED=5 } xc_search_generation_read_status;
+typedef struct { int source; size_t max_results,max_reference_bytes; } xc_search_generation_read_options;
+void xc_search_generation_read_options_default(xc_search_generation_read_options *out);
+/* No search rerun/history mutation. Valid requests poll OK even when disposition
+ * is stale/unavailable/failed-group. Inspect read metadata before take_search.
+ * OK read's take-once owned xc_search supports existing getters and survives
+ * request/worker release. Its flags describe the originating search, not a new
+ * publication by the read. SDK traversal clones are outside copied byte limits. */
+xc_status xc_worker_read_search_generation(xc_worker *worker,uint64_t tab,uint64_t id,size_t group,
+  const xc_search_generation_read_options *options,xc_request **out);
+typedef struct { int disposition; xc_status failure; int result_present; } xc_search_generation_read_info;
+xc_status xc_request_search_generation_read(const xc_request *request,xc_search_generation_read_info *out);
+/* Requested query without invented output limits. Present for valid original
+ * group, including failed/unattempted groups. Borrowed fields clear on rejection.
+ * Copy before releasing request; getters remain valid after take_search. */
+typedef struct {
+  const char *module,*expression;
+  int mode,case_sensitive,within_last_results;
+  const char *range_module,*range_expression;
+  xc_search_text_info text_options;
+} xc_search_query_metadata;
+xc_status xc_request_search_generation_query(const xc_request *request,xc_search_query_metadata *out);
 xc_status xc_worker_create_tab(xc_worker *worker, xc_request **out);
 xc_status xc_worker_close_tab(xc_worker *worker, uint64_t tab, xc_request **out);
 /* Consumer migration capability, not a saved module preference. Accepts exactly

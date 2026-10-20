@@ -1,6 +1,6 @@
 # macOS chat handoff
 
-Updated 2026-10-19. Read [AGENTS.md](../../AGENTS.md), the
+Updated 2026-10-20. Read [AGENTS.md](../../AGENTS.md), the
 [shared handoff](handoff.md), [core scope](shared-core-roadmap.md),
 [status](status.md) and relevant parity rows first.
 
@@ -12,6 +12,15 @@ Previous checked handoff (2026-10-18, master): shared search advances checked/pu
 retained search-result generations before bounded export. Continue
 bounded shared-core slices with local checks. Preserve unrelated files/GTK3.
 All source changes are committed/pushed at this checkpoint; no shared source edits remain in flight. This is not a concurrent ownership lease.
+
+## C retention transport checkpoint (2026-10-20)
+
+C++ generation service is pushed at `37d9004`. Additive C11 transport now passes
+original-fixture integration, strict C11 header checks, 4/4 ASan/UBSan and 4/4
+TSan generation/batch/query+fixture checks. Read/query/policy ownership, stale
+IDs and capacity fallback are documented in [retention contracts](search-retention-workflows.md).
+No existing C layout changed. Swift transport is the next checked boundary;
+complete export and native controls remain pending. Local checks only.
 
 ## C++ retention checkpoint (2026-10-19)
 
