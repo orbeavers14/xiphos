@@ -8,7 +8,7 @@ exports contain images or arbitrary module styles.
 The existing general-book image/stylesheet service now consumes private
 `module_resource.hpp` / `module_resource.cpp` helpers for canonical containment,
 regular-file checks, bounded binary reads and observed path/size/time changes.
-Book SDK context capture, URI decoding, MIME hints, stylesheet selection and
+Extraction checkpoint: `ff46f9b`. Book SDK context capture, URI decoding, MIME hints, stylesheet selection and
 owned public values remain in their existing service. Error behavior is retained.
 Normal Mac, ASan/UBSan, TSan and portable-on-Mac focused checks each pass 4/4
 (original fixture, inline images, image-resource/owned C transport, stylesheet).
@@ -54,3 +54,10 @@ resource ownership must stay tied to the exported row's actual module.
 The in-app browser rejected local-file HTML preview by URL policy. Do not use
 alternate URLs/surfaces to work around that rejection. Static/core checks do not
 establish browser, CSP-runtime or visual acceptance.
+
+The shared path seam additionally rejects embedded NUL in either directory or
+filename before filesystem resolution, so native terminated-path calls cannot
+silently address a prefix. Original-file checks verify exact resolution and
+refusal even in missing-is-absent mode. Normal Mac 4/4, ASan/UBSan 3/3 and TSan
+3/3 image/stylesheet checks pass including prerequisite fixtures. No new public
+API or module-family/image-export support is implied.

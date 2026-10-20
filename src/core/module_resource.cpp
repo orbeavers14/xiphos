@@ -7,6 +7,10 @@ std::filesystem::path module_resource_path(const std::optional<std::string> &dir
   namespace fs = std::filesystem;
   if (!directory || directory->empty())
     throw std::invalid_argument("Book has no resource data directory");
+  // Native filesystem calls consume terminated paths. Never let an owned
+  // string with an embedded NUL silently address a different resource.
+  if (directory->find('\0') != std::string::npos || filename.find('\0') != std::string::npos)
+    throw std::invalid_argument("Resource path contains NUL");
 
   std::error_code error;
   const auto base = fs::canonical(fs::u8path(*directory), error);

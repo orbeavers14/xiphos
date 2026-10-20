@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/worker.hpp"
 #include "xiphos/core/c_api.h"
+#include "../module_resource.hpp"
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -28,6 +29,11 @@ int main(int argc,char **argv){try{
  const std::string original_png("\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49\x48\x44\x52\x00\x00\x00\x08\x00\x00\x00\x08\x08\x06\x00\x00\x00\xc4\x0f\xbe\x8b\x00\x00\x00\x12\x49\x44\x41\x54\x78\x9c\x63\x50\xc9\x58\xf3\x1f\x1f\x66\x18\x19\x0a\x00\xc1\xa0\x8d\xc1\xf4\xd5\x38\xd1\x00\x00\x00\x00\x49\x45\x4e\x44\xae\x42\x60\x82",75);write(root/"data"/fs::u8path("café.png"),original_png);
  write(root/"data/a+b.png",original_png);write(root/"data/literal%20.png",original_png);
  const auto before=bytes(root);BookImageResource held;
+ const auto directory=(root/"data").u8string();
+ check(detail::module_resource_path(directory,"binary.png",false)==fs::canonical(binary),"Shared resource path resolves the exact requested module file");
+ rejects<std::invalid_argument>([&]{detail::module_resource_path(directory,std::string("binary.png\0ignored.png",22),false);});
+ rejects<std::invalid_argument>([&]{detail::module_resource_path(directory+std::string("\0ignored",8),"binary.png",false);});
+ rejects<std::invalid_argument>([&]{detail::module_resource_path(directory,std::string("missing\0binary.png",18),true);});
  {
   Reader reader(root.string());
   for(const auto &value:std::vector<std::string>{"café.svg","file:café.svg",file.u8string(),"file:"+file.u8string(),"file://"+file.u8string(),"sub/../café.svg"}){
