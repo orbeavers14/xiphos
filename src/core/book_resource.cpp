@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "book_resource_source.hpp"
 #include "book_tree_source.hpp"
-#include "bounded_file.hpp"
+#include "module_resource.hpp"
 #include <filesystem>
 #include <swmodule.h>
 #include <glib.h>
@@ -15,46 +15,6 @@ BookResourceContext capture_book_resource_context(sword::SWModule &module) {
     return value ? std::make_optional(std::string(value)) : std::nullopt;
   };
   return {module.getName(), copy("DataPath"), copy("AbsoluteDataPath"), copy("PrefixPath"), copy("PreferredCSSXHTML")};
-}
-namespace {
-std::filesystem::path resource_path(const BookResourceContext &context, const std::string &filename, bool missing_is_absent) {
-  namespace fs = std::filesystem;
-  if (!context.absolute_data_path || context.absolute_data_path->empty())
-    throw std::invalid_argument("Book has no resource data directory");
-
-  std::error_code error;
-  const auto base = fs::canonical(fs::u8path(*context.absolute_data_path), error);
-  if (error || !fs::is_directory(base)) throw std::invalid_argument("Book resource directory is unavailable");
-  const auto requested = fs::u8path(filename);
-  if (requested.has_root_name() && !requested.is_absolute()) throw std::invalid_argument("Drive-relative book resource is unsupported");
-  const auto path = fs::canonical(requested.is_absolute() ? requested : base / requested, error);
-  if (error) {
-    if (missing_is_absent && (error == std::errc::no_such_file_or_directory || error == std::errc::not_a_directory)) return {};
-    throw std::invalid_argument("Book resource cannot be resolved");
-  }
-  bool contained = false;
-  for (auto parent = path.parent_path(); !parent.empty();) {
-    if (fs::equivalent(base, parent)) { contained = true; break; }
-    const auto next = parent.parent_path();
-    if (next == parent) break;
-    parent = next;
-  }
-  if (!contained || !fs::is_regular_file(path))
-    throw std::invalid_argument("Book resource must be a regular file inside its data directory");
-  return path;
-}
-std::string resource_bytes(const std::filesystem::path &path, std::size_t maximum_bytes, const char *kind) {
-  namespace fs = std::filesystem;
-  const auto size = fs::file_size(path);
-  const auto stamp = fs::last_write_time(path);
-  if (size > maximum_bytes) throw std::invalid_argument(std::string(kind) + " exceeds the byte limit");
-  auto data = read_bounded_file(path, maximum_bytes, kind);
-  // Detect observed replacement/size/time changes; this is not an interprocess
-  // lock and does not freeze a concurrently modified library across requests.
-  if (fs::canonical(path) != path || fs::file_size(path) != size || fs::last_write_time(path) != stamp || data.size() != size)
-    throw std::runtime_error(std::string(kind) + " changed during reading");
-  return data;
-}
 }
 BookImageResource capture_book_image_resource(sword::SWModule &module, BookImageLink command, std::size_t maximum_bytes) {
   if (!maximum_bytes || maximum_bytes > maximum_book_image_bytes)
@@ -74,8 +34,8 @@ BookImageResource capture_book_image_resource(sword::SWModule &module, BookImage
       ((filename[1] >= 'A' && filename[1] <= 'Z') || (filename[1] >= 'a' && filename[1] <= 'z')))
     filename.erase(0, 1);
 #endif
-  const auto path = resource_path(context, filename, false);
-  auto data = resource_bytes(path, maximum_bytes, "Book image");
+  const auto path = module_resource_path(context.absolute_data_path, filename, false);
+  auto data = read_module_resource_bytes(path, maximum_bytes, "Book image");
   return {{std::move(context), std::move(command)}, std::move(data)};
 }
 std::optional<BookStylesheetResource> capture_book_stylesheet_resource(sword::SWModule &module, std::size_t maximum_bytes) {
@@ -90,9 +50,9 @@ std::optional<BookStylesheetResource> capture_book_stylesheet_resource(sword::SW
   // later components. Config paths are filenames, not URL query parameters.
   std::unique_ptr<char, decltype(&g_free)> configured(g_build_filename(context.absolute_data_path->c_str(), filename.c_str(), nullptr), g_free);
   if (!configured) throw std::bad_alloc();
-  const auto path = resource_path(context, configured.get(), true);
+  const auto path = module_resource_path(context.absolute_data_path, configured.get(), true);
   if (path.empty()) return std::nullopt;
-  auto css = resource_bytes(path, maximum_bytes, "Book stylesheet");
+  auto css = read_module_resource_bytes(path, maximum_bytes, "Book stylesheet");
   if (css.find('\0') != std::string::npos || !g_utf8_validate(css.data(), static_cast<gssize>(css.size()), nullptr))
     throw std::invalid_argument("Book stylesheet must be UTF-8 without NUL");
   std::string inline_css;

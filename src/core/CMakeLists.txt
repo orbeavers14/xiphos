@@ -81,7 +81,7 @@ if(NOT XIPHOS_BUILD_NATIVE_CORE)
 endif()
 find_package(Threads REQUIRED)
 find_package(LibXml2 REQUIRED)
-add_library(xiphos_core STATIC reader.cpp html_source.cpp html_document.cpp book_tree.cpp search_batch.cpp search_generation.cpp search_session.cpp search_export.cpp search_export_selection.cpp search_html_export.cpp search_validation.cpp search.cpp search_results.cpp search_scope.cpp book_resource.cpp book_inline_images.cpp book_document.cpp book_selection.cpp session.cpp heading_note_presentation.cpp content.cpp link.cpp lexical.cpp navigation.cpp worker.cpp c_api.cpp preferences.cpp profile.cpp preference_file.cpp bounded_file.cpp)
+add_library(xiphos_core STATIC reader.cpp html_source.cpp html_document.cpp book_tree.cpp search_batch.cpp search_generation.cpp search_session.cpp search_export.cpp search_export_selection.cpp search_html_export.cpp search_validation.cpp search.cpp search_results.cpp search_scope.cpp module_resource.cpp book_resource.cpp book_inline_images.cpp book_document.cpp book_selection.cpp session.cpp heading_note_presentation.cpp content.cpp link.cpp lexical.cpp navigation.cpp worker.cpp c_api.cpp preferences.cpp profile.cpp preference_file.cpp bounded_file.cpp)
 add_library(Xiphos::Core ALIAS xiphos_core)
 # SWORD does not expose its regex backend's case bit in the public API.
 # GNU/ICU SDK builds use 2; C++11-regex SDK builds use 1. Validate the matching
