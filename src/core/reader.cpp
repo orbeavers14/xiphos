@@ -9,6 +9,7 @@
 #include "book_tree_source.hpp"
 #include "book_resource_source.hpp"
 #include "search_source.hpp"
+#include "xiphos/core/search_export.hpp"
 #include "search_validation.hpp"
 #include "search_control.hpp"
 #include "xiphos/core/reference_list.hpp"
@@ -20,6 +21,8 @@
 #include <swld.h>
 #include <versekey.h>
 #include <filesystem>
+#include <string_view>
+#include <glib.h>
 #include <mutex>
 #include <stdexcept>
 
@@ -444,6 +447,25 @@ Entry Reader::read(const std::string &id, const std::string &reference, const En
 }
 Entry Reader::read_commentary_entry(const std::string &id, const std::string &reference, bool headings, const EngineOptions &options, bool labels) {
   return read_impl(id, reference, &options, headings, true, &labels);
+}
+std::string Reader::read_stripped(const std::string &id,const std::string &reference,
+                                  const std::optional<EngineOptions> &options,std::size_t max_bytes){
+  if(id.empty()||id.size()>4096||id.find('\0')!=std::string::npos||reference.empty()||
+     reference.size()>maximum_search_reference_bytes||reference.find('\0')!=std::string::npos||max_bytes>maximum_search_export_bytes)
+    throw std::invalid_argument("Invalid stripped entry request");
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto &module=impl_->verse_module(id,reference);
+  if(!detail::supports_verse_search(module))throw std::invalid_argument("Text export requires a supported verse module");
+  std::unique_ptr<ScopedEngineOptions> scope;
+  if(options)scope=std::make_unique<ScopedEngineOptions>(*impl_->manager,*options);
+  module.setKey(reference.c_str());
+  if(module.getKey()->getError())throw std::invalid_argument("SWORD could not resolve the export reference");
+  const auto stripped=module.stripText();
+  const auto size=static_cast<std::size_t>(stripped.size());
+  const auto *text=stripped.c_str();
+  if(size>max_bytes)throw std::length_error("Stripped entry exceeds export budget");
+  if(std::string_view(text,size).find('\0')!=std::string_view::npos||!g_utf8_validate(text,static_cast<gssize>(size),nullptr))throw std::runtime_error("Invalid stripped entry UTF-8");
+  return {text,size};
 }
 Entry Reader::read_impl(const std::string &id, const std::string &reference, const EngineOptions *options,
                         bool headings, bool commentary_only, const bool *labels) {

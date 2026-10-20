@@ -4,6 +4,7 @@
 #include "dictionary_history.hpp"
 #include "reader.hpp"
 #include "presentation.hpp"
+#include "search_export.hpp"
 #include <optional>
 #include <map>
 namespace xiphos::core {
@@ -36,6 +37,7 @@ public:
   void set_search_retention_limits(SearchRetentionLimits limits);
   SearchRetentionLimits search_retention_limits() const {return search_retention_limits_;}
   SearchGenerationRead read_search_generation(std::uint64_t id,std::size_t group,SearchReferenceSource source=SearchReferenceSource::complete,const SearchLimits &limits = {}) const;
+  SearchTextExport export_search_visible_text(SearchTextExportRequest request,std::shared_ptr<SearchControl> control = {});
   SearchScopeInfo last_search_scope() const;
   void clear_search_scope();
   SearchTextState search_text_options() const {return {search_text_options_};}

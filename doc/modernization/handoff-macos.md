@@ -13,6 +13,14 @@ retained search-result generations before bounded export. Continue
 bounded shared-core slices with local checks. Preserve unrelated files/GTK3.
 All source changes are committed/pushed at this checkpoint; no shared source edits remain in flight. This is not a concurrent ownership lease.
 
+## Selected text export checkpoint (2026-10-20)
+
+Swift retention transport pushed at `d1a15df`. C++ session/worker selected visible
+text export is now checked: original-fixture normal 2/2, ASan/UBSan 5/5 and TSan
+3/3, with dependency instrumentation limits/leaks off. See [the contract](search-text-export-workflows.md).
+Next add owned C/Swift export transport before native save/copy. Complete retained
+results/HTML, advanced controls, platform runtime/corpus and full parity remain.
+
 ## Swift retention transport checkpoint (2026-10-20)
 
 C bridge pushed at `155e0cb`. Swift 6 copied generation/query/policy/read adapter

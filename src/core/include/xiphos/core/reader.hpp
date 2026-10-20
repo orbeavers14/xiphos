@@ -135,6 +135,10 @@ public:
   Chapter read_commentary_chapter(const std::string &module, const std::string &reference, const DisplayOptions &display, const EngineOptions &engine, bool headings, bool render_note_labels);
   Entry read_commentary_entry(const std::string &module, const std::string &reference, bool headings = true);
   Entry read_commentary_entry(const std::string &module, const std::string &reference, bool headings, const EngineOptions &options);
+  // SDK stripText with optional configured engine state, for text export.
+  // Copied byte guard only; no HTML stripping approximation or history mutation.
+  std::string read_stripped(const std::string &module,const std::string &reference,
+                            const std::optional<EngineOptions> &options,std::size_t max_bytes);
   Entry read(const std::string &module, const std::string &reference);
   Entry read(const std::string &module, const std::string &reference, const EngineOptions &options);
   Chapter read_chapter(const std::string &module, const std::string &reference,

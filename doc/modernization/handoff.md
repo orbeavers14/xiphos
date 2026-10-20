@@ -53,18 +53,26 @@ and the independent platform evidence in view.
 | Earlier Fedora preview scope catch-up | PRs #82–89, `a80409b` | [Native Fedora evidence](handoff-linux.md); retain manual/corpus/renderer gates |
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
-Active next shared slice: implement private retained search-result generations
-and capability metadata before complete export. Display prefixes and final last
-scope cannot reconstruct every batch group. The [concrete design](search-export-design.md)
-is a proposal, not an existing API. Reuse the checked export formatter; keep
-actual indexed execution, advanced controls/mixed families/settings and other
-core services as separate gates. No hosted build/reset credit used.
+Retained search generations are checked/pushed: C++ `37d9004`, additive C11
+`155e0cb`, Swift 6 `d1a15df`. See [retention contracts](search-retention-workflows.md)
+for generation identity, capacity, ordered groups and copied stale-safe reads.
+C generation/batch/query+fixture pass 4/4 ASan/UBSan and 4/4 TSan; 10 focused
+C/Swift checks pass. Earlier full C++ checkpoint: 140 Mac passes + 1 index skip,
+109 portable-on-Mac passes + 1 skip. Current Fedora/MSVC validation stays separate.
+
+Active next shared slice: bounded selected visible-row text export using the
+checked formatter and configured SDK text reads, before complete export/native
+hosts. Display prefixes and final last scope cannot reconstruct every batch group.
+The [export design](search-export-design.md) remains a proposal where not superseded
+by the checked retention contract. Keep actual indexed execution, advanced controls/
+mixed families/settings and other core services as separate gates. No hosted job
+or reset credit used.
 
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Retained search-result generations/capability, then bounded export | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Bounded selected visible-row text export, then copied/native hosts | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

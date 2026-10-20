@@ -46,6 +46,9 @@ public:
   std::future<SearchRetentionLimits> set_search_retention_limits(StudyTab tab,SearchRetentionLimits limits);
   std::future<SearchRetentionLimits> search_retention_limits(StudyTab tab);
   std::future<SearchGenerationRead> read_search_generation(StudyTab tab,std::uint64_t id,std::size_t group,SearchReferenceSource source=SearchReferenceSource::complete,SearchLimits limits = {});
+  struct SearchExportTask {std::shared_ptr<SearchControl> control;std::future<SearchTextExport> result;};
+  SearchExportTask export_search_visible_text_task(StudyTab tab,SearchTextExportRequest request);
+  std::future<SearchTextExport> export_search_visible_text(StudyTab tab,SearchTextExportRequest request);
   std::future<SearchScopeInfo> last_search_scope(StudyTab tab);
   std::future<SearchScopeInfo> clear_search_scope(StudyTab tab);
   std::future<SearchTextState> search_text_options(StudyTab tab);

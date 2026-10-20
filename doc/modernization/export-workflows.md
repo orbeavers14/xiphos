@@ -1,8 +1,10 @@
 # Export formatting and remaining workflows
 
-Updated 2026-10-18. F20/F32 remain partial, with no accepted native export workflow.
-This seam shares the existing item format while retaining GTK3 operation. It does
-not read modules, choose selections, access a clipboard, print or write a file.
+Updated 2026-10-20. F20/F32 remain partial, with no accepted native export workflow.
+The shared item formatter below retains GTK3 operation. A separate checked C++
+[selected visible-row text service](search-text-export-workflows.md) now resolves
+retained identities, reads configured SDK scripture and enforces aggregate output
+caps. Native transport/save/copy, full retained export and printing remain pending.
 
 ## Shared item contract
 

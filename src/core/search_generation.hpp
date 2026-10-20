@@ -24,6 +24,8 @@ class SearchGeneration {
   std::vector<SearchQuery> requested_;
   std::vector<Group> groups_;
 public:
+  // Private authoritative visible row; no SDK traversal or output expansion.
+  std::optional<std::pair<std::string,std::string>> visible_row(std::size_t group,std::size_t row) const;
   SearchGenerationInfo info() const noexcept{return info_;}
   SearchGenerationRead read(std::uint64_t id,std::size_t group,SearchReferenceSource source,const SearchLimits &limits) const;
 };

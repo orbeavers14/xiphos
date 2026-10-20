@@ -65,6 +65,10 @@ std::shared_ptr<const SearchGeneration> SearchGenerationBuilder::finish(bool can
   for(auto &group:value_.groups_)if(group.result){group.result->generation=value_.info_;group.result->generation_updated=true;}
   return std::make_shared<const SearchGeneration>(std::move(value_));
 }
+std::optional<std::pair<std::string,std::string>> SearchGeneration::visible_row(std::size_t group,std::size_t row) const {
+  if(group>=groups_.size()||!groups_[group].result||row>=groups_[group].result->references.size())return std::nullopt;
+  return std::make_pair(requested_[group].module,groups_[group].result->references[row]);
+}
 SearchGenerationRead SearchGeneration::read(std::uint64_t id,std::size_t index,SearchReferenceSource source,const SearchLimits &limits) const {
   validate_search_generation_read(source,limits);
   SearchGenerationRead out;out.generation=info_;

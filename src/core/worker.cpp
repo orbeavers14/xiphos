@@ -136,6 +136,16 @@ std::future<SearchRetentionLimits> StudyWorker::search_retention_limits(StudyTab
 std::future<SearchGenerationRead> StudyWorker::read_search_generation(StudyTab tab,std::uint64_t id,std::size_t group,SearchReferenceSource source,SearchLimits limits){
   return impl_->submit([tab,id,group,source,limits](Impl::State &s){return s.tab(tab).read_search_generation(id,group,source,limits);});
 }
+StudyWorker::SearchExportTask StudyWorker::export_search_visible_text_task(StudyTab tab,SearchTextExportRequest request){
+  SearchExportTask task{std::make_shared<SearchControl>(),{}};
+  task.result=impl_->submit([tab,request=std::move(request),control=task.control](Impl::State &s){
+    try{return s.tab(tab).export_search_visible_text(request,control);}
+    catch(...){detail::SearchControlAccess::fail_if_queued(control);throw;}
+  },task.control);return task;
+}
+std::future<SearchTextExport> StudyWorker::export_search_visible_text(StudyTab tab,SearchTextExportRequest request){
+  return export_search_visible_text_task(tab,std::move(request)).result;
+}
 std::future<SearchScopeInfo> StudyWorker::last_search_scope(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s){return s.tab(tab).last_search_scope();});
 }

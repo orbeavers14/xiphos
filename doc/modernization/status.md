@@ -1,12 +1,14 @@
 # Modernization status and acceptance
 
-Current C++ retention checkpoint (2026-10-19): complete per-module result
-generations, aggregate caps and stale-safe copied session/worker reads are checked.
-Scope remains independent. See [the contract](search-retention-workflows.md).
-Mac: 140 passes + 1 index skip; quiet portable-on-Mac: 109 passes + 1 skip.
-Serial focused ASan/UBSan 6/6, TSan 4/4 pass after initial elapsed-time failures.
-C/Swift generation transport and complete export remain next boundaries; no
-whole parity group, platform release or legacy retirement is accepted.
+Current retained-result checkpoint (2026-10-20): complete per-module generations,
+aggregate caps and stale-safe copied session/worker reads are pushed at `37d9004`,
+additive C11 transport at `155e0cb`, and Swift 6 values at `d1a15df`. Scope remains
+independent. See [the contract](search-retention-workflows.md). Ten focused local
+C/Swift regression checks pass; C generation/batch/query+fixture pass 4/4 ASan/UBSan
+and 4/4 TSan. Earlier full C++ checkpoint: Mac 140 passes + 1 index skip;
+portable-on-Mac 109 passes + 1 skip. These are distinct scoped runs.
+Bounded visible-row text export is active next work. No whole parity group,
+platform release or legacy retirement accepted; no hosted jobs/reset credit used.
 
 The following earlier checkpoint retains its own scoped evidence.
 
