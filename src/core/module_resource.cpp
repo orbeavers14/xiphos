@@ -53,7 +53,7 @@ std::string read_module_resource_bytes(const std::filesystem::path &path, std::s
   namespace fs = std::filesystem;
   const auto size = fs::file_size(path);
   const auto stamp = fs::last_write_time(path);
-  if (size > maximum_bytes) throw std::invalid_argument(std::string(kind) + " exceeds the byte limit");
+  if (size > maximum_bytes) throw BoundedFileLimitError(std::string(kind) + " exceeds the byte limit");
   auto data = read_bounded_file(path, maximum_bytes, kind);
   // Detect observed replacement/size/time changes; this is not an interprocess
   // lock and does not freeze a concurrently modified library across requests.

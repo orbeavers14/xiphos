@@ -91,3 +91,48 @@ Shared static PNG validation/encoding is now checked in
 [its scoped contract](png-export-workflows.md), using libpng/zlib and original
 fixtures. It does not yet enable images in search HTML. Next wire an explicit
 complete-or-failure per-document policy with aggregate budgets and default reject.
+
+## Private complete-fragment resource layer
+
+A private per-document `ExportImages` cache now combines the owner-supplied
+module-byte loader with the shared PNG validator. Cache identity is the actual
+source module plus exact DOM source URI; repeated occurrences reuse the first
+validated copy. Count includes repeated occurrences. Unique original bytes,
+pixels and encoded bytes have independent positive aggregate limits (ceilings:
+64 occurrences, 8 MiB original/encoded bytes, 16 Mi pixels). No global cache or
+frontend path decision is introduced. Failed reads/decodes do not enter the cache.
+
+The HTML fragment preparer accepts an internal optional resolver. Without it,
+the resource-rejecting default is unchanged. With it, the entire fragment's
+passive structure and attributes pass before any image load. `img` requires a
+nonempty source; alt and existing passive dimensions survive serialization.
+Scripts, events, styles, srcset and other unsupported resources reject. At most
+64 image elements are considered per fragment. Only resolver-produced PNG data
+URLs replace original source URIs. Final serialized bytes remain separately
+bounded, and resource failure/cancellation returns no prepared HTML.
+
+The bounded-file helper now throws a private `invalid_argument` subclass for
+byte exhaustion. Existing callers retain their parent exception contract; image
+packaging can distinguish output limits from unavailable files without matching
+error messages. Observed file-change failures remain unsupported resources.
+
+This checkpoint is private infrastructure: public search HTML still rejects
+images. Next expose an explicit owner-side document policy, aggregate across all
+rows, adjust CSP only for that policy and publish asset statistics only with a
+complete document. It does not establish browser/CSP or visual acceptance.
+
+Focused local evidence: 8/8 normal Mac, 8/8 ASan/UBSan, 8/8 TSan and 8/8
+portable/core-on-Mac checks passed. The selection covers the new cache/DOM
+contract, PNG validation, original passive HTML policy, book image/resource,
+verse image source/resource and preference-save compatibility. Portable checks
+have GTK runtime OFF; no new Fedora/MSVC acceptance. Dependencies remain partly
+instrumented and ASan leak detection is off. The [status ledger](status.md) retains the earlier native-image full-suite
+checkpoint; these focused results are not a new full-suite run.
+
+Existing C++/C search HTML export regressions and their original fixture setup
+also pass 5/5 normal, 5/5 ASan/UBSan and 5/5 TSan. The public resource-rejecting
+behavior, selection ownership and prior complete-document path remain checked.
+Local logs use `build/export-images-{configure,build,tests}.log`, the corresponding
+`san`/`tsan`/`portable` variants and `export-images-regression` variants. No hosted
+workflow was enabled or dispatched. The owner requested stopping after this
+checkpoint; public image-policy/CSP/transport integration is the next task.

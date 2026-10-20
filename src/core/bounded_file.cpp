@@ -10,7 +10,7 @@ std::string read_bounded_file(const std::filesystem::path &path, std::size_t max
   char buffer[8192];
   while (input.read(buffer, sizeof buffer) || input.gcount()) {
     const auto length = static_cast<std::size_t>(input.gcount());
-    if (length > maximum_bytes - result.size()) throw std::invalid_argument(std::string(description) + " is too large");
+    if (length > maximum_bytes - result.size()) throw BoundedFileLimitError(std::string(description) + " is too large");
     result.append(buffer, length);
   }
   if (input.bad()) throw std::runtime_error(std::string(description) + " read failed");

@@ -31,7 +31,7 @@ std::string scope_css(const std::string &css,unsigned style){
   return result;
 }
 }
-PreparedExportHtml prepare_export_html(const EntryHtmlSource &source,std::size_t max_bytes){
+PreparedExportHtml prepare_export_html(const EntryHtmlSource &source,std::size_t max_bytes,const ExportImageResolver &images){
   if(!max_bytes||max_bytes>maximum_html_source_bytes)throw std::invalid_argument("Invalid HTML preparation budget");
   PreparedExportHtml out;
   if(source.html.size()>max_bytes){out.limited=true;return out;}
@@ -52,6 +52,7 @@ PreparedExportHtml prepare_export_html(const EntryHtmlSource &source,std::size_t
   static const std::set<std::string> tags{"html","head","body","div","span","a","sup","sub","b","i","em","strong","font","p","br","hr","table","tbody","thead","tfoot","tr","th","td","ul","ol","li","blockquote","center","h1","h2","h3","h4","h5","h6","small","big","s","strike","u","tt","pre","code","dl","dt","dd","q","cite","abbr","bdo"};
   static const std::set<std::string> attributes{"id","class","title","dir","lang","xml:lang","align","valign","width","height","border","cellpadding","cellspacing","colspan","rowspan","color","bgcolor","face","size","name","href"};
   std::vector<std::pair<xmlNode *,unsigned>> pending{{xmlDocGetRootElement(document.get()),0}};xmlNode *body=nullptr;std::size_t nodes=0;
+  std::vector<std::pair<xmlNode *,std::string>> resources;
   while(!pending.empty()){
     const auto item=pending.back();pending.pop_back();auto *node=item.first;if(!node)continue;
     if(++nodes>100000||item.second>128){out.issue=HtmlExportIssue::markup;return out;}
@@ -60,8 +61,8 @@ PreparedExportHtml prepare_export_html(const EntryHtmlSource &source,std::size_t
     if(node->type==XML_COMMENT_NODE||node->type==XML_TEXT_NODE)continue;
     if(node->type!=XML_ELEMENT_NODE){out.issue=HtmlExportIssue::markup;return out;}
     const std::string tag=reinterpret_cast<const char *>(node->name);
-    if(tag=="img"||tag=="link"||tag=="source"||tag=="video"||tag=="audio"){out.issue=HtmlExportIssue::resources;return out;}
-    if(!tags.count(tag)){out.issue=HtmlExportIssue::markup;return out;}
+    if((tag=="img"&&!images)||tag=="link"||tag=="source"||tag=="video"||tag=="audio"){out.issue=HtmlExportIssue::resources;return out;}
+    if(tag!="img"&&!tags.count(tag)){out.issue=HtmlExportIssue::markup;return out;}
     // Only body children enter the document. Reject wrapper context that would
     // otherwise disappear (for example inherited right-to-left direction).
     if((tag=="html"||tag=="head"||tag=="body")&&node->properties){out.issue=HtmlExportIssue::markup;return out;}
@@ -69,15 +70,33 @@ PreparedExportHtml prepare_export_html(const EntryHtmlSource &source,std::size_t
     for(auto *attribute=node->properties;attribute;attribute=attribute->next){
       const std::string name=reinterpret_cast<const char *>(attribute->name);
       if(name=="style"){out.issue=HtmlExportIssue::styles;return out;}
-      if(name=="src"||name=="srcset"||name=="background"){out.issue=HtmlExportIssue::resources;return out;}
-      if(!attributes.count(name)){out.issue=HtmlExportIssue::markup;return out;}
+      if((name=="src"&&tag!="img")||name=="srcset"||name=="background"){out.issue=HtmlExportIssue::resources;return out;}
+      if(!(tag=="img"&&(name=="src"||name=="alt"))&&!attributes.count(name)){out.issue=HtmlExportIssue::markup;return out;}
       std::unique_ptr<xmlChar,decltype(xmlFree)> value(xmlNodeListGetString(document.get(),attribute->children,1),xmlFree);
       const std::string text=value?reinterpret_cast<const char *>(value.get()):"";
       if((name=="id"||name=="class")&&text.find("xiphos-export-")!=std::string::npos){out.issue=HtmlExportIssue::styles;return out;}
       if(name=="href"&&(tag!="a"||!passive_link(text))){out.issue=HtmlExportIssue::links;return out;}
     }
+    if(tag=="img"){
+      std::unique_ptr<xmlChar,decltype(xmlFree)> src(xmlGetProp(node,BAD_CAST "src"),xmlFree);
+      if(!src||!*src){out.issue=HtmlExportIssue::resources;return out;}
+      if(resources.size()==64){out.limited=true;return out;}
+      resources.emplace_back(node,reinterpret_cast<const char *>(src.get()));
+    }
   }
   if(!body){out.issue=HtmlExportIssue::markup;return out;}
+  // The complete structure passed before a resolver can touch the module library.
+  // Keep encoded assets bounded even before the final serialized fragment check.
+  std::size_t resource_bytes=0;
+  for(const auto &resource:resources){
+    const auto image=images(resource.second);
+    if(image.status==ExportPngStatus::cancelled){out.cancelled=true;return out;}
+    if(image.status==ExportPngStatus::output_limit){out.limited=true;return out;}
+    if(image.status!=ExportPngStatus::ok||image.data_url.rfind("data:image/png;base64,",0)!=0){out.issue=HtmlExportIssue::resources;return out;}
+    if(image.data_url.size()>max_bytes-resource_bytes){out.limited=true;return out;}
+    resource_bytes+=image.data_url.size();
+    if(!xmlSetProp(resource.first,BAD_CAST "src",BAD_CAST image.data_url.c_str()))throw std::bad_alloc();
+  }
   std::unique_ptr<xmlBuffer,decltype(&xmlBufferFree)> output(xmlBufferCreate(),xmlBufferFree);
   if(!output)throw std::bad_alloc();
   for(auto *node=body->children;node;node=node->next){
