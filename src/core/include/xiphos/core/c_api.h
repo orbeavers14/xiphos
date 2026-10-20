@@ -494,10 +494,25 @@ void xc_search_text_export_request_default(xc_search_text_export_request *out);
  * Existing search progress/cancel observe this job only. No partial document. */
 xc_status xc_worker_export_search_visible_text(xc_worker *worker,uint64_t tab,
   const xc_search_text_export_request *input,xc_request **out);
+/* Complete returned matches use the same owned payload. Source cancellation,
+ * failures or unattempted modules reject unless allow_partial_source is 1.
+ * Clipped groups/row/output caps never return a successful partial document. */
+typedef struct {
+  uint64_t generation;
+  const char *title;
+  int include_scripture;
+  size_t max_bytes,max_rows;
+  int allow_partial_source; /* strict 0/1, inspect source generation metadata */
+} xc_search_all_text_export_request;
+void xc_search_all_text_export_request_default(xc_search_all_text_export_request *out);
+xc_status xc_worker_export_search_all_text(xc_worker *worker,uint64_t tab,
+  const xc_search_all_text_export_request *input,xc_request **out);
+/* 0=explicit visible rows, 1=all retained matches, -1=NULL. No struct layout change. */
+int xc_search_text_export_selection(const xc_search_text_export *result);
 xc_search_text_export *xc_request_take_search_text_export(xc_request *request);
 typedef enum {XC_SEARCH_EXPORT_OK=0,XC_SEARCH_EXPORT_STALE=1,XC_SEARCH_EXPORT_INVALID_SELECTION=2,
   XC_SEARCH_EXPORT_OUTPUT_LIMIT=3,XC_SEARCH_EXPORT_CANCELLED=4,XC_SEARCH_EXPORT_MODULE_NOT_FOUND=5,
-  XC_SEARCH_EXPORT_ENGINE_ERROR=6} xc_search_export_status;
+  XC_SEARCH_EXPORT_ENGINE_ERROR=6,XC_SEARCH_EXPORT_CAPACITY_EXCEEDED=7,XC_SEARCH_EXPORT_SOURCE_INCOMPLETE=8} xc_search_export_status;
 typedef struct {
   int disposition;
   size_t row_count;

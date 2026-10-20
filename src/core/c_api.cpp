@@ -755,6 +755,26 @@ xc_status xc_worker_export_search_visible_text(xc_worker *w,uint64_t tab,const x
     *out=request.release();return XC_OK;
   }catch(...){return failure();}
 }
+void xc_search_all_text_export_request_default(xc_search_all_text_export_request *out){
+  if(out)*out={0,nullptr,0,1024*1024,xiphos::core::maximum_search_export_rows,0};
+}
+xc_status xc_worker_export_search_all_text(xc_worker *w,uint64_t tab,const xc_search_all_text_export_request *input,xc_request **out){
+  if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;
+  if(!w||!input||(input->include_scripture!=0&&input->include_scripture!=1)||
+     (input->allow_partial_source!=0&&input->allow_partial_source!=1)||!input->max_bytes||
+     input->max_bytes>xiphos::core::maximum_search_export_bytes||!input->max_rows||input->max_rows>xiphos::core::maximum_search_export_rows)return XC_INVALID_ARGUMENT;
+  try{
+    xiphos::core::SearchAllTextExportRequest copied;
+    copied.generation=input->generation;copied.include_scripture=input->include_scripture!=0;
+    copied.max_bytes=input->max_bytes;copied.max_rows=input->max_rows;copied.allow_partial_source=input->allow_partial_source!=0;
+    if(input->title){std::size_t size=0;while(size<=32768&&input->title[size])++size;if(size>32768)return XC_INVALID_ARGUMENT;copied.title.assign(input->title,size);}
+    auto request=std::make_unique<Request<xiphos::core::SearchTextExport>>();
+    auto task=w->value.export_search_all_text_task(tab,std::move(copied));
+    request->search_control=std::move(task.control);request->future=std::move(task.result);
+    *out=request.release();return XC_OK;
+  }catch(...){return failure();}
+}
+int xc_search_text_export_selection(const xc_search_text_export *r){return r?static_cast<int>(r->value.selection):-1;}
 xc_search_text_export *xc_request_take_search_text_export(xc_request *r){return r&&r->status==XC_OK?r->search_export.release():nullptr;}
 xc_status xc_search_text_export_get_info(const xc_search_text_export *r,xc_search_text_export_info *out){
   if(!out)return XC_INVALID_ARGUMENT;*out={};if(!r)return XC_INVALID_ARGUMENT;

@@ -55,9 +55,44 @@ int main(int argc,char **argv){try{
  auto *race=xc_request_take_search_text_export(request);check(xc_search_text_export_get_info(race,&info)==XC_OK&&xc_request_search_progress(request,&progress)==XC_OK&&
   ((info.disposition==XC_SEARCH_EXPORT_OK&&progress.phase==XC_SEARCH_COMPLETE)||(info.disposition==XC_SEARCH_EXPORT_CANCELLED&&progress.phase==XC_SEARCH_CANCELLED&&!xc_search_text_export_size(race))),"Cancel/completion disposition agrees with control");xc_request_release(request);xc_search_text_export_release(race);
  check(xc_worker_export_search_visible_text(worker,tab,&input,&request)==XC_OK,"Detached observer export");xc_request_release(request);
- check(xc_worker_export_search_visible_text(worker,tab,&input,&request)==XC_OK,"Accept before shutdown");xc_worker_close(worker);
- check(wait(request)==XC_OK,"Shutdown drains export");auto *drained=xc_request_take_search_text_export(request);xc_request_release(request);
- check(xc_search_text_export_get_info(drained,&info)==XC_OK&&info.disposition==XC_SEARCH_EXPORT_OK&&std::string(xc_search_text_export_text(owned))==text,"Payloads survive request and worker lifetime");
- xc_search_text_export_release(owned);xc_search_text_export_release(drained);xc_search_text_export_release(nullptr);
- std::cout<<"C copied selected text export, typed failures, budgets, cancellation and owned shutdown lifetime passed\n";return 0;
+ // All-retained transport recovers keys omitted from a one-row display prefix.
+ xc_search_options prefix;xc_search_options_default(&prefix);prefix.max_results=1;query.options=&prefix;
+ check(xc_worker_search(worker,tab,&query,&request)==XC_OK&&wait(request)==XC_OK,"Seed clipped all-export source");
+ search=xc_request_take_search(request);xc_request_release(request);
+ check(xc_search_get_generation(search,&generation)==XC_OK,"Clipped generation metadata");xc_search_release(search);
+ xc_search_all_text_export_request complete;xc_search_all_text_export_request_default(&complete);
+ check(complete.max_rows==10000&&complete.max_bytes==1024*1024&&!complete.allow_partial_source,"Complete defaults bounded and reject partial sources");
+ complete.generation=generation.id;complete.include_scripture=1;std::string label="All original";complete.title=label.c_str();
+ check(xc_worker_export_search_all_text(worker,tab,&complete,&request)==XC_OK,"Accept copied complete request");
+ complete.max_rows=1;label="Changed";
+ check(wait(request)==XC_OK,"Complete copied request");auto *all=xc_request_take_search_text_export(request);xc_request_release(request);
+ check(xc_search_text_export_get_info(all,&info)==XC_OK&&info.disposition==XC_SEARCH_EXPORT_OK&&info.row_count==4&&
+  xc_search_text_export_selection(all)==1&&xc_search_text_export_selection(owned)==0&&xc_search_text_export_selection(nullptr)==-1&&
+  std::string(xc_search_text_export_text(all)).find("All original\n\n")==0,"Complete selection kind, copied title/cap and all retained rows");
+ complete.title=nullptr;complete.max_rows=3;
+ auto runAll=[&]{check(xc_worker_export_search_all_text(worker,tab,&complete,&request)==XC_OK&&wait(request)==XC_OK,"Complete disposition request");
+  auto *result=xc_request_take_search_text_export(request);xc_request_release(request);check(result&&xc_search_text_export_get_info(result,&info)==XC_OK,"Complete owned outcome");return result;};
+ auto *clipped=runAll();check(info.disposition==XC_SEARCH_EXPORT_OUTPUT_LIMIT&&!xc_search_text_export_size(clipped),"Complete clipped output is never success");xc_search_text_export_release(clipped);
+ complete.max_rows=4;query.module=nullptr;const char *pair[]={"Text","Missing"};
+ check(xc_worker_search_modules(worker,tab,pair,2,&query,nullptr,&request)==XC_OK&&wait(request)==XC_OK,"Seed incomplete source");
+ auto *batch=xc_request_take_search_batch(request);xc_request_release(request);check(xc_search_batch_get_generation(batch,&generation)==XC_OK,"Incomplete generation");xc_search_batch_release(batch);complete.generation=generation.id;
+ auto *incomplete=runAll();check(info.disposition==XC_SEARCH_EXPORT_SOURCE_INCOMPLETE&&!xc_search_text_export_size(incomplete),"Default complete export rejects failed module source");xc_search_text_export_release(incomplete);
+ complete.allow_partial_source=1;auto *partial=runAll();
+ check(info.disposition==XC_SEARCH_EXPORT_OK&&info.row_count==4&&xc_search_text_export_get_generation(partial,&copied)==XC_OK&&copied.failed_groups==1,"Explicit partial source retains failure counts");xc_search_text_export_release(partial);
+ auto rejectAll=[&]{request=reinterpret_cast<xc_request *>(1);check(xc_worker_export_search_all_text(worker,tab,&complete,&request)==XC_INVALID_ARGUMENT&&!request,"Invalid complete request clears observer");};
+ complete.allow_partial_source=2;rejectAll();complete.allow_partial_source=0;complete.include_scripture=2;rejectAll();complete.include_scripture=0;complete.max_rows=0;rejectAll();complete.max_rows=10001;rejectAll();complete.max_rows=4;complete.max_bytes=0;rejectAll();complete.max_bytes=8*1024*1024+1;rejectAll();complete.max_bytes=1024;
+ check(xc_worker_export_search_all_text(worker,tab,nullptr,&request)==XC_INVALID_ARGUMENT&&!request&&
+  xc_worker_export_search_all_text(nullptr,tab,&complete,&request)==XC_INVALID_ARGUMENT&&!request&&
+  xc_worker_export_search_all_text(worker,tab,&complete,nullptr)==XC_INVALID_ARGUMENT,"NULL complete inputs");
+ complete.allow_partial_source=1;
+ check(xc_worker_export_search_all_text(worker,tab,&complete,&request)==XC_OK,"Complete shutdown drain");
+ xc_worker_close(worker);worker=nullptr;
+ check(wait(request)==XC_OK,"Shutdown drains complete export");auto *allDrained=xc_request_take_search_text_export(request);xc_request_release(request);
+ check(xc_search_text_export_get_info(allDrained,&info)==XC_OK&&info.disposition==XC_SEARCH_EXPORT_OK&&
+  std::string(xc_search_text_export_text(all)).find("John 1:4")!=std::string::npos,"Complete copied payload survives worker lifetime");
+ xc_search_text_export_release(all);xc_search_text_export_release(allDrained);
+ // The earlier selected payload is also independent of the destroyed worker.
+ check(std::string(xc_search_text_export_text(owned))==text,"Selected payload remains owned after all-export jobs");
+ xc_search_text_export_release(owned);xc_search_text_export_release(nullptr);
+ std::cout<<"C selected/complete text export, typed failures, copied inputs and owner lifetime passed\n";return 0;
 }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}

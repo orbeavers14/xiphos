@@ -16,6 +16,14 @@ retained search-result generations before bounded export. Continue
 bounded shared-core slices with local checks. Preserve unrelated files/GTK3.
 All source changes are committed/pushed at this checkpoint; no shared source edits remain in flight. This is not a concurrent ownership lease.
 
+## C complete-result transport checkpoint (2026-10-20)
+
+Complete C++ text service pushed at `b7dafd4`, including full portable-on-Mac
+113 + 1 index skip (GTK runtime OFF). Additive C all-result descriptor and result
+selection getter pass normal 2/2, ASan/UBSan 3/3 and TSan 3/3 (C/all-C+++fixture),
+plus strict C11 header. Existing C layouts unchanged. Swift transport is under
+focused checks; native hosts/HTML and representative corpus remain gates.
+
 ## Complete retained text checkpoint (2026-10-20, C++ only)
 
 Selected export pushed through `ec26889`. Full Mac suite at that checkpoint passed

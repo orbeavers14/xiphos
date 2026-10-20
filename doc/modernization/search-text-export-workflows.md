@@ -125,3 +125,20 @@ pre-cancel, copied options and worker shutdown. Normal all/visible/C-export+fixt
 pass 4/4. Final ASan/UBSan all+visible+fixture pass 3/3; TSan pass 3/3. Sanitizer
 coverage remains partial/leaks off. C/Swift complete-result transport, HTML,
 native save/copy/print and representative corpus/platform acceptance are pending.
+
+## C11 complete-result transport checkpoint
+
+An additive all-results descriptor copies generation, plain title, scripture,
+positive aggregate rows/bytes and strict partial-source opt-in before acceptance.
+It uses the same take-once owned text-export handle and progress/cancel observer.
+A separate selection getter returns visible versus all-retained without changing
+existing C struct layouts. Capacity-unavailable and incomplete-source dispositions
+are distinct from stale/invalid/output limits. Source failure counts remain owned
+metadata after partial-source acceptance; no implicit query retry/fallback occurs.
+
+Extended original-fixture C tests recover all keys beyond a one-row prefix,
+validate copied title/row policy, clipped output, default partial-source refusal,
+explicit acceptance, selection kind, invalid/null options and complete export drain.
+Normal C+fixture pass 2/2; C/all-C+++fixture pass 3/3 ASan/UBSan and 3/3 TSan.
+Strict C11/pedantic header check passes. Partial dependency instrumentation and
+ASan leaks-off limits remain. Native UI/HTML/corpus acceptance is still open.
