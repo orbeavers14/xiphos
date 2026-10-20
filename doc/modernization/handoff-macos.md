@@ -16,6 +16,14 @@ retained search-result generations before bounded export. Continue
 bounded shared-core slices with local checks. Preserve unrelated files/GTK3.
 All source changes are committed/pushed at this checkpoint; no shared source edits remain in flight. This is not a concurrent ownership lease.
 
+## Swift complete-result transport checkpoint (2026-10-20)
+
+C complete-result bridge pushed at `1bb2615`. Swift 6 all/visible export shares one
+copied-result adapter and passes 6/6 focused core/C/Swift+fixture checks. No second
+source-selection or document engine. Next consuming native selected/all text
+save/copy controls with stale/close/cancel protection and local window checks.
+Full legacy/native parity, HTML/print and current Fedora/MSVC acceptance remain.
+
 ## C complete-result transport checkpoint (2026-10-20)
 
 Complete C++ text service pushed at `b7dafd4`, including full portable-on-Mac

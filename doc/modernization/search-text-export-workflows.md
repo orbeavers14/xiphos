@@ -142,3 +142,19 @@ explicit acceptance, selection kind, invalid/null options and complete export dr
 Normal C+fixture pass 2/2; C/all-C+++fixture pass 3/3 ASan/UBSan and 3/3 TSan.
 Strict C11/pedantic header check passes. Partial dependency instrumentation and
 ASan leaks-off limits remain. Native UI/HTML/corpus acceptance is still open.
+
+## Swift complete-result transport checkpoint
+
+Swift 6 now adapts complete-result requests through the same copied-result helper
+as visible export. Selection kind and capacity/incomplete-source dispositions are
+typed values. No selection expansion, partial-source policy or formatting is
+implemented in Swift. Positive row caps/NUL-free titles guard signed-to-C inputs;
+default cancellation drains then throws, with interactive authoritative outcomes
+available through the existing option.
+
+Six focused checks pass: Swift all/visible/generation, C all/visible export, C++
+all export and fixture setup. Tests recover omitted groups/duplicates, establish
+exact Unicode bytes and row caps, reject incomplete source by default, accept it
+explicitly while keeping failure metadata, distinguish unavailable versus stale,
+validate invalid bounds, and preserve copied values after shutdown. Native
+save/copy actions, HTML/printing and broad corpus/platform gates remain open.

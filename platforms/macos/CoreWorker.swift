@@ -363,7 +363,27 @@ actor CoreWorker {
             let status = xc_worker_export_search_visible_text(handle, tab, &input, &request)
             return (status, request)
         } }
-        let completed = try await wait(queued.0, queued.1, cancellingSearch: true,
+        return try await searchTextExportValue(queued.0, queued.1, returnCancelledResults: returnCancelledResults, onProgress: onProgress)
+    }
+    func exportSearchAllText(tab: UInt64, generation: UInt64, title: String = "Search results",
+                             includeScripture: Bool = false, maxBytes: Int = 1024 * 1024, maxRows: Int = 10_000,
+                             allowPartialSource: Bool = false, returnCancelledResults: Bool = false,
+                             onProgress: (@Sendable (CoreSearchProgress) async -> Void)? = nil) async throws -> RenderedSearchTextExport {
+        guard !title.utf8.contains(0), title.utf8.count <= 32768, maxBytes > 0, maxRows > 0 else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        let handle = try worker()
+        let queued = title.withCString { label in
+            var request: OpaquePointer?
+            var input = xc_search_all_text_export_request(generation: generation, title: label,
+                include_scripture: includeScripture ? 1 : 0, max_bytes: maxBytes, max_rows: maxRows,
+                allow_partial_source: allowPartialSource ? 1 : 0)
+            let status = xc_worker_export_search_all_text(handle, tab, &input, &request)
+            return (status, request)
+        }
+        return try await searchTextExportValue(queued.0, queued.1, returnCancelledResults: returnCancelledResults, onProgress: onProgress)
+    }
+    private func searchTextExportValue(_ status: xc_status, _ request: OpaquePointer?, returnCancelledResults: Bool,
+                                       onProgress: (@Sendable (CoreSearchProgress) async -> Void)?) async throws -> RenderedSearchTextExport {
+        let completed = try await wait(status, request, cancellingSearch: true,
             returnCancelledSearch: returnCancelledResults, onSearchProgress: onProgress)
         defer { xc_request_release(completed) }
         guard let owned = xc_request_take_search_text_export(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
@@ -371,10 +391,11 @@ actor CoreWorker {
         var info = xc_search_text_export_info(), generation = xc_search_generation_info()
         guard xc_search_text_export_get_info(owned, &info) == XC_OK,
               xc_search_text_export_get_generation(owned, &generation) == XC_OK,
+              let selection = CoreSearchExportSelection(rawValue: xc_search_text_export_selection(owned)),
               let disposition = CoreSearchExportStatus(rawValue: info.disposition) else { throw CoreError(status: XC_ENGINE_ERROR) }
         let text = String(cString: xc_search_text_export_text(owned)!)
         precondition(text.utf8.count == xc_search_text_export_size(owned))
-        return RenderedSearchTextExport(status: disposition, generation: CoreValues.searchGeneration(generation),
+        return RenderedSearchTextExport(selection: selection, status: disposition, generation: CoreValues.searchGeneration(generation),
             rowCount: info.row_count, failedRow: info.failed_row_present != 0 ? info.failed_row : nil,
             includesScripture: info.includes_scripture != 0, text: text)
     }

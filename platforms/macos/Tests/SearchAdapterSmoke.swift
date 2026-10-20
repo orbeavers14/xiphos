@@ -174,7 +174,7 @@ actor ProgressLog {
         let log = ProgressLog()
         let copied = try await worker.exportSearchVisibleText(tab: tab, generation: id, rows: rows, title: "Selected café", includeScripture: true,
             onProgress: { await log.append($0) })
-        guard copied.status == .success, copied.rowCount == 3, copied.includesScripture, copied.generation == search.generation,
+        guard copied.status == .success, copied.selection == .visible, copied.rowCount == 3, copied.includesScripture, copied.generation == search.generation,
               copied.text.hasPrefix("Selected café\n\n"), copied.text.contains("John 1:3 Text"), copied.text.contains("Original"),
               (await log.snapshot()).last?.phase == .complete, try await worker.history(tab).count == 0 else { fatalError("Swift copies complete selected text and shared progress without navigating") }
         let exact = try await worker.exportSearchVisibleText(tab: tab, generation: id, rows: rows, title: "Selected café", includeScripture: true, maxBytes: copied.text.utf8.count)
@@ -199,7 +199,41 @@ actor ProgressLog {
         guard copied.text.hasPrefix("Selected café"), copied.generation.id == id else { fatalError("Copied Swift export outlives worker") }
         print("Swift selected text export, exact UTF-8 caps, typed failures, cancellation and lifetime passed")
     }
+    static func allTextExport(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let tab = try await worker.createTab()
+        let search = try await worker.searchModules(tab: tab, modules: ["Text", "Commentary", "Text"], expression: "Original", maxResults: 1)
+        let id = search.generation.id
+        let all = try await worker.exportSearchAllText(tab: tab, generation: id, includeScripture: true)
+        guard all.status == .success, all.selection == .allRetained, all.rowCount == 12,
+              all.generation.visibleResults == 1, all.text.contains("John 1:4"), all.includesScripture else { fatalError("Swift complete export recovers every retained group") }
+        let exact = try await worker.exportSearchAllText(tab: tab, generation: id, includeScripture: true, maxBytes: all.text.utf8.count, maxRows: 12)
+        let clipped = try await worker.exportSearchAllText(tab: tab, generation: id, maxRows: 11)
+        guard exact.text == all.text, clipped.status == .outputLimit, clipped.text.isEmpty else { fatalError("Complete export rejects clipped group/document") }
+        let failed = try await worker.searchModules(tab: tab, modules: ["Text", "Missing"], expression: "Original", maxResults: 1)
+        let refused = try await worker.exportSearchAllText(tab: tab, generation: failed.generation.id)
+        let accepted = try await worker.exportSearchAllText(tab: tab, generation: failed.generation.id, allowPartialSource: true)
+        guard refused.status == .sourceIncomplete, refused.text.isEmpty, accepted.status == .success,
+              accepted.rowCount == 4, accepted.generation.failedGroups == 1 else { fatalError("Explicit source acceptance remains a shared policy with copied failure metadata") }
+        _ = try await worker.setSearchRetentionLimits(tab: tab, limits: CoreSearchRetentionLimits(maxElements: 1, maxKeyBytes: 1024))
+        let overflow = try await worker.searchModule(tab: tab, module: "Text", expression: "Original")
+        let unavailable = try await worker.exportSearchAllText(tab: tab, generation: overflow.generation.id)
+        let stale = try await worker.exportSearchAllText(tab: tab, generation: id)
+        guard unavailable.status == .capacityExceeded, unavailable.selection == .allRetained, unavailable.text.isEmpty,
+              stale.status == .stale, stale.generation == overflow.generation else { fatalError("Complete export never substitutes visible or newer keys") }
+        for rows in [-1, 0, 10001] {
+            do { _ = try await worker.exportSearchAllText(tab: tab, generation: id, maxRows: rows); fatalError("Expected invalid row cap") } catch is CoreError {}
+        }
+        let stop = Task { try await worker.exportSearchAllText(tab: tab, generation: overflow.generation.id) };stop.cancel()
+        do { _ = try await stop.value; fatalError("Cancelled complete export drains then throws") } catch is CancellationError {}
+        try await worker.closeTab(tab);await worker.shutdown()
+        guard all.rowCount == 12, all.text.contains("Original"), accepted.generation.failedGroups == 1 else { fatalError("Complete copied values survive shutdown") }
+        print("Swift complete retained export, strict caps, explicit partial-source choice and lifetime passed")
+    }
     static func main() async throws {
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--all-export" {
+            try await allTextExport(root: CommandLine.arguments[2]); return
+        }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--export" {
             try await textExport(root: CommandLine.arguments[2]); return
         }

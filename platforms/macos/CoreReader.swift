@@ -165,8 +165,10 @@ struct RenderedSearchGenerationRead: Sendable, Equatable {
     let result: RenderedSearchResult?
 }
 struct CoreSearchVisibleRow: Sendable, Equatable {let group: Int, row: Int}
-enum CoreSearchExportStatus: Int32, Sendable {case success=0, stale=1, invalidSelection=2, outputLimit=3, cancelled=4, moduleNotFound=5, engineError=6}
+enum CoreSearchExportStatus: Int32, Sendable {case success=0, stale=1, invalidSelection=2, outputLimit=3, cancelled=4, moduleNotFound=5, engineError=6, capacityExceeded=7, sourceIncomplete=8}
+enum CoreSearchExportSelection: Int32, Sendable {case visible=0, allRetained=1}
 struct RenderedSearchTextExport: Sendable, Equatable {
+    let selection: CoreSearchExportSelection
     let status: CoreSearchExportStatus
     let generation: CoreSearchGeneration
     let rowCount: Int
