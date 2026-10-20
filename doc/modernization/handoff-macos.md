@@ -18,6 +18,15 @@ retained search-result generations before bounded export. Continue
 bounded shared-core slices with local checks. Preserve unrelated files/GTK3.
 All source changes are committed/pushed at this checkpoint; no shared source edits remain in flight. This is not a concurrent ownership lease.
 
+## Swift HTML transport checkpoint (2026-10-20)
+
+C HTML bridge pushed at `e7c141e`. Swift 6 copied HTML value adapter passes 7/7
+focused checks including existing selected/all text and C HTML plus fixtures.
+No HTML assembly or resource policy in Swift; no new native HTML buttons. Full
+current local rechecks follow. Native HTML save/clipboard, browser/visual/CSP
+runtime, module assets/styles and full advanced layout remain gates. Preserve
+browser file-protocol denial; do not work around it to claim visual acceptance.
+
 ## C HTML transport checkpoint (2026-10-20)
 
 C++ document service pushed at `1b327d9`. Additive C11 copied HTML request and

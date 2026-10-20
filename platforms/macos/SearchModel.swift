@@ -169,6 +169,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
                 case .sourceIncomplete: self.message = "The search stopped or some modules failed. Export a selected passage or run the search again."
                 case .moduleNotFound: self.message = "A searched module is no longer available. Run the search again."
                 case .engineError: self.message = "Unable to prepare search text. Try the search again."
+                case .unsupportedHTML: self.message = "This content cannot be exported in that format yet."
                 }
             } catch { if !self.closed && self.revision == token { self.message = error.localizedDescription } }
         }

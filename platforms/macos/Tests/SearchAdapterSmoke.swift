@@ -230,7 +230,54 @@ actor ProgressLog {
         guard all.rowCount == 12, all.text.contains("Original"), accepted.generation.failedGroups == 1 else { fatalError("Complete copied values survive shutdown") }
         print("Swift complete retained export, strict caps, explicit partial-source choice and lifetime passed")
     }
+    static func htmlExport(root: String, richRoot: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let tab = try await worker.createTab()
+        let search = try await worker.searchModules(tab: tab, modules: ["Text", "Commentary"], expression: "Original", maxResults: 1)
+        let id = search.generation.id, title = "Original <query> café"
+        let log = ProgressLog()
+        let all = try await worker.exportSearchHTML(tab: tab, generation: id, selection: .allRetained, title: title,
+            includeScripture: true, onProgress: { await log.append($0) })
+        guard all.status == .success, all.selection == .allRetained, all.rowCount == 8, all.issue == .none,
+              all.html.contains("Original &lt;query&gt; café"), all.generation.visibleResults == 1,
+              (await log.snapshot()).last?.phase == .complete else { fatalError("Swift copies complete shared HTML and source/progress metadata") }
+        let exact = try await worker.exportSearchHTML(tab: tab, generation: id, selection: .allRetained, title: title,
+            includeScripture: true, maxBytes: all.html.utf8.count, maxRows: 8)
+        let limited = try await worker.exportSearchHTML(tab: tab, generation: id, selection: .allRetained, title: title,
+            includeScripture: true, maxBytes: all.html.utf8.count - 1)
+        guard exact.html == all.html, limited.status == .outputLimit, limited.html.isEmpty, limited.rowCount == 0 else { fatalError("HTML exact UTF-8 byte cap and no partial document survive transport") }
+        let selected = try await worker.exportSearchHTML(tab: tab, generation: id,
+            rows: [CoreSearchVisibleRow(group: 0, row: 0), CoreSearchVisibleRow(group: 0, row: 0)])
+        let stale = try await worker.exportSearchHTML(tab: tab, generation: id + 1, selection: .allRetained)
+        guard selected.rowCount == 2, selected.selection == .visible, stale.status == .stale, stale.generation.id == id,
+              stale.html.isEmpty, try await worker.history(tab).count == 0 else { fatalError("Swift preserves duplicate selection, stale identity and history neutrality") }
+        for bad in [[], [CoreSearchVisibleRow(group: -1, row: 0)], [CoreSearchVisibleRow(group: 0, row: -1)]] {
+            do { _ = try await worker.exportSearchHTML(tab: tab, generation: id, rows: bad); fatalError("Expected invalid HTML selection") } catch is CoreError {}
+        }
+        do { _ = try await worker.exportSearchHTML(tab: tab, generation: id, selection: .allRetained, title: "bad\0tail"); fatalError("Expected NUL rejection") } catch is CoreError {}
+        let failed = try await worker.searchModules(tab: tab, modules: ["Text", "Missing"], expression: "Original")
+        let refused = try await worker.exportSearchHTML(tab: tab, generation: failed.generation.id, selection: .allRetained)
+        let partial = try await worker.exportSearchHTML(tab: tab, generation: failed.generation.id, selection: .allRetained, allowPartialSource: true)
+        guard refused.status == .sourceIncomplete, refused.html.isEmpty, partial.status == .success,
+              partial.generation.failedGroups == 1, partial.html.contains("only returned matches are included") else { fatalError("Partial-source choice and artifact labelling stay in shared core") }
+        let stop = Task { try await worker.exportSearchHTML(tab: tab, generation: failed.generation.id, selection: .allRetained, allowPartialSource: true) };stop.cancel()
+        do { _ = try await stop.value; fatalError("Cancelled HTML observer must drain then throw") } catch is CancellationError {}
+        try await worker.closeTab(tab);await worker.shutdown()
+        let richWorker = try CoreWorker(root: richRoot), richTab = try await richWorker.createTab()
+        let rich = try await richWorker.searchModule(tab: richTab, module: "Text", expression: "Original")
+        guard let ordinal = rich.references.firstIndex(of: "John 4:1") else { fatalError("Original rich source required") }
+        let unsupported = try await richWorker.exportSearchHTML(tab: richTab, generation: rich.generation.id,
+            rows: [CoreSearchVisibleRow(group: 0, row: ordinal)], includeScripture: true)
+        guard unsupported.status == .unsupportedHTML, unsupported.issue == .resources, unsupported.failedRow == 0,
+              unsupported.html.isEmpty, unsupported.rowCount == 0 else { fatalError("Typed unsupported assets cannot become successful Swift HTML") }
+        try await richWorker.closeTab(richTab);await richWorker.shutdown()
+        guard all.rowCount == 8, all.html.contains("Original"), partial.generation.failedGroups == 1 else { fatalError("Copied HTML values outlive observers and both workers") }
+        print("Swift copied HTML, strict bytes, duplicate/stale selection, partial/unsupported outcomes and lifetime passed")
+    }
     static func main() async throws {
+        if CommandLine.arguments.count == 4, CommandLine.arguments[1] == "--html" {
+            try await htmlExport(root: CommandLine.arguments[2], richRoot: CommandLine.arguments[3]); return
+        }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--all-export" {
             try await allTextExport(root: CommandLine.arguments[2]); return
         }

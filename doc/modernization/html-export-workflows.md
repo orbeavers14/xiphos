@@ -98,3 +98,19 @@ shapes, typed unsupported images, cooperative cancellation, detached observer an
 shutdown lifetime. Normal C+fixtures pass 4/4; C/C++ HTML plus C-text regressions
 and fixtures pass 6/6 ASan/UBSan and 6/6 TSan. Dependencies remain partly
 instrumented and ASan leaks off. This adds no native HTML/browser acceptance.
+
+## Copied Swift HTML values
+
+Swift 6 now submits selected/all HTML requests and copies complete payload,
+selection/status/issue, failed ordinal and source generation before releasing the
+C handle. It performs signed-input/NUL/shape guards, not HTML formatting, selection
+expansion or resource decisions. Default cancelled observers drain then throw;
+interactive consumers can request authoritative outcomes and copied progress.
+
+Seven focused local checks pass: Swift HTML/all-text/selected-text, C HTML and
+three fixture setups. Cases cover complete matches beyond display prefixes,
+escaped Unicode title, exact bytes, duplicates/stale IDs, invalid signed/NUL input,
+explicit partial-source labels, typed unsupported images, cancellation and copied
+values after shutdown. Existing native text controls remain text-only; the shared
+status mapping includes the HTML unsupported case. No new HTML UI/browser or
+visual acceptance is implied by adapter tests.

@@ -348,6 +348,42 @@ actor CoreWorker {
         if let module { return module.withCString(queue) }
         return queue(nil)
     }
+    func exportSearchHTML(tab: UInt64, generation: UInt64, selection: CoreSearchExportSelection = .visible,
+                          rows: [CoreSearchVisibleRow] = [], title: String = "Search results", includeScripture: Bool = false,
+                          maxBytes: Int = 1024 * 1024, maxRows: Int = 10_000, allowPartialSource: Bool = false,
+                          returnCancelledResults: Bool = false,
+                          onProgress: (@Sendable (CoreSearchProgress) async -> Void)? = nil) async throws -> RenderedSearchHTMLExport {
+        guard (selection == .visible ? !rows.isEmpty : rows.isEmpty), rows.count <= 10_000,
+              rows.allSatisfy({ $0.group >= 0 && $0.row >= 0 }), !title.utf8.contains(0), title.utf8.count <= 32768,
+              maxBytes > 0, maxRows > 0 else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        let handle = try worker()
+        let copied = rows.map { xc_search_visible_row(group: $0.group, row: $0.row) }
+        let queued = title.withCString { label in copied.withUnsafeBufferPointer { buffer in
+            var request: OpaquePointer?
+            var input = xc_search_html_export_request(generation: generation, selection: selection.rawValue,
+                rows: selection == .visible ? buffer.baseAddress : nil, row_count: buffer.count, title: label,
+                include_scripture: includeScripture ? 1 : 0, max_bytes: maxBytes, max_rows: maxRows,
+                allow_partial_source: allowPartialSource ? 1 : 0)
+            let status = xc_worker_export_search_html(handle, tab, &input, &request)
+            return (status, request)
+        } }
+        let completed = try await wait(queued.0, queued.1, cancellingSearch: true,
+            returnCancelledSearch: returnCancelledResults, onSearchProgress: onProgress)
+        defer { xc_request_release(completed) }
+        guard let owned = xc_request_take_search_html_export(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_search_html_export_release(owned) }
+        var info = xc_search_html_export_info(), generation = xc_search_generation_info()
+        guard xc_search_html_export_get_info(owned, &info) == XC_OK,
+              xc_search_html_export_get_generation(owned, &generation) == XC_OK,
+              let status = CoreSearchExportStatus(rawValue: info.disposition),
+              let selection = CoreSearchExportSelection(rawValue: info.selection),
+              let issue = CoreHTMLExportIssue(rawValue: info.issue) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        let html = String(cString: xc_search_html_export_html(owned)!)
+        precondition(html.utf8.count == xc_search_html_export_size(owned))
+        return RenderedSearchHTMLExport(selection: selection, status: status, generation: CoreValues.searchGeneration(generation),
+            rowCount: info.row_count, failedRow: info.failed_row_present != 0 ? info.failed_row : nil,
+            includesScripture: info.includes_scripture != 0, issue: issue, html: html)
+    }
     func exportSearchVisibleText(tab: UInt64, generation: UInt64, rows: [CoreSearchVisibleRow],
                                  title: String = "Search results", includeScripture: Bool = false,
                                  maxBytes: Int = 1024 * 1024, returnCancelledResults: Bool = false,
