@@ -222,3 +222,29 @@ were not moved. libpng implementation remains `5d540fc`; this checkpoint changes
 documentation only. Checked local Markdown links and whitespace; no builds or
 hosted jobs needed. This is an inventory, not a complete transitive lockfile or
 release license audit. Continue shared HTML resource policy/cache work next.
+
+### Private HTML image resource checkpoint (2026-10-20)
+
+Implementation: `63ce703` on the fork's `master`. Added private per-document
+module/URI image caching, bounded aggregate occurrence/raw/pixel/encoded limits,
+typed file-byte exhaustion and optional complete-fragment PNG resolution. Full
+passive DOM validation precedes image reads; repeated resource identities reuse
+the first validated copy. The public search export request, CSP and C/Swift
+transport remain unchanged and still reject images. See
+[resource contract/evidence](resource-export-design.md).
+
+Local Mac normal, ASan/UBSan, TSan and portable core/model configurations each
+pass 8/8 focused checks. Existing C++/C search HTML export paths plus fixture
+setup each pass 5/5 normal, ASan/UBSan and TSan. AppleClang21, macOS27 ARM64,
+Swift6 toolchain, C++17 core; checked native SDK target26, SWORD1.9.0.3916,
+GLib2.86.5, Apple libxml2/zlib and official-source libpng1.6.59 static SDK.
+Portable tests ran on Mac with GTK runtime OFF, not Fedora/MSVC. Dependencies
+are partly instrumented, ASan leaks off. No new whole parity/retirement or
+release acceptance; no browser/CSP/visual export acceptance. No hosted jobs.
+
+The owner requested finishing this workflow, pushing and stopping; stopped at
+this checkpoint. Next: connect an explicit owner-side HTML document image policy
+to the existing Reader source service, aggregate across rows, change CSP only
+for opted-in documents, publish statistics only on complete success, then add
+ABI-safe C/Swift options and native consumption. Keep default reject behavior
+and the documented browser-policy restriction. Unrelated `.DS_Store` left alone.

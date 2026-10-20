@@ -29,8 +29,13 @@ Native HTML destinations, resource/style/semantic-action expansion, complete
 advanced headers and browser/CSP/visual acceptance remain pending. The browser
 blocked local-file preview by URL policy; no workaround or visual acceptance.
 
-Next bounded work: characterize shared resource/link export policy before native
-HTML consumption, then advanced search controls/settings and workflow acceptance.
+Private image-export infrastructure at `63ce703` now adds a bounded per-document PNG cache
+and an optional complete-fragment resolver; public HTML defaults and C/Swift
+requests remain unchanged. See [resource policy](resource-export-design.md).
+
+Next bounded work: wire an explicit shared document image policy, aggregate
+budgets/CSP and successful-only statistics before native HTML consumption, then
+advanced search controls/settings and workflow acceptance.
 Keep target-platform validation and other core services in view. No whole parity
 group, release or legacy retirement accepted: **0/38 groups, 0/3 release-ready apps**.
 Planning estimate remains **about 8% (6–10%)**; no reliable core-only percentage

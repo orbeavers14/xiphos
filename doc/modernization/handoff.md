@@ -35,6 +35,11 @@ Actual-index diagnostic `a3dcae8` still has no usable SDK framework; optional pr
 skips, required-index negative control fails as expected. No actual indexed
 execution or failed required probe is counted as acceptance.
 
+Private HTML image infrastructure at `63ce703` now includes a module/URI cache with aggregate
+occurrence/raw-byte/pixel/encoded-byte bounds, typed file-limit reporting and
+complete-fragment validation before loading. Public HTML remains resource-rejecting.
+See [the resource checkpoint and next integration step](resource-export-design.md).
+
 Book tree/restore/navigation/DisplayLevel, resources/styles and combined note
 counters remain checked partial services with native Mac consumption; detailed
 contracts and earlier hashes live in [book workflows](book-tree-workflows.md).
