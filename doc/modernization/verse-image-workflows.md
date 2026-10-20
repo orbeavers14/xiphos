@@ -115,3 +115,24 @@ them; missing/parent/network-looking sources refuse. Copied FIFO command request
 and source identity survive shutdown. Normal Mac, ASan/UBSan, TSan and portable-on-
 Mac focused suites each pass 4/4 including original source/resource tests and
 retained book image regression/setup. No image embedding or viewer is added here.
+
+## Typed reading-pane dispatch
+
+The contextual shared link classifier now returns a distinct image target bound
+to the committed source module. Contextual follow/resolve and pane navigation APIs
+return `VerseImageResource`; the existing C request stores it as the same opaque
+`xc_verse_image` kind. No additional C dispatch function or frontend command
+parser is needed. Existing note/reference/lexical/passage kinds retain their
+behavior, and the older two-kind resolve API is unchanged. Closed tabs or missing
+committed context fail; successful image reads add no reading/dictionary history
+or book selection.
+
+Image hover returns an explicit no-presentation marker without opening the file,
+including when the referenced image is missing. Legacy hover filename/status text
+is not implemented by this slice. No image bytes reach a hover preview.
+
+Normal Mac, ASan/UBSan, TSan and portable-on-Mac focused checks each pass 10/10:
+verse source/resource/C transport, existing content/note/hover/paired-passage
+regressions and prerequisite fixtures. C contextual takes are distinct/take-once;
+source-pane ownership differs intentionally from the navigation Bible. Native
+consuming image UI and complete visual/workflow acceptance remain next.

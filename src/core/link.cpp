@@ -247,6 +247,12 @@ ContextualStudyCommandLink contextual_link(const std::string &url, const std::st
   if (parameter(parameters, "action") == "showRef") return reference_list_target(parameters, current_module);
   if (parameter(parameters, "action") == "showStrongs" || parameter(parameters, "action") == "showMorph")
     return lexical_target(parameters, current_module);
+  if(parameter(parameters,"action")=="showImage"){
+    if(current_module.empty()||current_module.size()>4096||current_module.find('\0')!=std::string::npos||url.size()>32768)
+      throw std::invalid_argument("Image command requires bounded source context");
+    book_image_link(url); // Validate the command without reading any resource.
+    return VerseImageLink{current_module,url};
+  }
   return note_target(parameters, current_module, current_reference);
 }
 }

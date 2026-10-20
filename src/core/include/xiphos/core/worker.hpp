@@ -9,7 +9,7 @@ namespace xiphos::core {
 using StudyTab = std::uint64_t;
 struct StudyBatchSearch { std::shared_ptr<SearchControl> control; std::future<SearchBatchResult> result; };
 struct StudySearch { std::shared_ptr<SearchControl> control; std::future<SearchResult> result; };
-using ContextualStudyLink = std::variant<PassageLink, StudyNote, ReferenceList, LexicalEntry>;
+using ContextualStudyLink = std::variant<PassageLink, StudyNote, ReferenceList, LexicalEntry, VerseImageResource>;
 using ResolvedStudyLink = std::variant<PassageLink, StudyNote>;
 using StudyHoverLink = std::variant<std::monostate, StudyNote, ReferenceList, LexicalEntry>;
 struct DictionaryHistorySnapshot {

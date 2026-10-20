@@ -671,7 +671,10 @@ xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_req
  * preview after explicit tab lexicon configuration. Source context/URI must
  * be nonempty for this contextual API. No Bible history visit.
  * After XC_OK take_reference_list, take_link, take_note or take_lexical_entry
- * identifies the kind. Older resolve_study_link retains its two-kind contract. */
+ * identifies the kind. SDK showImage commands return take_verse_image with
+ * copied bytes owned by the actual source module, not a declared URI module.
+ * Image hover is no-presentation with no file read; filename status text remains
+ * a separate UI gate. Older resolve_study_link retains its two-kind contract. */
 /* Explicit click dispatch records successful lexical visits in dictionary
  * history; other command kinds retain preview/target behavior. No Bible visit.
  * Legacy Unicode-uppercase requested key is recorded; raw command metadata is retained. */

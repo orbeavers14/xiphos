@@ -8,6 +8,11 @@ buttons yet. Source failure/cancellation, stale IDs, capacity/output caps,
 order/duplicates and state neutrality stay explicit. See [retention](search-retention-workflows.md),
 [text export](search-text-export-workflows.md) and [HTML export](html-export-workflows.md).
 
+Shared verse image source bytes and copied C/Swift values are now checked; actual
+SDK image commands and typed reading-pane dispatch keep URI/native directory
+handling in C++. See [image contract](verse-image-workflows.md). Native reading
+image consumption is active next; HTML image embedding remains unsupported.
+
 Full Mac suite at `7e9ff93`: **154 passes + 1 explicit index skip** (155 registered,
 131.12 s), with desktop access for the isolated named-pasteboard test. Full portable suite at the same source checkpoint:
 **118 core/model passes + 1 skip on Mac** (119 registered, 89.70 s), GTK runtime OFF.

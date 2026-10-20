@@ -60,6 +60,22 @@ int main(int argc,char **argv){try{
   rejects<std::out_of_range>([&]{reader.read_verse_inline_image("Missing","original.png");});
   for(auto limit:{std::size_t{0},maximum_verse_image_bytes+1})rejects<std::invalid_argument>([&]{reader.read_verse_inline_image("ThMLText","original.png",limit);});
  }
+ {
+  StudyWorker worker(root.string());const auto tab=worker.create_tab().get();
+  const auto other=worker.create_tab().get();
+  const auto target=std::get<VerseImageLink>(contextual_study_link(worker_link,"OSISText","ThMLText"));
+  check(target.module=="OSISText"&&target.uri==worker_link,"Image classification preserves source pane rather than navigation Bible");
+  const auto followed=worker.follow_pane_link_at(tab,"ThMLText","OSISText","John1:2",worker_link).get();
+  check(std::get<VerseImageResource>(followed).data==image_test::bytes(),"Contextual click dispatch returns typed row-owned image bytes");
+  const auto resolved=worker.resolve_study_link_at(tab,"OSISText","John1:2",worker_link).get();
+  check(std::get<VerseImageResource>(resolved).source==worker_link,"Non-recording contextual dispatch shares the same image source");
+  // This generated command references a missing file. Hover must not try to read it.
+  const auto missing=image_test::attributes(worker.read_entry_snapshot(tab,"OSISText","John1:5").get().html,"a","href").at(0);
+  check(std::holds_alternative<std::monostate>(worker.hover_study_link_at(tab,"OSISText","John1:5",missing).get()),"Image hover performs no file read or body preview");
+  rejects<std::invalid_argument>([&]{worker.follow_study_link_at(tab,"OSISText","",worker_link).get();});
+  worker.close_tab(other).get();rejects<std::invalid_argument>([&]{worker.follow_study_link_at(other,"OSISText","John1:2",worker_link).get();});
+  check(worker.history(tab).get().entries.empty()&&worker.dictionary_history(tab).get().entries.empty()&&!worker.book_document_selection(tab).get(),"Image dispatch does not publish navigation/dictionary/book state");
+ }
  std::future<VerseImageResource> drained,clicked;
  {StudyWorker worker(root.string());auto submitted=worker_source;drained=worker.read_verse_inline_image("OSISText",submitted);clicked=worker.read_verse_image_link("OSISText",worker_link);submitted="unrelated.png";}
  check(clicked.get().source==worker_link&&drained.get().data==image_test::bytes()&&held.data==image_test::bytes(),"Accepted copied image sources drain and results outlive SDK owner");

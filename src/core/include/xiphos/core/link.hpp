@@ -12,7 +12,9 @@ LexicalLink lexical_link(const std::string &url, const std::string &current_modu
 struct PassageLink { std::string module, reference; };
 struct StudyNoteLink { std::string module, reference, identifier, type; };
 struct ReferenceListLink { std::string module, expression; };
-using ContextualStudyCommandLink = std::variant<PassageLink, StudyNoteLink, ReferenceListLink, LexicalLink>;
+// Image ownership follows the committed source pane, not a declared URI module.
+struct VerseImageLink {std::string module,uri;};
+using ContextualStudyCommandLink = std::variant<PassageLink, StudyNoteLink, ReferenceListLink, LexicalLink, VerseImageLink>;
 // showRef commands retain lists/ranges for rendering with explicit source context.
 ContextualStudyCommandLink contextual_study_link(const std::string &url, const std::string &current_module);
 // Main-pane sword/bible links default to the main Bible; note/lexical commands

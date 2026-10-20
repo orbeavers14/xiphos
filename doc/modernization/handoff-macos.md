@@ -173,3 +173,16 @@ and copied lifetime pass normal/ASan/UBSan/TSan/portable focused 4/4 each. Build
 and run `-R '^core_verse_image_source$|^core_verse_image_resource$|^core_book_image_resource$'`.
 This is new SDK-command behavior; old book filename semantics remain unchanged.
 Next copied command transport and typed reading-pane dispatch/native controls.
+
+## Typed reading-pane image dispatch
+
+Command source pushed at `3a1eeec`. Shared contextual classifier/follow/resolve
+now returns a distinct image source result; existing C requests expose
+`xc_request_take_verse_image` without a new frontend parser. Image hover is
+no-presentation with no file read; legacy filename status text remains pending.
+Normal, ASan/UBSan, TSan and portable-on-Mac focused suites pass 10/10 each. Build
+`core_verse_image_resource_test core_verse_image_c_test core_content_test core_study_note_test core_hover_test core_study_passage_test`
+and run `-R '^core_verse_image|^core_content$|^core_study_notes$|^core_hover$|^core_study_passage$'`.
+Next Swift typed result and native macOS image viewer consumption with model/window
+checks. Current Linux model safely reports unsupported image presentation; GTK
+image UI/runtime and Windows remain pending. No whole parity group is accepted.

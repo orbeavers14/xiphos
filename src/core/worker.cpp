@@ -50,6 +50,11 @@ struct StudyWorker::Impl {
       if (std::holds_alternative<LexicalLink>(target))
         return record_lexical ? session.visit_lexical(current_module, current_reference, uri, XIPHOS_LEXICON_MAIN)
                               : session.read_lexical(current_module, current_reference, uri, XIPHOS_LEXICON_MAIN);
+      if(const auto *image=std::get_if<VerseImageLink>(&target)){
+        if(current_reference.empty()||current_reference.find('\0')!=std::string::npos)
+          throw std::invalid_argument("Image command requires committed reading context");
+        return reader.read_verse_image_link(image->module,image->uri);
+      }
       return note_target(tab, std::get<StudyNoteLink>(target));
     }
   };
@@ -327,7 +332,7 @@ std::future<StudyHoverLink> StudyWorker::hover_study_link_at(StudyTab tab, std::
         current_reference.find('\0') != std::string::npos || uri.find('\0') != std::string::npos)
       throw std::invalid_argument("Hover requires copied source context and a valid URI");
     const auto target = xiphos::core::contextual_hover_link(uri, current_module, current_reference);
-    if (std::holds_alternative<PassageLink>(target) || std::holds_alternative<ReferenceListLink>(target))
+    if (std::holds_alternative<PassageLink>(target) || std::holds_alternative<ReferenceListLink>(target) || std::holds_alternative<VerseImageLink>(target))
       return std::monostate{};
     if (std::holds_alternative<LexicalLink>(target))
       return session.read_lexical(current_module, current_reference, uri, XIPHOS_LEXICON_MAIN);

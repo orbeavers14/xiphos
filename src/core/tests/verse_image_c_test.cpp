@@ -37,6 +37,12 @@ int main(int argc,char **argv){try{
  }
  check(xc_worker_read_verse_inline_image(worker,"Missing","original.png",1024,&request)==XC_OK&&wait(request)==XC_MODULE_NOT_FOUND&&!xc_request_take_verse_image(request),"Missing module has typed failure");xc_request_release(request);
  check(xc_worker_read_verse_inline_image(worker,"ThMLText","original.png",image_test::bytes().size()-1,&request)==XC_OK&&wait(request)==XC_INVALID_ARGUMENT&&!xc_request_take_verse_image(request),"One-byte-short data cap refuses truncation");xc_request_release(request);
+ check(xc_worker_create_tab(worker,&request)==XC_OK&&wait(request)==XC_OK,"Create C reading context");const auto tab=xc_request_tab(request);xc_request_release(request);
+ check(xc_worker_read_tab_entry(worker,tab,"OSISText","John1:2",&request)==XC_OK&&wait(request)==XC_OK,"Read actual SDK command source through C");auto *entry=xc_request_take_entry(request);xc_request_release(request);check(entry,"Owned source entry");
+ const auto link=image_test::attributes(xc_entry_html(entry),"a","href").at(0);xc_entry_release(entry);
+ check(xc_worker_follow_pane_link_at(worker,tab,"ThMLText","OSISText","John1:2",link.c_str(),&request)==XC_OK&&wait(request)==XC_OK,"Shared contextual C image dispatch");
+ auto *clicked=xc_request_take_verse_image(request);check(!xc_request_take_note(request)&&!xc_request_take_link(request)&&!xc_request_take_verse_image(request),"Image is a distinct take-once contextual result");xc_request_release(request);
+ check(clicked&&std::string(xc_verse_image_module(clicked))=="OSISText"&&std::string(xc_verse_image_source(clicked))==link&&data(clicked)==image_test::bytes(),"Contextual C bytes retain actual source module and command identity");xc_verse_image_release(clicked);
  check(xc_worker_read_verse_inline_image(worker,"ThMLText","empty.png",1024,&request)==XC_OK&&wait(request)==XC_OK,"Empty C image bytes succeed");auto *empty=xc_request_take_verse_image(request);xc_request_release(request);check(empty&&!xc_verse_image_size(empty)&&!xc_verse_image_bytes(empty),"Empty resource is distinct from missing result");xc_verse_image_release(empty);
  check(xc_worker_read_verse_inline_image(worker,"ThMLText","original.png",1024,&request)==XC_OK,"Detached read accepted");xc_request_release(request);
  check(xc_worker_read_verse_inline_image(worker,"ThMLText","a+b.png",1024,&request)==XC_OK,"Read accepted before shutdown");xc_worker_close(worker);
