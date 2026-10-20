@@ -62,6 +62,9 @@ PreparedExportHtml prepare_export_html(const EntryHtmlSource &source,std::size_t
     const std::string tag=reinterpret_cast<const char *>(node->name);
     if(tag=="img"||tag=="link"||tag=="source"||tag=="video"||tag=="audio"){out.issue=HtmlExportIssue::resources;return out;}
     if(!tags.count(tag)){out.issue=HtmlExportIssue::markup;return out;}
+    // Only body children enter the document. Reject wrapper context that would
+    // otherwise disappear (for example inherited right-to-left direction).
+    if((tag=="html"||tag=="head"||tag=="body")&&node->properties){out.issue=HtmlExportIssue::markup;return out;}
     if(tag=="body")body=node;
     for(auto *attribute=node->properties;attribute;attribute=attribute->next){
       const std::string name=reinterpret_cast<const char *>(attribute->name);

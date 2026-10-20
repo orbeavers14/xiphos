@@ -1,7 +1,7 @@
 # Initial shared HTML search documents
 
-Updated 2026-10-20. Checked C++ service for a restricted passive HTML subset.
-C/Swift HTML transport, native HTML save/clipboard, visual/browser acceptance,
+Updated 2026-10-20. Checked C++ service and copied C/Swift adapters for a restricted passive HTML subset.
+Native HTML save/clipboard, visual/browser acceptance,
 images/module CSS, full advanced headers and printing remain gates. See
 [text export](search-text-export-workflows.md), [configured sources](html-source-workflows.md)
 and [remaining work](search-export-design.md). No whole parity group is accepted.
@@ -44,6 +44,9 @@ of byte-identical browser repair across arbitrary module markup.
 Unsupported images/resources, inline styles, active/unknown markup, unrecognized
 stylesheets, unsafe/unsupported link schemes and reserved-class collisions reject
 the whole document with a typed issue. They are never silently dropped or fetched.
+Attributes on source html/head/body wrappers also reject: extracting only body
+children would otherwise lose inherited language, direction or style context.
+Fragment-local `dir`/`lang` remains attached to its content.
 Existing explicit image-off preferences still apply in the shared renderer. Core
 note/passage links may remain application/context dependent; self-contained note
 bodies, resource rewriting and semantic action export are separate gates.
@@ -114,3 +117,20 @@ explicit partial-source labels, typed unsupported images, cancellation and copie
 values after shutdown. Existing native text controls remain text-only; the shared
 status mapping includes the HTML unsupported case. No new HTML UI/browser or
 visual acceptance is implied by adapter tests.
+
+## Full adapter checkpoint and subsequent policy checks
+
+At `e8a8ec8`, full local suites passed 154 Mac checks plus one explicit index
+skip (155 registered, 130.04 s), and 118 portable core/model checks plus one skip
+on Mac (119 registered, 89.08 s, GTK runtime OFF). Desktop access was used for
+isolated named-pasteboard checks; no user clipboard content was read or changed.
+The local-file browser preview was rejected by URL protocol policy. No workaround,
+HTML visual acceptance or CSP runtime acceptance is claimed. Current Fedora/MSVC
+and full permitted-corpus checks remain separate gates.
+
+The wrapper-context correction passes 7 focused normal Mac checks, 6 ASan/UBSan
+and 6 TSan checks (HTML adapters, policy and prerequisite fixtures). Exact depth
+128/node-count 100,000 boundaries and one-beyond refusals pass independently in
+normal/ASan/UBSan/TSan policy checks; the subsequent portable-on-Mac focused run
+passes 6/6. Partial SDK instrumentation and leak-check exclusions still apply.
+Native-disabled C++11 helpers and pedantic C11 header compilation also pass.
