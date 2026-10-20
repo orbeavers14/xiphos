@@ -20,7 +20,7 @@ void check(bool ok,const char *message){if(!ok)throw std::runtime_error(message)
 int main(int argc,char **argv){try{
  check(argc==2,"Private original image-source fixture root required");const fs::path root=fs::path(argv[1])/fs::u8path("library %20 café");
  fs::create_directories(root/"mods.d");
- const std::vector<std::string> inputs{"original.png","caf%C3%A9.png","a+b.png","literal%2520.png","missing.png","../outside.png","https://example.invalid/original.png"};
+ const std::vector<std::string> inputs{"original.png","caf%C3%A9.png","a+b.png","literal%2520.png","missing.png","../outside.png","https://example.invalid/original.png","preview.png"};
  const std::vector<std::string> ids{"ThMLText","ThMLNotes","OSISText","OSISNotes"};
  for(const auto &id:ids){
   const auto data=root/"data"/id;fs::create_directories(data);
@@ -38,6 +38,7 @@ int main(int argc,char **argv){try{
   for(const auto &name:{std::string("original.png"),std::string("café.png"),std::string("a+b.png"),std::string("literal%20.png")}){
    std::ofstream file(data/fs::u8path(name),std::ios::binary);const auto bytes=image_test::bytes();file.write(bytes.data(),bytes.size());check(bool(file),"Write original binary resource");
   }
+  std::ofstream preview(data/"preview.png",std::ios::binary);const auto png=image_test::preview_png();preview.write(png.data(),png.size());check(bool(preview),"Write original PNG fixture");
   std::ofstream empty(data/"empty.png",std::ios::binary);
 
   std::ofstream config(root/"mods.d"/(id+".conf"));
@@ -55,7 +56,7 @@ int main(int argc,char **argv){try{
   EngineManager manager(root.string().c_str(),true,new sword::MarkupFilterMgr(sword::FMT_XHTML),false,false);
   for(const auto &id:ids){auto *module=manager.getModule(id.c_str());check(module,"Original image module installed");
    const auto *directory=module->getConfigEntry("AbsoluteDataPath");check(directory&&fs::equivalent(fs::u8path(directory),root/"data"/id),"Actual SDK resource context resolves to this row module's directory");
-   for(unsigned verse=1;verse<=7;++verse){const auto rendered=render_entry(*module,("John 1:"+std::to_string(verse)).c_str());const auto sources=images(rendered);
+   for(unsigned verse=1;verse<=inputs.size();++verse){const auto rendered=render_entry(*module,("John 1:"+std::to_string(verse)).c_str());const auto sources=images(rendered);
     const auto links=image_test::attributes(rendered,"a","href");
     check(links.size()==1,"SDK image has exactly one command link");
     const auto command=book_image_link(links[0]);

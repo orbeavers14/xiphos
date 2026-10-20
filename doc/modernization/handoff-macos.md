@@ -14,20 +14,18 @@ policy and NUL-path validation. One C++ FIFO SDK owner, copied values and origin
 GTK3 behavior/reference remain the architecture. No HTML controls were added.
 The only unrelated local file is `.DS_Store`; leave it untouched.
 
-Final full Mac recheck at `7e9ff93`: 154 passes + one explicit index skip
-(155 registered, 131.12 s), including isolated desktop-access pasteboard test.
-Final portable integration recheck at `7e9ff93`: 118 passes + one index skip
-(119 registered, 89.70 s), GTK runtime OFF. Both full builds/tests exited0.
-Focused source checks passed as recorded below. Source work is checked/pushed;
-this handoff records the clean checkpoint, with no shared source edits in flight.
+Latest integrated native image checkpoint: full Mac **159 passes + one explicit
+index skip** (160 registered, 134.30 s), with desktop access for the isolated
+pasteboard test. Portable models on Mac **121 passes + one skip** (122 registered,
+92.46 s), GTK runtime OFF. Both builds/tests exited0. Source work is sequential;
+preserve unrelated `.DS_Store`. No whole parity group or release is accepted.
 
-Active task: characterize and implement bounded owner-side Bible/commentary image
-resources; original source characterization now passes normal/ASan/UBSan/TSan.
-Next bounded task: implement resource ownership/path handling, then semantic
-links under the [resource export plan](resource-export-design.md), then define
-complete-or-failure opt-in resource support before native HTML destinations.
-Advanced headers/controls/settings, mixed families and complete workflow/corpus
-acceptance remain separate. Do not defer all native validation until a core freeze.
+Current task: shared verse image sources, C/Swift owned values, actual SDK command
+resolution and contextual dispatch are implemented; native Mac image preview is
+now checked in models and a disposable window. Next bounded task: complete-or-
+failure HTML resource policy with format/aggregate bounds, keeping current default
+unsupported behavior until checked. Inline reading resources, hover filename
+status text, full formats/corpus and GTK/Windows/native release gates remain.
 
 ## Implementation and scoped evidence
 
@@ -186,3 +184,16 @@ and run `-R '^core_verse_image|^core_content$|^core_study_notes$|^core_hover$|^c
 Next Swift typed result and native macOS image viewer consumption with model/window
 checks. Current Linux model safely reports unsupported image presentation; GTK
 image UI/runtime and Windows remain pending. No whole parity group is accepted.
+
+## Native reading image controls
+
+Shared dispatch source pushed at `c4336f6`. Swift typed image result and native
+Bible/commentary image sheet pass 9 focused checks plus the full suites above.
+The book/native thumbnail/view code is shared in renamed `ImagePreview.swift`.
+Model command: build `macos_reader_model_test macos_preview macos_verse_image_adapter_test macos_book_image_adapter_test core_verse_image_source_test`,
+then run `-R '^reader_model_verse_images$|^reader_model_book_images$|^swift_verse_image_adapter$|^swift_book_image_adapter$|^core_verse_image'`.
+Window check uses `sh platforms/macos/launch-fixture.sh build/macos verse-images`;
+select ThMLText, Read John1:8, click image, Close, leave draft John1:7, choose
+OSISNotes and click its John1:8 image, Escape, then click the invalid John1:1 image.
+Labels, original PNG, retained source/draft and failure message checked. App quit
+and only the disposable temp copy removed. No export-HTML browser workarounds.

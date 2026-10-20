@@ -116,6 +116,42 @@ struct ReaderModelSmoke {
         guard style.css.contains("Original café"), document.resourceCSS.contains(style.inlineCSS) else { fatalError("Swift CSS survives publication changes and shutdown") }
         print("Native module stylesheet ownership, safe inline CSS, empty/failed fallback and source separation passed")
     }
+    @MainActor static func verseImages(root: String) async throws {
+        let root = URL(fileURLWithPath: root).appendingPathComponent("library %20 café").path
+        let worker = try CoreWorker(root: root)
+        let model = ReaderModel(worker: worker, startupError: nil)
+        try await idle(model)
+        model.selection = "ThMLText"; model.reference = "John 1:8"; model.read(); try await idle(model)
+        let html = model.html, reference = model.renderedReference, back = model.canBack, forward = model.canForward
+        model.reference = "John 1:7" // An unsubmitted draft must survive the preview.
+        let uri = "passagestudy.jsp?action=showImage&value=file%3Apreview.png&module=OtherModule"
+        model.followLink(uri); try await idle(model)
+        guard let image = model.verseImage, image.source.module == "ThMLText", image.source.source == uri,
+              image.source.mediaType == "image/png", image.thumbnail.image.width == 8, image.thumbnail.image.height == 8,
+              model.html == html, model.renderedReference == reference, model.reference == "John 1:7",
+              model.canBack == back, model.canForward == forward else { fatalError("native image retains committed source, reading, draft and history") }
+        model.followLink("passagestudy.jsp?action=showImage&value=file%3Aoriginal.png"); try await idle(model)
+        guard model.verseImage?.id == image.id, model.html == html, !model.message.isEmpty else { fatalError("decoder failure preserves previous preview and reading") }
+        model.closeVerseImage(); guard model.verseImage == nil else { fatalError("native image Close") }
+        model.chooseCommentary("OSISNotes"); try await idle(model)
+        guard let commentary = model.commentaryEntry else { fatalError("original commentary image source") }
+        // Test fixture extraction only. The frontend's production link handling
+        // uses typed core dispatch and never parses command strings.
+        guard let start = commentary.html.range(of: "href=\""),
+              let end = commentary.html[start.upperBound...].firstIndex(of: "\"") else { fatalError("SDK commentary image command") }
+        let link = String(commentary.html[start.upperBound..<end]).replacingOccurrences(of: "&amp;", with: "&")
+        let main = model.html
+        model.followCommentaryLink(link); try await idle(model)
+        guard let commentImage = model.verseImage, commentImage.source.module == "OSISNotes",
+              commentImage.thumbnail.image.width == 8, model.html == main,
+              model.commentaryEntry?.html == commentary.html, model.reference == "John 1:7" else { fatalError("commentary image uses source pane rather than navigation Bible") }
+        model.closeVerseImage()
+        model.followLink(uri); model.close()
+        try await Task.sleep(nanoseconds: 50_000_000)
+        guard model.verseImage == nil else { fatalError("closed window suppresses pending native preview") }
+        await worker.shutdown()
+        print("Native verse/commentary image preview, shared dispatch, draft/history/failure/close checks passed")
+    }
     @MainActor static func bookImages(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let model = ReaderModel(worker: worker, startupError: nil)
@@ -1268,6 +1304,9 @@ struct ReaderModelSmoke {
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--book-stylesheets" {
             try await bookStylesheets(root: CommandLine.arguments[2]); return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--verse-images" {
+            try await verseImages(root: CommandLine.arguments[2]); return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--book-images" {
             try await bookImages(root: CommandLine.arguments[2]); return

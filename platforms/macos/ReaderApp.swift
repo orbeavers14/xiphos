@@ -21,6 +21,10 @@ private struct BookLinkError: LocalizedError {
     var errorDescription: String? { "Unable to open this link in the displayed book." }
 }
 
+private struct ReadingImageError: LocalizedError {
+    var errorDescription: String? { "Unable to display this image." }
+}
+
 private struct ReadingOptionImportError: LocalizedError {
     var errorDescription: String? { "Unable to import reading options. Choose a readable Xiphos modops.conf file." }
 }
@@ -49,6 +53,7 @@ final class ReaderModel: ObservableObject {
     @Published private(set) var commentaryContentOptions = ContentDisplayOptions.unknown
     @Published private(set) var showingBook = false
     @Published private(set) var bookImage: BookImagePreview?
+    @Published private(set) var verseImage: VerseImagePreview?
     @Published private(set) var bookNote: RenderedBookNote?
     @Published private(set) var bookDocument: RenderedBookDocument?
     var bookEntry: RenderedBookEntry? { bookDocument?.sections.first?.entry }
@@ -113,7 +118,7 @@ final class ReaderModel: ObservableObject {
         isPreviewLoading = false
         informationPreview = nil
         informationNote = nil
-        bookImage = nil
+        bookImage = nil; verseImage = nil
         if let worker, let tab {
             self.tab = nil
             Task { try? await worker.closeTab(tab) }
@@ -413,6 +418,7 @@ final class ReaderModel: ObservableObject {
         }
     }
     func showBookNoteLink(_ uri: String) { followBookLink(uri) }
+    func closeVerseImage() { guard !closed, !isBusy else { return }; verseImage = nil }
     func closeBookImage() { guard !closed, !isBusy else { return }; bookImage = nil }
     func followBookLink(_ uri: String) {
         guard !closed, !isBusy, let worker, let tab, bookDocument != nil else { return }
@@ -681,6 +687,12 @@ final class ReaderModel: ObservableObject {
         let context = currentReference ?? displayedEntry.reference
         run { token in
             switch try await worker.followStudyLinkAt(tab: tab, currentModule: module, currentReference: context, uri: uri, navigationModule: navigationModule) {
+            case .image(let source):
+                let preview: VerseImagePreview
+                do { preview = try await VerseImagePreview.decode(source) }
+                catch { throw ReadingImageError() }
+                guard token == self.revision && !self.closed else { return }
+                self.verseImage = preview; self.message = ""
             case .note(let note):
                 guard token == self.revision && !self.closed else { return }
                 self.referencePreview = nil
@@ -1272,6 +1284,9 @@ struct ReaderWindow: View {
             .onChange(of: model.selection) { _ in model.selectionChanged() }
             .onChange(of: model.verseNumbers) { _ in model.refreshDisplay() }
             .onChange(of: model.highlightSelected) { _ in model.refreshDisplay() }
+            .sheet(item: Binding(get: { model.verseImage }, set: { if $0 == nil { model.closeVerseImage() } })) { image in
+                VerseImagePreviewView(image: image, close: model.closeVerseImage)
+            }
             .sheet(isPresented: $model.showLexiconPreferences) {
                 if let preferences = model.lexiconPreferences { LexiconPreferencesView(model: model, preferences: preferences) }
             }

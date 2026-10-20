@@ -897,6 +897,10 @@ actor CoreWorker {
             defer { xc_lexical_entry_release(result) }
             return .lexical(CoreValues.lexicalEntry(result))
         }
+        if let result = xc_request_take_verse_image(completed) {
+            defer { xc_verse_image_release(result) }
+            return .image(CoreValues.verseImage(result))
+        }
         guard let result = xc_request_take_link(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
         defer { xc_link_release(result) }
         return .passage(PassageTarget(module: String(cString: xc_link_module(result)!),

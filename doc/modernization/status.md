@@ -10,15 +10,16 @@ order/duplicates and state neutrality stay explicit. See [retention](search-rete
 
 Shared verse image source bytes and copied C/Swift values are now checked; actual
 SDK image commands and typed reading-pane dispatch keep URI/native directory
-handling in C++. See [image contract](verse-image-workflows.md). Native reading
-image consumption is active next; HTML image embedding remains unsupported.
+handling in C++. See [image contract](verse-image-workflows.md). Native Mac reading
+image preview is now checked in scoped models/window; HTML image embedding and
+inline reading resources remain unsupported.
 
-Full Mac suite at `7e9ff93`: **154 passes + 1 explicit index skip** (155 registered,
-131.12 s), with desktop access for the isolated named-pasteboard test. Full portable suite at the same source checkpoint:
-**118 core/model passes + 1 skip on Mac** (119 registered, 89.70 s), GTK runtime OFF.
-Focused normal/ASan/UBSan/TSan/C11 evidence lives in the contracts and handoff.
-SDK dependencies are partly instrumented and ASan leaks off. Current Fedora/MSVC,
-actual SDK index execution and full corpus acceptance remain open.
+Latest integrated native image checkpoint: **159 Mac passes + 1 explicit index
+skip** (160 registered, 134.30 s), with desktop access for isolated pasteboard
+checks; **121 portable core/model passes + 1 skip on Mac** (122 registered,
+92.46 s), GTK runtime OFF. Scoped normal/ASan/UBSan/TSan/C11 evidence lives in the
+contracts/handoff. Dependencies are partly instrumented; ASan leaks off.
+Current Fedora/MSVC, actual indexed execution and full corpus acceptance remain open.
 
 Configured HTML sources reuse live rendering without publishing learned display
 choices. The real ThML counted-terminal-NUL convention is handled explicitly.

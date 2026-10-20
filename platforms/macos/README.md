@@ -381,3 +381,14 @@ HTML service; no native HTML buttons are exposed yet. See the
 [HTML contract](../../doc/modernization/html-export-workflows.md). Native HTML
 destinations, assets/semantic links, browser/visual checks, printing, full corpus
 and complete export parity remain pending.
+
+
+Bible and commentary image links now consume typed core-owned image bytes in a
+native sheet, with background ImageIO thumbnails and Close/Escape. The existing
+book viewer shares the same native image component. URI/path/resource policy
+stays in C++; no frontend command parser was added. See the
+[image contract](../../doc/modernization/verse-image-workflows.md) for copied
+lifetime, exact scoped model/window checks and remaining format/corpus/platform
+gates. `sh platforms/macos/launch-fixture.sh build/macos verse-images` launches
+only the generated original-prose image fixture in a disposable temp copy.
+Exported/inline reading images and complete native workflow acceptance remain pending.

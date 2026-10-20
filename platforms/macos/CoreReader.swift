@@ -315,6 +315,7 @@ struct ReferenceChoices: Sendable {
 }
 struct PassageTarget: Sendable { let module: String; let reference: String }
 enum ContextualStudyLink: Sendable {
+    case image(RenderedVerseImage)
     case passage(PassageTarget)
     case note(RenderedStudyNote)
     case references(RenderedReferenceList)

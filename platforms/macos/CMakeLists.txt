@@ -58,7 +58,7 @@ endforeach()
 set(adapter "${CMAKE_CURRENT_SOURCE_DIR}/CoreReader.swift" "${CMAKE_CURRENT_SOURCE_DIR}/CoreWorker.swift")
 set(preview_sources
   "${CMAKE_CURRENT_SOURCE_DIR}/ReaderApp.swift" "${CMAKE_CURRENT_SOURCE_DIR}/BookPane.swift"
-  "${CMAKE_CURRENT_SOURCE_DIR}/BookImagePreview.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SearchModel.swift"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ImagePreview.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SearchModel.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/SearchPane.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SearchExportDestination.swift")
 set(swift_cache "${CMAKE_CURRENT_BINARY_DIR}/swift-cache")
 set(swift_target "${CMAKE_SYSTEM_PROCESSOR}-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET}")
@@ -151,6 +151,8 @@ if(BUILD_TESTING)
   set_tests_properties(reader_model_book_note_numbers PROPERTIES FIXTURES_REQUIRED book_note_document_fixture TIMEOUT 30)
   add_test(NAME reader_model_book_stylesheets COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --book-stylesheets "${CMAKE_CURRENT_BINARY_DIR}/core/book-stylesheet-fixture")
   set_tests_properties(reader_model_book_stylesheets PROPERTIES FIXTURES_REQUIRED book_stylesheet_fixture TIMEOUT 30)
+  add_test(NAME reader_model_verse_images COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --verse-images "${CMAKE_CURRENT_BINARY_DIR}/core/verse-image-source-fixture")
+  set_tests_properties(reader_model_verse_images PROPERTIES FIXTURES_REQUIRED verse_image_fixture TIMEOUT 30)
   add_test(NAME reader_model_book_images COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --book-images "${CMAKE_CURRENT_BINARY_DIR}/core/book-image-fixture")
   set_tests_properties(reader_model_book_images PROPERTIES FIXTURES_REQUIRED book_image_resource_fixture TIMEOUT 30)
   add_test(NAME reader_model_book_presentation COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --book-presentation "${CMAKE_CURRENT_BINARY_DIR}/core/book-document-presentation-fixture")

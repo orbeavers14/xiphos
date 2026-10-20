@@ -26,10 +26,10 @@ settings are per tab and physical SDK filters restore on every job. One FIFO
 owner handles batches, progress/Stop, scope and copied values. See the consolidated
 [current search contract](search-workflows.md); chronology remains in Git.
 
-Full Mac suite at `7e9ff93`: **154 passes + 1 explicit index
-skip** (155 registered), 131.12 s, with desktop access for the isolated AppKit
-pasteboard test. Full portable/core models at the same source checkpoint on Mac:
-**118 passes + 1 index skip** (119 registered), 89.70 s, GTK runtime OFF. Current Fedora/MSVC acceptance remains separate.
+Latest integrated native image checkpoint: **159 Mac passes + 1 index skip**
+(160 registered, 134.30 s), with desktop access for the isolated pasteboard test;
+**121 portable/core model passes + 1 skip on Mac** (122 registered, 92.46 s),
+GTK runtime OFF. Current Fedora/MSVC acceptance remains separate.
 Detailed normal/sanitizer/C11 evidence lives in the contracts and platform handoff.
 Actual-index diagnostic `a3dcae8` still has no usable SDK framework; optional probe
 skips, required-index negative control fails as expected. No actual indexed
@@ -78,6 +78,12 @@ filesystem policy is extracted at `ff46f9b` with NUL-path guards at `7e9ff93`;
 [reuse audit](resource-export-design.md) defines the next bounded source contract.
 Keep actual indexed execution, advanced controls/mixed families/settings and other
 core services separate. No hosted jobs or reset credit used.
+
+Shared verse image source/command services, C/Swift values and typed reading-pane
+dispatch are checked through `c4336f6`. Native Mac image preview now passes scoped
+models/window checks using the same source owner and a reused native viewer.
+See [image contract](verse-image-workflows.md). HTML exported images and complete
+inline-image/hover/format/corpus/platform workflows remain pending.
 
 ## Platform responsibilities and immediate next tasks
 

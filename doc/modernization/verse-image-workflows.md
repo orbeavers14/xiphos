@@ -1,7 +1,7 @@
 # Owned Bible and commentary image resources
 
 Updated 2026-10-20. This checked C++ source service reads copied bytes; it does not
-embed images in HTML, decode pixels or add native image controls.
+embed images in HTML or decode pixels. Native controls consume it separately below.
 
 `Reader::read_verse_inline_image` and its FIFO `StudyWorker` command accept an
 actual module ID, rendered image source and positive byte cap (default/ceiling
@@ -108,7 +108,8 @@ images agree; it does not silently redefine the old book/manual-filename API.
 Legacy hover filename/status-bar presentation and complete native interaction
 parity remain separate gates.
 
-Actual generated links for all 28 original rows are characterized. Successful
+Actual generated links for the initial 28 original rows are characterized; four
+additional original PNG rows now exercise native decoding. Successful
 image commands and inline sources produce the same owned bytes, including Unicode,
 literal-percent and plus filenames. Alternate declared modules cannot redirect
 them; missing/parent/network-looking sources refuse. Copied FIFO command requests
@@ -136,3 +137,31 @@ verse source/resource/C transport, existing content/note/hover/paired-passage
 regressions and prerequisite fixtures. C contextual takes are distinct/take-once;
 source-pane ownership differs intentionally from the navigation Bible. Native
 consuming image UI and complete visual/workflow acceptance remain next.
+
+## Native macOS reading image preview
+
+Swift contextual link results now copy the typed image handle. The reading model
+uses that value directly; it does not inspect command strings or choose resource
+roots. Bible and commentary actions open a native image sheet after background
+ImageIO thumbnail decoding (maximum thumbnail side 2048). Reading source, draft
+reference, navigation/history and commentary remain intact. Decode failure keeps
+an existing preview, and closed/stale windows cannot publish a later preview.
+The existing book viewer and new reading viewer share `ImagePreview.swift`, with
+unchanged book source metadata/label/Close behavior. The former book-only file
+was renamed, not retired as legacy functionality.
+
+Nine focused Mac model/adapter/core/fixture checks pass. A disposable native window
+verified a real original 8x8 PNG from the Bible and OSIS commentary, correct source
+module labels, visible image/Close layout, Close and Escape, draft `John 1:7`
+retention while rendered `John 1:8` remained, and a decode failure without
+navigation. The generated app/fixture was quit and its temporary copy removed.
+No clipboard or user module/profile data was used. `launch-fixture.sh ... verse-images`
+recreates this scoped window check.
+
+Full integrated local suites pass **159 Mac checks + one index skip** (160
+registered, 134.30 s) and **121 portable core/model checks + one skip on Mac**
+(122 registered, 92.46 s), GTK runtime OFF. The isolated named-pasteboard test uses
+desktop access. These are not current Fedora/MSVC or full corpus/format/input/
+accessibility/visual acceptance. Inline reading images, HTML exported images,
+legacy hover filename text and full native platform workflows remain pending.
+The earlier blocked export-HTML browser preview was not reopened or worked around.
