@@ -371,4 +371,9 @@ uses the existing main-pane navigation. Clear last only clears retained scope.
 `launch-fixture.sh build/macos search` uses generated original prose. Model and
 window evidence, capacity limits and remaining search gates are in the
 [search contract](../../doc/modernization/search-workflows.md). Scope persistence,
-advanced/attribute/index/multiple-module controls, settings and export are still pending.
+advanced/attribute/index/multiple-module controls and saved settings remain pending.
+The native Export text menu now consumes shared selected/all retained text,
+Include scripture, progress/Stop, clipboard and save dialog. See the
+[text export contract](../../doc/modernization/search-text-export-workflows.md)
+for identity/capacity limits, desktop-access test requirements and actual window
+evidence. HTML/printing, full corpus and complete export parity remain pending.

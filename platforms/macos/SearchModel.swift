@@ -32,9 +32,17 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     @Published private(set) var isSearching = false
     @Published private(set) var isPreviewLoading = false
     @Published private(set) var isClearing = false
+    @Published private(set) var isExporting = false
+    @Published var exportScripture = false
     @Published private(set) var message = "Enter text to search."
-    var isBusy: Bool { isSearching || isPreviewLoading || isClearing }
+    var isBusy: Bool { isSearching || isPreviewLoading || isClearing || isExporting }
     var canSearch: Bool { !isBusy && !module.isEmpty && !expression.isEmpty }
+    var canExportSelected: Bool {
+        !closed && !isBusy && result?.generation.id != nil && result?.generation.id != 0 && hits.contains { $0.id == selection }
+    }
+    var canExportAll: Bool {
+        !closed && !isBusy && !hits.isEmpty && result?.generation.id != nil && result?.generation.id != 0
+    }
     private var worker: CoreWorker?
     private var tab: UInt64?
     private var revision: UInt64 = 0
@@ -52,9 +60,9 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     func close() {
         guard !closed else { return }
         closed = true; revision &+= 1; task?.cancel(); task = nil
-        isSearching = false; isPreviewLoading = false; isClearing = false
+        isSearching = false; isPreviewLoading = false; isClearing = false; isExporting = false
     }
-    func stop() { if isSearching { task?.cancel() } }
+    func stop() { if isSearching || isExporting { task?.cancel() } }
     func search() {
         guard !closed, canSearch, let worker, let tab else { return }
         let submittedModule = module, submittedExpression = expression, submittedMode = mode
@@ -107,7 +115,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
         preview = entry; previewSource = hit; isPreviewLoading = false
     }
     func select(_ id: Int?) {
-        guard !closed, !isSearching, !isClearing, let worker, let tab, let hit = hits.first(where: { $0.id == id }) else { return }
+        guard !closed, !isSearching, !isClearing, !isExporting, let worker, let tab, let hit = hits.first(where: { $0.id == id }) else { return }
         if selection == hit.id && previewSource == hit { return }
         task?.cancel()
         revision &+= 1; let token = revision
@@ -119,6 +127,53 @@ struct SearchHit: Identifiable, Sendable, Equatable {
             catch { if !self.closed && self.revision == token { self.message = error.localizedDescription } }
         }
     }
+    func exportText(allMatches: Bool, completion: @escaping @MainActor (RenderedSearchTextExport) -> Void) {
+        guard allMatches ? canExportAll : canExportSelected, let worker, let tab, let source = result else { return }
+        let selected = selection, includeScripture = exportScripture
+        // Capture displayed result identity and original query, never editable drafts
+        // or a subsequently queried latest generation. Core rejects stale identity.
+        let title = "Search results: \(source.expression)"
+        revision &+= 1; let token = revision
+        isExporting = true; progress = nil; message = "Preparing search text…"
+        task = Task { [weak self] in
+            guard let self, !self.closed else { return }
+            defer { if !self.closed && self.revision == token { self.isExporting = false; self.task = nil } }
+            do {
+                let callback: @Sendable (CoreSearchProgress) async -> Void = { [weak self] progress in
+                    await self?.receive(progress, token: token)
+                }
+                let payload: RenderedSearchTextExport
+                if allMatches {
+                    payload = try await worker.exportSearchAllText(tab: tab, generation: source.generation.id,
+                        title: title, includeScripture: includeScripture, returnCancelledResults: true, onProgress: callback)
+                } else {
+                    guard let selected else { return }
+                    payload = try await worker.exportSearchVisibleText(tab: tab, generation: source.generation.id,
+                        rows: [CoreSearchVisibleRow(group: 0, row: selected)], title: title, includeScripture: includeScripture,
+                        returnCancelledResults: true, onProgress: callback)
+                }
+                guard !self.closed, self.revision == token else { return }
+                // A late completion may win a stop in the core. A stopped native
+                // action still must not unexpectedly open a dialog/write clipboard.
+                guard !Task.isCancelled else { self.message = "Export stopped."; return }
+                switch payload.status {
+                case .success:
+                    self.message = "Search text ready."
+                    self.isExporting = false
+                    completion(payload)
+                case .cancelled: self.message = "Export stopped."
+                case .stale: self.message = "Search results changed. Run the search again before exporting."
+                case .invalidSelection: self.message = "Select a search passage to export."
+                case .outputLimit: self.message = "Search text is too large to export. Select a passage instead."
+                case .capacityExceeded: self.message = "Complete search results are unavailable. Export a selected passage instead."
+                case .sourceIncomplete: self.message = "The search stopped or some modules failed. Export a selected passage or run the search again."
+                case .moduleNotFound: self.message = "A searched module is no longer available. Run the search again."
+                case .engineError: self.message = "Unable to prepare search text. Try the search again."
+                }
+            } catch { if !self.closed && self.revision == token { self.message = error.localizedDescription } }
+        }
+    }
+    func exportDestinationMessage(_ text: String) { if !closed { message = text } }
     func clearScope() {
         guard !closed, !isBusy, let worker, let tab else { return }
         revision &+= 1; let token = revision; isClearing = true

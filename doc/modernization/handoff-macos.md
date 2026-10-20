@@ -6,7 +6,8 @@ Updated 2026-10-20. Read [AGENTS.md](../../AGENTS.md), the
 
 Active task (2026-10-20, master): retained generations and selected visible text
 export are checked/pushed through `ec26889`; selected-export full Mac recheck and current portable-on-Mac checks pass.
-Next native selected save/copy and complete retained text export; local checks only.
+Native selected/all text save/copy is now checked below. Next shared work is
+remaining search/export correctness and HTML/corpus seams; local checks only.
 Checkpoint sections below preserve their original scoped evidence; earlier next
 steps are superseded by this active entry.
 
@@ -15,6 +16,21 @@ Previous checked handoff (2026-10-18, master): shared search advances checked/pu
 retained search-result generations before bounded export. Continue
 bounded shared-core slices with local checks. Preserve unrelated files/GTK3.
 All source changes are committed/pushed at this checkpoint; no shared source edits remain in flight. This is not a concurrent ownership lease.
+
+## Native text actions checkpoint (2026-10-20)
+
+C++ complete export `b7dafd4`, C `1bb2615`, Swift `80589a4` are pushed. Native
+selected/all text menu, scripture toggle, progress/Stop, copied result identity,
+clipboard and save dialog now consume those services. Full local Mac: 148 passes
++ 1 explicit index skip (149 registered), 126.84 s, with desktop access for an
+isolated named-pasteboard check. Restricted pasteboard runs failed, then desktop
+rerun passed; do not count the restricted attempts as passed. Temporary-file atomic
+replacement and failed-payload preservation pass; general clipboard untouched.
+Disposable window/AX and save checks confirmed ordered 199-byte original-prose
+UTF-8 scripture export and selected dialog Cancel. Initial crowded labels were
+moved onto a separate Export row and rechecked. See [the detailed contract](search-text-export-workflows.md).
+Native HTML/print, advanced controls, corpus/physical input/accessibility remain.
+No hosted job/reset credit, new Fedora/MSVC claim or legacy source retirement.
 
 ## Swift complete-result transport checkpoint (2026-10-20)
 

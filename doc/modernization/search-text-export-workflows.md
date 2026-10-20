@@ -158,3 +158,42 @@ exact Unicode bytes and row caps, reject incomplete source by default, accept it
 explicitly while keeping failure metadata, distinguish unavailable versus stale,
 validate invalid bounds, and preserve copied values after shutdown. Native
 save/copy actions, HTML/printing and broad corpus/platform gates remain open.
+
+## Native Mac text actions checkpoint (2026-10-20)
+
+The Search sidebar consumes the shared selected/all text services through native
+Export text menus, Include scripture, progress/Stop, clipboard and save dialog.
+It captures displayed generation/row/query identity before submission, never an
+edited draft or a re-queried latest ID. Stale/incomplete/capacity/limit failures
+produce user-facing status and no destination action. Stop suppresses the native
+action even if core completion wins; closing the window suppresses later delivery.
+No formatting, search rerun or selection expansion lives in the frontend.
+
+Only successful owned payloads reach destinations. AppKit writes the plain string
+to a clipboard; Foundation atomic UTF-8 file replacement runs off the main actor
+after the native save dialog returns a chosen URL. Cancelling the dialog writes
+nothing. A document prepared before a later search stays its original snapshot;
+the save dialog explicitly describes that timing. Destination errors remain plain
+status, and source histories/selection/search are independent. Printing/HTML and
+saved export settings remain separate work.
+
+The native model/destination test uses a uniquely named isolated pasteboard and
+disposable files, preserving the user's general clipboard and files. It checks
+selected/all identity, drafts, source/state neutrality, exact bytes, failed-payload
+refusal without changing destinations, stale ID, Stop and closure. The restricted
+shell cannot write AppKit pasteboards: initial restricted runs failed with the
+clipboard error; the desktop-access rerun passed 2/2 including fixture. These are
+not accepted as successful restricted runs. A test-patch anchor mismatch was fixed
+by adding a separate focused smoke test rather than enlarging the reader model test.
+
+Window/AX checks on an original-prose disposable fixture verified enabled/disabled
+menu actions, selected preview, full labels at the narrow sidebar width, scripture
+choice, all-results save dialog, successful 199-byte UTF-8 output with every first/
+subsequent ordered fixture row, selected-save dialog and Cancel leaving the earlier
+file unchanged. The first toolbar layout crowded labels; Export moved to its own
+row and the window was rechecked. Clipboard destination is checked through the
+isolated AppKit test, not by replacing the user's general clipboard in the window.
+Full final local Mac suite passed 148 checks + 1 explicit index skip (149 registered),
+126.84 s, with desktop access. Existing deprecation warnings remain. No current
+Fedora GTK/MSVC/WinUI acceptance, actual index execution, representative corpus/
+accessibility/physical-input completion or whole feature group is claimed.

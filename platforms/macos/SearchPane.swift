@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 import SwiftUI
+import AppKit
+import UniformTypeIdentifiers
 
 struct SearchPane: View {
     @ObservedObject var model: SearchModel
@@ -32,8 +34,8 @@ struct SearchPane: View {
                 Toggle("Case sensitive", isOn: $model.caseSensitive)
             }.disabled(model.isBusy || hostBusy)
             HStack {
-                if model.isSearching {
-                    Button("Stop") { model.stop() }.accessibilityLabel("Stop search")
+                if model.isSearching || model.isExporting {
+                    Button("Stop") { model.stop() }.accessibilityLabel(model.isExporting ? "Stop export" : "Stop search")
                 } else {
                     Button("Search") { model.search() }.disabled(!model.canSearch || hostBusy)
                 }
@@ -42,9 +44,21 @@ struct SearchPane: View {
                     .disabled(model.isBusy || hostBusy || !model.scope.present)
                     .help("Clear the scope used by Search within last results")
             }
-            if model.isSearching {
+            HStack {
+                Menu("Export text") {
+                    Button("Copy selected passage") { export(all: false, save: false) }.disabled(!model.canExportSelected)
+                    Button("Save selected passage…") { export(all: false, save: true) }.disabled(!model.canExportSelected)
+                    Divider()
+                    Button("Copy all search matches") { export(all: true, save: false) }.disabled(!model.canExportAll)
+                    Button("Save all search matches…") { export(all: true, save: true) }.disabled(!model.canExportAll)
+                    Divider()
+                    Toggle("Include scripture", isOn: $model.exportScripture)
+                }.disabled(model.isBusy || hostBusy || model.hits.isEmpty).accessibilityLabel("Export search text")
+                Spacer()
+            }
+            if model.isSearching || model.isExporting {
                 ProgressView(value: Double(model.progress?.percent ?? 0), total: 100)
-                    .accessibilityLabel("Search progress")
+                    .accessibilityLabel(model.isExporting ? "Export progress" : "Search progress")
             }
             Text(model.message).font(.caption).foregroundStyle(.secondary).accessibilityLabel("Search status: \(model.message)")
             VSplitView {
@@ -54,7 +68,7 @@ struct SearchPane: View {
                             Text(hit.reference).tag(hit.id).contentShape(Rectangle())
                                 .onTapGesture(count: 2) { if canRead && !hostBusy { onRead(hit.reference) } }
                         }
-                    }.accessibilityLabel("Search results").disabled(model.isSearching || model.isClearing || hostBusy)
+                    }.accessibilityLabel("Search results").disabled(model.isSearching || model.isClearing || model.isExporting || hostBusy)
                     Button("Read in main pane") {
                         if let hit = model.hits.first(where: { $0.id == model.selection }) { onRead(hit.reference) }
                     }.disabled(model.isBusy || hostBusy || !canRead || model.selection == nil)
@@ -70,4 +84,32 @@ struct SearchPane: View {
             }
         }.padding(8)
     }
+    private func export(all: Bool, save: Bool) {
+        model.exportText(allMatches: all) { payload in
+            if save { chooseSaveFile(payload) }
+            else {
+                do {
+                    try SearchExportDestination.copy(payload)
+                    model.exportDestinationMessage(payload.selection == .visible ? "Selected passage copied." : "Search matches copied.")
+                } catch { model.exportDestinationMessage(error.localizedDescription) }
+            }
+        }
+    }
+    private func chooseSaveFile(_ payload: RenderedSearchTextExport) {
+        let panel = NSSavePanel()
+        panel.title = payload.selection == .visible ? "Save selected search passage" : "Save search matches"
+        panel.message = "Save the search text from when you chose Export."
+        panel.allowedContentTypes = [.plainText]
+        panel.nameFieldStringValue = "Xiphos search results.txt"
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            Task {
+                do {
+                    try await SearchExportDestination.save(payload, to: url)
+                    model.exportDestinationMessage("Search text saved.")
+                } catch { model.exportDestinationMessage(error.localizedDescription) }
+            }
+        }
+    }
+
 }

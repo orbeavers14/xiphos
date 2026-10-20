@@ -59,7 +59,7 @@ set(adapter "${CMAKE_CURRENT_SOURCE_DIR}/CoreReader.swift" "${CMAKE_CURRENT_SOUR
 set(preview_sources
   "${CMAKE_CURRENT_SOURCE_DIR}/ReaderApp.swift" "${CMAKE_CURRENT_SOURCE_DIR}/BookPane.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/BookImagePreview.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SearchModel.swift"
-  "${CMAKE_CURRENT_SOURCE_DIR}/SearchPane.swift")
+  "${CMAKE_CURRENT_SOURCE_DIR}/SearchPane.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SearchExportDestination.swift")
 set(swift_cache "${CMAKE_CURRENT_BINARY_DIR}/swift-cache")
 set(swift_target "${CMAKE_SYSTEM_PROCESSOR}-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET}")
 set(app "${CMAKE_CURRENT_BINARY_DIR}/XiphosNativePreview.app")
@@ -130,6 +130,17 @@ if(BUILD_TESTING)
       Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h
     VERBATIM)
   add_custom_target(macos_reader_model_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke")
+  add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/search_export_smoke"
+    COMMAND ${SWIFTC} -swift-version 6 -D XIPHOS_PREVIEW_TEST -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
+      -I "${bridge}" ${adapter} ${preview_sources} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/SearchExportSmoke.swift"
+      "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
+      ${sword_link_flags} -lc++ -framework SwiftUI -framework AppKit -framework WebKit
+      -o "${CMAKE_CURRENT_BINARY_DIR}/search_export_smoke"
+    DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift ${preview_sources} Tests/SearchExportSmoke.swift
+      Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h VERBATIM)
+  add_custom_target(macos_search_export_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/search_export_smoke")
+  add_test(NAME reader_model_search_export COMMAND "${CMAKE_CURRENT_BINARY_DIR}/search_export_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/search-fixture")
+  set_tests_properties(reader_model_search_export PROPERTIES FIXTURES_REQUIRED search_fixture TIMEOUT 60)
   add_test(NAME reader_model_search COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --search "${CMAKE_CURRENT_BINARY_DIR}/core/search-fixture")
   set_tests_properties(reader_model_search PROPERTIES FIXTURES_REQUIRED search_fixture TIMEOUT 30)
   add_test(NAME reader_model COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/fixture")
