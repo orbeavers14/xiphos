@@ -21,7 +21,9 @@ Final portable integration recheck at `7e9ff93`: 118 passes + one index skip
 Focused source checks passed as recorded below. Source work is checked/pushed;
 this handoff records the clean checkpoint, with no shared source edits in flight.
 
-Next bounded task: characterize original Bible/commentary image context/semantic
+Active task: characterize and implement bounded owner-side Bible/commentary image
+resources; original source characterization now passes normal/ASan/UBSan/TSan.
+Next bounded task: implement resource ownership/path handling, then semantic
 links under the [resource export plan](resource-export-design.md), then define
 complete-or-failure opt-in resource support before native HTML destinations.
 Advanced headers/controls/settings, mixed families and complete workflow/corpus
@@ -117,3 +119,14 @@ chronology/commands remain in the contracts and [prior handoff](https://github.c
 No hosted jobs or reset credit used. Remote audit shows builds/native-core paused,
 linux-core manual-only and latest jobs October15. Current Mac portable-model
 checks are not new Fedora or native Windows acceptance. No legacy source retires.
+
+## Verse image-source characterization
+
+New `core_verse_image_source` creates isolated original RawText/RawCom ThML/OSIS
+modules and checks SDK directory/source behavior, image-off/settings neutrality
+and history. Normal/ASan/UBSan/TSan pass 1/1 each. Configure the existing three
+build directories, build `core_verse_image_source_test`, then
+`ctest --test-dir <build> --output-on-failure -R '^core_verse_image_source$'`
+(with `ASAN_OPTIONS=detect_leaks=0` for address/undefined). This is characterization,
+not new HTML-image or native/browser acceptance. Source policy details live in
+[resource export design](resource-export-design.md).

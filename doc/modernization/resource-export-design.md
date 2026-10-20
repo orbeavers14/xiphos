@@ -61,3 +61,22 @@ silently address a prefix. Original-file checks verify exact resolution and
 refusal even in missing-is-absent mode. Normal Mac 4/4, ASan/UBSan 3/3 and TSan
 3/3 image/stylesheet checks pass including prerequisite fixtures. No new public
 API or module-family/image-export support is implied.
+
+## Verse-source characterization (2026-10-20)
+
+A private original-prose fixture creates RawText and RawCom modules in both ThML
+and OSIS, then observes actual SWORD XHTML rendering and `AbsoluteDataPath`.
+ThML leaves image source strings unchanged. OSIS prepends `file:` and the exact
+SDK data directory to every tested source, including parent traversal, missing
+files and a network-looking string. Percent escapes and literal plus signs are
+not decoded by either renderer. This is observed SDK behavior, not permission to
+fetch a URL or bypass containment. The future adapter must keep row-module origin
+and must not percent-decode an SDK-generated native directory prefix as if it
+were an encoded URI component.
+
+Configured session source checks establish image presence without learning display
+preferences, explicit image-off text retention, stable history and no book
+selection. The characterization passes normal, ASan/UBSan and TSan (one focused
+fixture test in each; dependencies partly instrumented and leaks off). No resource
+bytes or images are added to search exports by this checkpoint. Filesystem,
+Unicode-directory, missing/symlink and whole-document policy checks follow.
