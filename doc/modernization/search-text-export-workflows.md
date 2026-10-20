@@ -1,6 +1,6 @@
 # Selected visible search text export
 
-Updated 2026-10-20. Initial checked C++ session/worker service, not a complete
+Updated 2026-10-20. Checked C++ session/worker service and additive C transport, not a complete
 native export workflow. See [retention](search-retention-workflows.md),
 [shared item formatting](export-workflows.md) and [remaining design](search-export-design.md).
 
@@ -61,6 +61,21 @@ Local normal export+fixture pass 2/2, ASan/UBSan export/generation/shared format
 and fixture pass 5/5, TSan export/generation+fixture pass 3/3. Dependency sanitizer
 coverage remains partial; ASan leaks off. Initial compile checks caught SWBuf's
 actual return type and a test-only nonexistent shutdown call; both were corrected
-before acceptance. No hosted job/reset credit or legacy retirement. Native
-C/Swift transport and actual save/copy UI, representative corpus/locales and
+before acceptance. No hosted job/reset credit or legacy retirement. Swift transport and actual save/copy UI, representative corpus/locales and
 Fedora/MSVC runtime validation remain next gates.
+
+## C11 export transport checkpoint
+
+The additive C request copies bounded row ordinals, title, scripture choice,
+generation ID and byte cap before acceptance. A dedicated take-once owned export
+handle carries disposition, source generation, failed-row ordinal and the complete
+UTF-8 payload/byte count. It survives observer and worker destruction. Failure
+handles expose empty text. Existing search progress/cancel controls observe the
+export job; the operation never reruns a search or writes a destination.
+
+Original-prose C tests cover input mutation after submission, typed output/selection/
+stale failures, invalid/NULL/wrong-kind/pending access, queued invalid UTF-8/unknown
+tab, exact owned size, cooperative cancellation, detached observer and shutdown.
+Normal export+fixture pass 2/2; C export/generation+fixture pass 3/3 ASan/UBSan and
+3/3 TSan. Strict C11/pedantic public-header compilation passes. Dependencies remain
+partly instrumented and leaks off. This does not accept a native dialog workflow.

@@ -477,6 +477,41 @@ typedef struct {
   xc_search_text_info text_options;
 } xc_search_query_metadata;
 xc_status xc_request_search_generation_query(const xc_request *request,xc_search_query_metadata *out);
+/* Selected visible-row text export. No file/clipboard writes. IDs/ordinals refer
+ * to the originating live worker/tab. All request inputs copy before return. */
+typedef struct xc_search_text_export xc_search_text_export;
+typedef struct {size_t group,row;} xc_search_visible_row;
+typedef struct {
+  uint64_t generation;
+  const xc_search_visible_row *rows;
+  size_t row_count;
+  const char *title; /* NULL uses English default; NUL-terminated UTF-8 <=32KiB. */
+  int include_scripture; /* strict 0/1 */
+  size_t max_bytes; /* positive <=8MiB; final copied payload only */
+} xc_search_text_export_request;
+void xc_search_text_export_request_default(xc_search_text_export_request *out);
+/* Poll success carries typed disposition, including stale/limit/cancel failures.
+ * Existing search progress/cancel observe this job only. No partial document. */
+xc_status xc_worker_export_search_visible_text(xc_worker *worker,uint64_t tab,
+  const xc_search_text_export_request *input,xc_request **out);
+xc_search_text_export *xc_request_take_search_text_export(xc_request *request);
+typedef enum {XC_SEARCH_EXPORT_OK=0,XC_SEARCH_EXPORT_STALE=1,XC_SEARCH_EXPORT_INVALID_SELECTION=2,
+  XC_SEARCH_EXPORT_OUTPUT_LIMIT=3,XC_SEARCH_EXPORT_CANCELLED=4,XC_SEARCH_EXPORT_MODULE_NOT_FOUND=5,
+  XC_SEARCH_EXPORT_ENGINE_ERROR=6} xc_search_export_status;
+typedef struct {
+  int disposition;
+  size_t row_count;
+  int failed_row_present;
+  size_t failed_row;
+  int includes_scripture;
+} xc_search_text_export_info;
+xc_status xc_search_text_export_get_info(const xc_search_text_export *result,xc_search_text_export_info *out);
+xc_status xc_search_text_export_get_generation(const xc_search_text_export *result,xc_search_generation_info *out);
+/* Borrow until result release, including empty string for failed disposition.
+ * size counts UTF-8 bytes, excluding terminator. NULL handle returns NULL/0. */
+const char *xc_search_text_export_text(const xc_search_text_export *result);
+size_t xc_search_text_export_size(const xc_search_text_export *result);
+void xc_search_text_export_release(xc_search_text_export *result);
 xc_status xc_worker_create_tab(xc_worker *worker, xc_request **out);
 xc_status xc_worker_close_tab(xc_worker *worker, uint64_t tab, xc_request **out);
 /* Consumer migration capability, not a saved module preference. Accepts exactly

@@ -80,6 +80,7 @@ struct xc_book_note {
 };
 struct xc_passage { xiphos::core::StudyPassage value; };
 struct xc_entry { xiphos::core::Entry value; };
+struct xc_search_text_export {xiphos::core::SearchTextExport value;};
 struct xc_worker { xiphos::core::StudyWorker value; explicit xc_worker(const char *root) : value(root ? root : "") {} };
 struct xc_catalog { std::vector<xiphos::core::Module> value; };
 struct xc_history { xiphos::core::HistorySnapshot value; };
@@ -100,6 +101,7 @@ struct xc_request {
   std::shared_ptr<xiphos::core::SearchControl> search_control;
   std::unique_ptr<xc_search> search_result;
   std::unique_ptr<xc_search_batch> search_batch;
+  std::unique_ptr<xc_search_text_export> search_export;
   std::optional<xiphos::core::SearchScopeInfo> search_scope;
   std::optional<xiphos::core::SearchTextState> search_text_state;
   std::optional<xiphos::core::SearchGenerationInfo> search_generation;
@@ -122,6 +124,7 @@ struct xc_request {
   std::unique_ptr<xc_history> history;
   virtual ~xc_request() = default;
   virtual void update() = 0;
+  void store(xiphos::core::SearchTextExport v){search_export=std::make_unique<xc_search_text_export>(xc_search_text_export{std::move(v)});}
   void store(xiphos::core::SearchGenerationInfo v){search_generation=v;}
   void store(xiphos::core::SearchRetentionLimits v){search_retention_limits=v;}
   void store(xiphos::core::SearchGenerationRead v){
@@ -728,6 +731,42 @@ xc_status xc_search_batch_get_text_options(const xc_search_batch *batch,xc_searc
   return copy_search_text_info(batch->value.text_options.options,out);
 }
 void xc_search_batch_release(xc_search_batch *batch){delete batch;}
+void xc_search_text_export_request_default(xc_search_text_export_request *out){
+  if(out)*out={0,nullptr,0,nullptr,0,1024*1024};
+}
+xc_status xc_worker_export_search_visible_text(xc_worker *w,uint64_t tab,const xc_search_text_export_request *input,xc_request **out){
+  if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;
+  if(!w||!input||!input->rows||!input->row_count||input->row_count>xiphos::core::maximum_search_export_rows||
+     (input->include_scripture!=0&&input->include_scripture!=1)||!input->max_bytes||input->max_bytes>xiphos::core::maximum_search_export_bytes)
+    return XC_INVALID_ARGUMENT;
+  try{
+    xiphos::core::SearchTextExportRequest copied;
+    copied.generation=input->generation;copied.include_scripture=input->include_scripture!=0;copied.max_bytes=input->max_bytes;
+    if(input->title){
+      std::size_t size=0;while(size<=32768&&input->title[size])++size;
+      if(size>32768)return XC_INVALID_ARGUMENT;
+      copied.title.assign(input->title,size);
+    }
+    copied.rows.reserve(input->row_count);
+    for(std::size_t i=0;i<input->row_count;++i)copied.rows.push_back({input->rows[i].group,input->rows[i].row});
+    auto request=std::make_unique<Request<xiphos::core::SearchTextExport>>();
+    auto task=w->value.export_search_visible_text_task(tab,std::move(copied));
+    request->search_control=std::move(task.control);request->future=std::move(task.result);
+    *out=request.release();return XC_OK;
+  }catch(...){return failure();}
+}
+xc_search_text_export *xc_request_take_search_text_export(xc_request *r){return r&&r->status==XC_OK?r->search_export.release():nullptr;}
+xc_status xc_search_text_export_get_info(const xc_search_text_export *r,xc_search_text_export_info *out){
+  if(!out)return XC_INVALID_ARGUMENT;*out={};if(!r)return XC_INVALID_ARGUMENT;
+  *out={static_cast<int>(r->value.status),r->value.row_count,r->value.failed_row?1:0,r->value.failed_row.value_or(0),r->value.includes_scripture?1:0};return XC_OK;
+}
+xc_status xc_search_text_export_get_generation(const xc_search_text_export *r,xc_search_generation_info *out){
+  if(!out)return XC_INVALID_ARGUMENT;*out={};if(!r)return XC_INVALID_ARGUMENT;
+  return copy_search_generation_info(r->value.generation,out);
+}
+const char *xc_search_text_export_text(const xc_search_text_export *r){return r?r->value.text.c_str():nullptr;}
+size_t xc_search_text_export_size(const xc_search_text_export *r){return r?r->value.text.size():0;}
+void xc_search_text_export_release(xc_search_text_export *r){delete r;}
 void xc_search_retention_limits_default(xc_search_retention_limits *out){
   if(out)*out={xiphos::core::maximum_search_retained_elements,xiphos::core::maximum_search_retained_key_bytes};
 }

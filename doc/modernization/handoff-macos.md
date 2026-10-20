@@ -13,6 +13,13 @@ retained search-result generations before bounded export. Continue
 bounded shared-core slices with local checks. Preserve unrelated files/GTK3.
 All source changes are committed/pushed at this checkpoint; no shared source edits remain in flight. This is not a concurrent ownership lease.
 
+## C selected text export checkpoint (2026-10-20)
+
+Core selected visible export pushed at `3faadea`. Additive C11 owned request/result
+now passes normal original-fixture checks, strict C11 header, 3/3 ASan/UBSan and
+3/3 TSan (C export/generation+fixture). No partial payload or external write.
+Swift export adapter is in progress; native save/copy remains pending.
+
 ## Selected text export checkpoint (2026-10-20)
 
 Swift retention transport pushed at `d1a15df`. C++ session/worker selected visible
