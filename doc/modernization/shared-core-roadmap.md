@@ -1,6 +1,6 @@
 # Shared core: remaining scope
 
-Updated 2026-10-18. This is a planning map, not an acceptance score.
+Updated 2026-10-20. This is a planning map, not an acceptance score.
 The full project remains roughly 8% (6–10%), with zero whole parity groups
 accepted. There is no evidence-based core-only completion percentage yet.
 A tested worker/reading foundation does not mean the application core is almost
@@ -13,7 +13,7 @@ finished. Whole workflows and data compatibility remain the acceptance units.
 | Dictionary and lexical content | Lookup/key steps/history, shared casing, lexical HTML/CSS and notes | Complete lookup/hover/search families and full corpus/locale acceptance |
 | General books | Tree/navigation/DisplayLevel documents, scoped restore, note/image clicks, bounded inline resources/module CSS, shared geometry and combined note numbering | Native sizing/global CSS/assets/formats, complete semantic links/corpus acceptance, book windows/tabs and saved workflows |
 | Parallel reading | Pending | Verse alignment, ordered translations, named sets, navigation and persistence |
-| Search | Bible/commentary basic + exact attribute modes, explicit intervals/complete last scope, private annotation context, advanced word dialects, bounded ordered batches, copied C/Swift transport, progress/cancel and basic Mac controls | Advanced module/range setup, actual indexed execution, mixed families, advanced controls/settings, complete preview/export and full backend/corpus acceptance |
+| Search | Bible/commentary basic + exact attribute modes, explicit intervals/complete last scope, private annotation context, advanced word dialects, bounded ordered batches, complete per-group result generations, stale-safe C/Swift reads, bounded selected visible text export, progress/cancel and basic Mac controls | Advanced module/range setup, actual indexed execution, mixed families, advanced controls/settings, complete preview/export and full backend/corpus acceptance |
 | Library and installation | Module metadata/discovery subset | Favorites/hiding/grouping, sources/install/uninstall/index/cipher workflows |
 | Bookmarks and annotations | Pending | Hierarchy/order/colors, XML round trips, AndBible import, rendering precedence |
 | Writing and editing | Pending | Personal commentary, study pads, journals/prayer lists, compatible document storage |
@@ -27,12 +27,14 @@ implementation of these services. The detailed requirements remain in the
 with a consuming frontend to expose boundary problems early. Existing GTK3 is
 the behavior/design reference; keep it operational and retain retirement gates.
 
-Current next slice: [private retained search-result generations/capability](search-export-design.md)
-before bounded export. Exact [item formatting](export-workflows.md) is shared with
-GTK and advanced range/export/bookmark quirks are characterized. Complete document/
-selection/retention/native export is still pending. Attribute/context/ordered batch
-services remain partial. Actual indexed execution, mixed families, advanced native
-controls/settings and saved workflows remain gates.
+Current checkpoint: retained result generations C++ `37d9004`, C `155e0cb`, Swift
+`d1a15df`; selected visible text export C++ `3faadea`, C `6f0e3c1`, Swift `ec26889`.
+See [retention](search-retention-workflows.md) and [text export](search-text-export-workflows.md)
+for actual bounds/ownership. Next consuming native save/copy and complete retained
+text/HTML export remain distinct gates. Exact [item formatting](export-workflows.md)
+is shared with GTK; advanced header/first-row quirks are characterized. Actual
+indexed execution, mixed families, advanced controls/settings and saved workflows
+remain partial work.
 Book link/session, native
 sizing and corpus acceptance remain tracked work alongside the existing reading
 seams. Parallel reading and complete persistence remain later core services.

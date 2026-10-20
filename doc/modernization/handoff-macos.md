@@ -4,14 +4,31 @@ Updated 2026-10-20. Read [AGENTS.md](../../AGENTS.md), the
 [shared handoff](handoff.md), [core scope](shared-core-roadmap.md),
 [status](status.md) and relevant parity rows first.
 
-Active task (2026-10-19, master): implement private retained result generations,
-aggregate retention limits and copied stale-safe reads; local checks only.
+Active task (2026-10-20, master): retained generations and selected visible text
+export are checked/pushed through `ec26889`; selected-export full Mac recheck and current portable-on-Mac checks pass.
+Next native selected save/copy and complete retained text export; local checks only.
+Checkpoint sections below preserve their original scoped evidence; earlier next
+steps are superseded by this active entry.
 
 Previous checked handoff (2026-10-18, master): shared search advances checked/pushed through
 `cf80541`, then export/advanced characterization `8c0a4ed`; next implement private
 retained search-result generations before bounded export. Continue
 bounded shared-core slices with local checks. Preserve unrelated files/GTK3.
 All source changes are committed/pushed at this checkpoint; no shared source edits remain in flight. This is not a concurrent ownership lease.
+
+## Complete retained text checkpoint (2026-10-20, C++ only)
+
+Selected export pushed through `ec26889`. Full Mac suite at that checkpoint passed
+145 checks + 1 explicit index skip (146 registered), 122.52 s. This is not current
+Fedora/MSVC/native GTK acceptance. Complete returned text export now passes 4/4
+normal (all/visible/C+fixture), final 3/3 ASan/UBSan and 3/3 TSan (all/visible+fixture).
+It shares document assembly, requires explicit incomplete-source acceptance and
+rejects clipped all-results output. See [the contract](search-text-export-workflows.md).
+Portable-on-Mac full recheck passed 113 + 1 index skip (114 registered), 87.47 s,
+GTK runtime OFF. Next C/Swift
+complete-result transport and native selected save/copy; keep HTML/corpus gates.
+Hosted workflow audit: builds/native-core remain disabled; linux-core has only
+manual dispatch; latest remote run is still Oct 15. No hosted jobs/reset credit.
 
 ## Swift selected text export checkpoint (2026-10-20)
 

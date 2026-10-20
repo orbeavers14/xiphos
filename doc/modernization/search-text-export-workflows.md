@@ -94,3 +94,34 @@ attribute fixture. Cases cover original text/Unicode title, exact UTF-8 byte cap
 no partial failure document, stale/invalid identity, negative/NUL input,
 progress/cancellation and ownership after worker shutdown. Actual native
 save/copy, complete-result/HTML and platform/corpus gates remain pending.
+
+## Complete returned text checkpoint (C++ only)
+
+`export_search_all_text` resolves complete retained groups on the same FIFO owner,
+using typed post-sort keys independently of displayed prefixes and final scope.
+It shares the selected-text document/SDK-reading implementation, preserving module
+order, duplicate groups and every returned row. An explicit result selection kind
+distinguishes visible selection from all retained output, including failures.
+
+The generation must still match and complete retention must be available.
+Default requests reject a source with cancellation, failed modules or unattempted
+groups (`source_incomplete`). Explicit `allow_partial_source` accepts the returned
+successful groups, with original cancellation/failure/count metadata preserved;
+it never claims all requested modules succeeded. Complete-retention capacity
+failure is distinct from output limits. No source rerun or visible-prefix fallback.
+
+A positive row cap defaults to 10,000 and cannot exceed it. If any group is clipped,
+or more references exist after the aggregate cap, the entire export fails with
+empty text. Later empty groups at the exact cap are valid. A successfully empty
+source can produce a title-only document. Explicitly accepted all-failed sources
+also retain their failure metadata with zero rows. Copied module/key bytes share
+an 8 MiB guard; final output has the same independent 8 MiB ceiling. Full retained
+SDK key/traversal allocations remain outside those logical output guards.
+
+Original fixtures exercise omitted display groups, duplicates, exact/overflow row
+and document caps, shared scripture reading, default rejection/explicit partial
+source, all-error/empty groups, stale/capacity/visible fallback, state neutrality,
+pre-cancel, copied options and worker shutdown. Normal all/visible/C-export+fixture
+pass 4/4. Final ASan/UBSan all+visible+fixture pass 3/3; TSan pass 3/3. Sanitizer
+coverage remains partial/leaks off. C/Swift complete-result transport, HTML,
+native save/copy/print and representative corpus/platform acceptance are pending.

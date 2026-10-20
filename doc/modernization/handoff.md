@@ -1,6 +1,6 @@
 # Shared project handoff: start here in every chat
 
-Updated 2026-10-18. These files replace missing conversation context with a
+Updated 2026-10-20. These files replace missing conversation context with a
 versioned record. They do not transfer chat messages or synchronize themselves:
 each chat must fetch/pull Git and read them before working.
 
@@ -60,19 +60,28 @@ C generation/batch/query+fixture pass 4/4 ASan/UBSan and 4/4 TSan; 10 focused
 C/Swift checks pass. Earlier full C++ checkpoint: 140 Mac passes + 1 index skip,
 109 portable-on-Mac passes + 1 skip. Current Fedora/MSVC validation stays separate.
 
-Active next shared slice: bounded selected visible-row text export using the
-checked formatter and configured SDK text reads, before complete export/native
-hosts. Display prefixes and final last scope cannot reconstruct every batch group.
-The [export design](search-export-design.md) remains a proposal where not superseded
-by the checked retention contract. Keep actual indexed execution, advanced controls/
-mixed families/settings and other core services as separate gates. No hosted job
-or reset credit used.
+Selected visible text export is checked/pushed at C++ `3faadea`, C `6f0e3c1` and
+Swift `ec26889`; see [its bounded contract](search-text-export-workflows.md).
+Original fixtures establish exact output caps, duplicate/order preservation,
+configured SDK stripText, stale selection, all-or-nothing cancellation/failure,
+state neutrality and owned shutdown lifetime. Focused normal/sanitizer evidence
+is scoped there; full selected-export Mac recheck passed 145 checks + 1 explicit index skip
+(146 registered). Current C++ complete-export portable-on-Mac recheck passed 113 + 1 index skip
+(114 registered), GTK runtime OFF.
+
+Complete retained text is checked in C++ with explicit incomplete-source
+acceptance and aggregate row/byte caps. Next shared/consuming work: C/Swift
+complete-result transport and native selected save/copy, then HTML/document gates. Display prefixes and final last scope cannot
+reconstruct every group. [Remaining design](search-export-design.md) is a proposal
+where not superseded by checked contracts. Keep actual indexed execution, advanced
+controls/mixed families/settings and other core services as separate gates.
+No hosted job or reset credit used.
 
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Bounded selected visible-row text export, then copied/native hosts | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Native selected save/copy and complete retained export | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 
