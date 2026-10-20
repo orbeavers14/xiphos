@@ -2,17 +2,12 @@
 #include "xiphos/core/session.hpp"
 #include "xiphos/core/export_item.hpp"
 #include "search_generation.hpp"
+#include "search_export_selection.hpp"
 #include "search_control.hpp"
-#include <glib.h>
-#include <algorithm>
 #include <stdexcept>
 namespace xiphos::core {
 namespace {
-using Rows=std::vector<std::pair<std::string,std::string>>;
-void validate_output(const std::string &title,std::size_t bytes){
-  if(!bytes||bytes>maximum_search_export_bytes||title.size()>32768||title.find('\0')!=std::string::npos||
-     !g_utf8_validate(title.data(),static_cast<gssize>(title.size()),nullptr))throw std::invalid_argument("Invalid search text export options");
-}
+using Rows=detail::SearchExportRows;
 SearchTextExport fail_export(SearchTextExport out,SearchExportStatus status,std::optional<std::size_t> row=std::nullopt){
   out.status=status;out.failed_row=row;out.row_count=0;out.text.clear();return out;
 }
@@ -49,53 +44,25 @@ template<class Read>SearchTextExport render_text(const std::string &title,std::s
 }
 }
 SearchTextExport StudySession::export_search_visible_text(SearchTextExportRequest request,std::shared_ptr<SearchControl> control){
-  detail::SearchControlScope progress(control);validate_output(request.title,request.max_bytes);
-  if(request.rows.empty()||request.rows.size()>maximum_search_export_rows)throw std::invalid_argument("Invalid visible search selection");
-  SearchTextExport out;out.generation=search_generation();out.includes_scripture=request.include_scripture;
-  auto finish=[&](SearchTextExport value){progress.finish(value.status==SearchExportStatus::cancelled);return value;};
-  if(!request.generation||request.generation!=out.generation.id)return finish(fail_export(std::move(out),SearchExportStatus::stale));
-  if(stopped(control))return finish(fail_export(std::move(out),SearchExportStatus::cancelled));
-  Rows rows;rows.reserve(request.rows.size());std::size_t reference_bytes=0;
-  for(std::size_t i=0;i<request.rows.size();++i){
-    const auto row=search_generation_->visible_row(request.rows[i].group,request.rows[i].row);
-    if(!row)return finish(fail_export(std::move(out),SearchExportStatus::invalid_selection,i));
-    if(row->first.size()+row->second.size()>maximum_search_reference_bytes-reference_bytes)return finish(fail_export(std::move(out),SearchExportStatus::output_limit,i));
-    reference_bytes+=row->first.size()+row->second.size();rows.push_back(*row);
-  }
-  return finish(render_text(request.title,request.max_bytes,rows,std::move(out),control,[&](const auto &module,const auto &key,std::size_t bytes){
+  detail::SearchControlScope progress(control);detail::validate_search_export_output(request.title,request.max_bytes);
+  Rows rows;SearchTextExport out;
+  static_cast<SearchExportMetadata &>(out)=detail::resolve_search_export_rows(search_generation_.get(),request.generation,
+    SearchExportSelection::visible,request.rows,maximum_search_export_rows,false,control,rows);
+  out.includes_scripture=request.include_scripture;
+  if(out.status==SearchExportStatus::ok)out=render_text(request.title,request.max_bytes,rows,std::move(out),control,[&](const auto &module,const auto &key,std::size_t bytes){
     return reader_.read_stripped(module,key,module_engine_options(module),bytes);
-  }));
+  });
+  progress.finish(out.status==SearchExportStatus::cancelled);return out;
 }
 SearchTextExport StudySession::export_search_all_text(SearchAllTextExportRequest request,std::shared_ptr<SearchControl> control){
-  detail::SearchControlScope progress(control);validate_output(request.title,request.max_bytes);
-  if(!request.max_rows||request.max_rows>maximum_search_export_rows)throw std::invalid_argument("Invalid complete search export row budget");
-  SearchTextExport out;out.generation=search_generation();out.includes_scripture=request.include_scripture;
-  out.selection=SearchExportSelection::all_retained;
-  auto finish=[&](SearchTextExport value){progress.finish(value.status==SearchExportStatus::cancelled);return value;};
-  if(!request.generation||request.generation!=out.generation.id)return finish(fail_export(std::move(out),SearchExportStatus::stale));
-  if(stopped(control))return finish(fail_export(std::move(out),SearchExportStatus::cancelled));
-  if(out.generation.retention!=SearchRetentionStatus::complete)return finish(fail_export(std::move(out),SearchExportStatus::capacity_exceeded));
-  if(!request.allow_partial_source&&(out.generation.cancelled||out.generation.failed_groups||out.generation.group_count!=out.generation.requested_count))
-    return finish(fail_export(std::move(out),SearchExportStatus::source_incomplete));
-  Rows rows;std::size_t reference_bytes=0;
-  for(std::size_t group=0;group<out.generation.group_count;++group){
-    if(stopped(control))return finish(fail_export(std::move(out),SearchExportStatus::cancelled));
-    // Read at least one row to distinguish an empty group at exact budget from
-    // more matches. A clipped complete group always rejects the whole document.
-    const auto available=request.max_rows-rows.size();
-    const auto value=search_generation_->read(request.generation,group,SearchReferenceSource::complete,
-      {std::max(std::size_t{1},available),maximum_search_reference_bytes});
-    if(value.status==SearchGenerationReadStatus::failed_group)continue; // Explicit partial-source opt-in above.
-    if(value.status!=SearchGenerationReadStatus::ok||!value.result)return finish(fail_export(std::move(out),SearchExportStatus::engine_error));
-    if(value.result->limited||value.result->references.size()>available)return finish(fail_export(std::move(out),SearchExportStatus::output_limit));
-    for(const auto &key:value.result->references){
-      const auto &module=value.requested->module;
-      if(module.size()+key.size()>maximum_search_reference_bytes-reference_bytes)return finish(fail_export(std::move(out),SearchExportStatus::output_limit));
-      reference_bytes+=module.size()+key.size();rows.emplace_back(module,key);
-    }
-  }
-  return finish(render_text(request.title,request.max_bytes,rows,std::move(out),control,[&](const auto &module,const auto &key,std::size_t bytes){
+  detail::SearchControlScope progress(control);detail::validate_search_export_output(request.title,request.max_bytes);
+  Rows rows;SearchTextExport out;
+  static_cast<SearchExportMetadata &>(out)=detail::resolve_search_export_rows(search_generation_.get(),request.generation,
+    SearchExportSelection::all_retained,{},request.max_rows,request.allow_partial_source,control,rows);
+  out.includes_scripture=request.include_scripture;
+  if(out.status==SearchExportStatus::ok)out=render_text(request.title,request.max_bytes,rows,std::move(out),control,[&](const auto &module,const auto &key,std::size_t bytes){
     return reader_.read_stripped(module,key,module_engine_options(module),bytes);
-  }));
+  });
+  progress.finish(out.status==SearchExportStatus::cancelled);return out;
 }
 }

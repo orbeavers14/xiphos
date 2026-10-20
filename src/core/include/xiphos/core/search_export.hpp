@@ -23,16 +23,30 @@ struct SearchAllTextExportRequest {
   std::size_t max_bytes=1024*1024,max_rows=maximum_search_export_rows;
   bool allow_partial_source=false;
 };
-enum class SearchExportStatus {ok=0,stale=1,invalid_selection=2,output_limit=3,cancelled=4,module_not_found=5,engine_error=6,capacity_exceeded=7,source_incomplete=8};
+enum class SearchExportStatus {ok=0,stale=1,invalid_selection=2,output_limit=3,cancelled=4,module_not_found=5,engine_error=6,capacity_exceeded=7,source_incomplete=8,unsupported_html=9};
 enum class SearchExportSelection {visible=0,all_retained=1};
-struct SearchTextExport {
+struct SearchExportMetadata {
   SearchExportStatus status=SearchExportStatus::stale;
-  SearchGenerationInfo generation; // Current metadata even on stale request.
-  std::size_t row_count=0; // Zero on failure; text is never a partial document.
-  std::optional<std::size_t> failed_row; // Request ordinal, when applicable.
+  SearchGenerationInfo generation;
+  std::size_t row_count=0;
+  std::optional<std::size_t> failed_row;
   bool includes_scripture=false;
-  std::string text;
   SearchExportSelection selection=SearchExportSelection::visible;
+};
+struct SearchTextExport:SearchExportMetadata {std::string text;};
+enum class HtmlExportIssue {none=0,resources=1,markup=2,styles=3,links=4};
+struct SearchHtmlExport:SearchExportMetadata {
+  std::string html;
+  HtmlExportIssue issue=HtmlExportIssue::none;
+};
+struct SearchHtmlExportRequest {
+  std::uint64_t generation=0;
+  SearchExportSelection selection=SearchExportSelection::visible;
+  std::vector<SearchVisibleRow> rows; // Empty for all_retained.
+  std::string title="Search results";
+  bool include_scripture=false;
+  std::size_t max_bytes=1024*1024,max_rows=maximum_search_export_rows;
+  bool allow_partial_source=false; // Applies only to all_retained.
 };
 // Selection/assembly/rendering run on one owner. Output cap bounds final copied
 // bytes, not SDK temporary allocation/time. No destination write or history visit.

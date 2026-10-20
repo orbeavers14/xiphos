@@ -4,9 +4,11 @@ Updated 2026-10-20. Read [AGENTS.md](../../AGENTS.md), the
 [shared handoff](handoff.md), [core scope](shared-core-roadmap.md),
 [status](status.md) and relevant parity rows first.
 
-Active task (2026-10-20, master): configured sources/ThML correction pushed at
-`0fffdbd`. Bounded body/CSS capture passes 7/7 normal Mac, portable-on-Mac,
-ASan/UBSan and TSan checks. Next shared HTML document/CSS/asset policy; local only.
+Active task (2026-10-20, master): initial C++ passive HTML documents now pass
+8 normal, 8 ASan/UBSan and 8 TSan focused checks plus portable-on-Mac full
+117 + 1 index skip (118 registered). Source/selection stays shared with text.
+Next copied C/Swift HTML transport. Browser local-file preview was blocked by
+URL policy; no workaround or visual HTML acceptance. Local checks only.
 Checkpoint sections below preserve original scoped evidence; earlier next steps
 are superseded by this active entry.
 
@@ -15,6 +17,22 @@ Previous checked handoff (2026-10-18, master): shared search advances checked/pu
 retained search-result generations before bounded export. Continue
 bounded shared-core slices with local checks. Preserve unrelated files/GTK3.
 All source changes are committed/pushed at this checkpoint; no shared source edits remain in flight. This is not a concurrent ownership lease.
+
+## C++ HTML document checkpoint (2026-10-20)
+
+Bounded source pushed at `2666599`. Initial selected/all passive HTML document
+service shares the text selection resolver/formatter and configured source path.
+Normal 8/8, ASan/UBSan 8/8 and TSan 8/8 checks pass, including text/C regressions
+and prerequisite fixtures (partial SDK instrumentation/leaks off). Images/inline/
+module CSS/active content reject as typed unsupported; no missing-source success.
+Known core styles are isolated per wrapper; partial source is labelled. Real SDK
+bare-ampersand links required structured canonicalization instead of XML-strict
+wellFormed gating; the corrected rich-source test passes.
+Portable-on-Mac full recheck passed 117 + 1 index skip (118 registered), 88.79 s,
+GTK runtime OFF. In-app browser rejected local file
+preview by URL protocol policy; no workaround attempted and no visual HTML/CSP
+runtime acceptance claimed. See [HTML contract](html-export-workflows.md).
+Next copied C/Swift HTML handles, preserving text ABI and native controls.
 
 ## Bounded HTML body checkpoint (2026-10-20)
 

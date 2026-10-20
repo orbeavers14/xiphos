@@ -136,6 +136,16 @@ std::future<SearchRetentionLimits> StudyWorker::search_retention_limits(StudyTab
 std::future<SearchGenerationRead> StudyWorker::read_search_generation(StudyTab tab,std::uint64_t id,std::size_t group,SearchReferenceSource source,SearchLimits limits){
   return impl_->submit([tab,id,group,source,limits](Impl::State &s){return s.tab(tab).read_search_generation(id,group,source,limits);});
 }
+StudyWorker::SearchHtmlExportTask StudyWorker::export_search_html_task(StudyTab tab,SearchHtmlExportRequest request){
+  SearchHtmlExportTask task{std::make_shared<SearchControl>(),{}};
+  task.result=impl_->submit([tab,request=std::move(request),control=task.control](Impl::State &s){
+    try{return s.tab(tab).export_search_html(request,control);}
+    catch(...){detail::SearchControlAccess::fail_if_queued(control);throw;}
+  },task.control);return task;
+}
+std::future<SearchHtmlExport> StudyWorker::export_search_html(StudyTab tab,SearchHtmlExportRequest request){
+  return export_search_html_task(tab,std::move(request)).result;
+}
 StudyWorker::SearchExportTask StudyWorker::export_search_all_text_task(StudyTab tab,SearchAllTextExportRequest request){
   SearchExportTask task{std::make_shared<SearchControl>(),{}};
   task.result=impl_->submit([tab,request=std::move(request),control=task.control](Impl::State &s){

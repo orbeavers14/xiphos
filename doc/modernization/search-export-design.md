@@ -21,6 +21,9 @@ preserves its metadata. Native Mac text save/copy consumes the same services wit
 Stop/stale/close protection, isolated clipboard/file tests and scoped window/save
 evidence. Exact hashes/environment/counts live in the handoff and contracts.
 
+Initial C++ selected/all passive HTML is now checked in [its scoped contract](html-export-workflows.md).
+Images/module styles, semantic links and browser/visual evidence remain open.
+
 ## Next shared seams
 
 1. Characterize configured HTML entry sources and their independent lifetimes,

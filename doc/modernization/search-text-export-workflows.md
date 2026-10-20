@@ -197,3 +197,9 @@ Full final local Mac suite passed 148 checks + 1 explicit index skip (149 regist
 126.84 s, with desktop access. Existing deprecation warnings remain. No current
 Fedora GTK/MSVC/WinUI acceptance, actual index execution, representative corpus/
 accessibility/physical-input completion or whole feature group is claimed.
+
+The initial [C++ passive HTML service](html-export-workflows.md) now reuses the
+same private selection resolver and formatter. Common C++ metadata is factored
+without changing existing C layouts or text bytes. Text regressions pass alongside
+HTML; its restricted assets/styles and absent browser/native acceptance are
+separate from the checked text actions.
