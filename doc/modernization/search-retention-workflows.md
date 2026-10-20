@@ -1,7 +1,7 @@
 # Retained search-result generations
 
 Updated 2026-10-20. Checked C++ session/worker service and additive C transport;
-Swift generation transport and complete export are the next boundaries. No whole F18–F20/F32 parity
+Swift transport is checked below; complete export is the next boundary. No whole F18–F20/F32 parity
 or legacy source retirement is accepted. See [search](search-workflows.md),
 [export](export-workflows.md) and the [remaining export proposal](search-export-design.md).
 
@@ -135,3 +135,20 @@ Strict C11/pedantic header check passes. Focused C generation/batch/canonical qu
 plus fixture pass 4/4 under ASan/UBSan and 4/4 under TSan (partial dependency
 instrumentation, ASan leaks off). Swift transport and actual export have separate
 acceptance gates. No hosted jobs or reset credit used.
+
+## Swift transport checkpoint (2026-10-20)
+
+The Swift 6 adapter now copies generation/capacity metadata into single and batch
+values and exposes current metadata, future retention policy and bounded reads.
+Typed stale/failed/unattempted/capacity outcomes carry optional original query and
+result values; no SDK handle or borrowed string escapes the adapter. Keep the
+originating live worker/tab with the ID. The adapter does not rerun queries or
+replace a stale ID. Default task cancellation still drains accepted work.
+
+Ten focused local checks pass: Swift generation/batch/context/attribute/basic
+adapters, C generation/batch/canonical query and two fixture setups. Original
+fixtures establish complete-versus-visible copying, failed groups, query bounds,
+policy/reset independence, stale replacement, capacity fallback and copied
+lifetime after shutdown. An initial test argument-order compilation error was
+fixed before acceptance. This is adapter evidence, not a native save/copy UI or
+complete search/export parity.

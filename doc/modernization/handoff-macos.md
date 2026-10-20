@@ -13,6 +13,14 @@ retained search-result generations before bounded export. Continue
 bounded shared-core slices with local checks. Preserve unrelated files/GTK3.
 All source changes are committed/pushed at this checkpoint; no shared source edits remain in flight. This is not a concurrent ownership lease.
 
+## Swift retention transport checkpoint (2026-10-20)
+
+C bridge pushed at `155e0cb`. Swift 6 copied generation/query/policy/read adapter
+and original-fixture test pass with the existing search adapters: 10/10 focused
+checks including two fixture setups. Next implement bounded visible-row text
+export using the shared formatter, then copied transport/native host actions.
+No advanced GUI, complete export, platform release or retirement gate accepted.
+
 ## C retention transport checkpoint (2026-10-20)
 
 C++ generation service is pushed at `37d9004`. Additive C11 transport now passes

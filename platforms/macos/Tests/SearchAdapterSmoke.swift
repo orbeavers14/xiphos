@@ -113,7 +113,62 @@ actor ProgressLog {
         guard result.groups[0].result?.expression == "Original", narrowed.groups[0].result?.references == ["John 1:1"] else { fatalError("All batch copies outlive C batch and worker") }
         print("Swift ordered batch copies, per-module failures, budgets, scopes, progress, cancellation and lifetime passed")
     }
+    static func generations(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let tab = try await worker.createTab(), other = try await worker.createTab()
+        guard try await worker.searchGeneration(tab: tab) == .empty,
+              try await worker.searchRetentionLimits(tab: tab) == CoreSearchRetentionLimits() else { fatalError("Empty generation and bounded defaults") }
+        let wanted = CoreSearchTextOptions(strongs: true, morphology: false, footnotes: true)
+        let batch = try await worker.searchModules(tab: tab, modules: ["Text", "Missing", "Commentary", "Text"],
+            expression: "Original", mode: .multiword, maxResults: 1, textOptions: wanted)
+        let generation = batch.generation
+        guard batch.generationUpdated, generation.id != 0, generation.retention == .complete,
+              generation.groupCount == 4, generation.failedGroups == 1, generation.visibleResults == 1,
+              generation.retainedElements == 12, batch.groups[3].result?.generation == generation,
+              try await worker.searchGeneration(tab: other) == .empty else { fatalError("Swift preserves shared batch identity and isolated capacity metadata") }
+        let full = try await worker.readSearchGeneration(tab: tab, id: generation.id, group: 2)
+        let visible = try await worker.readSearchGeneration(tab: tab, id: generation.id, group: 2, source: .visible)
+        guard full.status == .success, full.result?.references == ["John 1:1", "John 1:2", "John 1:3", "John 1:4"],
+              full.query?.module == "Commentary", full.query?.textOptions == wanted,
+              full.result?.generation == generation, visible.result?.references == [], visible.result?.limited == true,
+              try await worker.history(tab).count == 0 else { fatalError("Complete read recovers omitted group without navigation") }
+        let failed = try await worker.readSearchGeneration(tab: tab, id: generation.id, group: 1)
+        let invalid = try await worker.readSearchGeneration(tab: tab, id: generation.id, group: 4)
+        guard failed.status == .failedGroup, failed.failure == .moduleNotFound, failed.result == nil,
+              failed.query?.module == "Missing", invalid.status == .invalidGroup, invalid.query == nil else { fatalError("Typed unavailable outcomes preserve original queries") }
+        _ = try await worker.clearSearchScope(tab: tab)
+        _ = try await worker.clearSearchTextOptions(tab: tab)
+        let low = CoreSearchRetentionLimits(maxElements: 1, maxKeyBytes: 1024)
+        guard try await worker.setSearchRetentionLimits(tab: tab, limits: low) == low,
+              try await worker.searchGeneration(tab: tab) == generation else { fatalError("Reset/policy does not discard existing generation") }
+        let next = try await worker.searchModule(tab: tab, module: "Text", expression: "Original")
+        let overflow = try await worker.readSearchGeneration(tab: tab, id: next.generation.id, group: 0)
+        let fallback = try await worker.readSearchGeneration(tab: tab, id: next.generation.id, group: 0, source: .visible, maxResults: 1)
+        let stale = try await worker.readSearchGeneration(tab: tab, id: generation.id, group: 0)
+        guard next.generationUpdated, next.generation.retention == .capacityExceeded,
+              overflow.status == .capacityExceeded, overflow.query?.module == "Text", overflow.result == nil,
+              fallback.result?.references == ["John 1:1"], fallback.result?.limited == true,
+              stale.status == .stale, stale.query == nil, stale.generation == next.generation else { fatalError("No stale or unavailable read silently exports latest/full results") }
+        _ = try await worker.setSearchRetentionLimits(tab: tab, limits: CoreSearchRetentionLimits())
+        let bounded = try await worker.searchModule(tab: tab, module: "Text", expression: "Original", mode: .multiword,
+            caseSensitive: true, range: CoreSearchRange(module: "Text", expression: "John1:2-John1:3"), textOptions: wanted)
+        let copied = try await worker.readSearchGeneration(tab: tab, id: bounded.generation.id, group: 0, maxReferenceBytes: 8)
+        guard copied.query?.range?.expression == "John1:2-John1:3", copied.query?.caseSensitive == true,
+              copied.query?.mode == .multiword, copied.result?.references == ["John 1:2"], copied.result?.limited == true else { fatalError("Raw query and bounded copied references survive transport") }
+        for bad in [-1, 0, 10001] {
+            do { _ = try await worker.readSearchGeneration(tab: tab, id: bounded.generation.id, group: 0, maxResults: bad); fatalError("Expected invalid bound") }
+            catch is CoreError {}
+        }
+        do { _ = try await worker.setSearchRetentionLimits(tab: tab, limits: CoreSearchRetentionLimits(maxElements: -1)); fatalError("Expected invalid policy") }
+        catch is CoreError {}
+        try await worker.closeTab(tab);try await worker.closeTab(other);await worker.shutdown()
+        guard full.result?.references.count == 4, copied.query?.textOptions == wanted else { fatalError("Swift strings/metadata outlive request, tab and worker") }
+        print("Swift shared generation identity, capacity, stale reads, original queries and copied lifetime passed")
+    }
     static func main() async throws {
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--generation" {
+            try await generations(root: CommandLine.arguments[2]); return
+        }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--batch" {
             try await batch(root: CommandLine.arguments[2]); return
         }

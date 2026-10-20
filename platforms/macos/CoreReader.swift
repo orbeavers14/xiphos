@@ -131,6 +131,39 @@ struct CoreSearchProgress: Sendable, Equatable { let phase: CoreSearchPhase; let
 struct CoreSearchTextOptions: Sendable, Equatable { var strongs = false; var morphology = false; var footnotes = false }
 struct CoreSearchScope: Sendable, Equatable { let present: Bool; let elementCount: UInt64 }
 struct CoreSearchRange: Sendable, Equatable { let module: String; let expression: String }
+// IDs are ephemeral within the originating live worker/tab. Keep that origin
+// with a selection; never substitute the latest ID after a stale response.
+enum CoreSearchRetention: Int32, Sendable { case none=0, complete=1, capacityExceeded=2 }
+struct CoreSearchGeneration: Sendable, Equatable {
+    let id: UInt64
+    let retention: CoreSearchRetention
+    let requestedCount: Int, groupCount: Int, failedGroups: Int, visibleResults: Int
+    let matchedElements: UInt64, retainedElements: UInt64
+    let accountedKeyBytes: Int
+    let cancelled: Bool
+    static let empty = CoreSearchGeneration(id: 0, retention: .none, requestedCount: 0, groupCount: 0,
+        failedGroups: 0, visibleResults: 0, matchedElements: 0, retainedElements: 0, accountedKeyBytes: 0, cancelled: false)
+}
+struct CoreSearchRetentionLimits: Sendable, Equatable {
+    var maxElements = 100_000
+    var maxKeyBytes = 16 * 1024 * 1024
+}
+enum CoreSearchReferenceSource: Int32, Sendable { case visible=0, complete=1 }
+enum CoreSearchReadStatus: Int32, Sendable { case success=0, stale=1, invalidGroup=2, notAttempted=3, failedGroup=4, capacityExceeded=5 }
+struct CoreSearchRequestedQuery: Sendable, Equatable {
+    let module: String, expression: String
+    let mode: CoreSearchMode
+    let caseSensitive: Bool, withinLastResults: Bool
+    let range: CoreSearchRange?
+    let textOptions: CoreSearchTextOptions?
+}
+struct RenderedSearchGenerationRead: Sendable, Equatable {
+    let status: CoreSearchReadStatus
+    let generation: CoreSearchGeneration
+    let query: CoreSearchRequestedQuery?
+    let failure: CoreSearchGroupStatus
+    let result: RenderedSearchResult?
+}
 struct RenderedSearchResult: Sendable, Equatable {
     let module: String, expression: String, effectiveExpression: String
     let mode: CoreSearchMode
@@ -146,6 +179,8 @@ struct RenderedSearchResult: Sendable, Equatable {
     var effectiveTextOptions: CoreSearchTextOptions? = nil
     var textOptionsUpdated = false
     var indexFallback = false
+    var generation = CoreSearchGeneration.empty
+    var generationUpdated = false
 }
 enum CoreSearchGroupStatus: UInt32, Sendable { case success=0, invalidRequest=1, moduleNotFound=2, engineError=3 }
 struct RenderedSearchGroup: Sendable, Equatable {
@@ -160,6 +195,8 @@ struct RenderedSearchBatch: Sendable, Equatable {
     let limited: Bool, cancelled: Bool, scopeUpdated: Bool, textOptionsUpdated: Bool
     let scope: CoreSearchScope
     let textOptions: CoreSearchTextOptions?
+    var generation = CoreSearchGeneration.empty
+    var generationUpdated = false
 }
 struct RenderedBookImage: Sendable, Equatable {
     let module: String, filename: String, mediaType: String
@@ -407,6 +444,13 @@ enum CoreValues {
     static func searchTextOptions(_ info: xc_search_text_info) -> CoreSearchTextOptions? {
         info.present == 0 ? nil : CoreSearchTextOptions(strongs: info.strongs != 0, morphology: info.morphology != 0, footnotes: info.footnotes != 0)
     }
+    static func searchGeneration(_ info: xc_search_generation_info) -> CoreSearchGeneration {
+        guard let retention = CoreSearchRetention(rawValue: info.retention) else { preconditionFailure("Unknown retention status") }
+        return CoreSearchGeneration(id: info.id, retention: retention, requestedCount: info.requested_count,
+            groupCount: info.group_count, failedGroups: info.failed_groups, visibleResults: info.visible_results,
+            matchedElements: info.matched_elements, retainedElements: info.retained_elements,
+            accountedKeyBytes: info.accounted_key_bytes, cancelled: info.cancelled != 0)
+    }
     static func search(_ result: OpaquePointer) -> RenderedSearchResult {
         var info = xc_search_info()
         precondition(xc_search_get_info(result, &info) == XC_OK)
@@ -416,6 +460,8 @@ enum CoreValues {
         var requestedText = xc_search_text_info(), effectiveText = xc_search_text_info()
         precondition(xc_search_requested_text_options(result, &requestedText) == XC_OK)
         precondition(xc_search_effective_text_options(result, &effectiveText) == XC_OK)
+        var generation = xc_search_generation_info()
+        precondition(xc_search_get_generation(result, &generation) == XC_OK)
         return RenderedSearchResult(module: String(cString: xc_search_module(result)!),
             expression: String(cString: xc_search_expression(result)!),
             effectiveExpression: String(cString: xc_search_effective_expression(result)!),
@@ -428,7 +474,8 @@ enum CoreValues {
             scope: CoreSearchScope(present: scope.present != 0, elementCount: scope.element_count),
             scopeUpdated: xc_search_scope_updated(result) == 1,
             requestedTextOptions: searchTextOptions(requestedText), effectiveTextOptions: searchTextOptions(effectiveText),
-            textOptionsUpdated: xc_search_text_options_updated(result) == 1, indexFallback: xc_search_index_fallback(result) == 1)
+            textOptionsUpdated: xc_search_text_options_updated(result) == 1, indexFallback: xc_search_index_fallback(result) == 1,
+            generation: searchGeneration(generation), generationUpdated: xc_search_generation_updated(result) == 1)
     }
     static func searchBatch(_ batch: OpaquePointer) -> RenderedSearchBatch {
         var info = xc_search_batch_info(), scope = xc_search_scope_info(), text = xc_search_text_info()
@@ -443,13 +490,16 @@ enum CoreValues {
             precondition((copied != nil) == (group.result_present != 0))
             return RenderedSearchGroup(requestIndex: group.request_index, status: status, result: copied)
         }
+        var generation = xc_search_generation_info()
+        precondition(xc_search_batch_get_generation(batch, &generation) == XC_OK)
         return RenderedSearchBatch(
             requestedModules: (0..<info.requested_count).map { String(cString: xc_search_batch_requested_module(batch, $0)!) },
             groups: groups, copiedResultCount: info.result_count, copiedReferenceBytes: info.reference_bytes,
             failureCount: info.failure_count, limited: info.limited != 0, cancelled: info.cancelled != 0,
             scopeUpdated: info.scope_updated != 0, textOptionsUpdated: info.text_options_updated != 0,
             scope: CoreSearchScope(present: scope.present != 0, elementCount: scope.element_count),
-            textOptions: searchTextOptions(text))
+            textOptions: searchTextOptions(text), generation: searchGeneration(generation),
+            generationUpdated: xc_search_batch_generation_updated(batch) == 1)
     }
     static func bookImage(_ result: OpaquePointer) -> RenderedBookImage {
         let source = xc_book_image_data_source(result)!

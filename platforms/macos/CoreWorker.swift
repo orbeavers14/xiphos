@@ -348,6 +348,67 @@ actor CoreWorker {
         if let module { return module.withCString(queue) }
         return queue(nil)
     }
+    func searchGeneration(tab: UInt64) async throws -> CoreSearchGeneration {
+        var request: OpaquePointer?
+        let status = xc_worker_search_generation(try worker(), tab, &request)
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        var info = xc_search_generation_info()
+        let copied = xc_request_search_generation(completed, &info)
+        guard copied == XC_OK else { throw CoreError(status: copied) }
+        return CoreValues.searchGeneration(info)
+    }
+    func searchRetentionLimits(tab: UInt64) async throws -> CoreSearchRetentionLimits {
+        var request: OpaquePointer?
+        let status = xc_worker_search_retention_limits(try worker(), tab, &request)
+        return try await searchRetentionValue(status, request)
+    }
+    func setSearchRetentionLimits(tab: UInt64, limits: CoreSearchRetentionLimits) async throws -> CoreSearchRetentionLimits {
+        guard limits.maxElements > 0, limits.maxKeyBytes > 0 else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        var copied = xc_search_retention_limits(max_elements: limits.maxElements, max_key_bytes: limits.maxKeyBytes)
+        let status = xc_worker_set_search_retention_limits(try worker(), tab, &copied, &request)
+        return try await searchRetentionValue(status, request)
+    }
+    private func searchRetentionValue(_ status: xc_status, _ request: OpaquePointer?) async throws -> CoreSearchRetentionLimits {
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        var info = xc_search_retention_limits()
+        let copied = xc_request_search_retention_limits(completed, &info)
+        guard copied == XC_OK else { throw CoreError(status: copied) }
+        return CoreSearchRetentionLimits(maxElements: info.max_elements, maxKeyBytes: info.max_key_bytes)
+    }
+    func readSearchGeneration(tab: UInt64, id: UInt64, group: Int, source: CoreSearchReferenceSource = .complete,
+                              maxResults: Int = 1000, maxReferenceBytes: Int = 1024 * 1024) async throws -> RenderedSearchGenerationRead {
+        guard group >= 0, maxResults > 0, maxReferenceBytes > 0 else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        var options = xc_search_generation_read_options(source: source.rawValue, max_results: maxResults, max_reference_bytes: maxReferenceBytes)
+        let status = xc_worker_read_search_generation(try worker(), tab, id, group, &options, &request)
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        var info = xc_search_generation_read_info(), generation = xc_search_generation_info()
+        guard xc_request_search_generation_read(completed, &info) == XC_OK,
+              xc_request_search_generation(completed, &generation) == XC_OK,
+              let disposition = CoreSearchReadStatus(rawValue: info.disposition),
+              let failure = CoreSearchGroupStatus(rawValue: info.failure.rawValue) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        var metadata = xc_search_query_metadata()
+        let query: CoreSearchRequestedQuery?
+        if xc_request_search_generation_query(completed, &metadata) == XC_OK {
+            guard let mode = CoreSearchMode(rawValue: metadata.mode) else { throw CoreError(status: XC_ENGINE_ERROR) }
+            query = CoreSearchRequestedQuery(module: String(cString: metadata.module!), expression: String(cString: metadata.expression!),
+                mode: mode, caseSensitive: metadata.case_sensitive != 0, withinLastResults: metadata.within_last_results != 0,
+                range: metadata.range_module.map { CoreSearchRange(module: String(cString: $0), expression: String(cString: metadata.range_expression!)) },
+                textOptions: CoreValues.searchTextOptions(metadata.text_options))
+        } else { query = nil }
+        let result: RenderedSearchResult?
+        if info.result_present != 0 {
+            guard let owned = xc_request_take_search(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+            defer { xc_search_release(owned) }
+            result = CoreValues.search(owned)
+        } else { result = nil }
+        return RenderedSearchGenerationRead(status: disposition, generation: CoreValues.searchGeneration(generation),
+            query: query, failure: failure, result: result)
+    }
     func lastSearchScope(tab: UInt64) async throws -> CoreSearchScope {
         var request: OpaquePointer?
         let status = xc_worker_last_search_scope(try worker(), tab, &request)
