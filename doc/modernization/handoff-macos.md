@@ -18,6 +18,15 @@ retained search-result generations before bounded export. Continue
 bounded shared-core slices with local checks. Preserve unrelated files/GTK3.
 All source changes are committed/pushed at this checkpoint; no shared source edits remain in flight. This is not a concurrent ownership lease.
 
+## C HTML transport checkpoint (2026-10-20)
+
+C++ document service pushed at `1b327d9`. Additive C11 copied HTML request and
+take-once result pass normal 4/4 fixture checks, 6/6 ASan/UBSan and 6/6 TSan
+(C/C++ HTML + C text + fixtures), plus strict C11/pedantic header. Text ABI stays
+unchanged. Source unsupported/stale/limit/cancel outcomes carry empty HTML and
+owned metadata; no browser/destination action. Swift transport is under checks.
+Browser file preview remains blocked by URL policy; no workaround attempted.
+
 ## C++ HTML document checkpoint (2026-10-20)
 
 Bounded source pushed at `2666599`. Initial selected/all passive HTML document

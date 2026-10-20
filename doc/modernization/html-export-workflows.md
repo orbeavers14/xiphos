@@ -80,3 +80,21 @@ rejected by its URL security gate (file protocol disallowed). No workaround was
 attempted. Browser pixels, CSP runtime behavior, physical input and visual HTML
 parity remain unvalidated; DOM/stylesheet structural checks are the accepted scope.
 No hosted jobs/reset credit or legacy source retirement.
+
+## Owned C11 transport
+
+The additive C descriptor copies generation/selection, visible ordinals, plain
+UTF-8 title, scripture, row/byte caps and partial-source choice before acceptance.
+All-retained mode requires NULL rows/zero count. A dedicated take-once owned HTML
+handle exposes disposition, issue, failed ordinal, source generation and complete
+HTML/byte size. It remains independent of the request and worker. Text and other
+request takes cannot consume it; invalid getters clear stale output values.
+Existing C structs/layouts remain unchanged and strict C11/pedantic compilation
+passes. Existing per-job progress/cancel controls observe this job only.
+
+Original-fixture C checks establish copied-input mutation, omitted-prefix recovery,
+duplicate visible rows, exact/one-byte-short cap, stale/unknown tab, invalid/NULL
+shapes, typed unsupported images, cooperative cancellation, detached observer and
+shutdown lifetime. Normal C+fixtures pass 4/4; C/C++ HTML plus C-text regressions
+and fixtures pass 6/6 ASan/UBSan and 6/6 TSan. Dependencies remain partly
+instrumented and ASan leaks off. This adds no native HTML/browser acceptance.

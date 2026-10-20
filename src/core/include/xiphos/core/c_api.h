@@ -512,7 +512,7 @@ int xc_search_text_export_selection(const xc_search_text_export *result);
 xc_search_text_export *xc_request_take_search_text_export(xc_request *request);
 typedef enum {XC_SEARCH_EXPORT_OK=0,XC_SEARCH_EXPORT_STALE=1,XC_SEARCH_EXPORT_INVALID_SELECTION=2,
   XC_SEARCH_EXPORT_OUTPUT_LIMIT=3,XC_SEARCH_EXPORT_CANCELLED=4,XC_SEARCH_EXPORT_MODULE_NOT_FOUND=5,
-  XC_SEARCH_EXPORT_ENGINE_ERROR=6,XC_SEARCH_EXPORT_CAPACITY_EXCEEDED=7,XC_SEARCH_EXPORT_SOURCE_INCOMPLETE=8} xc_search_export_status;
+  XC_SEARCH_EXPORT_ENGINE_ERROR=6,XC_SEARCH_EXPORT_CAPACITY_EXCEEDED=7,XC_SEARCH_EXPORT_SOURCE_INCOMPLETE=8,XC_SEARCH_EXPORT_UNSUPPORTED_HTML=9} xc_search_export_status;
 typedef struct {
   int disposition;
   size_t row_count;
@@ -527,6 +527,36 @@ xc_status xc_search_text_export_get_generation(const xc_search_text_export *resu
 const char *xc_search_text_export_text(const xc_search_text_export *result);
 size_t xc_search_text_export_size(const xc_search_text_export *result);
 void xc_search_text_export_release(xc_search_text_export *result);
+/* Restricted passive HTML documents. Shared core selection/source/format policy;
+ * unsupported resources/styles/markup return a typed outcome with empty HTML. */
+typedef struct xc_search_html_export xc_search_html_export;
+typedef struct {
+  uint64_t generation;
+  int selection; /* 0=visible ordinals, 1=all retained; IDs remain live-tab scoped. */
+  const xc_search_visible_row *rows;
+  size_t row_count; /* all-retained requires NULL rows and zero count */
+  const char *title; /* NULL English default, NUL-terminated UTF-8 <=32KiB */
+  int include_scripture;
+  size_t max_bytes,max_rows;
+  int allow_partial_source;
+} xc_search_html_export_request;
+void xc_search_html_export_request_default(xc_search_html_export_request *out);
+xc_status xc_worker_export_search_html(xc_worker *worker,uint64_t tab,const xc_search_html_export_request *input,xc_request **out);
+xc_search_html_export *xc_request_take_search_html_export(xc_request *request);
+typedef enum {XC_HTML_EXPORT_ISSUE_NONE=0,XC_HTML_EXPORT_ISSUE_RESOURCES=1,XC_HTML_EXPORT_ISSUE_MARKUP=2,
+  XC_HTML_EXPORT_ISSUE_STYLES=3,XC_HTML_EXPORT_ISSUE_LINKS=4} xc_html_export_issue;
+typedef struct {
+  int disposition;
+  size_t row_count;
+  int failed_row_present;
+  size_t failed_row;
+  int includes_scripture,selection,issue;
+} xc_search_html_export_info;
+xc_status xc_search_html_export_get_info(const xc_search_html_export *result,xc_search_html_export_info *out);
+xc_status xc_search_html_export_get_generation(const xc_search_html_export *result,xc_search_generation_info *out);
+const char *xc_search_html_export_html(const xc_search_html_export *result); /* borrowed until release */
+size_t xc_search_html_export_size(const xc_search_html_export *result); /* UTF-8 bytes, excludes terminator */
+void xc_search_html_export_release(xc_search_html_export *result);
 xc_status xc_worker_create_tab(xc_worker *worker, xc_request **out);
 xc_status xc_worker_close_tab(xc_worker *worker, uint64_t tab, xc_request **out);
 /* Consumer migration capability, not a saved module preference. Accepts exactly
