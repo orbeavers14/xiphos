@@ -58,6 +58,10 @@ int c_header_test(void) {
          xc_worker_read_tab_entry(NULL, 0, "M", "John 3:16", &request) == XC_INVALID_ARGUMENT && request == NULL &&
          xc_worker_read_tab_chapter(NULL, 0, "M", "John 3:16", 0, &request) == XC_INVALID_ARGUMENT && request == NULL &&
          xc_worker_modules(NULL, &request) == XC_INVALID_ARGUMENT && request == NULL &&
+         xc_worker_read_verse_inline_image(NULL, "M", "original.png", 1024, &request) == XC_INVALID_ARGUMENT && request == NULL &&
+         xc_request_take_verse_image(NULL) == NULL && xc_verse_image_module(NULL) == NULL &&
+         xc_verse_image_source(NULL) == NULL && xc_verse_image_media_type(NULL) == NULL &&
+         xc_verse_image_bytes(NULL) == NULL && xc_verse_image_size(NULL) == 0 &&
          xc_request_poll(NULL) == XC_INVALID_ARGUMENT && xc_api_version() == 1 && xh_find_reference(references, 2, "B") == 1 &&
          xh_find_reference(references, 2, "Missing") == 2 &&
          xc_session_open(NULL, &session) == XC_INVALID_ARGUMENT && session == NULL;

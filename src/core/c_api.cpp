@@ -64,6 +64,7 @@ struct xc_book_document {
     for (auto &section : value.sections) sections.emplace_back(std::move(section));
   }
 };
+struct xc_verse_image {xiphos::core::VerseImageResource value;};
 struct xc_book_image { xiphos::core::BookImageTarget value; };
 struct xc_book_image_data {
   xc_book_image source;
@@ -112,6 +113,7 @@ struct xc_request {
   std::unique_ptr<xc_book_document> book_document;
   std::unique_ptr<xc_book_image> book_image;
   std::unique_ptr<xc_book_image_data> book_image_data;
+  std::unique_ptr<xc_verse_image> verse_image;
   std::unique_ptr<xc_book_children> book_children;
   std::unique_ptr<xc_book_note> book_note;
   std::unique_ptr<xc_lexical_entry> lexical;
@@ -159,6 +161,7 @@ struct xc_request {
     if (v) book_document = std::make_unique<xc_book_document>(std::move(*v));
   }
   void store(xiphos::core::BookFollowLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
+  void store(xiphos::core::VerseImageResource v){verse_image=std::make_unique<xc_verse_image>(xc_verse_image{std::move(v)});}
   void store(xiphos::core::BookImageResource v) { book_image_data = std::make_unique<xc_book_image_data>(std::move(v)); }
   void store(xiphos::core::BookImageTarget v) { book_image = std::make_unique<xc_book_image>(xc_book_image{std::move(v)}); }
   void store(xiphos::core::BookDocument v) { book_document = std::make_unique<xc_book_document>(std::move(v)); }
@@ -272,6 +275,11 @@ template<class T> struct Request final : xc_request {
 };
 template<class F> struct FutureValue;
 template<class T> struct FutureValue<std::future<T>> { using Type = T; };
+bool bounded_image_c_text(const char *text,std::size_t maximum){
+  if(!text||!*text)return false;
+  for(std::size_t i=0;i<=maximum;++i)if(!text[i])return true;
+  return false;
+}
 template<class F> xc_status queue_request(xc_worker *w, xc_request **out, F operation) {
   if (!out) return XC_INVALID_ARGUMENT;
   *out = nullptr;
@@ -589,6 +597,17 @@ const unsigned char *xc_book_image_data_bytes(const xc_book_image_data *image) {
 }
 size_t xc_book_image_data_size(const xc_book_image_data *image) { return image ? image->bytes.size() : 0; }
 void xc_book_image_data_release(xc_book_image_data *image) { delete image; }
+xc_status xc_worker_read_verse_inline_image(xc_worker *w,const char *module,const char *source,size_t maximum_bytes,xc_request **out){
+  if(!bounded_image_c_text(module,4096)||!bounded_image_c_text(source,32768)||!maximum_bytes||maximum_bytes>xiphos::core::maximum_verse_image_bytes){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
+  return queue_request(w,out,[=](auto &worker){return worker.read_verse_inline_image(module,source,maximum_bytes);});
+}
+xc_verse_image *xc_request_take_verse_image(xc_request *r){return r&&r->status==XC_OK?r->verse_image.release():nullptr;}
+const char *xc_verse_image_module(const xc_verse_image *image){return image?image->value.module.c_str():nullptr;}
+const char *xc_verse_image_source(const xc_verse_image *image){return image?image->value.source.c_str():nullptr;}
+const char *xc_verse_image_media_type(const xc_verse_image *image){return image?image->value.media_type.c_str():nullptr;}
+const unsigned char *xc_verse_image_bytes(const xc_verse_image *image){return image&&!image->value.data.empty()?reinterpret_cast<const unsigned char *>(image->value.data.data()):nullptr;}
+size_t xc_verse_image_size(const xc_verse_image *image){return image?image->value.data.size():0;}
+void xc_verse_image_release(xc_verse_image *image){delete image;}
 xc_status xc_worker_book_children(xc_worker *w, const char *id, uint64_t parent,
                                   int has_after, uint64_t after, uint32_t limit, xc_request **out) {
   if (!id || !*id || (has_after != 0 && has_after != 1) || !limit || limit > 256) {

@@ -143,3 +143,13 @@ pass 5/5 each (source/resource + book image/style + fixture). Configure/build
 then run `-R '^core_verse_image|^core_book_image_resource$|^core_book_stylesheet$'`.
 This is source bytes, not HTML-image embedding or visual acceptance. See
 [verse image contract](verse-image-workflows.md). No hosted jobs/reset credit used.
+
+## C verse image transport
+
+C++ source pushed at `2492d64`. Additive owned C11 transport passes normal,
+ASan/UBSan and TSan 4/4 focused checks plus strict C11 syntax. Build targets
+`core_verse_image_c_test core_verse_image_source_test core_verse_image_resource_test core_reader_test`
+and run `-R '^core_verse_image|^core_reader$'` in each configured directory.
+Input length guards precede copying/enqueue; owned results have take-once/null/
+empty/binary/lifetime checks. See [contract](verse-image-workflows.md). No native
+UI/HTML-image or whole-group acceptance. Swift copied values are next.

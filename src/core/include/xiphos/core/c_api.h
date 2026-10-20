@@ -21,6 +21,7 @@ typedef struct xc_book_entry xc_book_entry;
 typedef struct xc_book_document xc_book_document;
 typedef struct xc_book_image xc_book_image;
 typedef struct xc_book_image_data xc_book_image_data;
+typedef struct xc_verse_image xc_verse_image;
 typedef struct xc_book_children xc_book_children;
 typedef struct xc_book_note xc_book_note;
 /* Submission-only borrowed strings, copied before return. NULL is absent;
@@ -263,6 +264,22 @@ const xc_book_image *xc_book_image_data_source(const xc_book_image_data *image);
 const unsigned char *xc_book_image_data_bytes(const xc_book_image_data *image);
 size_t xc_book_image_data_size(const xc_book_image_data *image);
 void xc_book_image_data_release(xc_book_image_data *image);
+/* Owned Bible/regular-commentary image source bytes. Module/source strings copy
+ * before return; max_bytes is 1..16 MiB. No tab, rendering, decoding, history or
+ * network fetch. Uses actual module directory and shared bounded file policy;
+ * OSIS raw native prefixes are preserved before one source-URI decoding pass.
+ * Semantic/path errors arrive through request polling. Existing book API stays
+ * book-only. Take once after XC_OK; all pointers borrow until image release.
+ * MIME is a suffix hint. Empty owned data has size 0 and NULL bytes. */
+xc_status xc_worker_read_verse_inline_image(xc_worker *worker,const char *module,
+    const char *source,size_t max_bytes,xc_request **out);
+xc_verse_image *xc_request_take_verse_image(xc_request *request);
+const char *xc_verse_image_module(const xc_verse_image *image);
+const char *xc_verse_image_source(const xc_verse_image *image);
+const char *xc_verse_image_media_type(const xc_verse_image *image);
+const unsigned char *xc_verse_image_bytes(const xc_verse_image *image);
+size_t xc_verse_image_size(const xc_verse_image *image);
+void xc_verse_image_release(xc_verse_image *image);
 /* Read-only SDK child order, page limit 1..256; has_after is strict 0/1.
  * after is ignored when has_after=0; otherwise it must identify a direct child
  * of parent. All node strings borrow from the owned page. Out-of-range indices

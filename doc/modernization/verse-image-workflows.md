@@ -53,3 +53,21 @@ encoded-output limits, cancellation and copied C/native transport where needed.
 Do not reuse the reading preview's partial-image fallback as a successful export.
 Browser/CSP/visual/corpus checks remain pending; local-file preview was previously
 blocked by browser URL policy, with no workaround or visual acceptance.
+
+## Additive C11 transport
+
+A separate opaque image handle exposes the same copied module/source/MIME/bytes.
+Submission caps module/source lengths (4096/32768 bytes) before copying/enqueue;
+NULL/empty inputs and byte caps outside 1..16 MiB reject and clear the observer.
+Semantic/UTF-8/path errors arrive through polling. Results take once after XC_OK,
+are distinct from book image handles, and outlive both request and worker. Empty
+bytes use NULL plus size0; the owned result itself remains present. All borrowed
+fields are valid until that image handle is released. No existing C struct layout
+or API version changes.
+
+Focused normal/ASan/UBSan/TSan checks pass 4/4 each, including the source fixture,
+C image transport, C++ resource regression and C-reader/pedantic header checks.
+Cases cover caller-input mutation, overlong/NULL/invalid input, binary/empty data,
+exact/one-short bytes, missing/path errors, wrong/second takes, observer release
+and shutdown draining. Strict standalone C11 header syntax passes. This adds no
+native UI, image decoding or document/browser acceptance.
