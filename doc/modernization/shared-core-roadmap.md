@@ -30,8 +30,9 @@ the behavior/design reference; keep it operational and retain retirement gates.
 Current checkpoint: retained result generations C++ `37d9004`, C `155e0cb`, Swift
 `d1a15df`; selected visible text export C++ `3faadea`, C `6f0e3c1`, Swift `ec26889`.
 See [retention](search-retention-workflows.md) and [text export](search-text-export-workflows.md)
-for actual bounds/ownership. Next consuming native save/copy and complete retained
-text/HTML export remain distinct gates. Exact [item formatting](export-workflows.md)
+for actual bounds/ownership. Complete returned text is checked at C++ `b7dafd4`, C `1bb2615`, Swift `80589a4`;
+native Mac text actions at `5d52a11`. Next shared reference correctness and
+configured HTML source/document policy remain distinct gates. Exact [item formatting](export-workflows.md)
 is shared with GTK; advanced header/first-row quirks are characterized. Actual
 indexed execution, mixed families, advanced controls/settings and saved workflows
 remain partial work.

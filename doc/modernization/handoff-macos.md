@@ -4,12 +4,12 @@ Updated 2026-10-20. Read [AGENTS.md](../../AGENTS.md), the
 [shared handoff](handoff.md), [core scope](shared-core-roadmap.md),
 [status](status.md) and relevant parity rows first.
 
-Active task (2026-10-20, master): retained generations and selected visible text
-export are checked/pushed through `ec26889`; selected-export full Mac recheck and current portable-on-Mac checks pass.
-Native selected/all text save/copy is now checked below. Next shared work is
-remaining search/export correctness and HTML/corpus seams; local checks only.
-Checkpoint sections below preserve their original scoped evidence; earlier next
-steps are superseded by this active entry.
+Active task (2026-10-20, master): native selected/all text save/copy checked/pushed
+at `5d52a11`; shared SDK reference/range UTF-8 guards now pass 6 normal, 6 ASan/UBSan
+and 6 TSan focused checks, including two fixture setups each. Current portable-on-Mac full recheck: 113 passes + 1 index skip (114 registered),
+83.93 s, GTK runtime OFF. Next configured HTML source/document seams; local checks only.
+Checkpoint sections below preserve original scoped evidence; earlier next steps
+are superseded by this active entry.
 
 Previous checked handoff (2026-10-18, master): shared search advances checked/pushed through
 `cf80541`, then export/advanced characterization `8c0a4ed`; next implement private

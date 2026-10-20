@@ -73,6 +73,9 @@ int main(int argc,char **argv){try{
   check(stopped.executed&&stopped.cancelled&&staged&&staged->info().element_count==1&&stopped.references==std::vector<std::string>{"John 1:3"}&&!partial.terminateSearch,"Returned partial scope stages despite cancellation and restores SDK stop flag");
   previous=staged;partial.fail=true;rejects<std::runtime_error>([&]{capture_module_search(manager,partial,{"Text","Original"},{},{},previous.get(),&staged);});
   check(!staged&&previous->info().element_count==1,"SDK failure preserves prior immutable scope");
+  partial.fail=false;partial.result.clear();partial.result.add(sword::VerseKey("John1:1"));partial.result.add(sword::SWKey("bad\xff"));
+  rejects<std::runtime_error>([&]{capture_module_search(manager,partial,{"Text","Original"},{1,1024},{},previous.get(),&staged);});
+  check(!staged&&previous->info().element_count==1&&!partial.terminateSearch,"Malformed complete key beyond visible prefix cannot replace prior scope and SDK state restores");
  }
  std::cout<<"Private complete last-search scopes, tab isolation, publication, capacity and interval ownership passed\n";return 0;
  }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}

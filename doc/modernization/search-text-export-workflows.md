@@ -1,7 +1,7 @@
-# Selected visible search text export
+# Search text export: shared core and native Mac actions
 
-Updated 2026-10-20. Checked C++ session/worker service and additive C transport, not a complete
-native export workflow. See [retention](search-retention-workflows.md),
+Updated 2026-10-20. Checked selected/complete C++ text services, additive C/Swift
+transport and scoped native Mac text save/copy. Whole export parity remains open. See [retention](search-retention-workflows.md),
 [shared item formatting](export-workflows.md) and [remaining design](search-export-design.md).
 
 ## Selection, ownership and output
@@ -21,9 +21,9 @@ newline. Item descriptions use legacy advanced export's `KEY MODULE` spelling.
 Every selected row, including the first, is emitted. This corrects the
 characterized advanced first-row omission. The single title/explicit selection
 layout is an initial service contract, not byte-identical complete legacy
-advanced headers/group sections. HTML, full retained results, persisted settings,
-bookmarks, clipboard, destination writing, native save/print and pagination remain
-separate gates. No file or clipboard is touched by this service.
+advanced headers/group sections. Complete returned text and native Mac clipboard/
+save are checked below. HTML, persisted settings, bookmarks, printing and pagination
+remain gates. No file or clipboard is touched by the core service.
 
 Optional scripture comes from SWORD `stripText` with the tab's current configured
 module engine options, not search-only annotation choices or approximate HTML

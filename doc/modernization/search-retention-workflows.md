@@ -152,3 +152,21 @@ policy/reset independence, stale replacement, capacity fallback and copied
 lifetime after shutdown. An initial test argument-order compilation error was
 fixed before acceptance. This is adapter evidence, not a native save/copy UI or
 complete search/export parity.
+
+## SDK key text guard (2026-10-20)
+
+Copied search references now reject malformed UTF-8 rather than passing bytes to
+native adapters that may replace them silently. The complete private scope/retained
+key snapshot validates SDK key text, range text and versification metadata before
+publication. Whole-key output limits remain independent: an omitted malformed tail
+is not copied into a stateless bounded prefix, while complete retention rejects
+that tail even when the visible prefix was valid. No partial scope replaces the
+previous immutable snapshot on failure; SDK flags restore.
+
+Controlled SDK lists cover invalid lead bytes, overlong encodings, surrogate
+sequences, truncated multibyte text and out-of-range scalars, plus valid owned
+Unicode key/range text. An injected returned malformed key after a valid visible
+row establishes atomic scope failure rather than truncation/replacement recovery.
+Six normal, six ASan/UBSan and six TSan focused reference/scope/generation/C-export
+checks (including two fixture setups each) pass. SDK instrumentation remains
+partial/leaks off. This does not add dictionary/book search-family support.

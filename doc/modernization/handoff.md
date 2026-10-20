@@ -26,17 +26,14 @@ settings are per tab and physical SDK filters restore on every job. One FIFO
 owner handles batches, progress/Stop, scope and copied values. See the consolidated
 [current search contract](search-workflows.md); chronology remains in Git.
 
-Latest local suites: **139 Mac/core passes + 1 index skip** (140 registered),
-**108 portable/core model passes + 1 index skip** (109 registered, on Mac).
-Search batch/context checks passed **8 ASan/UBSan**, **6 TSan** at `f86293b`, then
-C transport **3 ASan/UBSan**, **3 TSan** at `ad28750`. Export item/C11/advanced setup
-checks at `8c0a4ed` pass **3 normal/ASan**; strict C11/pedantic C adapters, C++11
-native-disabled helpers pass. See [export evidence](export-workflows.md).
-Actual-index diagnostic `a3dcae8` is pushed. Its optional probe skips because this SDK supplies no usable
-framework despite creation status 0. Required-index mode correctly fails that
-negative control; real indexed execution remains unvalidated. No failed required
-probe is counted as feature acceptance. Basic window evidence remains `0ca0bab`;
-current Fedora/MSVC/native advanced GUI acceptance remains pending.
+Latest full Mac checkpoint `5d52a11`: **148 passes + 1 explicit index skip**
+(149 registered), with desktop access for the isolated AppKit pasteboard test.
+Current reference-guard checkpoint, portable/core models on Mac: **113 passes
++ 1 index skip** (114 registered), 83.93 s, GTK runtime OFF. Current Fedora/MSVC acceptance remains separate.
+Detailed normal/sanitizer/C11 evidence lives in the contracts and platform handoff.
+Actual-index diagnostic `a3dcae8` still has no usable SDK framework; optional probe
+skips, required-index negative control fails as expected. No actual indexed
+execution or failed required probe is counted as acceptance.
 
 Book tree/restore/navigation/DisplayLevel, resources/styles and combined note
 counters remain checked partial services with native Mac consumption; detailed
@@ -53,35 +50,27 @@ and the independent platform evidence in view.
 | Earlier Fedora preview scope catch-up | PRs #82–89, `a80409b` | [Native Fedora evidence](handoff-linux.md); retain manual/corpus/renderer gates |
 | Hosted build conservation | `cf9c853` | Linux manual-only; older workflows administratively paused |
 
-Retained search generations are checked/pushed: C++ `37d9004`, additive C11
-`155e0cb`, Swift 6 `d1a15df`. See [retention contracts](search-retention-workflows.md)
-for generation identity, capacity, ordered groups and copied stale-safe reads.
-C generation/batch/query+fixture pass 4/4 ASan/UBSan and 4/4 TSan; 10 focused
-C/Swift checks pass. Earlier full C++ checkpoint: 140 Mac passes + 1 index skip,
-109 portable-on-Mac passes + 1 skip. Current Fedora/MSVC validation stays separate.
+Retained generations are pushed: C++ `37d9004`, C `155e0cb`, Swift `d1a15df`.
+See [the contract](search-retention-workflows.md) for capacity, identity and copied
+stale-safe reads. Selected text export: C++ `3faadea`, C `6f0e3c1`, Swift `ec26889`;
+complete returned text: C++ `b7dafd4`, C `1bb2615`, Swift `80589a4`; native Mac
+selected/all text save/copy: `5d52a11`. See [the text contract](search-text-export-workflows.md).
+Output guards, first-row inclusion, order/duplicates, configured SDK text reads,
+partial-source choice, cancellation, state neutrality and owned lifetime are
+checked. Native window/save evidence is scoped; the user's general clipboard was
+untouched by tests. No complete HTML/print or whole feature group is accepted.
 
-Selected visible text export is checked/pushed at C++ `3faadea`, C `6f0e3c1` and
-Swift `ec26889`; see [its bounded contract](search-text-export-workflows.md).
-Original fixtures establish exact output caps, duplicate/order preservation,
-configured SDK stripText, stale selection, all-or-nothing cancellation/failure,
-state neutrality and owned shutdown lifetime. Focused normal/sanitizer evidence
-is scoped there; full selected-export Mac recheck passed 145 checks + 1 explicit index skip
-(146 registered). Current C++ complete-export portable-on-Mac recheck passed 113 + 1 index skip
-(114 registered), GTK runtime OFF.
-
-Complete retained text is checked in C++ with explicit incomplete-source
-acceptance and aggregate row/byte caps. Next shared/consuming work: C/Swift
-complete-result transport and native selected save/copy, then HTML/document gates. Display prefixes and final last scope cannot
-reconstruct every group. [Remaining design](search-export-design.md) is a proposal
-where not superseded by checked contracts. Keep actual indexed execution, advanced
-controls/mixed families/settings and other core services as separate gates.
-No hosted job or reset credit used.
+SDK reference/range UTF-8 validation before owned publication now passes six
+normal, six ASan/UBSan and six TSan focused checks (two fixture setups each).
+Next bounded work: configured HTML source/document seams in [the remaining plan](search-export-design.md).
+Keep actual indexed execution, advanced controls/mixed families/settings and other
+core services separate. No hosted jobs or reset credit used.
 
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Native selected save/copy and complete retained export | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Shared reference correctness, then configured HTML sources/document | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 
@@ -173,12 +162,12 @@ update/push the handoff with the tested commit and evidence. Preserve the GTK3 a
 and one shared C++ core. Do not trigger or enable hosted GitHub builds.
 ```
 
-## Hosted-build conservation verification (2026-10-18)
+## Hosted-build conservation verification (2026-10-20)
 
 Read-only GitHub inspection after the checked pushes confirms `builds` and
 `native-core` remain disabled_manually. `linux-core` remains active with only
 workflow_dispatch in its YAML. The latest repository runs returned by GitHub are
-from 2026-10-15; these 2026-10-18 pushes created no hosted jobs. No enable/dispatch
+from 2026-10-15; checked pushes through native text actions created no hosted jobs. No enable/dispatch
 or allowance reset was performed. Recheck these states before any future hosted
 run; an active manual workflow is not permission to dispatch it.
 

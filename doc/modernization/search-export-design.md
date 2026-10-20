@@ -1,119 +1,59 @@
-# Next shared slice: retained search results and export
+# Remaining search export work
 
-Updated 2026-10-20. Retention/session/worker and C/Swift transport are checked at
-`37d9004`, `155e0cb` and `d1a15df`; see [the current contract](search-retention-workflows.md).
-The first C++ selected visible text service is checked in [its contract](search-text-export-workflows.md).
-The remaining export/native host sections below describe the next work, not
-implemented public APIs unless a later checked contract explicitly supersedes them.
-See [current search](search-workflows.md), [export evidence](export-workflows.md)
-and [remaining core scope](shared-core-roadmap.md). No native export is accepted.
+Updated 2026-10-20. This is the remaining plan, not an implemented API contract.
+Checked behavior is defined by [retention](search-retention-workflows.md),
+[text export](search-text-export-workflows.md) and [shared item formatting](export-workflows.md).
+No whole search/export parity group or legacy retirement gate is accepted.
 
-## Problem established by current code
+## Checked foundation
 
-Public single/batch search output is a bounded prefix. The private last scope
-retains complete typed keys, but a batch replaces it after each execution, leaving
-only the final module. Neither a truncated prefix nor final scope can reproduce
-all search groups for export. Rerunning a search can change results/options and
-must not be an implicit recovery mechanism. Legacy export/bookmark code also has
-characterized first-row/header and global-list traversal quirks.
+One engine-owner FIFO retains immutable per-tab result generations, ordered
+queries/groups/failures and bounded complete typed keys, separately from final
+last scope. Copied generation IDs reject stale reads/exports. Aggregate capacity
+failures explicitly disable complete retention while visible rows remain usable.
+C++/C/Swift transport is checked; no SDK handle crosses to a frontend.
 
-## Proposed retention contract
+Selected visible and complete returned text share one document/SDK-reading policy.
+They preserve order/duplicates, include every intended first row, enforce aggregate
+row/byte guards and publish no partial failure document. Complete export rejects
+cancelled/failed/unattempted source by default; explicit partial-source acceptance
+preserves its metadata. Native Mac text save/copy consumes the same services with
+Stop/stale/close protection, isolated clipboard/file tests and scoped window/save
+evidence. Exact hashes/environment/counts live in the handoff and contracts.
 
-Keep one current search-result generation per tab on the existing engine owner,
-separately from last-search scope and annotation context. A generation owns module
-identity, ordered group/status metadata, query disposition and, when capacity
-allows, complete SDK keys for each successful group in display/export order.
-Scope retains its characterized pre-index-sort snapshot; export order must use
-post-sort keys instead. Preserve duplicate groups/rows and module identity.
+## Next shared seams
 
-Return a copied nonzero generation ID with public output. Export requests must
-name that ID; a stale ID rejects rather than exporting a newer invisible query.
-No SDK object/owning SDK handle leaves the FIFO worker. Replacing a generation or
-closing a tab destroys SDK snapshots on that owner. A later C/Swift presentation
-failure cannot accidentally associate old visible rows with new retained results;
-the host re-queries metadata or shows the stale-result error.
+1. Characterize configured HTML entry sources and their independent lifetimes,
+   styles, heading/annotation settings, images/resources and module families.
+   Do not turn stripped text into approximate HTML or drop required matching CSS.
+2. Extend the shared document policy with bounded HTML headers/sections and
+   escaped title/query/module metadata. Compare actual retained orchestration;
+   correct its characterized raw-header escaping, first-row omission and unmatched
+   closing lists explicitly rather than claiming byte-identical buggy output.
+3. Define self-contained versus externally referenced asset policy before calling
+   native HTML files complete. SDK rendering/temporary allocation and external
+   file mutation are not bounded/transactional merely because output bytes are.
+4. Add copied HTML transport and consuming native save/copy only after shared
+   source/document contracts are checked. Prepare complete payload before any
+   destination write; preserve reading/dictionary history, book selection, scope
+   and result generation on all outcomes.
 
-Publication follows visible-result disposition:
+## Remaining workflow acceptance
 
-| Disposition | Proposed current generation |
-|---|---|
-| Returned successful or SDK-partial executed search | Replace with returned groups/disposition |
-| Successful empty last-scope short-circuit | Replace with an explicit empty result generation |
-| Cancel before execution, with old visible results retained | Keep previous generation |
-| Single-search validation/preparation failure | Keep previous generation |
-| Completed batch with ordered per-group failures | Replace with attempted groups/statuses; no silent old result reuse |
-| Fatal batch failure before owned publication | Keep previous generation |
-| Clear last scope / reset annotation context | Keep visible result generation independent |
+The current text document has one caller-localizable title and item sequence.
+Full advanced query/mode headers, module sections, multi-selection ordering,
+legacy/native dialog choices and saved export settings still need workflow and
+visual acceptance. Native hosts should adapt those shared policies rather than
+recreate them. Core and output capability must remain distinct from all requested
+modules successfully completing.
 
-Use an aggregate retention cap across all groups, not the existing per-module
-scope cap multiplied by 32. Initial proposed ceilings: 100,000 SDK elements and
-16 MiB accounted key/range/versification bytes across the generation, with separately
-bounded owned metadata/prefix storage. Validate and test the actual accounting.
-These are logical caps, not exact SDK heap/time limits.
+Bookmarks require a shared ordered transformation/repository, compatible hierarchy,
+XML import/export round trips and existing first-row/header quirk decisions.
+Passage/selected-text export is a separate source contract. Printing, pagination,
+clipboard rich formats, accessibility and native dialogs on all three platforms
+remain independent gates. Keep actual indexed execution, mixed module families,
+full permitted corpus/locales and saved session compatibility in view.
 
-If complete export retention exceeds capacity while search itself can succeed,
-return the usable bounded display result with a **new** generation whose complete
-export capability is explicitly unavailable (`capacity_exceeded`). Do not leave
-an old generation masquerading as the new query. Explicit visible-row export can
-remain possible from independently retained bounded public rows. This is a new
-capability/disposition contract and needs tests before implementation acceptance.
-
-## Proposed export request and result
-
-Two explicit selections:
-
-- All retained matches: require complete retained groups and the matching current
-  generation. A missing/incomplete generation rejects with an owned reason.
-- Visible rows: identify generation/group/row ordinal, bounded in count, retaining
-  requested order and duplicates. The core resolves authoritative module/key
-  metadata; the host does not synthesize an all-results claim from a prefix.
-
-Rows need ordinal identity because duplicate keys/groups are legitimate. Establish
-selection ordering against the retained UI before adding native selection actions.
-A returned stopped search can export its explicitly identified partial generation;
-it must retain that cancelled/partial disposition in metadata or presentation.
-
-The request chooses text/HTML, include-scripture and a positive aggregate output
-byte cap. Build a complete owned payload or return a typed failure/cancellation;
-do not return an unlabeled half-document as a successful complete export. Validate
-selection and estimate/consume the output budget before publication. SDK rendering
-and temporary allocation/time are not automatically bounded by the final byte cap.
-
-Scripture reads use existing configured, history-neutral core reading on that tab.
-Use settings captured at export-job start, as legacy export reads the current
-reading backend, rather than assuming search-only annotation choices are display
-preferences. One worker job prevents application commands from interleaving those
-reads; it does not make externally modified module files transactional. Reading,
-book selection and both histories must remain unchanged, including failure/cancel.
-
-Reuse the checked item formatter. Header/document assembly belongs in one shared
-policy. Include every intended match; handle the characterized first-row omission,
-raw header escaping and unmatched list closes as explicit corrections with
-before/after fixtures. Do not claim byte-identical legacy orchestration when
-correcting these quirks. HTML assets/styles, localized labels, whole module
-families and saved workflows require separate acceptance evidence.
-
-The worker/C boundary transports only copied statuses, metadata and a complete
-owned payload. Swift/Windows/GTK adapters provide native file/clipboard/print UI;
-they do not recreate result selection, scripture rendering or document assembly.
-Prepare payload fully before any destination write. Reuse verified replacement
-primitives where their ownership/path contracts fit; profile persistence is not
-an automatic generic export-file API. Clipboard/printing/pagination remain
-independent host and acceptance gates.
-
-## Bounded implementation order
-
-1. Add private retained generation/capability metadata; test single/batch/duplicate
-   ordering, index sorting versus scope, aggregate retention capacity, empty/clear,
-   errors, cancellation, stale IDs, tab isolation and owner-thread destruction.
-2. Add bounded explicit visible-row text export with the existing formatter and
-   history-neutral configured reads. Test exact output/limits and no publication
-   on failure before broadening to complete retained results and HTML headers.
-3. Add copied C requests/results, take-once/borrowed lifetime and shutdown tests;
-   consume a native save/copy action only after the same shared contract is checked.
-4. Complete all-results export, bookmark transformation/storage and print/HTML asset
-   behavior with representative permitted corpus/profiles and visual/input evidence.
-
-This plan does not retire legacy source, complete bookmarks/passage export or
-recompute the overall/core completion estimate. Keep each slice reviewable and
-locally tested; no hosted build is required to begin it.
+Continue small reviewable slices with local tests and existing GTK3 operation.
+No hosted builds are required. Profile replacement is not a generic export-file
+API; reuse utilities only when their ownership/path/format contracts fit.

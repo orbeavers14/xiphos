@@ -2,6 +2,7 @@
 #include "search_scope.hpp"
 #include <versekey.h>
 #include <cstring>
+#include <glib.h>
 #include <stdexcept>
 namespace xiphos::core::detail {
 SearchScope::SearchScope(const sword::ListKey &keys,const SearchScopeLimits &limits) {
@@ -13,6 +14,8 @@ SearchScope::SearchScope(const sword::ListKey &keys,const SearchScopeLimits &lim
     if(!text)throw std::runtime_error("SDK scope key has missing text");
     const auto length=std::strlen(text);
     if(length>limits.max_key_bytes-bytes)throw std::length_error("Retained search scope exceeds text capacity");
+    if(!g_utf8_validate(text,static_cast<gssize>(length),nullptr))
+      throw std::runtime_error("SDK retained search key metadata is not valid UTF-8");
     bytes+=length;
   };
   for(int i=0;i<keys.getCount();++i){

@@ -1,20 +1,25 @@
 # Modernization status and acceptance
 
-Current retained-result checkpoint (2026-10-20): complete per-module generations,
-aggregate caps and stale-safe copied session/worker reads are pushed at `37d9004`,
-additive C11 transport at `155e0cb`, and Swift 6 values at `d1a15df`. Scope remains
-independent. See [the contract](search-retention-workflows.md). Ten focused local
-C/Swift regression checks pass; C generation/batch/query+fixture pass 4/4 ASan/UBSan
-and 4/4 TSan. Earlier full C++ checkpoint: Mac 140 passes + 1 index skip;
-portable-on-Mac 109 passes + 1 skip. These are distinct scoped runs.
-Selected visible-row text export is checked at C++ `3faadea`, C `6f0e3c1`, Swift
-`ec26889`; see [the bounded contract](search-text-export-workflows.md). Normal and
-focused sanitizers pass as recorded there; full selected-export Mac recheck passed 145 + 1 index skip (146 registered).
-Complete retained text is now checked in C++ with explicit partial-source choice;
-its C/Swift transport remains a next boundary. Portable-on-Mac full current
-recheck passed 113 + 1 index skip (114 registered), GTK runtime OFF.
-Native save/copy and complete-result/HTML export remain next work. No whole parity group,
-platform release or legacy retirement accepted; no hosted jobs/reset credit used.
+Current checkpoint (2026-10-20): retained generations and selected/complete text
+export are checked through one C++ owner with copied C/Swift values. Native Mac
+text save/copy at `5d52a11` consumes the same services. Source failure/cancellation,
+stale IDs, capacity/output caps, order/duplicates and state neutrality remain
+explicit; see [retention](search-retention-workflows.md) and [text export](search-text-export-workflows.md).
+
+Full Mac suite: 148 passes + 1 index skip (149 registered) at the native text
+checkpoint, with desktop access for its isolated named-pasteboard test. Portable
+core/model suite on Mac at the reference-guard checkpoint: 113 passes + 1 skip
+(114 registered), 83.93 s, GTK runtime OFF. Scoped sanitizer/C11 evidence remains in the contracts/handoff;
+SDK dependencies are partly instrumented and ASan leaks off. Current Fedora/MSVC,
+actual SDK index execution and full corpus acceptance remain open.
+
+SDK reference/range UTF-8 guards pass six normal, six ASan/UBSan and six TSan
+focused checks including two fixture setups each. Next boundary: configured HTML
+source/document seams. Advanced controls/mixed families,
+HTML/print, saved workflows and native platform acceptance remain. No whole parity
+group, platform release or legacy retirement accepted. Planning estimate remains
+about 8% (6–10%); no reliable core-only percentage follows from test counts.
+No hosted jobs/reset credit used.
 
 The following earlier checkpoint retains its own scoped evidence.
 
