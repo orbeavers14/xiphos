@@ -1,5 +1,8 @@
 # Shared Xiphos application core
 
+For the dependency inventory, SDK locations and platform setup links, see
+[dependencies/README.md](../../dependencies/README.md).
+
 On Linux, use the [automated setup/build/test commands](../../platforms/linux/README.md).
 
 Build/test independently of the GTK application:

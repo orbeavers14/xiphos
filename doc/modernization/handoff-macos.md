@@ -212,3 +212,13 @@ archive live only under ignored build. PNG/zlib are new explicit native-core
 requirements; target Linux/MSVC acceptance is pending. Next shared document
 resource/cache policy, preserving current default rejection and no partial output.
 No hosted jobs/reset credit or browser workaround used.
+
+### Dependency inventory checkpoint (2026-10-20)
+
+Added the tracked [dependency directory](../../dependencies/README.md) with
+shared-core requirements, platform/reference-app dependencies, inspected local
+SDK locations and a convention for future ignored source builds. Existing SDKs
+were not moved. libpng implementation remains `5d540fc`; this checkpoint changes
+documentation only. Checked local Markdown links and whitespace; no builds or
+hosted jobs needed. This is an inventory, not a complete transitive lockfile or
+release license audit. Continue shared HTML resource policy/cache work next.

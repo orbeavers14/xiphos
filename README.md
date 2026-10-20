@@ -60,6 +60,7 @@ a starter message to paste into each chat. Pull the latest repository before
 working, and push updated handoff evidence when finishing.
 
 * Existing GTK application: [INSTALL.md](INSTALL.md).
+* Dependency inventory and local SDK locations: [dependencies/README.md](dependencies/README.md).
 * Shared core and engine tests: [src/core/README.md](src/core/README.md).
 * Linux dependency setup and automated checks: [platforms/linux/README.md](platforms/linux/README.md).
 * Native macOS preview and adapter tests: [platforms/macos/README.md](platforms/macos/README.md).
