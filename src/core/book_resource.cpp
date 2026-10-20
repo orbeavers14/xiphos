@@ -20,20 +20,7 @@ BookImageResource capture_book_image_resource(sword::SWModule &module, BookImage
   if (!maximum_bytes || maximum_bytes > maximum_book_image_bytes)
     throw std::invalid_argument("Unsupported book image byte limit");
   auto context = capture_book_resource_context(module);
-  auto filename = command.filename;
-  // file:///local/path retains three slashes after legacy file: stripping.
-  // Authority/UNC forms are not implicitly contacted by this initial local reader.
-  if (filename.compare(0, 3, "///") == 0) {
-    const auto first = filename.find_first_not_of('/');
-    filename = first == std::string::npos ? "/" : "/" + filename.substr(first);
-  } else if (filename.compare(0, 2, "//") == 0 || filename.compare(0, 2, "\\\\") == 0) {
-    throw std::invalid_argument("Book image authorities are unsupported");
-  }
-#ifdef _WIN32
-  if (filename.size() > 3 && filename[0] == '/' && filename[2] == ':' &&
-      ((filename[1] >= 'A' && filename[1] <= 'Z') || (filename[1] >= 'a' && filename[1] <= 'z')))
-    filename.erase(0, 1);
-#endif
+  const auto filename = normalize_module_image_filename(command.filename);
   const auto path = module_resource_path(context.absolute_data_path, filename, false);
   auto data = read_module_resource_bytes(path, maximum_bytes, "Book image");
   return {{std::move(context), std::move(command)}, std::move(data)};

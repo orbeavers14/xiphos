@@ -12,6 +12,7 @@
 #include "book_tree.hpp"
 #include "book_document.hpp"
 #include "book_resource.hpp"
+#include "verse_image.hpp"
 #include "search.hpp"
 #include "book_selection.hpp"
 #include <memory>
@@ -81,6 +82,10 @@ public:
   // Uses the same bounded module-directory file policy and owned byte result.
   BookImageResource read_book_inline_image(const std::string &module, const std::string &source,
                                            std::size_t maximum_bytes = maximum_book_image_bytes);
+  // Exact rendered Bible/commentary image source, resolved under that module's
+  // actual SDK directory. No network reads, key/history/filter changes or decode.
+  VerseImageResource read_verse_inline_image(const std::string &module,const std::string &source,
+      std::size_t maximum_bytes=maximum_verse_image_bytes);
   // Missing module stylesheet is ordinary absence. Config chooses
   // PreferredCSSXHTML exactly (including empty), otherwise style.css. Local
   // regular files are bounded to the module data directory; no global CSS or

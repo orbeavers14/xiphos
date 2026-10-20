@@ -130,3 +130,16 @@ build directories, build `core_verse_image_source_test`, then
 (with `ASAN_OPTIONS=detect_leaks=0` for address/undefined). This is characterization,
 not new HTML-image or native/browser acceptance. Source policy details live in
 [resource export design](resource-export-design.md).
+
+## Owned verse image resource checkpoint
+
+Owner-side C++ Reader/FIFO worker commands now return copied source identity,
+MIME hints and bounded binary bytes. Existing book slash/path/file helpers are
+reused; book family guard stays unchanged. Original fixtures now include a
+Unicode/literal-percent/space native library root, regular files and contained/
+escaping symlinks. Normal Mac, ASan/UBSan, TSan and portable-on-Mac focused suites
+pass 5/5 each (source/resource + book image/style + fixture). Configure/build
+`core_verse_image_source_test core_verse_image_resource_test core_book_image_resource_test core_book_stylesheet_test`,
+then run `-R '^core_verse_image|^core_book_image_resource$|^core_book_stylesheet$'`.
+This is source bytes, not HTML-image embedding or visual acceptance. See
+[verse image contract](verse-image-workflows.md). No hosted jobs/reset credit used.

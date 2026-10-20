@@ -30,9 +30,9 @@ SVG. Arbitrary image bytes/styles cannot become trusted export data by renaming
 that service. Its parser can normalize source wrappers and retain style elements;
 the passive search policy deliberately rejects unsupported style context.
 
-Book resource context currently requires indexed general books. Bible/commentary
-source context needs characterization against actual SDK filters/configuration
-before sharing it. Do not bypass the module-family gate or accept an arbitrary
+Book resource context still requires indexed general books. A separate
+[owned verse image source service](verse-image-workflows.md) now handles the
+characterized Bible/commentary family without weakening that book guard. Do not bypass the module-family gate or accept an arbitrary
 frontend filesystem root. Declared modules in legacy image links remain metadata;
 resource ownership must stay tied to the exported row's actual module.
 
@@ -80,3 +80,8 @@ selection. The characterization passes normal, ASan/UBSan and TSan (one focused
 fixture test in each; dependencies partly instrumented and leaks off). No resource
 bytes or images are added to search exports by this checkpoint. Filesystem,
 Unicode-directory, missing/symlink and whole-document policy checks follow.
+
+Owned source implementation now passes 5/5 normal, ASan/UBSan, TSan and portable
+on-Mac focused checks. The [contract](verse-image-workflows.md) records exact
+bounds, copied ownership and OSIS native-prefix versus URI-suffix handling.
+Document image embedding and native/browser acceptance remain pending.

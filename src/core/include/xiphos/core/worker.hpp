@@ -37,6 +37,8 @@ public:
   StudyWorker(const StudyWorker &) = delete;
   StudyWorker &operator=(const StudyWorker &) = delete;
   std::future<std::vector<Module>> modules();
+  std::future<VerseImageResource> read_verse_inline_image(std::string module,std::string source,
+      std::size_t maximum_bytes=maximum_verse_image_bytes);
   // Owned, read-only source queries use the same engine thread, without a tab.
   StudySearch search_module_task(StudyTab tab,SearchQuery query,SearchLimits limits = {});
   std::future<SearchResult> search_module(StudyTab tab,SearchQuery query,SearchLimits limits = {});

@@ -4,6 +4,8 @@
 #include <optional>
 #include <string>
 namespace xiphos::core::detail {
+// Local file URI slash/drive normalization shared by image source consumers.
+std::string normalize_module_image_filename(std::string filename);
 // Filesystem policy only: callers supply exact SDK directory context and decode
 // source URIs separately. Missing-is-absent applies only to absent path entries.
 std::filesystem::path module_resource_path(const std::optional<std::string> &directory,

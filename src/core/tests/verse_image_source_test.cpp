@@ -3,6 +3,8 @@
 #include "xiphos/core/engine_manager.hpp"
 #include "xiphos/core/session.hpp"
 #include "xiphos/core/render.hpp"
+#include "image_source_test_support.hpp"
+using image_test::images;
 #include <rawtext.h>
 #include <rawcom.h>
 #include <markupfiltmgr.h>
@@ -15,22 +17,8 @@
 using namespace xiphos::core;
 namespace fs=std::filesystem;
 void check(bool ok,const char *message){if(!ok)throw std::runtime_error(message);}
-std::vector<std::string> images(const std::string &html){
- std::unique_ptr<xmlDoc,decltype(&xmlFreeDoc)> doc(htmlReadMemory(html.data(),static_cast<int>(html.size()),nullptr,"UTF-8",HTML_PARSE_NONET|HTML_PARSE_NODEFDTD|HTML_PARSE_NOERROR|HTML_PARSE_NOWARNING),xmlFreeDoc);
- check(bool(doc),"Parse generated original-prose SDK image source");
- std::vector<std::string> result;std::vector<xmlNode *> pending{xmlDocGetRootElement(doc.get())};
- while(!pending.empty()){
-  auto *n=pending.back();pending.pop_back();if(!n)continue;
-  if(n->next)pending.push_back(n->next);if(n->children)pending.push_back(n->children);
-  if(n->type==XML_ELEMENT_NODE&&xmlStrcasecmp(n->name,BAD_CAST "img")==0){
-   std::unique_ptr<xmlChar,decltype(xmlFree)> src(xmlGetProp(n,BAD_CAST "src"),xmlFree);
-   check(bool(src),"SDK image keeps a source");result.emplace_back(reinterpret_cast<const char *>(src.get()));
-  }
- }
- return result;
-}
 int main(int argc,char **argv){try{
- check(argc==2,"Private original image-source fixture root required");const fs::path root(argv[1]);
+ check(argc==2,"Private original image-source fixture root required");const fs::path root=fs::path(argv[1])/fs::u8path("library %20 café");
  fs::create_directories(root/"mods.d");
  const std::vector<std::string> inputs{"original.png","caf%C3%A9.png","a+b.png","literal%2520.png","missing.png","../outside.png","https://example.invalid/original.png"};
  const std::vector<std::string> ids{"ThMLText","ThMLNotes","OSISText","OSISNotes"};
@@ -47,8 +35,20 @@ int main(int argc,char **argv){try{
    const auto html=std::string("Original image-source prose ")+(osis?"<figure src=\"":"<img src=\"")+source+(osis?"\"/>":"\" />");writer->setEntry(html.c_str());
   }
   writer.reset();
+  for(const auto &name:{std::string("original.png"),std::string("café.png"),std::string("a+b.png"),std::string("literal%20.png")}){
+   std::ofstream file(data/fs::u8path(name),std::ios::binary);const auto bytes=image_test::bytes();file.write(bytes.data(),bytes.size());check(bool(file),"Write original binary resource");
+  }
+  std::ofstream empty(data/"empty.png",std::ios::binary);
+
   std::ofstream config(root/"mods.d"/(id+".conf"));
   config<<'['<<id<<"]\nDataPath=./data/"<<id<<"/\nModDrv="<<(commentary?"RawCom":"RawText")<<"\nSourceType="<<(osis?"OSIS":"ThML")<<"\nEncoding=UTF-8\n";
+ }
+ for(const auto &id:ids){
+  const auto dir=root/"data"/id;std::error_code error;
+  fs::create_directories(dir/"directory.png");
+  fs::remove(dir/"inside.png",error);fs::create_symlink(dir/"original.png",dir/"inside.png",error);
+  fs::remove(dir/"outside.png",error);const auto other=id=="ThMLText"?"OSISText":"ThMLText";
+  fs::create_symlink(root/"data"/other/"original.png",dir/"outside.png",error);
  }
  fs::remove(root/"mods.d/modules-conf.cache");
  {

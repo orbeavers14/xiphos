@@ -36,6 +36,7 @@ int main(int argc,char **argv){try{
  rejects<std::invalid_argument>([&]{detail::module_resource_path(directory,std::string("missing\0binary.png",18),true);});
  {
   Reader reader(root.string());
+  rejects<std::invalid_argument>([&]{reader.read_verse_inline_image("StyledBook","original.png");});
   for(const auto &value:std::vector<std::string>{"café.svg","file:café.svg",file.u8string(),"file:"+file.u8string(),"file://"+file.u8string(),"sub/../café.svg"}){
    auto resource=reader.read_book_image("StyledBook",base+encode(value));check(resource.data==svg && resource.target.context.module=="StyledBook" && resource.target.command.media_type=="image/svg+xml","Relative/contained absolute/file URI paths use SDK resource directory with exact owned bytes");held=std::move(resource);
   }

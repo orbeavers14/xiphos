@@ -8,6 +8,7 @@
 #include "xiphos/core/reader.hpp"
 #include "book_tree_source.hpp"
 #include "book_resource_source.hpp"
+#include "verse_image_source.hpp"
 #include "search_source.hpp"
 #include "xiphos/core/search_export.hpp"
 #include "search_validation.hpp"
@@ -208,6 +209,13 @@ BookImageResource Reader::read_book_inline_image(const std::string &id, const st
   auto *module = impl_->manager->getModule(id.c_str());
   if (!module) throw std::out_of_range("Module is not installed");
   return detail::capture_book_image_resource(*module, std::move(command), maximum_bytes);
+}
+VerseImageResource Reader::read_verse_inline_image(const std::string &id,const std::string &source,std::size_t maximum_bytes) {
+  if(id.empty()||id.size()>4096||id.find('\0')!=std::string::npos)throw std::invalid_argument("Invalid verse image module ID");
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto *module=impl_->manager->getModule(id.c_str());
+  if(!module)throw std::out_of_range("Module is not installed");
+  return detail::capture_verse_image_resource(*module,source,maximum_bytes);
 }
 std::optional<BookStylesheetResource> Reader::read_book_stylesheet(const std::string &id, std::size_t maximum_bytes) {
   if (id.empty() || id.find('\0') != std::string::npos) throw std::invalid_argument("Invalid general-book module ID");
