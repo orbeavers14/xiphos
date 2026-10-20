@@ -169,7 +169,8 @@ private:
   StudyNote note_impl(const std::string &module, const std::string &reference,
                        const std::string &identifier, const EngineOptions *options, bool render_body = true);
   Entry read_impl(const std::string &module, const std::string &reference, const EngineOptions *options,
-                  bool headings = false, bool commentary_only = false, const bool *render_note_labels = nullptr);
+                  bool headings = false, bool commentary_only = false, const bool *render_note_labels = nullptr,
+                  const std::size_t *max_html_bytes = nullptr);
   Chapter chapter_impl(const std::string &module, const std::string &reference,
                        const DisplayOptions &display, const EngineOptions *engine, const bool *render_note_labels = nullptr);
   Chapter commentary_chapter_impl(const std::string &module, const std::string &reference,

@@ -12,6 +12,7 @@
 #include "xiphos/core/search_export.hpp"
 #include "search_validation.hpp"
 #include "sdk_text.hpp"
+#include "sdk_render.hpp"
 #include "search_control.hpp"
 #include "xiphos/core/reference_list.hpp"
 #include <markupfiltmgr.h>
@@ -463,7 +464,7 @@ std::string Reader::read_stripped(const std::string &id,const std::string &refer
   return detail::copy_sdk_text(stripped,max_bytes);
 }
 Entry Reader::read_impl(const std::string &id, const std::string &reference, const EngineOptions *options,
-                        bool headings, bool commentary_only, const bool *labels) {
+                        bool headings, bool commentary_only, const bool *labels,const std::size_t *max_html_bytes) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto *module = &impl_->verse_module(id, reference);
   if (commentary_only && std::string(module->getType()) != "Commentaries")
@@ -477,7 +478,10 @@ Entry Reader::read_impl(const std::string &id, const std::string &reference, con
   // Resolve using the module's own versification and SWORD normalization,
   // never an independent canon/reference parser in a frontend.
   Entry result;
-  result.html = render_entry(*module, reference.c_str());
+  if(max_html_bytes){
+    module->setKey(reference.c_str());
+    result.html=detail::copy_sdk_text(detail::render_sdk_entry(*module),*max_html_bytes);
+  }else result.html = render_entry(*module, reference.c_str());
   if (module->getKey()->getError())
     throw std::invalid_argument("SWORD could not resolve the reference");
   result.reference = module->getKeyText();

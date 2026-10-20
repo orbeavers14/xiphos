@@ -4,11 +4,9 @@ Updated 2026-10-20. Read [AGENTS.md](../../AGENTS.md), the
 [shared handoff](handoff.md), [core scope](shared-core-roadmap.md),
 [status](status.md) and relevant parity rows first.
 
-Active task (2026-10-20, master): configured HTML/CSS source snapshots and ThML
-SDK text compatibility now pass full Mac 150 + 1 index skip (151 registered),
-portable-on-Mac 115 + 1 skip (116), ASan/UBSan 10/10 and TSan 10/10 focused checks.
-They share live rendering without publishing learned display choices; C++ only.
-Next bounded HTML output/CSS/asset policy; local checks only.
+Active task (2026-10-20, master): configured sources/ThML correction pushed at
+`0fffdbd`. Bounded body/CSS capture passes 7/7 normal Mac, portable-on-Mac,
+ASan/UBSan and TSan checks. Next shared HTML document/CSS/asset policy; local only.
 Checkpoint sections below preserve original scoped evidence; earlier next steps
 are superseded by this active entry.
 
@@ -17,6 +15,16 @@ Previous checked handoff (2026-10-18, master): shared search advances checked/pu
 retained search-result generations before bounded export. Continue
 bounded shared-core slices with local checks. Preserve unrelated files/GTK3.
 All source changes are committed/pushed at this checkpoint; no shared source edits remain in flight. This is not a concurrent ownership lease.
+
+## Bounded HTML body checkpoint (2026-10-20)
+
+Configured source/ThML correction pushed at `0fffdbd`. Bounded compact body/CSS
+capture now passes 7 focused checks each on normal Mac, portable-on-Mac, ASan/UBSan
+and TSan (source/copier/options+fixtures). The default 1 MiB/ceiling 8 MiB counts
+returned module/reference/body/CSS; sized SDK body validation precedes C-string
+truncation. No source/pref partial publication; live/legacy paths unchanged.
+See [source limits](html-source-workflows.md). Next document/CSS isolation and
+asset policy, not native HTML save. Full earlier suites retain their own hashes.
 
 ## Configured HTML source / ThML checkpoint (2026-10-20)
 

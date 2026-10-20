@@ -32,6 +32,18 @@ int main(int argc,char **argv){try{
   const auto before=session.module_presentation_options("Text");
   check(before.image_content==ContentPreference::unknown&&before.respect_font_faces==ContentPreference::unknown,"Fixture starts without learned content preferences");
   held=session.read_entry_snapshot("Text","John4:1");auto expected=session;const auto live=expected.read_entry("Text","John4:1");
+  const auto bounded=session.capture_entry_html("Text","John4:1");
+  check(bounded.module=="Text"&&bounded.reference==held.reference&&bounded.html==held.html&&bounded.css==held.lexical.css&&
+   bounded.lexical_applied&&bounded.copied_bytes==bounded.module.size()+bounded.reference.size()+bounded.html.size()+bounded.css.size(),"Bounded body source carries exact matching HTML/CSS and aggregate bytes");
+  check(session.capture_entry_html("Text","John4:1",{bounded.copied_bytes}).html==bounded.html,"Exact aggregate HTML source limit accepted");
+  bool clipped=false;try{session.capture_entry_html("Text","John4:1",{bounded.copied_bytes-1});}catch(const std::length_error &){clipped=true;}
+  check(clipped&&same_preferences(session.module_presentation_options("Text"),before),"One-byte-short source fails without publishing learned display choices");
+  bool raw_clipped=false;try{session.capture_entry_html("Text","John4:1",{4});}catch(const std::length_error &){raw_clipped=true;}
+  check(raw_clipped&&same_preferences(session.module_presentation_options("Text"),before),"SDK body guard also restores physical/logical state before aggregate source publication");
+  for(auto cap:{std::size_t{0},maximum_html_source_bytes+1}){bool bad=false;try{session.capture_entry_html("Text","John4:1",{cap});}catch(const std::invalid_argument &){bad=true;}check(bad,"Invalid HTML source budget");}
+  for(const auto &bad:std::vector<std::string>{std::string("bad\0tail",8),std::string("\xff",1),std::string(4097,'x')}){
+   bool rejected=false;try{session.capture_entry_html("Text",bad);}catch(const std::invalid_argument &){rejected=true;}check(rejected,"Invalid HTML source reference rejects before SDK reads");
+  }
   check(same_source(held,live)&&held.lexical.applied&&!held.lexical.css.empty()&&held.note_source.captured,"Snapshot uses the exact configured renderer, matching styles, cleanup and note source");
   check(same_preferences(session.module_presentation_options("Text"),before)&&
    expected.module_presentation_options("Text").image_content==ContentPreference::on&&expected.module_presentation_options("Text").respect_font_faces==ContentPreference::on,"Snapshot does not publish automatic image/font discovery that a live read publishes");
@@ -61,12 +73,12 @@ int main(int argc,char **argv){try{
    check(source.note_source.captured&&same_source(source,expected.read_entry("Text","John4:5"))&&same_preferences(session.module_presentation_options("Text"),before),"Real SDK note labels and numbering use the shared source/presentation pipeline");
   }
  }
- std::future<Entry> drained;
+ std::future<Entry> drained;std::future<EntryHtmlSource> bounded_drained;
  {
   StudyWorker worker(argv[1]);const auto tab=worker.create_tab().get();worker.set_lexical_layout_enabled(tab,true).get();
   worker.enable_module_preferences(tab).get();EngineOptions on;on.strongs=true;worker.set_module_engine_options(tab,"Text",on).get();
-  drained=worker.read_entry_snapshot(tab,"Text","John4:1");worker.close_tab(tab).get();
+  drained=worker.read_entry_snapshot(tab,"Text","John4:1");bounded_drained=worker.capture_entry_html(tab,"Text","John4:1");worker.close_tab(tab).get();
  }
- check(drained.get().lexical.applied&&held.html.find("Original")!=std::string::npos&&!held.lexical.css.empty(),"FIFO owner drains configured snapshots and copied HTML/CSS outlives all engine state");
+ check(drained.get().lexical.applied&&bounded_drained.get().lexical_applied&&held.html.find("Original")!=std::string::npos&&!held.lexical.css.empty(),"FIFO owner drains configured snapshots and copied HTML/CSS outlives all engine state");
  std::cout<<"Configured HTML/CSS sources, no preference publication, notes, fallback and owned worker lifetime passed\n";return 0;
 }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}

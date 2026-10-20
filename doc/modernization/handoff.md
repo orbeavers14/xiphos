@@ -66,7 +66,8 @@ normal/ASan/UBSan/TSan). Configured C++ HTML/CSS source snapshots now share live
 rendering without publishing auto-discovered image/font choices. Real ThML
 regressions corrected the earlier query/scripture guard's terminal-NUL convention;
 [the source contract](html-source-workflows.md) records the correction and 10/10
-ASan/UBSan plus 10/10 TSan checks. Next bounded HTML document/CSS/asset policies.
+ASan/UBSan plus 10/10 TSan checks. Bounded body/CSS capture additionally passes 7 focused checks each on normal Mac,
+portable-on-Mac, ASan/UBSan and TSan. Next HTML document/CSS/asset policies.
 Keep actual indexed execution, advanced controls/mixed families/settings and other
 core services separate. No hosted jobs or reset credit used.
 

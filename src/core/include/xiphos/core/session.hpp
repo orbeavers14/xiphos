@@ -5,6 +5,7 @@
 #include "reader.hpp"
 #include "presentation.hpp"
 #include "search_export.hpp"
+#include "html_source.hpp"
 #include <optional>
 #include <map>
 namespace xiphos::core {
@@ -105,6 +106,8 @@ public:
   // Configured HTML/CSS source without publishing automatic image/font choices.
   // Same renderer/cleanup/notes as live reads, no history or selection changes.
   // Owned source only: no HTML document/assets/output-size contract implied.
+  // Bounded body/CSS source; no profile discovery publication or output writes.
+  EntryHtmlSource capture_entry_html(const std::string &module,const std::string &reference,const HtmlSourceLimits &limits = {});
   Entry read_entry_snapshot(const std::string &module,const std::string &reference);
   Entry read_commentary_entry_snapshot(const std::string &module,const std::string &reference);
   StudyPassage read_passage(const std::string &module, const std::string &commentary,
@@ -174,7 +177,7 @@ private:
   std::vector<std::vector<std::string>> heading_note_html(const std::string &module,
       const std::vector<Entry *> &entries, const ModulePresentationOptions &options,
       const std::optional<EngineOptions> &engine);
-  Entry read_entry_impl(const std::string &module,const std::string &reference,bool commentary,bool publish_presentation);
+  Entry read_entry_impl(const std::string &module,const std::string &reference,bool commentary,bool publish_presentation,const std::size_t *max_html_bytes=nullptr);
   Entry present_content(const std::string &module, Entry entry,bool publish_presentation=true);
   Chapter present_content(const std::string &module, Chapter chapter, const DisplayOptions &display, bool commentary);
   LexicalEntry lookup_lexical(const std::string &module, const std::string &reference,

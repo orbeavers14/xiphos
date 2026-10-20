@@ -388,10 +388,12 @@ Entry StudySession::read_entry_snapshot(const std::string &module,const std::str
 Entry StudySession::read_commentary_entry_snapshot(const std::string &module,const std::string &reference){
   return read_entry_impl(module,reference,true,false);
 }
-Entry StudySession::read_entry_impl(const std::string &module,const std::string &reference,bool commentary,bool publish_presentation){
+Entry StudySession::read_entry_impl(const std::string &module,const std::string &reference,bool commentary,bool publish_presentation,const std::size_t *max_html_bytes){
   const auto options=module_engine_options(module);
   const auto presentation=module_presentation_options(module);
   auto entry=[&]{
+    if(max_html_bytes)return reader_.read_impl(module,reference,options?&*options:nullptr,
+      commentary&&presentation.headings,commentary,presentation.note_numbering_available?&presentation.note_numbers:nullptr,max_html_bytes);
     if(commentary)return presentation.note_numbering_available
       ? reader_.read_commentary_entry(module,reference,presentation.headings,*options,presentation.note_numbers)
       : options?reader_.read_commentary_entry(module,reference,presentation.headings,*options)

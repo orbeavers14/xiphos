@@ -124,6 +124,7 @@ public:
   std::future<StudyNote> study_note_link(StudyTab tab, std::string current_module, std::string uri);
   std::future<StudyNote> study_note(StudyTab tab, std::string module, std::string reference, std::string identifier);
   std::future<Entry> read_entry(StudyTab tab, std::string module, std::string reference);
+  std::future<EntryHtmlSource> capture_entry_html(StudyTab tab,std::string module,std::string reference,HtmlSourceLimits limits = {});
   std::future<Entry> read_entry_snapshot(StudyTab tab,std::string module,std::string reference);
   std::future<Entry> read_commentary_entry_snapshot(StudyTab tab,std::string module,std::string reference);
   std::future<StudyPassage> read_passage(StudyTab tab, std::string module, std::string commentary, std::string reference);
