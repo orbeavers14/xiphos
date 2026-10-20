@@ -197,6 +197,17 @@ if(BUILD_TESTING)
   add_custom_target(macos_option_adapter_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/option_adapter_smoke")
   add_test(NAME swift_option_adapter COMMAND "${CMAKE_CURRENT_BINARY_DIR}/option_adapter_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/options-fixture")
   set_tests_properties(swift_option_adapter PROPERTIES FIXTURES_REQUIRED options_fixture)
+  add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/verse_image_adapter_smoke"
+    COMMAND ${SWIFTC} -swift-version 6 -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
+      -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/VerseImageAdapterSmoke.swift"
+      "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
+      ${sword_link_flags} -lc++ -o "${CMAKE_CURRENT_BINARY_DIR}/verse_image_adapter_smoke"
+    DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift Tests/VerseImageAdapterSmoke.swift
+      Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h
+    VERBATIM)
+  add_custom_target(macos_verse_image_adapter_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/verse_image_adapter_smoke")
+  add_test(NAME swift_verse_image_adapter COMMAND "${CMAKE_CURRENT_BINARY_DIR}/verse_image_adapter_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/verse-image-source-fixture")
+  set_tests_properties(swift_verse_image_adapter PROPERTIES FIXTURES_REQUIRED verse_image_fixture)
   add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/book_image_adapter_smoke"
     COMMAND ${SWIFTC} -swift-version 6 -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
       -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/BookImageAdapterSmoke.swift"

@@ -71,3 +71,19 @@ Cases cover caller-input mutation, overlong/NULL/invalid input, binary/empty dat
 exact/one-short bytes, missing/path errors, wrong/second takes, observer release
 and shutdown draining. Strict standalone C11 header syntax passes. This adds no
 native UI, image decoding or document/browser acceptance.
+
+## Swift copied values
+
+Swift6 `CoreWorker.readVerseInlineImage` submits through C and copies module,
+original source, MIME hint and `Data` before releasing all borrowed C handles.
+Signed capacities, empty/overlong and embedded-NUL strings reject before C-string
+conversion. No URI decoding, filesystem policy or pixel decoding moves to Swift.
+As with existing non-search source reads, accepted work drains to its authoritative
+outcome even when its observing task is cancelled; interruption is not promised.
+
+Seven focused Mac checks pass, including the new Swift adapter, book-image Swift
+regression, C/C++ verse image tests and prerequisite fixtures. All four original
+module types, exact/short capacities, binary/empty values, invalid/unsafe inputs,
+state neutrality, cancellation/draining and post-shutdown copied values are
+covered. This changes adapters only; native image UI and exported images remain
+separate work.

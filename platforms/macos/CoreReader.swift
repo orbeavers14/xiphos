@@ -221,6 +221,10 @@ struct RenderedSearchBatch: Sendable, Equatable {
     var generation = CoreSearchGeneration.empty
     var generationUpdated = false
 }
+struct RenderedVerseImage: Sendable, Equatable {
+    let module: String, source: String, mediaType: String
+    let data: Data
+}
 struct RenderedBookImage: Sendable, Equatable {
     let module: String, filename: String, mediaType: String
     let data: Data
@@ -523,6 +527,13 @@ enum CoreValues {
             scope: CoreSearchScope(present: scope.present != 0, elementCount: scope.element_count),
             textOptions: searchTextOptions(text), generation: searchGeneration(generation),
             generationUpdated: xc_search_batch_generation_updated(batch) == 1)
+    }
+    static func verseImage(_ image: OpaquePointer) -> RenderedVerseImage {
+        let count = xc_verse_image_size(image)
+        let data = count == 0 ? Data() : Data(bytes: xc_verse_image_bytes(image)!, count: count)
+        return RenderedVerseImage(module: String(cString: xc_verse_image_module(image)!),
+            source: String(cString: xc_verse_image_source(image)!),
+            mediaType: String(cString: xc_verse_image_media_type(image)!), data: data)
     }
     static func bookImage(_ result: OpaquePointer) -> RenderedBookImage {
         let source = xc_book_image_data_source(result)!

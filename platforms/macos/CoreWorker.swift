@@ -532,6 +532,24 @@ actor CoreWorker {
         guard copied == XC_OK else { throw CoreError(status: copied) }
         return CoreValues.searchTextOptions(info)
     }
+    // The shared core owns source decoding, family/root policy and byte reads.
+    // Accepted file reads drain; this does not promise interruption of file I/O.
+    func readVerseInlineImage(module: String, source: String, maxBytes: Int = 16 * 1024 * 1024) async throws -> RenderedVerseImage {
+        guard !module.isEmpty, module.utf8.count <= 4096, !module.utf8.contains(0),
+              !source.isEmpty, source.utf8.count <= 32768, !source.utf8.contains(0),
+              maxBytes > 0, maxBytes <= 16 * 1024 * 1024 else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        let handle = try worker()
+        let submitted: (xc_status, OpaquePointer?) = module.withCString { id in source.withCString { uri in
+            var request: OpaquePointer?
+            let status = xc_worker_read_verse_inline_image(handle, id, uri, maxBytes, &request)
+            return (status, request)
+        } }
+        let completed = try await wait(submitted.0, submitted.1)
+        defer { xc_request_release(completed) }
+        guard let image = xc_request_take_verse_image(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_verse_image_release(image) }
+        return CoreValues.verseImage(image)
+    }
     func followBookLink(tab: UInt64, uri: String) async throws -> RenderedBookLink {
         guard !uri.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?

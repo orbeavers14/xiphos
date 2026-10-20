@@ -153,3 +153,12 @@ and run `-R '^core_verse_image|^core_reader$'` in each configured directory.
 Input length guards precede copying/enqueue; owned results have take-once/null/
 empty/binary/lifetime checks. See [contract](verse-image-workflows.md). No native
 UI/HTML-image or whole-group acceptance. Swift copied values are next.
+
+## Swift verse image values
+
+C transport pushed at `4b3220f`. Swift6 adapter passes 7/7 focused checks including
+existing book-image adapter and C/C++ source/resource cases plus fixtures. Build
+`macos_verse_image_adapter_test macos_book_image_adapter_test core_verse_image_source_test`,
+then run `-R '^swift_verse_image_adapter$|^swift_book_image_adapter$|^core_verse_image'`.
+Data/source are copied before C release, with signed/NUL guards and authoritative
+drain semantics. No URI/file policy or native image controls added in Swift.
