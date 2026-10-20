@@ -8,18 +8,18 @@
 #include <optional>
 #include <stdexcept>
 namespace xiphos::core::detail {
-VerseImageResource capture_verse_image_resource(sword::SWModule &module,const std::string &source,std::size_t maximum_bytes){
+VerseImageResource capture_verse_image_resource(sword::SWModule &module,const std::string &source,std::size_t maximum_bytes,VerseImageSourceKind kind){
  if(!supports_verse_search(module))throw std::invalid_argument("Image source requires a supported Bible or commentary module");
  if(!maximum_bytes||maximum_bytes>maximum_verse_image_bytes||source.empty()||source.size()>32768||
     source.find('\0')!=std::string::npos||!g_utf8_validate(source.data(),source.size(),nullptr))
   throw std::invalid_argument("Invalid bounded verse image source");
  const auto *value=module.getConfigEntry("AbsoluteDataPath");
  const std::optional<std::string> directory=value?std::make_optional(std::string(value)):std::nullopt;
- std::string uri=source;
+ std::string uri=kind==VerseImageSourceKind::study_command?book_image_link(source).filename:source;
  // OSIS emits a raw native SDK directory followed by the source URI. Decode
  // only that URI suffix; decoding the native prefix can change literal % paths.
  if(module.getMarkup()==sword::FMT_OSIS&&directory){
-  const auto prefix="file:"+*directory;
+  const auto prefix=(kind==VerseImageSourceKind::study_command?std::string{}:std::string("file:"))+*directory;
   if(uri.compare(0,prefix.size(),prefix)==0)uri.erase(0,prefix.size());
  }
  const auto command=book_inline_image_link(uri);

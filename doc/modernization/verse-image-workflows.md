@@ -87,3 +87,31 @@ module types, exact/short capacities, binary/empty values, invalid/unsafe inputs
 state neutrality, cancellation/draining and post-shutdown copied values are
 covered. This changes adapters only; native image UI and exported images remain
 separate work.
+
+## Actual SDK image commands
+
+`Reader::read_verse_image_link` and its FIFO worker command read actual SDK
+showImage links through the same bounded source service. The copied `source`
+identity is the original command URI. The existing strict book command parser
+performs query decoding/validation (including duplicate/unknown fields and
+suffix rules); that command value still contains a separate image URI suffix.
+ThML prefixes that value with `file:`; OSIS uses the raw SDK native directory.
+The adapter then decodes only the source-URI suffix, preserving the matched OSIS
+native prefix. Declared alternate-module fields remain metadata and never rebase
+resource ownership. Other commands/external origins are not image dispatch.
+
+This is an explicit SDK-command source contract. Legacy viewer dispatch passes a
+raw decoded filename to an external viewer, and the old book command API retains
+its characterized filename semantics. The new service intentionally resolves
+SDK image URI components under the actual source module so inline and clicked
+images agree; it does not silently redefine the old book/manual-filename API.
+Legacy hover filename/status-bar presentation and complete native interaction
+parity remain separate gates.
+
+Actual generated links for all 28 original rows are characterized. Successful
+image commands and inline sources produce the same owned bytes, including Unicode,
+literal-percent and plus filenames. Alternate declared modules cannot redirect
+them; missing/parent/network-looking sources refuse. Copied FIFO command requests
+and source identity survive shutdown. Normal Mac, ASan/UBSan, TSan and portable-on-
+Mac focused suites each pass 4/4 including original source/resource tests and
+retained book image regression/setup. No image embedding or viewer is added here.

@@ -450,6 +450,11 @@ std::future<StudyNote> StudyWorker::study_note(StudyTab tab, std::string module,
     return s.tab(tab).study_note(module, reference, identifier);
   });
 }
+std::future<VerseImageResource> StudyWorker::read_verse_image_link(std::string module,std::string uri,std::size_t maximum_bytes){
+  return impl_->submit([module=std::move(module),uri=std::move(uri),maximum_bytes](Impl::State &s){
+    return s.reader.read_verse_image_link(module,uri,maximum_bytes);
+  });
+}
 std::future<VerseImageResource> StudyWorker::read_verse_inline_image(std::string module,std::string source,std::size_t maximum_bytes){
   return impl_->submit([module=std::move(module),source=std::move(source),maximum_bytes](Impl::State &s){
     return s.reader.read_verse_inline_image(module,source,maximum_bytes);

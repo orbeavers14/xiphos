@@ -162,3 +162,14 @@ existing book-image adapter and C/C++ source/resource cases plus fixtures. Build
 then run `-R '^swift_verse_image_adapter$|^swift_book_image_adapter$|^core_verse_image'`.
 Data/source are copied before C release, with signed/NUL guards and authoritative
 drain semantics. No URI/file policy or native image controls added in Swift.
+
+## SDK verse image command sources
+
+Swift source values pushed at `840faec`. New C++ Reader/FIFO command source shares
+bounded image reads while separating query and URI decoding and retaining the
+matched OSIS native directory. Actual generated links, declared-module neutrality
+and copied lifetime pass normal/ASan/UBSan/TSan/portable focused 4/4 each. Build
+`core_verse_image_source_test core_verse_image_resource_test core_book_image_resource_test`
+and run `-R '^core_verse_image_source$|^core_verse_image_resource$|^core_book_image_resource$'`.
+This is new SDK-command behavior; old book filename semantics remain unchanged.
+Next copied command transport and typed reading-pane dispatch/native controls.

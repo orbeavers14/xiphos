@@ -86,6 +86,10 @@ public:
   // actual SDK directory. No network reads, key/history/filter changes or decode.
   VerseImageResource read_verse_inline_image(const std::string &module,const std::string &source,
       std::size_t maximum_bytes=maximum_verse_image_bytes);
+  // Actual SDK showImage command: query decoding and source-URI decoding are
+  // distinct. Declared alternate modules cannot rebase the supplied row module.
+  VerseImageResource read_verse_image_link(const std::string &module,const std::string &uri,
+      std::size_t maximum_bytes=maximum_verse_image_bytes);
   // Missing module stylesheet is ordinary absence. Config chooses
   // PreferredCSSXHTML exactly (including empty), otherwise style.css. Local
   // regular files are bounded to the module data directory; no global CSS or
@@ -180,6 +184,8 @@ private:
                        const DisplayOptions &display, const EngineOptions *engine, const bool *render_note_labels = nullptr);
   Chapter commentary_chapter_impl(const std::string &module, const std::string &reference,
                                    const DisplayOptions &display, const EngineOptions *engine, bool headings, const bool *render_note_labels = nullptr);
+  VerseImageResource verse_image_impl(const std::string &module,const std::string &source,
+      std::size_t maximum_bytes,bool command);
   struct Impl;
   std::unique_ptr<Impl> impl_;
 };

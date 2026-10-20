@@ -211,11 +211,17 @@ BookImageResource Reader::read_book_inline_image(const std::string &id, const st
   return detail::capture_book_image_resource(*module, std::move(command), maximum_bytes);
 }
 VerseImageResource Reader::read_verse_inline_image(const std::string &id,const std::string &source,std::size_t maximum_bytes) {
+  return verse_image_impl(id,source,maximum_bytes,false);
+}
+VerseImageResource Reader::read_verse_image_link(const std::string &id,const std::string &uri,std::size_t maximum_bytes) {
+  return verse_image_impl(id,uri,maximum_bytes,true);
+}
+VerseImageResource Reader::verse_image_impl(const std::string &id,const std::string &source,std::size_t maximum_bytes,bool command) {
   if(id.empty()||id.size()>4096||id.find('\0')!=std::string::npos)throw std::invalid_argument("Invalid verse image module ID");
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto *module=impl_->manager->getModule(id.c_str());
   if(!module)throw std::out_of_range("Module is not installed");
-  return detail::capture_verse_image_resource(*module,source,maximum_bytes);
+  return detail::capture_verse_image_resource(*module,source,maximum_bytes,command?detail::VerseImageSourceKind::study_command:detail::VerseImageSourceKind::inline_source);
 }
 std::optional<BookStylesheetResource> Reader::read_book_stylesheet(const std::string &id, std::size_t maximum_bytes) {
   if (id.empty() || id.find('\0') != std::string::npos) throw std::invalid_argument("Invalid general-book module ID");

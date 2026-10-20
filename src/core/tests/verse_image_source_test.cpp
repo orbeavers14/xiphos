@@ -56,6 +56,11 @@ int main(int argc,char **argv){try{
   for(const auto &id:ids){auto *module=manager.getModule(id.c_str());check(module,"Original image module installed");
    const auto *directory=module->getConfigEntry("AbsoluteDataPath");check(directory&&fs::equivalent(fs::u8path(directory),root/"data"/id),"Actual SDK resource context resolves to this row module's directory");
    for(unsigned verse=1;verse<=7;++verse){const auto rendered=render_entry(*module,("John 1:"+std::to_string(verse)).c_str());const auto sources=images(rendered);
+    const auto links=image_test::attributes(rendered,"a","href");
+    check(links.size()==1,"SDK image has exactly one command link");
+    const auto command=book_image_link(links[0]);
+    const auto filename=id.find("OSIS")==0?std::string(directory)+inputs[verse-1]:inputs[verse-1];
+    check(command.filename==filename&&command.declared_module==std::make_optional(id),"SDK command query decoding preserves the separate URI suffix and raw module directory");
     check(sources.size()==1,"Each SDK row yields exactly one image");
     const auto expected=id.find("OSIS")==0?std::string("file:")+directory+inputs[verse-1]:inputs[verse-1];
     check(sources[0]==expected,"ThML preserves image URLs; OSIS prefixes even missing, parent and network-looking sources with the exact SDK data path");
