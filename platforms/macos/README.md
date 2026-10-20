@@ -376,4 +376,8 @@ The native Export text menu now consumes shared selected/all retained text,
 Include scripture, progress/Stop, clipboard and save dialog. See the
 [text export contract](../../doc/modernization/search-text-export-workflows.md)
 for identity/capacity limits, desktop-access test requirements and actual window
-evidence. HTML/printing, full corpus and complete export parity remain pending.
+evidence. Copied Swift HTML values now consume the shared restricted passive
+HTML service; no native HTML buttons are exposed yet. See the
+[HTML contract](../../doc/modernization/html-export-workflows.md). Native HTML
+destinations, assets/semantic links, browser/visual checks, printing, full corpus
+and complete export parity remain pending.

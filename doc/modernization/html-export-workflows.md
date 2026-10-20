@@ -134,3 +134,8 @@ and 6 TSan checks (HTML adapters, policy and prerequisite fixtures). Exact depth
 normal/ASan/UBSan/TSan policy checks; the subsequent portable-on-Mac focused run
 passes 6/6. Partial SDK instrumentation and leak-check exclusions still apply.
 Native-disabled C++11 helpers and pedantic C11 header compilation also pass.
+
+Final integration after wrapper/resource follow-ups at `7e9ff93`: full Mac
+154 passes + one index skip (155 registered, 131.12 s); full portable models on
+Mac 118 passes + one skip (119 registered, 89.70 s), GTK runtime OFF. Both builds/
+suites exit0. Native HTML/browser/corpus and target-platform limits remain open.

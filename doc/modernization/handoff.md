@@ -26,11 +26,10 @@ settings are per tab and physical SDK filters restore on every job. One FIFO
 owner handles batches, progress/Stop, scope and copied values. See the consolidated
 [current search contract](search-workflows.md); chronology remains in Git.
 
-Latest configured-HTML-source/ThML checkpoint, full Mac: **150 passes + 1
-explicit index skip** (151 registered), 127.53 s, with desktop access for the
-isolated AppKit pasteboard test.
-Current configured-HTML-source/ThML checkpoint, portable/core models on Mac:
-**115 passes + 1 index skip** (116 registered), 86.92 s, GTK runtime OFF. Current Fedora/MSVC acceptance remains separate.
+Full Mac suite at `7e9ff93`: **154 passes + 1 explicit index
+skip** (155 registered), 131.12 s, with desktop access for the isolated AppKit
+pasteboard test. Full portable/core models at the same source checkpoint on Mac:
+**118 passes + 1 index skip** (119 registered), 89.70 s, GTK runtime OFF. Current Fedora/MSVC acceptance remains separate.
 Detailed normal/sanitizer/C11 evidence lives in the contracts and platform handoff.
 Actual-index diagnostic `a3dcae8` still has no usable SDK framework; optional probe
 skips, required-index negative control fails as expected. No actual indexed
@@ -67,7 +66,16 @@ rendering without publishing auto-discovered image/font choices. Real ThML
 regressions corrected the earlier query/scripture guard's terminal-NUL convention;
 [the source contract](html-source-workflows.md) records the correction and 10/10
 ASan/UBSan plus 10/10 TSan checks. Bounded body/CSS capture additionally passes 7 focused checks each on normal Mac,
-portable-on-Mac, ASan/UBSan and TSan. Next HTML document/CSS/asset policies.
+portable-on-Mac, ASan/UBSan and TSan. Initial restricted passive HTML documents
+are pushed: C++ `1b327d9`, C `e7c141e`, Swift `e8a8ec8`. Selection stays shared
+with text, matching core CSS is scoped, unsupported resources/markup reject
+without partial output. See [HTML contract](html-export-workflows.md).
+Native HTML destinations, resource/link policy expansion and browser/visual
+acceptance remain pending. Local-file browser preview was blocked by URL policy;
+no workaround or visual acceptance.
+Subsequent wrapper/traversal guards are checked at `395c834`. Shared resource
+filesystem policy is extracted at `ff46f9b` with NUL-path guards at `7e9ff93`;
+[reuse audit](resource-export-design.md) defines the next bounded source contract.
 Keep actual indexed execution, advanced controls/mixed families/settings and other
 core services separate. No hosted jobs or reset credit used.
 
@@ -75,7 +83,7 @@ core services separate. No hosted jobs or reset credit used.
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Shared reference correctness, then configured HTML sources/document | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Shared resource/link export characterization, then native HTML consumption and advanced search workflows | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 
@@ -172,11 +180,11 @@ and one shared C++ core. Do not trigger or enable hosted GitHub builds.
 Read-only GitHub inspection after the checked pushes confirms `builds` and
 `native-core` remain disabled_manually. `linux-core` remains active with only
 workflow_dispatch in its YAML. The latest repository runs returned by GitHub are
-from 2026-10-15; checked pushes through native text actions created no hosted jobs. No enable/dispatch
+from 2026-10-15; checked pushes through `7e9ff93` created no hosted jobs. No enable/dispatch
 or allowance reset was performed. Recheck these states before any future hosted
 run; an active manual workflow is not permission to dispatch it.
 
 At this checked handoff, source/docs are pushed sequentially to the fork's master;
 there are no shared source edits left in flight. Preserve unrelated local files
 and fetch before the next slice. The next shared service and explicit unresolved
-gates are recorded above and in the retained-result design.
+gates are recorded above and in the remaining export/resource plans.

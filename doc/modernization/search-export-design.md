@@ -21,25 +21,22 @@ preserves its metadata. Native Mac text save/copy consumes the same services wit
 Stop/stale/close protection, isolated clipboard/file tests and scoped window/save
 evidence. Exact hashes/environment/counts live in the handoff and contracts.
 
-Initial C++ selected/all passive HTML is now checked in [its scoped contract](html-export-workflows.md).
+Initial C++/C/Swift selected/all passive HTML is now checked in [its scoped contract](html-export-workflows.md).
 Images/module styles, semantic links and browser/visual evidence remain open.
 
 ## Next shared seams
 
-1. Characterize configured HTML entry sources and their independent lifetimes,
-   styles, heading/annotation settings, images/resources and module families.
-   Do not turn stripped text into approximate HTML or drop required matching CSS.
-2. Extend the shared document policy with bounded HTML headers/sections and
-   escaped title/query/module metadata. Compare actual retained orchestration;
-   correct its characterized raw-header escaping, first-row omission and unmatched
-   closing lists explicitly rather than claiming byte-identical buggy output.
-3. Define self-contained versus externally referenced asset policy before calling
-   native HTML files complete. SDK rendering/temporary allocation and external
-   file mutation are not bounded/transactional merely because output bytes are.
-4. Add copied HTML transport and consuming native save/copy only after shared
-   source/document contracts are checked. Prepare complete payload before any
-   destination write; preserve reading/dictionary history, book selection, scope
-   and result generation on all outcomes.
+1. Follow the [resource reuse audit](resource-export-design.md) to characterize self-contained versus externally referenced images/assets and
+   semantic note/passage links across module families. The restricted service
+   rejects unsupported requirements; do not silently strip them or enable fetching.
+2. Expand shared advanced query/mode headers and module sections with workflow
+   comparisons. Keep first-row inclusion and explicit escaping corrections.
+3. Add native HTML save/copy consumers using the existing copied transport only
+   after the intended format/resource contract is checked. Prepare the complete
+   payload before any destination write and preserve shared reading/search state.
+4. Validate browser/CSP, representative corpus, native destinations and full
+   workflows on each target. SDK temporaries/time and external file mutation are
+   not bounded/transactional merely because final output bytes are bounded.
 
 ## Remaining workflow acceptance
 
