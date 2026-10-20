@@ -2,6 +2,8 @@
 #include "search_source.hpp"
 #include "search_control.hpp"
 #include "search_results.hpp"
+#include "search_generation.hpp"
+#include "search_validation.hpp"
 #include "xiphos/core/search_policy.hpp"
 #include "xiphos/core/engine_manager.hpp"
 #include "xiphos/core/presentation.hpp"
@@ -59,15 +61,14 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
                                   SearchQuery query,const SearchLimits &limits,const std::shared_ptr<SearchControl> &control,
                                   const SearchScope *previous,std::shared_ptr<const SearchScope> *next,
                                   const SearchScopeLimits &scope_limits,const std::optional<SearchTextOptions> &previous_text,
-                                  unsigned progress_begin,unsigned progress_end,bool allow_empty_output) {
+                                  unsigned progress_begin,unsigned progress_end,bool allow_empty_output,
+                                  SearchRetainedKeys *retained,SearchRetentionLimits retention_limits) {
   if(progress_begin>progress_end||progress_end>100)throw std::invalid_argument("Invalid search progress interval");
   if(next)next->reset();
+  if(retained)*retained={};
   if(query.within_last_results&&(!next||query.range))
     throw std::invalid_argument("Last-search scope requires a session and excludes explicit range");
-  if(query.module.empty()||query.module.find('\0')!=std::string::npos||query.expression.empty()||
-     query.expression.size()>32768||query.expression.find('\0')!=std::string::npos||
-     !g_utf8_validate(query.expression.data(),query.expression.size(),nullptr))
-    throw std::invalid_argument("Search needs a nonempty UTF-8 query of at most 32768 bytes");
+  validate_search_query(query);
   if((!allow_empty_output&&(!limits.max_results||!limits.max_reference_bytes))||limits.max_results>maximum_search_results||
      limits.max_reference_bytes>maximum_search_reference_bytes)
     throw std::invalid_argument("Unsupported search output limits");
@@ -90,10 +91,6 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   std::optional<sword::ListKey> range;
   if(query.range){
     const auto &requested=*query.range;
-    if(requested.module.empty()||requested.module.find('\0')!=std::string::npos||requested.expression.empty()||
-       requested.expression.size()>4096||requested.expression.find('\0')!=std::string::npos||
-       !g_utf8_validate(requested.expression.data(),requested.expression.size(),nullptr))
-      throw std::invalid_argument("Search range needs a module and nonempty UTF-8 bounds of at most 4096 bytes");
     auto *source=manager.getModule(requested.module.c_str());
     if(!source)throw std::out_of_range("Search range module is not installed");
     auto *key=dynamic_cast<sword::VerseKey *>(source->getKey());
@@ -115,7 +112,11 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   const bool index_fallback=query.mode==SearchMode::indexed&&engine_type!=sword::SWModule::SEARCHTYPE_EXTERNAL;
   auto prepared=sidebar_search_text(query.expression,query.mode==SearchMode::words&&engine_type==sword::SWModule::SEARCHTYPE_EXTERNAL);
   if(attribute){auto value=attribute_search_text(query.expression,*attribute);prepared=std::move(value.expression);whole_entry=value.whole_entry;}
-  const std::string stripped=module.stripText(prepared.c_str()).c_str();
+  const auto &stripped_buffer=module.stripText(prepared.c_str());
+  if(stripped_buffer.size()>maximum_search_effective_bytes)throw std::length_error("Prepared SDK query exceeds copied metadata capacity");
+  const std::string stripped(stripped_buffer.c_str(),stripped_buffer.size());
+  if(stripped.find('\0')!=std::string::npos||!g_utf8_validate(stripped.data(),stripped.size(),nullptr))
+    throw std::runtime_error("Prepared SDK query is not NUL-free UTF-8");
   if(control&&control->cancel_requested()) {
     SearchResult result{std::move(query),stripped,engine_type,0,{},false};result.cancelled=true;result.effective_text_options=effective_text;result.index_fallback=index_fallback;return result;
   }
@@ -129,10 +130,14 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   // Legacy copies the complete scope before sorting indexed display results.
   auto staged=next?std::make_shared<const SearchScope>(list,scope_limits):nullptr;
   if(engine_type==sword::SWModule::SEARCHTYPE_EXTERNAL)list.sort();
+  SearchRetainedKeys staged_retained;
+  if(retained)staged_retained=retain_search_keys(list,
+    engine_type==sword::SWModule::SEARCHTYPE_EXTERNAL?nullptr:staged,retention_limits);
   auto copied=copy_search_references(list,limits,allow_empty_output);
   SearchResult result{std::move(query),stripped,engine_type,copied.engine_count,std::move(copied.references),copied.limited};
   result.executed=true;result.cancelled=control&&control->cancel_requested();
   result.effective_text_options=effective_text;result.index_fallback=index_fallback;
+  if(retained)*retained=std::move(staged_retained);
   if(next)*next=std::move(staged); // Publish only after all owned output is ready.
   return result;
 }

@@ -31,6 +31,11 @@ public:
   // complete next scope continue when the copied prefix budget is exhausted.
   // Per-module errors are owned group statuses; fatal failure publishes no state.
   SearchBatchResult search_batch(std::vector<SearchQuery> queries,const SearchBatchLimits &limits = {},std::shared_ptr<SearchControl> control = {});
+  SearchGenerationInfo search_generation() const;
+  // Policy applies to future generations only; no mutation of current results.
+  void set_search_retention_limits(SearchRetentionLimits limits);
+  SearchRetentionLimits search_retention_limits() const {return search_retention_limits_;}
+  SearchGenerationRead read_search_generation(std::uint64_t id,std::size_t group,SearchReferenceSource source=SearchReferenceSource::complete,const SearchLimits &limits = {}) const;
   SearchScopeInfo last_search_scope() const;
   void clear_search_scope();
   SearchTextState search_text_options() const {return {search_text_options_};}
@@ -141,6 +146,9 @@ public:
   void clear_history() { history_.clear(); }
 private:
   std::shared_ptr<const detail::SearchScope> search_scope_;
+  std::shared_ptr<const detail::SearchGeneration> search_generation_;
+  std::uint64_t search_generation_serial_=0;
+  SearchRetentionLimits search_retention_limits_;
   std::optional<SearchTextOptions> search_text_options_;
   std::optional<BookSelectionState> book_selection_;
   Reader &reader_;

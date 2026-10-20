@@ -267,6 +267,14 @@ No whole parity group or source-retirement gate is accepted. Local sanitizer
 instrumentation is partial and leaks are off; portable suites on Mac are not
 current Fedora desktop evidence. See handoffs for exact counts and revisions.
 
+## Retained result groups (2026-10-19)
+
+C++ session/worker generations now retain complete ordered result groups separately
+from last scope, with aggregate limits, explicit unavailable capability and stale-
+safe copied reads. See [the current retention contract](search-retention-workflows.md).
+Initial C/Swift generation transport and complete export remain the next boundaries;
+existing search APIs keep working. No additional whole parity group is accepted.
+
 ## Actual index diagnostic and required gate
 
 `core_search_index` copies only the generated original-prose fixture to a separate

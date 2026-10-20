@@ -1,5 +1,15 @@
 # Modernization status and acceptance
 
+Current C++ retention checkpoint (2026-10-19): complete per-module result
+generations, aggregate caps and stale-safe copied session/worker reads are checked.
+Scope remains independent. See [the contract](search-retention-workflows.md).
+Mac: 140 passes + 1 index skip; quiet portable-on-Mac: 109 passes + 1 skip.
+Serial focused ASan/UBSan 6/6, TSan 4/4 pass after initial elapsed-time failures.
+C/Swift generation transport and complete export remain next boundaries; no
+whole parity group, platform release or legacy retirement is accepted.
+
+The following earlier checkpoint retains its own scoped evidence.
+
 Current checkpoint (2026-10-18): shared search now includes exact attribute modes
 `572f539`, private annotation context `8ebeddc`, scoped capability probing `92bacfc`,
 composable C/Swift query `b71980b` / `f4934b2`, advanced multiword/raw indexed dialects

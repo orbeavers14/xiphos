@@ -124,6 +124,18 @@ StudyBatchSearch StudyWorker::search_batch_task(StudyTab tab,std::vector<SearchQ
 std::future<SearchBatchResult> StudyWorker::search_batch(StudyTab tab,std::vector<SearchQuery> queries,SearchBatchLimits limits) {
   return search_batch_task(tab,std::move(queries),limits).result;
 }
+std::future<SearchGenerationInfo> StudyWorker::search_generation(StudyTab tab){
+  return impl_->submit([tab](Impl::State &s){return s.tab(tab).search_generation();});
+}
+std::future<SearchRetentionLimits> StudyWorker::set_search_retention_limits(StudyTab tab,SearchRetentionLimits limits){
+  return impl_->submit([tab,limits](Impl::State &s){auto &session=s.tab(tab);session.set_search_retention_limits(limits);return session.search_retention_limits();});
+}
+std::future<SearchRetentionLimits> StudyWorker::search_retention_limits(StudyTab tab){
+  return impl_->submit([tab](Impl::State &s){return s.tab(tab).search_retention_limits();});
+}
+std::future<SearchGenerationRead> StudyWorker::read_search_generation(StudyTab tab,std::uint64_t id,std::size_t group,SearchReferenceSource source,SearchLimits limits){
+  return impl_->submit([tab,id,group,source,limits](Impl::State &s){return s.tab(tab).read_search_generation(id,group,source,limits);});
+}
 std::future<SearchScopeInfo> StudyWorker::last_search_scope(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s){return s.tab(tab).last_search_scope();});
 }

@@ -42,6 +42,10 @@ public:
   std::future<SearchResult> search_module(StudyTab tab,SearchQuery query,SearchLimits limits = {});
   StudyBatchSearch search_batch_task(StudyTab tab,std::vector<SearchQuery> queries,SearchBatchLimits limits = {});
   std::future<SearchBatchResult> search_batch(StudyTab tab,std::vector<SearchQuery> queries,SearchBatchLimits limits = {});
+  std::future<SearchGenerationInfo> search_generation(StudyTab tab);
+  std::future<SearchRetentionLimits> set_search_retention_limits(StudyTab tab,SearchRetentionLimits limits);
+  std::future<SearchRetentionLimits> search_retention_limits(StudyTab tab);
+  std::future<SearchGenerationRead> read_search_generation(StudyTab tab,std::uint64_t id,std::size_t group,SearchReferenceSource source=SearchReferenceSource::complete,SearchLimits limits = {});
   std::future<SearchScopeInfo> last_search_scope(StudyTab tab);
   std::future<SearchScopeInfo> clear_search_scope(StudyTab tab);
   std::future<SearchTextState> search_text_options(StudyTab tab);

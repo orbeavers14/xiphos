@@ -1,14 +1,30 @@
 # macOS chat handoff
 
-Updated 2026-10-18. Read [AGENTS.md](../../AGENTS.md), the
+Updated 2026-10-19. Read [AGENTS.md](../../AGENTS.md), the
 [shared handoff](handoff.md), [core scope](shared-core-roadmap.md),
 [status](status.md) and relevant parity rows first.
 
-Checked handoff (2026-10-18, master): shared search advances checked/pushed through
+Active task (2026-10-19, master): implement private retained result generations,
+aggregate retention limits and copied stale-safe reads; local checks only.
+
+Previous checked handoff (2026-10-18, master): shared search advances checked/pushed through
 `cf80541`, then export/advanced characterization `8c0a4ed`; next implement private
 retained search-result generations before bounded export. Continue
 bounded shared-core slices with local checks. Preserve unrelated files/GTK3.
 All source changes are committed/pushed at this checkpoint; no shared source edits remain in flight. This is not a concurrent ownership lease.
+
+## C++ retention checkpoint (2026-10-19)
+
+Private result generations, aggregate caps and copied stale-safe reads are checked
+in this checkpoint; next add C/Swift transport, then bounded visible-row export.
+Full local Mac suite: 140 passes + 1 index skip (141 registered). Portable suite
+quiet rerun: 109 passes + 1 index skip (110). Focused ASan/UBSan: 6/6; TSan: 4/4,
+run serially after builds. Initial concurrent checks timed out (one reported 910 s);
+affected portable checks passed 3/3 before the quiet full rerun. Do not count those
+initial timeouts as passing runs. SDK instrumentation remains partial/leaks off.
+See [retention contracts](search-retention-workflows.md) for state/capacity/ownership,
+SDK prepared-query bounds and corrected test-only SWBuf/NUL construction evidence.
+No hosted builds, reset credit or legacy source retirement.
 
 ## Current checked source and active work
 

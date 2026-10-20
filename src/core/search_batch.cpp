@@ -2,7 +2,8 @@
 #include "xiphos/core/session.hpp"
 #include "search_control.hpp"
 #include "search_scope.hpp"
-#include <glib.h>
+#include "search_generation.hpp"
+#include "search_validation.hpp"
 #include <algorithm>
 #include <stdexcept>
 namespace xiphos::core {
@@ -12,30 +13,19 @@ void validate_limits(const SearchLimits &limits) {
      limits.max_reference_bytes>maximum_search_reference_bytes)
     throw std::invalid_argument("Unsupported batch search output limits");
 }
-void validate_text(const std::string &value,std::size_t maximum) {
-  if(value.empty()||value.size()>maximum||value.find('\0')!=std::string::npos||
-     !g_utf8_validate(value.data(),value.size(),nullptr))
-    throw std::invalid_argument("Invalid bounded UTF-8 batch search input");
-}
 }
 SearchBatchResult StudySession::search_batch(std::vector<SearchQuery> queries,const SearchBatchLimits &limits,std::shared_ptr<SearchControl> control) {
   detail::SearchControlScope progress(control);
   validate_limits(limits.per_module);validate_limits(limits.total);
   if(queries.empty()||queries.size()>maximum_search_batch_modules)throw std::invalid_argument("Search batch needs 1 to 32 queries");
   // Validate every request before the first SDK execution or session mutation.
-  for(const auto &query:queries){
-    validate_text(query.module,4096);validate_text(query.expression,32768);
-    if(static_cast<int>(query.mode)<0||static_cast<int>(query.mode)>static_cast<int>(SearchMode::indexed))
-      throw std::invalid_argument("Unknown batch search mode");
-    if(query.range){
-      if(query.within_last_results)throw std::invalid_argument("Batch range excludes last-results scope");
-      validate_text(query.range->module,4096);validate_text(query.range->expression,4096);
-    }
-  }
+  for(const auto &query:queries)detail::validate_search_query(query);
   SearchBatchResult output;output.requested=std::move(queries);output.groups.reserve(output.requested.size());
   // Copy only immutable search scope and small search settings, never tab history,
   // book snapshots or a second SDK manager. Publish once all owned output exists.
   auto scope=search_scope_;auto text=search_text_options_;
+  detail::SearchGenerationBuilder generation(detail::next_search_generation_id(search_generation_serial_),output.requested,search_retention_limits_);
+  bool any_executed=false;
   for(std::size_t index=0;index<output.requested.size();++index){
     if(control&&control->cancel_requested()){output.cancelled=true;break;}
     const auto begin=static_cast<unsigned>(index*100/output.requested.size());
@@ -44,8 +34,16 @@ SearchBatchResult StudySession::search_batch(std::vector<SearchQuery> queries,co
     const SearchLimits remaining{
       std::min(limits.per_module.max_results,limits.total.max_results-output.copied_results),
       std::min(limits.per_module.max_reference_bytes,limits.total.max_reference_bytes-output.copied_reference_bytes)};
+    detail::SearchRetainedKeys retained;
     try {
-      auto result=reader_.search_impl(output.requested[index],remaining,control,&scope,text,true,begin,end);
+      group.result=reader_.search_impl(output.requested[index],remaining,control,&scope,text,true,begin,end,true,
+        generation.wants_keys()?&retained:nullptr,generation.remaining());
+    } catch(const std::out_of_range &){group.failure=SearchBatchFailure::module_not_found;}
+      catch(const std::invalid_argument &){group.failure=SearchBatchFailure::invalid_request;}
+      catch(const std::length_error &){group.failure=SearchBatchFailure::engine_error;}
+      catch(const std::runtime_error &){group.failure=SearchBatchFailure::engine_error;}
+    if(group.result){
+      auto &result=*group.result;any_executed|=result.executed;
       if(result.effective_text_options&&result.requested.text_options&&result.requested.mode!=SearchMode::phrase){
         text=result.requested.text_options;result.text_options_updated=true;
       }
@@ -53,11 +51,9 @@ SearchBatchResult StudySession::search_batch(std::vector<SearchQuery> queries,co
       output.copied_results+=result.references.size();
       for(const auto &reference:result.references)output.copied_reference_bytes+=reference.size();
       output.limited|=result.limited;output.cancelled|=result.cancelled;
-      group.result=std::move(result);
-    } catch(const std::out_of_range &){group.failure=SearchBatchFailure::module_not_found;}
-      catch(const std::invalid_argument &){group.failure=SearchBatchFailure::invalid_request;}
-      catch(const std::length_error &){group.failure=SearchBatchFailure::engine_error;}
-      catch(const std::runtime_error &){group.failure=SearchBatchFailure::engine_error;}
+    }
+    // Owned metadata allocation is outside recoverable SDK failure handling.
+    generation.append(index,group.result,group.failure,std::move(retained));
     if(group.failure!=SearchBatchFailure::none)++output.failures;
     output.groups.push_back(std::move(group));
     if(output.cancelled)break;
@@ -66,7 +62,13 @@ SearchBatchResult StudySession::search_batch(std::vector<SearchQuery> queries,co
   // A cancellation between modules yields the completed prefix. Late cancellation
   // after the final module can lose to completion, as for single-module jobs.
   output.scope=scope?scope->info():SearchScopeInfo{};output.text_options={text};
+  std::shared_ptr<const detail::SearchGeneration> staged;
+  if(!output.cancelled||any_executed){
+    staged=generation.finish(output.cancelled);output.generation=staged->info();output.generation_updated=true;
+  }else output.generation=search_generation();
+  for(auto &group:output.groups)if(group.result){group.result->generation=output.generation;group.result->generation_updated=output.generation_updated;}
   search_scope_=std::move(scope);search_text_options_=text;
+  if(staged){search_generation_serial_=staged->info().id;search_generation_=std::move(staged);}
   progress.finish(output.cancelled);return output;
 }
 }

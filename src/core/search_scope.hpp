@@ -11,9 +11,11 @@ struct SearchScopeLimits {
 // bound logical key count/text, not total SDK heap or search execution time.
 class SearchScope {
   sword::ListKey keys_;
+  std::size_t key_bytes_=0;
 public:
   explicit SearchScope(const sword::ListKey &keys,const SearchScopeLimits &limits = {});
   const sword::ListKey &keys() const noexcept{return keys_;}
+  std::size_t accounted_key_bytes() const noexcept{return key_bytes_;}
   SearchScopeInfo info() const noexcept{return {true,static_cast<std::uint64_t>(keys_.getCount())};}
 };
 }

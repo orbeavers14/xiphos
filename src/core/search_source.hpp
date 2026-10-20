@@ -11,5 +11,6 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
                                   const SearchScope *previous=nullptr,std::shared_ptr<const SearchScope> *next=nullptr,
                                   const SearchScopeLimits &scope_limits = {},
                                   const std::optional<SearchTextOptions> &previous_text = {},
-                                  unsigned progress_begin=0,unsigned progress_end=100,bool allow_empty_output=false);
+                                  unsigned progress_begin=0,unsigned progress_end=100,bool allow_empty_output=false,
+                                  SearchRetainedKeys *retained=nullptr,SearchRetentionLimits retention_limits = {});
 }}

@@ -23,6 +23,6 @@ SearchScope::SearchScope(const sword::ListKey &keys,const SearchScopeLimits &lim
     if(const auto *verse=dynamic_cast<const sword::VerseKey *>(key))account(verse->getVersificationSystem());
     keys_.add(*key); // SDK clone retains key type, bounds, flags and versification.
   }
-  keys_.setPosition(sword::TOP);
+  keys_.setPosition(sword::TOP);key_bytes_=bytes;
 }
 }

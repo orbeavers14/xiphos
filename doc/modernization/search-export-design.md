@@ -1,7 +1,10 @@
 # Next shared slice: retained search results and export
 
-Proposal after the checked search/export characterization, 2026-10-18. These
-contracts are a concrete next implementation plan, **not implemented public APIs**.
+Updated 2026-10-19. The first C++ retention/session/worker step is implemented in
+[retained-result contracts](search-retention-workflows.md). The remaining export,
+C/Swift transport and native host sections below are a proposal, **not implemented
+public APIs**. Historical proposed wording is superseded by that current contract
+where the retention service now exists.
 See [current search](search-workflows.md), [export evidence](export-workflows.md)
 and [remaining core scope](shared-core-roadmap.md). No native export is accepted.
 
