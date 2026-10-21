@@ -1,6 +1,6 @@
 # Shared project handoff: start here in every chat
 
-Updated 2026-10-20. These files replace missing conversation context with a
+Updated 2026-10-21. These files replace missing conversation context with a
 versioned record. They do not transfer chat messages or synchronize themselves:
 each chat must fetch/pull Git and read them before working.
 
@@ -26,19 +26,23 @@ settings are per tab and physical SDK filters restore on every job. One FIFO
 owner handles batches, progress/Stop, scope and copied values. See the consolidated
 [current search contract](search-workflows.md); chronology remains in Git.
 
-Latest integrated native image checkpoint: **159 Mac passes + 1 index skip**
-(160 registered, 134.30 s), with desktop access for the isolated pasteboard test;
-**121 portable/core model passes + 1 skip on Mac** (122 registered, 92.46 s),
-GTK runtime OFF. Current Fedora/MSVC acceptance remains separate.
+Latest integrated shared HTML image checkpoint: **164 Mac passes + 1 index skip**
+(165 registered, 137.38 s), core/C `4fecce8` and Swift `374147d`, with desktop
+access for the isolated pasteboard test. Focused normal/ASan/UBSan/TSan/portable
+core checks each pass 11/11; Swift image/default HTML checks pass 8/8 including
+fixtures. Prior full portable/core-model evidence remains **121 passes + 1 skip
+on Mac** (122 registered, 92.46 s at `b335db5`), GTK runtime OFF. Current
+Fedora/MSVC acceptance remains separate.
 Detailed normal/sanitizer/C11 evidence lives in the contracts and platform handoff.
 Actual-index diagnostic `a3dcae8` still has no usable SDK framework; optional probe
 skips, required-index negative control fails as expected. No actual indexed
 execution or failed required probe is counted as acceptance.
 
-Private HTML image infrastructure at `63ce703` now includes a module/URI cache with aggregate
-occurrence/raw-byte/pixel/encoded-byte bounds, typed file-limit reporting and
-complete-fragment validation before loading. Public HTML remains resource-rejecting.
-See [the resource checkpoint and next integration step](resource-export-design.md).
+The private HTML image cache at `63ce703` is now connected to shared document
+export through explicit C++/C/Swift static PNG options. Aggregate bounds, actual
+row-module ownership, successful-only counters and generated CSP stay in core.
+Existing/default calls reject images. See [the current contract](html-image-export-workflows.md)
+for limits and the remaining native/browser/platform gates.
 
 Book tree/restore/navigation/DisplayLevel, resources/styles and combined note
 counters remain checked partial services with native Mac consumption; detailed

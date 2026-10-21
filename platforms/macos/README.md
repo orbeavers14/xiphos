@@ -399,3 +399,9 @@ lifetime, exact scoped model/window checks and remaining format/corpus/platform
 gates. `sh platforms/macos/launch-fixture.sh build/macos verse-images` launches
 only the generated original-prose image fixture in a disposable temp copy.
 Exported/inline reading images and complete native workflow acceptance remain pending.
+
+Shared HTML export now accepts `CoreHTMLImageOptions` with explicit static PNG
+embedding and copied `CoreHTMLImageStatistics`. Defaults come from the core and
+continue rejecting images; this adapter adds no separate Swift loader/cache.
+Native HTML save/copy/print controls remain pending. See the
+[scoped image contract](../../doc/modernization/html-image-export-workflows.md).

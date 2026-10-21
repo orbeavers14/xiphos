@@ -7,10 +7,10 @@ an installed SDK can break its metadata and existing build configurations.
 
 ## Shared native core
 
-| Dependency | Purpose | Requirement | Inspected macOS development setup (2026-10-20) |
+| Dependency | Purpose | Requirement | Inspected macOS development setup (2026-10-21) |
 |---|---|---|---|
 | CrossWire SWORD | Modules, versification, rendering and search | >=1.8.1 | 1.9.0.3916; installed SDK under `/usr/local`, static library |
-| GLib | Existing Unicode casing and shared utility behavior | >=2.32 | 2.86.5; source/build in sibling `../glib-2.86.5` and `../glib-build` directories |
+| GLib | Existing Unicode casing and shared utility behavior | >=2.32 | 2.90.1 selected through installed pkg-config metadata; older 2.86.5 source/build remains at `../glib-2.86.5` and `../glib-build` |
 | libxml2 | XML persistence and HTML parsing | Required; standalone finder has no explicit version floor | Apple SDK headers/library; paths recorded by CMake |
 | libpng | Shared bounded static PNG validation/decoding | >=1.6, simplified read API enabled | 1.6.59, official-source static SDK at `build/libpng-sdk` |
 | zlib | PNG decompression/checksums and SWORD linkage | Required through PNG discovery | Apple SDK headers/library; headers report 1.2.12, not a verified runtime version |
@@ -24,7 +24,8 @@ configuration and minimum operating-system version.
 
 Static SDKs can require additional libraries. This Mac's SWORD linkage includes
 zlib, bzip2 and liblzma; GLib linkage includes libintl/gettext, iconv and Foundation.
-Those inputs are explicit in the local CMake cache. They are not necessarily the
+Those inputs are explicit in the local CMake cache; only the selected target
+and actual final link command establish which library was used. They are not necessarily the
 same on Linux or Windows. SDK/package dependencies must also be inventoried when
 preparing release bundles; this document is not a complete transitive lockfile.
 
@@ -79,3 +80,22 @@ libpng 1.6.59 bottle targets macOS 27; the separately built static SDK targets 2
 The requested macOS 13 minimum, native Windows validation and release dependency
 bundling remain open. Preserve upstream licenses and distribution obligations;
 this inventory does not replace a release notice/source audit.
+
+### Discovery change observed 2026-10-21
+
+The resumed configure discovers installed GLib 2.90.1 through pkg-config. Its
+imported target takes precedence over the older `GLIB_LIBRARY` fallback cache
+entry, even though that entry still names the local 2.86.5 SDK. Inspect selected
+pkg-config targets and actual link inputs, not only a fallback variable. The
+linked Homebrew GLib and liblzma report a macOS27 minimum while this development
+configuration requests26; current tests run on macOS27.0.1 and establish neither
+macOS26 nor macOS13 runtime compatibility. No installed package was moved or
+changed by this source work. The source-pinned static libpng SDK remains1.6.59.
+
+For a deliberate fallback-only configuration, CMake can disable PkgConfig
+discovery with `CMAKE_DISABLE_FIND_PACKAGE_PkgConfig=TRUE`; then supply coherent
+SWORD/GLib fallback headers, libraries and transitive link inputs through the
+platform guide. Use a fresh build directory and validate the complete chosen
+SDK set. Do not assume an explicit fallback cache path overrides an available
+imported pkg-config target. This is a reproducibility choice, not a package update
+or a claim that every older local SDK is release-compatible.

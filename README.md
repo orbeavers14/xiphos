@@ -35,8 +35,12 @@ Core commentary snapshots include owned headings and shared display preferences.
 The native commentary pane sits above dictionary content; complete heading transformations, detached
 windows and broader visual/corpus acceptance remain pending.
 
-The macOS suite passes 72 checks. The new portable Linux/core suite passes 56 checks on macOS; its GTK view changes still need Fedora validation. The prior native Fedora checkpoint passed 51 core/adapter checks and six desktop smoke modes. Both are supplemented by scoped sanitizer,
-strict-language and temporary-fixture GUI checks recorded in the status ledger.
+The current full macOS suite passes 164 tests with one explicit unavailable-index
+skip (165 registered). Shared HTML export now supports explicitly requested,
+bounded static PNG images through the same C++/C/Swift implementation. Focused
+export checks pass on normal/sanitizer and portable-core configurations on Mac;
+current Fedora/MSVC and full corpus/visual acceptance remain separate. Detailed
+results, SDK limitations and prior platform evidence live in the status ledger.
 The legacy app retains its existing UI and delegates selected seams to shared
 helpers. Routine development and testing stay local to conserve GitHub builds;
 platform CI and full acceptance are reserved for meaningful checkpoints.

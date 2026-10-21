@@ -1,8 +1,10 @@
-# Initial shared HTML search documents
+# Shared HTML search documents
 
-Updated 2026-10-20. Checked C++ service and copied C/Swift adapters for a restricted passive HTML subset.
+Updated 2026-10-21. Checked C++ service and copied C/Swift adapters for a restricted passive HTML subset.
 Native HTML save/clipboard, visual/browser acceptance,
-images/module CSS, full advanced headers and printing remain gates. See
+module CSS, other image formats, full advanced headers and printing remain gates.
+Explicit [static PNG images](html-image-export-workflows.md) are supported in the
+shared C++/C/Swift document path; default calls retain resource rejection. See
 [text export](search-text-export-workflows.md), [configured sources](html-source-workflows.md)
 and [remaining work](search-export-design.md). No whole parity group is accepted.
 
@@ -41,7 +43,7 @@ would reject real SDK output; the initial rich-source test caught and corrected
 that before acceptance. This is not a general-purpose HTML sanitizer or a claim
 of byte-identical browser repair across arbitrary module markup.
 
-Unsupported images/resources, inline styles, active/unknown markup, unrecognized
+Default-policy images/resources, inline styles, active/unknown markup, unrecognized
 stylesheets, unsafe/unsupported link schemes and reserved-class collisions reject
 the whole document with a typed issue. They are never silently dropped or fetched.
 Attributes on source html/head/body wrappers also reject: extracting only body
@@ -49,10 +51,11 @@ children would otherwise lose inherited language, direction or style context.
 Fragment-local `dir`/`lang` remains attached to its content.
 Existing explicit image-off preferences still apply in the shared renderer. Core
 note/passage links may remain application/context dependent; self-contained note
-bodies, resource rewriting and semantic action export are separate gates.
+bodies, broader resource rewriting and semantic action export are separate gates.
 
-The document sets a restrictive CSP: no default resource/script loading, no images,
-base or form actions; only its core-generated inline styles are allowed. This does
+Default documents set a restrictive CSP: no default resource/script loading,
+images, base or form actions; only core-generated inline styles are allowed.
+Explicit PNG-policy documents permit validated embedded images through `img-src data:`. This does
 not replace full module/corpus/browser acceptance. The fragment traversal also
 has node/depth guards (100,000/128). SDK/libxml/presentation temporary allocation
 and execution time are outside the logical copied-output limits.

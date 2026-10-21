@@ -1,7 +1,8 @@
 # Shared resource reuse for HTML export
 
-Updated 2026-10-20. This is a bounded implementation plan, not a claim that search
-exports contain images or arbitrary module styles.
+Updated 2026-10-21. This records the extraction/implementation checkpoints.
+The latest [explicit static PNG document policy](html-image-export-workflows.md)
+now supports scoped image exports; arbitrary module styles remain unsupported.
 
 ## Reuse already extracted
 
@@ -136,3 +137,13 @@ Local logs use `build/export-images-{configure,build,tests}.log`, the correspond
 `san`/`tsan`/`portable` variants and `export-images-regression` variants. No hosted
 workflow was enabled or dispatched. The owner requested stopping after this
 checkpoint; public image-policy/CSP/transport integration is the next task.
+
+## Public policy integration (2026-10-21)
+
+The [shared static PNG export contract](html-image-export-workflows.md) supersedes
+the historical next-step statements above. C++ session/worker documents now use
+the existing Reader as the module-owned loader, aggregate over all rows, opt-in
+generated image CSP and complete-success counters. Additive C11 options/getters
+and Swift6 copies expose the same policy. Existing calls/defaults still reject
+images. Native HTML destinations, browser/CSP/visual checks and broader export
+parity remain open.

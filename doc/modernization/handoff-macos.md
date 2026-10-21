@@ -1,31 +1,33 @@
 # macOS chat handoff
 
-Updated 2026-10-20. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.md),
+Updated 2026-10-21. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.md),
 [status](status.md), [core scope](shared-core-roadmap.md) and relevant parity rows.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
 ## Current checked source and active work
 
-Implementation through `7e9ff93`: retained search generations; selected/all text
-exports and native Mac text controls; initial restricted HTML documents with C/
-Swift adapters; wrapper-context/traversal guards; extracted shared resource file
-policy and NUL-path validation. One C++ FIFO SDK owner, copied values and original
+Implementation through core/C `4fecce8` and Swift `374147d`: retained search
+generations; selected/all text exports and native Mac text controls; restricted
+HTML with explicit module-owned static PNG embedding, aggregate limits and copied
+image statistics; wrapper/traversal/resource guards and thin C/Swift adapters. One C++ FIFO SDK owner, copied values and original
 GTK3 behavior/reference remain the architecture. No HTML controls were added.
 The only unrelated local file is `.DS_Store`; leave it untouched.
 
-Latest integrated native image checkpoint: full Mac **159 passes + one explicit
-index skip** (160 registered, 134.30 s), with desktop access for the isolated
-pasteboard test. Portable models on Mac **121 passes + one skip** (122 registered,
-92.46 s), GTK runtime OFF. Both builds/tests exited0. Source work is sequential;
-preserve unrelated `.DS_Store`. No whole parity group or release is accepted.
+Latest full Mac checkpoint: **164 passes + one explicit index skip** (165
+registered, 137.38 s), with desktop access for isolated pasteboard checks. The
+shared HTML image/resource selection passes 11/11 each normal, ASan/UBSan, TSan
+and portable core on Mac, GTK runtime OFF. Swift image/default HTML selection
+passes 8/8 including fixtures; C11 header syntax passes. Earlier full portable
+model evidence remains 121 passes + one skip (122 registered, 92.46 s at
+`b335db5`). No current Fedora/MSVC, whole parity or release acceptance.
 
-Current task: shared verse image sources, C/Swift owned values, actual SDK command
-resolution and contextual dispatch are implemented; native Mac image preview is
-now checked in models and a disposable window. Next bounded task: complete-or-
-failure HTML resource policy with format/aggregate bounds, keeping current default
-unsupported behavior until checked. Inline reading resources, hover filename
-status text, full formats/corpus and GTK/Windows/native release gates remain.
+Current task: the complete-or-failure HTML static PNG policy is implemented and
+checked across C++/C/Swift. Default calls still reject resources. Next bounded
+task: native HTML save/copy controls that consume the complete shared document,
+then remaining resource/style/semantic and advanced-search workflows. Inline
+reading resources, hover filename status, other formats/corpus, browser/CSP
+runtime and GTK/Windows/native release gates remain.
 
 ## Implementation and scoped evidence
 
@@ -248,3 +250,33 @@ to the existing Reader source service, aggregate across rows, change CSP only
 for opted-in documents, publish statistics only on complete success, then add
 ABI-safe C/Swift options and native consumption. Keep default reject behavior
 and the documented browser-policy restriction. Unrelated `.DS_Store` left alone.
+
+### Shared HTML static PNG export checkpoint (2026-10-21)
+
+Core/C implementation `4fecce8`; Swift adapter `374147d`; both pushed to fork
+`master` after local checks. See the [contract](html-image-export-workflows.md)
+for explicit policy/defaults, aggregate limits, actual row-module ownership,
+successful-only counters and cancellation semantics. No existing C request/info
+layout changed; C11 syntax and older C/Swift default paths remain checked.
+
+Full local Mac build and tests pass: 164 passes + 1 explicit index skip, 165
+registered, 137.38 s (`build/search-html-images-full-{build,tests}.log`). Existing
+index framework remains unavailable; skip is not execution acceptance. Normal,
+ASan/UBSan, TSan and portable core configurations each pass the focused 11/11
+selection; Swift image/default HTML selection passes 8/8 including fixtures.
+These are not new Fedora/MSVC or browser/CSP/visual checks. SDK dependencies
+remain partly instrumented, ASan leaks off. Native HTML controls are not added.
+
+Actual environment: macOS27.0.1 ARM64, AppleClang21/Swift6 mode, SWORD1.9.0.3916,
+libpng1.6.59 official-source static SDK, Apple libxml2/zlib. Resumed pkg-config
+discovery selects installed GLib2.90.1, superseding the older 2.86.5 fallback;
+all four checked configurations now use2.90.1. Homebrew GLib/liblzma report
+macOS27 minima despite the configured target26. Tests on this host establish
+neither macOS26 nor13 compatibility. See the [dependency inventory](../../dependencies/README.md).
+No package installation/move, hosted build, usage reset, user profile/module or
+general clipboard modification occurred. Unrelated `.DS_Store` is untouched.
+
+Next: add native HTML destinations through the existing shared export workflow,
+without frontend rendering/resource logic or a workaround for the recorded
+browser-policy block. Keep unsupported styles/formats/semantic actions explicit
+and retain all whole-parity/legacy-retirement gates.

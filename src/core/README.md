@@ -38,6 +38,12 @@ SDKs can set `PNG_PNG_INCLUDE_DIR`, `PNG_LIBRARY_RELEASE`, `ZLIB_INCLUDE_DIR` an
 runtime. Native-disabled C++11 legacy helper builds do not require libpng.
 See the [PNG contract](../../doc/modernization/png-export-workflows.md).
 
+HTML search export can explicitly embed static PNG images from the actual row's
+module using bounded per-document caching. Existing C calls and C++/Swift defaults
+retain resource rejection. Separate additive C11 options/getters keep existing
+layouts unchanged; all image policy/loading/validation stays in core. See the
+[image export contract](../../doc/modernization/html-image-export-workflows.md).
+
 Tests generate a small on-disk RawText OSIS module with original prose.
 They validate discovery isolation, UTF-8 XHTML, legacy setKey/renderText
 comparison, C header consumption, handle/result ownership, missing modules,

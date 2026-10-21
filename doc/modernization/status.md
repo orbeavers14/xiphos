@@ -1,6 +1,6 @@
 # Modernization status and acceptance
 
-Current checkpoint (2026-10-20): shared retained search generations, selected/all
+Current checkpoint (2026-10-21): shared retained search generations, selected/all
 text export and initial restricted passive HTML documents are implemented through
 one C++ owner with copied C/Swift values. Native Mac text save/copy at `5d52a11`
 consumes the shared services; HTML adapters through `e8a8ec8` have no native HTML
@@ -11,14 +11,18 @@ order/duplicates and state neutrality stay explicit. See [retention](search-rete
 Shared verse image source bytes and copied C/Swift values are now checked; actual
 SDK image commands and typed reading-pane dispatch keep URI/native directory
 handling in C++. See [image contract](verse-image-workflows.md). Native Mac reading
-image preview is now checked in scoped models/window; HTML image embedding and
-inline reading resources remain unsupported.
+image preview is now checked in scoped models/window. Shared HTML static PNG
+embedding has explicit C++/C/Swift opt-in; native HTML destinations and inline
+reading resources remain pending.
 
-Latest integrated native image checkpoint: **159 Mac passes + 1 explicit index
-skip** (160 registered, 134.30 s), with desktop access for isolated pasteboard
-checks; **121 portable core/model passes + 1 skip on Mac** (122 registered,
-92.46 s), GTK runtime OFF. Scoped normal/ASan/UBSan/TSan/C11 evidence lives in the
-contracts/handoff. Dependencies are partly instrumented; ASan leaks off.
+Current integrated HTML image checkpoint: **164 Mac passes + 1 explicit index
+skip** (165 registered, 137.38 s), through core/C `4fecce8` and Swift `374147d`,
+with desktop access for isolated pasteboard checks. Focused shared HTML/resource
+checks pass **11/11** each normal, ASan/UBSan, TSan and portable core on Mac (GTK
+runtime OFF); Swift image/default HTML checks pass **8/8** including fixtures.
+The earlier full portable/core-model checkpoint remains 121 passes + 1 skip
+(122 registered, 92.46 s at `b335db5`), not a new full portable run. C11 header
+syntax passes. Dependencies are partly instrumented; ASan leaks off.
 Current Fedora/MSVC, actual indexed execution and full corpus acceptance remain open.
 
 Configured HTML sources reuse live rendering without publishing learned display
@@ -29,13 +33,14 @@ Native HTML destinations, resource/style/semantic-action expansion, complete
 advanced headers and browser/CSP/visual acceptance remain pending. The browser
 blocked local-file preview by URL policy; no workaround or visual acceptance.
 
-Private image-export infrastructure at `63ce703` now adds a bounded per-document PNG cache
-and an optional complete-fragment resolver; public HTML defaults and C/Swift
-requests remain unchanged. See [resource policy](resource-export-design.md).
+Shared HTML image export now connects the private cache to actual row-module
+resource loading, an explicit static PNG policy, aggregate budgets, generated
+CSP and successful-only counters. Additive C11 options/getters preserve existing
+layouts; Swift 6 copies options/results with core-supplied defaults. Default
+calls still reject images. See [the scoped contract](html-image-export-workflows.md).
 
-Next bounded work: wire an explicit shared document image policy, aggregate
-budgets/CSP and successful-only statistics before native HTML consumption, then
-advanced search controls/settings and workflow acceptance.
+Next bounded work: native HTML destinations, remaining resource/style/semantic
+policies, then advanced search controls/settings and workflow acceptance.
 Keep target-platform validation and other core services in view. No whole parity
 group, release or legacy retirement accepted: **0/38 groups, 0/3 release-ready apps**.
 Planning estimate remains **about 8% (6–10%)**; no reliable core-only percentage
