@@ -26,7 +26,7 @@ settings are per tab and physical SDK filters restore on every job. One FIFO
 owner handles batches, progress/Stop, scope and copied values. See the consolidated
 [current search contract](search-workflows.md); chronology remains in Git.
 
-Latest integrated shared HTML image checkpoint: **164 Mac passes + 1 index skip**
+Prior full integrated shared HTML image checkpoint: **164 Mac passes + 1 index skip**
 (165 registered, 137.38 s), core/C `4fecce8` and Swift `374147d`, with desktop
 access for the isolated pasteboard test. Focused normal/ASan/UBSan/TSan/portable
 core checks each pass 11/11; Swift image/default HTML checks pass 8/8 including
@@ -37,6 +37,13 @@ Detailed normal/sanitizer/C11 evidence lives in the contracts and platform hando
 Actual-index diagnostic `a3dcae8` still has no usable SDK framework; optional probe
 skips, required-index negative control fails as expected. No actual indexed
 execution or failed required probe is counted as acceptance.
+
+Native Mac HTML save/copy at `f89c585` now consumes the complete shared documents
+through the existing native lifecycle, with 10/10 focused model/destination/
+search checks and a disposable window save/failure check. This is not a new full
+suite or browser/visual acceptance. See [native destination evidence](native-search-html-export-workflows.md).
+The owner requested stopping after this slice; next shared work includes rich
+clipboard plain-text fallback, advanced headers and remaining resource policies.
 
 The private HTML image cache at `63ce703` is now connected to shared document
 export through explicit C++/C/Swift static PNG options. Aggregate bounds, actual
@@ -79,8 +86,8 @@ portable-on-Mac, ASan/UBSan and TSan. Initial restricted passive HTML documents
 are pushed: C++ `1b327d9`, C `e7c141e`, Swift `e8a8ec8`. Selection stays shared
 with text, matching core CSS is scoped, unsupported resources/markup reject
 without partial output. See [HTML contract](html-export-workflows.md).
-Native HTML destinations, resource/link policy expansion and browser/visual
-acceptance remain pending. Local-file browser preview was blocked by URL policy;
+Native Mac HTML destinations now have scoped checks; complete resource/link
+policy expansion and browser/visual acceptance remain pending. Local-file browser preview was blocked by URL policy;
 no workaround or visual acceptance.
 Subsequent wrapper/traversal guards are checked at `395c834`. Shared resource
 filesystem policy is extracted at `ff46f9b` with NUL-path guards at `7e9ff93`;
@@ -91,14 +98,15 @@ core services separate. No hosted jobs or reset credit used.
 Shared verse image source/command services, C/Swift values and typed reading-pane
 dispatch are checked through `c4336f6`. Native Mac image preview now passes scoped
 models/window checks using the same source owner and a reused native viewer.
-See [image contract](verse-image-workflows.md). HTML exported images and complete
-inline-image/hover/format/corpus/platform workflows remain pending.
+See [image contract](verse-image-workflows.md). Explicit shared HTML PNG export
+and native Mac destinations have scoped checks; complete inline-image/hover/
+format/corpus/platform workflows remain pending.
 
 ## Platform responsibilities and immediate next tasks
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Shared resource/link export characterization, then native HTML consumption and advanced search workflows | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Rich clipboard fallback, advanced headers/search and remaining resource policies | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

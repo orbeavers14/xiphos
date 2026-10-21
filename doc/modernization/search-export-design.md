@@ -1,6 +1,6 @@
 # Remaining search export work
 
-Updated 2026-10-20. This is the remaining plan, not an implemented API contract.
+Updated 2026-10-21. This is the remaining plan, not an implemented API contract.
 Checked behavior is defined by [retention](search-retention-workflows.md),
 [text export](search-text-export-workflows.md) and [shared item formatting](export-workflows.md).
 No whole search/export parity group or legacy retirement gate is accepted.
@@ -22,7 +22,10 @@ Stop/stale/close protection, isolated clipboard/file tests and scoped window/sav
 evidence. Exact hashes/environment/counts live in the handoff and contracts.
 
 Initial C++/C/Swift selected/all passive HTML is now checked in [its scoped contract](html-export-workflows.md).
-Images/module styles, semantic links and browser/visual evidence remain open.
+Explicit static PNG images and native Mac HTML save/copy now have scoped
+[shared](html-image-export-workflows.md) and [native](native-search-html-export-workflows.md)
+evidence. Other formats/module styles, semantic links and browser/visual acceptance
+remain open. Rich clipboard plain-text fallback is a remaining shared task.
 
 ## Next shared seams
 
@@ -31,9 +34,9 @@ Images/module styles, semantic links and browser/visual evidence remain open.
    rejects unsupported requirements; do not silently strip them or enable fetching.
 2. Expand shared advanced query/mode headers and module sections with workflow
    comparisons. Keep first-row inclusion and explicit escaping corrections.
-3. Add native HTML save/copy consumers using the existing copied transport only
-   after the intended format/resource contract is checked. Prepare the complete
-   payload before any destination write and preserve shared reading/search state.
+3. Native Mac HTML save/copy now consumes copied complete documents. Expand shared
+   rich-clipboard/plain-text fallback and native target acceptance without frontend
+   HTML stripping or a second render/selection policy.
 4. Validate browser/CSP, representative corpus, native destinations and full
    workflows on each target. SDK temporaries/time and external file mutation are
    not bounded/transactional merely because final output bytes are bounded.

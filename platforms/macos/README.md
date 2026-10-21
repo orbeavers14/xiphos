@@ -403,5 +403,13 @@ Exported/inline reading images and complete native workflow acceptance remain pe
 Shared HTML export now accepts `CoreHTMLImageOptions` with explicit static PNG
 embedding and copied `CoreHTMLImageStatistics`. Defaults come from the core and
 continue rejecting images; this adapter adds no separate Swift loader/cache.
-Native HTML save/copy/print controls remain pending. See the
+Native HTML save/copy now has scoped model/window checks; print and rich clipboard
+plain-text fallback remain pending. See the
 [scoped image contract](../../doc/modernization/html-image-export-workflows.md).
+
+The native Export menu offers Plain text or HTML, selected/all matches, scripture
+and explicit PNG embedding. Documents prepare completely before save/copy; Stop,
+stale results and closed windows suppress destinations. HTML copy advertises the
+native HTML pasteboard type; Plain text remains available as its own format. See
+[native destination evidence](../../doc/modernization/native-search-html-export-workflows.md)
+for exact checks and remaining parity gates.

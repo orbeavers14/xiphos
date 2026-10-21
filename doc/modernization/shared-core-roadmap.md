@@ -1,6 +1,6 @@
 # Shared core: remaining scope
 
-Updated 2026-10-20. This is a planning map, not an acceptance score.
+Updated 2026-10-21. This is a planning map, not an acceptance score.
 The full project remains roughly 8% (6–10%), with zero whole parity groups
 accepted. There is no evidence-based core-only completion percentage yet.
 A tested worker/reading foundation does not mean the application core is almost
@@ -13,7 +13,7 @@ finished. Whole workflows and data compatibility remain the acceptance units.
 | Dictionary and lexical content | Lookup/key steps/history, shared casing, lexical HTML/CSS and notes | Complete lookup/hover/search families and full corpus/locale acceptance |
 | General books | Tree/navigation/DisplayLevel documents, scoped restore, note/image clicks, bounded inline resources/module CSS, shared geometry and combined note numbering | Native sizing/global CSS/assets/formats, complete semantic links/corpus acceptance, book windows/tabs and saved workflows |
 | Parallel reading | Pending | Verse alignment, ordered translations, named sets, navigation and persistence |
-| Search | Bible/commentary basic + exact attribute modes, explicit intervals/complete last scope, private annotation context, advanced word dialects, bounded ordered batches, complete per-group result generations, stale-safe C/Swift reads, bounded selected/all text and restricted HTML export with C/Swift adapters, native Mac text save/copy, progress/cancel and basic controls | Advanced module/range setup, actual indexed execution, mixed families, advanced controls/settings, complete preview/export and full backend/corpus acceptance |
+| Search | Bible/commentary basic + exact attribute modes, explicit intervals/complete last scope, private annotation context, advanced word dialects, bounded ordered batches, complete per-group result generations, stale-safe C/Swift reads, bounded selected/all text and restricted HTML export with C/Swift adapters, explicit bounded PNG embedding, native Mac text/HTML save/copy, progress/cancel and basic controls | Advanced module/range setup, actual indexed execution, mixed families, advanced controls/settings, complete preview/export and full backend/corpus acceptance |
 | Library and installation | Module metadata/discovery subset | Favorites/hiding/grouping, sources/install/uninstall/index/cipher workflows |
 | Bookmarks and annotations | Pending | Hierarchy/order/colors, XML round trips, AndBible import, rendering precedence |
 | Writing and editing | Pending | Personal commentary, study pads, journals/prayer lists, compatible document storage |
@@ -32,11 +32,13 @@ Current checkpoint: retained result generations C++ `37d9004`, C `155e0cb`, Swif
 See [retention](search-retention-workflows.md) and [text export](search-text-export-workflows.md)
 for actual bounds/ownership. Complete returned text is checked at C++ `b7dafd4`, C `1bb2615`, Swift `80589a4`;
 native Mac text actions at `5d52a11`. Restricted HTML C++ `1b327d9`, C `e7c141e`, Swift `e8a8ec8` share configured
-sources/selection and reject unsupported resources. Next resource/link policy,
-native HTML destinations and browser/visual acceptance remain distinct gates.
+sources/selection. Explicit static PNG embedding is now shared at `4fecce8` /
+`374147d`; scoped native Mac HTML save/copy is checked at `f89c585`. Rich clipboard
+plain-text fallback, broader resource/link policy and browser/visual acceptance
+remain distinct gates.
 The [resource reuse audit](resource-export-design.md) records shared private
-filesystem extraction `ff46f9b` and NUL-path guard `7e9ff93`; this adds no
-search-image support. Exact [item formatting](export-workflows.md)
+filesystem extraction `ff46f9b` and NUL-path guard `7e9ff93`; later shared static PNG export reuses that
+source infrastructure. Exact [item formatting](export-workflows.md)
 is shared with GTK; advanced header/first-row quirks are characterized. Actual
 indexed execution, mixed families, advanced controls/settings and saved workflows
 remain partial work.

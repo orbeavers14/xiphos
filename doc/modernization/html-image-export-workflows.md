@@ -84,8 +84,8 @@ Swift `CoreHTMLImageOptions` gets its defaults from C. `CoreWorker.exportSearchH
 accepts those options and copies the resulting HTML and typed image statistics
 before releasing C ownership. Swift rejects nonpositive signed limits before
 submission; the C/core boundary enforces ceilings. There is no Swift URI parser,
-image loader, cache or PNG validator. Native HTML save/copy/print controls remain
-separate work.
+image loader, cache or PNG validator. Native Mac HTML save/copy controls now have
+[scoped checks](native-search-html-export-workflows.md); printing remains separate.
 
 ## Validation limits
 
@@ -118,4 +118,4 @@ local macOS build/suite passes **164 tests + 1 explicit index skip** (165
 registered, 137.38 s); `build/search-html-images-full-{build,tests}.log`.
 The unavailable index framework is not counted as execution acceptance. No
 new full portable/model suite was run; the portable result above is focused
-core coverage. Native HTML destination controls are the next bounded slice.
+core coverage. Native Mac HTML destinations are checked at `f89c585` in their scoped contract.

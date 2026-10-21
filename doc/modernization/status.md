@@ -3,8 +3,8 @@
 Current checkpoint (2026-10-21): shared retained search generations, selected/all
 text export and initial restricted passive HTML documents are implemented through
 one C++ owner with copied C/Swift values. Native Mac text save/copy at `5d52a11`
-consumes the shared services; HTML adapters through `e8a8ec8` have no native HTML
-buttons yet. Source failure/cancellation, stale IDs, capacity/output caps,
+consumes the shared services; native HTML save/copy at `f89c585` now consumes the
+same complete shared documents. Source failure/cancellation, stale IDs, capacity/output caps,
 order/duplicates and state neutrality stay explicit. See [retention](search-retention-workflows.md),
 [text export](search-text-export-workflows.md) and [HTML export](html-export-workflows.md).
 
@@ -12,10 +12,10 @@ Shared verse image source bytes and copied C/Swift values are now checked; actua
 SDK image commands and typed reading-pane dispatch keep URI/native directory
 handling in C++. See [image contract](verse-image-workflows.md). Native Mac reading
 image preview is now checked in scoped models/window. Shared HTML static PNG
-embedding has explicit C++/C/Swift opt-in; native HTML destinations and inline
-reading resources remain pending.
+embedding has explicit C++/C/Swift opt-in. Native Mac HTML destinations have scoped
+model/window checks; inline reading resources remain pending.
 
-Current integrated HTML image checkpoint: **164 Mac passes + 1 explicit index
+Prior full integrated HTML image checkpoint: **164 Mac passes + 1 explicit index
 skip** (165 registered, 137.38 s), through core/C `4fecce8` and Swift `374147d`,
 with desktop access for isolated pasteboard checks. Focused shared HTML/resource
 checks pass **11/11** each normal, ASan/UBSan, TSan and portable core on Mac (GTK
@@ -29,8 +29,9 @@ Configured HTML sources reuse live rendering without publishing learned display
 choices. The real ThML counted-terminal-NUL convention is handled explicitly.
 Restricted HTML documents share text selection, bound final bytes, scope known
 core styles and reject unsupported assets/markup with no partial document.
-Native HTML destinations, resource/style/semantic-action expansion, complete
-advanced headers and browser/CSP/visual acceptance remain pending. The browser
+Native HTML destination controls are checked in a scoped Mac slice. Resource/
+style/semantic-action expansion, complete advanced headers and browser/CSP/visual
+acceptance remain pending. The browser
 blocked local-file preview by URL policy; no workaround or visual acceptance.
 
 Shared HTML image export now connects the private cache to actual row-module
@@ -39,8 +40,14 @@ CSP and successful-only counters. Additive C11 options/getters preserve existing
 layouts; Swift 6 copies options/results with core-supplied defaults. Default
 calls still reject images. See [the scoped contract](html-image-export-workflows.md).
 
-Next bounded work: native HTML destinations, remaining resource/style/semantic
-policies, then advanced search controls/settings and workflow acceptance.
+Native destination checkpoint `f89c585` passes 10/10 focused checks including
+fixtures, isolated HTML/text pasteboards, atomic files and search regression;
+disposable window/save/resource-failure checks passed. See
+[native HTML contract](native-search-html-export-workflows.md). No new full-suite run.
+
+Next bounded work: shared rich-clipboard plain-text fallback and remaining
+resource/style/semantic policies, then advanced headers/search controls/settings
+and workflow acceptance. The owner requested stopping after this slice.
 Keep target-platform validation and other core services in view. No whole parity
 group, release or legacy retirement accepted: **0/38 groups, 0/3 release-ready apps**.
 Planning estimate remains **about 8% (6–10%)**; no reliable core-only percentage

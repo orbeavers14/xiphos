@@ -11,7 +11,7 @@ Implementation through core/C `4fecce8` and Swift `374147d`: retained search
 generations; selected/all text exports and native Mac text controls; restricted
 HTML with explicit module-owned static PNG embedding, aggregate limits and copied
 image statistics; wrapper/traversal/resource guards and thin C/Swift adapters. One C++ FIFO SDK owner, copied values and original
-GTK3 behavior/reference remain the architecture. No HTML controls were added.
+GTK3 behavior/reference remain the architecture. Native HTML destination controls now consume the same shared documents at `f89c585`.
 The only unrelated local file is `.DS_Store`; leave it untouched.
 
 Latest full Mac checkpoint: **164 passes + one explicit index skip** (165
@@ -24,8 +24,8 @@ model evidence remains 121 passes + one skip (122 registered, 92.46 s at
 
 Current task: the complete-or-failure HTML static PNG policy is implemented and
 checked across C++/C/Swift. Default calls still reject resources. Next bounded
-task: native HTML save/copy controls that consume the complete shared document,
-then remaining resource/style/semantic and advanced-search workflows. Inline
+task after the checked native HTML slice: shared rich-clipboard plain-text
+fallback, then remaining resource/style/semantic and advanced-search workflows. Inline
 reading resources, hover filename status, other formats/corpus, browser/CSP
 runtime and GTK/Windows/native release gates remain.
 
@@ -280,3 +280,29 @@ Next: add native HTML destinations through the existing shared export workflow,
 without frontend rendering/resource logic or a workaround for the recorded
 browser-policy block. Keep unsupported styles/formats/semantic actions explicit
 and retain all whole-parity/legacy-retirement gates.
+
+### Native HTML destination checkpoint (2026-10-21)
+
+Implementation `f89c585`, pushed to fork `master`. Native Plain text/HTML format,
+scripture and explicit PNG controls use one model lifecycle and the existing core
+export service. NSSavePanel/atomic UTF-8 files and native HTML pasteboard values
+consume copied complete documents. No frontend image/resource/rendering policy.
+See [native contract/evidence](native-search-html-export-workflows.md).
+
+Preview/export/search model builds pass. Final scoped selection 10/10 (14.94 s),
+including fixtures, native HTML/text destinations, existing search and Swift
+HTML transport; initial selection 9/9 (13.83 s). Exact isolated named clipboard
+bytes, temporary atomic files, invalid destination/payload, original draft/query/
+format capture and stale/Stop/close suppression are checked. Disposable OSISText
+window: PNG search John1:8, native HTML save with scripture/PNG, 791-byte saved
+UTF-8 document with one 75-byte PNG by static inspection, embedding-off resource
+failure before picker. App quit and its sole disposable directory removed.
+No rendered export preview or browser/CSP acceptance; no user's general clipboard,
+profile/library, hosted workflow, dependency or language-standard changes.
+
+This slice has focused/window evidence, not a new full Mac/Fedora/MSVC suite.
+SDK/older-macOS constraints remain as recorded above. No whole parity/retirement
+gate passed. Owner requested finishing this slice, pushing and stopping. Stop at
+this checkpoint. Next shared slice: rich clipboard plain-text fallback, preserving
+one owner/document snapshot rather than frontend HTML stripping or a second
+selection/render engine; then advanced headers and broader resource/link policy.

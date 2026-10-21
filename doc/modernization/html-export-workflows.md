@@ -1,7 +1,7 @@
 # Shared HTML search documents
 
 Updated 2026-10-21. Checked C++ service and copied C/Swift adapters for a restricted passive HTML subset.
-Native HTML save/clipboard, visual/browser acceptance,
+Native Mac HTML save/clipboard has [scoped evidence](native-search-html-export-workflows.md); visual/browser acceptance,
 module CSS, other image formats, full advanced headers and printing remain gates.
 Explicit [static PNG images](html-image-export-workflows.md) are supported in the
 shared C++/C/Swift document path; default calls retain resource rejection. See
