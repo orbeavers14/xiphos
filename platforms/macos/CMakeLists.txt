@@ -85,6 +85,8 @@ if(BUILD_TESTING)
     DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift Tests/SearchAdapterSmoke.swift
       Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h VERBATIM)
   add_custom_target(macos_search_adapter_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/search_adapter_smoke")
+  add_test(NAME swift_search_html_images COMMAND "${CMAKE_CURRENT_BINARY_DIR}/search_adapter_smoke" --html-images "${CMAKE_CURRENT_BINARY_DIR}/core/verse-image-source-fixture")
+  set_tests_properties(swift_search_html_images PROPERTIES FIXTURES_REQUIRED verse_image_fixture TIMEOUT 60)
   add_test(NAME swift_search_html_export COMMAND "${CMAKE_CURRENT_BINARY_DIR}/search_adapter_smoke" --html "${CMAKE_CURRENT_BINARY_DIR}/core/attribute-search-fixture" "${CMAKE_CURRENT_BINARY_DIR}/core/lexical-snapshots-fixture")
   set_tests_properties(swift_search_html_export PROPERTIES FIXTURES_REQUIRED "attribute_search_fixture;lexical_snapshots_fixture" TIMEOUT 60)
   add_test(NAME swift_search_all_text_export COMMAND "${CMAKE_CURRENT_BINARY_DIR}/search_adapter_smoke" --all-export "${CMAKE_CURRENT_BINARY_DIR}/core/attribute-search-fixture")

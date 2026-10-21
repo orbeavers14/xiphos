@@ -168,6 +168,22 @@ struct CoreSearchVisibleRow: Sendable, Equatable {let group: Int, row: Int}
 enum CoreSearchExportStatus: Int32, Sendable {case success=0, stale=1, invalidSelection=2, outputLimit=3, cancelled=4, moduleNotFound=5, engineError=6, capacityExceeded=7, sourceIncomplete=8, unsupportedHTML=9}
 enum CoreSearchExportSelection: Int32, Sendable {case visible=0, allRetained=1}
 enum CoreHTMLExportIssue: Int32, Sendable {case none=0, resources=1, markup=2, styles=3, links=4}
+enum CoreHTMLImagePolicy: Int32, Sendable {case reject=0, embeddedStaticPNG=1}
+struct CoreHTMLImageOptions: Sendable, Equatable {
+    var policy: CoreHTMLImagePolicy
+    var maxImages: Int
+    var maxOriginalBytes: Int
+    var maxPixels: Int
+    init() {
+        var value = xc_search_html_image_options()
+        xc_search_html_image_options_default(&value)
+        policy = CoreHTMLImagePolicy(rawValue: value.policy)!
+        maxImages = value.max_images; maxOriginalBytes = value.max_original_bytes; maxPixels = value.max_pixels
+    }
+}
+struct CoreHTMLImageStatistics: Sendable, Equatable {
+    let count: Int, uniqueCount: Int, originalBytes: Int, pixels: Int
+}
 struct RenderedSearchHTMLExport: Sendable, Equatable {
     let selection: CoreSearchExportSelection
     let status: CoreSearchExportStatus
@@ -176,6 +192,7 @@ struct RenderedSearchHTMLExport: Sendable, Equatable {
     let failedRow: Int?
     let includesScripture: Bool
     let issue: CoreHTMLExportIssue
+    let images: CoreHTMLImageStatistics
     let html: String
 }
 struct RenderedSearchTextExport: Sendable, Equatable {

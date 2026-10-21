@@ -274,7 +274,65 @@ actor ProgressLog {
         guard all.rowCount == 8, all.html.contains("Original"), partial.generation.failedGroups == 1 else { fatalError("Copied HTML values outlive observers and both workers") }
         print("Swift copied HTML, strict bytes, duplicate/stale selection, partial/unsupported outcomes and lifetime passed")
     }
+    static func htmlImages(root: String) async throws {
+        let library = URL(fileURLWithPath: root).appendingPathComponent("library %20 café").path
+        let worker = try CoreWorker(root: library)
+        let tab = try await worker.createTab()
+        let search = try await worker.searchModule(tab: tab, module: "OSISNotes", expression: "Original")
+        guard let valid = search.references.firstIndex(of: "John 1:8"),
+              let missing = search.references.firstIndex(of: "John 1:5") else { fatalError("Original image rows required") }
+        let rows = [CoreSearchVisibleRow(group: 0, row: valid), CoreSearchVisibleRow(group: 0, row: valid)]
+        let initial = try await worker.exportSearchHTML(tab: tab, generation: search.generation.id, rows: rows, includeScripture: true)
+        guard initial.status == .unsupportedHTML, initial.issue == .resources, initial.html.isEmpty,
+              initial.images.count == 0 else { fatalError("Swift defaults continue rejecting image resources") }
+        var images = CoreHTMLImageOptions()
+        guard images.policy == .reject, images.maxImages == 64, images.maxOriginalBytes == 8 * 1024 * 1024,
+              images.maxPixels == 16 * 1024 * 1024 else { fatalError("Image defaults come from C core") }
+        images.policy = .embeddedStaticPNG; images.maxImages = 2; images.maxOriginalBytes = 75; images.maxPixels = 64
+        let output = try await worker.exportSearchHTML(tab: tab, generation: search.generation.id, rows: rows,
+                                                      includeScripture: true, images: images)
+        guard output.status == .success, output.rowCount == 2, output.images.count == 2,
+              output.images.uniqueCount == 1, output.images.originalBytes == 75, output.images.pixels == 64,
+              output.html.contains("data:image/png;base64,"), output.html.contains("img-src data:") else { fatalError("Copied image document and unique resource statistics") }
+        let exact = try await worker.exportSearchHTML(tab: tab, generation: search.generation.id, rows: rows,
+            includeScripture: true, maxBytes: output.html.utf8.count, images: images)
+        guard exact == output else { fatalError("Exact final image document byte limit") }
+        let limited = try await worker.exportSearchHTML(tab: tab, generation: search.generation.id, rows: rows,
+            includeScripture: true, maxBytes: output.html.utf8.count - 1, images: images)
+        guard limited.status == .outputLimit, limited.html.isEmpty, limited.images.count == 0,
+              limited.images.uniqueCount == 0, limited.images.originalBytes == 0, limited.images.pixels == 0 else { fatalError("No partial document/statistics on output exhaustion") }
+        images.maxOriginalBytes = 150; images.maxPixels = 128
+        let absent = try await worker.exportSearchHTML(tab: tab, generation: search.generation.id,
+            rows: [rows[0], CoreSearchVisibleRow(group: 0, row: missing)], includeScripture: true, images: images)
+        guard absent.status == .unsupportedHTML, absent.issue == .resources, absent.failedRow == 1,
+              absent.html.isEmpty, absent.images.count == 0 else { fatalError("Unavailable image leaves no artifact") }
+        for value in [-1, 0, 65] {
+            var invalid = images; invalid.maxImages = value
+            do { _ = try await worker.exportSearchHTML(tab: tab, generation: search.generation.id, rows: rows, images: invalid); fatalError("Invalid image count") }
+            catch is CoreError {}
+        }
+        images.maxPixels = -1
+        do { _ = try await worker.exportSearchHTML(tab: tab, generation: search.generation.id, rows: rows, images: images); fatalError("Negative pixel budget") }
+        catch is CoreError {}
+        images = CoreHTMLImageOptions(); images.policy = .embeddedStaticPNG
+        let allSearch = try await worker.searchModule(tab: tab, module: "ThMLText", expression: "PNG")
+        let all = try await worker.exportSearchHTML(tab: tab, generation: allSearch.generation.id,
+            selection: .allRetained, includeScripture: true, images: images)
+        guard all.status == .success, all.rowCount == 1, all.images.count == 1,
+              try await worker.history(tab).count == 0 else { fatalError("All retained image export shares core selection without navigation") }
+        let cancellationImages = images
+        let stopped = Task { try await worker.exportSearchHTML(tab: tab, generation: allSearch.generation.id,
+            selection: .allRetained, includeScripture: true, images: cancellationImages, returnCancelledResults: true) }
+        stopped.cancel(); let raced = try await stopped.value
+        guard raced.status == .success || (raced.status == .cancelled && raced.html.isEmpty && raced.images.count == 0) else { fatalError("Swift cancellation never returns partial image document") }
+        try await worker.closeTab(tab); await worker.shutdown()
+        guard output.html.contains("data:image/png;base64,"), output.images.pixels == 64 else { fatalError("Copied HTML and image statistics survive shutdown") }
+        print("Swift shared PNG export policy, exact limits, unavailable/cancelled outcomes and owned statistics passed")
+    }
     static func main() async throws {
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--html-images" {
+            try await htmlImages(root: CommandLine.arguments[2]); return
+        }
         if CommandLine.arguments.count == 4, CommandLine.arguments[1] == "--html" {
             try await htmlExport(root: CommandLine.arguments[2], richRoot: CommandLine.arguments[3]); return
         }
