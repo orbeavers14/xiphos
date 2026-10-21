@@ -32,7 +32,7 @@ int main(int argc,char **argv){try{
   unsigned verse=1;
   for(const auto &source:inputs){
    writer->setKey(("John 1:"+std::to_string(verse++)).c_str());
-   const auto html=std::string("Original image-source prose ")+(osis?"<figure src=\"":"<img src=\"")+source+(osis?"\"/>":"\" />");writer->setEntry(html.c_str());
+   const auto html=std::string(source=="preview.png"?"Original PNG image-source prose ":"Original image-source prose ")+(osis?"<figure src=\"":"<img src=\"")+source+(osis?"\"/>":"\" />");writer->setEntry(html.c_str());
   }
   writer.reset();
   for(const auto &name:{std::string("original.png"),std::string("café.png"),std::string("a+b.png"),std::string("literal%20.png")}){

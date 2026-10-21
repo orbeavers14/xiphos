@@ -2,9 +2,10 @@
 #pragma once
 #include "xiphos/core/verse_image.hpp"
 #include "xiphos/core/search.hpp"
+#include "xiphos/core/search_export.hpp"
 #include <cstdint>
 namespace xiphos::core::detail {
-inline constexpr std::size_t maximum_export_image_pixels=16*1024*1024;
+inline constexpr std::size_t maximum_export_image_pixels=maximum_search_export_image_pixels;
 inline constexpr std::uint32_t maximum_export_image_side=16384;
 enum class ExportPngStatus {ok,unsupported,output_limit,cancelled};
 struct ExportPng {

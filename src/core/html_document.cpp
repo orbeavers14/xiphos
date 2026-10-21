@@ -80,7 +80,7 @@ PreparedExportHtml prepare_export_html(const EntryHtmlSource &source,std::size_t
     if(tag=="img"){
       std::unique_ptr<xmlChar,decltype(xmlFree)> src(xmlGetProp(node,BAD_CAST "src"),xmlFree);
       if(!src||!*src){out.issue=HtmlExportIssue::resources;return out;}
-      if(resources.size()==64){out.limited=true;return out;}
+      if(resources.size()==maximum_search_export_images){out.limited=true;return out;}
       resources.emplace_back(node,reinterpret_cast<const char *>(src.get()));
     }
   }

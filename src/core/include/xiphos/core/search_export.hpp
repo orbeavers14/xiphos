@@ -35,9 +35,24 @@ struct SearchExportMetadata {
 };
 struct SearchTextExport:SearchExportMetadata {std::string text;};
 enum class HtmlExportIssue {none=0,resources=1,markup=2,styles=3,links=4};
+inline constexpr std::size_t maximum_search_export_images=64;
+inline constexpr std::size_t maximum_search_export_image_pixels=16*1024*1024;
+enum class SearchHtmlImagePolicy {reject=0,embedded_static_png=1};
+struct SearchHtmlImageOptions {
+  SearchHtmlImagePolicy policy=SearchHtmlImagePolicy::reject;
+  std::size_t max_images=maximum_search_export_images;
+  std::size_t max_original_bytes=maximum_search_export_bytes;
+  std::size_t max_pixels=maximum_search_export_image_pixels;
+};
+// Counts are published only with a complete successful document. Occurrences
+// include duplicates; bytes/pixels count unique (actual module, source URI) assets.
+struct SearchHtmlImageStatistics {
+  std::size_t count=0,unique_count=0,original_bytes=0,pixels=0;
+};
 struct SearchHtmlExport:SearchExportMetadata {
   std::string html;
   HtmlExportIssue issue=HtmlExportIssue::none;
+  SearchHtmlImageStatistics images;
 };
 struct SearchHtmlExportRequest {
   std::uint64_t generation=0;
@@ -47,6 +62,7 @@ struct SearchHtmlExportRequest {
   bool include_scripture=false;
   std::size_t max_bytes=1024*1024,max_rows=maximum_search_export_rows;
   bool allow_partial_source=false; // Applies only to all_retained.
+  SearchHtmlImageOptions images; // Explicit opt-in; existing callers reject resources.
 };
 // Selection/assembly/rendering run on one owner. Output cap bounds final copied
 // bytes, not SDK temporary allocation/time. No destination write or history visit.

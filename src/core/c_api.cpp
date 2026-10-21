@@ -756,8 +756,21 @@ void xc_search_batch_release(xc_search_batch *batch){delete batch;}
 void xc_search_html_export_request_default(xc_search_html_export_request *out){
   if(out)*out={0,0,nullptr,0,nullptr,0,1024*1024,xiphos::core::maximum_search_export_rows,0};
 }
+void xc_search_html_image_options_default(xc_search_html_image_options *out){
+  if(out)*out={XC_HTML_IMAGES_REJECT,xiphos::core::maximum_search_export_images,
+    xiphos::core::maximum_search_export_bytes,xiphos::core::maximum_search_export_image_pixels};
+}
 xc_status xc_worker_export_search_html(xc_worker *w,uint64_t tab,const xc_search_html_export_request *input,xc_request **out){
+  xc_search_html_image_options images;xc_search_html_image_options_default(&images);
+  return xc_worker_export_search_html_with_images(w,tab,input,&images,out);
+}
+xc_status xc_worker_export_search_html_with_images(xc_worker *w,uint64_t tab,const xc_search_html_export_request *input,
+    const xc_search_html_image_options *images,xc_request **out){
   if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;
+  if(!images||(images->policy!=XC_HTML_IMAGES_REJECT&&images->policy!=XC_HTML_IMAGES_EMBEDDED_STATIC_PNG)||
+     !images->max_images||images->max_images>xiphos::core::maximum_search_export_images||
+     !images->max_original_bytes||images->max_original_bytes>xiphos::core::maximum_search_export_bytes||
+     !images->max_pixels||images->max_pixels>xiphos::core::maximum_search_export_image_pixels)return XC_INVALID_ARGUMENT;
   if(!w||!input||(input->selection!=0&&input->selection!=1)||
      (input->selection==0&&(!input->rows||!input->row_count||input->row_count>xiphos::core::maximum_search_export_rows))||
      (input->selection==1&&(input->rows||input->row_count))||
@@ -765,6 +778,7 @@ xc_status xc_worker_export_search_html(xc_worker *w,uint64_t tab,const xc_search
      !input->max_bytes||input->max_bytes>xiphos::core::maximum_search_export_bytes||!input->max_rows||input->max_rows>xiphos::core::maximum_search_export_rows)return XC_INVALID_ARGUMENT;
   try{
     xiphos::core::SearchHtmlExportRequest copied;
+    copied.images={static_cast<xiphos::core::SearchHtmlImagePolicy>(images->policy),images->max_images,images->max_original_bytes,images->max_pixels};
     copied.generation=input->generation;copied.selection=static_cast<xiphos::core::SearchExportSelection>(input->selection);
     copied.include_scripture=input->include_scripture!=0;copied.max_bytes=input->max_bytes;copied.max_rows=input->max_rows;copied.allow_partial_source=input->allow_partial_source!=0;
     if(input->title){std::size_t size=0;while(size<=32768&&input->title[size])++size;if(size>32768)return XC_INVALID_ARGUMENT;copied.title.assign(input->title,size);}
@@ -781,6 +795,10 @@ xc_status xc_search_html_export_get_info(const xc_search_html_export *r,xc_searc
 }
 xc_status xc_search_html_export_get_generation(const xc_search_html_export *r,xc_search_generation_info *out){
   if(!out)return XC_INVALID_ARGUMENT;*out={};if(!r)return XC_INVALID_ARGUMENT;return copy_search_generation_info(r->value.generation,out);
+}
+xc_status xc_search_html_export_get_images(const xc_search_html_export *r,xc_search_html_image_info *out){
+  if(!out)return XC_INVALID_ARGUMENT;*out={};if(!r)return XC_INVALID_ARGUMENT;
+  const auto &images=r->value.images;*out={images.count,images.unique_count,images.original_bytes,images.pixels};return XC_OK;
 }
 const char *xc_search_html_export_html(const xc_search_html_export *r){return r?r->value.html.c_str():nullptr;}
 size_t xc_search_html_export_size(const xc_search_html_export *r){return r?r->value.html.size():0;}

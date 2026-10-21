@@ -4,6 +4,7 @@
 #include "search_export_selection.hpp"
 #include "search_control.hpp"
 #include "html_document.hpp"
+#include "export_images.hpp"
 #include <glib.h>
 #include <array>
 #include <memory>
@@ -11,6 +12,16 @@
 namespace xiphos::core {
 SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest request,std::shared_ptr<SearchControl> control){
   detail::SearchControlScope progress(control);detail::validate_search_export_output(request.title,request.max_bytes);
+  if(request.images.policy!=SearchHtmlImagePolicy::reject&&request.images.policy!=SearchHtmlImagePolicy::embedded_static_png)
+    throw std::invalid_argument("Invalid HTML image export policy");
+  // One cache for the entire job, tied to the row's actual module. The loader
+  // runs on the existing SWORD owner and never accepts a frontend data directory.
+  detail::ExportImages images({request.images.max_images,request.images.max_original_bytes,
+    request.images.max_pixels,request.max_bytes},
+    [this](const std::string &module,const std::string &source,std::size_t maximum){
+      return reader_.read_verse_inline_image(module,source,maximum);
+    },control);
+  const bool embed_images=request.images.policy==SearchHtmlImagePolicy::embedded_static_png;
   detail::SearchExportRows rows;SearchHtmlExport out;
   static_cast<SearchExportMetadata &>(out)=detail::resolve_search_export_rows(search_generation_.get(),request.generation,
     request.selection,request.rows,request.max_rows,request.allow_partial_source,control,rows);
@@ -22,7 +33,7 @@ SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest reques
   const std::unique_ptr<gchar,decltype(&g_free)> escaped(g_markup_escape_text(request.title.data(),static_cast<gssize>(request.title.size())),g_free);
   const std::string title=escaped.get();
   const auto prefix=std::string("<!DOCTYPE html><html><head><meta charset=\"UTF-8\">")+
-    "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src 'none'; base-uri 'none'; form-action 'none'\">"+
+    "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src "+std::string(embed_images?"data:":"'none'")+"; base-uri 'none'; form-action 'none'\">"+
     "<title>"+title+"</title>";
   const bool partial=out.generation.cancelled||out.generation.failed_groups||out.generation.group_count!=out.generation.requested_count;
   const auto middle=std::string("</head><body><h1>")+title+"</h1><p>"+
@@ -45,7 +56,10 @@ SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest reques
       catch(const std::out_of_range &){return finish(SearchExportStatus::module_not_found,i);}
       catch(const std::invalid_argument &){return finish(SearchExportStatus::engine_error,i);}
       catch(const std::runtime_error &){return finish(SearchExportStatus::engine_error,i);}
-      const auto prepared=detail::prepare_export_html(source,request.max_bytes);
+      detail::ExportImageResolver resolver;
+      if(embed_images)resolver=[&](const std::string &uri){return images.resolve(row.first,uri);};
+      const auto prepared=detail::prepare_export_html(source,request.max_bytes,resolver);
+      if(prepared.cancelled)return finish(SearchExportStatus::cancelled,i);
       if(prepared.limited)return finish(SearchExportStatus::output_limit,i);
       if(prepared.issue!=HtmlExportIssue::none){out.issue=prepared.issue;return finish(SearchExportStatus::unsupported_html,i);}
       if(prepared.style&&!styles[prepared.style]){
@@ -66,6 +80,6 @@ SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest reques
   auto document=prefix+(css.empty()?std::string{}:"<style>"+css+"</style>")+middle+body+suffix;
   if(document.size()!=used||document.size()>request.max_bytes)throw std::logic_error("HTML document accounting mismatch");
   if(control&&control->cancel_requested())return finish(SearchExportStatus::cancelled);
-  out.html=std::move(document);out.row_count=rows.size();progress.finish(false);return out;
+  out.html=std::move(document);out.row_count=rows.size();out.images=images.statistics();progress.finish(false);return out;
 }
 }

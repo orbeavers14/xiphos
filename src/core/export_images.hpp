@@ -4,14 +4,12 @@
 #include <functional>
 #include <map>
 namespace xiphos::core::detail {
-inline constexpr std::size_t maximum_export_image_count=64;
+inline constexpr std::size_t maximum_export_image_count=maximum_search_export_images;
 struct ExportImageLimits {
-  std::size_t count=maximum_export_image_count,original_bytes=8*1024*1024;
-  std::size_t pixels=maximum_export_image_pixels,encoded_bytes=8*1024*1024;
+  std::size_t count=maximum_export_image_count,original_bytes=maximum_search_export_bytes;
+  std::size_t pixels=maximum_export_image_pixels,encoded_bytes=maximum_search_export_bytes;
 };
-struct ExportImageStatistics {
-  std::size_t count=0,unique_count=0,original_bytes=0,pixels=0;
-};
+using ExportImageStatistics=SearchHtmlImageStatistics;
 // Private per-document cache. Identity includes the actual source module and
 // exact decoded DOM URI. No persistent cache, filesystem naming or SDK mutation.
 class ExportImages {

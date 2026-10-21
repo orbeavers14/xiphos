@@ -559,6 +559,22 @@ typedef struct {
 } xc_search_html_export_request;
 void xc_search_html_export_request_default(xc_search_html_export_request *out);
 xc_status xc_worker_export_search_html(xc_worker *worker,uint64_t tab,const xc_search_html_export_request *input,xc_request **out);
+/* Additive image options: the existing request/info layouts and default function
+ * remain unchanged. Values copy before return. Only static decoded PNG images
+ * from each row's actual module can be embedded; no network or frontend paths.
+ * All limits positive: <=64 occurrences, <=8MiB unique original bytes,
+ * <=16Mi unique pixels; final HTML bytes retain the existing max_bytes cap. */
+typedef enum {XC_HTML_IMAGES_REJECT=0,XC_HTML_IMAGES_EMBEDDED_STATIC_PNG=1} xc_html_image_policy;
+typedef struct {int policy;size_t max_images,max_original_bytes,max_pixels;} xc_search_html_image_options;
+void xc_search_html_image_options_default(xc_search_html_image_options *out);
+/* images is required, including an explicit reject policy if desired. */
+xc_status xc_worker_export_search_html_with_images(xc_worker *worker,uint64_t tab,
+  const xc_search_html_export_request *input,const xc_search_html_image_options *images,xc_request **out);
+typedef struct {size_t count,unique_count,original_bytes,pixels;} xc_search_html_image_info;
+/* All counts zero on failed dispositions and reference-only/image-off output.
+ * Duplicate occurrences count separately; unique identity is actual module/URI.
+ * NULL inputs clear the output and return INVALID_ARGUMENT. */
+xc_status xc_search_html_export_get_images(const xc_search_html_export *result,xc_search_html_image_info *out);
 xc_search_html_export *xc_request_take_search_html_export(xc_request *request);
 typedef enum {XC_HTML_EXPORT_ISSUE_NONE=0,XC_HTML_EXPORT_ISSUE_RESOURCES=1,XC_HTML_EXPORT_ISSUE_MARKUP=2,
   XC_HTML_EXPORT_ISSUE_STYLES=3,XC_HTML_EXPORT_ISSUE_LINKS=4} xc_html_export_issue;
