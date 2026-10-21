@@ -34,6 +34,8 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     @Published private(set) var isClearing = false
     @Published private(set) var isExporting = false
     @Published var exportScripture = false
+    @Published var exportFormat: SearchExportFormat = .plainText
+    @Published var exportImages = false
     @Published private(set) var message = "Enter text to search."
     var isBusy: Bool { isSearching || isPreviewLoading || isClearing || isExporting }
     var canSearch: Bool { !isBusy && !module.isEmpty && !expression.isEmpty }
@@ -128,13 +130,22 @@ struct SearchHit: Identifiable, Sendable, Equatable {
         }
     }
     func exportText(allMatches: Bool, completion: @escaping @MainActor (RenderedSearchTextExport) -> Void) {
+        exportPayload(allMatches: allMatches, format: .plainText, embedImages: false) {
+            if case .text(let value) = $0 { completion(value) }
+        }
+    }
+    func exportResults(allMatches: Bool, completion: @escaping @MainActor (SearchExportPayload) -> Void) {
+        exportPayload(allMatches: allMatches, format: exportFormat, embedImages: exportImages, completion: completion)
+    }
+    private func exportPayload(allMatches: Bool, format: SearchExportFormat, embedImages: Bool,
+                               completion: @escaping @MainActor (SearchExportPayload) -> Void) {
         guard allMatches ? canExportAll : canExportSelected, let worker, let tab, let source = result else { return }
         let selected = selection, includeScripture = exportScripture
         // Capture displayed result identity and original query, never editable drafts
         // or a subsequently queried latest generation. Core rejects stale identity.
         let title = "Search results: \(source.expression)"
         revision &+= 1; let token = revision
-        isExporting = true; progress = nil; message = "Preparing search text…"
+        isExporting = true; progress = nil; message = format == .html ? "Preparing HTML document…" : "Preparing search text…"
         task = Task { [weak self] in
             guard let self, !self.closed else { return }
             defer { if !self.closed && self.revision == token { self.isExporting = false; self.task = nil } }
@@ -142,15 +153,22 @@ struct SearchHit: Identifiable, Sendable, Equatable {
                 let callback: @Sendable (CoreSearchProgress) async -> Void = { [weak self] progress in
                     await self?.receive(progress, token: token)
                 }
-                let payload: RenderedSearchTextExport
-                if allMatches {
-                    payload = try await worker.exportSearchAllText(tab: tab, generation: source.generation.id,
-                        title: title, includeScripture: includeScripture, returnCancelledResults: true, onProgress: callback)
+                let payload: SearchExportPayload
+                if format == .html {
+                    var images = CoreHTMLImageOptions()
+                    if embedImages && includeScripture { images.policy = .embeddedStaticPNG }
+                    let rows = allMatches ? [] : selected.map { [CoreSearchVisibleRow(group: 0, row: $0)] } ?? []
+                    payload = .html(try await worker.exportSearchHTML(tab: tab, generation: source.generation.id,
+                        selection: allMatches ? .allRetained : .visible, rows: rows, title: title,
+                        includeScripture: includeScripture, images: images, returnCancelledResults: true, onProgress: callback))
+                } else if allMatches {
+                    payload = .text(try await worker.exportSearchAllText(tab: tab, generation: source.generation.id,
+                        title: title, includeScripture: includeScripture, returnCancelledResults: true, onProgress: callback))
                 } else {
                     guard let selected else { return }
-                    payload = try await worker.exportSearchVisibleText(tab: tab, generation: source.generation.id,
+                    payload = .text(try await worker.exportSearchVisibleText(tab: tab, generation: source.generation.id,
                         rows: [CoreSearchVisibleRow(group: 0, row: selected)], title: title, includeScripture: includeScripture,
-                        returnCancelledResults: true, onProgress: callback)
+                        returnCancelledResults: true, onProgress: callback))
                 }
                 guard !self.closed, self.revision == token else { return }
                 // A late completion may win a stop in the core. A stopped native
@@ -158,18 +176,21 @@ struct SearchHit: Identifiable, Sendable, Equatable {
                 guard !Task.isCancelled else { self.message = "Export stopped."; return }
                 switch payload.status {
                 case .success:
-                    self.message = "Search text ready."
+                    self.message = format == .html ? "HTML document ready." : "Search text ready."
                     self.isExporting = false
                     completion(payload)
                 case .cancelled: self.message = "Export stopped."
                 case .stale: self.message = "Search results changed. Run the search again before exporting."
                 case .invalidSelection: self.message = "Select a search passage to export."
-                case .outputLimit: self.message = "Search text is too large to export. Select a passage instead."
+                case .outputLimit: self.message = "This export is too large. Select a passage or turn off scripture."
                 case .capacityExceeded: self.message = "Complete search results are unavailable. Export a selected passage instead."
                 case .sourceIncomplete: self.message = "The search stopped or some modules failed. Export a selected passage or run the search again."
                 case .moduleNotFound: self.message = "A searched module is no longer available. Run the search again."
-                case .engineError: self.message = "Unable to prepare search text. Try the search again."
-                case .unsupportedHTML: self.message = "This content cannot be exported in that format yet."
+                case .engineError: self.message = "Unable to prepare this export. Try the search again."
+                case .unsupportedHTML:
+                    if case .html(let value) = payload, value.issue == .resources {
+                        self.message = "This passage contains images or resources that are not enabled or supported for HTML export."
+                    } else { self.message = "This content cannot be exported in that format yet." }
                 }
             } catch { if !self.closed && self.revision == token { self.message = error.localizedDescription } }
         }

@@ -144,6 +144,8 @@ if(BUILD_TESTING)
     DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift ${preview_sources} Tests/SearchExportSmoke.swift
       Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h VERBATIM)
   add_custom_target(macos_search_export_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/search_export_smoke")
+  add_test(NAME reader_model_search_html_export COMMAND "${CMAKE_CURRENT_BINARY_DIR}/search_export_smoke" --html "${CMAKE_CURRENT_BINARY_DIR}/core/verse-image-source-fixture")
+  set_tests_properties(reader_model_search_html_export PROPERTIES FIXTURES_REQUIRED verse_image_fixture TIMEOUT 60)
   add_test(NAME reader_model_search_export COMMAND "${CMAKE_CURRENT_BINARY_DIR}/search_export_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/search-fixture")
   set_tests_properties(reader_model_search_export PROPERTIES FIXTURES_REQUIRED search_fixture TIMEOUT 60)
   add_test(NAME reader_model_search COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --search "${CMAKE_CURRENT_BINARY_DIR}/core/search-fixture")

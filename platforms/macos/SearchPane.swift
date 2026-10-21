@@ -45,15 +45,21 @@ struct SearchPane: View {
                     .help("Clear the scope used by Search within last results")
             }
             HStack {
-                Menu("Export text") {
+                Menu("Export") {
                     Button("Copy selected passage") { export(all: false, save: false) }.disabled(!model.canExportSelected)
                     Button("Save selected passage…") { export(all: false, save: true) }.disabled(!model.canExportSelected)
                     Divider()
                     Button("Copy all search matches") { export(all: true, save: false) }.disabled(!model.canExportAll)
                     Button("Save all search matches…") { export(all: true, save: true) }.disabled(!model.canExportAll)
                     Divider()
+                    Picker("Format", selection: $model.exportFormat) {
+                        ForEach(SearchExportFormat.allCases) { Text($0.rawValue).tag($0) }
+                    }.accessibilityLabel("Search export format")
                     Toggle("Include scripture", isOn: $model.exportScripture)
-                }.disabled(model.isBusy || hostBusy || model.hits.isEmpty).accessibilityLabel("Export search text")
+                    if model.exportFormat == .html {
+                        Toggle("Embed PNG images", isOn: $model.exportImages).disabled(!model.exportScripture)
+                    }
+                }.disabled(model.isBusy || hostBusy || model.hits.isEmpty).accessibilityLabel("Export search results")
                 Spacer()
             }
             if model.isSearching || model.isExporting {
@@ -85,7 +91,7 @@ struct SearchPane: View {
         }.padding(8)
     }
     private func export(all: Bool, save: Bool) {
-        model.exportText(allMatches: all) { payload in
+        model.exportResults(allMatches: all) { payload in
             if save { chooseSaveFile(payload) }
             else {
                 do {
@@ -95,18 +101,18 @@ struct SearchPane: View {
             }
         }
     }
-    private func chooseSaveFile(_ payload: RenderedSearchTextExport) {
+    private func chooseSaveFile(_ payload: SearchExportPayload) {
         let panel = NSSavePanel()
         panel.title = payload.selection == .visible ? "Save selected search passage" : "Save search matches"
-        panel.message = "Save the search text from when you chose Export."
-        panel.allowedContentTypes = [.plainText]
-        panel.nameFieldStringValue = "Xiphos search results.txt"
+        panel.message = "Save the search results from when you chose Export."
+        panel.allowedContentTypes = payload.format == .html ? [.html] : [.plainText]
+        panel.nameFieldStringValue = payload.format == .html ? "Xiphos search results.html" : "Xiphos search results.txt"
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }
             Task {
                 do {
                     try await SearchExportDestination.save(payload, to: url)
-                    model.exportDestinationMessage("Search text saved.")
+                    model.exportDestinationMessage(payload.format == .html ? "HTML document saved." : "Search text saved.")
                 } catch { model.exportDestinationMessage(error.localizedDescription) }
             }
         }
