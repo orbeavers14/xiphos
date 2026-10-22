@@ -13,7 +13,7 @@ and [shared handoff](handoff.md). This consolidated contract replaces superseded
 |---|---|---|
 | Sidebar mode/case/bounds/last | src/main/search_sidebar.cc | Shared execution and basic Mac controls checked; full saved/corpus acceptance pending |
 | SDK results/index/scopes/cancel | src/backend/sword_main.cc | Shared capability, owned results/scope and cooperative control checked; actual indexed execution pending |
-| Attribute/include options/advanced word dialects | src/main/search_dialog.cc | Shared C++11 policy reused by GTK, owned C/C++/Swift execution checked; advanced controls pending |
+| Attribute/include options/advanced word dialects | src/main/search_dialog.cc | Shared C++11 policy reused by GTK, owned C/C++/Swift execution and Mac single-module advanced mode/annotation controls checked; multi-module controls pending |
 | Ordered module search | src/main/search_dialog.cc | Bounded shared worker/C/Swift service checked; module abbreviations/mixed families and dialog setup pending |
 | Progress/preview/navigation/export | src/gtk/search_dialog.c; src/main/search_sidebar.cc; src/main/search_dialog.cc | Basic Mac progress/Stop/preview/navigation checked; advanced grouping/export pending |
 
@@ -313,3 +313,17 @@ native workflow gates. Default optional skips never certify indexed execution.
 History retains intermediate counts, test-only compile corrections, focused
 commands and source provenance. Current full checks supersede historical totals;
 none proves complete feature parity or a reliable core-only percentage.
+
+## Native advanced single-module controls (2026-10-22)
+
+Implementation `d26aa2d`: Match exposes all eight declared modes. Optional Strong's,
+morphology and footnote annotation inputs are copied with mode/query/case/scope
+before enqueue. Disabling the override retains core search context. Phrase controls
+explain and defer the core's prior-context preservation; no native query rewriting
+or engine selection is introduced. Explicit index fallback is reported from copied
+result metadata. Existing preview/export/Stop/close handling is reused.
+
+Native preview/model/export builds and focused regressions pass10/10; detailed
+commands and limitations are in the Mac handoff. Physical controls, real indexed
+execution, multi-module setup, saved preferences and complete corpus/platform
+acceptance remain pending. No whole parity group passes.
