@@ -46,8 +46,9 @@ ASan/UBSan12/12 and portable core/GTK models27/27 on Mac. Defaults and public
 layouts remain unchanged; see [context contract](export-context-workflows.md).
 Read-only legacy named module-list/range import and bounded comma splitting are
 now shared at `4ca44370`; [contract](saved-search-lists-workflows.md). Focused
-normal, ASan/UBSan and portable-on-Mac checks each pass9/9. Next are C/Swift
-transport and native consumption; complete saved setup remains open.
+normal, ASan/UBSan and portable-on-Mac checks each pass9/9. Additive owned
+C/Swift transport at `80e8a3c4` has4/4 focused Mac checks plus2/2 each
+sanitized/portable checks. Next is native consumption; complete saved setup remains open.
 
 Prior full integrated shared HTML image checkpoint: **164 Mac passes + 1 index skip**
 (165 registered, 137.38 s), core/C `4fecce8` and Swift `374147d`, with desktop

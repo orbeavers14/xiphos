@@ -678,3 +678,31 @@ No new full-suite, native UI, real-index, corpus or Fedora/MSVC acceptance.
 Next: copied C/Swift transport and native named-list/range consumption through
 these shared services; profile writes and complete advanced setup stay separate.
 No hosted builds or private profiles/modules used.
+
+### Saved search-list C/Swift transport (2026-10-22)
+
+Implementation `80e8a3c4`, branch `modernization/saved-search-list-adapters`.
+Additive queued C read/tokenization operations transfer owned typed handles,
+borrow optional attributes safely and expose shared first-label effective indices.
+Swift6 copies Sendable/Equatable arrays and uses the shared tokenizer. No C
+layout changes or frontend parser; no profile/search/history mutation.
+Module-list text now has an explicit16-MiB cap, including pre-copy C validation.
+
+Same Mac/SDK/compiler environment. Complete integrated Mac build and focused
+builds pass.
+`ctest --test-dir build/macos --output-on-failure -R '^(core_search_lists_.*|swift_profile_adapter|core_dictionary)$'`
+pass4/4 (1.58 s, dictionary fixture included). Sanitized target builds plus
+`ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/sanitized --output-on-failure -R '^core_search_lists_.*'`
+pass2/2 (1.11 s). Portable target builds and same CTest selection pass2/2
+(0.49 s), on Mac/GTK runtime OFF. Strict C11 header syntax and whitespace pass.
+Logs: ignored `build/search-lists-adapters-*.log`. ASan leaks remain off.
+
+C checks include pre-poll/wrong-kind/take-once, absent/empty fields, invalid
+kind/row/null clearing, duplicate shadowing, empty/malformed/oversized names,
+missing/bad files, copied submission strings, closed tabs and shutdown draining.
+Swift checks copied UTF-8/optional/effective values, shared token order/duplicates,
+invalid text/file/closed-tab failures and post-shutdown values alongside existing
+lexicon save/import isolation checks. No new full suite, UI/physical input,
+Fedora/MSVC, real index or corpus/parity acceptance. Next: native explicit profile
+picker and saved module/range selection using these services; writes stay separate.
+No hosted jobs or private modules/profiles used.

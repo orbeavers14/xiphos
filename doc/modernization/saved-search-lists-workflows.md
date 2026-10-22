@@ -48,9 +48,25 @@ A read accepted before close/shutdown drains; a read queued after closure fails
 under the existing invalid-argument tab contract. Result strings survive parser,
 source file, tab and worker destruction. There is no new SWORD instance or worker.
 
-The new C++ API has no C ABI layout changes. C/Swift/GTK/Windows transport and
-native controls remain the next consuming slice; frontends must use shared
-lookup/tokenization rather than create independent setup engines.
+C/Swift transport at `80e8a3c4` adds owned `xc_search_lists` and
+`xc_search_module_names` results through existing queued requests. Read and
+module-tokenization inputs copy before return; tokenization accepts empty text
+but rejects NULL/over-16-MiB inputs before queueing. The C++ helper enforces the
+same text cap. Existing C layouts and entry points remain unchanged.
+
+Counts and borrowed attribute getters distinguish NULL from explicit empty.
+Invalid kind/row/null handles return zero/NULL. The effective-index getter clears
+its output on invalid inputs and calls shared first-label lookup. A later row with
+a duplicate label can therefore display its raw data while selecting the same
+first value as legacy behavior. Only small indices are copied for this purpose;
+large attribute strings are not duplicated once for every shadowed label.
+
+Results take once after explicit successful polling and outlive their request,
+worker and source file. Swift 6 copies Sendable/Equatable raw arrays, optional
+strings and effective indices before releasing C handles. Its async actor calls
+shared module tokenization, rejects embedded NUL, and contains no XML parser,
+first-label engine or comma splitter. Native controls and GTK/Windows consumption
+remain the next slice; frontends must consume these policies.
 
 ## Evidence and remaining work
 
