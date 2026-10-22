@@ -622,3 +622,33 @@ passes11/11 (28.37 s). Whitespace checks pass. Logs are ignored
 No new full suite, actual index, Fedora/MSVC, corpus, physical UI or parity claim.
 Next: source disposition for empty/failed/unattempted groups in shared context
 exports, then saved search setup and remaining resource policies. No hosted jobs.
+
+### Shared source-group dispositions (2026-10-22)
+
+Implementation `e2e53ee1`, branch `modernization/search-source-dispositions`.
+Context-enabled exports now prepare one copied source summary with every original
+request index/module/query and its completed, stopped, empty-scope, typed-failure
+or unattempted disposition. Successful empty groups report zero SDK elements.
+The summary survives zero-row exports, shares one resolved document between
+HTML/plain and counts against final byte caps. HTML escapes all query metadata.
+Defaults, result-row identity/counts, source acceptance and public layouts stay
+unchanged. C/Swift/native consumers receive it through existing opt-in APIs.
+
+Existing Mac27 ARM64 / AppleClang21 / Swift6.4 / SWORD1.9.0.3916 setup.
+`cmake --build build/macos --parallel 4` passes; full desktop-access
+`ctest --test-dir build/macos --output-on-failure` passes **168 +1 explicit
+index skip**,169 registered,150.14 s. Sanitized build plus
+`ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/sanitized --output-on-failure -R 'search_html_export|search_html_images|search_export|search_all_export|core_search_generation$'`
+passes12/12 (52.22 s). Portable build plus
+`ctest --test-dir build/linux-models --output-on-failure -R 'search_html_export|search_html_images|search_export|search_all_export|core_search_generation$|linux_.*model'`
+passes27/27 (33.04 s), including all GTK models on Mac with GTK runtime OFF.
+Strict C11 syntax and whitespace checks pass. Logs: ignored
+`build/source-dispositions-*.log`. Named clipboard fixtures remain isolated;
+no user profiles/general clipboard or hosted workflows changed.
+
+Cases cover every no-row disposition and original ordered identity without SDK
+reads, real missing/empty groups, escaped failed-query metadata, zero-row rich
+output and exact/short final byte budgets, default formatting and native consumers.
+No current Fedora/MSVC, real index, corpus, browser/physical-input or parity claim.
+Next: read-only shared legacy named search-list import and saved setup, then
+remaining resource/semantic policies and independent target-platform acceptance.
