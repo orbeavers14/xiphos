@@ -8,7 +8,7 @@ C++ application core and native frontends:
 |---|---|---|
 | macOS | SwiftUI / AppKit | Reading/history/options, note/reference previews, lexical/direct dictionary lookup and key steps |
 | Windows | WinUI 3 | Planned; legacy GTK application retained |
-| Linux | GTK4 / WebKitGTK | Reading/commentary/history/options, dictionary, contextual previews, profiles and shared-worker windows; legacy GTK3 retained |
+| Linux | GTK4 / WebKitGTK | Reading/commentary/dictionary, books/images, ordered search and text/HTML export adapters, profiles and shared-worker windows; legacy GTK3 retained |
 
 The goal is to preserve all existing Bible-study functionality, pane layout,
 module behavior, data and established workflows while adding appropriate

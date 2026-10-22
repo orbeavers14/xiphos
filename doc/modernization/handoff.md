@@ -155,7 +155,7 @@ unvalidated redistribution of module content. Preserve this order across chats.
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
 | macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Advanced headers/search and remaining resource policies | [Mac instructions](handoff-macos.md) |
-| Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
+| Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Local books/images/search/export catch-up `3f9a068a`:130 normal tests pass; display/input/picker/clipboard checks and packaged SWORD sanitizer defect remain | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 
 These are task lanes, not claims that sessions are running or leases are held.

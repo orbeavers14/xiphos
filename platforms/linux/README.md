@@ -23,7 +23,7 @@ UndefinedBehaviorSanitizer; leak detection defaults off for uninstrumented
 system dependencies, matching the existing native-core workflow.
 
 Release and sanitizer builds use separate ignored directories under `build/`.
-Use `--jobs N` to control memory/CPU use (default 2) and `--build-dir DIR` to
+Use `--jobs N` to control memory/CPU use (default 1, suitable for memory-limited development machines) and `--build-dir DIR` to
 choose a separate output directory. Relative directories resolve from the
 calling directory. Use a different directory when changing compiler or mode.
 CMake honors `CC`, `CXX`, and standard dependency discovery variables.
@@ -40,6 +40,15 @@ require these checks on every change while routine acceptance stays local.
 This validates the shared core's existing contracts. It does not establish full
 feature parity or complete the shared engine. See the modernization status and
 parity ledger before moving to GTK4 frontend implementation.
+
+## Memory-limited builds
+
+Use one build process and one compiler job on small VMs. The core helper now
+uses one job by default. For the desktop preview use `cmake --build build/gtk4
+--parallel 1` and `ctest --test-dir build/gtk4 --parallel 1`. For lower compiler
+memory, configure Debug with `-DCMAKE_CXX_FLAGS_DEBUG="-O0 -g0"` and
+`-DCMAKE_C_FLAGS_DEBUG="-O0 -g0"`; this omits debugger symbols. Do not run
+multiple builds against the same directory.
 
 ## Experimental GTK4 reading preview
 
@@ -252,3 +261,47 @@ controls, copied preference state and queued commands. Current portable/core
 checks pass 54/54 on Mac; focused model ASan/UBSan checks pass 3/3 including
 fixtures. Current GTK controls require Fedora compilation and desktop checks.
 See [double-spacing contracts/evidence](../../doc/modernization/double-space-workflows.md).
+
+
+## General books and current search/export catch-up
+
+The book tab below commentary now consumes shared configured DisplayLevel
+HTML/CSS, resource-prepared inline images, lazy contents pages, parent/child/
+sibling navigation, explicit keys/paths and selected-file XML restoration.
+Images, font faces, spacing and note numbers refresh through core settings.
+Book note and image clicks use typed core dispatch. Bible/commentary image
+clicks share the PNG preview, which bounds decoded pixels and displays only
+copied local bytes. External resources and module scripts remain disabled.
+
+The left Search tab supports all eight current match modes, case sensitivity,
+explicit bounds/provider, complete last-results scope, search-only annotation
+choices/reset and ordered comma-separated module requests. Module spaces are
+literal; duplicates and unavailable names remain visible. Import saved search
+lists uses the explicit XML picker and shared first-label/tokenization policy;
+missing and empty values stay distinct. Editing/saving those lists is not yet
+exposed by the current Mac adapter either.
+
+Select a result to preview its actual module; activate it or use Read selected
+passage for shared pane routing. Stop observes the single shared batch/export
+request. Each displayed hit retains its original group/row and generation.
+Copy/Save export selected rows or all retained matches as shared plain text or
+restricted HTML, with optional scripture, committed search details and bounded
+PNG embedding. Explicit incomplete-source export requires search details and
+resets on each new result. Failed/stale/capacity-limited output never replaces
+clipboard contents or writes a partial document. HTML Copy advertises HTML and
+the shared plain-text companion; Save uses asynchronous native replacement.
+
+Focused model checks (including fixture prerequisites):
+
+```sh
+ctest --test-dir build/gtk4 -R '^linux_study_model$' --output-on-failure --parallel 1
+```
+
+`linux_study_ui_smoke COMBINED_FIXTURE_ROOT` is an opt-in desktop executable,
+never an automatic CTest or hosted job. Combine the generated
+`book-document-presentation-fixture` and `attribute-search-fixture` `mods.d/`
+and `data/` directories into a disposable root before running it. It exercises
+book selection/path/options, ordered search, preview/activation and pending
+export closure without changing the user's clipboard. It exits 77 if no display
+is accessible. Actual desktop, file-picker, rich-client clipboard, physical
+input/accessibility, representative corpus and visual acceptance remain open.

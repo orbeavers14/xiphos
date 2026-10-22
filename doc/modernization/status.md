@@ -105,7 +105,7 @@ not fresh measurements of the current source.
 ## Parity coverage snapshot
 
 The current matrix has 38 feature groups. Mac/shared-core has 21 partial rows,
-WinUI 3 has no frontend rows implemented, and GTK4 has 17 partial rows. These
+WinUI 3 has no frontend rows implemented, and GTK4 has 23 partial rows. These
 counts overlap, and a partial group can contain substantial pending workflows.
 **No group has complete accepted parity; no native app is release-ready.**
 The matrix and target handoffs retain the actual criteria and independent evidence.
@@ -281,3 +281,24 @@ normal and2/2 each sanitized/portable are independently scoped. No new current
 Fedora/MSVC, real index, broad corpus, full physical/visual/accessibility or whole
 parity acceptance. Explicit saved-list editing/atomic persistence, remaining
 advanced setup and resource/semantic policy remain pending. GTK3 stays intact.
+
+
+## Local Linux catch-up checkpoint (2026-10-22)
+
+Linux implementation `3f9a068a` on `linux/native-parity` adds general-book,
+typed image, ordered advanced search, saved-list import/application and retained
+text/HTML destination adapters through existing shared services. Private SDK
+compatibility covers released search constants and counted strip-filter bytes;
+standalone libxml test includes are explicit. The default Linux helper now uses
+one compiler job following an overlapping-build memory exhaustion.
+
+Fedora 44/aarch64 normal checks pass **130/130**, including indexed search;
+the expanded Linux model check passes **4/4** with prerequisites. GTK frontend
+and the opt-in new desktop smoke compile. Display access is unavailable (smoke
+exit77), so no new desktop/clipboard/picker/visual acceptance follows. Focused
+ASan/UBSan records4 passes,1 installed-SWORD overlap failure and2 blocked tests;
+direct model/generation runs reproduce the SWORD search diagnostic. It is not
+suppressed. See the [exact environment, commands and limits](handoff-linux.md).
+The owner subsequently approved publication; the identical tested code tree is
+published on `linux/native-parity` as `3f9a068a`. No hosted workflow was dispatched
+or enabled; no whole-feature acceptance or retirement changes.
