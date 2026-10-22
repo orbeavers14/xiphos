@@ -25,11 +25,18 @@ controls now consume the shared service at `d26aa2d`. Ordered multi-module
 selection/grouped preview/export now consume the shared batch service at
 `c17206e`; explicit native partial-source export with shared disclosure follows
 at `667f9b7`; search-only annotation reset uses the shared per-tab command at
-`119e943`. Complete advanced setup/saved workflows remain.
+`119e943`. Source-preserving search activation uses existing shared pane routing
+at `3b5ff5c`. Complete advanced setup/saved workflows remain.
 Complete typed last scope is independent of copied result prefixes. Search-only
 settings are per tab and physical SDK filters restore on every job. One FIFO
 owner handles batches, progress/Stop, scope and copied values. See the consolidated
 [current search contract](search-workflows.md); chronology remains in Git.
+
+Current integrated native search checkpoint `3b5ff5c`: **168 Mac passes +1
+explicit index skip** (169 registered,123.07 s), with isolated desktop clipboard
+checks. Includes advanced modes/batches, partial export/reset and source-preserving
+activation through existing core routing. Current target-platform, actual-index
+and physical/corpus acceptance remain independent.
 
 Prior full integrated shared HTML image checkpoint: **164 Mac passes + 1 index skip**
 (165 registered, 137.38 s), core/C `4fecce8` and Swift `374147d`, with desktop

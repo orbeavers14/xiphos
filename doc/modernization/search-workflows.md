@@ -403,3 +403,28 @@ retain native input choices; a closed model cannot publish late reset completion
 Focused Mac regressions pass11/11. See the Mac handoff for exact command/results;
 physical UI, saved settings, actual indexed execution and full platform/corpus
 acceptance remain pending. No new shared API or independent state engine is added.
+
+## Source-preserving native result activation (2026-10-22)
+
+Implementation `3b5ff5c`: both double-click and Read in main pane now pass the
+owned SearchHit, including its actual module/reference. The prior native callback
+passed only the reference and therefore reused the displayed module. Legacy
+`main_finds_verselist_selection_changed` in `src/main/search_dialog.cc` constructs
+a source-module/key sword URI; `src/main/url.cc` routes Bible targets to that
+Bible and commentary targets to the searched commentary plus current Bible.
+This is inspected source evidence, not a new full GTK runtime comparison.
+
+Native activation now uses the existing shared `visitLinkedStudyPassage` service
+in the paired reading host. The core selects Bible versus commentary routing and
+records the established history behavior. A standalone host uses its existing
+typed read/present path. No native URI construction/parser or new pane-routing
+engine is added. Search snapshots, displayed batch generation, query drafts and
+other windows stay untouched. Failed/closed activation retains existing native
+presentation guards. Reference-only history deduplication remains the shared
+legacy-compatible policy, including first-recorded module-pair metadata.
+
+Original two-Bible/two-commentary fixtures verify each source module reaches its
+intended pane at the same reference, plus missing-source failure and window/close
+isolation. Exact evidence is in the Mac handoff. Physical double-click delivery,
+standalone-only corpus, alternate versifications and full GTK/Windows acceptance
+remain pending.
