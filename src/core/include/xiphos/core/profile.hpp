@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 #include "lexical.hpp"
+#include <vector>
 namespace xiphos::core {
 // Owned, read-only subset of the legacy Xiphos XML profile. Unknown settings
 // are not exposed or changed. Locale is data, never applied by the reader.
@@ -13,6 +14,26 @@ struct StudyProfile {
 // No external resources, home/profile discovery, module validation or writes.
 StudyProfile parse_study_profile(const std::string &xml);
 StudyProfile read_study_profile(const std::string &path);
+// Raw named advanced-search lists from the first legacy section. Preserve
+// ordering, duplicate labels, missing versus empty attributes and unknown modules.
+// No tokenization, installed-module lookup, search execution or profile writes.
+struct SavedSearchList {
+  std::optional<std::string> label, value;
+};
+struct SavedSearchLists {
+  std::vector<SavedSearchList> module_lists, ranges;
+};
+inline constexpr std::size_t maximum_saved_search_lists = 1024; // Per section.
+SavedSearchLists parse_saved_search_lists(const std::string &xml);
+SavedSearchLists read_saved_search_lists(const std::string &path);
+// Exact first matching label, including a missing label. A missing value on that
+// first match shadows later duplicates, as in xml_get_list_from_label.
+std::optional<std::string> saved_search_list_value(const std::vector<SavedSearchList> &items,
+                                                 const std::optional<std::string> &label);
+// Legacy comma tokenization: skip empty fields, preserve spaces/order/duplicates.
+// Reject malformed names or more modules than one bounded shared search batch.
+// This never resolves abbreviations, validates installation or starts a search.
+std::vector<std::string> saved_search_module_names(const std::string &text);
 // Read-only saved general-book fields, with the legacy XML getter's null/empty
 // and first-matching-key semantics. Raw key/offset text stays unnormalized:
 // startup resolution, module validation, tab state and writes are separate.

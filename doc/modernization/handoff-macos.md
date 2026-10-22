@@ -652,3 +652,29 @@ output and exact/short final byte budgets, default formatting and native consume
 No current Fedora/MSVC, real index, corpus, browser/physical-input or parity claim.
 Next: read-only shared legacy named search-list import and saved setup, then
 remaining resource/semantic policies and independent target-platform acceptance.
+
+### Shared legacy named search-list import (2026-10-22)
+
+Implementation `4ca44370`, branch `modernization/saved-search-lists-core`.
+Read-only C++ profile/worker APIs own raw module lists/ranges, preserve ordered
+first-section/first-label behavior and missing/empty attributes, and implement
+bounded legacy comma splitting using the shared module-input validator. No
+profile mutation, implicit module resolution, second worker or frontend engine.
+See [contract and next consumers](saved-search-lists-workflows.md).
+
+Mac27 ARM64 / AppleClang21 / Swift6.4 / SWORD1.9.0.3916 configuration unchanged.
+`cmake -S platforms/macos -B build/macos` and complete integrated build pass.
+Focused rebuilt targets plus
+`ctest --test-dir build/macos --output-on-failure -R '^core_(search_lists_profile|profile_reader|book_profile|preview_profile|profile_save|search_query|search_batch|xml_profile)$'`
+pass9/9 (12.59 s, includes attribute fixture). Same focused rebuilt targets in
+`build/sanitized`, with `ASAN_OPTIONS=detect_leaks=0`, pass9/9 (28.34 s).
+`cmake -S platforms/linux -B build/linux-models`, matching focused targets and
+same CTest selection pass9/9 (13.64 s), portable on Mac/GTK runtime OFF.
+Whitespace checks pass. Logs: ignored `build/search-lists-*.log`.
+An initial new test expected out-of-range for a closed tab; it now checks the
+existing invalid-argument contract and all final runs above pass. Leaks remain
+off because dependencies/retained characterization helpers are partly uninstrumented.
+No new full-suite, native UI, real-index, corpus or Fedora/MSVC acceptance.
+Next: copied C/Swift transport and native named-list/range consumption through
+these shared services; profile writes and complete advanced setup stay separate.
+No hosted builds or private profiles/modules used.
