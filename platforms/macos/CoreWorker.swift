@@ -86,6 +86,22 @@ actor CoreWorker {
         }
         return request
     }
+    func resolveModuleName(tab: UInt64, requested: String) async throws -> ModuleNameResolution {
+        guard !requested.isEmpty, !requested.utf8.contains(0), requested.utf8.count <= 4096 else {
+            throw CoreError(status: XC_INVALID_ARGUMENT)
+        }
+        let handle = try worker()
+        var request: OpaquePointer?
+        let status = requested.withCString { xc_worker_resolve_module_name(handle, tab, $0, &request) }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_module_resolution(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_module_resolution_release(result) }
+        guard let original = xc_module_resolution_requested(result) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        return ModuleNameResolution(requested: String(cString: original),
+            module: xc_module_resolution_module(result).map { String(cString: $0) },
+            viaAbbreviation: xc_module_resolution_via_abbreviation(result) != 0)
+    }
     func modules() async throws -> [InstalledModule] {
         var request: OpaquePointer?
         let status = xc_worker_modules(try worker(), &request)

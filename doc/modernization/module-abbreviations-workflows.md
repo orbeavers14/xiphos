@@ -71,3 +71,24 @@ installed-ID/alias collisions, case/Unicode, absent/empty/rejected aliases,
 per-field/module-count/aggregate bounds, copied inputs, shutdown, closed tabs and
 ordinary reading after metadata rejection. C/Swift transport and explicit search
 execution with correct retained/export provenance remain next.
+
+
+## Owned C/Swift resolution transport
+
+Additive `xc_worker_resolve_module_name` returns owned `xc_module_resolution`
+through the existing request channel. Required nonempty UTF-8 token is bounded
+before copying to4096 bytes; malformed UTF-8/catalog/tab errors arrive at poll.
+Unknown tokens succeed with a null module getter. Requested token and alias-origin
+flag remain separate. Pre-poll/failed/wrong-kind takes yield null; successful
+take transfers once. Result strings borrow only from that handle until release,
+and survive request/worker/SDK teardown. Null getters/release are safe. Existing
+C layouts/version and query/search behavior remain unchanged.
+
+Swift6 `ModuleNameResolution` copies Sendable/Equatable requested/optional module/
+alias fields. The actor rejects empty/NUL/oversized Swift strings and consumes
+shared registration/resolution policy without a frontend alias map. Accepted
+read-only observations drain on cancellation/shutdown; no current state applies.
+Normal4/4 including Swift/fixture, and ASan/UBSan, TSan, portable-on-Mac3/3 each
+pass; strict C11 header syntax passes. Details/limits are in the Mac handoff.
+Next: resolve actual search targets while preserving raw requested provenance,
+explicit range providers and authoritative preview/retained/export module IDs.

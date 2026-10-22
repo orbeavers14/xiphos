@@ -32,6 +32,7 @@ struct xc_search_batch {
 struct xc_reference_list { xiphos::core::ReferenceList value; };
 struct xc_search_lists { xiphos::core::SavedSearchLists value; };
 struct xc_search_module_names { std::vector<std::string> value; };
+struct xc_module_resolution { xiphos::core::ModuleNameResolution value; };
 struct xc_lexicons { std::optional<xiphos::core::LexiconPreferences> value; };
 struct xc_lexical_entry { xiphos::core::LexicalEntry value; };
 struct xc_dictionary_choices { xiphos::core::DictionaryChoices value; };
@@ -122,6 +123,7 @@ struct xc_request {
   std::unique_ptr<xc_lexicons> lexicons;
   std::unique_ptr<xc_search_lists> search_lists;
   std::unique_ptr<xc_search_module_names> search_module_names;
+  std::unique_ptr<xc_module_resolution> module_resolution;
   std::unique_ptr<xc_note> note;
   std::unique_ptr<xc_entry> entry;
   std::unique_ptr<xc_passage> passage;
@@ -159,6 +161,7 @@ struct xc_request {
     if (search_lists) search_lists->value = std::move(v);
     else search_lists = std::make_unique<xc_search_lists>(xc_search_lists{std::move(v)});
   }
+  void store(xiphos::core::ModuleNameResolution v) { module_resolution = std::make_unique<xc_module_resolution>(xc_module_resolution{std::move(v)}); }
   void store(std::vector<std::string> v) { search_module_names = std::make_unique<xc_search_module_names>(xc_search_module_names{std::move(v)}); }
   void store(std::optional<xiphos::core::LexiconPreferences> v) { lexicons = std::make_unique<xc_lexicons>(xc_lexicons{std::move(v)}); }
   void store(xiphos::core::LexicalEntry v) { lexical = std::make_unique<xc_lexical_entry>(xc_lexical_entry{std::move(v)}); }
@@ -1258,6 +1261,10 @@ xc_status xc_worker_import_lexicon_profile(xc_worker *w, uint64_t tab, const cha
   if (!path || !*path) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.import_lexicon_profile(tab, path); });
 }
+xc_status xc_worker_resolve_module_name(xc_worker *w, uint64_t tab, const char *requested, xc_request **out) {
+  if (!bounded_image_c_text(requested, 4096)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  return queue_request(w, out, [=](auto &worker) { return worker.resolve_module_name(tab, requested); });
+}
 xc_status xc_worker_read_search_lists(xc_worker *w, uint64_t tab, const char *path, xc_request **out) {
   if (!path || !*path) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.read_search_lists(tab, path); });
@@ -1419,6 +1426,11 @@ uint64_t xc_request_tab(const xc_request *r) { return r && r->status == XC_OK ? 
 xc_reference_list *xc_request_take_reference_list(xc_request *r) { return r && r->status == XC_OK ? r->references.release() : nullptr; }
 xc_lexical_entry *xc_request_take_lexical_entry(xc_request *r) { return r && r->status == XC_OK ? r->lexical.release() : nullptr; }
 xc_search_lists *xc_request_take_search_lists(xc_request *r) { return r && r->status == XC_OK ? r->search_lists.release() : nullptr; }
+xc_module_resolution *xc_request_take_module_resolution(xc_request *r) { return r && r->status == XC_OK ? r->module_resolution.release() : nullptr; }
+const char *xc_module_resolution_requested(const xc_module_resolution *r) { return r ? r->value.requested.c_str() : nullptr; }
+const char *xc_module_resolution_module(const xc_module_resolution *r) { return r && r->value.module ? r->value.module->c_str() : nullptr; }
+int xc_module_resolution_via_abbreviation(const xc_module_resolution *r) { return r && r->value.via_abbreviation ? 1 : 0; }
+void xc_module_resolution_release(xc_module_resolution *r) { delete r; }
 xc_search_module_names *xc_request_take_search_module_names(xc_request *r) { return r && r->status == XC_OK ? r->search_module_names.release() : nullptr; }
 xc_lexicons *xc_request_take_lexicons(xc_request *r) { return r && r->status == XC_OK ? r->lexicons.release() : nullptr; }
 xc_dictionary_entry *xc_request_take_dictionary_entry(xc_request *r) { return r && r->status == XC_OK ? r->dictionary.release() : nullptr; }

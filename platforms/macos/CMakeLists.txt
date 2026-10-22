@@ -289,6 +289,18 @@ if(BUILD_TESTING)
   add_custom_target(macos_lexical_adapter_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/lexical_adapter_smoke")
   add_test(NAME swift_lexical_adapter COMMAND "${CMAKE_CURRENT_BINARY_DIR}/lexical_adapter_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/dictionary-fixture")
   set_tests_properties(swift_lexical_adapter PROPERTIES FIXTURES_REQUIRED dictionary_fixture)
+  add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/module_resolution_smoke"
+    COMMAND ${SWIFTC} -swift-version 6 -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
+      -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/ModuleResolutionSmoke.swift"
+      "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
+      ${sword_link_flags} -lc++ -o "${CMAKE_CURRENT_BINARY_DIR}/module_resolution_smoke"
+    DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift Tests/ModuleResolutionSmoke.swift
+      Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h
+    VERBATIM)
+  add_custom_target(macos_module_resolution_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/module_resolution_smoke")
+  add_test(NAME swift_module_resolution COMMAND "${CMAKE_CURRENT_BINARY_DIR}/module_resolution_smoke"
+    "${CMAKE_CURRENT_BINARY_DIR}/core/module-resolution-fixture")
+  set_tests_properties(swift_module_resolution PROPERTIES FIXTURES_REQUIRED module_resolution_fixture)
   add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/profile_adapter_smoke"
     COMMAND ${SWIFTC} -swift-version 6 -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
       -I "${bridge}" ${adapter} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/ProfileAdapterSmoke.swift"

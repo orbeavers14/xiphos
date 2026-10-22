@@ -34,6 +34,7 @@ typedef struct xc_lexical_entry xc_lexical_entry;
 typedef struct xc_lexicons xc_lexicons;
 typedef struct xc_search_lists xc_search_lists;
 typedef struct xc_search_module_names xc_search_module_names;
+typedef struct xc_module_resolution xc_module_resolution;
 /* Borrowed submission strings. NULL is unset; empty is an explicit empty name. */
 typedef struct {
   const char *greek, *hebrew, *greek_morph_nt, *greek_morph_ot, *hebrew_morph;
@@ -755,6 +756,17 @@ xc_status xc_worker_save_lexicon_profile(xc_worker *worker, uint64_t tab, const 
  * Neither operation changes a profile, search, history or reading settings. */
 xc_status xc_worker_read_search_lists(xc_worker *worker, uint64_t tab, const char *path, xc_request **out);
 xc_status xc_worker_parse_search_module_list(xc_worker *worker, uint64_t tab, const char *text, xc_request **out);
+/* Explicit read-only module resolution. Nonempty required token: terminated
+ * UTF-8 <=4096 bytes. Inputs copy before return; tab/catalog errors arrive at
+ * poll. Exact installed IDs win; otherwise shared bounded SDK alias policy is
+ * used. Unknown tokens succeed with a NULL module. No selection/search/history/
+ * profile mutation. Owned take-once values survive request/worker teardown. */
+xc_status xc_worker_resolve_module_name(xc_worker *worker, uint64_t tab, const char *requested, xc_request **out);
+xc_module_resolution *xc_request_take_module_resolution(xc_request *request);
+const char *xc_module_resolution_requested(const xc_module_resolution *result);
+const char *xc_module_resolution_module(const xc_module_resolution *result);
+int xc_module_resolution_via_abbreviation(const xc_module_resolution *result);
+void xc_module_resolution_release(xc_module_resolution *result);
 typedef enum xc_saved_search_list_kind { XC_SAVED_SEARCH_MODULES = 0, XC_SAVED_SEARCH_RANGES = 1 } xc_saved_search_list_kind;
 typedef struct { int kind; const char *label, *value; } xc_saved_search_list_edit;
 /* Explicit selected-file edit. Path, edit and both attributes are required;

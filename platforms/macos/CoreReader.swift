@@ -65,6 +65,11 @@ struct LexiconRoles: OptionSet, Sendable {
 }
 enum LexiconOrigin: Int32, Sendable { case main = 0, dialog = 1 }
 enum LexicalKind: Int32, Sendable { case strongs = 0, morphology = 1 }
+struct ModuleNameResolution: Sendable, Equatable {
+    let requested: String
+    let module: String?
+    let viaAbbreviation: Bool
+}
 struct SavedSearchList: Sendable, Equatable {
     let label: String?, value: String?
     let effectiveIndex: Int // Shared first-label lookup; duplicate shadows stay in core.

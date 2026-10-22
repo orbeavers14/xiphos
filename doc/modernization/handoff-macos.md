@@ -1006,7 +1006,7 @@ No hosted workflow/reset/purchase.
 
 ### Owned native module resolution (2026-10-22)
 
-Sequential `master`: read-only Reader/worker resolution lazily stages bounded
+Implementation `3f88cfc` (pushed fork `master`). Sequential `master`: read-only Reader/worker resolution lazily stages bounded
 copied SDK alias catalog metadata, preserves exact installed IDs and original
 requested tokens, and publishes only a complete registry. Existing Reader owns
 all SDK access; no current search/history/scope/preferences/profile mutation.
@@ -1023,3 +1023,24 @@ aliases, Unicode/empty/absent metadata, copied submission/teardown, closed tabs,
 shutdown and ordinary read isolation pass. No new full suite, C ABI/Swift/native
 consumer, Fedora/MSVC/corpus or whole parity acceptance. Next: copied C/Swift
 resolution transport, then search execution with requested/resolved provenance.
+
+
+### Module resolution C/Swift transport (2026-10-22)
+
+Sequential `master`: additive owned C request/result and Swift6 copied values
+reuse the explicit resolver. Unknown token remains successful absent identity,
+not a failed operation. Required bounded inputs copy before queueing; successful
+poll/take-once and teardown ownership use existing request semantics. No new
+search application, SDK owner, ABI layout/version or language change.
+
+Normal4/4 (1.46s), ASan/UBSan3/3 (2.48s), TSan3/3 (5.39s), portable-on-Mac3/3;
+strict C11 header/whitespace pass. Build targets are the three core module
+resolution/registry tests plus `macos_module_resolution_test` on Mac. Selection:
+`ctest --test-dir <dir> --output-on-failure -R '^core_module_(resolution.*|abbreviations)$'`,
+adding `|^swift_module_resolution$` for Mac. Existing SDK/compiler environment,
+ASan leaks OFF, GTK runtime OFF, SDKs partly instrumented. Logs: ignored
+`build/module-resolution-adapters-*`. Tests cover pre-poll/wrong-kind/take-once,
+null/empty/over-limit/invalid UTF-8, optional/Unicode values, copied inputs,
+closed tabs, accepted cancellation/shutdown and value lifetime. No new full
+suite/UI/Fedora/MSVC/corpus/whole-parity acceptance. Next: search execution with
+requested/resolved identity retained through preview/export and all consumers.
