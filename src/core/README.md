@@ -44,6 +44,11 @@ retain resource rejection. Separate additive C11 options/getters keep existing
 layouts unchanged; all image policy/loading/validation stays in core. See the
 [image export contract](../../doc/modernization/html-image-export-workflows.md).
 
+C++ search text/HTML requests can explicitly include committed per-group search
+context without changing default bytes or any existing C/Swift output. Header
+policy, escaping and budgets remain shared; transport/native opt-in follows in a
+separate slice. See the [context contract](../../doc/modernization/export-context-workflows.md).
+
 Tests generate a small on-disk RawText OSIS module with original prose.
 They validate discovery isolation, UTF-8 XHTML, legacy setKey/renderText
 comparison, C header consumption, handle/result ownership, missing modules,

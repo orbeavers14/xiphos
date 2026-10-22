@@ -42,6 +42,19 @@ int main(int argc,char **argv){try{
   try{session.export_search_html(request);}catch(const std::invalid_argument &){rejected=true;}
   check(rejected,"An enabled C++ companion cannot have zero budget");
   request.plain_text_max_bytes.reset();
+  request.include_search_context=true;request.plain_text_max_bytes=16384;request.max_bytes=16384;
+  auto contextual=session.export_search_html(request);
+  check(contextual.status==SearchExportStatus::ok&&contextual.row_count==12&&
+    count(contextual.html,"class=\"xiphos-search-context\"")==3&&count(contextual.html,"John 1:1 Text")==2&&
+    contextual.html.find("Query: Original")!=std::string::npos&&contextual.html.find("Mode: Exact phrase")!=std::string::npos&&
+    contextual.plain_text->find("Search group 3\nModule: Text")!=std::string::npos,
+    "Opted-in headers use committed group metadata, keep every first row and distinguish repeated modules");
+  request.max_bytes=contextual.html.size();request.plain_text_max_bytes=contextual.plain_text->size();
+  check(session.export_search_html(request).html==contextual.html,"Exact context budgets include both complete representations");
+  --request.max_bytes;auto short_context=session.export_search_html(request);
+  check(short_context.status==SearchExportStatus::output_limit&&short_context.html.empty()&&!short_context.plain_text,
+    "HTML header bytes count against the same complete-document budget");
+  request.include_search_context=false;request.plain_text_max_bytes.reset();
   request.max_bytes=held.html.size();check(session.export_search_html(request).html==held.html,"Exact complete HTML byte cap accepted");
   --request.max_bytes;auto clipped=session.export_search_html(request);check(clipped.status==SearchExportStatus::output_limit&&clipped.html.empty()&&!clipped.row_count,"HTML output cap never returns an unlabeled partial page");
   request.max_bytes=8192;request.max_rows=11;auto row_limited=session.export_search_html(request);
@@ -80,6 +93,42 @@ int main(int argc,char **argv){try{
    count(mixed.html,"<style>")==1,"Mixed configured modules share one scoped stylesheet without applying annotation rules to the plain row");
   if(argc==4){std::ofstream output(argv[3],std::ios::binary);output<<mixed.html;check(static_cast<bool>(output),"Write original-prose local visual fixture");}
   check(before.image_content==ContentPreference::unknown&&session.module_presentation_options("Text").respect_font_faces==ContentPreference::unknown,"HTML attempts do not learn/publish font choices");
+ }
+ {
+  Reader reader(argv[1]);StudySession session(reader);
+  auto ordered=session.search_batch({{"Text","Original"},{"Commentary","Original"}});
+  SearchHtmlExportRequest mixed; mixed.generation=ordered.generation.id; mixed.rows={{0,1},{1,0},{0,0}};
+  mixed.include_search_context=true;mixed.plain_text_max_bytes=8192;
+  const auto reordered=session.export_search_html(mixed);
+  check(reordered.status==SearchExportStatus::ok&&reordered.row_count==3&&count(reordered.html,"class=\"xiphos-search-context\"")==3&&
+    reordered.html.find("John 1:2 Text")<reordered.html.find("John 1:1 Commentary")&&
+    reordered.html.find("John 1:1 Commentary")<reordered.html.find("John 1:1 Text"),
+    "Visible group reentry repeats its committed header without reordering selected rows");
+  SearchQuery query{"Text","Original|<script>not-code</script>"};query.mode=SearchMode::regular_expression;
+  query.case_sensitive=true;query.range=SearchRange{"Text","John1:1-2"};query.text_options=SearchTextOptions{true,false,true};
+  auto result=session.search_module(query);check(!result.references.empty(),"Context query has original matches");
+  session.clear_search_text_options();
+  SearchHtmlExportRequest request;request.generation=result.generation.id;request.rows={{0,0},{0,0}};
+  request.include_search_context=true;request.plain_text_max_bytes=8192;
+  const auto context=session.export_search_html(request);
+  check(context.status==SearchExportStatus::ok&&context.row_count==2&&count(context.html,"class=\"xiphos-search-context\"")==1&&
+    context.html.find("Query: Original|&lt;script&gt;not-code&lt;/script&gt;")!=std::string::npos&&context.html.find("<script>")==std::string::npos&&
+    context.plain_text->find("Query: "+query.expression)!=std::string::npos&&context.plain_text->find("Case sensitive: on\nScope: range (Text): John1:1-2")!=std::string::npos&&
+    context.plain_text->find("Search annotation policy: Strong's on, morphology off, footnotes on")!=std::string::npos,
+    "Headers escape committed query metadata and retain search-time annotations after settings change");
+  check(!session.search_text_options().options&&session.history().entries().empty()&&session.search_generation().id==result.generation.id,
+    "Header preparation does not restore old annotations or change history/generation");
+  query={"Text","Original"};query.mode=SearchMode::multiword;query.within_last_results=true;
+  result=session.search_module(query);request.generation=result.generation.id;
+  auto last=session.export_search_html(request);
+  check(last.status==SearchExportStatus::ok&&last.plain_text->find("Mode: Multiword")!=std::string::npos&&
+    last.plain_text->find("Scope: previous results")!=std::string::npos,"Last-scope provenance belongs to committed request, not latest UI scope");
+  query={"Text","Original"};query.mode=SearchMode::indexed;
+  result=session.search_module(query);request.generation=result.generation.id;
+  auto indexed=session.export_search_html(request);
+  check(indexed.status==SearchExportStatus::ok&&indexed.plain_text->find("Mode: Raw indexed query")!=std::string::npos&&
+    (indexed.plain_text->find("used multiword fallback")!=std::string::npos)==result.index_fallback,
+    "Explicit indexed provenance reports actual captured fallback without claiming usable indexing");
  }
  std::future<SearchHtmlExport> drained;
  {StudyWorker worker(argv[1]);const auto tab=worker.create_tab().get();auto search=worker.search_module(tab,{"Text","Original"}).get();

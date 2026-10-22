@@ -20,15 +20,28 @@ inline bool stopped(const std::shared_ptr<SearchControl> &control) { return cont
 // One document policy for explicit visible selections and complete returned keys.
 // The owning session supplies configured SDK reads, never a frontend renderer.
 inline SearchTextExport render_search_export_text(const std::string &title, std::size_t cap, const Rows &rows,
-						  SearchTextExport out, const std::shared_ptr<SearchControl> &control, const std::function<std::string(const std::string &, const std::string &, std::size_t)> &read, bool report_progress = true)
+						  SearchTextExport out, const std::shared_ptr<SearchControl> &control, const std::function<std::string(const std::string &, const std::string &, std::size_t)> &read, bool report_progress = true, bool include_context = false)
 {
 	if (title.size() + 3 > cap)
 		return fail_export(std::move(out), SearchExportStatus::output_limit);
 	std::string staged = title + "\n\n";
+	if (include_context && (out.generation.cancelled || out.generation.failed_groups || out.generation.group_count != out.generation.requested_count)) {
+		const std::string warning = "Source search stopped or had module failures; only returned matches are included.\n\n";
+		if (warning.size() > cap - staged.size() - 1)
+			return fail_export(std::move(out), SearchExportStatus::output_limit);
+		staged += warning;
+	}
+	std::optional<std::size_t> previous_group;
 	for (std::size_t i = 0; i < rows.size(); ++i) {
 		if (stopped(control))
 			return fail_export(std::move(out), SearchExportStatus::cancelled, i);
 		const auto &row = rows[i];
+		if (row.context && previous_group != row.group) {
+			if (row.context->size() + 1 > cap - staged.size() - 1)
+				return fail_export(std::move(out), SearchExportStatus::output_limit, i);
+			staged += *row.context + "\n";
+		}
+		previous_group = row.group;
 		const auto description = row.second + " " + row.first;
 		const auto base = 10 + description.size() + row.first.size() + row.second.size();
 		const auto remaining = cap - staged.size() - 1; // Reserve final document newline.

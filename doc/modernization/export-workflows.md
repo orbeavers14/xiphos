@@ -102,12 +102,13 @@ text/HTML destinations are implemented. A displayed prefix or final last scope
 still cannot stand in for complete returned matches; keep the explicit selection,
 partial-source and capacity contracts when adding formats.
 
-Next are advanced per-group headers from committed query metadata, with escaped
-HTML and matching plain text, preserving every first match and duplicate group.
-Specify how original versus effective query, mode, case, bounds/last scope,
-annotation settings, failures and index fallback are represented. Editable native
-query fields must not supply historical headers. Preserve current/default document
-bytes until a caller explicitly selects the extended header contract.
+Initial [C++ committed-context headers](export-context-workflows.md) now cover
+original/effective query, mode, case, requested bounds/last scope, annotation
+policy and backend/fallback for emitting row groups. They preserve first matches,
+duplicates, default bytes and complete-document budgets. Next add explicit C/Swift
+options and native consumption; richer empty/failure group sections, localization
+and full advanced workflow acceptance remain open. Editable native query fields
+must never supply historical headers.
 
 Then expand resource/style/semantic policy and native interoperability with
 original fixtures and representative permitted modules/profiles. Complete passage
