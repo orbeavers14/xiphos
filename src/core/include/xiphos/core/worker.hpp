@@ -113,6 +113,7 @@ public:
   // Explicit selected-file read on the FIFO owner; validates the tab but changes no state.
   std::future<SavedSearchLists> read_search_lists(StudyTab tab, std::string path);
   std::future<std::vector<std::string>> parse_search_module_list(StudyTab tab, std::string text);
+  std::future<SavedSearchLists> save_search_list(StudyTab tab, std::string path, SavedSearchListEdit edit);
   std::future<void> save_lexicon_profile(StudyTab tab, std::string path);
   std::future<LexicalEntry> visit_lexical(StudyTab tab, std::string module, std::string reference, std::string uri, int origin);
   std::future<LexicalEntry> read_lexical(StudyTab tab, std::string module, std::string reference,

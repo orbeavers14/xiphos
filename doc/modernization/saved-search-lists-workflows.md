@@ -84,6 +84,38 @@ No implicit startup application, profile save, range-provider guessing or rerun
 is introduced. Busy/revision/closed-window guards include both loading and module
 preparation. Failed imports retain prior choices, drafts, source results and scope.
 
+## Explicit shared editing and persistence
+
+C++ checkpoint `2e599e78` adds `SavedSearchListEdit`,
+`serialize_saved_search_list`, `save_saved_search_list` and the queued
+`StudyWorker::save_search_list` operation. A typed module-list/range edit supplies
+literal label/value attributes. Empty strings are valid; invalid kinds, NUL,
+invalid UTF-8, XML-unrepresentable characters, oversized documents and collection
+capacity overflow reject. Raw values are not normalized or resolved against
+installed modules, matching the legacy editing boundary.
+
+Only the first matching named item in the first section is updated. Missing
+sections/items are created. Other attributes/children/comments/settings, duplicate
+labels and later duplicate sections survive; there is no delete or whole-profile
+rewrite API. The retained C `xml_set_list_item` is compiled as C11 in a test
+adapter, and valid edits compare byte-for-byte with its serialized output.
+
+Selected-file saves reuse existing same-directory staging, readback verification,
+permission retention and replacement. New files start with an Xiphos root and
+private permissions; source encoding normalizes to UTF-8. Invalid/read-only
+files and missing parents remain failures rather than silent fallback paths.
+Existing symlink aliases retain their targets under the common file policy.
+Observed external-content changes reject before replacement; the shared helper
+is not an interprocess lock and does not eliminate the final external-writer race.
+
+The returned owned snapshot is allocated and parsed from the verified staged file
+before replacement. On success it describes the committed document without a
+second frontend read; no search/history/preferences state is applied. Worker
+inputs copy before queueing and closed tabs reject before mutation. Dropping an
+observer does not cancel an accepted save; shutdown drains it. C/Swift transport
+and explicit native editing remain the next slice. No user-profile discovery or
+automatic save is introduced by this API.
+
 ## Evidence and remaining work
 
 The [Mac handoff](handoff-macos.md) records actual build/test commands and scope.
@@ -93,8 +125,8 @@ unavailable modules. They check exact/overflow list and batch limits, malformed
 names/XML/paths, explicit-file byte/permission preservation, independent parsers,
 FIFO read ownership, closed-tab failure and shutdown draining.
 
-No profile writes, automatic startup application, module installation, saved
-query serialization, alias resolution, full mixed-family range setup or complete frontend
-workflow is accepted by this slice. These remain separate work, along with
+Automatic startup application, module installation, saved query serialization,
+alias resolution, full mixed-family range setup and complete frontend workflow
+acceptance remain open. Native profile writing is not yet exposed. These remain separate work, along with
 corpus/locale, actual-index and current Fedora/MSVC validation. Existing GTK3
 source remains unchanged and no parity/retirement gate passes.

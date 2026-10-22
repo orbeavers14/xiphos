@@ -37,6 +37,18 @@ std::optional<std::string> saved_search_list_value(const std::vector<SavedSearch
 // Reject malformed names or more modules than one bounded shared search batch.
 // This never resolves abbreviations, validates installation or starts a search.
 std::vector<std::string> saved_search_module_names(const std::string &text);
+enum class SavedSearchListKind { module_list = 0, range = 1 };
+struct SavedSearchListEdit {
+  SavedSearchListKind kind = SavedSearchListKind::module_list;
+  std::string label, value; // Explicit literal attributes; empty is valid, NUL is not.
+};
+// Update/create only the first matching named item in the first section, retaining
+// unrelated XML, attributes, comments and shadowed duplicates. Output is verified
+// UTF-8 under the existing profile bounds; no automatic profile discovery.
+std::string serialize_saved_search_list(const std::string &xml, const SavedSearchListEdit &edit);
+// Same-directory staged verification/replacement, as for explicit lexicon saves.
+// Return the copied staged snapshot prepared before the atomic replacement.
+SavedSearchLists save_saved_search_list(const std::string &path, const SavedSearchListEdit &edit);
 // Read-only saved general-book fields, with the legacy XML getter's null/empty
 // and first-matching-key semantics. Raw key/offset text stays unnormalized:
 // startup resolution, module validation, tab state and writes are separate.

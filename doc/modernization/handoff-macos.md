@@ -746,3 +746,34 @@ user profiles, general clipboard or hosted workflows changed.
 Next shared work: explicit saved-list editing/atomic persistence with preserved
 unknown XML, remaining advanced setup/resource semantics and independent
 Fedora/MSVC/index/corpus acceptance. No whole parity or retirement gate passes.
+
+### Shared saved-list editing / verified persistence (2026-10-22)
+
+Implementation `2e599e78`, branch `modernization/saved-search-list-persistence`.
+Typed C++ edits update/create the first named module/range item and preserve
+unrelated XML, attributes/children/comments and duplicate shadows. Selected-file
+saves reuse bounded staging/readback/permission/replacement policy and return the
+copied stage snapshot prepared before replacement. Worker copies all inputs,
+checks the tab before mutation and drains accepted saves. No automatic profile
+write, second SDK owner or frontend persistence policy.
+
+Mac/SDK/compiler configuration unchanged. Complete integrated Mac build passes.
+Focused rebuilt targets and
+`ctest --test-dir build/macos --output-on-failure -R '^core_(search_list.*|profile_save|xml_profile)$'`
+pass5/5 (1.09 s). Final matching ASan/UBSan targets and selection with
+`ASAN_OPTIONS=detect_leaks=0` pass5/5 (1.76 s); portable-on-Mac targets/selection
+pass5/5 (0.81 s), GTK runtime OFF. Whitespace checks pass. Logs: ignored
+`build/search-list-save-*.log`. The last full suite remains171 passes+1 skip
+through native setup; this slice adds one registered core save test, not a new
+full-suite claim. Dependencies/legacy characterization remain partly instrumented;
+ASan leaks off.
+
+Tests compile the actual retained writer as C11, compare valid edits exactly,
+exercise empty/duplicate/Unicode/escaped attributes, unknown XML/children/comments,
+new/private files, source encoding, existing permissions/symlinks, malformed and
+unrepresentable data, invalid paths/read-only files, collection overflow,
+prepared snapshot identity, closed-tab retention, dropped observers/shutdown and
+stage cleanup. No C ABI, native write UI, current Fedora/MSVC, broad corpus,
+external-writer locking or whole parity acceptance. Next: additive C/Swift save
+transport and explicit native editing over this same shared service. No hosted
+builds or real user profiles were used.
