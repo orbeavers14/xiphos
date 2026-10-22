@@ -49,6 +49,9 @@ int main(int argc,char **argv){try{
     contextual.html.find("Query: Original")!=std::string::npos&&contextual.html.find("Mode: Exact phrase")!=std::string::npos&&
     contextual.plain_text->find("Search group 3\nModule: Text")!=std::string::npos,
     "Opted-in headers use committed group metadata, keep every first row and distinguish repeated modules");
+  check(count(contextual.html,"Source SDK result elements: 4")==3&&count(*contextual.plain_text,"Source SDK result elements: 4")==3&&
+    contextual.html.find("Source visible references: 0")!=std::string::npos&&contextual.plain_text->find("Source visible references: 1")!=std::string::npos,
+    "HTML and text companion disclose the same source result and preview counts for every retained group");
   request.max_bytes=contextual.html.size();request.plain_text_max_bytes=contextual.plain_text->size();
   check(session.export_search_html(request).html==contextual.html,"Exact context budgets include both complete representations");
   --request.max_bytes;auto short_context=session.export_search_html(request);

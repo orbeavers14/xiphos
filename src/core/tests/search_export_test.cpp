@@ -21,6 +21,12 @@ int main(int argc,char **argv){try{
   format_export_item("John 1:1 Text","Text","John 1:1","",false,false)+format_export_item("John 1:3 Text","Text","John 1:3","",false,false)+"\n";
  check(plain.status==SearchExportStatus::ok&&plain.text==expected&&plain.row_count==3&&!plain.includes_scripture&&
   plain.generation.id==generation.id,"Text payload preserves first selected row, order and duplicates with exact shared formatting");
+ request.include_search_context=true;request.max_bytes=4096;
+ const auto contextual=session.export_search_visible_text(request);
+ check(contextual.status==SearchExportStatus::ok&&contextual.row_count==3&&
+  contextual.text.find("Source SDK result elements: 4\nSource visible references: 3\nSource visible references were limited;")!=std::string::npos,
+  "Selected rows and duplicates do not replace the captured source match/preview counts");
+ request.include_search_context=false;
  request.max_bytes=expected.size();check(session.export_search_visible_text(request).text==expected,"Exact byte cap accepted");
  --request.max_bytes;auto overflow=session.export_search_visible_text(request);
  check(overflow.status==SearchExportStatus::output_limit&&overflow.text.empty()&&!overflow.row_count,"One byte below cap has no partial payload");
