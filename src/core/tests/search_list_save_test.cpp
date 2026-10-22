@@ -10,6 +10,7 @@
 #include <stdexcept>
 using namespace xiphos::core;
 extern "C" char *legacy_search_list_edit(const char *, int, const char *, const char *);
+extern "C" char *legacy_search_list_remove(const char *, int, const char *);
 void check(bool ok, const char *message)
 {
 	if (!ok)
@@ -144,6 +145,65 @@ int main(int argc, char **argv)
 			worker.save_search_list(live, file.u8string(), {SavedSearchListKind::range, "Drain", "John1:3"});
 		}
 		check(saved_search_list_value(read_saved_search_lists(file.u8string()).ranges, "Drain") == "John1:3", "Dropped observer does not cancel accepted FIFO save before shutdown");
+        for (auto kind : {SavedSearchListKind::module_list, SavedSearchListKind::range})
+            for (const auto &label : {std::string("Original"), std::string(), std::string("café α"), std::string("Missing")}) {
+                const std::unique_ptr<char, decltype(xmlFree)> expected(legacy_search_list_remove(source.c_str(), static_cast<int>(kind), label.c_str()), xmlFree);
+                check(expected && serialize_saved_search_list_removal(source, kind, label) == expected.get(), "Removal matches retained C first-section/first-label bytes");
+            }
+        const auto removal = root / "removal.xml";
+        write(removal, source);
+        std::filesystem::permissions(removal, permissions);
+        const auto removed = remove_saved_search_list(removal.u8string(), SavedSearchListKind::module_list, "Original");
+        check(removed.module_lists.size() == 3 && saved_search_list_value(removed.module_lists, "Original") == "Shadowed",
+              "Removing first duplicate exposes later value in prepared snapshot");
+        const auto removedBytes = bytes(removal);
+        check(removedBytes.find("<!--keep-->") != std::string::npos && removedBytes.find("Later section") != std::string::npos &&
+              removedBytes.find("<unknown label=\"Original\"") != std::string::npos && std::filesystem::status(removal).permissions() == permissions,
+              "Removal retains unrelated XML, duplicate sections and file permissions");
+        for (const auto &bad : {std::string("bad\0tail", 8), std::string(1, char(0xff)), std::string(1, '\x01'), std::string(16*1024*1024+1, 'x')}) {
+            rejects([&] { remove_saved_search_list(removal.u8string(), SavedSearchListKind::range, bad); });
+            check(bytes(removal) == removedBytes, "Rejected removal label preserves file");
+        }
+        rejects([&] { remove_saved_search_list(removal.u8string(), static_cast<SavedSearchListKind>(9), "Original"); });
+        const auto absentFile = root / "absent-removal.xml";
+        std::filesystem::remove(absentFile);
+        rejects([&] { remove_saved_search_list(absentFile.u8string(), SavedSearchListKind::range, "Original"); });
+        check(!std::filesystem::exists(absentFile), "Removal never creates a missing profile");
+        check(serialize_saved_search_list_removal("<Xiphos/>", SavedSearchListKind::range, "Missing").find("ranges") == std::string::npos,
+              "Missing-section removal creates no section");
+        for (const auto &badSource : {std::string("<Xiphos>"), std::string("<Other/>"), std::string("<!DOCTYPE Xiphos><Xiphos/>"),
+             capped + "trailing", capped.substr(0, capped.size()-18) + "<range label='Overflow'/></ranges></Xiphos>"})
+            rejects([&] { serialize_saved_search_list_removal(badSource, SavedSearchListKind::range, "Original"); });
+#ifndef _WIN32
+        std::filesystem::permissions(removal, std::filesystem::perms::owner_read);
+        rejects([&] { remove_saved_search_list(removal.u8string(), SavedSearchListKind::module_list, "Original"); });
+        check(bytes(removal) == removedBytes, "Read-only removal preserves bytes");
+        std::filesystem::permissions(removal, permissions);
+        const auto removalLink = root / "removal-alias.xml";
+        std::filesystem::remove(removalLink);
+        std::filesystem::create_symlink(removal.filename(), removalLink);
+        remove_saved_search_list(removalLink.u8string(), SavedSearchListKind::range, "Missing");
+        check(std::filesystem::is_symlink(removalLink) && bytes(removal) == removedBytes, "No-match removal preserves alias and document");
+        std::filesystem::remove(removalLink);
+#endif
+
+        {
+            StudyWorker worker(root.u8string());
+            const auto tab = worker.create_tab().get();
+            std::string copiedPath = removal.u8string(), copiedLabel = "Original";
+            auto pending = worker.remove_search_list(tab, copiedPath, SavedSearchListKind::module_list, copiedLabel);
+            copiedPath.clear(); copiedLabel = "Changed";
+            const auto snapshot = pending.get();
+            check(!saved_search_list_index(snapshot.module_lists, "Original") && worker.history(tab).get().entries.empty() && !worker.search_generation(tab).get().id,
+                  "Queued removal copies inputs, returns verified snapshot and preserves search/history");
+            worker.close_tab(tab).get();
+            const auto beforeClosed = bytes(removal);
+            rejects([&] { (void)worker.remove_search_list(tab, removal.u8string(), SavedSearchListKind::range, "Original").get(); });
+            check(bytes(removal) == beforeClosed, "Closed-tab removal rejects before mutation");
+            const auto live = worker.create_tab().get();
+            worker.remove_search_list(live, removal.u8string(), SavedSearchListKind::range, "Original");
+        }
+        check(!saved_search_list_index(read_saved_search_lists(removal.u8string()).ranges, "Original"), "Shutdown drains removal with dropped observer");
 		for (const auto &entry : std::filesystem::directory_iterator(root))
 			check(entry.path().filename().u8string().find(".xiphos-preferences-") != 0, "Staged directories cleaned after success and failure");
 		std::cout << "Legacy named-list writes, preserved XML, staged validation, encoding/permissions, failure retention and FIFO draining passed\n";

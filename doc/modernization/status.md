@@ -20,7 +20,10 @@ snapshots refresh choices without applying them or changing current search state
 Full Mac regression173 passes+1 explicit index skip (174 registered,125.66s);
 scoped editor/chooser cancellation/new-file save/menu checked with original fixtures.
 See [saved-list contract](saved-search-lists-workflows.md#native-explicit-editor-2026-10-22).
-No whole parity acceptance follows.
+Shared first-label saved-list removal now also has C++ serialization, verified
+staged snapshots and FIFO execution; normal/sanitizer/portable scoped checks4/4
+each. C/Swift/native removal consumption remains next. No whole parity acceptance
+follows.
 
 Earlier export checkpoint (2026-10-22): shared retained search generations, selected/all
 text export and initial restricted passive HTML documents are implemented through

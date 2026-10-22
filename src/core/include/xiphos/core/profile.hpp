@@ -49,6 +49,13 @@ std::string serialize_saved_search_list(const std::string &xml, const SavedSearc
 // Same-directory staged verification/replacement, as for explicit lexicon saves.
 // Return the copied staged snapshot prepared before the atomic replacement.
 SavedSearchLists save_saved_search_list(const std::string &path, const SavedSearchListEdit &edit);
+// Remove only the first matching named item from the first section, matching
+// retained xml_remove_node. Unmatched labels are a successful no-op; later
+// duplicate items may become effective. No section/file is created by removal.
+std::string serialize_saved_search_list_removal(const std::string &xml, SavedSearchListKind kind,
+                                                const std::string &label);
+SavedSearchLists remove_saved_search_list(const std::string &path, SavedSearchListKind kind,
+                                          const std::string &label);
 // Read-only saved general-book fields, with the legacy XML getter's null/empty
 // and first-matching-key semantics. Raw key/offset text stays unnormalized:
 // startup resolution, module validation, tab state and writes are separate.

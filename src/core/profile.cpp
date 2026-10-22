@@ -4,12 +4,14 @@
 #include "search_validation.hpp"
 #include <libxml/parser.h>
 #include <libxml/encoding.h>
+#include <libxml/chvalid.h>
 #include <filesystem>
 #include <fstream>
 #include <memory>
 #include <mutex>
 #include <stdexcept>
 #include <array>
+#include <algorithm>
 #include <cerrno>
 #include <cstdlib>
 #include <limits>
@@ -211,6 +213,72 @@ SavedSearchLists save_saved_search_list(const std::string &path, const SavedSear
   SavedSearchLists prepared;
   detail::replace_preference_file(path, [&](const std::filesystem::path &file, const std::string &original, bool existed) {
     const auto serialized = serialize_saved_search_list(existed ? original : "<Xiphos/>", edit);
+    {
+      std::ofstream output(file, std::ios::binary);
+      output.exceptions(std::ios::badbit | std::ios::failbit);
+      output.write(serialized.data(), static_cast<std::streamsize>(serialized.size()));
+      output.close();
+    }
+    if (detail::read_preference_file(file, maximum_profile_bytes) != serialized)
+      throw std::runtime_error("Written Xiphos search list failed verification");
+    prepared = read_saved_search_lists(file.u8string());
+  }, maximum_profile_bytes);
+  return prepared;
+}
+std::string serialize_saved_search_list_removal(const std::string &source, SavedSearchListKind kind,
+                                                const std::string &label) {
+  const char *section_name = nullptr, *item_name = nullptr;
+  switch (kind) {
+    case SavedSearchListKind::module_list: section_name = "modlists"; item_name = "modlist"; break;
+    case SavedSearchListKind::range: section_name = "ranges"; item_name = "range"; break;
+    default: throw std::invalid_argument("Unknown saved search list kind");
+  }
+  if (label.size() > maximum_profile_bytes || label.find('\0') != std::string::npos || !xmlCheckUTF8(BAD_CAST label.c_str()))
+    throw std::invalid_argument("Invalid saved search list label");
+  for (std::size_t offset = 0; offset < label.size();) {
+    int length = static_cast<int>(std::min<std::size_t>(4, label.size() - offset));
+    const int codepoint = xmlGetUTF8Char(BAD_CAST label.data() + offset, &length);
+    if (codepoint < 0 || length <= 0 || !xmlIsCharQ(codepoint))
+      throw std::invalid_argument("Invalid XML saved search list label");
+    offset += static_cast<std::size_t>(length);
+  }
+  // Validate original collection bounds as well as the resulting document.
+  const auto before = parse_saved_search_lists(source);
+  auto document = parse_document(source);
+  auto *root = xmlDocGetRootElement(document.get());
+  xmlNode *section = nullptr;
+  for (auto *node = root->children; node; node = node->next)
+    if (!xmlStrcmp(node->name, BAD_CAST section_name)) { section = node; break; }
+  if (section) for (auto *node = section->children; node; node = node->next) {
+    if (xmlStrcmp(node->name, BAD_CAST item_name)) continue;
+    const std::unique_ptr<xmlChar, decltype(xmlFree)> candidate(xmlGetProp(node, BAD_CAST "label"), xmlFree);
+    if (candidate && !xmlStrcmp(candidate.get(), BAD_CAST label.c_str())) {
+      xmlUnlinkNode(node);
+      xmlFreeNode(node);
+      break;
+    }
+  }
+  xmlChar *serialized = nullptr;
+  int length = 0;
+  xmlDocDumpFormatMemoryEnc(document.get(), &serialized, &length, "UTF-8", 0);
+  const std::unique_ptr<xmlChar, decltype(xmlFree)> owned(serialized, xmlFree);
+  if (!serialized || length <= 0) throw std::runtime_error("Xiphos search-list serialization failed");
+  std::string result(reinterpret_cast<const char *>(serialized), static_cast<std::size_t>(length));
+  const auto verified = parse_saved_search_lists(result);
+  auto expected = kind == SavedSearchListKind::module_list ? before.module_lists : before.ranges;
+  if (const auto index = saved_search_list_index(expected, label)) expected.erase(expected.begin() + *index);
+  const auto &actual = kind == SavedSearchListKind::module_list ? verified.module_lists : verified.ranges;
+  if (actual.size() != expected.size()) throw std::runtime_error("Removed search list failed verification");
+  for (std::size_t i = 0; i < actual.size(); ++i)
+    if (actual[i].label != expected[i].label || actual[i].value != expected[i].value)
+      throw std::runtime_error("Removed search list failed verification");
+  return result;
+}
+SavedSearchLists remove_saved_search_list(const std::string &path, SavedSearchListKind kind, const std::string &label) {
+  SavedSearchLists prepared;
+  detail::replace_preference_file(path, [&](const std::filesystem::path &file, const std::string &original, bool existed) {
+    if (!existed) throw std::invalid_argument("Cannot remove a search list from a missing profile");
+    const auto serialized = serialize_saved_search_list_removal(original, kind, label);
     {
       std::ofstream output(file, std::ios::binary);
       output.exceptions(std::ios::badbit | std::ios::failbit);

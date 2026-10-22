@@ -96,8 +96,8 @@ installed modules, matching the legacy editing boundary.
 
 Only the first matching named item in the first section is updated. Missing
 sections/items are created. Other attributes/children/comments/settings, duplicate
-labels and later duplicate sections survive; there is no delete or whole-profile
-rewrite API. The retained C `xml_set_list_item` is compiled as C11 in a test
+labels and later duplicate sections survive; there is no whole-profile
+rewrite API; explicit removal is documented below. The retained C `xml_set_list_item` is compiled as C11 in a test
 adapter, and valid edits compare byte-for-byte with its serialized output.
 
 Selected-file saves reuse existing same-directory staging, readback verification,
@@ -182,3 +182,31 @@ failure retention, unchanged draft/results/scope/preview/other windows and pendi
 close. Full Mac regression and final focused evidence are in the Mac handoff.
 Existing-item prefill/list management, deletion, complete saved setup, physical
 input/accessibility/corpus and other-platform acceptance remain open.
+
+
+## Shared explicit removal (2026-10-22)
+
+`serialize_saved_search_list_removal`, `remove_saved_search_list` and queued
+`StudyWorker::remove_search_list` remove only the first matching named item in
+the first section, matching the actual retained C `xml_remove_node`. Later
+same-label items may become effective. Empty labels are literal; absent label
+attributes are not selected by this typed string operation. Unmatched labels
+succeed without creating a section. Missing profiles reject without creating a
+file. This is explicit selected-file mutation, with no profile discovery or
+search/history/settings application.
+
+Original and resulting collections remain bounded; malformed/DTD/wrong-root XML,
+invalid kinds, over-limit/NUL/invalid UTF-8/XML labels reject. Serialization retains
+unrelated nodes/attributes/comments and later sections, normalizing UTF-8 as for
+saves. The common staged/readback/permission/symlink/replacement helper prepares
+the owned result before replacement. Existing external-writer/durability limits
+remain unchanged. One worker copies arguments, checks the tab before mutation
+and drains accepted removals on shutdown or observer loss.
+
+Direct retained-C byte comparisons, duplicates/empty/nonexistent labels, unknown
+XML, permissions/symlinks, invalid labels/files, original collection bounds,
+copied worker input, closed-tab preservation and shutdown draining are checked.
+Normal Mac, ASan/UBSan and portable-on-Mac focused selections each pass4/4;
+GTK runtime OFF, ASan leaks OFF, dependencies partly instrumented. Additive
+C/Swift removal transport and explicit native list management remain next. No
+whole parity/platform/retirement acceptance follows.

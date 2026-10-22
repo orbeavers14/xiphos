@@ -841,7 +841,7 @@ Next bounded core-consuming slice: explicit native saved-list editing through
 
 ## Native saved-list editor (2026-10-22)
 
-Task/branch: sequential `master`, consuming the existing verified shared save
+Implementation `d0b068c` (pushed fork `master`). Task/branch: sequential `master`, consuming the existing verified shared save
 transport. Native sheet accepts explicit kind, label and raw value; a native save
 chooser selects an existing profile or a new destination. Only the returned
 verified snapshot replaces available choices. Search draft, results, preview,
@@ -873,3 +873,24 @@ whole visual/workflow parity or retirement acceptance. No completion score chang
 
 Next bounded work: existing-choice prefill/list management over shared effective
 indices, then remaining saved setup and shared advanced search/resource policies.
+
+
+### Shared saved-list removal (2026-10-22)
+
+Sequential `master`: extracting retained `xml_remove_node` first-section/first-
+label behavior into explicit C++ serialization, verified staged file replacement
+and the existing FIFO worker. Later duplicate values become effective; unrelated
+XML survives. Missing items are no-ops, missing profiles reject without creation.
+No implicit search application. Existing C/Swift callers remain compatible;
+additive removal transport/native action is subsequent work. C++ normal, ASan/UBSan and portable-on-Mac selections pass4/4 each (0.37s,
+1.38s,0.58s respectively); GTK runtime OFF, sanitizer leaks OFF, dependencies
+partly instrumented. Commands: build `core_search_list_save_test`,
+`core_search_lists_profile_test`, `core_profile_save_test`, `core_xml_profile_test`
+in `build/macos`, `build/sanitized`, `build/linux-models`, then
+`ctest --test-dir <dir> --output-on-failure -R '^core_(search_list_save|search_lists_profile|profile_save|xml_profile)$'`
+with `ASAN_OPTIONS=detect_leaks=0` on sanitized. The retained removal helper is
+compiled as C11; no language/API layout increase. Logs: ignored
+`build/search-list-removal-{build,tests,asan-build,asan-tests,portable-build,portable-tests}.log`.
+Same documented SDK environment; no new full suite or desktop/corpus/Fedora/MSVC
+acceptance. Next: additive preallocated C/Swift transport and explicit native
+removal/prefill; preserve current draft/results and duplicate-shadow semantics.

@@ -20,3 +20,16 @@ char *legacy_search_list_edit(const char *source, int kind, const char *label, c
 	xml_settings_doc = NULL;
 	return (char *)result;
 }
+
+char *legacy_search_list_remove(const char *source, int kind, const char *label)
+{
+    xml_settings_doc = xmlReadMemory(source, (int)strlen(source), NULL, NULL, XML_PARSE_NONET);
+    if (!xml_settings_doc) return NULL;
+    xml_remove_node(kind ? "ranges" : "modlists", kind ? "range" : "modlist", label);
+    xmlChar *result = NULL;
+    int length = 0;
+    xmlDocDumpFormatMemoryEnc(xml_settings_doc, &result, &length, "UTF-8", 0);
+    xmlFreeDoc(xml_settings_doc);
+    xml_settings_doc = NULL;
+    return (char *)result;
+}
