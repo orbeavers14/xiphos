@@ -351,12 +351,13 @@ actor CoreWorker {
     func exportSearchHTML(tab: UInt64, generation: UInt64, selection: CoreSearchExportSelection = .visible,
                           rows: [CoreSearchVisibleRow] = [], title: String = "Search results", includeScripture: Bool = false,
                           maxBytes: Int = 1024 * 1024, maxRows: Int = 10_000, allowPartialSource: Bool = false,
-                          images: CoreHTMLImageOptions = CoreHTMLImageOptions(), returnCancelledResults: Bool = false,
+                          images: CoreHTMLImageOptions = CoreHTMLImageOptions(), plainTextMaxBytes: Int? = nil, returnCancelledResults: Bool = false,
                           onProgress: (@Sendable (CoreSearchProgress) async -> Void)? = nil) async throws -> RenderedSearchHTMLExport {
         guard (selection == .visible ? !rows.isEmpty : rows.isEmpty), rows.count <= 10_000,
               rows.allSatisfy({ $0.group >= 0 && $0.row >= 0 }), !title.utf8.contains(0), title.utf8.count <= 32768,
               maxBytes > 0, maxRows > 0, images.maxImages > 0, images.maxOriginalBytes > 0,
               images.maxPixels > 0 else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        guard plainTextMaxBytes == nil || (plainTextMaxBytes! > 0 && plainTextMaxBytes! <= 8 * 1024 * 1024) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         let handle = try worker()
         let copied = rows.map { xc_search_visible_row(group: $0.group, row: $0.row) }
         let queued = title.withCString { label in copied.withUnsafeBufferPointer { buffer in
@@ -367,7 +368,7 @@ actor CoreWorker {
                 allow_partial_source: allowPartialSource ? 1 : 0)
             var imageOptions = xc_search_html_image_options(policy: images.policy.rawValue, max_images: images.maxImages,
                 max_original_bytes: images.maxOriginalBytes, max_pixels: images.maxPixels)
-            let status = xc_worker_export_search_html_with_images(handle, tab, &input, &imageOptions, &request)
+            let status = xc_worker_export_search_rich_html(handle, tab, &input, &imageOptions, plainTextMaxBytes ?? 0, &request)
             return (status, request)
         } }
         let completed = try await wait(queued.0, queued.1, cancellingSearch: true,
@@ -384,11 +385,13 @@ actor CoreWorker {
               let issue = CoreHTMLExportIssue(rawValue: info.issue) else { throw CoreError(status: XC_ENGINE_ERROR) }
         let html = String(cString: xc_search_html_export_html(owned)!)
         precondition(html.utf8.count == xc_search_html_export_size(owned))
+        let plainText = xc_search_html_export_plain_text(owned).map { String(cString: $0) }
+        precondition((plainText?.utf8.count ?? 0) == xc_search_html_export_plain_text_size(owned))
         return RenderedSearchHTMLExport(selection: selection, status: status, generation: CoreValues.searchGeneration(generation),
             rowCount: info.row_count, failedRow: info.failed_row_present != 0 ? info.failed_row : nil,
             includesScripture: info.includes_scripture != 0, issue: issue,
             images: CoreHTMLImageStatistics(count: imageInfo.count, uniqueCount: imageInfo.unique_count,
-                originalBytes: imageInfo.original_bytes, pixels: imageInfo.pixels), html: html)
+                originalBytes: imageInfo.original_bytes, pixels: imageInfo.pixels), html: html, plainText: plainText)
     }
     func exportSearchVisibleText(tab: UInt64, generation: UInt64, rows: [CoreSearchVisibleRow],
                                  title: String = "Search results", includeScripture: Bool = false,

@@ -22,10 +22,11 @@ passes 8/8 including fixtures; C11 header syntax passes. Earlier full portable
 model evidence remains 121 passes + one skip (122 registered, 92.46 s at
 `b335db5`). No current Fedora/MSVC, whole parity or release acceptance.
 
-Current task: the complete-or-failure HTML static PNG policy is implemented and
-checked across C++/C/Swift. Default calls still reject resources. Next bounded
-task after the checked native HTML slice: shared rich-clipboard plain-text
-fallback, then remaining resource/style/semantic and advanced-search workflows. Inline
+Current implementation: shared rich clipboard `b85c440` adds an optional bounded
+plain-text companion to complete HTML on the same FIFO job/resolved rows. Native
+Copy consumes both copied values; Save stays HTML-only. See
+[contract](rich-clipboard-workflows.md) and latest checks below. Next bounded work:
+advanced headers and remaining resource/style/semantic and advanced-search workflows. Inline
 reading resources, hover filename status, other formats/corpus, browser/CSP
 runtime and GTK/Windows/native release gates remain.
 
@@ -306,3 +307,83 @@ gate passed. Owner requested finishing this slice, pushing and stopping. Stop at
 this checkpoint. Next shared slice: rich clipboard plain-text fallback, preserving
 one owner/document snapshot rather than frontend HTML stripping or a second
 selection/render engine; then advanced headers and broader resource/link policy.
+
+### Shared rich clipboard checkpoint (2026-10-21)
+
+Implementation `b85c440` on `modernization/rich-clipboard-fallback`; handed off
+for reviewed integration. HTML Copy requests a bounded optional plain-text
+companion through the same resolved selection/FIFO owner. One native pasteboard
+item receives both exact copied representations. Save remains HTML-only.
+Additive C11 functions/getters preserve existing request/info layouts. See
+[contract](rich-clipboard-workflows.md); GTK3/Linux sources are unchanged.
+
+Final full local Mac build succeeds; CTest **165 passes + 1 explicit index skip**
+(166 registered, 141.38 s). This includes native named-pasteboard/file/model and
+Swift copied-companion checks. Full tests used desktop access, never the general
+clipboard. Focused ASan/UBSan checks pass **11/11** (27.39 s); portable core plus
+all seven GTK model checks pass **26/26** (28.18 s) on this Mac, GTK runtime OFF.
+Strict C11 header syntax and whitespace checks pass. No new GUI/rich-client paste,
+Fedora/MSVC, actual indexed execution, whole parity or retirement acceptance.
+
+Environment: macOS27.0.1 ARM64, AppleClang21, Swift6.4/Swift6 mode,
+SWORD1.9.0.3916 static SDK, GLib2.90.1, libpng1.6.59. This fresh checkout uses
+installed SDKs, not another chat's ignored build caches. Explicit fallback SDK
+selection disables PkgConfig. Deployment target27 matches this host/dependencies;
+older macOS versions remain unvalidated. Final Mac uses Apple SDK libxml2.9.13.
+Sanitizer/portable focused checks used installed libxml2.15.4. Dependencies are
+not fully instrumented; ASan leak detection is disabled.
+
+Exact configure/build/test choices (standard installed SDK locations; generated
+logs/cache stay ignored under build):
+
+```sh
+cmake -S platforms/macos -B build/macos -DCMAKE_BUILD_TYPE=Debug -DCMAKE_OSX_DEPLOYMENT_TARGET=27.0 \
+  -DCMAKE_DISABLE_FIND_PACKAGE_PkgConfig=TRUE -DSWORD_INCLUDE_DIR=/usr/local/include/sword \
+  -DSWORD_LIBRARY=/usr/local/lib/libsword.a -DXIPHOS_SWORD_EXTRA_LIBRARIES='z;bz2;/opt/homebrew/lib/liblzma.dylib' \
+  -DGLIB_INCLUDE_DIR=/opt/homebrew/include/glib-2.0 -DGLIB_CONFIG_INCLUDE_DIR=/opt/homebrew/lib/glib-2.0/include \
+  -DGLIB_LIBRARY=/opt/homebrew/lib/libglib-2.0.dylib \
+  -DLIBXML2_INCLUDE_DIR="$(xcrun --show-sdk-path)/usr/include/libxml2" \
+  -DLIBXML2_LIBRARY="$(xcrun --show-sdk-path)/usr/lib/libxml2.tbd"
+cmake --build build/macos --parallel 4
+ctest --test-dir build/macos --output-on-failure
+clang -std=c11 -pedantic-errors -fsyntax-only -I src/core/include src/core/tests/c_header_test.c
+```
+
+`build/sanitized` uses the same SWORD/GLib/deployment selection, `-S src/core`,
+Debug C/C++ flags `-fsanitize=address,undefined -fno-omit-frame-pointer` and linker
+flag `-fsanitize=address,undefined`; XML is the installed2.15.4 SDK.
+Build the seven export targets plus `core_attribute_search_test`,
+`core_lexical_snapshots_test`, `core_verse_image_source_test` and
+`core_heading_collection_test`, then run:
+
+```sh
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/sanitized --output-on-failure \
+  -R 'search_html_export|search_html_images|search_export|search_all_export'
+```
+
+`build/linux-models` uses `-S platforms/linux` with the same fallback SDK flags,
+installed XML2.15.4 and `-DXIPHOS_BUILD_GTK4_PREVIEW=OFF`; full build passes.
+The focused command is:
+
+```sh
+ctest --test-dir build/linux-models --output-on-failure \
+  -R 'search_html_export|search_html_images|search_export|search_all_export|linux_.*model'
+```
+
+Initial full run with automatically discovered XML2.15.4: **164 passes, 1 skip,
+1 failure** in unchanged `core_xml_profile`; frozen and actual legacy functions
+still agree exactly, but hard-coded expected results differ. A disposable diagnostic
+found nested-only values return empty text rather than NULL, and malformed
+`Raw & broken` returns `Raw  broken` rather than NULL. Original source/tests were
+not relaxed. Final Apple SDK full suite passes. Newer XML compatibility needs a
+separate characterization/preservation decision; passing focused2.15.4 checks is
+not full dependency acceptance. Initial Homebrew SWORD selection also lacked
+new search constants; use the documented newer SDK until compatibility is addressed.
+
+Remote audit before publication: master remains at `a8c2a8b`, no open PRs;
+`builds`/`native-core` disabled_manually and `linux-core` manual-only. No hosted
+jobs dispatched, dependencies installed/moved, private modules/profiles committed
+or user clipboard modified. Owner now authorizes continuing validated work and
+merging/pushing checkpoints. Library upgrades are owner-deferred for a later review. Next bounded work:
+advanced export headers and remaining resource/semantic policies, followed by
+actual target-platform and representative workflow acceptance.

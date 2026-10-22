@@ -25,6 +25,21 @@ int main(int argc,char **argv){try{
  xc_search_html_export_info info{};check(xc_search_html_export_get_info(owned,&info)==XC_OK&&info.disposition==XC_SEARCH_EXPORT_OK&&info.row_count==8&&info.selection==1&&info.includes_scripture&&info.issue==XC_HTML_EXPORT_ISSUE_NONE,"Copied all-result options recover every retained row");
  const std::string html=xc_search_html_export_html(owned);check(html.find("Original &lt;query&gt; café")!=std::string::npos&&xc_search_html_export_size(owned)==html.size(),"Owned UTF-8 HTML title and exact byte size");
  xc_search_generation_info copied{};check(xc_search_html_export_get_generation(owned,&copied)==XC_OK&&copied.id==generation.id,"Source generation metadata copied");
+ check(!xc_search_html_export_plain_text(owned)&&!xc_search_html_export_plain_text_size(owned)&&
+  !xc_search_html_export_plain_text(nullptr)&&!xc_search_html_export_plain_text_size(nullptr),"Absent/null C companion is distinct from an empty string");
+ xc_search_html_image_options images;xc_search_html_image_options_default(&images);
+ input.title="Original <query> café";input.max_rows=8;
+ auto run_rich=[&](size_t cap){check(xc_worker_export_search_rich_html(worker,tab,&input,&images,cap,&request)==XC_OK&&wait(request)==XC_OK,"Rich C job completes");
+  auto *r=xc_request_take_search_html_export(request);check(r&&!xc_request_take_search_html_export(request),"Rich C ownership transfers once");xc_request_release(request);return r;};
+ auto *rich_payload=run_rich(8192);const std::string text=xc_search_html_export_plain_text(rich_payload);
+ check(std::string(xc_search_html_export_html(rich_payload))==html&&text.find("Original <query> café")!=std::string::npos&&
+  text.size()==xc_search_html_export_plain_text_size(rich_payload),"C rich representation owns complete UTF-8 text beside unchanged HTML");
+ auto *rich_exact=run_rich(text.size());check(std::string(xc_search_html_export_plain_text(rich_exact))==text,"C exact companion cap");xc_search_html_export_release(rich_exact);
+ auto *rich_short=run_rich(text.size()-1);xc_search_html_export_info rich_info{};
+ check(xc_search_html_export_get_info(rich_short,&rich_info)==XC_OK&&rich_info.disposition==XC_SEARCH_EXPORT_OUTPUT_LIMIT&&
+  !xc_search_html_export_size(rich_short)&&!xc_search_html_export_plain_text(rich_short)&&!rich_info.row_count,"C companion exhaustion cannot leak HTML-only success");xc_search_html_export_release(rich_short);
+ request=reinterpret_cast<xc_request *>(1);
+ check(xc_worker_export_search_rich_html(worker,tab,&input,&images,8*1024*1024+1,&request)==XC_INVALID_ARGUMENT&&!request,"C rejects oversized companion cap before enqueue");
  input.title="Original <query> café";input.max_rows=8;input.max_bytes=html.size();
  auto run=[&]{check(xc_worker_export_search_html(worker,tab,&input,&request)==XC_OK&&wait(request)==XC_OK,"HTML outcome request");auto *r=xc_request_take_search_html_export(request);xc_request_release(request);check(r&&xc_search_html_export_get_info(r,&info)==XC_OK,"Owned HTML outcome");return r;};
  auto *exact=run();check(std::string(xc_search_html_export_html(exact))==html,"Exact C HTML budget accepted");xc_search_html_export_release(exact);
@@ -55,6 +70,7 @@ int main(int argc,char **argv){try{
  check(rich<source.result_count,"Rich original row exists");xc_search_release(search);
  rows[0]={0,rich};input={generation.id,0,rows,1,nullptr,1,8192,10000,0};auto *unsupported=run();
  check(info.disposition==XC_SEARCH_EXPORT_UNSUPPORTED_HTML&&info.issue==XC_HTML_EXPORT_ISSUE_RESOURCES&&info.failed_row_present&&!info.failed_row&&!xc_search_html_export_size(unsupported),"Unsupported asset outcome is typed, empty and identifies the selected row");xc_search_html_export_release(unsupported);xc_worker_close(worker);
- check(std::string(xc_search_html_export_html(owned))==html,"HTML copied value survives unrelated later worker lifetime");xc_search_html_export_release(owned);xc_search_html_export_release(nullptr);
+ check(std::string(xc_search_html_export_html(owned))==html,"HTML copied value survives unrelated later worker lifetime");check(std::string(xc_search_html_export_plain_text(rich_payload))==text,"Owned rich companion survives worker shutdown and later engine use");
+ xc_search_html_export_release(rich_payload);xc_search_html_export_release(owned);xc_search_html_export_release(nullptr);
  std::cout<<"C copied selected/all HTML, exact limits, typed unsupported outcomes, cancellation and lifetime passed\n";return 0;
 }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}

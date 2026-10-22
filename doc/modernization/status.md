@@ -45,9 +45,16 @@ fixtures, isolated HTML/text pasteboards, atomic files and search regression;
 disposable window/save/resource-failure checks passed. See
 [native HTML contract](native-search-html-export-workflows.md). No new full-suite run.
 
-Next bounded work: shared rich-clipboard plain-text fallback and remaining
-resource/style/semantic policies, then advanced headers/search controls/settings
-and workflow acceptance. The owner requested stopping after this slice.
+Rich clipboard implementation `b85c440` now returns optional bounded plain text
+beside complete HTML on one FIFO job/resolved selection. Additive C getters and
+Swift copied values feed both native clipboard types; Save keeps HTML-only
+behavior. Final Mac165 passes +1 index skip (166 registered); ASan/UBSan11/11;
+portable core/GTK models26/26 on Mac. Newer XML2.15.4 full-suite compatibility
+remains open; final Mac uses the documented Apple XML2.9.13 SDK. See [contract/evidence](rich-clipboard-workflows.md) and latest local
+checks in the [Mac handoff](handoff-macos.md).
+
+Next bounded work: advanced headers/search controls/settings, remaining
+resource/style/semantic policies and workflow acceptance.
 Keep target-platform validation and other core services in view. No whole parity
 group, release or legacy retirement accepted: **0/38 groups, 0/3 release-ready apps**.
 Planning estimate remains **about 8% (6–10%)**; no reliable core-only percentage

@@ -294,6 +294,19 @@ actor ProgressLog {
         guard output.status == .success, output.rowCount == 2, output.images.count == 2,
               output.images.uniqueCount == 1, output.images.originalBytes == 75, output.images.pixels == 64,
               output.html.contains("data:image/png;base64,"), output.html.contains("img-src data:") else { fatalError("Copied image document and unique resource statistics") }
+        guard output.plainText == nil else { fatalError("Default HTML does not request companion text") }
+        let rich = try await worker.exportSearchHTML(tab: tab, generation: search.generation.id, rows: rows,
+            includeScripture: true, images: images, plainTextMaxBytes: 8192)
+        let plain = try await worker.exportSearchVisibleText(tab: tab, generation: search.generation.id, rows: rows, includeScripture: true)
+        guard rich.html == output.html, rich.plainText == plain.text else { fatalError("Swift copied rich companion matches exact SDK text and duplicate order") }
+        let exhausted = try await worker.exportSearchHTML(tab: tab, generation: search.generation.id, rows: rows,
+            includeScripture: true, images: images, plainTextMaxBytes: plain.text.utf8.count - 1)
+        guard exhausted.status == .outputLimit, exhausted.html.isEmpty, exhausted.plainText == nil,
+              exhausted.images.count == 0 else { fatalError("Companion failure discards complete PNG representation and counters") }
+        for cap in [-1, 0, 8 * 1024 * 1024 + 1] {
+            do { _ = try await worker.exportSearchHTML(tab: tab, generation: search.generation.id, rows: rows, plainTextMaxBytes: cap); fatalError("Invalid companion cap") }
+            catch is CoreError {}
+        }
         let exact = try await worker.exportSearchHTML(tab: tab, generation: search.generation.id, rows: rows,
             includeScripture: true, maxBytes: output.html.utf8.count, images: images)
         guard exact == output else { fatalError("Exact final image document byte limit") }
@@ -326,7 +339,7 @@ actor ProgressLog {
         stopped.cancel(); let raced = try await stopped.value
         guard raced.status == .success || (raced.status == .cancelled && raced.html.isEmpty && raced.images.count == 0) else { fatalError("Swift cancellation never returns partial image document") }
         try await worker.closeTab(tab); await worker.shutdown()
-        guard output.html.contains("data:image/png;base64,"), output.images.pixels == 64 else { fatalError("Copied HTML and image statistics survive shutdown") }
+        guard output.html.contains("data:image/png;base64,"), output.images.pixels == 64, rich.plainText == plain.text else { fatalError("Copied HTML and image statistics survive shutdown") }
         print("Swift shared PNG export policy, exact limits, unavailable/cancelled outcomes and owned statistics passed")
     }
     static func main() async throws {

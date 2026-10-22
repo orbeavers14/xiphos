@@ -42,8 +42,14 @@ Native Mac HTML save/copy at `f89c585` now consumes the complete shared document
 through the existing native lifecycle, with 10/10 focused model/destination/
 search checks and a disposable window save/failure check. This is not a new full
 suite or browser/visual acceptance. See [native destination evidence](native-search-html-export-workflows.md).
-The owner requested stopping after this slice; next shared work includes rich
-clipboard plain-text fallback, advanced headers and remaining resource policies.
+Shared rich clipboard implementation `b85c440` adds an optional bounded text
+companion on the same resolved selection/FIFO job and copied C/Swift result.
+Native HTML Copy advertises both representations; Save remains HTML-only.
+Final Mac165 passes +1 index skip; ASan/UBSan11/11 and portable core/GTK models26/26
+on Mac. Newer XML2.15.4 full-suite compatibility remains a separate gate. See
+[contract and limits](rich-clipboard-workflows.md) and current evidence in the
+[Mac handoff](handoff-macos.md). Next are advanced headers and remaining resource
+policies; current Fedora/MSVC and actual rich-client interoperability remain open.
 
 The private HTML image cache at `63ce703` is now connected to shared document
 export through explicit C++/C/Swift static PNG options. Aggregate bounds, actual
@@ -106,7 +112,7 @@ format/corpus/platform workflows remain pending.
 
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
-| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Rich clipboard fallback, advanced headers/search and remaining resource policies | [Mac instructions](handoff-macos.md) |
+| macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Advanced headers/search and remaining resource policies | [Mac instructions](handoff-macos.md) |
 | Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 

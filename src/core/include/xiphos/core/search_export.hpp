@@ -51,6 +51,7 @@ struct SearchHtmlImageStatistics {
 };
 struct SearchHtmlExport:SearchExportMetadata {
   std::string html;
+  std::optional<std::string> plain_text; // Present only for a requested, complete rich export.
   HtmlExportIssue issue=HtmlExportIssue::none;
   SearchHtmlImageStatistics images;
 };
@@ -63,6 +64,7 @@ struct SearchHtmlExportRequest {
   std::size_t max_bytes=1024*1024,max_rows=maximum_search_export_rows;
   bool allow_partial_source=false; // Applies only to all_retained.
   SearchHtmlImageOptions images; // Explicit opt-in; existing callers reject resources.
+  std::optional<std::size_t> plain_text_max_bytes; // Independent UTF-8 cap; no fallback by default.
 };
 // Selection/assembly/rendering run on one owner. Output cap bounds final copied
 // bytes, not SDK temporary allocation/time. No destination write or history visit.

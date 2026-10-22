@@ -18,23 +18,26 @@ import AppKit
         guard model.canExportSelected, model.canExportAll, let source = model.result else { fatalError("PNG search exports available") }
         model.expression = "Unsubmitted draft"; model.exportScripture = true; model.exportFormat = .html; model.exportImages = true
         var selected: SearchExportPayload?
-        model.exportResults(allMatches: false) { selected = $0 }
+        model.exportResults(allMatches: false, forClipboard: true) { selected = $0 }
         model.exportFormat = .plainText; model.exportImages = false
         try await idle(model)
         guard case .html(let value) = selected, value.status == .success, value.rowCount == 1,
               value.selection == .visible, value.images.count == 1, value.images.originalBytes == 75,
               value.html.contains("Search results: PNG"), !value.html.contains("Unsubmitted"),
               value.html.contains("data:image/png;base64,"), value.generation == source.generation else { fatalError("HTML action captures format/options and committed query before editable drafts change") }
+        let plain = try await worker.exportSearchVisibleText(tab: tab, generation: source.generation.id,
+            rows: [CoreSearchVisibleRow(group: 0, row: 0)], title: "Search results: PNG", includeScripture: true)
+        guard value.plainText == plain.text else { fatalError("Rich clipboard companion matches shared configured SDK text exactly") }
         model.exportFormat = .html; model.exportImages = true
         var all: SearchExportPayload?
         model.exportResults(allMatches: true) { all = $0 }; try await idle(model)
         guard case .html(let complete) = all, complete.status == .success, complete.selection == .allRetained,
-              complete.rowCount == 1, complete.images.count == 1, model.result == source,
+              complete.rowCount == 1, complete.images.count == 1, complete.plainText == nil, model.result == source,
               try await worker.history(tab).count == 0 else { fatalError("All HTML consumes shared selection without navigation") }
         let board = NSPasteboard(name: NSPasteboard.Name("XiphosHTMLExportTest-" + UUID().uuidString))
         defer { board.releaseGlobally() }
         try SearchExportDestination.copy(.html(value), to: board)
-        guard board.data(forType: .html) == Data(value.html.utf8), board.string(forType: .string) == nil else { fatalError("Native clipboard gets exact HTML representation without frontend text conversion") }
+        guard board.data(forType: .html) == Data(value.html.utf8), board.string(forType: .string) == value.plainText && value.plainText?.contains("Search results: PNG") == true else { fatalError("Native clipboard gets exact HTML representation and exact core plain text without frontend conversion") }
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("XiphosHTMLExportTest-" + UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -50,19 +53,19 @@ import AppKit
         do { try await SearchExportDestination.save(.html(complete), to: directory); fatalError("Directory is not an HTML destination file") } catch is SearchExportDestinationError {}
         model.exportImages = false
         var unsupported = false
-        model.exportResults(allMatches: false) { _ in unsupported = true }; try await idle(model)
+        model.exportResults(allMatches: false, forClipboard: true) { _ in unsupported = true }; try await idle(model)
         guard !unsupported, model.message.contains("not enabled or supported"), model.result == source else { fatalError("Resource failure is actionable and cannot open a destination") }
         model.exportImages = true
         var stopped = false
-        model.exportResults(allMatches: false) { _ in stopped = true }; model.stop(); try await idle(model)
+        model.exportResults(allMatches: false, forClipboard: true) { _ in stopped = true }; model.stop(); try await idle(model)
         guard !stopped, model.message == "Export stopped." else { fatalError("Stopped HTML action suppresses destination even on late success") }
         _ = try await worker.searchModule(tab: tab, module: "OSISNotes", expression: "Original")
         var stale = false
-        model.exportResults(allMatches: false) { _ in stale = true }; try await idle(model)
+        model.exportResults(allMatches: false, forClipboard: true) { _ in stale = true }; try await idle(model)
         guard !stale, model.message.contains("Search results changed"), model.result == source else { fatalError("Stale displayed HTML cannot reach clipboard or save picker") }
         model.expression = "PNG"; model.search(); try await idle(model)
         var closed = false
-        model.exportResults(allMatches: false) { _ in closed = true }; model.close()
+        model.exportResults(allMatches: false, forClipboard: true) { _ in closed = true }; model.close()
         try await Task.sleep(nanoseconds: 50_000_000)
         guard !closed, !model.isBusy else { fatalError("Closed window suppresses HTML destination") }
         try await worker.closeTab(tab); await worker.shutdown()

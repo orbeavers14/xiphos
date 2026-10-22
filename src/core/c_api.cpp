@@ -766,7 +766,12 @@ xc_status xc_worker_export_search_html(xc_worker *w,uint64_t tab,const xc_search
 }
 xc_status xc_worker_export_search_html_with_images(xc_worker *w,uint64_t tab,const xc_search_html_export_request *input,
     const xc_search_html_image_options *images,xc_request **out){
+  return xc_worker_export_search_rich_html(w,tab,input,images,0,out);
+}
+xc_status xc_worker_export_search_rich_html(xc_worker *w,uint64_t tab,const xc_search_html_export_request *input,
+    const xc_search_html_image_options *images,size_t plain_text_max_bytes,xc_request **out){
   if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;
+  if(plain_text_max_bytes>xiphos::core::maximum_search_export_bytes)return XC_INVALID_ARGUMENT;
   if(!images||(images->policy!=XC_HTML_IMAGES_REJECT&&images->policy!=XC_HTML_IMAGES_EMBEDDED_STATIC_PNG)||
      !images->max_images||images->max_images>xiphos::core::maximum_search_export_images||
      !images->max_original_bytes||images->max_original_bytes>xiphos::core::maximum_search_export_bytes||
@@ -778,6 +783,7 @@ xc_status xc_worker_export_search_html_with_images(xc_worker *w,uint64_t tab,con
      !input->max_bytes||input->max_bytes>xiphos::core::maximum_search_export_bytes||!input->max_rows||input->max_rows>xiphos::core::maximum_search_export_rows)return XC_INVALID_ARGUMENT;
   try{
     xiphos::core::SearchHtmlExportRequest copied;
+    if(plain_text_max_bytes)copied.plain_text_max_bytes=plain_text_max_bytes;
     copied.images={static_cast<xiphos::core::SearchHtmlImagePolicy>(images->policy),images->max_images,images->max_original_bytes,images->max_pixels};
     copied.generation=input->generation;copied.selection=static_cast<xiphos::core::SearchExportSelection>(input->selection);
     copied.include_scripture=input->include_scripture!=0;copied.max_bytes=input->max_bytes;copied.max_rows=input->max_rows;copied.allow_partial_source=input->allow_partial_source!=0;
@@ -802,6 +808,12 @@ xc_status xc_search_html_export_get_images(const xc_search_html_export *r,xc_sea
 }
 const char *xc_search_html_export_html(const xc_search_html_export *r){return r?r->value.html.c_str():nullptr;}
 size_t xc_search_html_export_size(const xc_search_html_export *r){return r?r->value.html.size():0;}
+const char *xc_search_html_export_plain_text(const xc_search_html_export *r){
+  return r&&r->value.plain_text?r->value.plain_text->c_str():nullptr;
+}
+size_t xc_search_html_export_plain_text_size(const xc_search_html_export *r){
+  return r&&r->value.plain_text?r->value.plain_text->size():0;
+}
 void xc_search_html_export_release(xc_search_html_export *r){delete r;}
 void xc_search_text_export_request_default(xc_search_text_export_request *out){
   if(out)*out={0,nullptr,0,nullptr,0,1024*1024};

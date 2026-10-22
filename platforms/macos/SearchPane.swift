@@ -91,7 +91,7 @@ struct SearchPane: View {
         }.padding(8)
     }
     private func export(all: Bool, save: Bool) {
-        model.exportResults(allMatches: all) { payload in
+        model.exportResults(allMatches: all, forClipboard: !save) { payload in
             if save { chooseSaveFile(payload) }
             else {
                 do {

@@ -589,6 +589,16 @@ xc_status xc_search_html_export_get_info(const xc_search_html_export *result,xc_
 xc_status xc_search_html_export_get_generation(const xc_search_html_export *result,xc_search_generation_info *out);
 const char *xc_search_html_export_html(const xc_search_html_export *result); /* borrowed until release */
 size_t xc_search_html_export_size(const xc_search_html_export *result); /* UTF-8 bytes, excludes terminator */
+/* One FIFO job / resolved selection, complete HTML and optional configured SDK
+ * plain text. 0 disables the companion; 1..8MiB bounds its UTF-8 bytes separately.
+ * Failure/cancellation publishes neither representation nor image statistics.
+ * Existing request/info layouts and default HTML-only calls are unchanged. */
+xc_status xc_worker_export_search_rich_html(xc_worker *worker,uint64_t tab,
+  const xc_search_html_export_request *input,const xc_search_html_image_options *images,
+  size_t plain_text_max_bytes,xc_request **out);
+/* Borrowed until release; NULL for absent/failed companion, size excludes NUL. */
+const char *xc_search_html_export_plain_text(const xc_search_html_export *result);
+size_t xc_search_html_export_plain_text_size(const xc_search_html_export *result);
 void xc_search_html_export_release(xc_search_html_export *result);
 xc_status xc_worker_create_tab(xc_worker *worker, xc_request **out);
 xc_status xc_worker_close_tab(xc_worker *worker, uint64_t tab, xc_request **out);

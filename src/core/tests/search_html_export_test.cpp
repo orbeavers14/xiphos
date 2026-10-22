@@ -25,20 +25,41 @@ int main(int argc,char **argv){try{
   check(count(held.html,"John 1:1 Text")==2&&held.html.find("Original")!=std::string::npos&&held.html.find("default-src 'none'")!=std::string::npos,"Duplicate identity and passive document policy are preserved");
   std::unique_ptr<xmlDoc,decltype(&xmlFreeDoc)> document(htmlReadMemory(held.html.data(),static_cast<int>(held.html.size()),nullptr,"UTF-8",HTML_PARSE_NONET|HTML_PARSE_NODEFDTD),xmlFreeDoc);
   check(document!=nullptr,"Owned export is a parseable complete HTML document");
+  check(!held.plain_text,"Existing HTML-only calls do not silently acquire another representation");
+  request.plain_text_max_bytes=8192;
+  auto rich=session.export_search_html(request);
+  SearchAllTextExportRequest plain;plain.generation=search.generation.id;plain.title=request.title;plain.include_scripture=true;plain.max_bytes=8192;
+  const auto expected=session.export_search_all_text(plain);
+  check(rich.status==SearchExportStatus::ok&&rich.html==held.html&&rich.plain_text==expected.text&&rich.row_count==expected.row_count,
+    "Rich HTML reuses exact all-retained text semantics on the same resolved selection");
+  request.plain_text_max_bytes=expected.text.size();
+  check(session.export_search_html(request).plain_text==expected.text,"Exact companion byte limit succeeds");
+  request.plain_text_max_bytes=expected.text.size()-1;
+  auto short_text=session.export_search_html(request);
+  check(short_text.status==SearchExportStatus::output_limit&&short_text.html.empty()&&!short_text.plain_text&&!short_text.row_count&&!short_text.images.count,
+    "One-byte-short companion discards HTML, text, counters and rows together");
+  request.plain_text_max_bytes=0;rejected=false;
+  try{session.export_search_html(request);}catch(const std::invalid_argument &){rejected=true;}
+  check(rejected,"An enabled C++ companion cannot have zero budget");
+  request.plain_text_max_bytes.reset();
   request.max_bytes=held.html.size();check(session.export_search_html(request).html==held.html,"Exact complete HTML byte cap accepted");
   --request.max_bytes;auto clipped=session.export_search_html(request);check(clipped.status==SearchExportStatus::output_limit&&clipped.html.empty()&&!clipped.row_count,"HTML output cap never returns an unlabeled partial page");
   request.max_bytes=8192;request.max_rows=11;auto row_limited=session.export_search_html(request);
   check(row_limited.status==SearchExportStatus::output_limit&&row_limited.html.empty(),"Complete HTML never treats a clipped row prefix as all retained output");request.max_rows=maximum_search_export_rows;
   request.selection=SearchExportSelection::visible;request.rows={{0,0},{0,0}};auto selected=session.export_search_html(request);
   check(selected.status==SearchExportStatus::ok&&selected.row_count==2&&count(selected.html,"John 1:1 Text")==2&&selected.html.find("Selected search passages.")!=std::string::npos,"Explicit visible duplicates preserve request order/identity");
+  request.plain_text_max_bytes=8192;
+  SearchTextExportRequest visible;visible.generation=request.generation;visible.rows=request.rows;visible.title=request.title;visible.include_scripture=true;visible.max_bytes=8192;
+  check(session.export_search_html(request).plain_text==session.export_search_visible_text(visible).text,
+    "Visible rich text preserves duplicate order and the existing text formatter");
   request.rows={{1,0}};check(session.export_search_html(request).status==SearchExportStatus::invalid_selection,"Omitted group cannot be synthesized from complete keys in visible mode");
   request.rows={{0,0}};request.generation++;check(session.export_search_html(request).status==SearchExportStatus::stale,"Stale HTML request cannot substitute latest generation");request.generation--;
   auto stopped=std::make_shared<SearchControl>();stopped->request_cancel();auto stop=session.export_search_html(request,stopped);
-  check(stop.status==SearchExportStatus::cancelled&&stop.html.empty()&&stopped->phase()==SearchPhase::cancelled,"Pre-cancel HTML has no payload");
+  check(stop.status==SearchExportStatus::cancelled&&stop.html.empty()&&!stop.plain_text&&stopped->phase()==SearchPhase::cancelled,"Pre-cancel HTML has no payload");
   check(session.history().entries().empty()&&session.search_generation().id==search.generation.id&&session.module_presentation_options("Text").image_content==before.image_content,"HTML reads preserve logical profile/history/search state");
   auto incomplete=session.search_batch({{"Text","Original"},{"Missing","Original"}},limits);request={};request.generation=incomplete.generation.id;request.selection=SearchExportSelection::all_retained;
-  check(session.export_search_html(request).status==SearchExportStatus::source_incomplete,"HTML shares incomplete-source default refusal");request.allow_partial_source=true;
-  auto partial=session.export_search_html(request);check(partial.status==SearchExportStatus::ok&&partial.generation.failed_groups==1&&partial.html.find("only returned matches are included")!=std::string::npos,"Explicit partial HTML labels its source disposition in the document as well as metadata");
+  check(session.export_search_html(request).status==SearchExportStatus::source_incomplete,"HTML shares incomplete-source default refusal");request.allow_partial_source=true;request.plain_text_max_bytes=8192;
+  auto partial=session.export_search_html(request);check(partial.status==SearchExportStatus::ok&&partial.generation.failed_groups==1&&partial.plain_text.has_value()&&partial.html.find("only returned matches are included")!=std::string::npos,"Explicit partial HTML labels its source disposition in the document as well as metadata");
  }
  {
   Reader reader(argv[2]);StudySession session(reader);session.enable_module_preferences();session.set_lexical_layout_enabled(true);
