@@ -30,6 +30,8 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     @Published var scopeChoice: SearchScopeChoice = .all
     @Published var boundsModule = ""
     @Published var bounds = ""
+    @Published private(set) var savedSearchLists = SavedSearchLists(moduleLists: [], ranges: [])
+    @Published private(set) var isLoadingSearchSetup = false
     @Published private(set) var batchResult: RenderedSearchBatch?
     private var batchExpression = ""
     @Published private(set) var result: RenderedSearchResult?
@@ -49,7 +51,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     @Published var exportFormat: SearchExportFormat = .plainText
     @Published var exportImages = false
     @Published private(set) var message = "Enter text to search."
-    var isBusy: Bool { isSearching || isPreviewLoading || isClearing || isExporting }
+    var isBusy: Bool { isSearching || isPreviewLoading || isClearing || isExporting || isLoadingSearchSetup }
     var canSearch: Bool {
         !isBusy && !expression.isEmpty && (searchMultipleModules ? (1...32).contains(selectedModules.count) : !module.isEmpty)
     }
@@ -111,7 +113,50 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     func close() {
         guard !closed else { return }
         closed = true; revision &+= 1; task?.cancel(); task = nil
-        isSearching = false; isPreviewLoading = false; isClearing = false; isExporting = false
+        isSearching = false; isPreviewLoading = false; isClearing = false; isExporting = false; isLoadingSearchSetup = false
+    }
+    func loadSearchLists(path: String) {
+        guard !closed, !isBusy, let worker, let tab else { return }
+        revision &+= 1; let token = revision
+        isLoadingSearchSetup = true; message = "Loading saved search lists…"
+        task = Task { [weak self] in
+            guard let self else { return }
+            defer { if !self.closed && self.revision == token { self.isLoadingSearchSetup = false; self.task = nil } }
+            do {
+                let copied = try await worker.readSearchLists(tab: tab, path: path)
+                guard !self.closed, self.revision == token else { return }
+                self.savedSearchLists = copied
+                self.message = "Saved search lists loaded. Choose a module list or range to apply."
+            } catch { if !self.closed && self.revision == token { self.message = error.localizedDescription } }
+        }
+    }
+    func applySavedModuleList(at index: Int) {
+        guard !closed, !isBusy, let worker, let tab, savedSearchLists.moduleLists.indices.contains(index) else { return }
+        let effective = savedSearchLists.moduleLists[index].effectiveIndex
+        guard savedSearchLists.moduleLists.indices.contains(effective), let text = savedSearchLists.moduleLists[effective].value else {
+            message = "This saved module list has no value."; return
+        }
+        revision &+= 1; let token = revision
+        isLoadingSearchSetup = true; message = "Applying saved module list…"
+        task = Task { [weak self] in
+            guard let self else { return }
+            defer { if !self.closed && self.revision == token { self.isLoadingSearchSetup = false; self.task = nil } }
+            do {
+                let names = try await worker.parseSearchModuleList(tab: tab, text: text)
+                guard !self.closed, self.revision == token else { return }
+                self.selectedModules = names; self.searchMultipleModules = true
+                self.message = names.isEmpty ? "This saved module list is empty." : "Saved module list applied."
+            } catch { if !self.closed && self.revision == token { self.message = error.localizedDescription } }
+        }
+    }
+    func applySavedRange(at index: Int) {
+        guard !closed, !isBusy, savedSearchLists.ranges.indices.contains(index) else { return }
+        let effective = savedSearchLists.ranges[index].effectiveIndex
+        guard savedSearchLists.ranges.indices.contains(effective), let text = savedSearchLists.ranges[effective].value else {
+            message = "This saved range has no value."; return
+        }
+        bounds = text; scopeChoice = .bounds
+        message = "Saved range applied. Check the bounds module before searching."
     }
     func stop() { if isSearching || isExporting { task?.cancel() } }
     func search() {
@@ -203,7 +248,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
         preview = entry; previewSource = hit; isPreviewLoading = false
     }
     func select(_ id: Int?) {
-        guard !closed, !isSearching, !isClearing, !isExporting, let worker, let tab, let hit = hits.first(where: { $0.id == id }) else { return }
+        guard !closed, !isSearching, !isClearing, !isExporting, !isLoadingSearchSetup, let worker, let tab, let hit = hits.first(where: { $0.id == id }) else { return }
         if selection == hit.id && previewSource == hit { return }
         task?.cancel()
         revision &+= 1; let token = revision

@@ -35,8 +35,8 @@ Core commentary snapshots include owned headings and shared display preferences.
 The native commentary pane sits above dictionary content; complete heading transformations, detached
 windows and broader visual/corpus acceptance remain pending.
 
-The latest full macOS suite passes 168 tests with one explicit unavailable-index
-skip (169 registered). Shared HTML export now supports explicitly requested,
+The latest full macOS suite passes 171 tests with one explicit unavailable-index
+skip (172 registered). Shared HTML export now supports explicitly requested,
 bounded static PNG images through the same C++/C/Swift implementation. Native
 Mac HTML save/copy consumes those complete documents; Copy now supplies a shared,
 bounded plain-text companion through the same FIFO job and resolved selection.

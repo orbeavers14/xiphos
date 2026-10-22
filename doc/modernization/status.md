@@ -265,3 +265,19 @@ Keep regression tests after features are checked off. Keep current parity
 requirements, architecture, supported user documentation and required license/
 attribution files. Git history and linked PRs preserve removed implementation
 and detailed review history; avoid a growing archive of duplicate work notes.
+
+
+## Saved advanced-search choices checkpoint (2026-10-22)
+
+Shared read-only named module-list/range import at `4ca44370`, copied C/Swift
+transport/shared tokenization at `80e8a3c4`, and explicit native picker/application
+at `8f6bacc1` preserve first-section/first-label semantics, missing/empty values,
+ordered duplicate/unavailable modules and selected bounds providers. See the
+[contract and remaining setup gates](saved-search-lists-workflows.md).
+Latest complete Mac suite171 passes +1 explicit index skip,172 registered,
+145.28 s, plus scoped fixture-only menu/picker/action checks. Core initial
+profile/search checks9/9 each normal/sanitized/portable-on-Mac; adapter checks4/4
+normal and2/2 each sanitized/portable are independently scoped. No new current
+Fedora/MSVC, real index, broad corpus, full physical/visual/accessibility or whole
+parity acceptance. Explicit saved-list editing/atomic persistence, remaining
+advanced setup and resource/semantic policy remain pending. GTK3 stays intact.

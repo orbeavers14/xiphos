@@ -15,6 +15,27 @@ struct SearchPane: View {
                 Picker("Module", selection: $model.module) {
                     ForEach(model.modules) { Text($0.id).tag($0.id) }
                 }.accessibilityLabel("Search module")
+                Menu("Saved search lists") {
+                    Button("Load from Xiphos profile…") { chooseSearchProfile() }
+                    if model.savedSearchLists.moduleLists.contains(where: { $0.label != nil }) {
+                        Section("Module lists") {
+                            ForEach(Array(model.savedSearchLists.moduleLists.enumerated()), id: \.offset) { item in
+                                if let label = item.element.label {
+                                    Button(label.isEmpty ? "(Empty label)" : label) { model.applySavedModuleList(at: item.offset) }
+                                }
+                            }
+                        }
+                    }
+                    if model.savedSearchLists.ranges.contains(where: { $0.label != nil }) {
+                        Section("Ranges") {
+                            ForEach(Array(model.savedSearchLists.ranges.enumerated()), id: \.offset) { item in
+                                if let label = item.element.label {
+                                    Button(label.isEmpty ? "(Empty label)" : label) { model.applySavedRange(at: item.offset) }
+                                }
+                            }
+                        }
+                    }
+                }.accessibilityLabel("Saved search lists")
                 Toggle("Search multiple modules", isOn: $model.searchMultipleModules)
                 if model.searchMultipleModules {
                     Button("Add selected module") { model.addModule() }
@@ -153,6 +174,17 @@ struct SearchPane: View {
     private func resultRow(_ hit: SearchHit) -> some View {
         Text(hit.reference).tag(hit.id).contentShape(Rectangle())
             .onTapGesture(count: 2) { if canRead && !hostBusy { onRead(hit) } }
+    }
+    private func chooseSearchProfile() {
+        let panel = NSOpenPanel()
+        panel.title = "Load saved search lists"
+        panel.message = "Choose a Xiphos settings file containing named module lists and ranges."
+        panel.prompt = "Load"
+        panel.canChooseFiles = true; panel.canChooseDirectories = false; panel.allowsMultipleSelection = false
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            model.loadSearchLists(path: url.path)
+        }
     }
     private func export(all: Bool, save: Bool) {
         model.exportResults(allMatches: all, forClipboard: !save) { payload in

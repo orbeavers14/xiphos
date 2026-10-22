@@ -69,6 +69,80 @@ struct ReaderModelSmoke {
         second.close(); await worker.shutdown()
         print("Native shared search, scopes, result preview, navigation, stop and closure passed")
     }
+    @MainActor static func savedSearchLists(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let tab = try await worker.createTab(), otherTab = try await worker.createTab()
+        let modules = try await worker.modules()
+        let model = SearchModel(), other = SearchModel()
+        model.configure(worker: worker, tab: tab, modules: modules, preferred: "Text")
+        other.configure(worker: worker, tab: otherTab, modules: modules, preferred: "Text")
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("xiphos-search-lists-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("settings-café.xml"), bad = directory.appendingPathComponent("bad.xml")
+        let tooMany = Array(repeating: "Text", count: 33).joined(separator: ",")
+        let source = "<Xiphos><modlists><modlist label='Original' list='Text,MissingModule,Text,Commentary'/><modlist label='Original' list='Shadowed'/><modlist label='Too many' list='\(tooMany)'/><modlist label='Empty' list=''/><modlist label='Absent'/><modlist label='Spaces' list='Text, Commentary,Text,'/></modlists><ranges><range label='Original' list='John1:2'/><range label='Original' list='John1:4'/><range label='Empty' list=''/><range label='Absent'/></ranges><unknown keep='yes'/></Xiphos>"
+        try Data(source.utf8).write(to: file); try Data("<Xiphos>".utf8).write(to: bad)
+        model.expression = "Original"; model.search(); try await searchIdle(model)
+        let generation = model.result!.generation.id, scope = model.scope, preview = model.preview?.html, hits = model.hits
+        model.expression = "Unsubmitted draft"; model.mode = .regularExpression; model.caseSensitive = true
+        model.scopeChoice = .last; model.bounds = "Unsubmitted bounds"; model.boundsModule = "Commentary"
+        model.loadSearchLists(path: file.path)
+        guard model.isLoadingSearchSetup, model.isBusy, !model.canSearch else { fatalError("nonblocking saved-list loading state") }
+        model.select(1) // A competing preview must not invalidate the setup operation.
+        try await searchIdle(model)
+        guard model.savedSearchLists.moduleLists.count == 6, model.savedSearchLists.ranges.count == 4,
+              model.result?.generation.id == generation, model.scope == scope, model.preview?.html == preview, model.hits == hits,
+              model.expression == "Unsubmitted draft", model.mode == .regularExpression, model.caseSensitive,
+              model.scopeChoice == .last, model.bounds == "Unsubmitted bounds", model.boundsModule == "Commentary",
+              model.selectedModules.isEmpty, !model.searchMultipleModules, other.savedSearchLists.moduleLists.isEmpty else {
+            fatalError("loading named choices preserves drafts, committed source/preview, scope and another window")
+        }
+        let saved = model.savedSearchLists
+        model.loadSearchLists(path: bad.path); try await searchIdle(model)
+        guard model.savedSearchLists == saved, model.hits == hits else { fatalError("failed profile replacement retains loaded lists/results") }
+        model.applySavedModuleList(at: 1); try await searchIdle(model)
+        let selected = ["Text", "MissingModule", "Text", "Commentary"]
+        guard model.selectedModules == selected, model.searchMultipleModules,
+              model.result?.generation.id == generation, model.scope == scope, model.expression == "Unsubmitted draft" else {
+            fatalError("saved duplicate label delegates first match and comma tokens without rerunning search")
+        }
+        model.applySavedModuleList(at: 2); try await searchIdle(model)
+        guard model.selectedModules == selected else { fatalError("oversized module list changed draft selection") }
+        model.applySavedModuleList(at: 4)
+        guard model.selectedModules == selected else { fatalError("absent saved value changed draft selection") }
+        model.applySavedModuleList(at: 5); try await searchIdle(model)
+        guard model.selectedModules == ["Text", " Commentary", "Text"] else { fatalError("native adapter normalized shared literal tokens") }
+        model.applySavedModuleList(at: 3); try await searchIdle(model)
+        guard model.selectedModules.isEmpty, model.searchMultipleModules, !model.canSearch else { fatalError("empty saved list became an implicit all-module search") }
+        model.applySavedModuleList(at: 0); try await searchIdle(model)
+        model.applySavedRange(at: 1)
+        guard model.bounds == "John1:2", model.scopeChoice == .bounds, model.boundsModule == "Commentary",
+              model.scope == scope else { fatalError("saved range first match preserves explicit provider and committed last scope") }
+        model.applySavedRange(at: 3)
+        guard model.bounds == "John1:2" else { fatalError("absent range cleared draft") }
+        model.applySavedRange(at: 2)
+        guard model.bounds.isEmpty, model.scopeChoice == .bounds else { fatalError("explicit empty range changed scope to all text") }
+        model.applySavedRange(at: 0)
+        model.expression = "Original"; model.mode = .phrase; model.caseSensitive = false
+        model.search(); try await searchIdle(model)
+        guard model.batchResult?.groups.count == 4, model.batchResult?.failureCount == 1,
+              model.hits.map(\.module) == ["Text", "Text", "Commentary"], model.hits.allSatisfy({ $0.reference == "John 1:2" }),
+              model.batchResult?.groups[0].result?.range?.module == "Commentary",
+              other.hits.isEmpty, try Data(contentsOf: file) == Data(source.utf8) else { fatalError("saved setup uses existing shared ordered batch/range execution without profile writes") }
+        model.applySavedModuleList(at: 1); model.close()
+        try await Task.sleep(nanoseconds: 50_000_000)
+        guard model.selectedModules == selected, !model.isLoadingSearchSetup else { fatalError("closed model published pending module setup") }
+        let closing = SearchModel(); closing.configure(worker: worker, tab: otherTab, modules: modules, preferred: "Text")
+        closing.loadSearchLists(path: file.path); closing.close()
+        try await Task.sleep(nanoseconds: 50_000_000)
+        guard closing.savedSearchLists.moduleLists.isEmpty, !closing.isBusy else { fatalError("closed model published loaded profile") }
+        try await worker.closeTab(otherTab)
+        other.loadSearchLists(path: file.path); try await searchIdle(other)
+        guard other.savedSearchLists.moduleLists.isEmpty else { fatalError("missing tab published loaded choices") }
+        other.close(); try await worker.closeTab(tab); await worker.shutdown()
+        print("Native saved lists/ranges, shared first-match/tokenization, ordered execution, state retention and close guards passed")
+    }
     @MainActor static func advancedSearch(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let tab = try await worker.createTab(), otherTab = try await worker.createTab()
@@ -1506,6 +1580,9 @@ struct ReaderModelSmoke {
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--search-activation" {
             try await searchActivation(root: CommandLine.arguments[2]); return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--saved-search-lists" {
+            try await savedSearchLists(root: CommandLine.arguments[2]); return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--batch-search" {
             try await batchSearch(root: CommandLine.arguments[2]); return
