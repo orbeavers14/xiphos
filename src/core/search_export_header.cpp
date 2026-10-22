@@ -59,7 +59,10 @@ std::string SearchGeneration::export_header(std::size_t index) const
 		text += "previous results";
 	else
 		text += "entire module";
-	text += "\n";
+	text += "\nSource SDK result elements: " + std::to_string(result.total_results) +
+		"\nSource visible references: " + std::to_string(result.references.size()) + "\n";
+	if (result.limited)
+		text += "Source visible references were limited; this is not the complete returned key list.\n";
 	if (result.effective_expression != query.expression)
 		text += "Effective query: " + result.effective_expression + "\n";
 	if (result.effective_text_options) {

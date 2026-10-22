@@ -23,6 +23,9 @@ int main(int argc,char **argv){try{
   contextual.text.find("Search group 2\nModule: Commentary")!=std::string::npos&&
   contextual.text.find("Search group 3\nModule: Text")!=std::string::npos&&contextual.text.find("John 1:1 Text")!=std::string::npos,
   "Optional all-retained headers preserve group identity and every first match");
+ check(contextual.text.find("Source SDK result elements: 4\nSource visible references: 1\nSource visible references were limited;")!=std::string::npos&&
+  contextual.text.find("Source SDK result elements: 4\nSource visible references: 0\nSource visible references were limited;")!=std::string::npos,
+  "All-retained provenance distinguishes source SDK counts from bounded visible prefixes, including zero-visible groups");
  request.max_bytes=contextual.text.size();check(session.export_search_all_text(request).text==contextual.text,"Exact text context byte budget");
  --request.max_bytes;auto short_context=session.export_search_all_text(request);
  check(short_context.status==SearchExportStatus::output_limit&&short_context.text.empty()&&!short_context.row_count,"One-byte-short context cannot leak partial text");

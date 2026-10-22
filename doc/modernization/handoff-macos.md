@@ -599,3 +599,26 @@ named pasteboards/temp files. User data/general clipboard and workflows remain
 untouched; no hosted jobs. Next: complete saved/advanced search setup and remaining
 resource/semantic/corpus/platform acceptance. Owner enhancement priorities stay
 after parity; no whole parity or legacy retirement gate passes.
+
+### Shared export source counts (2026-10-22)
+
+Implementation `d54aec4d`, branch `modernization/search-export-source-counts`.
+Shared opt-in headers now distinguish captured SDK result elements, visible
+reference count and preview limitation from exported row counts. Complete output
+can include groups whose original preview had zero rows; selected duplicates
+retain original source counts. HTML/plain companions use the same copied header.
+No public API/layout or frontend formatter changes; defaults retain exact bytes.
+
+Existing macOS27 ARM64 / AppleClang21 / Swift6.4 / SWORD1.9.0.3916 configuration.
+`cmake --build build/macos --parallel 4` and sanitized build pass.
+`ctest --test-dir build/macos --output-on-failure -R 'search_html_export|search_html_images|search_export|search_all_export'`
+passes14/16 under restricted access; two named-pasteboard destination tests fail
+with the known desktop clipboard restriction. Desktop-access rerun
+`ctest --test-dir build/macos --output-on-failure -R 'reader_model_search_html_export|reader_model_search_export'`
+passes4/4 including fixtures (6.56 s). The remaining14 normal checks passed.
+`ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/sanitized --output-on-failure -R 'search_html_export|search_html_images|search_export|search_all_export'`
+passes11/11 (28.37 s). Whitespace checks pass. Logs are ignored
+`build/source-counts-*.log`. Dependencies remain partly instrumented; leaks off.
+No new full suite, actual index, Fedora/MSVC, corpus, physical UI or parity claim.
+Next: source disposition for empty/failed/unattempted groups in shared context
+exports, then saved search setup and remaining resource policies. No hosted jobs.

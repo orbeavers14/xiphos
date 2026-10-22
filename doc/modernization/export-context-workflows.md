@@ -2,8 +2,7 @@
 
 Updated 2026-10-21. The shared C++ header policy now has additive C/Swift options
 and a native Mac opt-in. Existing C/Swift/GTK callers keep their current output
-because the option defaults off. Library upgrades
-are deferred; this change uses the already validated SDK selection.
+because the option defaults off.
 
 ## Contract
 
@@ -17,7 +16,12 @@ companion share the same copied header strings on the existing owner/FIFO job.
 Each header carries one-based originating group index, module, original query,
 requested mode, case choice, requested entire-module/range/previous-result scope,
 changed effective query, captured search annotation policy, selected backend and
-explicit indexed-to-multiword fallback or stopped-group status. Named annotation
+explicit indexed-to-multiword fallback or stopped-group status. It also records
+the original SDK result-element count, original visible-reference count and
+whether that preview was limited. These are source counts, independent of the
+exported row count: duplicate selected rows do not increase them, and an
+all-retained export can include groups with no visible preview references. SDK
+elements are not a promise about the number of verses in expanded range keys. Named annotation
 policy is not a claim that every module implements every SDK filter. With no
 captured policy the header reports unchanged SDK state, not invented defaults.
 These are provenance labels, not a complete portable saved-search serializer;
