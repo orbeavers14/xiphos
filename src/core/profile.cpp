@@ -168,6 +168,61 @@ std::vector<std::string> saved_search_module_names(const std::string &text) {
   }
   return result;
 }
+std::string serialize_saved_search_list(const std::string &source, const SavedSearchListEdit &edit) {
+  const char *section_name = nullptr, *item_name = nullptr;
+  switch (edit.kind) {
+    case SavedSearchListKind::module_list: section_name = "modlists"; item_name = "modlist"; break;
+    case SavedSearchListKind::range: section_name = "ranges"; item_name = "range"; break;
+    default: throw std::invalid_argument("Unknown saved search list kind");
+  }
+  for (const auto *text : {&edit.label, &edit.value})
+    if (text->size() > maximum_profile_bytes || text->find('\0') != std::string::npos || !xmlCheckUTF8(BAD_CAST text->c_str()))
+      throw std::invalid_argument("Invalid saved search list text");
+  auto document = parse_document(source);
+  auto *root = xmlDocGetRootElement(document.get());
+  xmlNode *section = nullptr, *target = nullptr;
+  for (auto *node = root->children; node; node = node->next)
+    if (!xmlStrcmp(node->name, BAD_CAST section_name)) { section = node; break; }
+  if (!section) section = xmlNewChild(root, nullptr, BAD_CAST section_name, nullptr);
+  if (!section) throw std::bad_alloc();
+  for (auto *node = section->children; node; node = node->next) {
+    if (xmlStrcmp(node->name, BAD_CAST item_name)) continue;
+    const std::unique_ptr<xmlChar, decltype(xmlFree)> label(xmlGetProp(node, BAD_CAST "label"), xmlFree);
+    if (label && !xmlStrcmp(label.get(), BAD_CAST edit.label.c_str())) { target = node; break; }
+  }
+  if (!target) {
+    target = xmlNewChild(section, nullptr, BAD_CAST item_name, nullptr);
+    if (!target || !xmlNewProp(target, BAD_CAST "label", BAD_CAST edit.label.c_str())) throw std::bad_alloc();
+  }
+  if (!xmlSetProp(target, BAD_CAST "list", BAD_CAST edit.value.c_str())) throw std::bad_alloc();
+  xmlChar *serialized = nullptr;
+  int length = 0;
+  xmlDocDumpFormatMemoryEnc(document.get(), &serialized, &length, "UTF-8", 0);
+  const std::unique_ptr<xmlChar, decltype(xmlFree)> owned(serialized, xmlFree);
+  if (!serialized || length <= 0) throw std::runtime_error("Xiphos search-list serialization failed");
+  std::string result(reinterpret_cast<const char *>(serialized), static_cast<std::size_t>(length));
+  const auto verified = parse_saved_search_lists(result);
+  const auto &items = edit.kind == SavedSearchListKind::module_list ? verified.module_lists : verified.ranges;
+  if (saved_search_list_value(items, edit.label) != edit.value)
+    throw std::runtime_error("Serialized search list failed verification");
+  return result;
+}
+SavedSearchLists save_saved_search_list(const std::string &path, const SavedSearchListEdit &edit) {
+  SavedSearchLists prepared;
+  detail::replace_preference_file(path, [&](const std::filesystem::path &file, const std::string &original, bool existed) {
+    const auto serialized = serialize_saved_search_list(existed ? original : "<Xiphos/>", edit);
+    {
+      std::ofstream output(file, std::ios::binary);
+      output.exceptions(std::ios::badbit | std::ios::failbit);
+      output.write(serialized.data(), static_cast<std::streamsize>(serialized.size()));
+      output.close();
+    }
+    if (detail::read_preference_file(file, maximum_profile_bytes) != serialized)
+      throw std::runtime_error("Written Xiphos search list failed verification");
+    prepared = read_saved_search_lists(file.u8string());
+  }, maximum_profile_bytes);
+  return prepared;
+}
 SavedBookSelection parse_saved_book_selection(const std::string &source) {
   auto document = parse_document(source);
   return {value(document.get(), "modules", "book"), value(document.get(), "keys", "book"),
