@@ -1,8 +1,8 @@
 # Optional committed search-context export headers
 
-Updated 2026-10-21. This is the initial shared C++ header policy; C/Swift options
-and native controls remain a following slice. Existing C/Swift/GTK callers keep
-their current output because the new C++ option defaults off. Library upgrades
+Updated 2026-10-21. The shared C++ header policy now has additive C/Swift options
+and a native Mac opt-in. Existing C/Swift/GTK callers keep their current output
+because the option defaults off. Library upgrades
 are deferred; this change uses the already validated SDK selection.
 
 ## Contract
@@ -47,6 +47,23 @@ currently English, as in the existing initial document policy. Localization,
 empty/failure group sections and full advanced/native workflow acceptance remain
 open.
 
+## C, Swift and native consumption
+
+Additive `xc_worker_export_search_visible_text_with_context`,
+`xc_worker_export_search_all_text_with_context` and
+`xc_worker_export_search_rich_html_with_context` accept a strict 0/1 flag. Inputs
+copy before queueing; invalid flags clear the observer and return invalid argument.
+Existing entry points pass zero to the same implementation. No request/info layout,
+owned result, cancellation, lifetime or byte-limit contract changes.
+
+Swift defaults `includeSearchContext` to false and copies the existing complete
+payloads. Native Export has an unchecked-by-default Include search details toggle
+for both text and HTML, selected and all returned matches. The model captures the
+choice before queueing with format/scripture/PNG/selection. Later edits cannot
+change the document. Copy uses the same details in HTML and its shared text
+companion; Save still requests no companion. There is no frontend header formatter
+or metadata lookup, and no new persistence engine.
+
 ## Evidence and next slice
 
 Executed checks/hash are in the [Mac handoff](handoff-macos.md). Regression cases
@@ -56,7 +73,9 @@ HTML metacharacters, exact/short text/HTML limits, captured range/case/annotatio
 after later setting changes, previous-result scope and actual recorded index
 fallback. The unavailable real SDK index remains an explicit skip, not acceptance.
 
-Next: additive C11 options and copied Swift consumption, then native header choice
-through the existing model lifecycle. Do not rebuild historical headers in a
-frontend or silently enable the new format for existing callers. Actual corpus,
+C/Swift/native option and destination/model checks now exercise default and
+opted-in paths, strict C flags and captured-choice preservation. No new physical
+menu/window/visual acceptance is claimed. Do not rebuild historical headers in a
+frontend or silently enable the new format for existing callers. Next are richer
+empty/failure group sections, localization and remaining resource/semantic policy. Actual corpus,
 HTML/CSP/visual, rich-client paste, Fedora/MSVC and whole-parity gates remain.
