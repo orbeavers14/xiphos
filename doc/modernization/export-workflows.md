@@ -4,7 +4,10 @@ Updated 2026-10-20. F20/F32 remain partial, with no accepted native export workf
 The shared item formatter below retains GTK3 operation. A separate checked C++
 [selected visible-row text service](search-text-export-workflows.md) now resolves
 retained identities, reads configured SDK scripture and enforces aggregate output
-caps. Native transport/save/copy, full retained export and printing remain pending.
+caps. Selected/all retained text, C/Swift transport, scoped native Mac save/copy
+and restricted HTML now consume these shared services. HTML Copy also has a
+[bounded shared text companion](rich-clipboard-workflows.md). Passage export,
+printing and full export parity remain pending.
 
 ## Shared item contract
 
@@ -93,17 +96,21 @@ Do not delete the oracle functions until the full workflow gates pass.
 
 ## Next shared boundary
 
-Define an owned export request/selection contract before adding native dialogs.
-A displayed search prefix can omit results and is insufficient to claim a complete
-export. Batch final last scope belongs to one module, so it cannot reconstruct
-all earlier groups either. Choose explicit visible-selection export versus a
-bounded retained full result/streaming export service; report truncation and never
-silently label a prefix as all matches. Preserve module identity and duplicate
-order. Do not rerun mutable searches implicitly to recover missing results.
+The selected/all retained contracts, aggregate output bounds, configured
+history-neutral reads, copied worker/C/Swift results and scoped native Mac
+text/HTML destinations are implemented. A displayed prefix or final last scope
+still cannot stand in for complete returned matches; keep the explicit selection,
+partial-source and capacity contracts when adding formats.
 
-Then add aggregate output bounds, configured history-neutral scripture reads,
-header/document policy, text/HTML and bookmark transformations, copied worker/C
-transport and appropriate native file/clipboard/print hosts. Compare legacy and
-native output with original fixtures, representative permitted modules/profiles
-and visual/keyboard/round-trip evidence. Complete passage export, verse lists,
-bookmark hierarchy/import, printing/pagination and saved workflows remain open.
+Next are advanced per-group headers from committed query metadata, with escaped
+HTML and matching plain text, preserving every first match and duplicate group.
+Specify how original versus effective query, mode, case, bounds/last scope,
+annotation settings, failures and index fallback are represented. Editable native
+query fields must not supply historical headers. Preserve current/default document
+bytes until a caller explicitly selects the extended header contract.
+
+Then expand resource/style/semantic policy and native interoperability with
+original fixtures and representative permitted modules/profiles. Complete passage
+export, verse lists, bookmark hierarchy/import, printing/pagination, saved choices
+and visual/keyboard/round-trip evidence remain open. No reference implementation
+or oracle is eligible for retirement on the strength of these partial services.
