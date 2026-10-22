@@ -26,7 +26,8 @@ Current implementation: shared rich clipboard `b85c440` adds an optional bounded
 plain-text companion to complete HTML on the same FIFO job/resolved rows. Native
 Copy consumes both copied values; Save stays HTML-only. See
 [contract](rich-clipboard-workflows.md) and latest checks below. Next bounded work:
-advanced headers and remaining resource/style/semantic and advanced-search workflows. Inline
+C/Swift/native consumption of optional committed export headers, then remaining
+resource/style/semantic and advanced-search workflows. Inline
 reading resources, hover filename status, other formats/corpus, browser/CSP
 runtime and GTK/Windows/native release gates remain.
 
@@ -387,3 +388,37 @@ or user clipboard modified. Owner now authorizes continuing validated work and
 merging/pushing checkpoints. Library upgrades are owner-deferred for a later review. Next bounded work:
 advanced export headers and remaining resource/semantic policies, followed by
 actual target-platform and representative workflow acceptance.
+
+### Optional core search-context headers (2026-10-21)
+
+Implementation `66196e3` on `modernization/shared-export-context-headers`.
+Shared C++ text/all-text/HTML requests append an opt-in committed-context flag;
+default output and existing C/Swift/native behavior are unchanged. One owner
+copies headers once per emitting group; all formats/companions share metadata,
+escaping, row order and final-byte budgets. No first match is consumed as a
+header. Repeated groups and visible group reentry remain explicit. See
+[contract](export-context-workflows.md) for scope and unimplemented sections.
+
+Final complete Mac preview/core build passes; full CTest **165 passes + 1 explicit
+index skip**, 166 registered, 147.84 s. Focused final ASan/UBSan **11/11** (35.07 s),
+portable core/all seven GTK models **26/26** on Mac (28.48 s, GTK runtime OFF).
+Additional final exact default-empty-document assertion passes with its fixture
+**2/2** (7.33 s). Strict C11 and whitespace checks pass. Same SDK/cache selection
+as the preceding rich clipboard checkpoint: Apple XML2.9.13 for full Mac;
+installed XML2.15.4 for focused sanitizer/portable checks. Libraries, deployment,
+workflow configuration and language standards did not change. Dependency upgrades
+are owner-deferred; retain the preceding compatibility gate and index skip.
+
+Commands: `cmake --build build/macos --parallel 4`, then desktop-access
+`ctest --test-dir build/macos --output-on-failure`. Rebuild the same seven export
+sanitizer targets, then run the preceding ASAN_OPTIONS/CTest export selection.
+Portable: full `cmake --build build/linux-models --parallel 4`, then preceding
+26-test export/Linux-model selection. Logs are ignored
+`build/context-{full,final-sanitized,portable}-*.log`.
+
+No new native header controls, GUI/rich-client paste, browser/CSP/visual,
+localization, empty/failure group sections, Fedora/MSVC, complete advanced-search
+or whole-parity acceptance. Existing C/Swift options cannot enable headers yet;
+their default paths and GTK models were rebuilt/checked. Next bounded slice:
+additive C11 options, copied Swift consumption and a native opt-in through the
+existing export model lifecycle. Application policy remains in C++.

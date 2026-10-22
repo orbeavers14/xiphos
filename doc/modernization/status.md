@@ -53,7 +53,12 @@ portable core/GTK models26/26 on Mac. Newer XML2.15.4 full-suite compatibility
 remains open; final Mac uses the documented Apple XML2.9.13 SDK. See [contract/evidence](rich-clipboard-workflows.md) and latest local
 checks in the [Mac handoff](handoff-macos.md).
 
-Next bounded work: advanced headers/search controls/settings, remaining
+Optional C++ committed search-context headers at `66196e3` preserve first rows,
+duplicate groups, default bytes and existing output caps. Header text comes from
+retained metadata, with escaped HTML and matching rich clipboard companions.
+See [contract](export-context-workflows.md); explicit C/Swift/native options follow.
+
+Next bounded work: header transport/controls, advanced search settings, remaining
 resource/style/semantic policies and workflow acceptance.
 Keep target-platform validation and other core services in view. No whole parity
 group, release or legacy retirement accepted: **0/38 groups, 0/3 release-ready apps**.
