@@ -15,6 +15,31 @@ struct SearchPane: View {
                 Picker("Module", selection: $model.module) {
                     ForEach(model.modules) { Text($0.id).tag($0.id) }
                 }.accessibilityLabel("Search module")
+                Toggle("Search multiple modules", isOn: $model.searchMultipleModules)
+                if model.searchMultipleModules {
+                    Button("Add selected module") { model.addModule() }
+                        .disabled(model.selectedModules.count >= 32)
+                    if model.selectedModules.isEmpty {
+                        Text("Add modules in the order to search.").font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 4) {
+                                ForEach(Array(model.selectedModules.enumerated()), id: \.offset) { item in
+                                    HStack {
+                                        Text("\(item.offset + 1). \(item.element)")
+                                        Spacer()
+                                        Button { model.moveModule(at: item.offset, by: -1) } label: { Image(systemName: "chevron.up") }
+                                            .disabled(item.offset == 0).accessibilityLabel("Move \(item.element) at position \(item.offset + 1) up")
+                                        Button { model.moveModule(at: item.offset, by: 1) } label: { Image(systemName: "chevron.down") }
+                                            .disabled(item.offset + 1 == model.selectedModules.count).accessibilityLabel("Move \(item.element) at position \(item.offset + 1) down")
+                                        Button { model.removeModule(at: item.offset) } label: { Image(systemName: "minus.circle") }
+                                            .accessibilityLabel("Remove \(item.element) at position \(item.offset + 1)")
+                                    }.buttonStyle(.borderless)
+                                }
+                            }
+                        }.frame(height: min(120, CGFloat(model.selectedModules.count) * 28))
+                    }
+                }
                 TextField("Search text", text: $model.expression).onSubmit { if !hostBusy { model.search() } }
                     .accessibilityLabel("Search text")
                 Picker("Match", selection: $model.mode) {
@@ -89,9 +114,18 @@ struct SearchPane: View {
             VSplitView {
                 VStack(spacing: 4) {
                     List(selection: Binding(get: { model.selection }, set: { model.select($0) })) {
-                        ForEach(model.hits) { hit in
-                            Text(hit.reference).tag(hit.id).contentShape(Rectangle())
-                                .onTapGesture(count: 2) { if canRead && !hostBusy { onRead(hit.reference) } }
+                        if let batch = model.batchResult {
+                            ForEach(batch.requestedModules.indices, id: \.self) { index in
+                                Section {
+                                    ForEach(model.hits.filter { $0.group == index }) { hit in resultRow(hit) }
+                                    let status = model.groupMessage(index)
+                                    if !status.isEmpty { Text(status).font(.caption).foregroundStyle(.secondary) }
+                                } header: {
+                                    Text("\(batch.requestedModules[index]) • group \(index + 1)")
+                                }
+                            }
+                        } else {
+                            ForEach(model.hits) { hit in resultRow(hit) }
                         }
                     }.accessibilityLabel("Search results").disabled(model.isSearching || model.isClearing || model.isExporting || hostBusy)
                     Button("Read in main pane") {
@@ -108,6 +142,10 @@ struct SearchPane: View {
                 } else if model.isPreviewLoading { ProgressView("Loading preview…").frame(minHeight: 100) }
             }
         }.padding(8)
+    }
+    private func resultRow(_ hit: SearchHit) -> some View {
+        Text(hit.reference).tag(hit.id).contentShape(Rectangle())
+            .onTapGesture(count: 2) { if canRead && !hostBusy { onRead(hit.reference) } }
     }
     private func export(all: Bool, save: Bool) {
         model.exportResults(allMatches: all, forClipboard: !save) { payload in

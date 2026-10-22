@@ -13,8 +13,8 @@ and [shared handoff](handoff.md). This consolidated contract replaces superseded
 |---|---|---|
 | Sidebar mode/case/bounds/last | src/main/search_sidebar.cc | Shared execution and basic Mac controls checked; full saved/corpus acceptance pending |
 | SDK results/index/scopes/cancel | src/backend/sword_main.cc | Shared capability, owned results/scope and cooperative control checked; actual indexed execution pending |
-| Attribute/include options/advanced word dialects | src/main/search_dialog.cc | Shared C++11 policy reused by GTK, owned C/C++/Swift execution and Mac single-module advanced mode/annotation controls checked; multi-module controls pending |
-| Ordered module search | src/main/search_dialog.cc | Bounded shared worker/C/Swift service checked; module abbreviations/mixed families and dialog setup pending |
+| Attribute/include options/advanced word dialects | src/main/search_dialog.cc | Shared C++11 policy reused by GTK, owned C/C++/Swift execution and Mac advanced mode/annotation and ordered module controls checked; complete advanced setup pending |
+| Ordered module search | src/main/search_dialog.cc | Bounded shared worker/C/Swift service checked; Mac ordered module selection/grouped preview/export checked; abbreviations/mixed families and complete setup pending |
 | Progress/preview/navigation/export | src/gtk/search_dialog.c; src/main/search_sidebar.cc; src/main/search_dialog.cc | Basic Mac progress/Stop/preview/navigation checked; advanced grouping/export pending |
 
 Sidebar settings retain a 255-byte search-text field while execution receives the
@@ -327,3 +327,36 @@ Native preview/model/export builds and focused regressions pass10/10; detailed
 commands and limitations are in the Mac handoff. Physical controls, real indexed
 execution, multi-module setup, saved preferences and complete corpus/platform
 acceptance remain pending. No whole parity group passes.
+
+## Native ordered batch consumption (2026-10-22)
+
+Implementation `c17206e`: native Search multiple modules is an explicit opt-in.
+Add/remove/reorder controls retain the chosen order and duplicate occurrences,
+with at most32 module requests. Choices use copied catalog verse-search
+eligibility; no native module-family or abbreviation engine is added. Existing
+single-module input remains the default. Bounds still use the explicitly chosen
+provider. Complete legacy range-list/default/abbreviation setup is not claimed.
+
+One `CoreWorker.searchModules` call submits the captured list/query/mode/case/
+annotation/scope. Swift iterates copied groups only for presentation; it does not
+chain independent searches or build a union scope. The core owns ordered
+execution, per-group failures and the final last-results scope. Result sections
+show each original request, including failed, empty or unattempted groups.
+Stopped/limited/index-fallback messages consume copied metadata.
+
+Each visible hit keeps its originating group/row and actual module. Preview uses
+that module. Selected export uses those original ordinals and the displayed
+generation; all export uses the retained complete generation, not flattened
+visible rows. The committed query is retained with batch presentation rather
+than read from an editable draft. Missing groups and duplicate modules do not
+shift export identities. Incomplete all-source exports still refuse by default;
+explicit native partial-source acceptance is a following slice. A new single
+search clears batch presentation, and pre-publication Stop preserves the prior
+committed display. Reading history and independent tab state remain core-owned.
+
+Native model checks cover ordered selection, failures/repeated groups, selected
+commentary preview/HTML/text identity, complete export, stale refusal, bounds,
+last-scope chaining, all-failed replacement, single-mode return and close guards.
+Exact build/test evidence is in the Mac handoff. Full corpus/physical keyboard/
+menu/accessibility, actual indexed execution, saved settings and target-platform
+acceptance remain separate. No whole feature or retirement gate passes.

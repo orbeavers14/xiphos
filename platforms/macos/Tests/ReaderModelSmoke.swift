@@ -118,6 +118,75 @@ struct ReaderModelSmoke {
         other.close(); try await worker.closeTab(tab); try await worker.closeTab(otherTab); await worker.shutdown()
         print("Native advanced modes, captured annotation policy, phrase retention, bounds, fallback and isolation passed")
     }
+    @MainActor static func batchSearch(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let tab = try await worker.createTab(), otherTab = try await worker.createTab()
+        let modules = try await worker.modules()
+        let model = SearchModel(), other = SearchModel()
+        model.configure(worker: worker, tab: tab, modules: modules, preferred: "Text")
+        other.configure(worker: worker, tab: otherTab, modules: modules, preferred: "Text")
+        model.expression = "Original"; model.searchMultipleModules = true
+        guard !model.canSearch else { fatalError("Batch requires an explicit ordered selection") }
+        model.addModule(); model.module = "Commentary"; model.addModule(); model.module = "Text"; model.addModule()
+        model.moveModule(at: 2, by: -1)
+        guard model.selectedModules == ["Text", "Text", "Commentary"] else { fatalError("Native order controls retain duplicates") }
+        model.removeModule(at: 1); model.addModule()
+        guard model.selectedModules == ["Text", "Commentary", "Text"] else { fatalError("Native add/remove acts on one occurrence") }
+        model.selectedModules.insert("Missing", at: 1)
+        model.mode = .lemma; model.expression = "G140"; model.search()
+        model.selectedModules = ["Commentary"]; model.expression = "Unsubmitted batch draft"; model.mode = .phrase
+        try await searchIdle(model)
+        guard let failed = model.batchResult, failed.requestedModules == ["Text", "Missing", "Commentary", "Text"],
+              failed.failureCount == 1, model.result == nil, model.hits.count == 6,
+              model.hits.map(\.group) == [0,0,2,2,3,3], model.hits.map(\.row) == [0,1,0,1,0,1],
+              model.groupMessage(1) == "Module unavailable.", model.previewSource?.module == "Text",
+              other.hits.isEmpty, !other.scope.present, try await worker.lastSearchScope(tab: otherTab).present == false else { fatalError("One captured batch preserves failed-group gaps, duplicate identity and window isolation") }
+        model.select(3); try await searchIdle(model)
+        guard model.previewSource?.module == "Commentary", model.preview?.reference == "John 1:4" else { fatalError("Batch preview uses selected actual module") }
+        model.exportFormat = .html; model.exportSearchContext = true
+        var selected: SearchExportPayload?
+        model.exportResults(allMatches: false, forClipboard: true) { selected = $0 }; try await searchIdle(model)
+        guard case .html(let html) = selected, html.status == .success, html.rowCount == 1,
+              html.generation == failed.generation, html.html.contains("Search group 3\nModule: Commentary"),
+              html.html.contains("John 1:4 Commentary"), html.html.contains("Search results: G140"),
+              !html.html.contains("Unsubmitted"), html.plainText?.contains("Module: Commentary") == true else { fatalError("Selected batch export captures displayed generation/query and exact group/row") }
+        var partialAll = false
+        model.exportResults(allMatches: true) { _ in partialAll = true }; try await searchIdle(model)
+        guard !partialAll, model.message.contains("some modules failed") else { fatalError("Incomplete batch cannot silently export a successful prefix as all matches") }
+        model.selectedModules = ["Text", "Commentary", "Text"]; model.expression = "Original"; model.mode = .multiword
+        model.search(); try await searchIdle(model)
+        guard let full = model.batchResult, model.hits.count == 12, full.failureCount == 0 else { fatalError("Complete ordered batch is displayed") }
+        model.expression = "Unsubmitted export draft"; model.exportFormat = .plainText
+        var all: RenderedSearchTextExport?
+        model.exportText(allMatches: true) { all = $0 }; try await searchIdle(model)
+        guard let all, all.status == .success, all.rowCount == 12, all.generation == full.generation,
+              all.text.contains("Search group 3\nModule: Text"), all.text.hasPrefix("Search results: Original\n\n"),
+              !all.text.contains("Unsubmitted"), try await worker.history(tab).count == 0 else { fatalError("Complete batch export uses retained groups and committed title without history visits") }
+        _ = try await worker.searchModule(tab: tab, module: "Text", expression: "Original")
+        var stale = false
+        model.exportText(allMatches: false) { _ in stale = true }; try await searchIdle(model)
+        guard !stale, model.message.contains("Search results changed"), model.batchResult == full else { fatalError("Stale displayed batch cannot substitute a newer generation") }
+        model.selectedModules = ["Text", "Commentary"]; model.mode = .lemma; model.expression = "G140"
+        model.search(); try await searchIdle(model)
+        model.scopeChoice = .last; model.mode = .footnote; model.expression = "Alpha"
+        model.search(); try await searchIdle(model)
+        guard model.hits.map(\.reference) == ["John 1:1", "John 1:1"], model.scope.elementCount == 1 else { fatalError("Batch last-scope chaining is performed by shared owner, not a native union") }
+        model.scopeChoice = .bounds; model.boundsModule = "Text"; model.bounds = "John1:2-John1:4"
+        model.mode = .lemma; model.expression = "G140"; model.search(); try await searchIdle(model)
+        guard model.hits.map(\.reference) == ["John 1:4", "John 1:4"], model.batchResult?.groups.allSatisfy({ $0.result?.range?.expression == model.bounds }) == true else { fatalError("One explicit core range applies to ordered module requests") }
+        model.selectedModules = ["Missing"]; model.scopeChoice = .all; model.search(); try await searchIdle(model)
+        guard model.hits.isEmpty, model.preview == nil, model.batchResult?.failureCount == 1,
+              !model.canExportAll, model.groupMessage(0) == "Module unavailable." else { fatalError("All-failed committed batch replaces old hits with its own honest disposition") }
+        model.searchMultipleModules = false; model.module = "Text"; model.mode = .phrase; model.expression = "Original"
+        model.search(); try await searchIdle(model)
+        guard model.result != nil, model.batchResult == nil, model.hits.allSatisfy({ $0.group == 0 && $0.row == $0.id }) else { fatalError("Returning to single-module mode restores its existing identity path") }
+        let held = model.result
+        model.searchMultipleModules = true; model.selectedModules = ["Text", "Commentary"]; model.search(); model.close()
+        try await Task.sleep(nanoseconds: 50_000_000)
+        guard model.result == held, model.batchResult == nil else { fatalError("Closed batch model suppresses late publication") }
+        other.close(); try await worker.closeTab(tab); try await worker.closeTab(otherTab); await worker.shutdown()
+        print("Native ordered batch, failure groups, actual preview/export identity, scope chaining, drafts and lifecycle passed")
+    }
     @MainActor static func bookNoteNumbers(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let model = ReaderModel(worker: worker, startupError: nil)
@@ -1321,6 +1390,9 @@ struct ReaderModelSmoke {
             guard recorded.entries.last?.key == expectedKey else { fatalError("locale snapshot lifetime") }
             print("Native environment locale startup/click checks passed")
             return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--batch-search" {
+            try await batchSearch(root: CommandLine.arguments[2]); return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--advanced-search" {
             try await advancedSearch(root: CommandLine.arguments[2]); return
