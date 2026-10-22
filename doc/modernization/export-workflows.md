@@ -105,9 +105,9 @@ partial-source and capacity contracts when adding formats.
 Initial [C++ committed-context headers](export-context-workflows.md) now cover
 original/effective query, mode, case, requested bounds/last scope, annotation
 policy and backend/fallback for emitting row groups. They preserve first matches,
-duplicates, default bytes and complete-document budgets. Next add explicit C/Swift
-options and native consumption; richer empty/failure group sections, localization
-and full advanced workflow acceptance remain open. Editable native query fields
+duplicates, default bytes and complete-document budgets. Additive C/Swift
+options and native Mac opt-in now consume this policy; richer empty/failure group
+sections, localization and full advanced workflow acceptance remain open. Editable native query fields
 must never supply historical headers.
 
 Then expand resource/style/semantic policy and native interoperability with
