@@ -100,6 +100,11 @@ struct SearchPane: View {
                     }.accessibilityLabel("Search export format")
                     Toggle("Include scripture", isOn: $model.exportScripture)
                     Toggle("Include search details", isOn: $model.exportSearchContext)
+                    if model.hasIncompleteExportSource {
+                        Toggle("Export returned matches from incomplete search", isOn: $model.exportPartialSource)
+                            .disabled(!model.exportSearchContext)
+                            .help("Enable Include search details to label incomplete output. Only returned matches are exported; this choice resets for each new search result.")
+                    }
                     if model.exportFormat == .html {
                         Toggle("Embed PNG images", isOn: $model.exportImages).disabled(!model.exportScripture)
                     }

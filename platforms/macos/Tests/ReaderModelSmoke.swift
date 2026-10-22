@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 import Foundation
+import AppKit
 @main
 struct ReaderModelSmoke {
     // Original-prose variant fixtures contain no encoded text except spacing.
@@ -153,9 +154,45 @@ struct ReaderModelSmoke {
         var partialAll = false
         model.exportResults(allMatches: true) { _ in partialAll = true }; try await searchIdle(model)
         guard !partialAll, model.message.contains("some modules failed") else { fatalError("Incomplete batch cannot silently export a successful prefix as all matches") }
+        guard model.hasIncompleteExportSource, !model.exportPartialSource else { fatalError("Incomplete export choice starts disabled") }
+        model.exportPartialSource = true
+        var accepted: SearchExportPayload?
+        model.exportResults(allMatches: true, forClipboard: true) { accepted = $0 }
+        model.exportPartialSource = false; model.exportSearchContext = false
+        try await searchIdle(model)
+        guard case .html(let returned) = accepted, returned.status == .success, returned.rowCount == 6,
+              returned.generation == failed.generation, returned.generation.failedGroups == 1,
+              returned.html.contains("only returned matches are included"),
+              returned.plainText?.contains("only returned matches are included") == true else { fatalError("Explicit partial acceptance captures the choice and preserves shared source disclosure in both formats") }
+        let board = NSPasteboard(name: NSPasteboard.Name("XiphosPartialBatch-" + UUID().uuidString))
+        defer { board.releaseGlobally() }
+        try SearchExportDestination.copy(.html(returned), to: board)
+        guard board.data(forType: .html) == Data(returned.html.utf8),
+              board.string(forType: .string) == returned.plainText else { fatalError("Accepted partial pair reaches isolated native clipboard unchanged") }
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("XiphosPartialBatch-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("returned.html")
+        try await SearchExportDestination.save(.html(returned), to: file)
+        guard try Data(contentsOf: file) == Data(returned.html.utf8) else { fatalError("Partial HTML save preserves exact shared warning/document") }
+        model.exportPartialSource = true
+        var unlabelled = false
+        model.exportResults(allMatches: true) { _ in unlabelled = true }; try await searchIdle(model)
+        guard !unlabelled, model.message.contains("some modules failed") else { fatalError("Native partial option cannot omit the required shared context disclosure") }
+        model.exportSearchContext = true; model.exportFormat = .plainText
+        var acceptedText: RenderedSearchTextExport?
+        model.exportText(allMatches: true) { acceptedText = $0 }; try await searchIdle(model)
+        guard acceptedText?.status == .success, acceptedText?.rowCount == 6,
+              acceptedText?.generation == failed.generation,
+              acceptedText?.text.contains("only returned matches are included") == true else { fatalError("Plain partial export uses the same explicit core source decision and warning") }
+        _ = try await worker.searchModule(tab: tab, module: "Text", expression: "Original")
+        var oldPartial = false
+        model.exportText(allMatches: true) { _ in oldPartial = true }; try await searchIdle(model)
+        guard !oldPartial, model.message.contains("Search results changed"), model.batchResult == failed else { fatalError("Partial-source acceptance never bypasses stale-generation refusal") }
         model.selectedModules = ["Text", "Commentary", "Text"]; model.expression = "Original"; model.mode = .multiword
         model.search(); try await searchIdle(model)
-        guard let full = model.batchResult, model.hits.count == 12, full.failureCount == 0 else { fatalError("Complete ordered batch is displayed") }
+        guard let full = model.batchResult, model.hits.count == 12, full.failureCount == 0,
+              !model.exportPartialSource, !model.hasIncompleteExportSource else { fatalError("Complete ordered batch is displayed") }
         model.expression = "Unsubmitted export draft"; model.exportFormat = .plainText
         var all: RenderedSearchTextExport?
         model.exportText(allMatches: true) { all = $0 }; try await searchIdle(model)
@@ -174,6 +211,15 @@ struct ReaderModelSmoke {
         model.scopeChoice = .bounds; model.boundsModule = "Text"; model.bounds = "John1:2-John1:4"
         model.mode = .lemma; model.expression = "G140"; model.search(); try await searchIdle(model)
         guard model.hits.map(\.reference) == ["John 1:4", "John 1:4"], model.batchResult?.groups.allSatisfy({ $0.result?.range?.expression == model.bounds }) == true else { fatalError("One explicit core range applies to ordered module requests") }
+        _ = try await worker.setSearchRetentionLimits(tab: tab, limits: CoreSearchRetentionLimits(maxElements: 1, maxKeyBytes: 1024))
+        model.selectedModules = ["Text", "Missing"]; model.scopeChoice = .all; model.expression = "Original"; model.mode = .multiword
+        model.search(); try await searchIdle(model)
+        guard model.hasIncompleteExportSource, !model.exportPartialSource else { fatalError("New incomplete generation resets native consent") }
+        model.exportPartialSource = true; model.exportSearchContext = true
+        var capacityBypass = false
+        model.exportText(allMatches: true) { _ in capacityBypass = true }; try await searchIdle(model)
+        guard !capacityBypass, model.message.contains("Complete search results are unavailable") else { fatalError("Partial-source acceptance never bypasses retained-capacity refusal") }
+        _ = try await worker.setSearchRetentionLimits(tab: tab, limits: CoreSearchRetentionLimits())
         model.selectedModules = ["Missing"]; model.scopeChoice = .all; model.search(); try await searchIdle(model)
         guard model.hits.isEmpty, model.preview == nil, model.batchResult?.failureCount == 1,
               !model.canExportAll, model.groupMessage(0) == "Module unavailable." else { fatalError("All-failed committed batch replaces old hits with its own honest disposition") }
