@@ -671,6 +671,21 @@ final class ReaderModel: ObservableObject {
         }
     }
     var canOpenSearchResult: Bool { displayedModule != nil && displayedEntry != nil }
+    func openSearchResult(_ hit: SearchHit) {
+        guard let worker, let tab, let main = displayedModule else { return }
+        let target = PassageTarget(module: hit.module, reference: hit.reference)
+        let commentary = commentarySelection
+        let paired = modules.contains(where: { $0.id == main && $0.type == "Biblical Texts" })
+        run { token in
+            if paired {
+                let pair = try await worker.visitLinkedStudyPassage(tab: tab, bible: main,
+                    commentary: commentary, target: target)
+                try await self.present(pair.text, module: pair.module, token: token, passage: pair)
+            } else {
+                try await self.visitAndPresent(module: target.module, reference: target.reference, token: token)
+            }
+        }
+    }
     func chooseReference(_ target: String) {
         guard worker != nil, tab != nil, let module = displayedModule else { return }
         run { token in
@@ -994,7 +1009,7 @@ struct ReaderWindow: View {
                     .accessibilityLabel("Installed SWORD modules")
                     .tabItem { Text("Modules") }
                     SearchPane(model: model.search, hostBusy: model.isBusy, canRead: model.canOpenSearchResult,
-                        onRead: model.chooseReference,
+                        onRead: model.openSearchResult,
                         onLink: { uri, module, reference in model.followLink(uri, currentModule: module, currentReference: reference) })
                         .tabItem { Text("Search") }
                 }
