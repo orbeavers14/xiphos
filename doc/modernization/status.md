@@ -77,6 +77,11 @@ Native per-tab annotation reset at `119e943` now clears only future search
 context/override inputs, preserving scope, reading options, results and historical
 export provenance. Focused search/export regression checks pass11/11.
 
+Native result activation at `3b5ff5c` now passes the actual hit module/reference
+through existing shared pane routing; the prior reference-only callback could
+reuse the wrong translation. Scoped two-Bible/two-commentary model checks pass. Final integrated Mac suite:
+168 passes +1 explicit index skip,169 registered (123.07 s), through `3b5ff5c`.
+
 Next bounded work: saved/advanced settings, remaining
 resource/style/semantic policies and workflow acceptance.
 Keep target-platform validation and other core services in view. No whole parity

@@ -14,11 +14,12 @@ image statistics; wrapper/traversal/resource guards and thin C/Swift adapters. O
 GTK3 behavior/reference remain the architecture. Native HTML destination controls now consume the same shared documents at `f89c585`.
 The only unrelated local file is `.DS_Store`; leave it untouched.
 
-Latest full Mac checkpoint at native batch `c17206e`: **167 passes + one explicit
-index skip** (168 registered, 142.55 s), with desktop access for isolated
-pasteboard tests. This includes new advanced-mode and ordered-batch model cases.
-Earlier source/sanitizer/portable evidence remains in the linked contracts and
-checkpoint sections below. No Fedora/MSVC, whole parity or release acceptance.
+Latest full Mac checkpoint at search activation `3b5ff5c`: **168 passes + one
+explicit index skip** (169 registered, 123.07 s), with desktop access for isolated
+pasteboard tests. This includes advanced modes, ordered batches, explicit partial
+exports, annotation reset and actual source-module activation. Earlier scoped
+sanitizer/portable evidence remains in linked contracts/checkpoints. No current
+Fedora/MSVC, whole parity or release acceptance.
 
 Current implementation: shared rich clipboard `b85c440` adds an optional bounded
 plain-text companion to complete HTML on the same FIFO job/resolved rows. Native
@@ -568,3 +569,33 @@ physical-control, actual-index, corpus/Fedora/MSVC or whole-parity claim.
 Next bounded work: complete saved/advanced search setup, resource/semantic policy,
 and independent target-platform/physical-input acceptance. Owner post-parity
 priorities are in the shared handoff. No hosted builds were dispatched.
+
+### Source-preserving search activation / full integration (2026-10-22)
+
+Implementation `3b5ff5c`, branch `modernization/search-result-activation`.
+Inspected legacy activation sends source module+key through its sword URI and
+routes Bible/commentary panes by source. Native SearchPane formerly sent only a
+reference to `chooseReference`, reusing the displayed translation. Both explicit
+Read and double-click callbacks now pass the owned SearchHit. ReaderModel uses
+existing shared paired routing, or the established standalone read path. No new
+URI parser, module family engine or core/C ABI/adapter/GTK3/Linux changes.
+
+Preview/model/export builds pass. Focused desktop-access
+`ctest --test-dir build/macos --output-on-failure -R 'reader_model_search_activation|reader_model_batch_search|reader_model_advanced_search|reader_model_search$|reader_model_commentary|reader_model_search.*export'`
+passes11/11 (24.43 s, fixtures included). Final complete desktop-access
+`ctest --test-dir build/macos --output-on-failure` passes **168 +1 explicit index
+skip**,169 registered,123.07 s. Link/whitespace checks pass. Logs: ignored
+`build/search-activation-{build,tests}.log` and
+`build/search-integration-full-tests.log`. SDK/compiler/configuration unchanged;
+no new sanitizer, actual-index, physical input, standalone-only corpus,
+alternate-versification or Fedora/MSVC acceptance.
+
+Original two-Bible/two-commentary fixtures verify the exact searched translation
+and commentary selections at one reference, paired Bible retention, another
+window's unchanged content, retained search generation/query draft, missing-module
+failure retention and closed-host guards. Existing reference-only history
+deduplication is unchanged. Native destination tests in the full suite use only
+named pasteboards/temp files. User data/general clipboard and workflows remain
+untouched; no hosted jobs. Next: complete saved/advanced search setup and remaining
+resource/semantic/corpus/platform acceptance. Owner enhancement priorities stay
+after parity; no whole parity or legacy retirement gate passes.

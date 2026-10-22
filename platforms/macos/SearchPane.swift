@@ -7,7 +7,7 @@ struct SearchPane: View {
     @ObservedObject var model: SearchModel
     let hostBusy: Bool
     let canRead: Bool
-    let onRead: (String) -> Void
+    let onRead: (SearchHit) -> Void
     let onLink: (String, String, String) -> Void
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -136,7 +136,7 @@ struct SearchPane: View {
                         }
                     }.accessibilityLabel("Search results").disabled(model.isSearching || model.isClearing || model.isExporting || hostBusy)
                     Button("Read in main pane") {
-                        if let hit = model.hits.first(where: { $0.id == model.selection }) { onRead(hit.reference) }
+                        if let hit = model.hits.first(where: { $0.id == model.selection }) { onRead(hit) }
                     }.disabled(model.isBusy || hostBusy || !canRead || model.selection == nil)
                 }.frame(minHeight: 90)
                 if let entry = model.preview, let source = model.previewSource {
@@ -152,7 +152,7 @@ struct SearchPane: View {
     }
     private func resultRow(_ hit: SearchHit) -> some View {
         Text(hit.reference).tag(hit.id).contentShape(Rectangle())
-            .onTapGesture(count: 2) { if canRead && !hostBusy { onRead(hit.reference) } }
+            .onTapGesture(count: 2) { if canRead && !hostBusy { onRead(hit) } }
     }
     private func export(all: Bool, save: Bool) {
         model.exportResults(allMatches: all, forClipboard: !save) { payload in

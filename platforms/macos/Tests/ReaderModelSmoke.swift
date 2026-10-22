@@ -267,6 +267,39 @@ struct ReaderModelSmoke {
         other.close(); try await worker.closeTab(tab); try await worker.closeTab(otherTab); await worker.shutdown()
         print("Native ordered batch, failure groups, actual preview/export identity, scope chaining, drafts and lifecycle passed")
     }
+    @MainActor static func searchActivation(root: String) async throws {
+        let library = URL(fileURLWithPath: root).appendingPathComponent("library %20 café").path
+        let worker = try CoreWorker(root: library)
+        let first = ReaderModel(worker: worker, startupError: nil), second = ReaderModel(worker: worker, startupError: nil)
+        try await idle(first); try await idle(second)
+        first.selection = "OSISText"; first.reference = "John 1:1"; first.read(); try await idle(first)
+        let otherModule = second.selection, otherReference = second.renderedReference, otherHTML = second.html
+        let search = first.search
+        search.searchMultipleModules = true; search.selectedModules = ["ThMLText", "ThMLNotes", "OSISText", "OSISNotes"]
+        search.expression = "PNG"; search.search(); try await searchIdle(search)
+        guard let source = search.batchResult, search.hits.count == 4 else { fatalError("Original multi-Bible/commentary activation source") }
+        search.expression = "Unsubmitted activation draft"; search.selectedModules = ["OSISText"]
+        first.openSearchResult(search.hits[0]); try await idle(first)
+        guard first.selection == "ThMLText", first.renderedReference == "John 1:8", first.canBack,
+              search.batchResult == source, search.expression == "Unsubmitted activation draft" else { fatalError("Bible activation uses captured result module/reference and preserves search state") }
+        first.openSearchResult(search.hits[2]); try await idle(first)
+        guard first.selection == "OSISText", first.renderedReference == "John 1:8" else { fatalError("Second Bible group opens its own translation at the same reference") }
+        first.openSearchResult(search.hits[1]); try await idle(first)
+        guard first.selection == "OSISText", first.commentarySelection == "ThMLNotes", first.commentaryEntry?.reference == "John 1:8" else { fatalError("Shared routing keeps Bible while selecting the searched commentary") }
+        first.openSearchResult(search.hits[3]); try await idle(first)
+        guard first.selection == "OSISText", first.commentarySelection == "OSISNotes", first.commentaryEntry?.reference == "John 1:8",
+              second.selection == otherModule, second.renderedReference == otherReference, second.html == otherHTML,
+              search.batchResult == source else { fatalError("Other commentary group and window isolation retain source identity") }
+        let keptHTML = first.html, keptCommentary = first.commentarySelection
+        first.openSearchResult(SearchHit(id: 999, group: 0, row: 0, module: "Missing", reference: "John 1:1")); try await idle(first)
+        guard first.html == keptHTML, first.commentarySelection == keptCommentary,
+              first.selection == "OSISText", !first.message.isEmpty else { fatalError("Failed source activation retains committed panes") }
+        first.close(); first.openSearchResult(search.hits[0])
+        try await Task.sleep(nanoseconds: 20_000_000)
+        guard first.selection == "OSISText", first.html == keptHTML else { fatalError("Closed result activation cannot publish") }
+        second.close(); await worker.shutdown()
+        print("Actual search source Bible/commentary activation, shared routing, failure retention and window isolation passed")
+    }
     @MainActor static func bookNoteNumbers(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let model = ReaderModel(worker: worker, startupError: nil)
@@ -1470,6 +1503,9 @@ struct ReaderModelSmoke {
             guard recorded.entries.last?.key == expectedKey else { fatalError("locale snapshot lifetime") }
             print("Native environment locale startup/click checks passed")
             return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--search-activation" {
+            try await searchActivation(root: CommandLine.arguments[2]); return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--batch-search" {
             try await batchSearch(root: CommandLine.arguments[2]); return
