@@ -26,6 +26,8 @@ class SearchGeneration {
 public:
   // Private authoritative visible row; no SDK traversal or output expansion.
   std::optional<std::pair<std::string,std::string>> visible_row(std::size_t group,std::size_t row) const;
+  // Plain committed request/result metadata only; no SDK traversal or mutable UI fields.
+  std::string export_header(std::size_t group) const;
   SearchGenerationInfo info() const noexcept{return info_;}
   SearchGenerationRead read(std::uint64_t id,std::size_t group,SearchReferenceSource source,const SearchLimits &limits) const;
 };

@@ -13,6 +13,7 @@ struct SearchTextExportRequest {
   std::string title="Search results"; // Plain UTF-8 label, caller may localize.
   bool include_scripture=false;
   std::size_t max_bytes=1024*1024;
+  bool include_search_context=false; // Explicit opt-in to committed per-group headers.
 };
 // All returned retained matches, not all requested modules. Source failures,
 // unattempted groups or cancellation require explicit partial-source acceptance.
@@ -22,6 +23,7 @@ struct SearchAllTextExportRequest {
   bool include_scripture=false;
   std::size_t max_bytes=1024*1024,max_rows=maximum_search_export_rows;
   bool allow_partial_source=false;
+  bool include_search_context=false;
 };
 enum class SearchExportStatus {ok=0,stale=1,invalid_selection=2,output_limit=3,cancelled=4,module_not_found=5,engine_error=6,capacity_exceeded=7,source_incomplete=8,unsupported_html=9};
 enum class SearchExportSelection {visible=0,all_retained=1};
@@ -65,6 +67,7 @@ struct SearchHtmlExportRequest {
   bool allow_partial_source=false; // Applies only to all_retained.
   SearchHtmlImageOptions images; // Explicit opt-in; existing callers reject resources.
   std::optional<std::size_t> plain_text_max_bytes; // Independent UTF-8 cap; no fallback by default.
+  bool include_search_context=false;
 };
 // Selection/assembly/rendering run on one owner. Output cap bounds final copied
 // bytes, not SDK temporary allocation/time. No destination write or history visit.

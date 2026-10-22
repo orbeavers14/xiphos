@@ -17,6 +17,16 @@ int main(int argc,char **argv){try{
   expected+=format_export_item(std::string(key)+" "+module,module,key,"",false,false);
  expected+='\n';
  check(all.status==SearchExportStatus::ok&&all.selection==SearchExportSelection::all_retained&&all.text==expected&&all.row_count==12&&all.generation.visible_results==1&&all.generation.retained_elements==12,"Complete export uses every retained ordered group beyond visible prefixes and final scope");
+ request.include_search_context=true;auto contextual=session.export_search_all_text(request);
+ check(contextual.status==SearchExportStatus::ok&&contextual.row_count==12&&
+  contextual.text.find("Search group 1\nModule: Text\nQuery: Original\nMode: Exact phrase")!=std::string::npos&&
+  contextual.text.find("Search group 2\nModule: Commentary")!=std::string::npos&&
+  contextual.text.find("Search group 3\nModule: Text")!=std::string::npos&&contextual.text.find("John 1:1 Text")!=std::string::npos,
+  "Optional all-retained headers preserve group identity and every first match");
+ request.max_bytes=contextual.text.size();check(session.export_search_all_text(request).text==contextual.text,"Exact text context byte budget");
+ --request.max_bytes;auto short_context=session.export_search_all_text(request);
+ check(short_context.status==SearchExportStatus::output_limit&&short_context.text.empty()&&!short_context.row_count,"One-byte-short context cannot leak partial text");
+ request.include_search_context=false;
  request.max_rows=12;request.max_bytes=expected.size();check(session.export_search_all_text(request).text==expected,"Exact aggregate rows and payload bytes accepted");
  request.max_rows=11;auto rows=session.export_search_all_text(request);
  check(rows.status==SearchExportStatus::output_limit&&rows.text.empty()&&!rows.row_count,"Clipped final group rejects all document");
@@ -27,11 +37,15 @@ int main(int argc,char **argv){try{
  auto failed=session.search_batch({{"Text","Original"},{"Missing","Original"},{"Commentary","Original"}},limits);
  request.generation=failed.generation.id;auto refused=session.export_search_all_text(request);
  check(refused.status==SearchExportStatus::source_incomplete&&refused.text.empty()&&refused.generation.failed_groups==1,"Complete retained keys do not imply every requested module succeeded");
- request.allow_partial_source=true;auto partial=session.export_search_all_text(request);
- check(partial.status==SearchExportStatus::ok&&partial.row_count==8&&partial.generation.failed_groups==1&&partial.generation.requested_count==3,"Explicit partial-source choice retains failure metadata and exports returned successful groups");
+ request.allow_partial_source=true;request.include_search_context=true;auto partial=session.export_search_all_text(request);
+ check(partial.status==SearchExportStatus::ok&&partial.row_count==8&&partial.generation.failed_groups==1&&partial.generation.requested_count==3&&partial.text.find("only returned matches are included")!=std::string::npos,"Explicit partial-source choice retains failure metadata and exports returned successful groups");
  auto errors=session.search_batch({{"Missing","Original"}},limits);request.generation=errors.generation.id;
  auto no_rows=session.export_search_all_text(request);
- check(no_rows.status==SearchExportStatus::ok&&!no_rows.row_count&&no_rows.text==request.title+"\n\n\n"&&no_rows.generation.failed_groups==1,"Explicit all-failed source acceptance returns labelled empty document, not old results");
+ check(no_rows.status==SearchExportStatus::ok&&!no_rows.row_count&&no_rows.text.find("only returned matches are included")!=std::string::npos&&no_rows.generation.failed_groups==1,"Explicit all-failed source acceptance returns labelled empty document, not old results");
+ request.include_search_context=false;
+ auto default_empty=session.export_search_all_text(request);
+ check(default_empty.status==SearchExportStatus::ok&&default_empty.text==request.title+"\n\n\n",
+  "Opting out preserves the original exact empty-document bytes even for accepted failed sources");
  auto exact=session.search_batch({{"Text","Original"},{"Commentary","NoMatchOriginalFixture"}},limits);
  request={};request.generation=exact.generation.id;request.max_rows=4;
  check(session.export_search_all_text(request).status==SearchExportStatus::ok&&session.export_search_all_text(request).row_count==4,"Empty later group at exhausted exact row budget is accepted");

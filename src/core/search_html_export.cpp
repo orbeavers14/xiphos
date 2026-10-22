@@ -26,7 +26,7 @@ SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest reques
   const bool embed_images=request.images.policy==SearchHtmlImagePolicy::embedded_static_png;
   detail::SearchExportRows rows;SearchHtmlExport out;
   static_cast<SearchExportMetadata &>(out)=detail::resolve_search_export_rows(search_generation_.get(),request.generation,
-    request.selection,request.rows,request.max_rows,request.allow_partial_source,control,rows);
+    request.selection,request.rows,request.max_rows,request.allow_partial_source,control,rows,request.include_search_context);
   out.includes_scripture=request.include_scripture;
   auto finish=[&](SearchExportStatus status,std::optional<std::size_t> row=std::nullopt){
     out.status=status;out.failed_row=row;progress.finish(status==SearchExportStatus::cancelled);return out;
@@ -45,9 +45,18 @@ SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest reques
   std::size_t used=prefix.size()+middle.size()+suffix.size();
   if(used>request.max_bytes)return finish(SearchExportStatus::output_limit);
   std::string body,css;std::array<bool,4> styles{};
+  std::optional<std::size_t> previous_group;
   for(std::size_t i=0;i<rows.size();++i){
     if(control&&control->cancel_requested())return finish(SearchExportStatus::cancelled,i);
-    const auto &row=rows[i];const auto description=row.second+" "+row.first;
+    const auto &row=rows[i];
+    if(row.context&&previous_group!=row.group){
+      const std::unique_ptr<gchar,decltype(&g_free)> context(g_markup_escape_text(row.context->data(),static_cast<gssize>(row.context->size())),g_free);
+      const auto header=std::string("<li class=\"xiphos-search-context\"><pre>")+context.get()+"</pre></li>";
+      if(header.size()>request.max_bytes-used)return finish(SearchExportStatus::output_limit,i);
+      used+=header.size();body+=header;
+    }
+    previous_group=row.group;
+    const auto description=row.second+" "+row.first;
     const auto empty=format_export_item(description,row.first,row.second,"",true,out.includes_scripture);
     if(empty.size()>request.max_bytes-used)return finish(SearchExportStatus::output_limit,i);
     std::string scripture;
@@ -91,7 +100,7 @@ SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest reques
     text=detail::render_search_export_text(request.title,*request.plain_text_max_bytes,rows,std::move(text),control,
       [&](const auto &module,const auto &key,std::size_t bytes){
         return reader_.read_stripped(module,key,module_engine_options(module),bytes);
-      },false);
+      },false,request.include_search_context);
     if(text.status!=SearchExportStatus::ok)return finish(text.status,text.failed_row);
     plain_text=std::move(text.text);
   }
