@@ -30,6 +30,7 @@
 #include <swmodule.h>
 #include "xiphos/core/dictionary.hpp"
 #include "xiphos/core/dictionary_history.hpp"
+#include "xiphos/core/module_abbreviations.hpp"
 #include <stdexcept>
 #include <stringmgr.h>
 #include <localemgr.h>
@@ -98,9 +99,7 @@ UErrorCode collator_status;
 
 extern gboolean valid_scripture_key;
 
-// these track together.  when one changes, so does the other.
-static std::map<string, string> abbrev_name2abbrev, abbrev_abbrev2name;
-typedef std::map<string, string>::iterator abbrev_iter;
+static xiphos::core::ModuleAbbreviations module_abbreviations;
 /* dic history nav */
 static xiphos::core::DictionaryHistory dictionary_history;
 static gboolean dict_history_navigating = FALSE;
@@ -123,11 +122,7 @@ static gboolean dict_history_navigating = FALSE;
 
 void main_add_abbreviation(const char *name, const char *abbreviation)
 {
-	// let's not be stupid about abbreviations chosen, ok?
-	if (!strchr(abbreviation, '(')) {
-		abbrev_name2abbrev[name] = abbreviation;
-		abbrev_abbrev2name[abbreviation] = name;
-	}
+	module_abbreviations.add(name, abbreviation);
 }
 
 /******************************************************************************
@@ -148,8 +143,7 @@ void main_add_abbreviation(const char *name, const char *abbreviation)
 
 void main_clear_abbreviations(void)
 {
-	abbrev_name2abbrev.clear();
-	abbrev_abbrev2name.clear();
+	module_abbreviations.clear();
 }
 
 /******************************************************************************
@@ -170,13 +164,7 @@ void main_clear_abbreviations(void)
 
 const char *main_name_to_abbrev(const char *name)
 {
-	if (name == NULL)
-		return NULL;
-	abbrev_iter it = abbrev_name2abbrev.find(name);
-	if (it != abbrev_name2abbrev.end()) {
-		return it->second.c_str();
-	}
-	return NULL;
+	return module_abbreviations.abbreviation_for(name);
 }
 
 /******************************************************************************
@@ -197,13 +185,7 @@ const char *main_name_to_abbrev(const char *name)
 
 const char *main_abbrev_to_name(const char *abbreviation)
 {
-	if (abbreviation == NULL)
-		return NULL;
-	abbrev_iter it = abbrev_abbrev2name.find(abbreviation);
-	if (it != abbrev_abbrev2name.end()) {
-		return it->second.c_str();
-	}
-	return NULL;
+	return module_abbreviations.name_for(abbreviation);
 }
 
 /******************************************************************************

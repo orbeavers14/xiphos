@@ -979,3 +979,26 @@ were left alone. No build/test process remains intentionally running.
 Stopping at96% of the5-hour window (78% weekly) to retain a clean handoff reserve;
 no reset/purchase used. All four implementation commits are already pushed.
 Final documentation checks cover whitespace and local Markdown link targets.
+
+
+## Abbreviation policy continuation (2026-10-22)
+
+Sequential fork `master`, after fresh fetch at `a112980`; unrelated `.DS_Store`
+preserved. Extract exact map registration/lookup into C++11 shared value policy,
+with retained GTK wrappers consuming it. Frozen baseline routines and actual
+wrapper extraction compile in a strict C++11 test. Native catalog registration,
+installed-ID collision exclusion and search resolution will follow separately;
+no native behavior or corpus/platform parity is claimed by the pure-map slice.
+Local checks pass1/1 each: strict C++11 normal Mac0.10s, ASan/UBSan0.49s,
+portable-on-Mac0.06s, native-disabled C++11 0.05s. Commands: configure each
+existing build (`platforms/macos`, standalone `src/core` sanitized, `platforms/linux`
+GTK runtime OFF); build `core_module_abbreviations_test`; run
+`ctest --test-dir <dir> --output-on-failure -R '^core_module_abbreviations$'`.
+Native-disabled configuration explicitly enables BUILD_TESTING and C++11.
+ASan uses `ASAN_OPTIONS=detect_leaks=0`; the test has no SDK/GLib dependency.
+Logs: ignored `build/module-abbreviations-policy-*`. Whitespace passes. No new
+full-suite/native behavior, full GTK3 application/desktop, Fedora/MSVC or parity
+acceptance. Same documented Mac/AppleClang environment. See
+[registry contract](module-abbreviations-workflows.md). Next: staged native
+catalog registration and copied resolution on the same owner.
+No hosted workflow/reset/purchase.
