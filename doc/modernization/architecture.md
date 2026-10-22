@@ -442,3 +442,15 @@ and explicit range providers stay unchanged. Owned actual source IDs flow throug
 retention, text/HTML/resource export and Mac/Linux preview/activation. No frontend
 map or second SDK manager is introduced. See
 [alias contract and remaining URI/parallel/BibleSync gates](module-abbreviations-workflows.md).
+
+
+URI module resolution uses the same bounded owner alias catalog as search.
+Single-passage unknown offered modules fall back to the exact installed main
+module, preserving original URI and pane roles through worker dispatch. Shared
+C++11 showRef dispatch uses exact requested membership/main fallback instead of
+URI aliases. Contextual installed Bible range URIs share the retained Bible/range
+classification and existing native reference service; native target/rendered
+previews cap the total ordered prefix at2000 and disclose limited results,
+including accessible link-only HTML. Legacy three-argument parsing remains
+per-range-only. No second frontend parser/navigation engine is introduced.
+See [URI boundaries and evidence](passage-uri-workflows.md).

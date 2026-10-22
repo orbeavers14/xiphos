@@ -15,12 +15,15 @@ int main(int argc,char **argv) {
    Reader reader(argv[1]); StudySession session(reader);
    (void)session.visit("OptionOther","John3:23");
    for(const auto *module:{"OptionTest","OptionOther"}) for(const auto *context:{"John3:16","Genesis1:1"})
-    for(const auto *expression:{"John3:16","John3:16-19;John3:16","16-18;20","John3:36-4:2","Jude","","not-a-reference","Gen1:1-Rev22:21"}) {
+    for(const auto *expression:{"John3:16","John3:16-19;John3:16","16-18;20","John3:36-4:2","Jude","","not-a-reference","Gen1:1-Rev22:21","Gen1:1-Gen50:26;Exod1:1-Exod40:38"}) {
      const auto targets=reader.reference_targets(module,expression,context);
      const auto full=reader.read_reference_list(module,expression,context);
      check(targets.context==full.context && targets.limited==full.limited && targets.skipped==full.skipped && targets.references.size()==full.entries.size(),"targets/full snapshots have matching context/order/guard metadata");
      for(std::size_t i=0;i<targets.references.size();++i) check(targets.references[i]==full.entries[i].reference,"each target matches existing rendered snapshot reference");
-     if(std::string(expression)=="Gen1:1-Rev22:21") check(targets.limited&&targets.references.size()==2000,"existing large-range cap retained without body payloads");
+     if(std::string(expression)=="Gen1:1-Rev22:21" || std::string(expression)=="Gen1:1-Gen50:26;Exod1:1-Exod40:38") check(targets.limited&&targets.references.size()==2000,"existing large-range cap retained without body payloads");
+     const auto html=display_reference_links(targets);
+     check((html.find("xc-reference-limit")!=std::string::npos)==targets.limited && html.find("Back to "+targets.context)!=std::string::npos,
+           "link-only preview discloses truncation and retains committed-context return link");
      ++comparisons;
     }
    EngineOptions enabled; enabled.strongs=true; enabled.footnotes=true;

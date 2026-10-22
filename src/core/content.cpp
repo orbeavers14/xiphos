@@ -32,6 +32,8 @@ std::string display_reference_list(const ReferenceList &references) {
 }
 std::string display_reference_links(const ParsedReferenceList &references) {
   std::string html;
+  if (references.limited)
+    html += "<p class=\"xc-reference-limit\" role=\"status\">This preview reached Xiphos's passage limit.</p>\n";
   for (const auto &reference : references.references)
     html += "<a href=\"" + attribute(passage_uri(reference)) + "\">" +
         attribute(reference) + ",</a><br/>";

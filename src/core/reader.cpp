@@ -311,7 +311,7 @@ ParsedReferenceList Reader::reference_targets(const std::string &id, const std::
   if (id.find('\0') != std::string::npos || expression.find('\0') != std::string::npos || context.find('\0') != std::string::npos)
     throw std::invalid_argument("Reference-list input contains NUL");
   std::lock_guard<std::mutex> lock(impl_->mutex);
-  return parse_reference_list(impl_->verse_module(id, context), expression, context);
+  return parse_reference_list(impl_->verse_module(id, context), expression, context, maximum_native_reference_list_entries);
 }
 ReferenceList Reader::reference_list_impl(const std::string &id, const std::string &expression,
                                          const std::string &context, const EngineOptions *options) {

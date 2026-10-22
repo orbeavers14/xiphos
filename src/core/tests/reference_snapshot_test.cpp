@@ -79,9 +79,9 @@ int main(int argc, char **argv) {
       const std::string multi="Gen1:1-Gen50:26;Exod1:1-Exod40:38";
       const auto boundedTargets=reader.reference_targets("OptionOther",multi,"John3:16");
       const auto boundedPreview=first.read_reference_list("OptionOther",multi,"John3:16");
-      check(!boundedTargets.limited && boundedTargets.references.size()>2000 && boundedPreview.limited && boundedPreview.entries.size()==2000 &&
-            boundedPreview.entries.back().reference==boundedTargets.references[1999] && first.history().cursor()==cursor,
-            "native rendered preview caps aggregate ordered list against original target prefix without history mutation");
+      check(boundedTargets.limited && boundedTargets.references.size()==2000 && boundedPreview.limited && boundedPreview.entries.size()==2000 &&
+            boundedPreview.entries.back().reference==boundedTargets.references.back() && first.history().cursor()==cursor,
+            "native target and rendered previews share aggregate ordered prefix without history mutation");
     }
     check(owned.entries.size() == 5 && owned.html.find("reference-5") != std::string::npos, "snapshot outlives reader");
     std::future<ReferenceList> accepted;

@@ -53,8 +53,12 @@ normal11/11, ASan/UBSan9/9, TSan9/9 and portable/Linux10/10 pass. Keep this
 separate from URI aliases. Complete retained sword_uri/preview callback oracle
 now passes18,436 traces across five configurations. Unknown single-passage URI
 module fallback to the exact installed main module is implemented with copied
-C/Swift and native Mac/Linux model checks. Range/anchor/keyed-family behavior
-remains separate; see [URI contract](passage-uri-workflows.md).
+C/Swift and native Mac/Linux model checks. Contextual installed Bible URI
+ranges now share the retained sidebar decision and use capped2000-reference
+previews (`fbfea5b`), with normal6/6, ASan/UBSan11/11, TSan11/11 and
+portable/Linux12/12 checks. Aggregate target/link-only disclosure follows the
+same policy. Unknown/non-Bible range navigation, anchors and keyed URI families
+remain separate; see [URI contract](passage-uri-workflows.md).
 Parallel/BibleSync and corpus/platform gates remain open.
 
 Current search checkpoint: shared attribute execution `572f539` / Swift `a83d3c4`,

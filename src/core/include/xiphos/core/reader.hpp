@@ -110,8 +110,9 @@ public:
   // Single-passage URI aliases resolve before unknown offered names fall back
   // to the exact installed current/main ID. No navigation or history mutation.
   PassageLink resolve_link(const std::string &current_module, const std::string &url);
-  // Owned targets/guard metadata from the existing parser, without rendering
-  // verse bodies or changing the module key/filter state.
+  // Owned targets/guard metadata, capped at 2000 total references with limited
+  // disclosure. Shared link-only HTML presents that flag. Does not render
+  // verse bodies or change the module key/filter state.
   ParsedReferenceList reference_targets(const std::string &module, const std::string &expression,
                                          const std::string &context);
   ReferenceList read_reference_list(const std::string &module, const std::string &expression,

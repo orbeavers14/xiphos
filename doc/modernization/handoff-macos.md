@@ -1248,3 +1248,19 @@ before first open. Dictionary/commentary URI ranges reject while commentary
 showRef list remains supported. ASan/UBSan11/11 (12.33s), TSan11/11
 (15.15s), portable/Linux12/12 (7.55s) pass.
 No new GUI URI click/current Fedora/MSVC/corpus or whole-feature acceptance.
+
+
+### Bounded native target/link-only previews (2026-10-22, active)
+
+Sequential master after URI ranges `fbfea5b`. Native Reader.reference_targets
+now uses the same2000-reference aggregate prefix cap as rendered snapshots.
+Shared display_reference_links discloses limited with an accessible status
+paragraph, preserving the committed-context Back link. This closes the explicit
+unrendered-path gap left at3458b0a without changing the retained three-argument
+parser/GTK callback policy. Existing non-limited HTML stays byte unchanged.
+Skipped counts cover the inspected prefix. Tests compare target/snapshot metadata
+and reference order across multiple individually sub-limit ranges and check
+disclosure/Back link; hover/normal/C/Swift transport checks remain scoped.
+Focused normal7/7 (3.49s), ASan/UBSan7/7 (7.27s), TSan7/7 and
+portable7/7 pass. Final complete regressions are in progress.
+No new GUI/corpus/current Fedora/MSVC or whole-feature acceptance.

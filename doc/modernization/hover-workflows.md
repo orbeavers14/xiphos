@@ -201,8 +201,8 @@ separate hover/module-family/fallback/range paths before native expansion.
 Native rendered reference previews now cap the aggregate ordered list at2000
 passages, with `limited` disclosure through existing C/Swift/native adapters.
 The explicit capped shared-parser overload preserves original unbounded-total
-three-argument/retained behavior. The unrendered target/link-only hover path is
-unchanged because its HTML-only presentation lacks limit metadata. Skipped counts
-for capped previews cover the inspected prefix; original expression/context stay
-available. This is a native preview transport bound, not complete URI range or
+three-argument/retained behavior. The subsequent link-only slice also caps native target snapshots and adds a
+shared accessible status paragraph when limited, retaining the committed-context
+Back link. Skipped counts for capped previews cover the inspected prefix; original
+expression/context stay available. This is a native preview transport bound, not complete URI range or
 legacy rendering acceptance.

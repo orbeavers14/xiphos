@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/content.hpp"
+#include "xiphos/core/reference_list.hpp"
 #include "xiphos/core/link.hpp"
 #include <iostream>
 #include <stdexcept>
@@ -130,6 +131,10 @@ int main() {
     require(referenceHTML.find("reference-1") != std::string::npos && referenceHTML.find("reference-2") != std::string::npos,
             "duplicate reference entries retain unique positions");
     require(display_reference_list({}).empty(), "empty reference-list fragment");
+    ParsedReferenceList clipped; clipped.context="John 3:16";clipped.references={"John 3:17"};clipped.limited=true;
+    const auto clippedHTML=display_reference_links(clipped);
+    require(clippedHTML.find("role=\"status\"")!=std::string::npos && clippedHTML.find("passage limit")!=std::string::npos &&
+            clippedHTML.find("Back to John 3:16")!=std::string::npos, "limited link preview includes accessible disclosure and original return context");
     std::cout << "Chapter presentation checks passed\n";
   } catch (const std::exception &e) { std::cerr << e.what() << '\n'; return 1; }
 }

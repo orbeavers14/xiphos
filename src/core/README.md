@@ -144,7 +144,8 @@ per range. Owned results report the guard (`limited`) and skipped elements.
 An explicit overload also caps the aggregate ordered prefix; zero preserves the
 original total policy. Native rendered snapshots use a2000-passage aggregate
 cap and disclose it through limited. Skipped counts cover the inspected prefix;
-unrendered reference_targets retains the original per-range-only policy.
+native reference_targets uses the same aggregate cap, with limited disclosure
+in shared link-only preview HTML. The legacy three-argument parser stays unchanged.
 The legacy `BackEnd::parse_verse_list` now delegates to it while preserving its
 current-key mutation and GList result. Characterization compiles both a frozen
 pre-extraction adapter and the actual current adapter without GTK, comparing

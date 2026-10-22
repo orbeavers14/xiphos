@@ -64,5 +64,6 @@ and Mac/Linux hit consumers. Full Mac/portable and scoped sanitizers are recorde
 in the [current contract](module-abbreviations-workflows.md). Typed single-passage URI
 consumption now reuses the catalog. showRef exact-module/main-module fallback
 shares retained C++11 dispatch with native contextual previews. Complete
-sword_uri callback characterization is next before expanding URI fallback/range
-or keyed-module families; broader families/corpus remain open.
+sword_uri callback characterization now supports unknown single-passage fallback
+and installed Bible contextual range previews with aggregate caps/disclosure.
+Unknown/non-Bible range navigation, anchors and keyed URI families remain open; broader families/corpus remain open.

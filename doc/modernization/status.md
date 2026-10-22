@@ -1,5 +1,17 @@
 # Modernization status and acceptance
 
+Current URI/reference continuation (2026-10-22): shared retained/native showRef
+fallback `4a71891`, complete URI callback oracle `d82bb6b`, unknown single-passage
+fallback `d4097b5`, aggregate native rendered preview bound `3458b0a`, and shared
+Bible URI range routing `fbfea5b`. Normal6/6, ASan/UBSan11/11, TSan11/11 and
+Mac-hosted portable/Linux12/12 check the range slice, including copied C/Swift
+and native models. Link-only native previews now also cap the aggregate and
+visibly disclose truncation. Final complete regressions are in progress.
+See [URI contract](passage-uri-workflows.md) and [Mac handoff](handoff-macos.md).
+Unknown/non-Bible range navigation, anchors, keyed URI families, physical GUI URI
+clicks and corpus/current Fedora/MSVC acceptance remain open. No whole parity
+group or retirement gate changes.
+
 Current alias-search checkpoint (2026-10-22): shared C++11 registry, bounded
 owned SDK catalog resolution and copied C/Swift transport now feed search
 execution. Raw requested tokens and explicit bounds providers remain unchanged;
