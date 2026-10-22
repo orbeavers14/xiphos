@@ -24,9 +24,9 @@ SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest reques
       return reader_.read_verse_inline_image(module,source,maximum);
     },control);
   const bool embed_images=request.images.policy==SearchHtmlImagePolicy::embedded_static_png;
-  detail::SearchExportRows rows;SearchHtmlExport out;
+  detail::SearchExportDocument document;const auto &rows=document.rows;SearchHtmlExport out;
   static_cast<SearchExportMetadata &>(out)=detail::resolve_search_export_rows(search_generation_.get(),request.generation,
-    request.selection,request.rows,request.max_rows,request.allow_partial_source,control,rows,request.include_search_context);
+    request.selection,request.rows,request.max_rows,request.allow_partial_source,control,document,request.include_search_context);
   out.includes_scripture=request.include_scripture;
   auto finish=[&](SearchExportStatus status,std::optional<std::size_t> row=std::nullopt){
     out.status=status;out.failed_row=row;progress.finish(status==SearchExportStatus::cancelled);return out;
@@ -45,6 +45,12 @@ SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest reques
   std::size_t used=prefix.size()+middle.size()+suffix.size();
   if(used>request.max_bytes)return finish(SearchExportStatus::output_limit);
   std::string body,css;std::array<bool,4> styles{};
+  if(!document.source_summary.empty()){
+    const std::unique_ptr<gchar,decltype(&g_free)> summary(g_markup_escape_text(document.source_summary.data(),static_cast<gssize>(document.source_summary.size())),g_free);
+    const auto header=std::string("<li class=\"xiphos-search-source\"><pre>")+summary.get()+"</pre></li>";
+    if(header.size()>request.max_bytes-used)return finish(SearchExportStatus::output_limit);
+    used+=header.size();body+=header;
+  }
   std::optional<std::size_t> previous_group;
   for(std::size_t i=0;i<rows.size();++i){
     if(control&&control->cancel_requested())return finish(SearchExportStatus::cancelled,i);
@@ -88,8 +94,8 @@ SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest reques
   }
   if(control&&control->cancel_requested())return finish(SearchExportStatus::cancelled);
   // Final owned allocation occurs before publishing any payload to the caller.
-  auto document=prefix+(css.empty()?std::string{}:"<style>"+css+"</style>")+middle+body+suffix;
-  if(document.size()!=used||document.size()>request.max_bytes)throw std::logic_error("HTML document accounting mismatch");
+  auto rendered=prefix+(css.empty()?std::string{}:"<style>"+css+"</style>")+middle+body+suffix;
+  if(rendered.size()!=used||rendered.size()>request.max_bytes)throw std::logic_error("HTML document accounting mismatch");
   if(control&&control->cancel_requested())return finish(SearchExportStatus::cancelled);
   std::optional<std::string> plain_text;
   if(request.plain_text_max_bytes){
@@ -97,7 +103,7 @@ SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest reques
     static_cast<SearchExportMetadata &>(text)=static_cast<const SearchExportMetadata &>(out);
     // Reuse the text formatter and configured SDK reads on the same owner and
     // already resolved rows. Neither representation is published on failure.
-    text=detail::render_search_export_text(request.title,*request.plain_text_max_bytes,rows,std::move(text),control,
+    text=detail::render_search_export_text(request.title,*request.plain_text_max_bytes,document,std::move(text),control,
       [&](const auto &module,const auto &key,std::size_t bytes){
         return reader_.read_stripped(module,key,module_engine_options(module),bytes);
       },false,request.include_search_context);
@@ -106,6 +112,6 @@ SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest reques
   }
   if(control&&control->cancel_requested())return finish(SearchExportStatus::cancelled);
   out.plain_text=std::move(plain_text);
-  out.html=std::move(document);out.row_count=rows.size();out.images=images.statistics();progress.finish(false);return out;
+  out.html=std::move(rendered);out.row_count=rows.size();out.images=images.statistics();progress.finish(false);return out;
 }
 }

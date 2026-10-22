@@ -41,10 +41,10 @@ int main(int argc,char **argv){try{
  request.generation=failed.generation.id;auto refused=session.export_search_all_text(request);
  check(refused.status==SearchExportStatus::source_incomplete&&refused.text.empty()&&refused.generation.failed_groups==1,"Complete retained keys do not imply every requested module succeeded");
  request.allow_partial_source=true;request.include_search_context=true;auto partial=session.export_search_all_text(request);
- check(partial.status==SearchExportStatus::ok&&partial.row_count==8&&partial.generation.failed_groups==1&&partial.generation.requested_count==3&&partial.text.find("only returned matches are included")!=std::string::npos,"Explicit partial-source choice retains failure metadata and exports returned successful groups");
+ check(partial.status==SearchExportStatus::ok&&partial.row_count==8&&partial.generation.failed_groups==1&&partial.generation.requested_count==3&&partial.text.find("only returned matches are included")!=std::string::npos&&partial.text.find("Group 2\nModule: Missing\nQuery: Original\nStatus: failed (module not found)")!=std::string::npos,"Explicit partial-source choice retains failure metadata and exports returned successful groups");
  auto errors=session.search_batch({{"Missing","Original"}},limits);request.generation=errors.generation.id;
  auto no_rows=session.export_search_all_text(request);
- check(no_rows.status==SearchExportStatus::ok&&!no_rows.row_count&&no_rows.text.find("only returned matches are included")!=std::string::npos&&no_rows.generation.failed_groups==1,"Explicit all-failed source acceptance returns labelled empty document, not old results");
+ check(no_rows.status==SearchExportStatus::ok&&!no_rows.row_count&&no_rows.text.find("Status: failed (module not found)")!=std::string::npos&&no_rows.text.find("only returned matches are included")!=std::string::npos&&no_rows.generation.failed_groups==1,"Explicit all-failed source acceptance returns labelled empty document, not old results");
  request.include_search_context=false;
  auto default_empty=session.export_search_all_text(request);
  check(default_empty.status==SearchExportStatus::ok&&default_empty.text==request.title+"\n\n\n",
@@ -52,6 +52,11 @@ int main(int argc,char **argv){try{
  auto exact=session.search_batch({{"Text","Original"},{"Commentary","NoMatchOriginalFixture"}},limits);
  request={};request.generation=exact.generation.id;request.max_rows=4;
  check(session.export_search_all_text(request).status==SearchExportStatus::ok&&session.export_search_all_text(request).row_count==4,"Empty later group at exhausted exact row budget is accepted");
+ request.include_search_context=true;
+ const auto empty_group=session.export_search_all_text(request);
+ check(empty_group.status==SearchExportStatus::ok&&empty_group.row_count==4&&
+  empty_group.text.find("Group 2\nModule: Commentary\nQuery: NoMatchOriginalFixture\nStatus: completed\nSDK result elements: 0")!=std::string::npos,
+  "Successful zero-match source groups survive export independently of result rows");
  auto empty=session.search_module({"Text","NoMatchOriginalFixture"});request.generation=empty.generation.id;
  check(session.export_search_all_text(request).status==SearchExportStatus::ok&&session.export_search_all_text(request).row_count==0,"Successfully empty search has complete empty export");
  const auto scope=session.last_search_scope();session.clear_search_text_options();

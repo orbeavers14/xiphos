@@ -38,6 +38,14 @@ checks. Includes advanced modes/batches, partial export/reset and source-preserv
 activation through existing core routing. Current target-platform, actual-index
 and physical/corpus acceptance remain independent.
 
+Shared context exports now disclose every requested source group's disposition,
+including zero-row failures/empty/unattempted requests, at `e2e53ee1`. Source
+counts at `d54aec4d` distinguish SDK elements from bounded visible previews.
+Latest full Mac suite:168 passes +1 explicit index skip,169 registered,150.14 s;
+ASan/UBSan12/12 and portable core/GTK models27/27 on Mac. Defaults and public
+layouts remain unchanged; see [context contract](export-context-workflows.md).
+Next shared slice is read-only legacy named search-list import/saved setup.
+
 Prior full integrated shared HTML image checkpoint: **164 Mac passes + 1 index skip**
 (165 registered, 137.38 s), core/C `4fecce8` and Swift `374147d`, with desktop
 access for the isolated pasteboard test. Focused normal/ASan/UBSan/TSan/portable

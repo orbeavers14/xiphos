@@ -126,5 +126,19 @@ int main(int argc,char **argv){try{
   auto saved=worker.search_module(b,{"Text","Original"}).get();drained=worker.read_search_generation(b,saved.generation.id,0);
  }
  check(drained.get().result->references==all&&held.result->references==all,"Copied generation results drain and survive worker/SDK lifetime");
+ {
+  std::vector<SearchQuery> queries{{"Missing","one"},{"Invalid","two"},{"Engine","three"},{"Empty","four"},{"Stopped","five"},{"Unattempted","six"}};
+  SearchGenerationBuilder builder(1,queries,{});
+  builder.append(0,std::nullopt,SearchBatchFailure::module_not_found,{});
+  builder.append(1,std::nullopt,SearchBatchFailure::invalid_request,{});
+  builder.append(2,std::nullopt,SearchBatchFailure::engine_error,{});
+  SearchResult empty;empty.requested=queries[3];builder.append(3,empty,SearchBatchFailure::none,{});
+  SearchResult stopped;stopped.requested=queries[4];stopped.cancelled=true;builder.append(4,stopped,SearchBatchFailure::none,{});
+  const auto summary=builder.finish(true)->export_source_summary();
+  check(summary.find("Status: failed (module not found)")!=std::string::npos&&summary.find("Status: failed (invalid request)")!=std::string::npos&&
+   summary.find("Status: failed (engine error)")!=std::string::npos&&summary.find("Status: not executed (empty scope)")!=std::string::npos&&
+   summary.find("Status: stopped")!=std::string::npos&&summary.find("Group 6\nModule: Unattempted\nQuery: six\nStatus: not attempted")!=std::string::npos,
+   "Copied source summary distinguishes every no-row disposition, ordered request identity and unattempted suffix without SDK access");
+ }
  std::cout<<"Retained complete search generations, aggregate caps, stale reads, ordering, cancellation and FIFO ownership passed\n";return 0;
  }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}

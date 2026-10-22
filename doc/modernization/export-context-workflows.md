@@ -21,8 +21,8 @@ the original SDK result-element count, original visible-reference count and
 whether that preview was limited. These are source counts, independent of the
 exported row count: duplicate selected rows do not increase them, and an
 all-retained export can include groups with no visible preview references. SDK
-elements are not a promise about the number of verses in expanded range keys. Named annotation
-policy is not a claim that every module implements every SDK filter. With no
+elements are not a promise about the number of verses in expanded range keys.
+Named annotation policy is not a claim that every module implements every SDK filter. With no
 captured policy the header reports unchanged SDK state, not invented defaults.
 These are provenance labels, not a complete portable saved-search serializer;
 previous-result keys and ambient SDK filter values are not reconstructed.
@@ -31,13 +31,19 @@ Distinct batch groups remain distinct even when their module names match.
 Visible selections preserve caller row order and duplicates; reentering a group
 repeats its header. All-retained selection preserves original group/key order.
 Headers never consume a result row or omit the first match (unlike the retained
-legacy advanced-export orchestration). A header emits only for a group with
-selected rows; empty/failed/unattempted groups get no empty header. Source
-metadata retains those dispositions. Context-enabled plain text also labels an
-incomplete/stopped aggregate source, including accepted sources with no rows;
+legacy advanced-export orchestration). A per-row header emits only for a group
+with selected rows. An opt-in source summary precedes those headers and lists every original requested group, in order,
+with its module, original query and disposition: completed (including zero
+matches), stopped, not executed because the last scope was empty, failed with a
+typed reason, or not attempted. Successful groups also report SDK element counts.
+The summary survives completely empty exports and includes original duplicate
+module occurrences. It describes the source search, not an implication that
+every source match was selected for export. Context-enabled plain text also
+labels an incomplete/stopped aggregate source, including accepted sources with no rows;
 HTML retains its existing incomplete-source warning.
 
-Headers are copied once per emitting group, shared by internal rows and limited
+The source summary is copied once per export; headers are copied once per
+emitting group, shared by internal rows and limited
 by existing bounded search requests/batch count. No SDK key traversal, rendering,
 search, filter mutation or history visit occurs while building header strings.
 Actual module/key rows, output row counts and source metadata keep their existing
@@ -47,9 +53,8 @@ All header/warning bytes count against the existing final UTF-8 document limits.
 Exact limits succeed; one-byte-short limits return empty failed results. A rich
 HTML/text pair still succeeds or fails together. Every caller-supplied metadata
 field is escaped for HTML; plain text preserves original UTF-8 bytes. Labels are
-currently English, as in the existing initial document policy. Localization,
-empty/failure group sections and full advanced/native workflow acceptance remain
-open.
+currently English, as in the existing initial document policy. Localization and
+full advanced/native workflow acceptance remain open.
 
 ## C, Swift and native consumption
 
@@ -80,6 +85,5 @@ fallback. The unavailable real SDK index remains an explicit skip, not acceptanc
 C/Swift/native option and destination/model checks now exercise default and
 opted-in paths, strict C flags and captured-choice preservation. No new physical
 menu/window/visual acceptance is claimed. Do not rebuild historical headers in a
-frontend or silently enable the new format for existing callers. Next are richer
-empty/failure group sections, localization and remaining resource/semantic policy. Actual corpus,
+frontend or silently enable the new format for existing callers. Next are localization, saved advanced setup and remaining resource/semantic policy. Actual corpus,
 HTML/CSP/visual, rich-client paste, Fedora/MSVC and whole-parity gates remain.
