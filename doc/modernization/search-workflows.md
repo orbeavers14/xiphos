@@ -387,3 +387,19 @@ Named-pasteboard/temp-file checks verify exact disclosed HTML/text values. Posit
 partial output, default refusal, missing-details refusal, choice capture/reset,
 stale and capacity refusal are exercised. Full-suite evidence remains the prior
 batch checkpoint; no new complete-suite or physical/corpus/platform acceptance.
+
+## Native search annotation reset (2026-10-22)
+
+Implementation `119e943`: Reset search annotations uses the existing
+`CoreWorker.clearSearchTextOptions` command on the current tab. On confirmed
+success, it clears the native override inputs for future requests. It does not
+clear last-result scope, retained results/generation, displayed preview, reading
+preferences or another tab's search context. Existing retained export headers
+continue to describe the original search-time policy. A later phrase request
+observes the cleared core context; reset does not invent an all-Off policy.
+
+The existing nonblocking busy/revision/close lifecycle applies. Failed resets
+retain native input choices; a closed model cannot publish late reset completion.
+Focused Mac regressions pass11/11. See the Mac handoff for exact command/results;
+physical UI, saved settings, actual indexed execution and full platform/corpus
+acceptance remain pending. No new shared API or independent state engine is added.

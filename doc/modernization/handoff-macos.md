@@ -542,3 +542,29 @@ corpus or Fedora/MSVC acceptance. Shared SDK/compiler/configuration unchanged.
 No hosted jobs or user-data/general-clipboard changes. Next bounded work:
 explicit search-annotation-context reset, complete saved/advanced setup and
 remaining resource/semantic policies. No whole parity or retirement acceptance.
+
+### Search annotation context reset checkpoint (2026-10-22)
+
+Implementation `119e943`, branch `modernization/native-search-context-reset`.
+Reset search annotations submits the existing per-tab clear command through the
+shared FIFO worker. Native override inputs reset only on success. Scope, visible
+and retained results, previews, original export provenance, current reading
+preferences and other tabs' search context remain unchanged. Failed/closed
+operations retain input/publication guards; the UI stays nonblocking. No shared
+core/ABI/adapter/GTK3/Linux or workflow changes.
+
+Preview/model/export builds pass. Final desktop-access
+`ctest --test-dir build/macos --output-on-failure -R 'reader_model_batch_search|reader_model_advanced_search|reader_model_search$|swift_attribute_search_adapter|swift_search_text_options|swift_search_batch|reader_model_search.*export'`
+passes11/11 (20.64 s). Whitespace/link checks pass. Logs: ignored
+`build/search-reset-{build,tests}.log`. Tests seed an independent tab's context
+and active reading preferences, verify old snapshot/header/scope/draft retention,
+check the next phrase's cleared context, and exercise missing-tab failure and
+pending-close suppression. Destinations remain isolated named pasteboards/temp
+files; user data/general clipboard are untouched.
+
+The latest complete167-pass+1-index-skip suite remains the batch checkpoint
+`c17206e`. This focused native reset slice is not a new full-suite/sanitizer,
+physical-control, actual-index, corpus/Fedora/MSVC or whole-parity claim.
+Next bounded work: complete saved/advanced search setup, resource/semantic policy,
+and independent target-platform/physical-input acceptance. Owner post-parity
+priorities are in the shared handoff. No hosted builds were dispatched.

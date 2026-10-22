@@ -73,7 +73,11 @@ acceptance flag, requires shared context disclosure and resets on new results.
 Focused native/adapters/destination checks pass11/11; stale and capacity refusal
 remain enforced.
 
-Next bounded work: search-context reset and saved/advanced settings, remaining
+Native per-tab annotation reset at `119e943` now clears only future search
+context/override inputs, preserving scope, reading options, results and historical
+export provenance. Focused search/export regression checks pass11/11.
+
+Next bounded work: saved/advanced settings, remaining
 resource/style/semantic policies and workflow acceptance.
 Keep target-platform validation and other core services in view. No whole parity
 group, release or legacy retirement accepted: **0/38 groups, 0/3 release-ready apps**.
