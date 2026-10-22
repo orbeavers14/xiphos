@@ -315,7 +315,7 @@ gboolean tick(gpointer data) {
   if (sidebar_identity != app->sidebar_identity) {
     app->sidebar_identity = sidebar_identity;
     webkit_web_view_load_html(app->sidebar_view, document(sidebar.html).c_str(), "xiphos-preview://study/");
-    const auto metadata = app->model->showing_references() ? std::to_string(sidebar.count) + " passages" + (sidebar.limited ? " (range limit reached)" : "") + (sidebar.skipped ? " — unresolved: " + std::to_string(sidebar.skipped) : "") : sidebar.reference;
+    const auto metadata = app->model->showing_references() ? std::to_string(sidebar.count) + " passages" + (sidebar.limited ? " (preview limit reached)" : "") + (sidebar.skipped ? " — unresolved: " + std::to_string(sidebar.skipped) : "") : sidebar.reference;
     gtk_label_set_text(GTK_LABEL(app->preview_metadata), metadata.c_str());
   }
   const auto &information = app->model->information(); const auto information_identity = information.module + information.reference + information.html;

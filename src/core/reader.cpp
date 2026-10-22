@@ -317,7 +317,7 @@ ReferenceList Reader::reference_list_impl(const std::string &id, const std::stri
                                          const std::string &context, const EngineOptions *options) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto &module = impl_->verse_module(id, context);
-  const auto parsed = parse_reference_list(module, expression, context);
+  const auto parsed = parse_reference_list(module, expression, context, maximum_native_reference_list_entries);
   struct RestoreKey {
     sword::SWModule &module;
     std::string reference;

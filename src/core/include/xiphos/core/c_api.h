@@ -1038,7 +1038,10 @@ void xc_chapter_release(xc_chapter *chapter);
  * permits, and records a successful visit. -1/+1 only; no wrap at Bible ends. */
 xc_status xc_session_navigate_chapter(xc_session *session, const char *module,
                                      const char *reference, int direction, xc_entry **out);
-/* Snapshot strings are owned by their result until release; NULL -> NULL.
+/* Rendered reference previews retain at most 2000 passages across all ranges
+ * and singles; limited reports an incomplete ordered prefix. skipped counts
+ * cover the inspected prefix. Original expression/context remain copied.
+ * Snapshot strings are owned by their result until release; NULL -> NULL.
  * Invalid list indexes -> NULL; NULL count/limit/skipped -> zero. */
 size_t xc_reference_list_count(const xc_reference_list *references);
 const char *xc_reference_list_module(const xc_reference_list *references);

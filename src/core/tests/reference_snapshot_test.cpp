@@ -76,6 +76,12 @@ int main(int argc, char **argv) {
       check(rejected && first.read_entry("OptionOther", "John3:16").html == expected[3][0].html, "failed list preserves settings");
       const auto guarded = first.read_reference_list("OptionOther", "Gen1:1-Rev22:21", "John3:16");
       check(guarded.limited && guarded.entries.size() == 2000, "rendered snapshots propagate legacy guard metadata");
+      const std::string multi="Gen1:1-Gen50:26;Exod1:1-Exod40:38";
+      const auto boundedTargets=reader.reference_targets("OptionOther",multi,"John3:16");
+      const auto boundedPreview=first.read_reference_list("OptionOther",multi,"John3:16");
+      check(!boundedTargets.limited && boundedTargets.references.size()>2000 && boundedPreview.limited && boundedPreview.entries.size()==2000 &&
+            boundedPreview.entries.back().reference==boundedTargets.references[1999] && first.history().cursor()==cursor,
+            "native rendered preview caps aggregate ordered list against original target prefix without history mutation");
     }
     check(owned.entries.size() == 5 && owned.html.find("reference-5") != std::string::npos, "snapshot outlives reader");
     std::future<ReferenceList> accepted;
@@ -121,9 +127,9 @@ int main(int argc, char **argv) {
       auto *empty = xc_request_take_reference_list(request); xc_request_release(request);
       check(empty && xc_reference_list_count(empty) == 0 && !xc_reference_list_entry_reference(empty, 0) && std::string(xc_reference_list_html(empty)).empty(), "C empty snapshot");
       xc_reference_list_release(empty);
-      check(xc_worker_read_reference_list(worker, tab, "OptionOther", "Gen1:1-Rev22:21", "John3:16", &request) == XC_OK && wait(request) == XC_OK, "C guarded list");
+      check(xc_worker_read_reference_list(worker, tab, "OptionOther", "Gen1:1-Gen50:26;Exod1:1-Exod40:38", "John3:16", &request) == XC_OK && wait(request) == XC_OK, "C guarded list");
       auto *guarded = xc_request_take_reference_list(request); xc_request_release(request);
-      check(guarded && xc_reference_list_limited(guarded) && xc_reference_list_count(guarded) == 2000, "C guard metadata"); xc_reference_list_release(guarded);
+      check(guarded && xc_reference_list_limited(guarded) && xc_reference_list_count(guarded) == 2000, "C aggregate preview guard metadata"); xc_reference_list_release(guarded);
       check(xc_worker_read_reference_list(worker, tab, "Missing", expression.c_str(), "John3:16", &request) == XC_OK && wait(request) == XC_MODULE_NOT_FOUND &&
             !xc_request_take_reference_list(request), "C missing module error"); xc_request_release(request);
       check(xc_worker_read_reference_list(worker, tab, nullptr, "16", "John3:16", &request) == XC_INVALID_ARGUMENT && !request, "C null module rejected");

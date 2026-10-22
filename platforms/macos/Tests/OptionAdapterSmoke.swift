@@ -101,6 +101,9 @@ struct OptionAdapterSmoke {
               references.entries.count == 3, references.entries[0].reference == "John 3:16",
               references.entries[2].reference == "John 3:16", references.entries[0].html.contains("3056"),
               references.html.contains("reference-3"), !references.limited else { fatalError("Swift reference-list metadata/options/order") }
+        let boundedReferences = try await worker.readReferenceList(tab: tab, module: "OptionTest", expression: "Gen1:1-Gen50:26;Exod1:1-Exod40:38", context: "John3:16")
+        guard boundedReferences.entries.count == 2000, boundedReferences.limited,
+              boundedReferences.entries[0].reference == "Genesis 1:1" else { fatalError("Swift aggregate reference preview cap and disclosure") }
         let emptyReferences = try await worker.readReferenceList(tab: tab, module: "OptionTest", expression: "", context: "John3:16")
         guard emptyReferences.entries.isEmpty, emptyReferences.html.isEmpty else { fatalError("Swift empty reference list") }
         do {

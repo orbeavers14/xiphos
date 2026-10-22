@@ -1197,3 +1197,30 @@ C11 header syntax, whitespace and local Markdown targets checked. Same
 environment/instrumentation limits as prior evidence. No full regression repeat
 for this bounded change; complete prior selections/rechecks are recorded above.
 No range/anchor/keyed-family expansion or GUI/full-platform/corpus acceptance.
+
+
+### Aggregate native reference preview bound (2026-10-22, active)
+
+Sequential master after published `d4097b5`. The owner explicitly authorized
+checked pushes to the public fork's master; the previously blocked commits
+e0e9a86/4a71891/d82bb6b/d4097b5 were published normally after ancestor validation.
+No hosted builds or reset credits were used.
+
+Add an explicit aggregate-cap overload to the shared C++11 reference parser,
+preserving the existing three-argument symbol and retained per-range-only policy.
+Native rendered reference snapshots pass a2000 total cap across all ranges and
+singles; ordered duplicates/prefix, original expression/context and limited flag
+are preserved. skipped counts cover the inspected prefix. Exact cap does not
+claim truncation unless another reference would be appended. Existing unrendered
+reference_targets retains its original policy, avoiding silent truncation in the
+link-only hover HTML path that lacks a guard transport. That separate path is
+not claimed bounded by this change. Native UI limit labels now cover aggregate
+previews; no frontend parsing/selection engine is introduced.
+
+Normal5/5 (2.55s) including existing C and Swift copied limited metadata; parser
+checks compare bounded duplicate/order prefixes against original complete output
+and two individually sub2000 ranges totaling more than2000. Snapshot tests verify
+actual content/source prefix, per-tab history isolation and original unrendered
+targets. ASan/UBSan7/7 (7.47s), TSan7/7 (8.94s), portable7/7
+(3.28s), C11 header syntax and whitespace checks pass. New URI range routing is next,
+not enabled by this cap. Same platform/instrumentation/full-acceptance limits.

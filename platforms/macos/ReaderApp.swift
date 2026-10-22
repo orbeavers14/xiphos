@@ -1034,7 +1034,7 @@ struct ReaderWindow: View {
                                 }
                             }.padding(8)
                             if references.limited {
-                                Text("Some ranges reached Xiphos's preview limit.").font(.caption).padding(.horizontal, 8)
+                                Text("This preview reached Xiphos's passage limit.").font(.caption).padding(.horizontal, 8)
                             }
                             if references.skipped > 0 {
                                 Text("\(references.skipped) references could not be resolved.").font(.caption).padding(.horizontal, 8)

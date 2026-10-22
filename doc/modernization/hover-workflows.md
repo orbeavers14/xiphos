@@ -196,3 +196,13 @@ for actual checks and limitations.
 
 The [complete URI callback contract](passage-uri-workflows.md) now records the
 separate hover/module-family/fallback/range paths before native expansion.
+
+
+Native rendered reference previews now cap the aggregate ordered list at2000
+passages, with `limited` disclosure through existing C/Swift/native adapters.
+The explicit capped shared-parser overload preserves original unbounded-total
+three-argument/retained behavior. The unrendered target/link-only hover path is
+unchanged because its HTML-only presentation lacks limit metadata. Skipped counts
+for capped previews cover the inspected prefix; original expression/context stay
+available. This is a native preview transport bound, not complete URI range or
+legacy rendering acceptance.

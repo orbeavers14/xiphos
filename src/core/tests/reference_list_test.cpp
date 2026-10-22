@@ -7,6 +7,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <memory>
+#include <algorithm>
 #include <iostream>
 #include <stdexcept>
 using namespace sword;
@@ -75,6 +76,16 @@ int main(int argc, char **argv) {
         }
       }
     }
+    const auto full = xiphos::core::parse_reference_list(module, "John3:16-18;16;17", "John3:16");
+    for (std::size_t limit : {1u,3u,4u,5u,6u}) {
+      const auto bounded = xiphos::core::parse_reference_list(module, "John3:16-18;16;17", "John3:16", limit);
+      check(bounded.references == std::vector<std::string>(full.references.begin(),full.references.begin()+std::min(limit,full.references.size())) &&
+            bounded.limited == (full.references.size()>limit), "aggregate bound retains exact ordered duplicate prefix and exact-cap disclosure");
+    }
+    const auto across = xiphos::core::parse_reference_list(module, "Gen1:1-Gen50:26;Exod1:1-Exod40:38", "John3:16");
+    const auto capped = xiphos::core::parse_reference_list(module, "Gen1:1-Gen50:26;Exod1:1-Exod40:38", "John3:16", 2000);
+    check(across.references.size()>2000 && !across.limited && capped.references.size()==2000 && capped.limited &&
+          std::equal(capped.references.begin(),capped.references.end(),across.references.begin()), "aggregate bound spans separate ranges below each retained per-range guard");
     key->setVersificationSystem("KJVA");
     const auto alternate = xiphos::core::parse_reference_list(module, "Tob.1.1-Tob.1.3", "John 3:16");
     check(alternate.references.size() == 3 && alternate.references[0].find("Tobit") != std::string::npos,

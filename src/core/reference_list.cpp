@@ -8,7 +8,11 @@
 #include <stdexcept>
 namespace xiphos { namespace core {
 ParsedReferenceList parse_reference_list(sword::SWModule &module, const std::string &list,
-					const std::string &context)
+                                        const std::string &context) {
+  return parse_reference_list(module, list, context, 0);
+}
+ParsedReferenceList parse_reference_list(sword::SWModule &module, const std::string &list,
+					const std::string &context, std::size_t maximum_total)
 {
 	auto *key = dynamic_cast<sword::VerseKey *>(module.getKey());
 	if (!key || context.empty())
@@ -33,6 +37,10 @@ ParsedReferenceList parse_reference_list(sword::SWModule &module, const std::str
 				sword::VerseKey walker(*verse);
 				int guard = 0;
 				while ((walker.compare(bound) <= 0) && !walker.popError() && (guard++ < 2000)) {
+					if (maximum_total && result.references.size() == maximum_total) {
+						result.limited = true;
+						return result;
+					}
 					result.references.emplace_back(walker.getText());
 					walker.increment(1);
 				}
@@ -40,6 +48,10 @@ ParsedReferenceList parse_reference_list(sword::SWModule &module, const std::str
 					result.limited = true;
 				continue;
 			}
+		}
+		if (maximum_total && result.references.size() == maximum_total) {
+			result.limited = true;
+			return result;
 		}
 		result.references.emplace_back(element->getText());
 	}
