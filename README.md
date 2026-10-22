@@ -35,12 +35,14 @@ Core commentary snapshots include owned headings and shared display preferences.
 The native commentary pane sits above dictionary content; complete heading transformations, detached
 windows and broader visual/corpus acceptance remain pending.
 
-The current full macOS suite passes 164 tests with one explicit unavailable-index
-skip (165 registered). Shared HTML export now supports explicitly requested,
+The latest full macOS suite passes 165 tests with one explicit unavailable-index
+skip (166 registered). Shared HTML export now supports explicitly requested,
 bounded static PNG images through the same C++/C/Swift implementation. Native
 Mac HTML save/copy consumes those complete documents; Copy now supplies a shared,
 bounded plain-text companion through the same FIFO job and resolved selection.
-See the [rich clipboard contract](doc/modernization/rich-clipboard-workflows.md). Focused
+See the [rich clipboard contract](doc/modernization/rich-clipboard-workflows.md).
+Optional search details also use committed core metadata through C/Swift/native
+controls, preserving the default export format. Focused
 export checks pass on normal/sanitizer and portable-core configurations on Mac;
 current Fedora/MSVC and full corpus/visual acceptance remain separate. Detailed
 results, SDK limitations and prior platform evidence live in the status ledger.

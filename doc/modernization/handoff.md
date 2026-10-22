@@ -48,10 +48,10 @@ Native HTML Copy advertises both representations; Save remains HTML-only.
 Final Mac165 passes +1 index skip; ASan/UBSan11/11 and portable core/GTK models26/26
 on Mac. Newer XML2.15.4 full-suite compatibility remains a separate gate. See
 [contract and limits](rich-clipboard-workflows.md) and current evidence in the
-[Mac handoff](handoff-macos.md). C++ committed-context headers are now implemented at `66196e3`;
-[contract](export-context-workflows.md) defines their opt-in/default and remaining
-C/Swift/native consumption. Next are transport/controls and remaining resource
-policies; current Fedora/MSVC and actual rich-client interoperability remain open.
+[Mac handoff](handoff-macos.md). Committed-context headers are implemented in C++ at `66196e3`, with additive
+C/Swift/native options at `5831417`; [contract](export-context-workflows.md) defines
+the opt-in/default and remaining acceptance gates. Next are remaining resource
+policies and advanced search controls; current Fedora/MSVC and actual rich-client interoperability remain open.
 
 The private HTML image cache at `63ce703` is now connected to shared document
 export through explicit C++/C/Swift static PNG options. Aggregate bounds, actual

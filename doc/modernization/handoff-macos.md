@@ -25,9 +25,8 @@ model evidence remains 121 passes + one skip (122 registered, 92.46 s at
 Current implementation: shared rich clipboard `b85c440` adds an optional bounded
 plain-text companion to complete HTML on the same FIFO job/resolved rows. Native
 Copy consumes both copied values; Save stays HTML-only. See
-[contract](rich-clipboard-workflows.md) and latest checks below. Next bounded work:
-C/Swift/native consumption of optional committed export headers, then remaining
-resource/style/semantic and advanced-search workflows. Inline
+[contract](rich-clipboard-workflows.md) and latest checks below. Optional committed headers now have C/Swift/native consumption at `5831417`.
+Next bounded work: remaining resource/style/semantic and advanced-search workflows. Inline
 reading resources, hover filename status, other formats/corpus, browser/CSP
 runtime and GTK/Windows/native release gates remain.
 
@@ -422,3 +421,51 @@ or whole-parity acceptance. Existing C/Swift options cannot enable headers yet;
 their default paths and GTK models were rebuilt/checked. Next bounded slice:
 additive C11 options, copied Swift consumption and a native opt-in through the
 existing export model lifecycle. Application policy remains in C++.
+
+### C/Swift/native export context checkpoint (2026-10-21)
+
+Implementation `5831417` on `modernization/native-export-context-headers`.
+Additive C11 entry points copy a strict context flag into the existing shared
+export requests; old entry points pass zero. C request/info layouts, payload
+ownership and default byte output remain unchanged. Swift defaults off and copies
+complete results. Native Export now has Include search details for text/HTML,
+selected/all matches, through one existing model lifecycle. The choice is captured
+before queueing; subsequent toggle/query/format changes cannot alter the request.
+HTML Copy's companion uses the same context; Save remains HTML-only. No native
+header formatter, metadata engine, storage engine or library upgrade was added.
+
+Complete Mac preview/adapters/core build passes. Focused final export checks
+**16/16** (22.87 s) include fixture setup, C/Swift and native named-pasteboard/
+atomic-file/model checks. Existing native search/Swift search regressions **3/3**
+(7.26 s, including fixture). ASan/UBSan export selection **11/11** (25.54 s).
+Portable core/all seven GTK models **26/26** on Mac, GTK runtime OFF (30.17 s).
+Strict C11 header syntax, documentation target and whitespace checks pass.
+The immediately preceding full165-pass+1-skip checkpoint belongs to `66196e3`;
+this thin transport/control slice has full compilation and focused runtime
+coverage, not another complete-suite run. SDK/deployment, index skip and external
+library instrumentation limitations remain unchanged. No Fedora/MSVC or new
+physical-menu/window/visual/rich-client interoperability acceptance.
+
+Commands use the same build directories/SDK selection recorded above:
+
+```sh
+cmake --build build/macos --parallel 4
+ctest --test-dir build/macos --output-on-failure \
+  -R 'search_html_export|search_html_images|search_export|search_all_export'
+ctest --test-dir build/macos --output-on-failure \
+  -R '^reader_model_search$|^swift_search_adapter$'
+cmake --build build/sanitized --target core_search_html_export_c_test core_search_html_images_c_test core_search_export_c_test --parallel 4
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/sanitized --output-on-failure \
+  -R 'search_html_export|search_html_images|search_export|search_all_export'
+cmake --build build/linux-models --parallel 4
+ctest --test-dir build/linux-models --output-on-failure \
+  -R 'search_html_export|search_html_images|search_export|search_all_export|linux_.*model'
+```
+
+Native destination tests use desktop access and isolated named pasteboards/temp
+files; the general clipboard and user data remain untouched. Logs are ignored
+`build/native-context-*.log`. GTK3/Linux source, dependencies and workflows are
+unchanged. No hosted runs were dispatched. Library upgrades remain explicitly
+owner-deferred. Next: representative export/resource/semantic policies, richer
+empty/failure group sections/localization, advanced search controls/settings and
+independent target-platform acceptance. No whole parity or retirement gate passes.
