@@ -23,11 +23,14 @@ struct SavedSearchList {
 struct SavedSearchLists {
   std::vector<SavedSearchList> module_lists, ranges;
 };
+inline constexpr std::size_t maximum_saved_search_text_bytes = 16 * 1024 * 1024;
 inline constexpr std::size_t maximum_saved_search_lists = 1024; // Per section.
 SavedSearchLists parse_saved_search_lists(const std::string &xml);
 SavedSearchLists read_saved_search_lists(const std::string &path);
 // Exact first matching label, including a missing label. A missing value on that
 // first match shadows later duplicates, as in xml_get_list_from_label.
+std::optional<std::size_t> saved_search_list_index(const std::vector<SavedSearchList> &items,
+                                                const std::optional<std::string> &label);
 std::optional<std::string> saved_search_list_value(const std::vector<SavedSearchList> &items,
                                                  const std::optional<std::string> &label);
 // Legacy comma tokenization: skip empty fields, preserve spaces/order/duplicates.

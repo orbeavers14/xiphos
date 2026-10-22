@@ -720,6 +720,28 @@ actor CoreWorker {
         guard let copied = CoreValues.lexicons(result) else { throw CoreError(status: XC_ENGINE_ERROR) }
         return copied
     }
+    func readSearchLists(tab: UInt64, path: String) async throws -> SavedSearchLists {
+        guard !path.isEmpty, !path.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = path.withCString { xc_worker_read_search_lists(handle, tab, $0, &request) }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_search_lists(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_search_lists_release(result) }
+        return try CoreValues.searchLists(result)
+    }
+    func parseSearchModuleList(tab: UInt64, text: String) async throws -> [String] {
+        guard !text.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = text.withCString { xc_worker_parse_search_module_list(handle, tab, $0, &request) }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_search_module_names(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_search_module_names_release(result) }
+        return (0..<xc_search_module_names_count(result)).map { String(cString: xc_search_module_names_at(result, $0)!) }
+    }
     func saveLexiconProfile(tab: UInt64, path: String) async throws {
         guard !path.isEmpty, !path.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?
