@@ -17,8 +17,8 @@ is retained in Git history rather than duplicated in the repository.
 | Footnote (`showNote`, type containing n) | Render Footnote body into information viewer | No corresponding body-display branch in inspected main handler | Complete frozen/actual show_note callback characterization; SDK output/runtime acceptance pending |
 | Cross-reference note (type containing x) | If xrefs_in_verse_list is enabled, display sidebar list; otherwise information viewer contains reference links and Back to current verse | Display the sidebar verse list | Complete frozen/actual show_note callback characterization; default setting is enabled; scoped native preference/hover routing implemented, full acceptance pending |
 | Explicit reference list (`showRef`) | No action in inspected show_ref | Display sidebar verse list | Shared C++11 dispatcher reused by GTK/native, complete frozen/actual show_ref traces including fallback, scoped native preview checks; whole workflow acceptance pending |
-| sword:// dictionary entry | Render dictionary text in information viewer | Module-type routing determines display | Source observation in sword_uri/show_in_previewer; abbreviations/general keyed modules require separate characterization |
-| sword:// non-dictionary reference | Update status text or bookmark tag information | Navigate appropriate pane | Source observation; do not infer that every reference hover should render a passage |
+| sword:// dictionary entry | Render dictionary text in information viewer | Module-type routing determines display | Complete frozen/current callback matrix; actual SDK/keyed navigation acceptance remains open |
+| sword:// non-dictionary reference | Update status text or bookmark tag information | Navigate appropriate pane | Complete frozen/current callback matrix; status/bookmark native behavior remains open |
 | Pointer leaves a link | Set in_url to zero, release cached URI, emit URI_SELECTED with null; no information-preview clear in inspected callback | Not applicable | Source observation in webkit/wk-html.c link_handler |
 
 
@@ -193,3 +193,6 @@ owned reference lists and do not record Bible navigation. This supersedes the
 prior exact-only rejection guard introduced with typed URI aliases. See
 [the Mac evidence](handoff-macos.md#shared-showref-module-dispatch-2026-10-22-active)
 for actual checks and limitations.
+
+The [complete URI callback contract](passage-uri-workflows.md) now records the
+separate hover/module-family/fallback/range paths before native expansion.

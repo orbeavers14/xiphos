@@ -1162,3 +1162,19 @@ Publication note: e0e9a86 is committed locally. Automatic approval review reject
 the attempted push because trusted current messages did not explicitly authorize
 the public fork destination/master. User authorization was requested; no alternate
 push path or remote modification was attempted. Continue local work pending reply.
+
+
+### Complete retained URI characterization (2026-10-22, active)
+
+Local master after `4a71891`. Freeze complete preview/URI callbacks from
+`e0e9a86`; compile current callbacks extracted by CMake and compare18,436
+deterministic callback/state traces in strict C++11. No production route changed.
+New target is available even with native core OFF. See
+[the URI contract](passage-uri-workflows.md) for exact cases, native gaps and the
+observed retained range split-buffer leak (reclaimed by oracle after tracing).
+Focused1/1 passes in every configuration: normal0.40s, ASan/UBSan0.97s,
+TSan1.84s, portable/Linux0.25s, native-disabled C++11 0.24s.
+Full prior reference-command evidence is above; no full-suite repeat for this
+test-only addition. Next bounded production gap: unknown single-passage URI
+fallback to the exact installed main module, keeping range/keyed cases separate.
+Publication approval remains pending; e0e9a86 and4a71891 are local commits.
