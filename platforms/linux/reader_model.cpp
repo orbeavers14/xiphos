@@ -313,12 +313,14 @@ void ReaderModel::tick() {
   request_ = nullptr; ++revision_;
   if (status != XC_OK) { error_ = message(status); return; }
   xc_request *next = nullptr;
+  if (take_extended(completed.get())) return;
   switch (operation_) {
+  default: error_ = "Unknown native operation."; break;
   case Operation::catalog: {
     std::unique_ptr<xc_catalog, decltype(&xc_catalog_release)> catalog(xc_request_take_catalog(completed.get()), xc_catalog_release);
     if (!catalog) { error_ = "Missing module catalog."; return; }
     for (size_t i = 0; i < xc_catalog_count(catalog.get()); ++i)
-      modules_.push_back({copy(xc_catalog_id(catalog.get(), i)), copy(xc_catalog_description(catalog.get(), i)), copy(xc_catalog_type(catalog.get(), i)), xc_catalog_is_dictionary(catalog.get(), i) != 0, xc_catalog_declared_engine_flags(catalog.get(), i), xc_catalog_is_regular_commentary(catalog.get(), i) != 0, xc_catalog_has_headings(catalog.get(), i) != 0, xc_catalog_lexicon_roles(catalog.get(), i), copy(xc_catalog_language(catalog.get(), i))});
+      modules_.push_back({copy(xc_catalog_id(catalog.get(), i)), copy(xc_catalog_description(catalog.get(), i)), copy(xc_catalog_type(catalog.get(), i)), xc_catalog_is_dictionary(catalog.get(), i) != 0, xc_catalog_declared_engine_flags(catalog.get(), i), xc_catalog_is_regular_commentary(catalog.get(), i) != 0, xc_catalog_has_headings(catalog.get(), i) != 0, xc_catalog_lexicon_roles(catalog.get(), i), copy(xc_catalog_language(catalog.get(), i)), xc_catalog_has_book_tree(catalog.get(), i) != 0, xc_catalog_has_verse_search(catalog.get(), i) != 0});
     auto submitted = xc_worker_create_tab(worker_, &next); accept(submitted, next, Operation::tab); break;
   }
   case Operation::tab: {
@@ -482,7 +484,7 @@ void ReaderModel::tick() {
   }
   case Operation::link: {
     std::unique_ptr<xc_link, decltype(&xc_link_release)> link(xc_request_take_link(completed.get()), xc_link_release);
-    if (!link) { if (!take_preview(completed.get(), false)) error_ = "Unsupported study link result."; return; }
+    if (!link) { if (take_image(completed.get())) return; if (!take_preview(completed.get(), false)) error_ = "Unsupported study link result."; return; }
     const auto module = copy(xc_link_module(link.get())), reference = copy(xc_link_reference(link.get()));
     const auto *main = this->module(passage_.bible);
     if (main && main->type != "Biblical Texts") { visit(module, "", reference); break; }

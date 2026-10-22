@@ -474,7 +474,7 @@ std::string Reader::read_stripped(const std::string &id,const std::string &refer
   if(options)scope=std::make_unique<ScopedEngineOptions>(*impl_->manager,*options);
   module.setKey(reference.c_str());
   if(module.getKey()->getError())throw std::invalid_argument("SWORD could not resolve the export reference");
-  const auto stripped=module.stripText();
+  const auto stripped=detail::strip_sdk_buffer(module,nullptr);
   return detail::copy_sdk_text(stripped,max_bytes);
 }
 Entry Reader::read_impl(const std::string &id, const std::string &reference, const EngineOptions *options,

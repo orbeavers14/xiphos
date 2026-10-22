@@ -8,7 +8,7 @@
 #include <vector>
 
 namespace xiphos::linux_preview {
-struct Module { std::string id, description, type; bool dictionary = false; unsigned declared_flags = 0; bool regular_commentary = false, headings = false; unsigned lexicon_roles = 0; std::string language; };
+struct Module { std::string id, description, type; bool dictionary = false; unsigned declared_flags = 0; bool regular_commentary = false, headings = false; unsigned lexicon_roles = 0; std::string language; bool book = false, search = false; };
 struct Preview { std::string module, reference, html, expression; size_t count = 0; bool limited = false; unsigned skipped = 0; };
 using Lexicons = std::array<std::optional<std::string>, 5>;
 struct Presentation { bool chapter = false, headings = true, double_space = false; int images = -1, font_faces = -1, note_numbers = -1; };
@@ -17,6 +17,27 @@ struct Dictionary { std::string module, key, html, source_module, source_referen
 struct ReferenceChoice { std::string label, target; };
 struct Chapter { std::string html, anchor, title; LexicalPresentation lexical; };
 struct Passage { std::string bible, commentary, reference, bible_html, commentary_html; LexicalPresentation bible_lexical, commentary_lexical; };
+struct BookNode { uint64_t offset = 0; std::string path, title; bool present = false, children = false; };
+struct BookDocument {
+  std::string module, html, css, issue; BookNode nodes[5];
+  int images = -1, fonts = -1, spacing = -1, numbers = -1;
+};
+struct BookContents { std::string module; BookNode parent, up; std::vector<BookNode> nodes; std::optional<uint64_t> after; };
+struct Image { std::string module, source; std::vector<unsigned char> bytes; unsigned revision = 0; };
+struct SearchHit { std::string module, reference; size_t group = 0, row = 0; };
+struct SearchGroup { std::string module; xc_status status = XC_OK; xc_search_info info{}; };
+struct SearchInput {
+  std::vector<std::string> modules; std::string expression, range_module, range;
+  int mode = XC_SEARCH_PHRASE; xc_search_scope_kind scope = XC_SEARCH_SCOPE_ALL;
+  bool case_sensitive = false; std::optional<xc_search_text_options> annotations;
+};
+struct SearchResults {
+  std::vector<SearchHit> hits; std::vector<SearchGroup> groups;
+  xc_search_generation_info generation{}; xc_search_scope_info scope{};
+  bool cancelled = false, limited = false; unsigned revision = 0;
+};
+struct SearchExport { std::string text, html; int disposition = -1; unsigned revision = 0; };
+struct SavedSearchList { std::optional<std::string> label, value; size_t effective = 0; };
 // UI-thread serial submissions and nonblocking polling only. All engine policy
 // and history stay on the core's one FIFO worker. No user-profile discovery.
 class ReaderModel {
@@ -28,6 +49,37 @@ public:
   ReaderModel(const ReaderModel &) = delete;
   ReaderModel &operator=(const ReaderModel &) = delete;
   void tick();
+  bool choose_book(const std::string &module);
+  bool read_book_key(const std::string &key);
+  bool read_book_node(uint64_t offset);
+  bool navigate_book(int direction);
+  bool browse_book(uint64_t parent = 0, bool more = false);
+  bool restore_book(const std::string &path);
+  bool book_option(int option, bool enabled); // images, fonts, spacing, numbers
+  bool refresh_book();
+  bool close_book();
+  bool follow_book(const std::string &uri);
+  const BookDocument &book() const { return book_; }
+  const BookContents &book_contents() const { return book_contents_; }
+  const Image &image() const { return image_; }
+  bool search(const SearchInput &input);
+  bool cancel_search();
+  xc_search_progress search_progress() const;
+  bool reset_search_annotations();
+  bool clear_search_scope();
+  bool preview_search_hit(size_t index);
+  bool activate_search_hit(size_t index);
+  bool export_search(bool html, bool all, const std::vector<size_t> &selection,
+                     bool scripture, bool context, bool images, bool partial);
+  bool import_search_lists(const std::string &path);
+  bool parse_search_modules(const std::string &text);
+  const SearchResults &search_results() const { return search_results_; }
+  const Preview &search_preview() const { return search_preview_; }
+  const SearchExport &search_export() const { return search_export_; }
+  const std::vector<SavedSearchList> &saved_lists(bool ranges) const { return saved_lists_[ranges ? 1 : 0]; }
+  const std::vector<std::string> &parsed_search_modules() const { return parsed_search_modules_; }
+  unsigned parsed_search_revision() const { return parsed_search_revision_; }
+
   bool visit(const std::string &bible, const std::string &commentary, const std::string &reference);
   bool navigate(int direction);
   bool choose_commentary(const std::string &module);
@@ -92,7 +144,21 @@ public:
   const std::string &error() const { return error_; }
   unsigned revision() const { return revision_; }
 private:
-  enum class Operation { catalog, tab, preferences, passage, history, link, refresh, clear, presentation, bible_chapter, commentary_chapter, choices, dictionary, dictionary_choices, dictionary_history, dictionary_clear, engine_options, bible_options, commentary_options, saved, enable_lexicons, lexicons, lexicon_changed, reference_preference, reference_preference_changed, references, entry, lexical_layout, note_numbering, heading_note_links };
+  enum class Operation { book_document, book_children, book_key, book_option, book_link, search_batch, search_preview, search_export, search_reset, search_scope, search_lists, search_names, catalog, tab, preferences, passage, history, link, refresh, clear, presentation, bible_chapter, commentary_chapter, choices, dictionary, dictionary_choices, dictionary_history, dictionary_clear, engine_options, bible_options, commentary_options, saved, enable_lexicons, lexicons, lexicon_changed, reference_preference, reference_preference_changed, references, entry, lexical_layout, note_numbering, heading_note_links };
+  bool take_extended(xc_request *request);
+  bool take_image(xc_request *request);
+  BookDocument book_;
+  BookContents book_contents_;
+  Image image_;
+  bool append_book_children_ = false;
+  uint64_t pending_book_parent_ = 0;
+  BookNode pending_book_up_;
+  SearchResults search_results_;
+  Preview search_preview_;
+  SearchExport search_export_;
+  std::vector<SavedSearchList> saved_lists_[2];
+  std::vector<std::string> parsed_search_modules_;
+  unsigned parsed_search_revision_ = 0;
   bool accept(xc_status status, xc_request *request, Operation operation);
   void history();
   bool take_preview(xc_request *request, bool hover);

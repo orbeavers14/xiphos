@@ -4,6 +4,7 @@
 #include "search_source.hpp"
 #include "search_results.hpp"
 #include "search_control.hpp"
+#include "../sdk_search.hpp"
 #include <markupfiltmgr.h>
 #include <rawtext.h>
 #include <versekey.h>
@@ -47,7 +48,7 @@ int main(int argc,char **argv){try{
  EngineManager manager(root.c_str(),true,new MarkupFilterMgr(FMT_XHTML),false,false);BackEnd legacy{&manager};
  for(std::size_t i=0;i<chain.size();++i){
   const auto &result=*complete.groups[i].result;legacy.current_scope=i?&legacy.search_scope_list:nullptr;
-  const int flags=XIPHOS_SWORD_SEARCH_ICASE_FLAG|(i<2?SWModule::SEARCHFLAG_MATCHWHOLEENTRY:0);
+  const int flags=XIPHOS_SWORD_SEARCH_ICASE_FLAG|(i<2?xiphos::core::detail::sdk_search_whole_entry:0);
   check(legacy.do_module_search(const_cast<char *>(chain[i].module.c_str()),result.effective_expression.c_str(),result.engine_type,flags,1)>=0,"Retained ordered search completes");
   check(result.references==refs(legacy.results),"Every batch group matches actual legacy typed last-scope chaining");
  }

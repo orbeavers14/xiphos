@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+#include "../sdk_search.hpp"
 #include "xiphos/core/session.hpp"
 #include "xiphos/core/worker.hpp"
 #include "xiphos/core/c_api.h"
@@ -53,10 +54,10 @@ int main(int argc,char **argv){try{
   const std::string text=mode==SearchMode::lemma?"G140":mode==SearchMode::morphology?"N-ASF":"Alpha";
   SearchQuery query{module,text,mode,sensitive};const auto result=reader.search_module(query);
   const auto kind=mode==SearchMode::lemma?AttributeSearch::lemma:mode==SearchMode::morphology?AttributeSearch::morphology:AttributeSearch::footnote;
-  const auto prepared=attribute_search_text(text,kind);auto &source=*legacy.getModule(module);const std::string stripped=source.stripText(prepared.expression.c_str()).c_str();
-  const int flags=(sensitive?0:XIPHOS_SWORD_SEARCH_ICASE_FLAG)|(prepared.whole_entry?SWModule::SEARCHFLAG_MATCHWHOLEENTRY:0);
-  check(backend.do_module_search(const_cast<char *>(module),stripped.c_str(),SWModule::SEARCHTYPE_ENTRYATTR,flags,1)>=0,"Actual legacy attribute search completes");
-  check(result.references==refs(backend.results)&&result.effective_expression==stripped&&result.requested.expression==text&&result.engine_type==SWModule::SEARCHTYPE_ENTRYATTR,"Owned attribute mode/case/query and ordered results match actual backend");
+  const auto prepared=attribute_search_text(text,kind);auto &source=*legacy.getModule(module);const std::string stripped=sword::SWBuf(source.stripText(prepared.expression.c_str())).c_str();
+  const int flags=(sensitive?0:XIPHOS_SWORD_SEARCH_ICASE_FLAG)|(prepared.whole_entry?xiphos::core::detail::sdk_search_whole_entry:0);
+  check(backend.do_module_search(const_cast<char *>(module),stripped.c_str(),xiphos::core::detail::sdk_search_attribute,flags,1)>=0,"Actual legacy attribute search completes");
+  check(result.references==refs(backend.results)&&result.effective_expression==stripped&&result.requested.expression==text&&result.engine_type==xiphos::core::detail::sdk_search_attribute,"Owned attribute mode/case/query and ordered results match actual backend");
   const auto expected=mode==SearchMode::lemma?std::vector<std::string>{"John 1:1","John 1:4"}:mode==SearchMode::morphology?std::vector<std::string>{"John 1:1","John 1:3"}:sensitive?std::vector<std::string>{"John 1:1"}:std::vector<std::string>{"John 1:1","John 1:2"};
   if(result.references!=expected){std::cerr<<"attribute mode="<<static_cast<int>(mode)<<" source="<<module<<" case="<<sensitive<<" query="<<result.effective_expression<<" flags="<<flags<<" actual=";for(const auto &key:result.references)std::cerr<<key<<';';std::cerr<<'\n';}
   check(result.references==expected,"Exact lemma/morph identifiers exclude longer prefixes; component lemma and note case behavior are present");
@@ -91,7 +92,7 @@ int main(int argc,char **argv){try{
   xc_search_options options;xc_search_options_default(&options);options.mode=mode;std::string input=mode==XC_SEARCH_LEMMA?"G140":mode==XC_SEARCH_MORPHOLOGY?"N-ASF":"Alpha";
   check(xc_worker_search_module(worker,tab,"Text",input.c_str(),&options,&request)==XC_OK,"Queue copied attribute mode");input="unrelated";options.mode=XC_SEARCH_PHRASE;
   check(wait(request)==XC_OK,"Complete C attribute search");auto *result=xc_request_take_search(request);xc_request_release(request);xc_search_info info{};xc_search_scope_info scope{};
-  check(result&&xc_search_get_info(result,&info)==XC_OK&&info.mode==mode&&info.engine_type==SWModule::SEARCHTYPE_ENTRYATTR&&info.result_count==2&&xc_search_get_scope(result,&scope)==XC_OK&&scope.element_count==2,"C transports attribute mode, flags and complete scope metadata through unchanged options layout");
+  check(result&&xc_search_get_info(result,&info)==XC_OK&&info.mode==mode&&info.engine_type==xiphos::core::detail::sdk_search_attribute&&info.result_count==2&&xc_search_get_scope(result,&scope)==XC_OK&&scope.element_count==2,"C transports attribute mode, flags and complete scope metadata through unchanged options layout");
   if(held)xc_search_release(held);held=result;
  }
  xc_search_options options;xc_search_options_default(&options);options.mode=XC_SEARCH_LEMMA;

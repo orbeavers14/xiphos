@@ -14,7 +14,7 @@ root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 install=false
 sanitize=false
 build_dir=
-jobs=${CMAKE_BUILD_PARALLEL_LEVEL:-2}
+jobs=${CMAKE_BUILD_PARALLEL_LEVEL:-1}
 while (($#)); do
   case "$1" in
     --install-deps) install=true; shift ;;
