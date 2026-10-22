@@ -12,6 +12,7 @@
 #include "search_source.hpp"
 #include "xiphos/core/search_export.hpp"
 #include "search_validation.hpp"
+#include "module_alias_catalog.hpp"
 #include "sdk_text.hpp"
 #include "sdk_render.hpp"
 #include "search_control.hpp"
@@ -68,6 +69,7 @@ struct Reader::Impl {
   std::unique_ptr<EngineManager> manager;
   NoteRenderingState note_rendering;
   std::vector<Module> modules;
+  std::unique_ptr<detail::ModuleAliasCatalog> aliases;
   std::mutex mutex;
   sword::SWModule &verse_module(const std::string &id, const std::string &reference) {
     if (reference.empty()) throw std::invalid_argument("Reference is empty");
@@ -106,6 +108,20 @@ Reader::Reader(const std::string &root) : impl_(std::make_unique<Impl>()) {
 }
 Reader::~Reader() = default;
 const std::vector<Module> &Reader::modules() const { return impl_->modules; }
+ModuleNameResolution Reader::resolve_module_name(const std::string &requested) {
+  detail::validate_search_module_name(requested);
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  // Exact installed IDs require no alias metadata and remain available even
+  // when an unrelated module has unsupported alias configuration.
+  if (impl_->manager->Modules.find(requested.c_str()) != impl_->manager->Modules.end())
+    return {requested, requested, false};
+  if (!impl_->aliases) {
+    auto staged = std::make_unique<detail::ModuleAliasCatalog>(detail::capture_module_alias_catalog(*impl_->manager));
+    impl_->aliases = std::move(staged);
+  }
+  return impl_->aliases->resolve(requested);
+}
+
 BookTree Reader::book_tree(const std::string &id, std::uint64_t offset) {
   if (id.empty() || id.find('\0') != std::string::npos) throw std::invalid_argument("Invalid general-book module ID");
   std::lock_guard<std::mutex> lock(impl_->mutex);

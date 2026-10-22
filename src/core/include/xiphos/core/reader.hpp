@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
+#include "module_resolution.hpp"
 #include "reference_list.hpp"
 #include "render.hpp"
 #include "study_note.hpp"
@@ -42,6 +43,9 @@ public:
   Reader(const Reader &) = delete;
   Reader &operator=(const Reader &) = delete;
   const std::vector<Module> &modules() const;
+  // Explicit read-only alias resolution on this Reader owner. Catalog metadata
+  // stages lazily; invalid alias metadata does not disable ordinary reading.
+  ModuleNameResolution resolve_module_name(const std::string &requested);
   // Initial whole-module Bible/regular-commentary search, with copied bounded
   // output and scoped accent/vowel filter settings. No history, session scope,
   // index creation or native UI. Optional cooperative controls never expose SDK state.

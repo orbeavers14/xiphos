@@ -983,7 +983,7 @@ Final documentation checks cover whitespace and local Markdown link targets.
 
 ## Abbreviation policy continuation (2026-10-22)
 
-Sequential fork `master`, after fresh fetch at `a112980`; unrelated `.DS_Store`
+Implementation `9c2153a` (pushed fork `master`). Sequential fork `master`, after fresh fetch at `a112980`; unrelated `.DS_Store`
 preserved. Extract exact map registration/lookup into C++11 shared value policy,
 with retained GTK wrappers consuming it. Frozen baseline routines and actual
 wrapper extraction compile in a strict C++11 test. Native catalog registration,
@@ -1002,3 +1002,24 @@ acceptance. Same documented Mac/AppleClang environment. See
 [registry contract](module-abbreviations-workflows.md). Next: staged native
 catalog registration and copied resolution on the same owner.
 No hosted workflow/reset/purchase.
+
+
+### Owned native module resolution (2026-10-22)
+
+Sequential `master`: read-only Reader/worker resolution lazily stages bounded
+copied SDK alias catalog metadata, preserves exact installed IDs and original
+requested tokens, and publishes only a complete registry. Existing Reader owns
+all SDK access; no current search/history/scope/preferences/profile mutation.
+Exact IDs/ordinary reads remain usable when unrelated alias metadata rejects.
+Normal Mac, ASan/UBSan and portable-on-Mac checks each pass2/2 (normal0.83s,
+ASan1.74s; portable result in ignored log). Targets:
+`core_module_resolution_test core_module_abbreviations_test`; selection:
+`ctest --test-dir <dir> --output-on-failure -R '^core_module_(resolution|abbreviations)$'`.
+Existing `build/macos`, `build/sanitized`, `build/linux-models` configurations;
+ASan leaks OFF, GTK runtime OFF, SDKs partly instrumented. Logs: ignored
+`build/module-resolution-*`. Same documented Mac/SDK environment. Exact budget
+and overflow, actual retained catalog block/frozen registry, SDK order, duplicate
+aliases, Unicode/empty/absent metadata, copied submission/teardown, closed tabs,
+shutdown and ordinary read isolation pass. No new full suite, C ABI/Swift/native
+consumer, Fedora/MSVC/corpus or whole parity acceptance. Next: copied C/Swift
+resolution transport, then search execution with requested/resolved provenance.

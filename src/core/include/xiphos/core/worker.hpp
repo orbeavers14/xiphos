@@ -38,6 +38,7 @@ public:
   StudyWorker(const StudyWorker &) = delete;
   StudyWorker &operator=(const StudyWorker &) = delete;
   std::future<std::vector<Module>> modules();
+  std::future<ModuleNameResolution> resolve_module_name(StudyTab tab, std::string requested);
   std::future<VerseImageResource> read_verse_inline_image(std::string module,std::string source,
       std::size_t maximum_bytes=maximum_verse_image_bytes);
   std::future<VerseImageResource> read_verse_image_link(std::string module,std::string uri,

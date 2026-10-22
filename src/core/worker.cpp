@@ -359,6 +359,12 @@ std::future<std::optional<LexiconPreferences>> StudyWorker::import_lexicon_profi
     return copied;
   });
 }
+std::future<ModuleNameResolution> StudyWorker::resolve_module_name(StudyTab tab, std::string requested) {
+  return impl_->submit([tab, requested = std::move(requested)](Impl::State &s) {
+    (void)s.tab(tab);
+    return s.reader.resolve_module_name(requested);
+  });
+}
 std::future<SavedSearchLists> StudyWorker::read_search_lists(StudyTab tab, std::string path) {
   return impl_->submit([tab, path = std::move(path)](Impl::State &s) {
     (void)s.tab(tab);

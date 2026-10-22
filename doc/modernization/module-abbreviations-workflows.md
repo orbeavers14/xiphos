@@ -38,3 +38,36 @@ Next: stage installed catalog aliases on the existing Reader/worker owner,
 including installed-ID protection, source SDK order, bounded copied metadata,
 reload semantics and owned resolution results. Do not resolve raw saved tokens
 at import or introduce a frontend map. No whole parity/retirement gate passes.
+
+
+## Bounded native catalog resolution
+
+`Reader::resolve_module_name` and queued `StudyWorker::resolve_module_name` return
+an owned `ModuleNameResolution` with literal requested token, optional installed
+module ID and explicit alias-origin flag. Unknown tokens are successful absent
+results. Queries require nonempty valid UTF-8, at most4096 bytes, with no NUL.
+Exact installed IDs bypass alias metadata and always retain their identity.
+
+On the first non-exact query, the Reader lazily stages SDK catalog registration
+in actual module iteration order. Every installed ID is protected before any
+alias registration, including later IDs. Null alias metadata stays absent; empty
+aliases and the shared parenthesis/collision rules remain literal. Metadata is
+bounded to65536 modules,4096 bytes per ID/alias and16MiB aggregate string bytes;
+invalid UTF-8/NUL/overflow or duplicate synthetic IDs reject without publishing a
+partial cache. SDK strings are bounded before copying. The cache belongs to the
+existing Reader and is immutable for its existing fixed SDK lifetime; any future
+install/reload service must invalidate/rebuild it transactionally.
+
+Lazy validation means malformed alias metadata cannot disable ordinary reads or
+exact-ID resolution. Alias queries reject that unsupported catalog consistently;
+there is no truncation/fallback map. This read-only service changes no search,
+scope, history, options or profile. Worker inputs copy before queueing, closed
+tabs reject, accepted operations drain and copied values outlive the owner.
+No search/URI/parallel/BibleSync behavior is enabled implicitly by this slice.
+
+Tests compare the actual retained backend registration block with frozen map
+routines, actual SDK catalog order and copied Reader/worker results. They cover
+installed-ID/alias collisions, case/Unicode, absent/empty/rejected aliases,
+per-field/module-count/aggregate bounds, copied inputs, shutdown, closed tabs and
+ordinary reading after metadata rejection. C/Swift transport and explicit search
+execution with correct retained/export provenance remain next.
