@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "reader_model.hpp"
 #include "reader_document.hpp"
+#include "study_ui.hpp"
 using xiphos::linux_preview::document;
 #include <gtk/gtk.h>
 #include <webkit/webkit.h>
@@ -45,6 +46,7 @@ struct App {
   std::string dictionary_identity, dictionary_choices_identity, dictionary_submitted;
   WebKitWebView *bible_view = nullptr, *commentary_view = nullptr;
   std::unique_ptr<ReaderModel> model;
+  std::unique_ptr<xiphos::linux_preview::StudyUI> study_ui;
   std::vector<std::string> bibles, commentaries{""};
   std::string root, rendered, submitted_draft, bible_anchor, commentary_anchor;
   unsigned scroll_jobs = 0, scroll_successes = 0, bible_scroll_successes = 0;
@@ -169,6 +171,7 @@ gboolean tick(gpointer data) {
   auto *app = static_cast<App *>(data);
   if (app->closing) return G_SOURCE_REMOVE;
   app->model->tick();
+  if (app->study_ui) app->study_ui->tick(*app->model);
   app->updating = true;
   if (app->model->ready() && !app->populated) {
     auto *bibles = gtk_string_list_new(nullptr), *commentaries = gtk_string_list_new(nullptr), *dictionaries = gtk_string_list_new(nullptr);
@@ -492,6 +495,7 @@ gboolean tick(gpointer data) {
 void shutdown(App *app) {
   if (app->closing) return;
   app->closing = true;
+  if (app->study_ui) app->study_ui->close();
   if (app->file_dialog) {
     g_signal_handlers_disconnect_by_data(app->file_dialog, app); gtk_native_dialog_hide(app->file_dialog);
     g_object_unref(app->file_dialog); app->file_dialog = nullptr;
@@ -711,7 +715,12 @@ void activate(GtkApplication *application, gpointer data) {
   }
   gtk_box_append(GTK_BOX(library), pane(app, "Study preview", &app->sidebar_view));
   gtk_box_append(GTK_BOX(library), pane(app, "Information", &app->information_view));
-  gtk_widget_set_size_request(library, 220, -1); gtk_paned_set_start_child(GTK_PANED(panes), library);
+  gtk_widget_set_size_request(library, 220, -1);
+  app->study_ui = std::make_unique<xiphos::linux_preview::StudyUI>(GTK_WINDOW(app->window), app->software);
+  auto *library_tabs = gtk_notebook_new();
+  gtk_notebook_append_page(GTK_NOTEBOOK(library_tabs), library, gtk_label_new("Study"));
+  gtk_notebook_append_page(GTK_NOTEBOOK(library_tabs), app->study_ui->search_pane(), gtk_label_new("Search"));
+  gtk_paned_set_start_child(GTK_PANED(panes), library_tabs);
   auto *study = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
   gtk_paned_set_end_child(GTK_PANED(panes), study); gtk_paned_set_position(GTK_PANED(panes), 240);
   gtk_paned_set_start_child(GTK_PANED(study), pane(app, "Reading", &app->bible_view));
@@ -719,7 +728,10 @@ void activate(GtkApplication *application, gpointer data) {
   gtk_paned_set_end_child(GTK_PANED(study), right); gtk_paned_set_position(GTK_PANED(study), 520);
   gtk_paned_set_start_child(GTK_PANED(right), pane(app, "Commentary", &app->commentary_view));
   auto *dictionary_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
-  gtk_paned_set_end_child(GTK_PANED(right), dictionary_box);
+  auto *content_tabs = gtk_notebook_new();
+  gtk_notebook_append_page(GTK_NOTEBOOK(content_tabs), dictionary_box, gtk_label_new("Dictionary"));
+  gtk_notebook_append_page(GTK_NOTEBOOK(content_tabs), app->study_ui->book_pane(), gtk_label_new("General book"));
+  gtk_paned_set_end_child(GTK_PANED(right), content_tabs);
   app->dictionary_module = gtk_drop_down_new(nullptr, nullptr); gtk_box_append(GTK_BOX(dictionary_box), app->dictionary_module);
   app->dictionary_description = description(dictionary_box);
   gtk_accessible_update_property(GTK_ACCESSIBLE(app->dictionary_module), GTK_ACCESSIBLE_PROPERTY_LABEL, "Dictionary module", -1);

@@ -8,4 +8,7 @@ namespace xiphos { namespace core { namespace detail {
 // The caller serializes module access and owns its lifetime/filter configuration.
 sword::SWBuf render_sdk_entry(sword::SWModule &module);
 sword::SWBuf render_sdk_buffer(sword::SWModule &module, const char *text);
+// Preserve counted strip-filter bytes on released SDKs whose stripText exposes
+// only a NUL-terminated pointer. NULL text strips the current entry.
+sword::SWBuf strip_sdk_buffer(sword::SWModule &module, const char *text);
 }}}

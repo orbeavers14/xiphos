@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/search_policy.hpp"
-#include <swmodule.h>
+#include "../sdk_search.hpp"
 #include <glib.h>
 #include <iostream>
 #include <stdexcept>
@@ -12,7 +12,7 @@ struct Widgets { bool rb_strongs,rb_morphs,rb_footnotes; } search1;
 #define GTK_TOGGLE_BUTTON(value) (value)
 bool gtk_toggle_button_get_active(bool value){return value;}
 #define XI_message(...) do {} while(false)
-const int SpecialSearchFlag=sword::SWModule::SEARCHFLAG_MATCHWHOLEENTRY;
+const int SpecialSearchFlag=xiphos::core::detail::sdk_search_whole_entry;
 struct Prepared { std::string expression;int flags;bool present; };
 Prepared frozen(const char *search_string,int search_type,int search_params){
  const char *attribute_search_string=nullptr;

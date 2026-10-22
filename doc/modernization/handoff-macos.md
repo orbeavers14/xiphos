@@ -777,3 +777,63 @@ stage cleanup. No C ABI, native write UI, current Fedora/MSVC, broad corpus,
 external-writer locking or whole parity acceptance. Next: additive C/Swift save
 transport and explicit native editing over this same shared service. No hosted
 builds or real user profiles were used.
+
+### Verified saved-list C/Swift save transport (2026-10-22)
+
+Implementation `c11b15b`, pushed sequentially to fork `master`. Additive C typed
+edits and Swift6 copied values reuse the existing verified core writer. Both C
+observer and result handle allocate before acceptance; poll moves the staged
+snapshot into the owned result without allocation. No second XML/duplicate-label
+policy, automatic profile write or new core owner. See
+[saved-list transport contract](saved-search-lists-workflows.md).
+
+Local normal selection6/6 including Swift profile/dictionary fixture; ASan/UBSan,
+TSan and portable core-on-Mac selections each6/6. C11 header syntax and whitespace
+pass. Existing Apple XML2.9.13/GLib2.90.1/SWORD1.9.0.3916 setup retained; SDKs
+partly instrumented, ASan leaks off. Exact copied inputs, Unicode/empty values,
+duplicate shadows, unrelated XML, strict input caps, rejected file preservation,
+closed tabs, detached observers/cancelled Swift observations and drained shutdown
+are checked. Source/results remain isolated original fixtures. No new full suite,
+Fedora/MSVC/native write UI or whole parity acceptance.
+
+The owner then requested integrating `linux/native-parity`; combined core/Mac/
+portable checks are recorded in the following integration checkpoint. Explicit
+native editing over this transport remains the next saved-list slice.
+
+
+## Linux parity integration (2026-10-22)
+
+Owner requested merging `linux/native-parity` into the integration branch,
+`master`. Inputs: master `c11b15b` (verified saved-list C/Swift write transport)
+and Linux tip `f0b6e57` (implementation `3f9a068`). The source merge is clean.
+One build compatibility correction was required: newer SWORD class search
+constants have out-of-line definitions, so the private adapter must use `const`
+rather than `constexpr`. The released-SDK macro/numeric path stays unchanged.
+No public API or language-standard change is introduced by that correction.
+
+Checks actually run on the combined tree, sequentially:
+
+```sh
+cmake --build build/macos --parallel 2
+ctest --test-dir build/macos --output-on-failure
+cmake -S platforms/linux -B build/linux-models -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
+cmake --build build/linux-models --parallel 2
+ctest --test-dir build/linux-models --output-on-failure
+```
+
+Full Mac suite: **173 passes + 1 explicit index skip**, 174 registered, 147.56 s.
+Full portable core/Linux models on Mac: **130 passes + 1 explicit index skip**,
+131 registered, 98.12 s. Both commands exit0; GTK desktop is OFF in the latter.
+Environment: macOS27.0.1 ARM64, AppleClang21, Swift6.4/Swift6 mode,
+SWORD1.9.0.3916, GLib2.90.1, Apple XML2.9.13 headers and source-pinned PNG1.6.59.
+Logs: ignored `build/linux-parity-merge-{macos,portable}-{build,tests}.log` and
+`build/linux-parity-merge-portable-configure.log`. Diff/Markdown link checks pass.
+
+Fedora's recorded **130/130** normal checks include indexed execution with its
+released SDK. This Mac run does not repeat that acceptance. Fedora's installed
+SWORD sanitizer overlap and lack of an accessible GTK display remain open; see
+[the Linux handoff](handoff-linux.md). No new GTK/WinUI desktop, visual, corpus,
+accessibility or whole-feature acceptance follows. No hosted builds, workflow
+changes, branch deletion or legacy retirement. Keep unrelated local files.
+Next bounded core-consuming slice: explicit native saved-list editing through
+`c11b15b`, with chooser cancellation, returned-snapshot and closed-window checks.

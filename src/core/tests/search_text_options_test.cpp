@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+#include "../sdk_search.hpp"
 #include "xiphos/core/session.hpp"
 #include "xiphos/core/engine_manager.hpp"
 #include "search_source.hpp"
@@ -28,7 +29,7 @@ std::vector<std::string> refs(ListKey &list){std::vector<std::string> out;list.s
 bool same(const std::optional<SearchTextOptions> &a,const SearchTextOptions &b){return a&&a->strongs==b.strongs&&a->morphology==b.morphology&&a->footnotes==b.footnotes;}
 struct Fault:SWFilter{bool enabled=true;char processText(SWBuf &,const SWKey *,const SWModule *)override{if(enabled)throw std::runtime_error("Original search text strip failure");return 0;}};
 struct InspectingModule:RawText {
- EngineManager &manager;SearchTextOptions expected;ListKey result;bool called=false,indexed=false,probed=false,fail_probe=false,expect_probe=true,optimal=true;int expected_type=SWModule::SEARCHTYPE_EXTERNAL,framework_checks=0;std::string expected_query="+Original ";
+ EngineManager &manager;SearchTextOptions expected;ListKey result;bool called=false,indexed=false,probed=false,fail_probe=false,expect_probe=true,optimal=true;int expected_type=xiphos::core::detail::sdk_search_external,framework_checks=0;std::string expected_query="+Original ";
  InspectingModule(const char *path,EngineManager &owner,SearchTextOptions wanted):RawText(path),manager(owner),expected(wanted){VerseKey key("John1:1");result.add(key);}
  void inspect_values(){
   std::array<bool,3> found{{false,false,false}};const auto settings=search_text_settings(expected);
@@ -60,7 +61,7 @@ int main(int argc,char **argv){try{
    SearchQuery query{"Text","G140",phrase?SearchMode::phrase:SearchMode::words};query.text_options=checkbox;
    const auto result=first.search_module(query);
    search1={phrase,checkbox.strongs,checkbox.morphology,checkbox.footnotes};check_search_global_options();
-   auto *module=legacy.getModule("Text");const std::string effective=module->stripText(query.expression.c_str()).c_str();
+   auto *module=legacy.getModule("Text");const std::string effective=sword::SWBuf(module->stripText(query.expression.c_str())).c_str();
    check(backend.do_module_search(const_cast<char *>("Text"),effective.c_str(),result.engine_type,XIPHOS_SWORD_SEARCH_ICASE_FLAG,1)>=0,"Actual legacy option/phrase execution completes");
    check(result.references==refs(backend.results)&&result.effective_expression==effective&&same(result.requested.text_options,checkbox)&&same(result.effective_text_options,requested)&&result.text_options_updated==!phrase,"Session query preparation/results and sticky phrase state match actual legacy SDK execution");
    check(same(first.search_text_options().options,requested),"Committed search-only context follows nonphrase choices and ignores phrase checkbox changes");
@@ -96,22 +97,22 @@ int main(int argc,char **argv){try{
  InspectingModule indexed((std::filesystem::path(root)/"data/text").string().c_str(),legacy,SearchTextOptions(false,false,false));indexed.indexed=true;
  inspected.mode=SearchMode::words;inspected.text_options=SearchTextOptions(false,false,false);
  const auto planned=detail::capture_module_search(legacy,indexed,inspected,{});
- check(indexed.called&&indexed.probed&&planned.engine_type==SWModule::SEARCHTYPE_EXTERNAL,"Controlled index capability sees effective flags before execution selection");
+ check(indexed.called&&indexed.probed&&planned.engine_type==xiphos::core::detail::sdk_search_external,"Controlled index capability sees effective flags before execution selection");
  InspectingModule advanced((std::filesystem::path(root)/"data/text").string().c_str(),legacy,SearchTextOptions(false,false,false));advanced.indexed=true;advanced.expected_query="Original OR beta";
  inspected.mode=SearchMode::indexed;inspected.expression="Original OR beta";
  const auto raw=detail::capture_module_search(legacy,advanced,inspected,{});
- check(raw.engine_type==SWModule::SEARCHTYPE_EXTERNAL&&!raw.index_fallback&&raw.effective_expression=="Original OR beta","Explicit indexed dialect preserves advanced raw syntax, unlike sidebar AND");
- InspectingModule plain((std::filesystem::path(root)/"data/text").string().c_str(),legacy,SearchTextOptions(false,false,false));plain.indexed=true;plain.expect_probe=false;plain.expected_type=SWModule::SEARCHTYPE_MULTIWORD;plain.expected_query="Original";
+ check(raw.engine_type==xiphos::core::detail::sdk_search_external&&!raw.index_fallback&&raw.effective_expression=="Original OR beta","Explicit indexed dialect preserves advanced raw syntax, unlike sidebar AND");
+ InspectingModule plain((std::filesystem::path(root)/"data/text").string().c_str(),legacy,SearchTextOptions(false,false,false));plain.indexed=true;plain.expect_probe=false;plain.expected_type=xiphos::core::detail::sdk_search_multiword;plain.expected_query="Original";
  inspected.mode=SearchMode::multiword;inspected.expression="Original";
  const auto forced=detail::capture_module_search(legacy,plain,inspected,{});
- check(forced.engine_type==SWModule::SEARCHTYPE_MULTIWORD&&!forced.index_fallback&&!plain.probed&&!plain.framework_checks,"Explicit advanced multiword bypasses framework probing even when available");
- InspectingModule unsupported((std::filesystem::path(root)/"data/text").string().c_str(),legacy,SearchTextOptions(false,false,false));unsupported.indexed=true;unsupported.optimal=false;unsupported.expected_type=SWModule::SEARCHTYPE_MULTIWORD;unsupported.expected_query="Original";
+ check(forced.engine_type==xiphos::core::detail::sdk_search_multiword&&!forced.index_fallback&&!plain.probed&&!plain.framework_checks,"Explicit advanced multiword bypasses framework probing even when available");
+ InspectingModule unsupported((std::filesystem::path(root)/"data/text").string().c_str(),legacy,SearchTextOptions(false,false,false));unsupported.indexed=true;unsupported.optimal=false;unsupported.expected_type=xiphos::core::detail::sdk_search_multiword;unsupported.expected_query="Original";
  inspected.mode=SearchMode::indexed;inspected.expression="Original";
  const auto not_supported=detail::capture_module_search(legacy,unsupported,inspected,{});
- check(unsupported.probed&&not_supported.index_fallback&&not_supported.engine_type==SWModule::SEARCHTYPE_MULTIWORD,"Present framework with unsupported capability also reports explicit fallback");
+ check(unsupported.probed&&not_supported.index_fallback&&not_supported.engine_type==xiphos::core::detail::sdk_search_multiword,"Present framework with unsupported capability also reports explicit fallback");
  InspectingModule unavailable((std::filesystem::path(root)/"data/text").string().c_str(),legacy,SearchTextOptions(false,false,false));inspected.mode=SearchMode::indexed;
  const auto fallback=detail::capture_module_search(legacy,unavailable,inspected,{});
- check(fallback.index_fallback&&fallback.engine_type==SWModule::SEARCHTYPE_MULTIWORD&&fallback.effective_expression=="Original","Missing framework yields explicit owned fallback without sidebar query rewriting");
+ check(fallback.index_fallback&&fallback.engine_type==xiphos::core::detail::sdk_search_multiword&&fallback.effective_expression=="Original","Missing framework yields explicit owned fallback without sidebar query rewriting");
  inspected.mode=SearchMode::words;
  indexed.fail_probe=true;indexed.setProcessEntryAttributes(false);indexed.setSkipConsecutiveLinks(true);
  try{detail::capture_module_search(legacy,indexed,inspected,{});throw std::logic_error("Expected capability failure");}catch(const std::runtime_error &){}

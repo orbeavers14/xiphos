@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "search_generation.hpp"
 #include <stdexcept>
-#include <swmodule.h>
+#include "sdk_search.hpp"
 namespace xiphos::core::detail
 {
 namespace
@@ -30,15 +30,15 @@ const char *mode_name(SearchMode mode)
 }
 const char *backend_name(int type)
 {
-	if (type == sword::SWModule::SEARCHTYPE_REGEX)
+	if (type == xiphos::core::detail::sdk_search_regex)
 		return "regular expression";
-	if (type == sword::SWModule::SEARCHTYPE_PHRASE)
+	if (type == xiphos::core::detail::sdk_search_phrase)
 		return "phrase";
-	if (type == sword::SWModule::SEARCHTYPE_MULTIWORD)
+	if (type == xiphos::core::detail::sdk_search_multiword)
 		return "multiword";
-	if (type == sword::SWModule::SEARCHTYPE_ENTRYATTR)
+	if (type == xiphos::core::detail::sdk_search_attribute)
 		return "entry attribute";
-	if (type == sword::SWModule::SEARCHTYPE_EXTERNAL)
+	if (type == xiphos::core::detail::sdk_search_external)
 		return "external index";
 	throw std::logic_error("Unknown committed search backend");
 }

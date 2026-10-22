@@ -48,7 +48,7 @@ int main(int argc,char **argv){try{
   for(const auto *target:{"Text","Commentary"})for(const auto *scope:{"Text","Alternate"})for(const auto *expression:{"John1:2-John1:3","John1:1;John1:3","Gen-Rev","unknown-original-bounds"}){
    SearchQuery query{target,"Original"};query.range=SearchRange{scope,expression};held=reader.search_module(query);
    check(backend.set_range(scope,expression)>=0,"Actual legacy range parser completes");backend.set_scope2range();
-   const auto stripped=manager.getModule(target)->stripText("Original");check(backend.do_module_search(const_cast<char *>(target),stripped.c_str(),-1,XIPHOS_SWORD_SEARCH_ICASE_FLAG,0)>=0,"Actual bounded backend search completes");
+   const sword::SWBuf stripped=manager.getModule(target)->stripText("Original");check(backend.do_module_search(const_cast<char *>(target),stripped.c_str(),-1,XIPHOS_SWORD_SEARCH_ICASE_FLAG,0)>=0,"Actual bounded backend search completes");
    check(held.references==refs(backend.results)&&held.requested.range->module==scope&&held.requested.range->expression==expression,"Copied scoped search matches actual legacy range/target module semantics, including alternate versification");
    check(reader.read("Text","John1:1").html.find("Original Alpha")!=std::string::npos,"Scoped search restores target module reading behavior");
   }

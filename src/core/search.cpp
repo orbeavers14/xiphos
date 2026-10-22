@@ -5,10 +5,11 @@
 #include "search_generation.hpp"
 #include "search_validation.hpp"
 #include "sdk_text.hpp"
+#include "sdk_render.hpp"
 #include "xiphos/core/search_policy.hpp"
 #include "xiphos/core/engine_manager.hpp"
 #include "xiphos/core/presentation.hpp"
-#include <swmodule.h>
+#include "sdk_search.hpp"
 #include <swoptfilter.h>
 #include <versekey.h>
 #include <listkey.h>
@@ -78,14 +79,14 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   bool whole_entry=false;
   std::optional<AttributeSearch> attribute;
   switch(query.mode){
-    case SearchMode::regular_expression:engine_type=sword::SWModule::SEARCHTYPE_REGEX;break;
-    case SearchMode::phrase:engine_type=sword::SWModule::SEARCHTYPE_PHRASE;break;
+    case SearchMode::regular_expression:engine_type=xiphos::core::detail::sdk_search_regex;break;
+    case SearchMode::phrase:engine_type=xiphos::core::detail::sdk_search_phrase;break;
     case SearchMode::words:
     case SearchMode::multiword:
-    case SearchMode::indexed:engine_type=sword::SWModule::SEARCHTYPE_MULTIWORD;break;
-    case SearchMode::lemma:attribute=AttributeSearch::lemma;engine_type=sword::SWModule::SEARCHTYPE_ENTRYATTR;break;
-    case SearchMode::morphology:attribute=AttributeSearch::morphology;engine_type=sword::SWModule::SEARCHTYPE_ENTRYATTR;break;
-    case SearchMode::footnote:attribute=AttributeSearch::footnote;engine_type=sword::SWModule::SEARCHTYPE_ENTRYATTR;break;
+    case SearchMode::indexed:engine_type=xiphos::core::detail::sdk_search_multiword;break;
+    case SearchMode::lemma:attribute=AttributeSearch::lemma;engine_type=xiphos::core::detail::sdk_search_attribute;break;
+    case SearchMode::morphology:attribute=AttributeSearch::morphology;engine_type=xiphos::core::detail::sdk_search_attribute;break;
+    case SearchMode::footnote:attribute=AttributeSearch::footnote;engine_type=xiphos::core::detail::sdk_search_attribute;break;
     default:throw std::invalid_argument("Unknown search mode");
   }
   std::optional<sword::ListKey> range;
@@ -108,11 +109,11 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   ScopedSearchFilters filters(manager,effective_text);ScopedSearchModule state(module);
   // Capability probing must see this request's search-only filter context too.
   if((query.mode==SearchMode::words||query.mode==SearchMode::indexed)&&supports_indexed_search(module))
-    engine_type=sword::SWModule::SEARCHTYPE_EXTERNAL;
-  const bool index_fallback=query.mode==SearchMode::indexed&&engine_type!=sword::SWModule::SEARCHTYPE_EXTERNAL;
-  auto prepared=sidebar_search_text(query.expression,query.mode==SearchMode::words&&engine_type==sword::SWModule::SEARCHTYPE_EXTERNAL);
+    engine_type=xiphos::core::detail::sdk_search_external;
+  const bool index_fallback=query.mode==SearchMode::indexed&&engine_type!=xiphos::core::detail::sdk_search_external;
+  auto prepared=sidebar_search_text(query.expression,query.mode==SearchMode::words&&engine_type==xiphos::core::detail::sdk_search_external);
   if(attribute){auto value=attribute_search_text(query.expression,*attribute);prepared=std::move(value.expression);whole_entry=value.whole_entry;}
-  const auto &stripped_buffer=module.stripText(prepared.c_str());
+  const auto stripped_buffer=strip_sdk_buffer(module,prepared.c_str());
   const auto stripped=copy_sdk_text(stripped_buffer,maximum_search_effective_bytes);
   if(control&&control->cancel_requested()) {
     SearchResult result{std::move(query),stripped,engine_type,0,{},false};result.cancelled=true;result.effective_text_options=effective_text;result.index_fallback=index_fallback;return result;
@@ -121,15 +122,15 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
     SearchResult result{std::move(query),stripped,engine_type,0,{},false};result.effective_text_options=effective_text;result.index_fallback=index_fallback;return result;
   }
   ProgressContext context{&module,control.get(),std::this_thread::get_id(),progress_begin,progress_end};
-  const int flags=(query.case_sensitive?0:XIPHOS_SWORD_SEARCH_ICASE_FLAG)|(whole_entry?sword::SWModule::SEARCHFLAG_MATCHWHOLEENTRY:0);
+  const int flags=(query.case_sensitive?0:XIPHOS_SWORD_SEARCH_ICASE_FLAG)|(whole_entry?xiphos::core::detail::sdk_search_whole_entry:0);
   auto &list=module.search(stripped.c_str(),engine_type,flags,
                            range?&*range:nullptr,nullptr,search_percent,&context);
   // Legacy copies the complete scope before sorting indexed display results.
   auto staged=next?std::make_shared<const SearchScope>(list,scope_limits):nullptr;
-  if(engine_type==sword::SWModule::SEARCHTYPE_EXTERNAL)list.sort();
+  if(engine_type==xiphos::core::detail::sdk_search_external)list.sort();
   SearchRetainedKeys staged_retained;
   if(retained)staged_retained=retain_search_keys(list,
-    engine_type==sword::SWModule::SEARCHTYPE_EXTERNAL?nullptr:staged,retention_limits);
+    engine_type==xiphos::core::detail::sdk_search_external?nullptr:staged,retention_limits);
   auto copied=copy_search_references(list,limits,allow_empty_output);
   SearchResult result{std::move(query),stripped,engine_type,copied.engine_count,std::move(copied.references),copied.limited};
   result.executed=true;result.cancelled=control&&control->cancel_requested();

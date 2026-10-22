@@ -112,8 +112,8 @@ The returned owned snapshot is allocated and parsed from the verified staged fil
 before replacement. On success it describes the committed document without a
 second frontend read; no search/history/preferences state is applied. Worker
 inputs copy before queueing and closed tabs reject before mutation. Dropping an
-observer does not cancel an accepted save; shutdown drains it. C/Swift transport
-and explicit native editing remain the next slice. No user-profile discovery or
+observer does not cancel an accepted save; shutdown drains it. C/Swift save transport is now available at `c11b15b`; explicit native editing
+remains the next slice. No user-profile discovery or
 automatic save is introduced by this API.
 
 ## Evidence and remaining work
@@ -130,3 +130,34 @@ alias resolution, full mixed-family range setup and complete frontend workflow
 acceptance remain open. Native profile writing is not yet exposed. These remain separate work, along with
 corpus/locale, actual-index and current Fedora/MSVC validation. Existing GTK3
 source remains unchanged and no parity/retirement gate passes.
+
+## Owned C/Swift save transport (2026-10-22)
+
+Implementation `c11b15b` adds `xc_saved_search_list_edit` and
+`xc_worker_save_search_list`. Existing C layouts/version and read handles remain
+unchanged. Required path/label/value strings copy before return; empty label/value
+are valid, kind is strict, and each input has a 16-MiB pre-copy ceiling. Invalid
+shapes clear the observer before submission; UTF-8/XML/path/tab failures arrive
+at poll without exposing a result or silently replacing invalid files.
+
+The C observer and result handle are allocated before accepting a write. The
+verified core snapshot moves into that preallocated handle without allocation
+when polled (enforced by a nothrow move-assignment assertion). Take-once getters
+use the existing optional/effective-index contracts. Dropped observers do not
+cancel accepted writes, and shutdown drains them. Values survive request/worker/
+source-file teardown. This preserves the prepared-before-replacement core policy
+through the C result boundary; it does not introduce an external-writer lock.
+
+Swift `SavedSearchListKind`/`SavedSearchListEdit` and `CoreWorker.saveSearchList`
+copy inputs/results and reject NUL/oversized fields before C conversion. They
+reuse shared XML, duplicate-label and persistence policy. Cancellation of an
+observer does not claim to undo an accepted save; no settings/history are applied.
+
+Local focused checks: normal Mac6/6 (including Swift profile/dictionary fixture),
+ASan/UBSan6/6, TSan6/6 and portable core-on-Mac6/6, GTK runtime OFF. Sanitizer/
+portable selections cover C/CPP saves, existing read transports/profile parsing
+and generic profile save/XML compatibility. Strict C11 header syntax passes.
+Dependencies remain partly instrumented; ASan leaks off. Logs use ignored
+`build/search-list-save-adapters-*`. This is scoped transport evidence, not new
+Fedora/MSVC/native editor/full-parity acceptance. Generated original-prose
+profiles only; no user profile, general clipboard or hosted workflow changed.

@@ -613,3 +613,8 @@ an unavailable framework is an explicit skip. Configure
 `XIPHOS_REQUIRE_INDEXED_SEARCH_TEST=ON` for target acceptance so that condition
 fails. A skipped probe or successful creation status alone does not validate
 indexed execution.
+
+Explicit saved-search-list writes now have copied C/Swift transport through
+`xc_worker_save_search_list` / `CoreWorker.saveSearchList`. They return the core's
+verified staged snapshot without applying any search/settings state. See the
+[saved-list contract](../../doc/modernization/saved-search-lists-workflows.md).

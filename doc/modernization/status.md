@@ -1,6 +1,20 @@
 # Modernization status and acceptance
 
-Current checkpoint (2026-10-22): shared retained search generations, selected/all
+Latest integration (2026-10-22): Linux catch-up branch `linux/native-parity`
+through `f0b6e57` is integrated with saved-list C/Swift write transport
+`c11b15b` on `master`, at the owner's request. It shares existing core services
+for books, images, advanced search and retained exports. The integration corrects
+newer SWORD SDK class-constant initialization. Full local macOS regression:
+**173 passes + 1 explicit index skip** (174 registered, 147.56 s).
+Full portable core/Linux model regression on Mac: **130 passes + 1 explicit
+index skip** (131 registered, 98.12 s; GTK runtime OFF).
+See [integration evidence](handoff-macos.md#linux-parity-integration-2026-10-22).
+Recorded Fedora normal evidence remains **130/130**, including indexed search;
+its installed-SWORD ASan overlap failure and unavailable desktop display remain
+open. No whole-feature acceptance, retirement or completion-percentage increase
+follows, and no hosted build was requested.
+
+Earlier export checkpoint (2026-10-22): shared retained search generations, selected/all
 text export and initial restricted passive HTML documents are implemented through
 one C++ owner with copied C/Swift values. Native Mac text save/copy at `5d52a11`
 consumes the shared services; native HTML save/copy at `f89c585` now consumes the
@@ -105,7 +119,7 @@ not fresh measurements of the current source.
 ## Parity coverage snapshot
 
 The current matrix has 38 feature groups. Mac/shared-core has 21 partial rows,
-WinUI 3 has no frontend rows implemented, and GTK4 has 17 partial rows. These
+WinUI 3 has no frontend rows implemented, and GTK4 has 23 partial rows. These
 counts overlap, and a partial group can contain substantial pending workflows.
 **No group has complete accepted parity; no native app is release-ready.**
 The matrix and target handoffs retain the actual criteria and independent evidence.
@@ -281,3 +295,24 @@ normal and2/2 each sanitized/portable are independently scoped. No new current
 Fedora/MSVC, real index, broad corpus, full physical/visual/accessibility or whole
 parity acceptance. Explicit saved-list editing/atomic persistence, remaining
 advanced setup and resource/semantic policy remain pending. GTK3 stays intact.
+
+
+## Local Linux catch-up checkpoint (2026-10-22)
+
+Linux implementation `3f9a068a` on `linux/native-parity` adds general-book,
+typed image, ordered advanced search, saved-list import/application and retained
+text/HTML destination adapters through existing shared services. Private SDK
+compatibility covers released search constants and counted strip-filter bytes;
+standalone libxml test includes are explicit. The default Linux helper now uses
+one compiler job following an overlapping-build memory exhaustion.
+
+Fedora 44/aarch64 normal checks pass **130/130**, including indexed search;
+the expanded Linux model check passes **4/4** with prerequisites. GTK frontend
+and the opt-in new desktop smoke compile. Display access is unavailable (smoke
+exit77), so no new desktop/clipboard/picker/visual acceptance follows. Focused
+ASan/UBSan records4 passes,1 installed-SWORD overlap failure and2 blocked tests;
+direct model/generation runs reproduce the SWORD search diagnostic. It is not
+suppressed. See the [exact environment, commands and limits](handoff-linux.md).
+The owner subsequently approved publication; the identical tested code tree is
+published on `linux/native-parity` as `3f9a068a`. No hosted workflow was dispatched
+or enabled; no whole-feature acceptance or retirement changes.

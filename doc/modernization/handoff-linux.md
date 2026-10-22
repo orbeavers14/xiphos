@@ -1,5 +1,112 @@
 # Linux / Fedora / WSL2 chat handoff
 
+## Integration into master (2026-10-22)
+
+At the owner's request, `linux/native-parity` through `f0b6e57` is integrated
+with master `c11b15b`. The Mac integration check corrected newer SDK class search
+constants from `constexpr` to `const`; the Fedora released-SDK path is unchanged.
+Actual combined-tree Mac checks: **173 passes +1 index skip** (174 registered);
+portable core/Linux models on Mac, GTK OFF: **130 passes +1 index skip** (131
+registered). See [commands and environment](handoff-macos.md#linux-parity-integration-2026-10-22).
+These do not replace the recorded Fedora results below or close the SDK sanitizer
+and desktop-display gates. The Linux branch is retained; fetch master before the
+next Linux slice. No hosted build was dispatched or enabled.
+
+## Local catch-up checkpoint — 2026-10-22
+
+Task/branch: `linux/native-parity`, based on `bbc12ee0`; implementation commit
+`3f9a068a`. Owner requested current Mac preview implementation-scope catch-up.
+The owner explicitly approved publication on 2026-10-22 after initial automatic
+review blocked the upload. Implementation is published on `linux/native-parity`
+through the GitHub connector. Its tree is byte-identical to the locally checked
+implementation (`28cec0d1`, tree `bd571d2575cf2360a03fc99255059b8771a32247`).
+The connector assigns a different commit identity; use the published hash above.
+No hosted workflow was dispatched or enabled.
+
+Environment: Fedora 44 aarch64, GCC/G++ 16.2.1, CMake 4.3.0, Ninja 1.13.2,
+SWORD 1.9.0-38.fc44, GTK 4.22.5, WebKitGTK 2.54.1, GLib 2.88.4,
+libxml2 2.12.10, libpng 1.6.58. The owner installed system development packages.
+A temporary workspace SDK was abandoned in favor of those system packages.
+
+Changed behavior:
+
+- General-book tab consumes shared DisplayLevel/resource HTML/CSS, lazy contents
+  pages, root/up browsing, key/path reads, parent/child/sibling navigation, explicit
+  XML restoration, image/font/spacing/note controls and typed note/image dispatch.
+- Actual-source verse/book image bytes feed a bounded native PNG viewer; scripts
+  and remote/file subresources stay blocked. Only prepared book HTML allows data
+  images. Image decoding/desktop presentation needs a display check.
+- Search tab consumes all eight modes, ordered module requests (including literal
+  spaces, duplicates and failures), bounds/provider/complete last scope, annotation
+  choices/reset, progress/Stop, selected previews and source-preserving activation.
+- Explicit saved-list import/application consumes copied optional values, shared
+  first-label indices and tokenization. No native XML/list parsing or list saving.
+- Retained generation/group/row identities feed selected/all text/HTML export,
+  optional scripture/context/PNG and explicit partial-source disclosure. Native
+  HTML Copy supplies both shared representations; selected-file Save uses async
+  replacement. Desktop destination acceptance remains pending.
+- Released-SDK search constants and sized stripped buffers are adapted privately.
+  The old pointer API hid embedded NUL tails; the equivalent sized strip operation
+  restores existing validation without discarding tests. Installed SDK disassembly
+  confirms its pointer wrapper calls `renderText(text, -1, false)`. Newer SDKs keep
+  their sized `stripText` path. Existing search/legacy comparisons remain.
+- Explicit libxml include paths fix standalone test compilation. The Linux helper
+  defaults to one job. An earlier overlapping parallel build exhausted this 4-GiB
+  VM; it was stopped, generated Ninja dependency records repaired, and subsequent
+  builds/tests ran serially with debugger symbols omitted. Source was preserved.
+
+Checks actually run:
+
+```sh
+cmake -S platforms/linux -B build/native-linux -G Ninja \
+  -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS_DEBUG='-O0 -g0' \
+  -DCMAKE_CXX_FLAGS_DEBUG='-O0 -g0'
+cmake --build build/native-linux --parallel 1
+ctest --test-dir build/native-linux --output-on-failure --parallel 1 \
+  --timeout 120 --no-tests=error
+ctest --test-dir build/native-linux -R '^linux_study_model$' \
+  --output-on-failure --parallel 1
+```
+
+Full normal suite: **130/130 pass**, including usable Fedora SDK indexed search
+(no index skip). Latest expanded model run: **4/4 pass** with book, attribute and
+image prerequisites; checks include retained failures, group identity, routing,
+exports, optional saved values, exact binary ownership and shared-window shutdown.
+The full current GTK executable and opt-in desktop smoke compile. `bash -n
+platforms/linux/core.sh` and `git diff --check` pass.
+
+Sanitizer configuration: `build/linux-sanitized`, GTK OFF, same Debug flags, plus
+`-fsanitize=address,undefined -fno-omit-frame-pointer` in C/C++ and sanitizer linker
+flags. Built serially the `linux_study_model_test`, `core_attribute_search_test`,
+`core_book_document_presentation_test`, `core_verse_image_source_test`,
+`core_search_generation_test`, `core_sdk_text_test` and `core_search_test` targets.
+With `ASAN_OPTIONS=detect_leaks=0` and
+`UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1`, focused CTest regex
+`^(linux_study_model|core_search_generation|core_sdk_text|core_search)$` records
+**4 passes, 1 failure, 2 dependency-blocked** (7 including fixtures).
+`core_attribute_search` reports `memcpy-param-overlap` inside the uninstrumented
+Fedora `libsword.so.1.9` `SWModule::search` (offset `0x8a510`). Direct sanitized
+runs of generation and Linux model also encounter that dependency diagnostic.
+No suppression, system-library patch or sanitizer acceptance is claimed.
+
+GUI interactions checked: **none**. `GSK_RENDERER=cairo
+build/native-linux/linux_study_ui_smoke build/native-linux/ui-smoke-fixture`
+returns **77**, `No accessible GTK display`. The smoke now checks display
+availability before creating worker/UI objects; no headless cleanup dereference.
+Its fixture root combines generated book-presentation and attribute-search
+`mods.d`/`data` directories only. The smoke does not access the user's clipboard.
+The six older desktop smokes, actual key/pointer delivery, picker cancellation,
+rich-client clipboard, screen-reader, corpus/visual and accelerated rendering
+checks remain open. Do not count compiled controls as desktop acceptance.
+
+Shared API changes: none in public C/C++ signatures; private SDK compatibility
+and test discovery fixes only. Swift/WinUI and legacy GTK source are retained.
+Mac/newer-SDK rechecks remain separate; no whole parity group is accepted.
+
+Next: run the opt-in new and existing desktop smokes
+from an accessible Fedora session, validate actual input/pickers/clipboard and
+resolve the packaged SWORD sanitizer defect in a separate dependency checkpoint.
+
 Shared API notice (2026-10-18): complete per-tab last-search scope is now private
 to the shared core (`c1b0a88`); worker/C query/clear and scalar metadata commands
 are in `c38cd8f`. Existing normal/range searches reseed this tab's complete scope,
@@ -14,7 +121,7 @@ acceptance; preserve the actual results below. See [search contracts](search-wor
 Updated 2026-10-15. Read [AGENTS.md](../../AGENTS.md), the [shared handoff](handoff.md),
 [status](status.md), [architecture](architecture.md) and [parity ledger](parity-matrix.md).
 
-## Current incoming changes — native Fedora rerun required
+## Earlier incoming changes — current local checks recorded above
 
 Fetch current master. Shared SDK render recovery `2b756bf` restores the caller's
 attribute-processing flag on stored/buffer render failures without changing

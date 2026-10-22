@@ -1,6 +1,6 @@
 # Shared project handoff: start here in every chat
 
-Updated 2026-10-21. These files replace missing conversation context with a
+Updated 2026-10-22. These files replace missing conversation context with a
 versioned record. They do not transfer chat messages or synchronize themselves:
 each chat must fetch/pull Git and read them before working.
 
@@ -15,6 +15,16 @@ The [status ledger](status.md) is the detailed scope/evidence record; the
 [parity matrix](parity-matrix.md) controls acceptance. The planning estimate is
 about 8% (range 6–10%), with 0/38 feature groups fully accepted and 0/3 native
 release-ready applications. Do not turn passed build counts into parity scores.
+
+Current integration checkpoint: the owner requested merging `linux/native-parity`
+(`f0b6e57`, implementation `3f9a068`) into `master` after the saved-list C/Swift
+transport `c11b15b`. The merge preserves the single shared owner and adds Linux
+book/image/advanced-search/export adapters. A newer SWORD SDK compatibility fix
+uses runtime `const` values for class constants defined outside SDK headers.
+See [integration evidence](handoff-macos.md#linux-parity-integration-2026-10-22)
+and [Fedora evidence and open gates](handoff-linux.md). This integrates code;
+full feature parity, Fedora desktop interaction and the installed-SWORD sanitizer
+failure remain open. GTK3 and legacy source stay intact.
 
 Current search checkpoint: shared attribute execution `572f539` / Swift `a83d3c4`,
 annotation context `8ebeddc` / probe ordering `92bacfc`, canonical copied C request
@@ -53,7 +63,8 @@ use these services at `8f6bacc1`. Latest full Mac171 passes +1 index skip,172
 registered,145.28 s, plus scoped menu/picker/action checks with original fixtures.
 Shared explicit saved-list editing/staged persistence is now checked at
 `2e599e78` (5/5 normal, ASan/UBSan and portable-on-Mac); it returns a prepared
-owned snapshot. Next are C/Swift save transport and explicit native editing.
+owned snapshot. C/Swift save transport is checked at `c11b15b`; explicit native
+editing remains next.
 Complete saved setup and target-platform acceptance remain open.
 
 Prior full integrated shared HTML image checkpoint: **164 Mac passes + 1 index skip**
@@ -155,7 +166,7 @@ unvalidated redistribution of module content. Preserve this order across chats.
 | Execution environment | Responsibility | Next bounded milestone | Handoff |
 |---|---|---|---|
 | macOS | SwiftUI/AppKit frontend, Swift adapter, existing core characterization | Advanced headers/search and remaining resource policies | [Mac instructions](handoff-macos.md) |
-| Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Rebuild current GTK lexical integration and new model test, then physical-input, picker, accessibility, corpus and accelerated-rendering gates | [Linux instructions](handoff-linux.md) |
+| Fedora / Linux / WSL2 | Linux core validation and GTK4 frontend | Local books/images/search/export catch-up `3f9a068a`:130 normal tests pass; display/input/picker/clipboard checks and packaged SWORD sanitizer defect remain | [Linux instructions](handoff-linux.md) |
 | Native Windows | MSVC/dependency validation, Windows adapter and WinUI 3 frontend | Build/test the existing core with native Windows dependencies before creating the matching reading slice | [Windows instructions](handoff-windows.md) |
 
 These are task lanes, not claims that sessions are running or leases are held.

@@ -52,14 +52,14 @@ int main(int argc,char **argv){try{
   SearchQuery query{module,mode==SearchMode::regular_expression?"[Aa]lpha":"Alpha",mode,sensitive};
   auto result=reader.search_module(query);auto &source=*legacy.getModule(module);
   legacy.setGlobalOption("Greek Accents","Off");legacy.setGlobalOption("Hebrew Vowel Points","Off");legacy.setGlobalOption("Arabic Vowel Points","Off");
-  const auto prepared=sidebar_search_text(query.expression,result.engine_type==-4);const std::string stripped=source.stripText(prepared.c_str()).c_str();
+  const auto prepared=sidebar_search_text(query.expression,result.engine_type==-4);const std::string stripped=sword::SWBuf(source.stripText(prepared.c_str())).c_str();
   check(backend.do_module_search(const_cast<char *>(module),stripped.c_str(),result.engine_type,sensitive?0:XIPHOS_SWORD_SEARCH_ICASE_FLAG,0)>=0,"Actual legacy backend search completes");
   check(result.references==references(backend.results)&&result.total_results==static_cast<std::uint64_t>(backend.results.getCount())&&result.effective_expression==stripped&&result.requested.expression==query.expression,"Owned search keys/order/query match actual legacy backend in each mode/case/module");
   if(mode==SearchMode::phrase && result.references.size()!=(sensitive?1:2)){std::cerr<<"Phrase source="<<module<<" case_sensitive="<<sensitive<<" count="<<result.references.size()<<" case_flag="<<XIPHOS_SWORD_SEARCH_ICASE_FLAG<<" query="<<result.effective_expression<<" keys=";for(const auto &key:result.references)std::cerr<<key<<';';std::cerr<<'\n';}
   if(mode==SearchMode::phrase)check(result.references.size()==(sensitive?1:2),"Case flag matches linked SDK ABI and expected upper/lower phrase hits");held=std::move(result);
  }
  check(updates>0,"Actual SDK progress callback path exercised by oracle");
- auto stripped_markup=reader.search_module({"Text","<w>Alpha</w>",SearchMode::phrase,false});check(stripped_markup.effective_expression==legacy.getModule("Text")->stripText("<w>Alpha</w>").c_str()&&stripped_markup.requested.expression=="<w>Alpha</w>","Engine query uses exact SDK stripText output while original request stays unchanged");
+ auto stripped_markup=reader.search_module({"Text","<w>Alpha</w>",SearchMode::phrase,false});check(stripped_markup.effective_expression==sword::SWBuf(legacy.getModule("Text")->stripText("<w>Alpha</w>")).c_str()&&stripped_markup.requested.expression=="<w>Alpha</w>","Engine query uses exact SDK stripText output while original request stays unchanged");
  auto all=reader.search_module({"Text","Original",SearchMode::phrase,false});SearchLimits one;one.max_results=1;auto prefix=reader.search_module({"Text","Original",SearchMode::phrase,false},one);
  check(all.references.size()==3&&prefix.references.size()==1&&prefix.limited&&prefix.total_results==3&&prefix.references.front()==all.references.front(),"Result limit copies complete SDK prefix and retains total count");
  one.max_results=100;one.max_reference_bytes=1;auto no_key=reader.search_module({"Text","Original",SearchMode::phrase,false},one);check(no_key.references.empty()&&no_key.limited&&no_key.total_results==3,"Byte limit never truncates a reference");
