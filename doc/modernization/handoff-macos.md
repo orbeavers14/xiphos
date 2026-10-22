@@ -1119,3 +1119,46 @@ from leaking into that separate behavior. Existing note_dispatch already freezes
 and compares the complete callback; command fallback is the next bounded gap.
 No new full suite/UI URI click/corpus/current Fedora/MSVC or whole-feature
 acceptance. Same environment and sanitizer instrumentation limits as above.
+
+
+### Shared showRef module dispatch (2026-10-22, active)
+
+Sequential local master after typed URI commit `e0e9a86`. Extract the retained
+show_ref callback policy into a header-only C++11 shared dispatcher: hover does
+no lookup/presentation; clicks select an exact installed requested ID or the
+main-module fallback, then invoke the existing sidebar renderer with context and
+expression unchanged. GTK uses this dispatcher; no legacy source is removed.
+The frozen/actual full note/reference oracle now covers null/empty/unknown/Unicode
+main and requested module values. Actual adapter compiles strict C++11.
+
+Native contextual dispatch consumes the same decision on the sole FIFO owner.
+For pane calls, omitted showRef modules default to navigation_module rather than
+source_module; unknown/abbreviation tokens fall back to that same main module.
+Source reference stays separate for relative list parsing. Other command families
+retain source context; sword/bible URI aliases keep their own route. The older
+two-kind single-reference API gains exact main fallback without enabling aliases
+for commands. Invalid fallback/non-verse/type/parser failures publish no preview
+or history. Native NUL context guards precede borrowed C-string policy calls.
+
+Normal11/11 (6.39s), including C take-once/copied owner teardown, Swift and native
+Mac model preview with unchanged reading/search state. ASan/UBSan9/9 (11.42s);
+TSan9/9 (14.46s), portable/Linux model10/10 (7.26s). Full local Mac build
+succeeds. Complete Mac181-case selection (155.58s) initially had three sandbox
+clipboard failures and two old heading-preview expectations that defaulted a
+module-less command to its commentary source. Retained main_url_handler defaults
+missing modules to MainWindowModule, so the two expectations were corrected to
+Text (including direct main-source bytes). Desktop-access recheck9/9 (17.03s)
+passes all five affected tests plus prerequisites. Combined coverage:180 passes
+and1 explicit index skip; this is full selection plus focused recheck, not a fresh
+single clean full run. Complete Mac-hosted portable137-case selection (101.04s)
+had the same old core heading expectation; its rebuilt focused recheck2/2 passes,
+for combined136 passes+1 index skip. No production change was needed after these
+runs. Native isolated Mac/Linux fallback model checks remain passing.
+Initial nested-sandbox SwiftUI macro build failed; authorized local build outside
+that nested sandbox succeeds. Same compiler/SDK/instrumentation limitations as
+prior checkpoint. No new GUI/current Fedora/MSVC/corpus or whole-feature claim.
+
+Publication note: e0e9a86 is committed locally. Automatic approval review rejected
+the attempted push because trusted current messages did not explicitly authorize
+the public fork destination/master. User authorization was requested; no alternate
+push path or remote modification was attempted. Continue local work pending reply.

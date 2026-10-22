@@ -16,7 +16,7 @@ is retained in Git history rather than duplicated in the repository.
 | Morphology | Select using committed main source/testament; render raw value into information viewer | Delegate to dictionary display | Same complete-handler characterization, including missing modules/settings, overlapping type tags and rendering failure |
 | Footnote (`showNote`, type containing n) | Render Footnote body into information viewer | No corresponding body-display branch in inspected main handler | Complete frozen/actual show_note callback characterization; SDK output/runtime acceptance pending |
 | Cross-reference note (type containing x) | If xrefs_in_verse_list is enabled, display sidebar list; otherwise information viewer contains reference links and Back to current verse | Display the sidebar verse list | Complete frozen/actual show_note callback characterization; default setting is enabled; scoped native preference/hover routing implemented, full acceptance pending |
-| Explicit reference list (`showRef`) | No action in inspected show_ref | Display sidebar verse list | Complete frozen/actual show_ref characterization; current native click list service is partial workflow evidence |
+| Explicit reference list (`showRef`) | No action in inspected show_ref | Display sidebar verse list | Shared C++11 dispatcher reused by GTK/native, complete frozen/actual show_ref traces including fallback, scoped native preview checks; whole workflow acceptance pending |
 | sword:// dictionary entry | Render dictionary text in information viewer | Module-type routing determines display | Source observation in sword_uri/show_in_previewer; abbreviations/general keyed modules require separate characterization |
 | sword:// non-dictionary reference | Update status text or bookmark tag information | Navigate appropriate pane | Source observation; do not infer that every reference hover should render a passage |
 | Pointer leaves a link | Set in_url to zero, release cached URI, emit URI_SELECTED with null; no information-preview clear in inspected callback | Not applicable | Source observation in webkit/wk-html.c link_handler |
@@ -174,3 +174,22 @@ handler GStrings and reclaims frozen early-return allocations after recording;
 current allocation occurs after guards with identical traces. This is not a full
 GTK/SDK leak audit. Fixture evidence does not replace representative-module,
 legacy/native gesture, full visual/design, packaging or all-platform acceptance.
+
+
+## Exact reference-command module selection
+
+The shared `dispatch_reference_command` preserves show_ref's complete decision
+and callback sequence. Hover returns immediately. Click checks exact installed-ID
+membership and replaces unknown requested modules with the main module before
+presenting the original context/expression. It deliberately does not consult the
+abbreviation registry. Borrowed strings/callbacks live only for this dispatch.
+
+Native pane commands now use navigation_module for omitted and unknown showRef
+module tokens while retaining the supplied source reference for relative parsing.
+Single-context callers use current_module for both module roles. Explicit installed
+module IDs win. Other note/lexical/image source policies are unchanged. The older
+single-reference resolver keeps its two-kind transport; contextual calls return
+owned reference lists and do not record Bible navigation. This supersedes the
+prior exact-only rejection guard introduced with typed URI aliases. See
+[the Mac evidence](handoff-macos.md#shared-showref-module-dispatch-2026-10-22-active)
+for actual checks and limitations.

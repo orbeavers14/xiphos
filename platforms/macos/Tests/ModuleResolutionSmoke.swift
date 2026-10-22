@@ -30,6 +30,9 @@ import Foundation
             do { _ = try await worker.resolveLink(uri, currentModule: module); fatalError("NUL link input accepted") }
             catch is CoreError { }
         }
+        let command = try await worker.followStudyLinkAt(tab: tab, currentModule: "BSecond", currentReference: "John1:1", uri: "passagestudy.jsp?action=showRef&type=scripRef&module=Shared&value=1%3B1", navigationModule: "AFirst")
+        guard case .references(let references) = command, references.module == "AFirst", references.entries.count == 2,
+              references.entries[0].html.contains("prose for AFirst"), try await worker.history(tab).count == 0 else { fatalError("Swift reference command uses shared main-module fallback without URI aliases or history") }
         try await worker.closeTab(tab)
         do { _ = try await worker.resolveModuleName(tab: tab, requested: "Shared"); fatalError("Closed tab accepted") }
         catch is CoreError { }

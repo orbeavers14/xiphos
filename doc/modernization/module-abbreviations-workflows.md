@@ -149,3 +149,11 @@ focused checks cover copied lifetime, shutdown, closed tabs, malformed input,
 non-verse aliases, URI/command distinction and unchanged search metadata. These
 are scoped checks; the previous complete search checkpoint remains the latest
 full regression. No URI GUI/corpus or whole-feature acceptance is claimed.
+
+
+The subsequent shared showRef dispatcher now implements the command fallback
+that was left open above. Exact requested membership wins; unknown aliases
+fall back to the main/navigation module, without consulting the alias catalog.
+Missing pane command modules also default to that main module, while relative
+list parsing keeps the supplied source reference. See
+[reference-command policy](hover-workflows.md#exact-reference-command-module-selection).

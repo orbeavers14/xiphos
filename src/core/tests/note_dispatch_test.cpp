@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include <glib.h>
 #include "xiphos/core/note_presentation.h"
+#include "xiphos/core/reference_command.hpp"
 #include <cstring>
 #include <iostream>
 #include <map>
@@ -91,8 +92,10 @@ int main() {
     compare([&] { return frozen::show_note(module,passage,type,value,clicked); },[&] { return actual::show_note(module,passage,type,value,clicked); },!active || !value || !*value);
     ++comparisons;
    }
-  for(const char *module:{static_cast<const char *>(nullptr),"Missing","Available"})
+  for(const char *main:{static_cast<const char *>(nullptr),"","CurrentModule","Missing","文字 café"})
+   for(const char *module:{static_cast<const char *>(nullptr),"","Missing","Available","CurrentModule","文字 café"})
    for(const char *list:{static_cast<const char *>(nullptr),"","John 3:17;John 3:18","café"}) for(bool clicked:{false,true}) {
+    settings.MainWindowModule=main;
     compare([&] { return frozen::show_ref(module,list,clicked); },[&] { return actual::show_ref(module,list,clicked); }); ++comparisons;
    }
   std::cout<<"Complete note/reference dispatch: "<<comparisons<<" frozen/actual traces and GString lifecycles agree\n";

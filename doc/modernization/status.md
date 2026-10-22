@@ -11,7 +11,12 @@ checked with distinct original prose. See [alias contract](module-abbreviations-
 and [Mac evidence](handoff-macos.md#alias-search-execution-and-source-provenance-2026-10-22).
 Typed single-passage URI alias resolution additionally passes normal12/12,
 ASan/UBSan10/10, TSan10/10 and Mac-hosted portable/Linux11/11 focused checks.
-showRef fallback, parallel/BibleSync, full mixed-family/corpus/current platform acceptance and
+Shared retained/native showRef exact-module/main-module fallback now passes
+normal11/11, ASan/UBSan9/9, TSan9/9 and Mac-hosted portable/Linux10/10; full
+Mac181-case full selection plus desktop/heading9/9 recheck covers180 passes
+and1 explicit index skip; portable137-case full selection plus corrected heading
+recheck covers136 passes+1 index skip. See the Mac handoff for initial failures
+and exact scope. Parallel/BibleSync, full mixed-family/corpus/current platform acceptance and
 all whole-parity/retirement gates remain open.
 
 

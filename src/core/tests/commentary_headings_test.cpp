@@ -71,9 +71,9 @@ int main(int argc, char **argv) {
     const auto link = worker.follow_pane_link_at(tab, "Text", "ThMLNotes", "John 3:20", uri).get();
     check(std::holds_alternative<ReferenceList>(link), "SDK heading link is a reference preview command");
     const auto &references = std::get<ReferenceList>(link);
-    check(references.module == "ThMLNotes" && references.entries.size() == 1 && references.entries.front().reference == "John 3:17" &&
-          references.entries.front().html.find("Original ThML entry body") != std::string::npos &&
-          worker.history(tab).get().entries.empty(), "heading reference preview retains commentary source without recording a visit");
+    check(references.module == "Text" && references.entries.size() == 1 && references.entries.front().reference == "John 3:17" &&
+          references.entries.front().html == reader.read("Text", "John 3:17").html &&
+          worker.history(tab).get().entries.empty(), "module-less heading reference uses retained main Bible default without recording a visit");
     const auto queued = worker.read_commentary_chapter(tab, "Notes", "John 3:16").get();
     check(queued.html.find("Original heading") == std::string::npos && worker.history(tab).get().entries.empty(), "queued heading preference used without Bible visit");
     auto wait = [](xc_request *r) {

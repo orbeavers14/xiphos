@@ -17,7 +17,8 @@ struct VerseImageLink {std::string module,uri;};
 using ContextualStudyCommandLink = std::variant<PassageLink, StudyNoteLink, ReferenceListLink, LexicalLink, VerseImageLink>;
 // showRef commands retain lists/ranges for rendering with explicit source context.
 ContextualStudyCommandLink contextual_study_link(const std::string &url, const std::string &current_module);
-// Main-pane sword/bible links default to the main Bible; note/lexical commands
+// Main-pane sword/bible links and missing showRef modules default to the main
+// Bible; explicit command IDs remain literal until owner dispatch. Note/lexical commands
 // retain their source pane module. Explicit URI module names are preserved.
 ContextualStudyCommandLink contextual_study_link(const std::string &url, const std::string &source_module,
                                                  const std::string &navigation_module);

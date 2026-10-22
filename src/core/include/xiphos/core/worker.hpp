@@ -129,6 +129,8 @@ public:
   std::future<DictionaryEntry> read_dictionary(StudyTab tab, std::string module, std::string key);
   std::future<ReferenceList> read_reference_list(StudyTab tab, std::string module, std::string expression, std::string context);
   // showRef previews use the supplied source reference and never visit history.
+  // Requested modules use exact membership, falling back to the navigation/main
+  // module (current_module for older single-context calls), never URI aliases.
   // Same dispatch, explicitly recording successful lexical dictionary visits.
   std::future<ContextualStudyLink> follow_pane_link_at(StudyTab tab, std::string navigation_module, std::string source_module,
                                                     std::string current_reference, std::string uri);

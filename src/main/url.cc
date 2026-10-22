@@ -67,6 +67,7 @@
 #include "backend/sword_main.hh"
 #include "xiphos/core/lexicon.h"
 #include "xiphos/core/note_presentation.h"
+#include "xiphos/core/reference_command.hpp"
 
 #include "gui/debug_glib_null.h"
 
@@ -533,15 +534,12 @@ static gint show_note(const gchar *module, const gchar *passage,
 
 static gint show_ref(const gchar *module, const gchar *list, gboolean clicked)
 {
-	if (!clicked)
-		return 1;
-
-	if (!backend->is_module(module))
-		module = settings.MainWindowModule;
-	main_display_verse_list_in_sidebar(settings.currentverse,
-					   (gchar *)module,
-					   (gchar *)list);
-	return 1;
+	return xiphos::core::dispatch_reference_command(
+	    module, settings.MainWindowModule, settings.currentverse, list, clicked,
+	    [](const char *name) { return backend->is_module(name); },
+	    [](const char *context, const char *name, const char *expression) {
+		main_display_verse_list_in_sidebar(context, (gchar *)name, (gchar *)expression);
+	    });
 }
 
 /******************************************************************************

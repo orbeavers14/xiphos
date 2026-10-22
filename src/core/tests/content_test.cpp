@@ -63,6 +63,8 @@ int main() {
             std::get<ReferenceListLink>(listLink).expression == "16-19;16", "contextual dispatch retains relative ranges and duplicates");
     require(std::holds_alternative<ReferenceListLink>(contextual_study_link("passagestudy.jsp?action=showRef&type=scripRef&value=John.3.16", "Other")),
             "single showRef command is also a sidebar preview");
+    const auto paneReference=std::get<ReferenceListLink>(contextual_study_link("passagestudy.jsp?action=showRef&type=scripRef&value=16-19", "Source", "Main"));
+    require(paneReference.module=="Main"&&paneReference.expression=="16-19", "pane reference commands default to main module while retaining literal expression");
     require(std::holds_alternative<StudyNoteLink>(contextual_study_link("passagestudy.jsp?" + query, "Current")) &&
             std::holds_alternative<PassageLink>(contextual_study_link("sword:///John3:16", "Other")), "contextual dispatch preserves note and passage kinds");
     for (const auto &bad : {"https://example/passagestudy.jsp?action=showRef&type=scripRef&value=16-19",

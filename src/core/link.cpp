@@ -263,6 +263,9 @@ ContextualStudyCommandLink contextual_study_link(const std::string &url, const s
                                                  const std::string &navigation_module) {
   if (url.compare(0, 8, "sword://") == 0 || url.compare(0, 8, "bible://") == 0)
     return passage_link(url, navigation_module);
+  const auto parameters = command_parameters(url);
+  if (parameter(parameters, "action") == "showRef")
+    return reference_list_target(parameters, navigation_module);
   return contextual_study_link(url, source_module);
 }
 ContextualStudyCommandLink contextual_hover_link(const std::string &url, const std::string &current_module,

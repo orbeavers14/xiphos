@@ -47,8 +47,11 @@ focused ASan/UBSan and TSan11/11 each. Scoped actual Mac window checked. See the
 [current alias contract](module-abbreviations-workflows.md) and platform evidence.
 Typed single-passage URI resolution now consumes the same alias owner, with
 normal12/12, ASan/UBSan10/10, TSan10/10 and portable/Linux11/11 focused checks.
-No whole-group acceptance is implied. Next bounded shared work: retained showRef
-exact-module/main-module fallback; keep this separate from URI aliases.
+No whole-group acceptance is implied. Retained showRef exact-module/main-module
+fallback now shares a strict C++11 dispatcher with native preview calls;
+normal11/11, ASan/UBSan9/9, TSan9/9 and portable/Linux10/10 pass. Keep this
+separate from URI aliases. Next bounded work: characterize the complete retained
+sword_uri callback before expanding URI fallback/range/module-family behavior.
 Parallel/BibleSync and corpus/platform gates remain open.
 
 Current search checkpoint: shared attribute execution `572f539` / Swift `a83d3c4`,

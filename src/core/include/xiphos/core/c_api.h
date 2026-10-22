@@ -724,7 +724,11 @@ xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_req
  * history; other command kinds retain preview/target behavior. No Bible visit.
  * Legacy Unicode-uppercase requested key is recorded; raw command metadata is retained. */
 /* Main study panes distinguish default Bible navigation from note/lexical
- * source context. Same result kinds/lexical recording as follow_study_link_at. */
+ * source context. Same result kinds/lexical recording as follow_study_link_at.
+ * showRef uses an exact installed requested module or navigation_module fallback;
+ * omitted modules also use navigation_module. Reference parsing uses reference.
+ * Other contextual APIs use current_module as the command fallback. Command
+ * module selection does not resolve URI abbreviations. */
 xc_status xc_worker_follow_pane_link_at(xc_worker *worker, uint64_t tab, const char *navigation_module, const char *source_module, const char *reference, const char *uri, xc_request **out);
 xc_status xc_worker_follow_study_link_at(xc_worker *worker, uint64_t tab, const char *current_module, const char *current_reference, const char *uri, xc_request **out);
 xc_status xc_worker_resolve_study_link_at(xc_worker *worker, uint64_t tab, const char *current_module, const char *current_reference, const char *uri, xc_request **out);

@@ -22,5 +22,8 @@ int main(int argc,char **argv) {try {
  const auto generation=model.search_results().generation.id;
  check(model.follow("AFirst","bible://文字+caf%C3%A9/John1:1"),"Follow typed Unicode passage alias");settle(model);
  check(model.passage().bible=="Unicode"&&model.search_results().generation.id==generation&&model.search_results().groups[0].module=="Shared","URI alias navigation retains requested search provenance");
+ const auto reading=model.passage();
+ check(model.follow("BSecond","passagestudy.jsp?action=showRef&type=scripRef&module=Shared&value=1%3B1","John1:2"),"Preview reference command with main-module fallback");settle(model);
+ check(model.references().module=="Unicode"&&model.references().reference=="John 1:2"&&model.references().count==2&&model.references().html.find("prose for Unicode")!=std::string::npos&&model.passage().bible==reading.bible&&model.passage().reference==reading.reference&&model.search_results().generation.id==generation,"Linux reference command uses shared main fallback and source context without navigation/search mutation");
  std::cout<<"Portable Linux alias preview/activation/export model checks passed\n";return 0;
  }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}

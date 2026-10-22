@@ -37,8 +37,22 @@ int main(int argc,char **argv){try{
   auto pane=worker.follow_pane_link_at(tab,"AFirst","BSecond","John1:1","sword://Shared/John1:1").get();check(std::get<PassageLink>(pane).module=="BSecond","Pane dispatch resolves explicit aliases on shared owner");
   auto fallback=worker.follow_pane_link_at(tab,"AFirst","BSecond","John1:1","sword:///John1:1").get();check(std::get<PassageLink>(fallback).module=="AFirst","Relative URI retains existing navigation-pane fallback");
   const auto command=worker.resolve_study_link(tab,"AFirst","passagestudy.jsp?action=showRef&type=scripRef&module=AFirst&value=John1:1").get();check(std::get<PassageLink>(command).module=="AFirst","Exact single-reference command remains supported");
-  rejects<std::out_of_range>([&]{(void)worker.resolve_study_link(tab,"AFirst","passagestudy.jsp?action=showRef&type=scripRef&module=Shared&value=John1:1").get();});
-  rejects<std::out_of_range>([&]{(void)worker.resolve_study_link_at(tab,"AFirst","John1:1","passagestudy.jsp?action=showRef&type=scripRef&module=Shared&value=John1:1").get();});
+  const std::string commandUri="passagestudy.jsp?action=showRef&type=scripRef&module=Shared&value=John1:1";
+  check(std::get<PassageLink>(worker.resolve_study_link(tab,"AFirst",commandUri).get()).module=="AFirst","Single command uses main module fallback instead of URI alias");
+  const auto list=std::get<ReferenceList>(worker.resolve_study_link_at(tab,"AFirst","John1:1",commandUri).get());
+  check(list.module=="AFirst"&&list.entries.size()==1&&list.entries.front().html.find("AFirst")!=std::string::npos,"Contextual command uses exact main module fallback with actual source contents");
+  for(const auto &token:{"Shared","Missing","文字+caf%C3%A9",""}) {
+    const auto uri=std::string("passagestudy.jsp?action=showRef&type=scripRef&module=")+token+"&value=1%3B1";
+    const auto paneList=std::get<ReferenceList>(worker.follow_pane_link_at(tab,"AFirst","BSecond","John1:1",uri).get());
+    check(paneList.module=="AFirst"&&paneList.entries.size()==2&&paneList.entries[0].reference==paneList.entries[1].reference,"Pane commands use main fallback and source reference, preserving duplicate order");
+  }
+  const auto explicitList=std::get<ReferenceList>(worker.follow_pane_link_at(tab,"AFirst","BSecond","John1:1","passagestudy.jsp?action=showRef&type=scripRef&module=Unicode&value=1").get());
+  check(explicitList.module=="Unicode"&&explicitList.entries.size()==1&&explicitList.entries[0].html.find("Unicode")!=std::string::npos,"Installed explicit command module wins over main fallback");
+  rejects<std::out_of_range>([&]{(void)worker.resolve_study_link(tab,"Shared",commandUri).get();});
+  rejects<std::out_of_range>([&]{(void)worker.resolve_study_link_at(tab,"Shared","John1:1",commandUri).get();});
+  rejects<std::invalid_argument>([&]{(void)worker.resolve_study_link(tab,std::string("AFirst\0hidden",13),commandUri).get();});
+  rejects<std::invalid_argument>([&]{(void)worker.follow_pane_link_at(tab,std::string("AFirst\0hidden",13),"BSecond","John1:1",commandUri).get();});
+  check(worker.history(tab).get().entries.empty(),"Reference fallback previews never record main navigation");
   worker.close_tab(tab).get();rejects<std::invalid_argument>([&]{(void)worker.resolve_study_link_at(tab,"AFirst","John1:1","sword://Shared/John1:1").get();});
   draining=worker.resolve_link("AFirst","sword://Shared/John1:1");
  }
@@ -53,6 +67,13 @@ int main(int argc,char **argv){try{
  check(xc_open(root.c_str(),&reader)==XC_OK&&xc_resolve_link(reader,"AFirst","sword://Shared/John1:1",&link)==XC_OK,"Existing C resolver consumes shared aliases");xc_close(reader);
  check(std::string(xc_link_module(link))=="BSecond"&&std::string(xc_link_reference(link))=="John1:1","Owned C link survives reader teardown");xc_link_release(link);
  xc_worker *worker=nullptr;xc_request *request=nullptr;
+ check(xc_worker_open(root.c_str(),&worker)==XC_OK&&xc_worker_create_tab(worker,&request)==XC_OK&&wait(request)==XC_OK,"C reference command owner");
+ const auto ctab=xc_request_tab(request);xc_request_release(request);
+ std::string copiedCommand="passagestudy.jsp?action=showRef&type=scripRef&module=Shared&value=1%3B1";
+ check(xc_worker_follow_pane_link_at(worker,ctab,"AFirst","BSecond","John1:1",copiedCommand.c_str(),&request)==XC_OK,"C copied command submission");copiedCommand.clear();
+ check(wait(request)==XC_OK,"C command fallback completed");auto *references=xc_request_take_reference_list(request);check(references&&!xc_request_take_reference_list(request),"C command reference result take once");xc_request_release(request);xc_worker_close(worker);
+ check(std::string(xc_reference_list_module(references))=="AFirst"&&xc_reference_list_count(references)==2&&std::string(xc_reference_list_entry_html(references,0)).find("prose for AFirst")!=std::string::npos,"C reference fallback copied source survives owner shutdown");xc_reference_list_release(references);
+ worker=nullptr;request=nullptr;
  check(xc_worker_open(root.c_str(),&worker)==XC_OK&&xc_worker_resolve_link(worker,"AFirst","sword://Shared/John1:1",&request)==XC_OK&&!xc_request_take_link(request),"Queue C passage alias with pre-poll guard");xc_worker_close(worker);
  check(wait(request)==XC_OK,"C shutdown drains passage aliases");link=xc_request_take_link(request);check(link&&!xc_request_take_link(request),"C passage alias take once");xc_request_release(request);check(std::string(xc_link_module(link))=="BSecond","C worker passage target owns actual ID after shutdown");xc_link_release(link);
  std::cout<<"Typed passage URI alias resolution, fallback, type guards, copied ownership and state isolation passed\n";return 0;

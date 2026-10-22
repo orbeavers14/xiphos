@@ -3,6 +3,7 @@
 #include "xiphos/core/profile.hpp"
 #include "search_control.hpp"
 #include "xiphos/core/note_presentation.h"
+#include "xiphos/core/reference_command.hpp"
 #include <condition_variable>
 #include <deque>
 #include <functional>
@@ -37,16 +38,31 @@ struct StudyWorker::Impl {
     StudyNote note_link(StudyTab id, const std::string &current_module, const std::string &uri) {
       return note_target(id, xiphos::core::study_note_link(uri, current_module));
     }
+    bool installed_module(const char *id) const {
+      return id && std::any_of(reader.modules().begin(), reader.modules().end(),
+          [&](const Module &module) { return module.id == id; });
+    }
     ContextualStudyLink study_link_at(StudyTab tab, const std::string &current_module,
                                      const std::string &current_reference, const std::string &uri, bool record_lexical,
                                      const std::string &navigation_module = "") {
       auto &session = this->tab(tab);
+      if (current_module.find('\0') != std::string::npos || navigation_module.find('\0') != std::string::npos ||
+          current_reference.find('\0') != std::string::npos)
+        throw std::invalid_argument("Study link context contains NUL");
       const auto target = navigation_module.empty() ? xiphos::core::contextual_study_link(uri, current_module)
           : xiphos::core::contextual_study_link(uri, current_module, navigation_module);
       if (const auto *passage = std::get_if<PassageLink>(&target))
         return reader.resolve_link(passage->module, passage_uri(passage->reference));
-      if (const auto *list = std::get_if<ReferenceListLink>(&target))
-        return session.read_reference_list(list->module, list->expression, current_reference);
+      if (const auto *list = std::get_if<ReferenceListLink>(&target)) {
+        ReferenceList result;
+        const auto &main_module = navigation_module.empty() ? current_module : navigation_module;
+        dispatch_reference_command(list->module.c_str(), main_module.c_str(), current_reference.c_str(),
+            list->expression.c_str(), true, [&](const char *id) { return installed_module(id); },
+            [&](const char *context, const char *id, const char *expression) {
+              result = session.read_reference_list(id, expression, context);
+            });
+        return result;
+      }
       if (std::holds_alternative<LexicalLink>(target))
         return record_lexical ? session.visit_lexical(current_module, current_reference, uri, XIPHOS_LEXICON_MAIN)
                               : session.read_lexical(current_module, current_reference, uri, XIPHOS_LEXICON_MAIN);
@@ -468,16 +484,23 @@ std::future<ContextualStudyLink> StudyWorker::resolve_study_link_at(StudyTab tab
 std::future<ResolvedStudyLink> StudyWorker::resolve_study_link(StudyTab tab, std::string current_module, std::string uri) {
   return impl_->submit([tab, current_module = std::move(current_module), uri = std::move(uri)](Impl::State &s) -> ResolvedStudyLink {
     s.tab(tab); // Both kinds require an open study context.
+    if (current_module.find('\0') != std::string::npos)
+      throw std::invalid_argument("Study link context contains NUL");
     const auto target = xiphos::core::study_link(uri, current_module);
     if (const auto *passage = std::get_if<PassageLink>(&target)) {
-      // showRef command fallback is a separate retained policy. Do not turn
-      // its existing exact-module behavior into URI alias resolution merely
-      // because both parsed values use PassageLink.
-      const bool passage_uri = uri.compare(0, 8, "sword://") == 0 || uri.compare(0, 8, "bible://") == 0;
-      if (!passage_uri && !std::any_of(s.reader.modules().begin(), s.reader.modules().end(),
-          [&](const Module &module) { return module.id == passage->module; }))
-        throw std::out_of_range("Command module is not installed");
-      return s.reader.resolve_link(passage->module, xiphos::core::passage_uri(passage->reference));
+      const bool is_passage_uri = uri.compare(0, 8, "sword://") == 0 || uri.compare(0, 8, "bible://") == 0;
+      if (is_passage_uri)
+        return s.reader.resolve_link(passage->module, xiphos::core::passage_uri(passage->reference));
+      PassageLink result;
+      dispatch_reference_command(passage->module.c_str(), current_module.c_str(), nullptr,
+          passage->reference.c_str(), true, [&](const char *id) { return s.installed_module(id); },
+          [&](const char *, const char *id, const char *reference) {
+            // Commands use exact IDs including the fallback; never resolve an
+            // abbreviation merely because the older API returns PassageLink.
+            if (!s.installed_module(id)) throw std::out_of_range("Command fallback module is not installed");
+            result = s.reader.resolve_link(id, xiphos::core::passage_uri(reference));
+          });
+      return result;
     }
     return s.note_target(tab, std::get<StudyNoteLink>(target));
   });

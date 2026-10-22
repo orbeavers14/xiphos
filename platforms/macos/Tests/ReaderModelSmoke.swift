@@ -110,6 +110,12 @@ struct ReaderModelSmoke {
         first.followLink("bible://文字+caf%C3%A9/John1:1"); try await idle(first)
         guard first.selection == "Unicode", first.html.contains("prose for Unicode"),
               model.batchResult?.generation.id == generation, model.selectedModules == requested else { fatalError("URI alias navigation must consume actual source without changing search") }
+        let readingHTML = first.html, readingReference = first.renderedReference
+        first.followLink("passagestudy.jsp?action=showRef&type=scripRef&module=Shared&value=1%3B1", currentModule: "BSecond", currentReference: "John1:2", navigationModule: "AFirst"); try await idle(first)
+        guard first.referencePreview?.module == "AFirst", first.referencePreview?.context == "John 1:2",
+              first.referencePreview?.entries.count == 2, first.referencePreview?.html.contains("prose for AFirst") == true,
+              first.html == readingHTML, first.renderedReference == readingReference, model.batchResult?.generation.id == generation,
+              second.referencePreview == nil else { fatalError("Native reference command must use shared main fallback and source context without navigation/search mutation") }
         first.close(); second.close(); await worker.shutdown()
         print("Native aliases preserve requested tokens and actual preview/activation/export provenance")
     }
@@ -1004,8 +1010,8 @@ struct ReaderModelSmoke {
         let otherBody = other.commentaryEntry?.html, otherBack = other.canBack
         other.reference = "John 4:2"
         other.followCommentaryLink(uri); try await idle(other)
-        guard other.referencePreview?.module == "ThMLNotes", other.referencePreview?.entries.first?.reference == "John 3:17",
-              other.commentaryEntry?.html == otherBody, other.reference == "John 4:2", other.canBack == otherBack else { fatalError("native heading reference preview retains source/draft/history") }
+        guard other.referencePreview?.module == "Text", other.referencePreview?.entries.first?.reference == "John 3:17",
+              other.commentaryEntry?.html == otherBody, other.reference == "John 4:2", other.canBack == otherBack else { fatalError("native module-less heading reference uses main Bible and retains draft/history") }
         other.setCommentaryHeadings(false); try await idle(other)
         guard other.commentaryEntry?.headingHTML.isEmpty == true, other.commentaryEntry?.html == otherBody,
               model.commentaryHeadings == false else { fatalError("ThML heading preference preserves body and other module/window") }
