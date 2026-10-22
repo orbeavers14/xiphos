@@ -1,6 +1,6 @@
 # Modernization status and acceptance
 
-Current checkpoint (2026-10-21): shared retained search generations, selected/all
+Current checkpoint (2026-10-22): shared retained search generations, selected/all
 text export and initial restricted passive HTML documents are implemented through
 one C++ owner with copied C/Swift values. Native Mac text save/copy at `5d52a11`
 consumes the shared services; native HTML save/copy at `f89c585` now consumes the
@@ -61,7 +61,14 @@ Mac Export now offers Include search details, default off. Scoped native/model/C
 checks pass16/16, ASan/UBSan11/11, portable core/GTK models26/26 on Mac and search
 regressions3/3. See [contract](export-context-workflows.md).
 
-Next bounded work: advanced search settings, remaining
+Mac advanced modes/annotation controls (`d26aa2d`) and ordered multi-module
+selection/grouped preview/export (`c17206e`) now consume the existing shared
+services. Full Mac batch checkpoint:167 passes +1 explicit index skip,168
+registered (142.55 s), with isolated desktop pasteboard access. Each hit retains its original group/row/module and generation for
+export; no native scope chaining or search engine was added. Full advanced
+settings/workflow and target-platform acceptance remain open.
+
+Next bounded work: explicit partial-source export choice, advanced search settings, remaining
 resource/style/semantic policies and workflow acceptance.
 Keep target-platform validation and other core services in view. No whole parity
 group, release or legacy retirement accepted: **0/38 groups, 0/3 release-ready apps**.

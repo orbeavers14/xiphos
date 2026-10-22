@@ -1,6 +1,6 @@
 # macOS chat handoff
 
-Updated 2026-10-21. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.md),
+Updated 2026-10-22. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.md),
 [status](status.md), [core scope](shared-core-roadmap.md) and relevant parity rows.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
@@ -14,13 +14,11 @@ image statistics; wrapper/traversal/resource guards and thin C/Swift adapters. O
 GTK3 behavior/reference remain the architecture. Native HTML destination controls now consume the same shared documents at `f89c585`.
 The only unrelated local file is `.DS_Store`; leave it untouched.
 
-Latest full Mac checkpoint: **164 passes + one explicit index skip** (165
-registered, 137.38 s), with desktop access for isolated pasteboard checks. The
-shared HTML image/resource selection passes 11/11 each normal, ASan/UBSan, TSan
-and portable core on Mac, GTK runtime OFF. Swift image/default HTML selection
-passes 8/8 including fixtures; C11 header syntax passes. Earlier full portable
-model evidence remains 121 passes + one skip (122 registered, 92.46 s at
-`b335db5`). No current Fedora/MSVC, whole parity or release acceptance.
+Latest full Mac checkpoint at native batch `c17206e`: **167 passes + one explicit
+index skip** (168 registered, 142.55 s), with desktop access for isolated
+pasteboard tests. This includes new advanced-mode and ordered-batch model cases.
+Earlier source/sanitizer/portable evidence remains in the linked contracts and
+checkpoint sections below. No Fedora/MSVC, whole parity or release acceptance.
 
 Current implementation: shared rich clipboard `b85c440` adds an optional bounded
 plain-text companion to complete HTML on the same FIFO job/resolved rows. Native
@@ -491,3 +489,30 @@ attribute/search fixtures; native destinations use isolated named pasteboards.
 Next bounded task: consume ordered shared batch search in native module selection
 and grouped results, retaining actual module/group/row identity through preview
 and export. Do not loop independent searches or recreate scope chaining in Swift.
+
+### Native ordered batch search checkpoint (2026-10-22)
+
+Implementation `c17206e`, branch `modernization/native-batch-search`.
+An explicit multiple-module mode offers ordered add/remove/move controls and
+retains duplicates. One existing shared batch call handles all requests. Copied
+results are grouped by original request, including failures/empty/unattempted
+status. Hits retain exact module/group/row; preview and selected export consume
+those identities. All export uses the complete retained generation, captured
+query and existing incomplete-source refusal. Single-mode defaults remain.
+
+Build `macos_preview macos_reader_model_test macos_search_export_test` in
+`build/macos` with `--parallel 4`: pass. Initial selection
+`ctest --test-dir build/macos --output-on-failure -R '^reader_model_batch_search$|^reader_model_advanced_search$|^reader_model_search$'`
+passes5/5 (13.90 s, including fixtures). Final desktop-access complete
+`ctest --test-dir build/macos --output-on-failure` passes **167 +1 index skip**,
+168 registered, 142.55 s. Whitespace/link checks pass. Existing SDK/compiler/
+configuration unchanged. Logs: ignored `build/batch-{model,full}-*.log`.
+No shared core/ABI/adapter/GTK3/Linux/workflow source changes; no hosted jobs.
+
+Checks cover order/duplicates, failed-group gaps, original drafts, actual-source
+preview/selected rich export, complete returned export, stale refusal, core last
+scope chaining/bounds, all-failed replacement, single-mode return and close guards.
+Only original fixture content, temporary files and isolated named pasteboards are
+used. No new sanitizer, physical native keyboard/menu/accessibility, actual index,
+corpus/Fedora/MSVC or complete parity acceptance. Next: explicit partial-source
+export choice and remaining advanced setup/saved workflows/resource policies.
