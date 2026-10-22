@@ -1264,3 +1264,21 @@ disclosure/Back link; hover/normal/C/Swift transport checks remain scoped.
 Focused normal7/7 (3.49s), ASan/UBSan7/7 (7.27s), TSan7/7 and
 portable7/7 pass. Final complete regressions are in progress.
 No new GUI/corpus/current Fedora/MSVC or whole-feature acceptance.
+
+
+### Native URI escape validation and final checkpoint (2026-10-22, active)
+
+Sequential master after link-only bounds `9ce2756`. Native decode rejects
+incomplete/non-hex percent sequences before module resolution/fallback. Valid
+encoded percent/literal plus/Unicode decode exactly once. Pure single/contextual,
+Reader/C and worker checks cover rejection; source retainer callback behavior is
+unchanged. Normal4/4 (3.80s), C11 header and whitespace checks pass. Final
+ASan/UBSan11/11 (16.98s) and TSan11/11 (20.22s) pass. Complete
+Mac and Mac-hosted portable/Linux regressions are in progress. Native-disabled strict C++11 registry/complete URI oracle2/2 pass
+(0.43s), including the newly shared retained range decision.
+
+The latest link-only focused TSan7/7 took8.62s, portable7/7 3.18s. That slice
+initially missed the complete reference-list type include in content_test; added
+the include before any passing checks/commit. No production repair was needed.
+Same environment/instrumentation limitations as prior entries; no reset credit,
+hosted build or acceptance score increase.

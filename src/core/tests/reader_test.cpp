@@ -158,6 +158,7 @@ int main(int argc, char **argv) {
           std::string(xc_link_module(badlink)) == "ParityTest", "unknown URI module uses retained main-module fallback");
     xc_link_release(badlink); badlink = nullptr;
     check(xc_resolve_link(r, "AlsoMissing", "sword://Missing/John3:17", &badlink) == XC_MODULE_NOT_FOUND && !badlink, "unavailable main fallback is reported");
+    check(xc_resolve_link(r, "ParityTest", "sword://Missing%GG/John3:17", &badlink) == XC_INVALID_ARGUMENT && !badlink, "malformed escape rejects before unknown-module fallback");
     check(xc_resolve_link(r, "ParityTest", "https://example.com", &badlink) == XC_INVALID_ARGUMENT && !badlink, "external link unsupported");
     check(xc_resolve_link(nullptr, "ParityTest", "sword:///John3:17", &badlink) == XC_INVALID_ARGUMENT, "null link reader");
     check(xc_resolve_link(r, "ParityTest", "sword:///John3:17", nullptr) == XC_INVALID_ARGUMENT, "null link output");

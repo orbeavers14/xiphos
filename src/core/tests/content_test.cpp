@@ -19,6 +19,16 @@ int main() {
       try { passage_link(bad, "Current"); } catch (const std::invalid_argument &) { rejected = true; }
       require(rejected, "unsupported links rejected");
     }
+    require(passage_link("sword://Module%25Name/John%203:16", "Current").module == "Module%Name" &&
+            passage_link("sword://Name%2BPlus/John3:16", "Current").module == "Name+Plus" &&
+            std::get<PassageLink>(contextual_study_link("sword://Name%2520/John3:16", "Current")).module == "Name%20",
+            "valid percent/literal-plus escapes decode exactly once");
+    for (const auto *bad : {"sword://Bad%/John3:16", "sword://Bad%2/John3:16", "sword://Bad%GG/John3:16", "bible://Current/John3:16%0G", "sword://Current/John3:16-17%"}) {
+      bool contextual=false, single=false;
+      try { (void)passage_link(bad,"Current"); } catch(const std::invalid_argument &) { single=true; }
+      try { (void)contextual_study_link(bad,"Current"); } catch(const std::invalid_argument &) { contextual=true; }
+      require(single&&contextual,"malformed escapes reject at both URI parsing boundaries before owner fallback");
+    }
     const std::string query = "action=showNote&type=n&value=1&module=Option%26Greek&passage=John+3%3A16";
     const auto note = study_note_link("passagestudy.jsp?" + query, "Current");
     require(note.module == "Option&Greek" && note.reference == "John 3:16" && note.identifier == "1" && note.type == "n",

@@ -23,7 +23,7 @@ int main(int argc,char **argv){try{
   check(reader.resolve_link("Shared","sword:///John1:1").module=="BSecond","URI module omission uses supplied current alias");
   check(reader.resolve_link("Shared","sword://AFirst/John1:1").module=="AFirst","Explicit installed ID overrides fallback alias");
   held=reader.resolve_link("AFirst","sword://文字+caf%C3%A9/John1:1");check(held.module=="Unicode","Decoded Unicode/space alias remains exact");
-  for(const auto &uri:{"https://example.com","sword://Shared/John1:1-2","sword://Shared/John1:1#anchor","sword://%00/John1:1","sword://%FF/John1:1"})rejects<std::invalid_argument>([&]{reader.resolve_link("AFirst",uri);});
+  for(const auto &uri:{"https://example.com","sword://Shared/John1:1-2","sword://Shared/John1:1#anchor","sword://%00/John1:1","sword://%FF/John1:1","sword://Missing%GG/John1:1","sword://Shared/John1:1%"})rejects<std::invalid_argument>([&]{reader.resolve_link("AFirst",uri);});
   check(reader.resolve_link("AFirst","sword://Missing/John1:1").module=="AFirst","Unknown offered URI module uses retained exact main fallback");
   rejects<std::out_of_range>([&]{reader.resolve_link("Missing","sword://OtherMissing/John1:1");});
   rejects<std::out_of_range>([&]{reader.resolve_link("Shared","sword://Missing/John1:1");});

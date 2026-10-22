@@ -56,8 +56,9 @@ reference snapshots, preserving supplied source reference, ordered duplicates,
 per-tab rendering options, actual source identity and limited disclosure. Missing
 URI modules use main navigation context. Unknown/non-Bible range targets remain
 errors; retained fallback/navigation for those cases is still a separate gap.
-Contextual URI input is capped at32768 bytes and rendered previews at2000 total
-entries. Older two-kind/Reader single-target APIs keep strict single references.
+Contextual URI input is capped at32768 bytes; rendered and link-only native
+previews cap the ordered prefix at2000 total entries with visible truncation
+disclosure. Older two-kind/Reader single-target APIs keep strict single references.
 No main/history/search mutation occurs when the preview is returned.
 
 The retained GTK callback now calls the same C++11 Bible/range decision; complete
@@ -67,3 +68,10 @@ dictionary hover/keyed-module navigation and status/bookmark behavior must be
 implemented and checked independently against the retained callback evidence.
 See [alias policy](module-abbreviations-workflows.md),
 [hover policy](hover-workflows.md) and [platform evidence](handoff-macos.md).
+
+
+Native URI decoding now rejects incomplete/non-hex percent escapes before owner
+module lookup or unknown-module fallback. Valid encoded percent signs/literal
+plus/Unicode decode once; percent-looking text produced by one decode is not
+decoded again. This tightens the native typed parser boundary; the complete
+retained callback oracle does not claim malformed legacy URL safety.

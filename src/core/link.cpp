@@ -16,7 +16,9 @@ std::string decode(const std::string &url) {
   for (std::size_t i = 0; i < url.size(); ++i) {
     char c = url[i];
     if (c == '+') c = ' ';
-    else if (c == '%' && i + 2 < url.size() && hex(url[i+1]) >= 0 && hex(url[i+2]) >= 0) {
+    else if (c == '%') {
+      if (i + 2 >= url.size() || hex(url[i+1]) < 0 || hex(url[i+2]) < 0)
+        throw std::invalid_argument("Malformed passage link escape");
       c = static_cast<char>((hex(url[i+1]) << 4) | hex(url[i+2])); i += 2;
     }
     if (static_cast<unsigned char>(c) < 32 || c == 127)
