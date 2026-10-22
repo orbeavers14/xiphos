@@ -32,6 +32,8 @@ typedef enum xc_book_restore_mode {
 } xc_book_restore_mode;
 typedef struct xc_lexical_entry xc_lexical_entry;
 typedef struct xc_lexicons xc_lexicons;
+typedef struct xc_search_lists xc_search_lists;
+typedef struct xc_search_module_names xc_search_module_names;
 /* Borrowed submission strings. NULL is unset; empty is an explicit empty name. */
 typedef struct {
   const char *greek, *hebrew, *greek_morph_nt, *greek_morph_ot, *hebrew_morph;
@@ -746,6 +748,29 @@ xc_status xc_worker_lexicon_preferences(xc_worker *worker, uint64_t tab, xc_requ
  * an accepted operation; no automatic user-profile reads/writes occur. */
 xc_status xc_worker_import_lexicon_profile(xc_worker *worker, uint64_t tab, const char *path, xc_request **out);
 xc_status xc_worker_save_lexicon_profile(xc_worker *worker, uint64_t tab, const char *path, xc_request **out);
+/* Explicit read-only selected XML profile. Path/text copy before return;
+ * tab validation and file parsing/tokenization run on the existing FIFO owner.
+ * Empty module-list text is valid and returns zero names; NULL or text over
+ * 16 MiB is invalid. Long/malformed module names fail on the worker.
+ * Neither operation changes a profile, search, history or reading settings. */
+xc_status xc_worker_read_search_lists(xc_worker *worker, uint64_t tab, const char *path, xc_request **out);
+xc_status xc_worker_parse_search_module_list(xc_worker *worker, uint64_t tab, const char *text, xc_request **out);
+typedef enum xc_saved_search_list_kind { XC_SAVED_SEARCH_MODULES = 0, XC_SAVED_SEARCH_RANGES = 1 } xc_saved_search_list_kind;
+/* Take once after successful poll. Strings borrow from the owned snapshot until
+ * release. NULL attributes remain absent; empty strings remain explicit empty.
+ * Invalid/null snapshot, kind or row yields zero count/NULL strings.
+ * Effective index uses shared first-label policy, preserving duplicate shadows;
+ * its getter clears the output and returns invalid argument on invalid inputs. */
+xc_search_lists *xc_request_take_search_lists(xc_request *request);
+size_t xc_search_lists_count(const xc_search_lists *lists, int kind);
+const char *xc_search_lists_label(const xc_search_lists *lists, int kind, size_t row);
+const char *xc_search_lists_value(const xc_search_lists *lists, int kind, size_t row);
+xc_status xc_search_lists_effective_index(const xc_search_lists *lists, int kind, size_t row, size_t *index);
+void xc_search_lists_release(xc_search_lists *lists);
+xc_search_module_names *xc_request_take_search_module_names(xc_request *request);
+size_t xc_search_module_names_count(const xc_search_module_names *names);
+const char *xc_search_module_names_at(const xc_search_module_names *names, size_t row);
+void xc_search_module_names_release(xc_search_module_names *names);
 /* URI must be nonempty; origin is XIPHOS_LEXICON_MAIN/DIALOG. Nullable source
  * module/reference become empty (valid for source-independent Strong's).
  * Greek morphology validates source on the worker. No Bible history visit.

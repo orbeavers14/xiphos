@@ -365,6 +365,12 @@ std::future<SavedSearchLists> StudyWorker::read_search_lists(StudyTab tab, std::
     return read_saved_search_lists(path);
   });
 }
+std::future<std::vector<std::string>> StudyWorker::parse_search_module_list(StudyTab tab, std::string text) {
+  return impl_->submit([tab, text = std::move(text)](Impl::State &s) {
+    (void)s.tab(tab);
+    return saved_search_module_names(text);
+  });
+}
 std::future<void> StudyWorker::save_lexicon_profile(StudyTab tab, std::string path) {
   return impl_->submit([tab, path = std::move(path)](Impl::State &s) {
     const auto &preferences = s.tab(tab).lexicon_preferences();

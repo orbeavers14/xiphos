@@ -78,6 +78,7 @@ int main(int argc, char **argv)
 		rejects([&] { saved_search_module_names(std::string(4097, 'x')); });
 		rejects([&] { saved_search_module_names(std::string("Text\0,Hidden", 12)); });
 		rejects([&] { saved_search_module_names(std::string(1, static_cast<char>(0xff))); });
+		rejects([&] { saved_search_module_names(std::string(maximum_saved_search_text_bytes + 1, ',')); });
 		std::string capped = "<Xiphos><ranges>";
 		for (std::size_t i = 0; i < maximum_saved_search_lists; ++i)
 			capped += "<range label='Original' list='John1:1'/>";

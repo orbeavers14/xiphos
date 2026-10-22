@@ -65,6 +65,13 @@ struct LexiconRoles: OptionSet, Sendable {
 }
 enum LexiconOrigin: Int32, Sendable { case main = 0, dialog = 1 }
 enum LexicalKind: Int32, Sendable { case strongs = 0, morphology = 1 }
+struct SavedSearchList: Sendable, Equatable {
+    let label: String?, value: String?
+    let effectiveIndex: Int // Shared first-label lookup; duplicate shadows stay in core.
+}
+struct SavedSearchLists: Sendable, Equatable {
+    let moduleLists: [SavedSearchList], ranges: [SavedSearchList]
+}
 struct LexiconPreferences: Sendable, Equatable {
     var greek: String?, hebrew: String?, greekMorphNT: String?, greekMorphOT: String?, hebrewMorph: String?
 }
@@ -657,6 +664,20 @@ enum CoreValues {
                 }
             }
         }
+    }
+    static func searchLists(_ result: OpaquePointer) throws -> SavedSearchLists {
+        func items(_ kind: xc_saved_search_list_kind) throws -> [SavedSearchList] {
+            let kindValue = Int32(kind.rawValue)
+            let count = xc_search_lists_count(result, kindValue)
+            return try (0..<count).map { row in
+                var index = 0
+                guard xc_search_lists_effective_index(result, kindValue, row, &index) == XC_OK,
+                      index < count else { throw CoreError(status: XC_ENGINE_ERROR) }
+                return SavedSearchList(label: xc_search_lists_label(result, kindValue, row).map { String(cString: $0) },
+                    value: xc_search_lists_value(result, kindValue, row).map { String(cString: $0) }, effectiveIndex: index)
+            }
+        }
+        return try SavedSearchLists(moduleLists: items(XC_SAVED_SEARCH_MODULES), ranges: items(XC_SAVED_SEARCH_RANGES))
     }
     static func lexicons(_ result: OpaquePointer) -> LexiconPreferences? {
         guard xc_lexicons_configured(result) != 0 else { return nil }

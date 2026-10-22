@@ -7,7 +7,7 @@ import Foundation
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let source = root.appendingPathComponent("profile-café.xml"), saved = root.appendingPathComponent("saved.xml")
         let malformed = root.appendingPathComponent("malformed.xml")
-        let original = "<Xiphos><!--retain--><lexicons><greek>DictionaryOne</greek><hebrew>Unavailable &amp; Hebrew</hebrew><greek_morph_nt>MorphGreek</greek_morph_nt></lexicons><locale><special>tr_TR.UTF-8</special></locale><other>retained</other></Xiphos>"
+        let original = "<Xiphos><!--retain--><lexicons><greek>DictionaryOne</greek><hebrew>Unavailable &amp; Hebrew</hebrew><greek_morph_nt>MorphGreek</greek_morph_nt></lexicons><locale><special>tr_TR.UTF-8</special></locale><other>retained</other><modlists><modlist label='Original' list='DictionaryOne,, MissingModule,DictionaryOne,'/><modlist label='Original' list='Shadowed'/><modlist label='' list=''/><modlist list='Unlabelled'/><modlist label='Absent'/></modlists><ranges><range label='café α' list=' John1:1-2 '/></ranges></Xiphos>"
         try Data(original.utf8).write(to: source)
         try Data("<Xiphos>".utf8).write(to: malformed)
         if FileManager.default.fileExists(atPath: saved.path) { try FileManager.default.removeItem(at: saved) }
@@ -18,6 +18,22 @@ import Foundation
         _ = try await worker.visit(tab: first, module: "OriginalBible", reference: "John3:16")
         _ = try await worker.visitDictionary(tab: first, module: "DictionaryOne", key: "alpha")
         try await worker.setModuleEngineOptions(tab: first, module: "OriginalBible", options: [.strongs])
+        let searchLists = try await worker.readSearchLists(tab: first, path: source.path)
+        guard searchLists.moduleLists.count == 5, searchLists.ranges.count == 1,
+              searchLists.moduleLists[0].effectiveIndex == 0, searchLists.moduleLists[1].effectiveIndex == 0,
+              searchLists.moduleLists[1].value == "Shadowed", searchLists.moduleLists[2].label == "",
+              searchLists.moduleLists[2].value == "", searchLists.moduleLists[3].label == nil,
+              searchLists.moduleLists[4].value == nil, searchLists.ranges[0].label == "café α",
+              searchLists.ranges[0].value == " John1:1-2 " else { fatalError("copied named lists and shared duplicate-label selection") }
+        let selectedValue = searchLists.moduleLists[searchLists.moduleLists[1].effectiveIndex].value!
+        guard try await worker.parseSearchModuleList(tab: first, text: selectedValue) == ["DictionaryOne", " MissingModule", "DictionaryOne"],
+              try await worker.parseSearchModuleList(tab: first, text: ",,,").isEmpty else { fatalError("shared typed module splitting") }
+        for text in ["Text\0Hidden", String(repeating: "x", count: 4097), Array(repeating: "Text", count: 33).joined(separator: ",")] {
+            do { _ = try await worker.parseSearchModuleList(tab: first, text: text); fatalError("invalid module list accepted") }
+            catch is CoreError { }
+        }
+        do { _ = try await worker.readSearchLists(tab: first, path: malformed.path); fatalError("malformed named-list profile accepted") }
+        catch is CoreError { }
         let imported = try await worker.importLexiconProfile(tab: first, path: source.path)
         guard imported.greek == "DictionaryOne", imported.hebrew == "Unavailable & Hebrew",
               imported.greekMorphNT == "MorphGreek", imported.greekMorphOT == "Packard", imported.hebrewMorph == "OSHM",
@@ -46,7 +62,12 @@ import Foundation
         try await worker.closeTab(first)
         do { _ = try await worker.importLexiconProfile(tab: first, path: source.path); fatalError("closed import tab accepted") }
         catch is CoreError { }
+        do { _ = try await worker.readSearchLists(tab: first, path: source.path); fatalError("closed named-list tab accepted") }
+        catch is CoreError { }
+        do { _ = try await worker.parseSearchModuleList(tab: first, text: "DictionaryOne"); fatalError("closed module-list tab accepted") }
+        catch is CoreError { }
         try await worker.closeTab(second); await worker.shutdown()
+        guard searchLists.ranges[0].label == "café α", searchLists.moduleLists[1].effectiveIndex == 0 else { fatalError("named-list values after shutdown") }
         guard imported.greek == "DictionaryOne", imported.hebrew == "Unavailable & Hebrew", lookup.entry.module == "DictionaryOne" else { fatalError("copied typed results after shutdown") }
         print("Swift profile import/save, isolation, ownership and failure checks passed")
     }

@@ -137,13 +137,19 @@ SavedSearchLists read_saved_search_lists(const std::string &path) {
 }
 std::optional<std::string> saved_search_list_value(const std::vector<SavedSearchList> &items,
                                                  const std::optional<std::string> &label) {
-  for (const auto &item : items) if (item.label == label) return item.value;
+  const auto index = saved_search_list_index(items, label);
+  return index ? items[*index].value : std::nullopt;
+}
+std::optional<std::size_t> saved_search_list_index(const std::vector<SavedSearchList> &items,
+                                                const std::optional<std::string> &label) {
+  for (std::size_t index = 0; index < items.size(); ++index)
+    if (items[index].label == label) return index;
   return std::nullopt;
 }
 std::vector<std::string> saved_search_module_names(const std::string &text) {
   // Reject hidden suffixes even when they occur in otherwise empty fields.
-  if (text.find('\0') != std::string::npos)
-    throw std::invalid_argument("Saved module list contains NUL");
+  if (text.size() > maximum_saved_search_text_bytes || text.find('\0') != std::string::npos)
+    throw std::invalid_argument("Saved module list exceeds input bounds");
   std::vector<std::string> result;
   std::size_t start = 0;
   while (start < text.size()) {
