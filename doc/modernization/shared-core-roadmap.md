@@ -1,6 +1,6 @@
 # Shared core: remaining scope
 
-Updated 2026-10-21. This is a planning map, not an acceptance score.
+Updated 2026-10-22. This is a planning map, not an acceptance score.
 The full project remains roughly 8% (6–10%), with zero whole parity groups
 accepted. There is no evidence-based core-only completion percentage yet.
 A tested worker/reading foundation does not mean the application core is almost
@@ -13,7 +13,7 @@ finished. Whole workflows and data compatibility remain the acceptance units.
 | Dictionary and lexical content | Lookup/key steps/history, shared casing, lexical HTML/CSS and notes | Complete lookup/hover/search families and full corpus/locale acceptance |
 | General books | Tree/navigation/DisplayLevel documents, scoped restore, note/image clicks, bounded inline resources/module CSS, shared geometry and combined note numbering | Native sizing/global CSS/assets/formats, complete semantic links/corpus acceptance, book windows/tabs and saved workflows |
 | Parallel reading | Pending | Verse alignment, ordered translations, named sets, navigation and persistence |
-| Search | Bible/commentary basic + exact attribute modes, explicit intervals/complete last scope, private annotation context, advanced word dialects, bounded ordered batches, complete per-group result generations, stale-safe C/Swift reads, bounded selected/all text and restricted HTML export with C/Swift adapters, explicit bounded PNG embedding, native Mac text/HTML save/copy, progress/cancel and basic controls | Advanced module/range setup, actual indexed execution, mixed families, advanced controls/settings, complete preview/export and full backend/corpus acceptance |
+| Search | Bible/commentary basic + exact attribute modes, explicit intervals/complete last scope, private annotation context, advanced word dialects, bounded ordered batches, complete per-group result generations, stale-safe C/Swift reads, bounded selected/all text and restricted HTML export with C/Swift adapters, explicit bounded PNG embedding, native Mac text/HTML save/copy, progress/cancel, explicit saved-list import/application/edit/removal with verified snapshots and native Mac prefill | Remaining advanced module/range setup, abbreviation resolution, actual indexed execution, mixed families, advanced controls/settings, complete preview/export and full backend/corpus acceptance |
 | Library and installation | Module metadata/discovery subset | Favorites/hiding/grouping, sources/install/uninstall/index/cipher workflows |
 | Bookmarks and annotations | Pending | Hierarchy/order/colors, XML round trips, AndBible import, rendering precedence |
 | Writing and editing | Pending | Personal commentary, study pads, journals/prayer lists, compatible document storage |
@@ -48,3 +48,11 @@ seams. Parallel reading and complete persistence remain later core services.
 Reorder only with evidence or owner steering; do not block all native work until
 an imagined final core freeze. Current evidence/active task lives in the
 [shared handoff](handoff.md) and [Mac handoff](handoff-macos.md).
+
+
+The latest saved-list slice now has shared verified single-item editing/removal,
+owned C/Swift transport and explicit native Mac controls. See the
+[saved-list contract and next abbreviation source audit](saved-search-lists-workflows.md#next-shared-seam-module-abbreviation-resolution-source-audit-2026-10-22).
+Installed-ID collision exclusion, SDK registration order and post-range-setup
+resolution must be characterized together before implementing aliases. This
+source audit accepts no new behavior or whole parity group.

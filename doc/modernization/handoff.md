@@ -28,11 +28,12 @@ failure remain open. GTK3 and legacy source stay intact.
 
 Latest saved-list work now includes explicit native single-item editing
 (`d0b068c`), shared first-label removal (`f0778e0`), owned C/Swift removal transport
-(`0dbfff9`) and native removal/prefill consumption. These use the same verified
+(`0dbfff9`) and native removal/prefill consumption (`2b2f518`). These use the same verified
 staged snapshot and FIFO owner; saving/removing only refresh available choices,
 never current draft/results/scope. Combined full Mac173 passes+1 explicit index
 skip (174 registered,149.80s); removal transport normal8/8 and ASan/UBSan,
-TSan and portable-on-Mac6/6 each. See the [current contract](saved-search-lists-workflows.md)
+TSan and portable-on-Mac6/6 each. Final full portable core/Linux models on Mac:
+130 passes+1 explicit index skip,131 registered,99.11s; GTK runtime OFF. See the [current contract](saved-search-lists-workflows.md)
 and [native evidence](handoff-macos.md#native-saved-list-management-2026-10-22).
 GUI prefill/chooser cancellation is scoped; full management/advanced setup,
 corpus/locale and current Fedora/MSVC acceptance remain separate.

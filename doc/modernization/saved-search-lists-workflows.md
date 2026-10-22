@@ -250,3 +250,35 @@ Native model/file checks cover successful removal, duplicate exposure, malformed
 file retention, busy/prefill guards, search isolation and pending closure. Scoped
 window checks cover prefill and chooser cancellation; actual GUI removal completion
 and full management/workflow/accessibility/corpus/Fedora/MSVC acceptance remain open.
+
+
+## Next shared seam: module abbreviation resolution (source audit 2026-10-22)
+
+This audit is planning evidence, not an implementation or acceptance claim.
+Saved raw module tokens remain literal today. Retained
+`src/main/search_dialog.cc` resolves each token with `main_abbrev_to_name` after
+advanced range setup and before installed-module validation/execution. The
+existing shared setup characterization already checks raw names at range setup;
+resolving aliases during XML import/tokenization would change this ordering.
+
+Two policies must be extracted together. `BackEnd::init_lists` in
+`src/backend/sword_main.cc` clears registration and iterates installed SDK modules,
+reading `Abbreviation`; it registers only aliases that do not equal any installed
+module ID. `src/backend/module_manager.cc` also applies that installed-name
+collision exclusion. `src/main/sword.cc` then rejects aliases containing `(` and
+maintains exact case-sensitive name-to-alias and alias-to-name maps. Empty aliases
+are not excluded by that helper. Repeated alias registrations overwrite the
+reverse mapping; repeated names can leave previous reverse entries until clear.
+Do not silently replace this with a normalized bijection or first-match lookup.
+Actual SDK registration order and reload boundaries need characterization.
+
+A bounded next slice should first compile/compare these retained registration
+and lookup routines with original-prose collision/Unicode/empty/re-registration
+fixtures. Then place policy and SDK metadata copying under the existing core
+owner, stage complete catalog aliases before publication, preserve exact-ID
+protection and search setup ordering, and expose copied resolved identities while
+retaining requested-token provenance in batch/export metadata. Audit URI,
+parallel-reading and BibleSync callers before reusing a broad resolver there;
+search-only resolution must not silently change those independent contracts.
+No frontend alias maps, new SDK manager, automatic saved-list application or
+unvalidated corpus/locale behavior should be introduced.

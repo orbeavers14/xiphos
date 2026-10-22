@@ -7,6 +7,14 @@ and pushes are authorized; preserve unrelated changes, never force-push.
 
 ## Current checked source and active work
 
+Latest checked/pushed implementation is `2b2f518`, following `d0b068c`, `f0778e0`
+and `0dbfff9`: explicit native saved-list editing, shared verified first-label
+removal, owned C/Swift transport and native prefill/removal. Final combined full
+Mac173 passes+1 explicit index skip (174 registered,149.80s); portable core/Linux
+models on Mac130 passes+1 explicit index skip (131 registered,99.11s), GTK runtime
+OFF. Scoped sanitizer/transport evidence is below. No whole parity acceptance.
+
+
 Implementation through core/C `4fecce8` and Swift `374147d`: retained search
 generations; selected/all text exports and native Mac text controls; restricted
 HTML with explicit module-owned static PNG embedding, aggregate limits and copied
@@ -917,7 +925,7 @@ removal and existing-choice prefill, retaining drafts/results/closed-window guar
 
 ### Native saved-list management (2026-10-22)
 
-Sequential `master`: Manage named lists sheet now prefills through core-provided
+Implementation `2b2f518` (pushed fork `master`). Sequential `master`: Manage named lists sheet now prefills through core-provided
 effective indices and offers explicit first-label removal from a selected existing
 profile. Successful snapshots alone replace choices; no current draft/results/
 preview/scope application. Missing-value choices cannot silently prefill empty.
@@ -936,3 +944,38 @@ profile bytes unchanged. Also cancelled an incidental Save chooser. Tested windo
 closed, other windows left alone. Actual removal file mutation is covered in
 model/core/transport tests; no GUI removal completion, full physical input,
 accessibility, corpus or whole parity acceptance is claimed.
+
+
+### Continuation boundary and next work (2026-10-22)
+
+Four checked implementation checkpoints are pushed sequentially to fork `master`:
+`d0b068c` native editing; `f0778e0` core removal; `0dbfff9` owned C/Swift removal;
+`2b2f518` native prefill/removal. Current work has no second SDK owner or frontend
+application-policy engine. Unrelated `.DS_Store` stays untracked. Hosted workflows,
+credits/reset credits, user profiles and installed module contents were untouched.
+
+Remaining usage budget is being reserved for final checks and a clean pushed
+handoff. Next bounded shared work is module abbreviation registration/resolution:
+see the [inspected-source audit](saved-search-lists-workflows.md#next-shared-seam-module-abbreviation-resolution-source-audit-2026-10-22).
+Installed-ID collision exclusion, parenthesis filtering, duplicate registration,
+SDK order/reload and post-range-setup resolution must be checked together. Current
+raw saved tokens and requested-source metadata must remain intact until explicit
+execution resolution. Full saved-query/setup, corpus/locale/index and independent
+Fedora/MSVC/desktop acceptance remain open. No complete parity/retirement gate
+or evidence-based completion-percentage change follows.
+
+
+Final integrated portable check at `2b2f518`:
+`cmake --build build/linux-models --parallel 2` and
+`ctest --test-dir build/linux-models --output-on-failure` pass130 +1 explicit index
+skip,131 registered,99.11s. Logs: ignored
+`build/native-list-management-portable-{build,tests}.log`. This is Mac-hosted
+portable/GTK-model evidence with GTK runtime OFF; it does not replace Fedora's
+recorded indexed execution or validate its outstanding installed-SWORD sanitizer
+failure/desktop gates. The two disposable preview processes launched in this
+continuation were stopped after their tested windows closed; older instances
+were left alone. No build/test process remains intentionally running.
+
+Stopping at96% of the5-hour window (78% weekly) to retain a clean handoff reserve;
+no reset/purchase used. All four implementation commits are already pushed.
+Final documentation checks cover whitespace and local Markdown link targets.

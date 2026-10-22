@@ -1,6 +1,17 @@
 # Modernization status and acceptance
 
-Latest integration (2026-10-22): Linux catch-up branch `linux/native-parity`
+Latest checked implementation (2026-10-22): `2b2f518`, with shared saved-list
+removal `f0778e0`, owned removal transport `0dbfff9` and native editing `d0b068c`.
+Final full Mac173 passes+1 explicit index skip (174 registered,149.80s); full
+portable core/Linux models on Mac130 passes+1 explicit index skip (131 registered,
+99.11s; GTK runtime OFF). Scoped removal transport: normal8/8; ASan/UBSan,
+TSan and portable6/6 each. Native prefill/editor/chooser cancellation is scoped;
+GUI removal completion, complete advanced setup/corpus/platform acceptance remain
+open. See the [current Mac evidence](handoff-macos.md#native-saved-list-management-2026-10-22).
+No whole parity, legacy retirement or new completion score follows.
+
+
+Linux integration checkpoint (2026-10-22): Linux catch-up branch `linux/native-parity`
 through `f0b6e57` is integrated with saved-list C/Swift write transport
 `c11b15b` on `master`, at the owner's request. It shares existing core services
 for books, images, advanced search and retained exports. The integration corrects
