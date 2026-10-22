@@ -68,6 +68,7 @@
 #include "xiphos/core/lexicon.h"
 #include "xiphos/core/note_presentation.h"
 #include "xiphos/core/reference_command.hpp"
+#include "xiphos/core/passage_uri.hpp"
 
 #include "gui/debug_glib_null.h"
 
@@ -766,8 +767,8 @@ gint sword_uri(const gchar *url, gboolean clicked)
 	if (real_mod)
 		mod = (gchar *)real_mod;
 	
-	if (strpbrk(tmpkey, "-;,") && // >1 verse marked
-	    (main_get_mod_type(mod) == TEXT_TYPE)) {
+	if (xiphos::core::passage_uri_reference_list(mod, tmpkey,
+	    [](const char *name) { return main_get_mod_type(name) == TEXT_TYPE; })) {
 		main_display_verse_list_in_sidebar(settings.currentverse, mod, tmpkey);
 		handling_uri = FALSE;
 		return 1;

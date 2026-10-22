@@ -118,6 +118,11 @@ struct ReaderModelSmoke {
               second.referencePreview == nil else { fatalError("Native reference command must use shared main fallback and source context without navigation/search mutation") }
         first.followLink("sword://Missing/John1:1", currentModule: "BSecond", currentReference: "John1:2", navigationModule: "AFirst"); try await idle(first)
         guard first.selection == "AFirst", first.html.contains("prose for AFirst"), model.batchResult?.generation.id == generation else { fatalError("Unknown URI uses main navigation fallback and actual source without changing search") }
+        let beforeRange = first.html
+        first.followLink("bible://Shared/John1:1-2%3B1", currentModule: "Unicode", currentReference: "John1:2", navigationModule: "AFirst"); try await idle(first)
+        guard first.referencePreview?.module == "BSecond", first.referencePreview?.context == "John 1:2", first.referencePreview?.entries.count == 3,
+              first.referencePreview?.html.contains("prose for BSecond") == true, first.html == beforeRange, first.selection == "AFirst",
+              model.batchResult?.generation.id == generation else { fatalError("Native URI range uses shared actual-source preview without main/search mutation") }
         first.close(); second.close(); await worker.shutdown()
         print("Native aliases preserve requested tokens and actual preview/activation/export provenance")
     }

@@ -15,7 +15,9 @@ struct ReferenceListLink { std::string module, expression; };
 // Image ownership follows the committed source pane, not a declared URI module.
 struct VerseImageLink {std::string module,uri;};
 using ContextualStudyCommandLink = std::variant<PassageLink, StudyNoteLink, ReferenceListLink, LexicalLink, VerseImageLink>;
-// showRef commands retain lists/ranges for rendering with explicit source context.
+// showRef commands and contextual sword/bible lists retain expressions for
+// rendering with explicit source context. URI lists require owner Bible typing.
+// Contextual passage URIs are bounded to 32768 bytes; older single APIs stay strict.
 ContextualStudyCommandLink contextual_study_link(const std::string &url, const std::string &current_module);
 // Main-pane sword/bible links and missing showRef modules default to the main
 // Bible; explicit command IDs remain literal until owner dispatch. Note/lexical commands

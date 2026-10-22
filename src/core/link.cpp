@@ -26,7 +26,9 @@ std::string decode(const std::string &url) {
   return value;
 }
 }
-PassageLink passage_link(const std::string &url, const std::string &current_module) {
+namespace {
+PassageLink passage_target(const std::string &url, const std::string &current_module, bool single) {
+  if (!single && url.size() > 32768) throw std::invalid_argument("Contextual passage URI exceeds byte limit");
   // Require the whole URI, unlike the legacy handler's substring dispatch.
   // External content must not accidentally become an internal study command.
   const auto decoded = decode(url);
@@ -39,9 +41,20 @@ PassageLink passage_link(const std::string &url, const std::string &current_modu
   PassageLink result{decoded.substr(start, slash - start), decoded.substr(slash + 1)};
   if (result.module.empty()) result.module = current_module;
   if (result.module.empty() || result.reference.empty() ||
-      result.reference.find_first_of("#?!-;,/") != std::string::npos)
-    throw std::invalid_argument("This slice supports unanchored single-reference links");
+      result.reference.find_first_of("#?!/") != std::string::npos ||
+      (single && result.reference.find_first_of("-;,") != std::string::npos))
+    throw std::invalid_argument("Passage URI has unsupported module/reference syntax");
   return result;
+}
+ContextualStudyCommandLink contextual_passage(const std::string &url, const std::string &current_module) {
+  const auto target = passage_target(url, current_module, false);
+  if (target.reference.find_first_of("-;,") != std::string::npos)
+    return ReferenceListLink{target.module, target.reference};
+  return target;
+}
+}
+PassageLink passage_link(const std::string &url, const std::string &current_module) {
+  return passage_target(url, current_module, true);
 }
 namespace {
 using CommandParameters = std::map<std::string, std::string>;
@@ -242,7 +255,7 @@ namespace {
 ContextualStudyCommandLink contextual_link(const std::string &url, const std::string &current_module,
                                            const std::string &current_reference) {
   if (url.compare(0, 8, "sword://") == 0 || url.compare(0, 8, "bible://") == 0)
-    return passage_link(url, current_module);
+    return contextual_passage(url, current_module);
   const auto parameters = command_parameters(url);
   if (parameter(parameters, "action") == "showRef") return reference_list_target(parameters, current_module);
   if (parameter(parameters, "action") == "showStrongs" || parameter(parameters, "action") == "showMorph")
@@ -262,7 +275,7 @@ ContextualStudyCommandLink contextual_study_link(const std::string &url, const s
 ContextualStudyCommandLink contextual_study_link(const std::string &url, const std::string &source_module,
                                                  const std::string &navigation_module) {
   if (url.compare(0, 8, "sword://") == 0 || url.compare(0, 8, "bible://") == 0)
-    return passage_link(url, navigation_module);
+    return contextual_passage(url, navigation_module);
   const auto parameters = command_parameters(url);
   if (parameter(parameters, "action") == "showRef")
     return reference_list_target(parameters, navigation_module);

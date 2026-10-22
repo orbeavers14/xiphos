@@ -711,7 +711,11 @@ xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_req
 /* Explicit note preview uses tab settings without moving/adding history. */
 /* Resolves an internal passage target or renders a note, without visiting.
  * After XC_OK take_link or take_note identifies the result kind. */
-/* Contextual showRef dispatch returns a reference list; passage URIs and notes
+/* Contextual showRef dispatch returns a reference list. Contextual sword/bible
+ * list/range URIs (at most 32768 bytes) return a bounded reference list for an
+ * installed Bible target, after alias resolution; omitted modules use main
+ * navigation context. Unknown or non-Bible range targets remain errors.
+ * Single passage URIs and notes
  * return their existing kinds. Strong's/morphology return an owned lexical
  * preview after explicit tab lexicon configuration. Source context/URI must
  * be nonempty for this contextual API. No Bible history visit.

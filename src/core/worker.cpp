@@ -4,6 +4,7 @@
 #include "search_control.hpp"
 #include "xiphos/core/note_presentation.h"
 #include "xiphos/core/reference_command.hpp"
+#include "xiphos/core/passage_uri.hpp"
 #include <condition_variable>
 #include <deque>
 #include <functional>
@@ -54,6 +55,18 @@ struct StudyWorker::Impl {
       if (std::holds_alternative<PassageLink>(target))
         return reader.resolve_link(navigation_module.empty() ? current_module : navigation_module, uri);
       if (const auto *list = std::get_if<ReferenceListLink>(&target)) {
+        const bool is_passage_uri = uri.compare(0, 8, "sword://") == 0 || uri.compare(0, 8, "bible://") == 0;
+        if (is_passage_uri) {
+          const auto resolved = reader.resolve_module_name(list->module);
+          if (!resolved.module) throw std::out_of_range("Range URI module is not installed");
+          const bool sidebar = passage_uri_reference_list(resolved.module->c_str(), list->expression.c_str(),
+              [&](const char *id) {
+                return std::any_of(reader.modules().begin(), reader.modules().end(),
+                    [&](const Module &module) { return module.id == id && module.type == "Biblical Texts"; });
+              });
+          if (!sidebar) throw std::invalid_argument("Range URI preview requires a Bible module");
+          return session.read_reference_list(*resolved.module, list->expression, current_reference);
+        }
         ReferenceList result;
         const auto &main_module = navigation_module.empty() ? current_module : navigation_module;
         dispatch_reference_command(list->module.c_str(), main_module.c_str(), current_reference.c_str(),

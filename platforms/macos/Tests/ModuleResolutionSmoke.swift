@@ -34,6 +34,10 @@ import Foundation
         let command = try await worker.followStudyLinkAt(tab: tab, currentModule: "BSecond", currentReference: "John1:1", uri: "passagestudy.jsp?action=showRef&type=scripRef&module=Shared&value=1%3B1", navigationModule: "AFirst")
         guard case .references(let references) = command, references.module == "AFirst", references.entries.count == 2,
               references.entries[0].html.contains("prose for AFirst"), try await worker.history(tab).count == 0 else { fatalError("Swift reference command uses shared main-module fallback without URI aliases or history") }
+        let range = try await worker.followStudyLinkAt(tab: tab, currentModule: "Unicode", currentReference: "John1:2", uri: "bible://Shared/John1:1-2%3B1", navigationModule: "AFirst")
+        guard case .references(let rangePreview) = range, rangePreview.module == "BSecond", rangePreview.context == "John 1:2", rangePreview.entries.count == 3,
+              rangePreview.entries[0].html.contains("prose for BSecond"), rangePreview.entries[0].reference == rangePreview.entries[2].reference,
+              try await worker.history(tab).count == 0 else { fatalError("Swift Bible range alias returns copied ordered actual-source preview") }
         try await worker.closeTab(tab)
         do { _ = try await worker.resolveModuleName(tab: tab, requested: "Shared"); fatalError("Closed tab accepted") }
         catch is CoreError { }

@@ -1224,3 +1224,27 @@ actual content/source prefix, per-tab history isolation and original unrendered
 targets. ASan/UBSan7/7 (7.47s), TSan7/7 (8.94s), portable7/7
 (3.28s), C11 header syntax and whitespace checks pass. New URI range routing is next,
 not enabled by this cap. Same platform/instrumentation/full-acceptance limits.
+
+
+### Bounded contextual Bible URI ranges (2026-10-22, active)
+
+Sequential master after published aggregate bound `3458b0a`. Extract retained
+Bible/range punctuation decision into a C++11 header used by GTK sword_uri and
+FIFO native contextual dispatch. Complete18,436 frozen/current callback traces
+preserve exact lookup order and state behavior. Pure contextual parser stages
+literal module/expression with a32768-byte URI bound; owner resolves aliases and
+requires an installed Biblical Texts module before using the existing capped
+reference preview service. Source context/main fallback remain separate. Older
+Reader/two-kind URI APIs stay single-only. Unknown and non-Bible range URI routes
+remain errors rather than guessing retained keyed/fallback navigation behavior.
+showRef commands retain their separate exact-ID/main-fallback policy.
+
+Normal6/6 (4.25s): actual alias prose, range/duplicate/source context, module-less
+main fallback, Unicode, input limit, aggregate2000/limited metadata, copied C
+take-once/shutdown, Swift and native Mac model non-navigation/search isolation.
+An expanded type fixture initially added commentary after opening Reader; SDK
+modules-conf.cache hid that later addition. Corrected fixture stages every module
+before first open. Dictionary/commentary URI ranges reject while commentary
+showRef list remains supported. ASan/UBSan11/11 (12.33s), TSan11/11
+(15.15s), portable/Linux12/12 (7.55s) pass.
+No new GUI URI click/current Fedora/MSVC/corpus or whole-feature acceptance.

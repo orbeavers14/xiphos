@@ -2,6 +2,7 @@
 #include "xiphos/core/worker.hpp"
 #include "xiphos/core/c_api.h"
 #include <rawld.h>
+#include <rawcom.h>
 #include <filesystem>
 #include <fstream>
 #include <chrono>
@@ -58,6 +59,18 @@ int main(int argc,char **argv){try{
   rejects<std::invalid_argument>([&]{(void)worker.resolve_study_link(tab,std::string("AFirst\0hidden",13),commandUri).get();});
   rejects<std::invalid_argument>([&]{(void)worker.follow_pane_link_at(tab,std::string("AFirst\0hidden",13),"BSecond","John1:1",commandUri).get();});
   check(worker.history(tab).get().entries.empty(),"Reference fallback previews never record main navigation");
+  const auto searchGeneration=worker.search_module(tab,{"AFirst","Original"}).get().generation.id;
+  const auto uriList=std::get<ReferenceList>(worker.follow_pane_link_at(tab,"AFirst","Unicode","John1:2","sword://Shared/John1:1-2%3B1").get());
+  check(uriList.module=="BSecond"&&uriList.context=="John 1:2"&&uriList.expression=="John1:1-2;1"&&uriList.entries.size()==3&&uriList.entries[0].html.find("prose for BSecond")!=std::string::npos&&uriList.entries[0].reference==uriList.entries[2].reference&&!uriList.limited,"Bible range URI resolves actual alias source, preserves source context and duplicate order");
+  const auto defaultList=std::get<ReferenceList>(worker.follow_pane_link_at(tab,"AFirst","BSecond","John1:2","bible:///John1:1%3B1").get());
+  check(defaultList.module=="AFirst"&&defaultList.entries.size()==2,"Module-less range URI uses committed main module");
+  const auto unicodeList=std::get<ReferenceList>(worker.resolve_study_link_at(tab,"AFirst","John1:1","bible://文字+caf%C3%A9/John1:1%3B1").get());check(unicodeList.module=="Unicode","Unicode range alias resolution");
+  rejects<std::out_of_range>([&]{(void)worker.resolve_study_link_at(tab,"AFirst","John1:1","sword://Missing/John1:1-2").get();});
+  rejects<std::invalid_argument>([&]{(void)worker.resolve_study_link(tab,"AFirst","sword://Shared/John1:1-2").get();});
+  rejects<std::invalid_argument>([&]{(void)worker.resolve_study_link_at(tab,"AFirst","John1:1",std::string("sword://Shared/")+std::string(32768,'1')).get();});
+  const auto cappedUri=std::get<ReferenceList>(worker.resolve_study_link_at(tab,"AFirst","John1:1","sword://Shared/Gen1:1-Gen50:26%3BExod1:1-Exod40:38").get());
+  check(cappedUri.module=="BSecond"&&cappedUri.entries.size()==2000&&cappedUri.limited,"URI preview consumes aggregate cap and copied truncation metadata");
+  check(worker.search_generation(tab).get().id==searchGeneration&&worker.history(tab).get().entries.empty(),"URI range preview preserves committed search and navigation history");
   worker.close_tab(tab).get();rejects<std::invalid_argument>([&]{(void)worker.resolve_study_link_at(tab,"AFirst","John1:1","sword://Shared/John1:1").get();});
   draining=worker.resolve_link("AFirst","sword://Shared/John1:1");
  }
@@ -67,7 +80,13 @@ int main(int argc,char **argv){try{
  std::filesystem::remove_all(dictRoot);std::filesystem::create_directories(dictRoot/"mods.d");std::filesystem::create_directories(dictRoot/"data");
  check(sword::RawLD::createModule((dictRoot/"data").string().c_str())==0,"Create original dictionary type fixture");
  {std::ofstream config(dictRoot/"mods.d/dictionary.conf");config<<"[Dictionary]\nDataPath=./data\nModDrv=RawLD\nSourceType=Plain\nEncoding=UTF-8\nLang=en\nDescription=Original alias type fixture\nAbbreviation=Lex\n";}
+ std::filesystem::create_directories(dictRoot/"commentary");check(sword::RawCom::createModule((dictRoot/"commentary").string().c_str())==0,"Create empty original commentary type fixture");
+ {std::ofstream config(dictRoot/"mods.d/notes.conf");config<<"[Notes]\nDataPath=./commentary/\nModDrv=RawCom\nSourceType=Plain\nEncoding=UTF-8\nLang=en\nDescription=Original commentary type fixture\nAbbreviation=N\n";}
  {Reader dictionary(dictRoot.u8string());check(dictionary.resolve_module_name("Lex").module=="Dictionary","Non-verse alias registers before passage-family rejection");rejects<std::invalid_argument>([&]{dictionary.resolve_link("Dictionary","sword://Lex/John1:1");});}
+ {StudyWorker typed(dictRoot.u8string());const auto tab=typed.create_tab().get();
+  for(const auto *module:{"Lex","N"})rejects<std::invalid_argument>([&]{(void)typed.resolve_study_link_at(tab,"Notes","John1:1",std::string("sword://")+module+"/John1:1-2").get();});
+  const auto command=std::get<ReferenceList>(typed.resolve_study_link_at(tab,"Notes","John1:1","passagestudy.jsp?action=showRef&type=scripRef&module=Notes&value=John1:1-2").get());check(command.module=="Notes"&&command.entries.size()==2,"Command commentary lists remain separate from Bible-only URI range routing");
+ }
  xc_reader *reader=nullptr;xc_link *link=nullptr;
  check(xc_open(root.c_str(),&reader)==XC_OK&&xc_resolve_link(reader,"AFirst","bible://Missing/John1:1",&link)==XC_OK,"C unknown passage module falls back to main owner source");check(std::string(xc_link_module(link))=="AFirst","C fallback actual identity");xc_link_release(link);xc_close(reader);reader=nullptr;link=nullptr;
  check(xc_open(root.c_str(),&reader)==XC_OK&&xc_resolve_link(reader,"AFirst","sword://Shared/John1:1",&link)==XC_OK,"Existing C resolver consumes shared aliases");xc_close(reader);
@@ -77,7 +96,10 @@ int main(int argc,char **argv){try{
  const auto ctab=xc_request_tab(request);xc_request_release(request);
  std::string copiedCommand="passagestudy.jsp?action=showRef&type=scripRef&module=Shared&value=1%3B1";
  check(xc_worker_follow_pane_link_at(worker,ctab,"AFirst","BSecond","John1:1",copiedCommand.c_str(),&request)==XC_OK,"C copied command submission");copiedCommand.clear();
- check(wait(request)==XC_OK,"C command fallback completed");auto *references=xc_request_take_reference_list(request);check(references&&!xc_request_take_reference_list(request),"C command reference result take once");xc_request_release(request);xc_worker_close(worker);
+ check(wait(request)==XC_OK,"C command fallback completed");auto *references=xc_request_take_reference_list(request);check(references&&!xc_request_take_reference_list(request),"C command reference result take once");xc_request_release(request);
+ std::string rangeUri="sword://Shared/John1:1-2%3B1";
+ check(xc_worker_follow_pane_link_at(worker,ctab,"AFirst","Unicode","John1:2",rangeUri.c_str(),&request)==XC_OK,"C copied range URI submission");rangeUri.clear();check(wait(request)==XC_OK,"C range URI completed");auto *range=xc_request_take_reference_list(request);check(range&&!xc_request_take_reference_list(request),"C URI list take once");xc_request_release(request);xc_worker_close(worker);
+ check(std::string(xc_reference_list_module(range))=="BSecond"&&xc_reference_list_count(range)==3&&std::string(xc_reference_list_context(range))=="John 1:2"&&std::string(xc_reference_list_entry_html(range,0)).find("prose for BSecond")!=std::string::npos,"C copied range source survives shutdown");xc_reference_list_release(range);
  check(std::string(xc_reference_list_module(references))=="AFirst"&&xc_reference_list_count(references)==2&&std::string(xc_reference_list_entry_html(references,0)).find("prose for AFirst")!=std::string::npos,"C reference fallback copied source survives owner shutdown");xc_reference_list_release(references);
  worker=nullptr;request=nullptr;
  check(xc_worker_open(root.c_str(),&worker)==XC_OK&&xc_worker_resolve_link(worker,"AFirst","sword://Shared/John1:1",&request)==XC_OK&&!xc_request_take_link(request),"Queue C passage alias with pre-poll guard");xc_worker_close(worker);

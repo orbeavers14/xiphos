@@ -47,7 +47,22 @@ module after alias lookup reports ordinary absence; invalid alias metadata is
 still an error. The owner validates the copied actual target without navigating.
 Native pane dispatch preserves original URI and main/source roles, so fallback
 does not accidentally use an unknown offered name or the commentary source.
-An unavailable fallback or known non-verse target still fails. Native range URI, anchors,
+An unavailable fallback or known non-verse target still fails.
+
+Contextual native sword/bible range/list URIs now use the extracted retained
+Bible-only sidebar decision. Literal URI tokens and decoded expressions stage
+before owner alias/type resolution. Installed Bible targets return bounded owned
+reference snapshots, preserving supplied source reference, ordered duplicates,
+per-tab rendering options, actual source identity and limited disclosure. Missing
+URI modules use main navigation context. Unknown/non-Bible range targets remain
+errors; retained fallback/navigation for those cases is still a separate gap.
+Contextual URI input is capped at32768 bytes and rendered previews at2000 total
+entries. Older two-kind/Reader single-target APIs keep strict single references.
+No main/history/search mutation occurs when the preview is returned.
+
+The retained GTK callback now calls the same C++11 Bible/range decision; complete
+18,436-trace frozen/current comparison preserves type-lookup callback order.
+Native anchors,
 dictionary hover/keyed-module navigation and status/bookmark behavior must be
 implemented and checked independently against the retained callback evidence.
 See [alias policy](module-abbreviations-workflows.md),

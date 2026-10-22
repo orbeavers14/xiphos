@@ -27,5 +27,7 @@ int main(int argc,char **argv) {try {
  check(model.references().module=="Unicode"&&model.references().reference=="John 1:2"&&model.references().count==2&&model.references().html.find("prose for Unicode")!=std::string::npos&&model.passage().bible==reading.bible&&model.passage().reference==reading.reference&&model.search_results().generation.id==generation,"Linux reference command uses shared main fallback and source context without navigation/search mutation");
  check(model.follow("AFirst","sword://Missing/John1:1"),"Follow unknown offered URI through main fallback");settle(model);
  check(model.passage().bible=="Unicode"&&model.passage().bible_html.find("prose for Unicode")!=std::string::npos&&model.search_results().generation.id==generation,"Linux unknown URI follows committed main module instead of source context");
+ check(model.follow("AFirst","bible://Shared/John1:1-2%3B1","John1:2"),"Preview Bible range URI alias");settle(model);
+ check(model.references().module=="BSecond"&&model.references().count==3&&model.references().reference=="John 1:2"&&model.references().html.find("prose for BSecond")!=std::string::npos&&model.passage().bible=="Unicode"&&model.search_results().generation.id==generation,"Linux URI range uses copied actual-source preview without main/search mutation");
  std::cout<<"Portable Linux alias preview/activation/export model checks passed\n";return 0;
  }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}

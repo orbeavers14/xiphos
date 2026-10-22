@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include <glib.h>
+#include "xiphos/core/passage_uri.hpp"
 #include <cstring>
 #include <functional>
 #include <iostream>
