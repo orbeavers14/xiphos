@@ -51,8 +51,8 @@ struct StudyWorker::Impl {
         throw std::invalid_argument("Study link context contains NUL");
       const auto target = navigation_module.empty() ? xiphos::core::contextual_study_link(uri, current_module)
           : xiphos::core::contextual_study_link(uri, current_module, navigation_module);
-      if (const auto *passage = std::get_if<PassageLink>(&target))
-        return reader.resolve_link(passage->module, passage_uri(passage->reference));
+      if (std::holds_alternative<PassageLink>(target))
+        return reader.resolve_link(navigation_module.empty() ? current_module : navigation_module, uri);
       if (const auto *list = std::get_if<ReferenceListLink>(&target)) {
         ReferenceList result;
         const auto &main_module = navigation_module.empty() ? current_module : navigation_module;
@@ -490,7 +490,7 @@ std::future<ResolvedStudyLink> StudyWorker::resolve_study_link(StudyTab tab, std
     if (const auto *passage = std::get_if<PassageLink>(&target)) {
       const bool is_passage_uri = uri.compare(0, 8, "sword://") == 0 || uri.compare(0, 8, "bible://") == 0;
       if (is_passage_uri)
-        return s.reader.resolve_link(passage->module, xiphos::core::passage_uri(passage->reference));
+        return s.reader.resolve_link(current_module, uri);
       PassageLink result;
       dispatch_reference_command(passage->module.c_str(), current_module.c_str(), nullptr,
           passage->reference.c_str(), true, [&](const char *id) { return s.installed_module(id); },

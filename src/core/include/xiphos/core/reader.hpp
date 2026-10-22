@@ -107,6 +107,8 @@ public:
   BookNote book_note(const std::string &module, std::uint64_t offset, const std::string &identifier,
                      bool render_body = true);
   ReferenceChoices reference_choices(const std::string &module, const std::string &reference);
+  // Single-passage URI aliases resolve before unknown offered names fall back
+  // to the exact installed current/main ID. No navigation or history mutation.
   PassageLink resolve_link(const std::string &current_module, const std::string &url);
   // Owned targets/guard metadata from the existing parser, without rendering
   // verse bodies or changing the module key/filter state.

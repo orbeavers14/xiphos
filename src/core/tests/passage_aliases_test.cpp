@@ -23,7 +23,9 @@ int main(int argc,char **argv){try{
   check(reader.resolve_link("Shared","sword://AFirst/John1:1").module=="AFirst","Explicit installed ID overrides fallback alias");
   held=reader.resolve_link("AFirst","sword://文字+caf%C3%A9/John1:1");check(held.module=="Unicode","Decoded Unicode/space alias remains exact");
   for(const auto &uri:{"https://example.com","sword://Shared/John1:1-2","sword://Shared/John1:1#anchor","sword://%00/John1:1","sword://%FF/John1:1"})rejects<std::invalid_argument>([&]{reader.resolve_link("AFirst",uri);});
-  rejects<std::out_of_range>([&]{reader.resolve_link("AFirst","sword://Missing/John1:1");});
+  check(reader.resolve_link("AFirst","sword://Missing/John1:1").module=="AFirst","Unknown offered URI module uses retained exact main fallback");
+  rejects<std::out_of_range>([&]{reader.resolve_link("Missing","sword://OtherMissing/John1:1");});
+  rejects<std::out_of_range>([&]{reader.resolve_link("Shared","sword://Missing/John1:1");});
   rejects<std::invalid_argument>([&]{reader.resolve_link(std::string("AFirst\0hidden",13),"sword:///John1:1");});
   StudySession session(reader);session.visit("AFirst","John1:1");const auto before=session.search_module({"AFirst","Original"}).generation.id;
   reader.resolve_link("AFirst","sword://Shared/John1:1");
@@ -36,6 +38,9 @@ int main(int argc,char **argv){try{
   check(std::get<PassageLink>(contextual).module=="BSecond"&&worker.history(tab).get().entries.empty(),"Contextual passage resolution returns installed source without history visit");
   auto pane=worker.follow_pane_link_at(tab,"AFirst","BSecond","John1:1","sword://Shared/John1:1").get();check(std::get<PassageLink>(pane).module=="BSecond","Pane dispatch resolves explicit aliases on shared owner");
   auto fallback=worker.follow_pane_link_at(tab,"AFirst","BSecond","John1:1","sword:///John1:1").get();check(std::get<PassageLink>(fallback).module=="AFirst","Relative URI retains existing navigation-pane fallback");
+  auto missingPane=worker.follow_pane_link_at(tab,"AFirst","BSecond","John1:1","sword://Missing/John1:1").get();
+  check(std::get<PassageLink>(missingPane).module=="AFirst","Unknown URI retains main navigation fallback rather than source pane");
+  auto missingSingle=worker.resolve_study_link(tab,"AFirst","sword://Missing/John1:1").get();check(std::get<PassageLink>(missingSingle).module=="AFirst","Older URI dispatch keeps main fallback through original URI");
   const auto command=worker.resolve_study_link(tab,"AFirst","passagestudy.jsp?action=showRef&type=scripRef&module=AFirst&value=John1:1").get();check(std::get<PassageLink>(command).module=="AFirst","Exact single-reference command remains supported");
   const std::string commandUri="passagestudy.jsp?action=showRef&type=scripRef&module=Shared&value=John1:1";
   check(std::get<PassageLink>(worker.resolve_study_link(tab,"AFirst",commandUri).get()).module=="AFirst","Single command uses main module fallback instead of URI alias");
@@ -64,6 +69,7 @@ int main(int argc,char **argv){try{
  {std::ofstream config(dictRoot/"mods.d/dictionary.conf");config<<"[Dictionary]\nDataPath=./data\nModDrv=RawLD\nSourceType=Plain\nEncoding=UTF-8\nLang=en\nDescription=Original alias type fixture\nAbbreviation=Lex\n";}
  {Reader dictionary(dictRoot.u8string());check(dictionary.resolve_module_name("Lex").module=="Dictionary","Non-verse alias registers before passage-family rejection");rejects<std::invalid_argument>([&]{dictionary.resolve_link("Dictionary","sword://Lex/John1:1");});}
  xc_reader *reader=nullptr;xc_link *link=nullptr;
+ check(xc_open(root.c_str(),&reader)==XC_OK&&xc_resolve_link(reader,"AFirst","bible://Missing/John1:1",&link)==XC_OK,"C unknown passage module falls back to main owner source");check(std::string(xc_link_module(link))=="AFirst","C fallback actual identity");xc_link_release(link);xc_close(reader);reader=nullptr;link=nullptr;
  check(xc_open(root.c_str(),&reader)==XC_OK&&xc_resolve_link(reader,"AFirst","sword://Shared/John1:1",&link)==XC_OK,"Existing C resolver consumes shared aliases");xc_close(reader);
  check(std::string(xc_link_module(link))=="BSecond"&&std::string(xc_link_reference(link))=="John1:1","Owned C link survives reader teardown");xc_link_release(link);
  xc_worker *worker=nullptr;xc_request *request=nullptr;

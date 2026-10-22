@@ -25,5 +25,7 @@ int main(int argc,char **argv) {try {
  const auto reading=model.passage();
  check(model.follow("BSecond","passagestudy.jsp?action=showRef&type=scripRef&module=Shared&value=1%3B1","John1:2"),"Preview reference command with main-module fallback");settle(model);
  check(model.references().module=="Unicode"&&model.references().reference=="John 1:2"&&model.references().count==2&&model.references().html.find("prose for Unicode")!=std::string::npos&&model.passage().bible==reading.bible&&model.passage().reference==reading.reference&&model.search_results().generation.id==generation,"Linux reference command uses shared main fallback and source context without navigation/search mutation");
+ check(model.follow("AFirst","sword://Missing/John1:1"),"Follow unknown offered URI through main fallback");settle(model);
+ check(model.passage().bible=="Unicode"&&model.passage().bible_html.find("prose for Unicode")!=std::string::npos&&model.search_results().generation.id==generation,"Linux unknown URI follows committed main module instead of source context");
  std::cout<<"Portable Linux alias preview/activation/export model checks passed\n";return 0;
  }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}

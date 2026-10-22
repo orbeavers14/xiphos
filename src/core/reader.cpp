@@ -286,8 +286,15 @@ PassageLink Reader::resolve_link(const std::string &current_module, const std::s
   auto target = passage_link(url, current_module);
   detail::validate_search_module_name(target.module);
   const auto resolved = impl_->resolve_name(target.module);
-  if (!resolved.module) throw std::out_of_range("Passage link module is not installed");
-  target.module = *resolved.module;
+  if (resolved.module) target.module = *resolved.module;
+  else {
+    // Retained sword_uri routes unknown offered modules through the main
+    // reader. The fallback is a committed installed ID, not a second alias.
+    detail::validate_search_module_name(current_module);
+    if (impl_->manager->Modules.find(current_module.c_str()) == impl_->manager->Modules.end())
+      throw std::out_of_range("Passage link fallback module is not installed");
+    target.module = current_module;
+  }
   impl_->verse_module(target.module, target.reference);
   return target;
 }

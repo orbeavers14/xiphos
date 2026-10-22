@@ -42,7 +42,12 @@ that this retained resource defect has been repaired.
 
 Typed single-passage sword/bible resolution consumes the bounded owner alias
 catalog and returns owned actual module IDs. Command showRef module fallback is
-separate and shared with GTK. Native range URI, unknown URI fallback, anchors,
+separate and shared with GTK. Unknown single-passage URI modules now fall back to the exact installed main
+module after alias lookup reports ordinary absence; invalid alias metadata is
+still an error. The owner validates the copied actual target without navigating.
+Native pane dispatch preserves original URI and main/source roles, so fallback
+does not accidentally use an unknown offered name or the commentary source.
+An unavailable fallback or known non-verse target still fails. Native range URI, anchors,
 dictionary hover/keyed-module navigation and status/bookmark behavior must be
 implemented and checked independently against the retained callback evidence.
 See [alias policy](module-abbreviations-workflows.md),

@@ -1178,3 +1178,22 @@ Full prior reference-command evidence is above; no full-suite repeat for this
 test-only addition. Next bounded production gap: unknown single-passage URI
 fallback to the exact installed main module, keeping range/keyed cases separate.
 Publication approval remains pending; e0e9a86 and4a71891 are local commits.
+
+
+### Unknown single-passage URI fallback (2026-10-22, active)
+
+Local master after complete callback oracle `d82bb6b`. Reader.resolve_link now
+uses exact/alias target resolution first, then ordinary unknown-target absence
+falls back to exact installed current/main module as retained sword_uri does.
+Invalid metadata, malformed inputs, unavailable fallback and non-verse targets
+retain errors. A fallback alias is not a second resolution pass. Resolution alone
+does not navigate/history/search; native hosts apply the copied actual target.
+Worker contextual and older two-kind URI dispatch retain the original URI and
+main context, preserving pane fallback separately from offered/source modules.
+C/Swift and Mac/Linux models exercise unknown-target behavior with distinct
+original prose and unchanged search generation. Normal11/11 (7.02s),
+ASan/UBSan9/9 (11.57s), TSan9/9 (13.97s), portable/Linux10/10 pass.
+C11 header syntax, whitespace and local Markdown targets checked. Same
+environment/instrumentation limits as prior evidence. No full regression repeat
+for this bounded change; complete prior selections/rechecks are recorded above.
+No range/anchor/keyed-family expansion or GUI/full-platform/corpus acceptance.

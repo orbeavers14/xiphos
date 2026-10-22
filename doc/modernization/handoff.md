@@ -50,8 +50,11 @@ normal12/12, ASan/UBSan10/10, TSan10/10 and portable/Linux11/11 focused checks.
 No whole-group acceptance is implied. Retained showRef exact-module/main-module
 fallback now shares a strict C++11 dispatcher with native preview calls;
 normal11/11, ASan/UBSan9/9, TSan9/9 and portable/Linux10/10 pass. Keep this
-separate from URI aliases. Next bounded work: characterize the complete retained
-sword_uri callback before expanding URI fallback/range/module-family behavior.
+separate from URI aliases. Complete retained sword_uri/preview callback oracle
+now passes18,436 traces across five configurations. Unknown single-passage URI
+module fallback to the exact installed main module is implemented with copied
+C/Swift and native Mac/Linux model checks. Range/anchor/keyed-family behavior
+remains separate; see [URI contract](passage-uri-workflows.md).
 Parallel/BibleSync and corpus/platform gates remain open.
 
 Current search checkpoint: shared attribute execution `572f539` / Swift `a83d3c4`,

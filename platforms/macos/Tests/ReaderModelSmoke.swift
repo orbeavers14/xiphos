@@ -116,6 +116,8 @@ struct ReaderModelSmoke {
               first.referencePreview?.entries.count == 2, first.referencePreview?.html.contains("prose for AFirst") == true,
               first.html == readingHTML, first.renderedReference == readingReference, model.batchResult?.generation.id == generation,
               second.referencePreview == nil else { fatalError("Native reference command must use shared main fallback and source context without navigation/search mutation") }
+        first.followLink("sword://Missing/John1:1", currentModule: "BSecond", currentReference: "John1:2", navigationModule: "AFirst"); try await idle(first)
+        guard first.selection == "AFirst", first.html.contains("prose for AFirst"), model.batchResult?.generation.id == generation else { fatalError("Unknown URI uses main navigation fallback and actual source without changing search") }
         first.close(); second.close(); await worker.shutdown()
         print("Native aliases preserve requested tokens and actual preview/activation/export provenance")
     }
