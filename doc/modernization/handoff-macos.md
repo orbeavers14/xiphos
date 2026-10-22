@@ -706,3 +706,43 @@ lexicon save/import isolation checks. No new full suite, UI/physical input,
 Fedora/MSVC, real index or corpus/parity acceptance. Next: native explicit profile
 picker and saved module/range selection using these services; writes stay separate.
 No hosted jobs or private modules/profiles used.
+
+### Native saved search-list/range consumption (2026-10-22)
+
+Implementation `8f6bacc1`, branch `modernization/native-saved-search-lists`.
+Search now explicitly loads named choices from a selected profile without applying
+any draft automatically. Menu selections use copied core effective indices and
+queued shared module parsing. Module order/duplicates/unavailable names survive;
+empty lists cannot become all-module searches. Saved ranges retain the chosen
+bounds provider and use existing core parsing when Search runs. No new XML,
+first-label, comma, search or persistence engine in Swift.
+
+Preview/model builds pass (existing onChange deprecation warnings remain).
+Focused8 checks initially pass7 with the known restricted named-pasteboard failure
+in reader_model_batch_search. Final complete desktop-access
+`ctest --test-dir build/macos --output-on-failure` passes **171 +1 explicit
+index skip**,172 registered,145.28 s. Logs: ignored
+`build/native-search-lists-{configure,build,tests,full-tests}.log`.
+Same Mac27 ARM64/AppleClang21/Swift6.4/SWORD1.9.0.3916 environment. No new core
+source/ABI or sanitizer changes in this native-only slice; preceding normal,
+sanitizer and portable evidence remains separately recorded.
+
+New model checks cover no automatic application, draft/result/preview/scope and
+other-window retention, malformed replacement, core duplicate-label shadows,
+overflow/missing/empty/literal-space choices, explicit bounds provider, actual
+ordered partial batch execution, source-file byte preservation, busy selection
+exclusion and pending-close/missing-tab suppression. Generated temp profiles only.
+A fixture-only disposable app was opened via launch-fixture.sh in search mode.
+AX UI automation opened the Saved search lists menu and native file chooser,
+loaded an original generated profile, chose its second duplicate label, verified
+Text/Commentary/Text order, applied John1:2 bounds with Text provider, and searched
+Original:3 passages across3 requests, each John1:2, with the source preview shown.
+A prior café query correctly returned zero within that bound. Tested window was
+closed; other existing windows were left alone. This is scoped menu/picker/action
+checking, not whole graphical, physical-input/accessibility/corpus or parity
+acceptance. Named test clipboards remain isolated; no installed/private modules,
+user profiles, general clipboard or hosted workflows changed.
+
+Next shared work: explicit saved-list editing/atomic persistence with preserved
+unknown XML, remaining advanced setup/resource semantics and independent
+Fedora/MSVC/index/corpus acceptance. No whole parity or retirement gate passes.

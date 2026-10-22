@@ -65,8 +65,24 @@ Results take once after explicit successful polling and outlive their request,
 worker and source file. Swift 6 copies Sendable/Equatable raw arrays, optional
 strings and effective indices before releasing C handles. Its async actor calls
 shared module tokenization, rejects embedded NUL, and contains no XML parser,
-first-label engine or comma splitter. Native controls and GTK/Windows consumption
-remain the next slice; frontends must consume these policies.
+first-label engine or comma splitter. GTK/Windows consumption remains pending; frontends must consume these policies.
+
+## Native Mac consumption
+
+At `8f6bacc1`, Search exposes an explicit native profile picker and named choices.
+Loading replaces only the available lists after successful parsing. Applying a
+module choice uses the core effective index and queued tokenizer; it preserves
+query/options/bounds and old results until a new search is submitted. Empty
+module lists leave Search unavailable; missing values or invalid/oversized lists
+retain the prior selection. Literal spaces and unavailable names stay visible and
+are handled by the existing batch service when Search runs.
+
+Applying a range copies its effective raw value into explicit bounds while
+retaining the current provider. Empty ranges remain explicit empty bounds and
+are validated by the existing core query path; they never switch to all text.
+No implicit startup application, profile save, range-provider guessing or rerun
+is introduced. Busy/revision/closed-window guards include both loading and module
+preparation. Failed imports retain prior choices, drafts, source results and scope.
 
 ## Evidence and remaining work
 
@@ -78,7 +94,7 @@ names/XML/paths, explicit-file byte/permission preservation, independent parsers
 FIFO read ownership, closed-tab failure and shutdown draining.
 
 No profile writes, automatic startup application, module installation, saved
-query serialization, alias resolution, full mixed-family range setup or frontend
+query serialization, alias resolution, full mixed-family range setup or complete frontend
 workflow is accepted by this slice. These remain separate work, along with
 corpus/locale, actual-index and current Fedora/MSVC validation. Existing GTK3
 source remains unchanged and no parity/retirement gate passes.

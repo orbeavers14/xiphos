@@ -48,7 +48,10 @@ Read-only legacy named module-list/range import and bounded comma splitting are
 now shared at `4ca44370`; [contract](saved-search-lists-workflows.md). Focused
 normal, ASan/UBSan and portable-on-Mac checks each pass9/9. Additive owned
 C/Swift transport at `80e8a3c4` has4/4 focused Mac checks plus2/2 each
-sanitized/portable checks. Next is native consumption; complete saved setup remains open.
+sanitized/portable checks. Native profile picker and explicit list/range application
+use these services at `8f6bacc1`. Latest full Mac171 passes +1 index skip,172
+registered,145.28 s, plus scoped menu/picker/action checks with original fixtures.
+Complete saved setup, editing/persistence and target-platform acceptance remain open.
 
 Prior full integrated shared HTML image checkpoint: **164 Mac passes + 1 index skip**
 (165 registered, 137.38 s), core/C `4fecce8` and Swift `374147d`, with desktop
