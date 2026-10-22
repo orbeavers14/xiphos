@@ -1,0 +1,68 @@
+# Shared legacy named search-list import
+
+Updated 2026-10-22. Initial C++ implementation `4ca44370` reads explicit selected
+legacy XML profiles. This is a read-only setup service, not automatic profile
+migration or complete advanced-search acceptance.
+
+## Data and lookup contract
+
+`SavedSearchLists` owns ordered `module_lists` and `ranges`. Each
+`SavedSearchList` preserves optional `label` and `value` strings: absent XML
+attributes remain absent, explicit empty attributes remain empty, and unavailable
+module names, whitespace and duplicate labels remain unchanged.
+
+`parse_saved_search_lists` reads `modlists/modlist` and `ranges/range` from the
+first matching section, including an empty first section. Later duplicate
+sections are shadowed. Only the expected item names are imported; unknown tags
+and unrelated profile data are neither exposed nor changed. The legacy dialog's
+unfiltered traversal of arbitrary child nodes is not treated as a new data
+schema. Input is bounded by the existing 16 MiB profile reader and 1,024 named
+items per section; larger collections reject rather than silently truncate.
+
+`saved_search_list_value` matches the actual retained
+`xml_get_list_from_label` first-label policy. An absent value on the first
+matching label shadows later duplicates. Missing labels can be explicitly
+selected with `std::nullopt`; empty labels remain distinct. This lookup does not
+normalize labels, split module names, resolve aliases or verify installation.
+
+`saved_search_module_names` implements the legacy comma-token rule without
+`strtok` or shared mutable parser state. Empty fields are skipped; spaces,
+module order and duplicates are preserved. Empty/all-comma input returns an
+empty list, never all installed modules. The existing batch service separately
+rejects empty search input. More than 32 modules, names over 4,096 bytes, NUL or
+invalid UTF-8 reject. Module validation reuses the shared search-input policy.
+No module abbreviation resolution or invented range provider is introduced.
+
+## Ownership and execution
+
+`read_saved_search_lists` reads only the caller-selected regular file through
+the existing bounded profile reader. XML-declared encodings become copied UTF-8;
+malformed XML, wrong roots, DTD declarations and hidden NUL suffixes reject under
+the same parser policy as existing profile services. Source bytes, unknown fields,
+file permissions, process locale and global XML parser settings are not changed.
+
+`StudyWorker::read_search_lists(tab, path)` copies its path before submission,
+checks the tab on the existing FIFO owner, then returns copied data. It changes
+no search generation/scope, annotations, reading settings, history or profile.
+A read accepted before close/shutdown drains; a read queued after closure fails
+under the existing invalid-argument tab contract. Result strings survive parser,
+source file, tab and worker destruction. There is no new SWORD instance or worker.
+
+The new C++ API has no C ABI layout changes. C/Swift/GTK/Windows transport and
+native controls remain the next consuming slice; frontends must use shared
+lookup/tokenization rather than create independent setup engines.
+
+## Evidence and remaining work
+
+The [Mac handoff](handoff-macos.md) records actual build/test commands and scope.
+Tests compare lookup directly with the extracted retained legacy routine,
+including missing/empty attributes, duplicate sections/labels, encoded text and
+unavailable modules. They check exact/overflow list and batch limits, malformed
+names/XML/paths, explicit-file byte/permission preservation, independent parsers,
+FIFO read ownership, closed-tab failure and shutdown draining.
+
+No profile writes, automatic startup application, module installation, saved
+query serialization, alias resolution, full mixed-family range setup or frontend
+workflow is accepted by this slice. These remain separate work, along with
+corpus/locale, actual-index and current Fedora/MSVC validation. Existing GTK3
+source remains unchanged and no parity/retirement gate passes.

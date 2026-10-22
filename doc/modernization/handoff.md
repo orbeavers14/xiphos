@@ -44,7 +44,10 @@ counts at `d54aec4d` distinguish SDK elements from bounded visible previews.
 Latest full Mac suite:168 passes +1 explicit index skip,169 registered,150.14 s;
 ASan/UBSan12/12 and portable core/GTK models27/27 on Mac. Defaults and public
 layouts remain unchanged; see [context contract](export-context-workflows.md).
-Next shared slice is read-only legacy named search-list import/saved setup.
+Read-only legacy named module-list/range import and bounded comma splitting are
+now shared at `4ca44370`; [contract](saved-search-lists-workflows.md). Focused
+normal, ASan/UBSan and portable-on-Mac checks each pass9/9. Next are C/Swift
+transport and native consumption; complete saved setup remains open.
 
 Prior full integrated shared HTML image checkpoint: **164 Mac passes + 1 index skip**
 (165 registered, 137.38 s), core/C `4fecce8` and Swift `374147d`, with desktop
