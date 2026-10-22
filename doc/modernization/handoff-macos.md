@@ -469,3 +469,25 @@ unchanged. No hosted runs were dispatched. Library upgrades remain explicitly
 owner-deferred. Next: representative export/resource/semantic policies, richer
 empty/failure group sections/localization, advanced search controls/settings and
 independent target-platform acceptance. No whole parity or retirement gate passes.
+
+### Native advanced single-module search controls (2026-10-22)
+
+Implementation `d26aa2d`, branch `modernization/native-advanced-search-modes`.
+All eight existing core modes are exposed in Match; optional search annotation
+inputs copy into the existing typed request. Core retains phrase/last/bounds/
+filter/backend behavior. Native status reports copied explicit index fallback.
+No core/C ABI/Swift adapter/GTK3/Linux/workflow changes. The selected mode and
+annotation inputs are captured before queueing; per-window context stays in core.
+
+Commands: `cmake --build build/macos --target macos_preview macos_reader_model_test
+macos_search_export_test --parallel 4` succeeds. Focused final desktop-access
+CTest selection `-R 'reader_model_advanced_search|reader_model_search$|swift_attribute_search_adapter|swift_search_text_options|swift_search_batch|reader_model_search.*export'`
+passes10/10 (17.21 s); initial narrower selection5/5 (13.73 s). Existing Mac SDK/
+compiler/configuration unchanged. Logs: ignored `build/advanced-modes-*.log`.
+Whitespace checks pass. No new full-suite, sanitizer, GUI physical-input, actual
+indexed-execution, Fedora/MSVC or whole-parity acceptance. Tests use original
+attribute/search fixtures; native destinations use isolated named pasteboards.
+
+Next bounded task: consume ordered shared batch search in native module selection
+and grouped results, retaining actual module/group/row identity through preview
+and export. Do not loop independent searches or recreate scope chaining in Swift.

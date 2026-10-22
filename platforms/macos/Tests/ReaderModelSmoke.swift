@@ -68,6 +68,56 @@ struct ReaderModelSmoke {
         second.close(); await worker.shutdown()
         print("Native shared search, scopes, result preview, navigation, stop and closure passed")
     }
+    @MainActor static func advancedSearch(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let tab = try await worker.createTab(), otherTab = try await worker.createTab()
+        let modules = try await worker.modules()
+        let model = SearchModel(), other = SearchModel()
+        model.configure(worker: worker, tab: tab, modules: modules, preferred: "Text")
+        other.configure(worker: worker, tab: otherTab, modules: modules, preferred: "Text")
+        let enabled = CoreSearchTextOptions(strongs: true, morphology: true, footnotes: true)
+        model.mode = .lemma; model.expression = "G140"; model.setAnnotationOptions = true
+        model.searchStrongs = true; model.searchMorphology = true; model.searchFootnotes = true
+        model.search()
+        model.mode = .morphology; model.expression = "Unsubmitted draft"; model.searchStrongs = false
+        try await searchIdle(model)
+        guard model.result?.mode == .lemma, model.result?.expression == "G140",
+              model.result?.requestedTextOptions == enabled, model.result?.effectiveTextOptions == enabled,
+              model.hits.map(\.reference) == ["John 1:1", "John 1:4"], model.expression == "Unsubmitted draft",
+              model.preview?.reference == "John 1:1", other.hits.isEmpty,
+              try await worker.searchTextOptions(tab: otherTab) == nil else { fatalError("Native attribute request captures inputs and stays isolated across windows") }
+        model.setAnnotationOptions = false; model.mode = .morphology; model.expression = "N-ASF"
+        model.search(); try await searchIdle(model)
+        guard model.hits.map(\.reference) == ["John 1:1", "John 1:3"], model.result?.requestedTextOptions == nil,
+              model.result?.effectiveTextOptions == enabled else { fatalError("Morphology and retained annotation context are core-owned") }
+        model.mode = .footnote; model.expression = "Alpha"; model.caseSensitive = true
+        model.search(); try await searchIdle(model)
+        guard model.hits.map(\.reference) == ["John 1:1"] else { fatalError("Footnote case control reaches shared attribute search") }
+        model.caseSensitive = false; model.search(); try await searchIdle(model)
+        guard model.hits.map(\.reference) == ["John 1:1", "John 1:2"] else { fatalError("Footnote case-insensitive search reaches core") }
+        model.mode = .phrase; model.expression = "Original"; model.setAnnotationOptions = true
+        model.searchStrongs = false; model.searchMorphology = false; model.searchFootnotes = false
+        model.search(); try await searchIdle(model)
+        guard model.result?.effectiveTextOptions == enabled, model.result?.textOptionsUpdated == false,
+              try await worker.searchTextOptions(tab: tab) == enabled else { fatalError("Phrase delegates preservation of prior annotation policy to core") }
+        model.mode = .multiword; model.expression = "Original"; model.search(); try await searchIdle(model)
+        guard model.result?.mode == .multiword, model.result?.effectiveTextOptions == CoreSearchTextOptions(),
+              !model.hits.isEmpty else { fatalError("Explicit multiword submits the selected annotation settings") }
+        model.mode = .indexed; model.search(); try await searchIdle(model)
+        guard model.result?.mode == .indexed, !model.hits.isEmpty,
+              model.message.contains("Index unavailable") == model.result?.indexFallback else { fatalError("Native status exposes recorded index fallback without choosing a backend") }
+        model.mode = .lemma; model.expression = "G140"; model.scopeChoice = .bounds
+        model.boundsModule = "Text"; model.bounds = "John1:2-John1:4"
+        model.search(); try await searchIdle(model)
+        guard model.hits.map(\.reference) == ["John 1:4"], model.result?.range?.expression == model.bounds,
+              try await worker.history(tab).count == 0 else { fatalError("Advanced modes reuse core bounds and preserve reading history") }
+        let held = model.result
+        model.expression = "G141"; model.search(); model.close()
+        try await Task.sleep(nanoseconds: 50_000_000)
+        guard model.result == held else { fatalError("Closed native advanced model suppresses late search publication") }
+        other.close(); try await worker.closeTab(tab); try await worker.closeTab(otherTab); await worker.shutdown()
+        print("Native advanced modes, captured annotation policy, phrase retention, bounds, fallback and isolation passed")
+    }
     @MainActor static func bookNoteNumbers(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let model = ReaderModel(worker: worker, startupError: nil)
@@ -1271,6 +1321,9 @@ struct ReaderModelSmoke {
             guard recorded.entries.last?.key == expectedKey else { fatalError("locale snapshot lifetime") }
             print("Native environment locale startup/click checks passed")
             return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--advanced-search" {
+            try await advancedSearch(root: CommandLine.arguments[2]); return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--search" {
             try await search(root: CommandLine.arguments[2]); return

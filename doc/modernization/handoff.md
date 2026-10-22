@@ -20,7 +20,9 @@ Current search checkpoint: shared attribute execution `572f539` / Swift `a83d3c4
 annotation context `8ebeddc` / probe ordering `92bacfc`, canonical copied C request
 `b71980b` / Swift `f4934b2`, explicit advanced multiword/raw-index dialects `69dea11`,
 and ordered bounded batches C++ `f86293b` / C `ad28750` / Swift `cf80541`. Basic
-native controls remain `0ca0bab`; advanced controls are not yet implemented.
+native controls began at `0ca0bab`; advanced single-module modes and annotation
+controls now consume the shared service at `d26aa2d`. Ordered multi-module
+selection/grouped presentation and full advanced setup remain next.
 Complete typed last scope is independent of copied result prefixes. Search-only
 settings are per tab and physical SDK filters restore on every job. One FIFO
 owner handles batches, progress/Stop, scope and copied values. See the consolidated
@@ -109,6 +111,16 @@ models/window checks using the same source owner and a reused native viewer.
 See [image contract](verse-image-workflows.md). Explicit shared HTML PNG export
 and native Mac destinations have scoped checks; complete inline-image/hover/
 format/corpus/platform workflows remain pending.
+
+## Owner priorities after parity
+
+Owner direction (2026-10-22): complete functional, workflow, data and platform
+parity first. After parity, review graphical improvements (typography, spacing,
+themes, icons, pane usability and accessibility), additional Bible translations
+such as ESV with availability/distribution permissions evaluated, and platform
+integration such as native application updates. These are later enhancement
+workstreams; they do not redefine the current parity baseline or authorize
+unvalidated redistribution of module content. Preserve this order across chats.
 
 ## Platform responsibilities and immediate next tasks
 

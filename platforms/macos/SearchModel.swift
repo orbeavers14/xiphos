@@ -19,6 +19,10 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     @Published var expression = ""
     @Published var mode: CoreSearchMode = .phrase
     @Published var caseSensitive = false
+    @Published var setAnnotationOptions = false
+    @Published var searchStrongs = false
+    @Published var searchMorphology = false
+    @Published var searchFootnotes = false
     @Published var scopeChoice: SearchScopeChoice = .all
     @Published var boundsModule = ""
     @Published var bounds = ""
@@ -70,6 +74,8 @@ struct SearchHit: Identifiable, Sendable, Equatable {
         guard !closed, canSearch, let worker, let tab else { return }
         let submittedModule = module, submittedExpression = expression, submittedMode = mode
         let sensitive = caseSensitive, last = scopeChoice == .last
+        let annotations = setAnnotationOptions ? CoreSearchTextOptions(strongs: searchStrongs,
+            morphology: searchMorphology, footnotes: searchFootnotes) : nil
         let range = scopeChoice == .bounds ? CoreSearchRange(module: boundsModule, expression: bounds) : nil
         revision &+= 1; let token = revision
         isSearching = true; progress = nil; message = "Searching…"
@@ -78,7 +84,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
             defer { if !self.closed && self.revision == token { self.isSearching = false; self.isPreviewLoading = false; self.task = nil } }
             do {
                 let copied = try await worker.searchModule(tab: tab, module: submittedModule, expression: submittedExpression,
-                    mode: submittedMode, caseSensitive: sensitive, range: range, withinLastResults: last,
+                    mode: submittedMode, caseSensitive: sensitive, range: range, withinLastResults: last, textOptions: annotations,
                     returnCancelledResults: true, onProgress: { [weak self] progress in
                         await self?.receive(progress, token: token)
                     })
@@ -94,6 +100,9 @@ struct SearchHit: Identifiable, Sendable, Equatable {
                 if copied.cancelled { self.message = "Search stopped." }
                 else if copied.limited { self.message = "Showing \(copied.references.count) passages. More results are available." }
                 else { self.message = "\(copied.references.count) \(copied.references.count == 1 ? "passage" : "passages") found." }
+                if copied.indexFallback && !copied.cancelled {
+                    self.message = "Index unavailable; used multiword search. " + self.message
+                }
                 if (copied.executed || !copied.cancelled), let first = self.hits.first {
                     self.selection = first.id
                     try await self.loadPreview(first, worker: worker, tab: tab, token: token)
