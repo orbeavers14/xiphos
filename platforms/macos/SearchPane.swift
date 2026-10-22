@@ -72,6 +72,8 @@ struct SearchPane: View {
                         Toggle("Include footnotes", isOn: $model.searchFootnotes)
                     }.disabled(model.mode == .phrase)
                 }
+                Button("Reset search annotations") { model.resetSearchAnnotations() }
+                    .help("Clear retained search-only settings without changing reading preferences or previous results.")
                 if model.mode == .phrase {
                     Text("Phrase search keeps prior annotation settings.").font(.caption).foregroundStyle(.secondary)
                 }

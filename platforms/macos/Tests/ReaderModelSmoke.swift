@@ -101,6 +101,32 @@ struct ReaderModelSmoke {
         model.search(); try await searchIdle(model)
         guard model.result?.effectiveTextOptions == enabled, model.result?.textOptionsUpdated == false,
               try await worker.searchTextOptions(tab: tab) == enabled else { fatalError("Phrase delegates preservation of prior annotation policy to core") }
+        let otherFlags = CoreSearchTextOptions(strongs: false, morphology: true, footnotes: false)
+        _ = try await worker.searchModule(tab: otherTab, module: "Text", expression: "N-ASF", mode: .morphology, textOptions: otherFlags)
+        let otherScope = try await worker.lastSearchScope(tab: otherTab)
+        try await worker.enableModulePreferences(tab: tab)
+        try await worker.setModuleEngineOptions(tab: tab, module: "Text", options: [.strongs, .footnotes])
+        let beforeReset = model.result, hitsBeforeReset = model.hits, previewBeforeReset = model.preview
+        let sourceBeforeReset = model.previewSource
+        let scopeBeforeReset = try await worker.lastSearchScope(tab: tab)
+        let readingBeforeReset = try await worker.moduleEngineOptions(tab: tab, module: "Text")
+        model.expression = "Unsubmitted reset draft"; model.resetSearchAnnotations(); try await searchIdle(model)
+        guard try await worker.searchTextOptions(tab: tab) == nil,
+              try await worker.lastSearchScope(tab: tab) == scopeBeforeReset,
+              try await worker.moduleEngineOptions(tab: tab, module: "Text") == readingBeforeReset,
+              model.result == beforeReset, model.hits == hitsBeforeReset,
+              model.preview?.reference == previewBeforeReset?.reference, model.preview?.html == previewBeforeReset?.html,
+              model.previewSource == sourceBeforeReset,
+              try await worker.searchTextOptions(tab: otherTab) == otherFlags,
+              try await worker.lastSearchScope(tab: otherTab) == otherScope,
+              model.expression == "Unsubmitted reset draft", !model.setAnnotationOptions,
+              !model.searchStrongs, !model.searchMorphology, !model.searchFootnotes else { fatalError("Native reset clears only future search context and input overrides, preserving results, scope, reading preferences and draft") }
+        let priorExport = try await worker.exportSearchVisibleText(tab: tab, generation: beforeReset!.generation.id,
+            rows: [CoreSearchVisibleRow(group: 0, row: 0)], includeSearchContext: true)
+        guard priorExport.text.contains("Search annotation policy: Strong's on, morphology on, footnotes on") else { fatalError("Reset cannot rewrite committed search provenance") }
+        model.mode = .phrase; model.expression = "Original"; model.search(); try await searchIdle(model)
+        guard model.result?.effectiveTextOptions == nil, !model.result!.textOptionsUpdated else { fatalError("Next phrase observes the cleared core annotation context") }
+        model.setAnnotationOptions = true
         model.mode = .multiword; model.expression = "Original"; model.search(); try await searchIdle(model)
         guard model.result?.mode == .multiword, model.result?.effectiveTextOptions == CoreSearchTextOptions(),
               !model.hits.isEmpty else { fatalError("Explicit multiword submits the selected annotation settings") }
@@ -112,10 +138,18 @@ struct ReaderModelSmoke {
         model.search(); try await searchIdle(model)
         guard model.hits.map(\.reference) == ["John 1:4"], model.result?.range?.expression == model.bounds,
               try await worker.history(tab).count == 0 else { fatalError("Advanced modes reuse core bounds and preserve reading history") }
+        let disposedTab = try await worker.createTab()
+        let disposed = SearchModel(); disposed.configure(worker: worker, tab: disposedTab, modules: modules, preferred: "Text")
+        disposed.setAnnotationOptions = true; disposed.searchFootnotes = true; disposed.expression = "retained reset-failure draft"
+        try await worker.closeTab(disposedTab)
+        disposed.resetSearchAnnotations(); try await searchIdle(disposed)
+        guard disposed.setAnnotationOptions, disposed.searchFootnotes, disposed.expression == "retained reset-failure draft",
+              !disposed.isBusy else { fatalError("Failed shared reset retains native input choices and finishes busy state") }
+        disposed.close()
         let held = model.result
-        model.expression = "G141"; model.search(); model.close()
+        model.expression = "G141"; model.resetSearchAnnotations(); model.close()
         try await Task.sleep(nanoseconds: 50_000_000)
-        guard model.result == held else { fatalError("Closed native advanced model suppresses late search publication") }
+        guard model.result == held, model.setAnnotationOptions, !model.isBusy else { fatalError("Closed native reset suppresses late UI publication") }
         other.close(); try await worker.closeTab(tab); try await worker.closeTab(otherTab); await worker.shutdown()
         print("Native advanced modes, captured annotation policy, phrase retention, bounds, fallback and isolation passed")
     }

@@ -285,6 +285,22 @@ struct SearchHit: Identifiable, Sendable, Equatable {
         }
     }
     func exportDestinationMessage(_ text: String) { if !closed { message = text } }
+    func resetSearchAnnotations() {
+        guard !closed, !isBusy, let worker, let tab else { return }
+        revision &+= 1; let token = revision; isClearing = true
+        message = "Resetting search annotations…"
+        task = Task { [weak self] in
+            guard let self else { return }
+            defer { if !self.closed && self.revision == token { self.isClearing = false; self.task = nil } }
+            do {
+                _ = try await worker.clearSearchTextOptions(tab: tab)
+                guard !self.closed, self.revision == token else { return }
+                self.setAnnotationOptions = false
+                self.searchStrongs = false; self.searchMorphology = false; self.searchFootnotes = false
+                self.message = "Search annotation settings reset."
+            } catch { if !self.closed && self.revision == token { self.message = error.localizedDescription } }
+        }
+    }
     func clearScope() {
         guard !closed, !isBusy, let worker, let tab else { return }
         revision &+= 1; let token = revision; isClearing = true
