@@ -59,7 +59,14 @@ previews (`fbfea5b`), with normal6/6, ASan/UBSan11/11, TSan11/11 and
 portable/Linux12/12 checks. Aggregate target/link-only disclosure follows the
 same policy. Unknown/non-Bible range navigation, anchors and keyed URI families
 remain separate; see [URI contract](passage-uri-workflows.md).
-Parallel/BibleSync and corpus/platform gates remain open.
+Final implementation `c70cca9` is pushed to fork master. Fresh full Mac181
+passes+1 index skip (182 registered,153.04s); Mac-hosted portable/Linux137
+passes+1 skip (138 registered,106.42s); focused ASan/UBSan and TSan11/11 each.
+See platform handoff for exact environment, SDK instrumentation and limitations.
+Next bounded work: pre-copy URI admission checks at C/worker boundaries; parser
+byte bounds currently run after argument copies. Then unknown/non-Bible range,
+anchor and keyed URI routes against the complete oracle. Parallel/BibleSync and
+corpus/platform gates remain open.
 
 Current search checkpoint: shared attribute execution `572f539` / Swift `a83d3c4`,
 annotation context `8ebeddc` / probe ordering `92bacfc`, canonical copied C request

@@ -339,3 +339,20 @@ and [contract](module-abbreviations-workflows.md). This does not replace recorde
 Fedora indexed execution or validate Fedora's installed-SWORD sanitizer issue,
 GTK desktop interaction, corpus, WinUI/MSVC or whole-feature parity. Current
 Fedora recheck remains needed; no hosted workflow was dispatched.
+
+
+### Mac-hosted portable URI/reference checkpoint (2026-10-22)
+
+Implementation through `c70cca9` is on the fork master. Shared showRef exact
+module/main fallback, single-URI alias/unknown fallback, complete retained URI
+callback oracle and Bible-only contextual URI range previews now feed the existing
+Linux model. Aggregate rendered and link-only previews cap2000 ordered passages
+with disclosure; native models retain actual source identity, committed main/source
+roles and search/history isolation. Full Mac-hosted portable/Linux build succeeds;
+full138-case selection passes137 with1 explicit index skip (106.42s). This is
+Mac ARM64 validation with GTK runtime OFF, not current Fedora/GTK desktop or
+Windows/MSVC evidence. Final focused ASan/UBSan11/11 and TSan11/11 are also
+Mac-hosted with previously documented SDK/instrumentation limits. Native-disabled
+C++11 policy/render libraries build and registry/URI oracles2/2 pass. See
+[Mac evidence](handoff-macos.md) and [URI contract](passage-uri-workflows.md) for
+limitations and the pre-copy admission bound next step. No whole parity claim.

@@ -1121,7 +1121,7 @@ No new full suite/UI URI click/corpus/current Fedora/MSVC or whole-feature
 acceptance. Same environment and sanitizer instrumentation limits as above.
 
 
-### Shared showRef module dispatch (2026-10-22, active)
+### Shared showRef module dispatch (2026-10-22)
 
 Sequential local master after typed URI commit `e0e9a86`. Extract the retained
 show_ref callback policy into a header-only C++11 shared dispatcher: hover does
@@ -1164,7 +1164,7 @@ the public fork destination/master. User authorization was requested; no alterna
 push path or remote modification was attempted. Continue local work pending reply.
 
 
-### Complete retained URI characterization (2026-10-22, active)
+### Complete retained URI characterization (2026-10-22)
 
 Local master after `4a71891`. Freeze complete preview/URI callbacks from
 `e0e9a86`; compile current callbacks extracted by CMake and compare18,436
@@ -1180,7 +1180,7 @@ fallback to the exact installed main module, keeping range/keyed cases separate.
 Publication approval remains pending; e0e9a86 and4a71891 are local commits.
 
 
-### Unknown single-passage URI fallback (2026-10-22, active)
+### Unknown single-passage URI fallback (2026-10-22)
 
 Local master after complete callback oracle `d82bb6b`. Reader.resolve_link now
 uses exact/alias target resolution first, then ordinary unknown-target absence
@@ -1199,7 +1199,7 @@ for this bounded change; complete prior selections/rechecks are recorded above.
 No range/anchor/keyed-family expansion or GUI/full-platform/corpus acceptance.
 
 
-### Aggregate native reference preview bound (2026-10-22, active)
+### Aggregate native reference preview bound (2026-10-22)
 
 Sequential master after published `d4097b5`. The owner explicitly authorized
 checked pushes to the public fork's master; the previously blocked commits
@@ -1226,7 +1226,7 @@ targets. ASan/UBSan7/7 (7.47s), TSan7/7 (8.94s), portable7/7
 not enabled by this cap. Same platform/instrumentation/full-acceptance limits.
 
 
-### Bounded contextual Bible URI ranges (2026-10-22, active)
+### Bounded contextual Bible URI ranges (2026-10-22)
 
 Sequential master after published aggregate bound `3458b0a`. Extract retained
 Bible/range punctuation decision into a C++11 header used by GTK sword_uri and
@@ -1250,7 +1250,7 @@ showRef list remains supported. ASan/UBSan11/11 (12.33s), TSan11/11
 No new GUI URI click/current Fedora/MSVC/corpus or whole-feature acceptance.
 
 
-### Bounded native target/link-only previews (2026-10-22, active)
+### Bounded native target/link-only previews (2026-10-22)
 
 Sequential master after URI ranges `fbfea5b`. Native Reader.reference_targets
 now uses the same2000-reference aggregate prefix cap as rendered snapshots.
@@ -1266,7 +1266,7 @@ portable7/7 pass. Final complete regressions are in progress.
 No new GUI/corpus/current Fedora/MSVC or whole-feature acceptance.
 
 
-### Native URI escape validation and final checkpoint (2026-10-22, active)
+### Native URI escape validation and final checkpoint (2026-10-22)
 
 Sequential master after link-only bounds `9ce2756`. Native decode rejects
 incomplete/non-hex percent sequences before module resolution/fallback. Valid
@@ -1282,3 +1282,41 @@ initially missed the complete reference-list type include in content_test; added
 the include before any passing checks/commit. No production repair was needed.
 Same environment/instrumentation limitations as prior entries; no reset credit,
 hosted build or acceptance score increase.
+
+
+Final review/next bounded work: the32768 contextual URI check runs in the core
+parser after the C/worker entry points have copied their string arguments.
+`xc_worker_follow_pane_link_at` and the other contextual entry points currently
+check non-null/nonempty input then submit copied strings; this continuation
+claims a parser acceptance bound, not a pre-admission allocation bound. Audit
+and add bounded pre-copy admission consistently before expanding keyed/unknown
+range URI routes. Preserve copied FIFO ownership and current status/empty-output
+contracts. Then use the complete retained callback oracle for unknown/non-Bible
+range navigation, anchors and dictionary/keyed hover. Do not infer that all
+passage hover renders a Bible preview. Parallel/BibleSync/corpus/platform/whole
+parity work remains independent.
+
+
+Final published implementation checkpoint: `c70cca9` (with `9ce2756`,
+`fbfea5b`, `3458b0a`, `d4097b5`, `d82bb6b`, `4a71891`, `e0e9a86`). All local
+tracked implementation changes are committed and pushed normally to the
+authorized fork master. Preserve unrelated untracked .DS_Store.
+
+Final complete Mac build succeeds; fresh full182-case desktop-access selection
+passes181 with1 explicit index skip (153.04s). Fresh full Mac-hosted portable/
+Linux138-case selection passes137 with1 explicit index skip (106.42s), GTK
+runtime OFF. Final focused ASan/UBSan11/11 (16.98s), TSan11/11 (20.22s).
+Native-disabled C++11 render/policy libraries build; registry/complete URI
+oracles2/2 (0.43s). C11 public header syntax, diff whitespace, local shell syntax
+and continuation Markdown link targets pass. Earlier failed/rechecked full
+selections above are historical; these fresh final complete runs supersede them.
+
+Environment remains Mac ARM64/macOS27.0.1, AppleClang21/Swift6.4, SWORD1.9.0.3916,
+GLib2.90.1, Apple XML2.9.13 and pinned PNG1.6.59. Sanitizer SDK/framework coverage
+is partial and ASan leak detection is OFF, as previously documented. No actual
+indexed search on this Mac SDK, current Fedora/MSVC, broad corpus, new GUI URI
+click or whole-workflow acceptance is claimed. Scoped native alias-search window
+evidence earlier in this continuation remains separate from URI/model checks.
+No hosted build, reset credit or parity/retirement score change. Stopping near
+the current usage window limit with checked/published work and explicit next-step
+pre-copy admission audit above.

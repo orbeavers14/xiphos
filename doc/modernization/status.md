@@ -6,7 +6,12 @@ fallback `d4097b5`, aggregate native rendered preview bound `3458b0a`, and share
 Bible URI range routing `fbfea5b`. Normal6/6, ASan/UBSan11/11, TSan11/11 and
 Mac-hosted portable/Linux12/12 check the range slice, including copied C/Swift
 and native models. Link-only native previews now also cap the aggregate and
-visibly disclose truncation. Final complete regressions are in progress.
+visibly disclose truncation (`9ce2756`); malformed escapes reject before fallback
+(`c70cca9`). Final full Mac181 passes+1 index skip (182 registered,153.04s),
+Mac-hosted portable/Linux137 passes+1 skip (138 registered,106.42s); focused
+ASan/UBSan11/11 (16.98s), TSan11/11 (20.22s). Native-disabled C++11 libraries
+build and registry/URI oracles2/2 pass. These fresh complete runs supersede the
+historical full-selection/recheck results below.
 See [URI contract](passage-uri-workflows.md) and [Mac handoff](handoff-macos.md).
 Unknown/non-Bible range navigation, anchors, keyed URI families, physical GUI URI
 clicks and corpus/current Fedora/MSVC acceptance remain open. No whole parity
@@ -32,7 +37,7 @@ and exact scope. Parallel/BibleSync, full mixed-family/corpus/current platform a
 all whole-parity/retirement gates remain open.
 
 
-Latest checked implementation (2026-10-22): `2b2f518`, with shared saved-list
+Earlier saved-list checkpoint (2026-10-22): `2b2f518`, with shared saved-list
 removal `f0778e0`, owned removal transport `0dbfff9` and native editing `d0b068c`.
 Final full Mac173 passes+1 explicit index skip (174 registered,149.80s); full
 portable core/Linux models on Mac130 passes+1 explicit index skip (131 registered,

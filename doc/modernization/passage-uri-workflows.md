@@ -7,7 +7,7 @@ no whole workflow or new parity group is accepted.
 
 The C++11 oracle freezes complete `show_in_previewer` and `sword_uri` callbacks
 from `e0e9a86`, with their GPL notice, and compiles current callbacks extracted
-from `main/url.cc`. Deterministic host callbacks compare18,436 traces and final
+from `main/url.cc`. Deterministic host callbacks compare 18,436 traces and final
 state across explicit/missing/unknown modules, aliases (including Unicode and
 uninstalled alias targets), every retained module family, punctuation/ranges,
 anchors, commentary visibility, notebook page, bookmark tags, preview render
@@ -42,9 +42,11 @@ that this retained resource defect has been repaired.
 
 Typed single-passage sword/bible resolution consumes the bounded owner alias
 catalog and returns owned actual module IDs. Command showRef module fallback is
-separate and shared with GTK. Unknown single-passage URI modules now fall back to the exact installed main
-module after alias lookup reports ordinary absence; invalid alias metadata is
-still an error. The owner validates the copied actual target without navigating.
+separate and shared with GTK. Unknown single-passage URI modules now fall back
+to the exact installed main module after alias lookup reports ordinary absence; invalid alias metadata is
+still an error. The owner checks installed verse-key module identity without navigating. A
+single-target result preserves the decoded reference; ordinary session reading
+performs the SDK reference parse when the host applies it.
 Native pane dispatch preserves original URI and main/source roles, so fallback
 does not accidentally use an unknown offered name or the commentary source.
 An unavailable fallback or known non-verse target still fails.
@@ -56,15 +58,14 @@ reference snapshots, preserving supplied source reference, ordered duplicates,
 per-tab rendering options, actual source identity and limited disclosure. Missing
 URI modules use main navigation context. Unknown/non-Bible range targets remain
 errors; retained fallback/navigation for those cases is still a separate gap.
-Contextual URI input is capped at32768 bytes; rendered and link-only native
-previews cap the ordered prefix at2000 total entries with visible truncation
+Contextual URI input is capped at 32768 bytes; rendered and link-only native
+previews cap the ordered prefix at 2000 total entries with visible truncation
 disclosure. Older two-kind/Reader single-target APIs keep strict single references.
 No main/history/search mutation occurs when the preview is returned.
 
 The retained GTK callback now calls the same C++11 Bible/range decision; complete
 18,436-trace frozen/current comparison preserves type-lookup callback order.
-Native anchors,
-dictionary hover/keyed-module navigation and status/bookmark behavior must be
+Native anchors, dictionary hover/keyed-module navigation and status/bookmark behavior must be
 implemented and checked independently against the retained callback evidence.
 See [alias policy](module-abbreviations-workflows.md),
 [hover policy](hover-workflows.md) and [platform evidence](handoff-macos.md).
@@ -75,3 +76,8 @@ module lookup or unknown-module fallback. Valid encoded percent signs/literal
 plus/Unicode decode once; percent-looking text produced by one decode is not
 decoded again. This tightens the native typed parser boundary; the complete
 retained callback oracle does not claim malformed legacy URL safety.
+
+
+The contextual byte check is a parser acceptance limit after worker argument
+copying. Pre-copy C/worker admission bounds are separate follow-up work; this
+continuation does not claim bounded allocation for arbitrarily large callers.

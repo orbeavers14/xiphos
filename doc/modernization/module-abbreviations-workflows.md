@@ -157,3 +157,13 @@ fall back to the main/navigation module, without consulting the alias catalog.
 Missing pane command modules also default to that main module, while relative
 list parsing keeps the supplied source reference. See
 [reference-command policy](hover-workflows.md#exact-reference-command-module-selection).
+
+
+Current published URI/reference checkpoint is `c70cca9`: single-passage aliases
+and exact main fallback, separate shared showRef dispatch, installed Bible
+contextual range previews, aggregate2000 target/rendered preview bounds with
+limited disclosure, and strict percent decoding. See the current
+[URI contract](passage-uri-workflows.md) and [final Mac evidence](handoff-macos.md).
+Fresh complete Mac181 passes+1 skip; Mac-hosted portable/Linux137 passes+1 skip;
+focused ASan/UBSan and TSan11/11 each. Physical GUI/corpus/platform/whole-feature
+acceptance remains independent.

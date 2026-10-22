@@ -191,7 +191,7 @@ module IDs win. Other note/lexical/image source policies are unchanged. The olde
 single-reference resolver keeps its two-kind transport; contextual calls return
 owned reference lists and do not record Bible navigation. This supersedes the
 prior exact-only rejection guard introduced with typed URI aliases. See
-[the Mac evidence](handoff-macos.md#shared-showref-module-dispatch-2026-10-22-active)
+[the Mac evidence](handoff-macos.md#shared-showref-module-dispatch-2026-10-22)
 for actual checks and limitations.
 
 The [complete URI callback contract](passage-uri-workflows.md) now records the
