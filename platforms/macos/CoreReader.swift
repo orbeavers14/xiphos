@@ -224,7 +224,7 @@ struct RenderedSearchTextExport: Sendable, Equatable {
     let text: String
 }
 struct RenderedSearchResult: Sendable, Equatable {
-    let module: String, expression: String, effectiveExpression: String
+    let module: String, requestedModule: String, expression: String, effectiveExpression: String
     let mode: CoreSearchMode
     let engineType: Int32
     let caseSensitive: Bool, limited: Bool, cancelled: Bool, executed: Bool
@@ -526,7 +526,8 @@ enum CoreValues {
         precondition(xc_search_effective_text_options(result, &effectiveText) == XC_OK)
         var generation = xc_search_generation_info()
         precondition(xc_search_get_generation(result, &generation) == XC_OK)
-        return RenderedSearchResult(module: String(cString: xc_search_module(result)!),
+        return RenderedSearchResult(module: String(cString: xc_search_source_module(result)!),
+            requestedModule: String(cString: xc_search_module(result)!),
             expression: String(cString: xc_search_expression(result)!),
             effectiveExpression: String(cString: xc_search_effective_expression(result)!),
             mode: mode, engineType: info.engine_type, caseSensitive: info.case_sensitive != 0,

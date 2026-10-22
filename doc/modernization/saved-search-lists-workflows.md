@@ -4,6 +4,12 @@ Updated 2026-10-22. Initial C++ implementation `4ca44370` reads explicit selecte
 legacy XML profiles. This is a read-only setup service, not automatic profile
 migration or complete advanced-search acceptance.
 
+Execution-time module aliases now consume the shared catalog registry without
+changing imported/saved strings or applying choices automatically. Requested and
+actual source identities remain separate through results/exports; see the
+[current alias contract](module-abbreviations-workflows.md). The source audit at
+the end of this document is retained as planning history.
+
 ## Data and lookup contract
 
 `SavedSearchLists` owns ordered `module_lists` and `ranges`. Each

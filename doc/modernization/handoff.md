@@ -38,6 +38,16 @@ and [native evidence](handoff-macos.md#native-saved-list-management-2026-10-22).
 GUI prefill/chooser cancellation is scoped; full management/advanced setup,
 corpus/locale and current Fedora/MSVC acceptance remain separate.
 
+Current alias-search checkpoint: registry `9c2153a`, bounded owned resolver
+`3f88cfc`, copied C/Swift `bd10e92`, now consumed at execution with raw requested
+and resolved source identities kept separate through retained export and native
+Mac/Linux preview/activation. Full Mac179 passes+1 index skip (180 registered);
+portable/Linux models on Mac135 passes+1 skip (136 registered, GTK runtime OFF);
+focused ASan/UBSan and TSan11/11 each. Scoped actual Mac window checked. See the
+[current alias contract](module-abbreviations-workflows.md) and platform evidence.
+No URI/parallel/BibleSync alias or whole-group acceptance is implied. Next bounded
+shared work: alias-aware single-passage URI resolution on the same owner.
+
 Current search checkpoint: shared attribute execution `572f539` / Swift `a83d3c4`,
 annotation context `8ebeddc` / probe ordering `92bacfc`, canonical copied C request
 `b71980b` / Swift `f4934b2`, explicit advanced multiword/raw-index dialects `69dea11`,

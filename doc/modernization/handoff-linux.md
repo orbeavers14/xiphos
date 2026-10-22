@@ -320,3 +320,22 @@ and final batch last scope cannot reconstruct every group's complete results;
 do not create a frontend workaround or implicitly rerun searches. Overall 21/38
 groups now have some core/Mac evidence, 0/38 are accepted and 0/3 native releases
 are ready. Keep local-only checks and preserve all legacy retirement gates.
+
+
+## Mac-hosted shared alias search integration (2026-10-22)
+
+Shared registry/catalog/C transport now resolve execution target aliases, retain
+literal requests and explicit bounds providers, and expose actual installed source
+IDs. Linux model hit/preview/activation uses additive `xc_search_source_module`;
+request group labels stay literal. New headless `linux_search_alias_model` checks
+raw duplicate/Unicode aliases, distinct actual-source preview, retained export
+context/content and activation through the existing shared worker. It is outside
+the GTK runtime switch and runs with the portable model suite.
+
+Actually run on Mac: complete portable build and135 passes+1 explicit index skip,
+136 registered,79.07s, GTK runtime OFF. Shared scoped ASan/UBSan and TSan11/11 each
+also pass on Mac. See [Mac evidence](handoff-macos.md#alias-search-execution-and-source-provenance-2026-10-22)
+and [contract](module-abbreviations-workflows.md). This does not replace recorded
+Fedora indexed execution or validate Fedora's installed-SWORD sanitizer issue,
+GTK desktop interaction, corpus, WinUI/MSVC or whole-feature parity. Current
+Fedora recheck remains needed; no hosted workflow was dispatched.

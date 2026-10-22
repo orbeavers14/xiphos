@@ -1027,7 +1027,7 @@ resolution transport, then search execution with requested/resolved provenance.
 
 ### Module resolution C/Swift transport (2026-10-22)
 
-Sequential `master`: additive owned C request/result and Swift6 copied values
+Implementation `bd10e92` (pushed fork `master`). Sequential `master`: additive owned C request/result and Swift6 copied values
 reuse the explicit resolver. Unknown token remains successful absent identity,
 not a failed operation. Required bounded inputs copy before queueing; successful
 poll/take-once and teardown ownership use existing request semantics. No new
@@ -1044,3 +1044,56 @@ null/empty/over-limit/invalid UTF-8, optional/Unicode values, copied inputs,
 closed tabs, accepted cancellation/shutdown and value lifetime. No new full
 suite/UI/Fedora/MSVC/corpus/whole-parity acceptance. Next: search execution with
 requested/resolved identity retained through preview/export and all consumers.
+
+
+### Alias search execution and source provenance (2026-10-22)
+
+Sequential `master`: only search execution targets resolve aliases on the same
+Reader owner. Raw requested module tokens and explicit range providers stay
+unchanged. Results additionally own installed source IDs; retention, visible/all
+text/HTML/rich export selection and Mac/Linux hit adapters consume those actual
+IDs. Optional shared context headers disclose resolution; exact-ID header bytes
+remain unchanged. Existing requested C getter stays compatible; additive source
+getter feeds preview/activation. No frontend resolver or automatic draft change.
+Distinct original prose per module makes wrong-source export detectable.
+
+Full Mac build and focused13/13 (22.95s) pass including native model alias saved
+list application, preview, activation and text/HTML export; existing batch/text/
+HTML regression and generated fixtures included. Full Mac179 passes+1 explicit index skip,180 registered,154.45s.
+Final full portable core/Linux models on Mac135 passes+1 explicit index skip,
+136 registered,79.07s, GTK runtime OFF; the Linux alias model is included.
+ASan/UBSan11/11 (41.24s), TSan11/11 (39.72s). Same documented Mac/compiler/SDK
+configuration, dependencies partly instrumented, ASan leaks OFF. Commands:
+
+```sh
+cmake --build build/macos --parallel 2
+ctest --test-dir build/macos --output-on-failure
+cmake -S platforms/linux -B build/linux-models -DXIPHOS_BUILD_GTK4_PREVIEW=OFF
+cmake --build build/linux-models --parallel 2
+ctest --test-dir build/linux-models --output-on-failure
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build/sanitized --output-on-failure -R '^core_(search_aliases|module_resolution.*|module_abbreviations|search_batch|search_export|search_all_export|search_html_export)$'
+ctest --test-dir build/thread-sanitized --output-on-failure -R '^core_(search_aliases|module_resolution.*|module_abbreviations|search_batch|search_export|search_all_export|search_html_export)$'
+```
+
+Sanitizer targets rebuilt for the selected eleven cases/fixtures; ignored logs
+`build/search-aliases-*` retain configure/build/exact result selections. After
+moving the Linux model test from the GTK-only block, its explicit target and
+fixture were rebuilt before the final full136-case portable run. Earlier135-case
+portable run is superseded for final combined-tree evidence. Header comments/
+formatting after full Mac run change no executable statements; strict C11 header,
+shell syntax and whitespace checks pass. No current Fedora/MSVC/runtime index,
+whole feature or release acceptance follows.
+
+
+Active alias-search validation update: complete Mac regression passes179 +1
+explicit index skip,180 registered,154.45s; ASan/UBSan focused11/11,41.24s.
+The generated `search-aliases` disposable native fixture loaded literal saved
+choices `Shared,AFirst,文字 café,Shared`, returned4 groups/4 matches, previewed
+BSecond for first Shared, and Read in main pane showed distinct original BSecond
+prose. Draft module tokens stayed literal. Tested window closed and only this
+continuation's disposable preview process was stopped; older previews untouched.
+No generated export HTML/browser workaround was attempted. This is scoped actual
+menu/import/search/preview/activation evidence, not whole visual/accessibility/
+export-browser/corpus acceptance. A Linux model test was initially registered
+under the GTK runtime switch; corrected to the headless test block. Its explicit
+build and final full136-case portable run passed, as did TSan11/11.

@@ -1,5 +1,18 @@
 # Modernization status and acceptance
 
+Current alias-search checkpoint (2026-10-22): shared C++11 registry, bounded
+owned SDK catalog resolution and copied C/Swift transport now feed search
+execution. Raw requested tokens and explicit bounds providers remain unchanged;
+actual installed IDs drive retained exports and Mac/Linux hit preview/activation.
+Full Mac179 passes+1 index skip (180 registered,154.45s); full portable/Linux models
+on Mac135 passes+1 skip (136 registered,79.07s, GTK runtime OFF); focused ASan/UBSan
+and TSan11/11 each. Scoped native saved-list/search/preview/activation window
+checked with distinct original prose. See [alias contract](module-abbreviations-workflows.md)
+and [Mac evidence](handoff-macos.md#alias-search-execution-and-source-provenance-2026-10-22).
+URI/parallel/BibleSync, full mixed-family/corpus/current platform acceptance and
+all whole-parity/retirement gates remain open.
+
+
 Latest checked implementation (2026-10-22): `2b2f518`, with shared saved-list
 removal `f0778e0`, owned removal transport `0dbfff9` and native editing `d0b068c`.
 Final full Mac173 passes+1 explicit index skip (174 registered,149.80s); full

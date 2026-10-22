@@ -92,3 +92,38 @@ Normal4/4 including Swift/fixture, and ASan/UBSan, TSan, portable-on-Mac3/3 each
 pass; strict C11 header syntax passes. Details/limits are in the Mac handoff.
 Next: resolve actual search targets while preserving raw requested provenance,
 explicit range providers and authoritative preview/retained/export module IDs.
+
+
+## Search execution and authoritative source identity
+
+Reader search resolves only the execution target, using the same cached catalog
+under its owner lock. `SearchQuery.module`, ordered batch requests and explicit
+range-provider strings remain literal. Missing aliases produce the existing
+module-not-found path; bad alias metadata produces the existing invalid-request
+path. Exact-ID searches bypass unsupported alias metadata. Explicit bounds
+providers retain their existing exact-ID policy and are never guessed/resolved
+from the search target. Existing search scope/filter/cancellation publication
+rules remain shared.
+
+`SearchResult.resolved_module` owns the selected installed ID before session
+publication. `source_module()` supports older isolated source fixtures by falling
+back to requested.module when no Reader identity was supplied. Retained metadata
+owns both identities. Visible and complete retained export rows use the actual
+source, including configured text/HTML/resource lookup. Optional context headers
+and source summaries additionally disclose a different resolved identity; default
+exact-ID output stays unchanged. Raw request provenance is never overwritten.
+
+The existing C `xc_search_module` getter still returns the literal request.
+Additive `xc_search_source_module` supplies actual source identity to the Swift
+adapter and Linux model. Swift results preserve requestedModule separately from
+module; both frontends build hits/preview/activation from actual sources while
+leaving grouped request labels and editable saved lists raw. No frontend alias
+map, second query engine or automatic saved choice application is introduced.
+
+Distinct original prose per installed module tests wrong-source reads directly.
+Coverage includes duplicate/Unicode aliases, installed-ID protection, retained
+visible/all text/HTML/rich companions, partial failure disclosure, unchanged
+bounds providers, scope chaining, cancellation, closed/shutdown ownership and
+native Mac/Linux model preview/activation/export. Platform/corpus/complete
+advanced-search acceptance remains independent; URI/parallel/BibleSync alias
+consumption is subsequent work.

@@ -355,6 +355,9 @@ int xc_search_text_options_updated(const xc_search *result);
  * warn. Indexed preserves raw advanced syntax; auto words adds sidebar AND. */
 int xc_search_index_fallback(const xc_search *result);
 
+/* Execution target tokens may be exact installed IDs or registered shared
+ * catalog abbreviations. Results preserve literal requested tokens separately
+ * from actual source IDs. Explicit range_module remains an exact installed ID. */
 xc_status xc_worker_search_module(xc_worker *worker,uint64_t tab,const char *module,const char *expression,
                                   const xc_search_options *options,xc_request **out);
 /* Explicit bounds use range_module's cloned VerseKey parser and empty default
@@ -407,13 +410,16 @@ xc_status xc_request_search_progress(const xc_request *request,xc_search_progres
 /* All strings borrow search ownership until release, survive later jobs/worker
  * close. Info invalid input clears a non-NULL out. Invalid strings/index = NULL. */
 xc_status xc_search_get_info(const xc_search *result,xc_search_info *out);
+/* Literal requested token, retained for backward-compatible provenance. */
 const char *xc_search_module(const xc_search *result);
+/* Actual installed source identity for preview/navigation/export. */
+const char *xc_search_source_module(const xc_search *result);
 const char *xc_search_expression(const xc_search *result);
 const char *xc_search_effective_expression(const xc_search *result);
 const char *xc_search_reference(const xc_search *result,size_t index);
 void xc_search_release(xc_search *result);
 /* Ordered multi-module form of one query. query.module MUST be NULL; the 1..32
- * module IDs supply it. Other descriptor fields retain single-search meanings,
+ * module tokens supply it. Other descriptor fields retain single-search meanings,
  * including options' per-module output limits and strict text/scope validation.
  * All pointed data is copied before return. Overall limits default to 10000/8MiB.
  * Complete scopes chain through modules in order, independently of copied output.

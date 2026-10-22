@@ -13,7 +13,7 @@ finished. Whole workflows and data compatibility remain the acceptance units.
 | Dictionary and lexical content | Lookup/key steps/history, shared casing, lexical HTML/CSS and notes | Complete lookup/hover/search families and full corpus/locale acceptance |
 | General books | Tree/navigation/DisplayLevel documents, scoped restore, note/image clicks, bounded inline resources/module CSS, shared geometry and combined note numbering | Native sizing/global CSS/assets/formats, complete semantic links/corpus acceptance, book windows/tabs and saved workflows |
 | Parallel reading | Pending | Verse alignment, ordered translations, named sets, navigation and persistence |
-| Search | Bible/commentary basic + exact attribute modes, explicit intervals/complete last scope, private annotation context, advanced word dialects, bounded ordered batches, complete per-group result generations, stale-safe C/Swift reads, bounded selected/all text and restricted HTML export with C/Swift adapters, explicit bounded PNG embedding, native Mac text/HTML save/copy, progress/cancel, explicit saved-list import/application/edit/removal with verified snapshots and native Mac prefill | Remaining advanced module/range setup, abbreviation resolution, actual indexed execution, mixed families, advanced controls/settings, complete preview/export and full backend/corpus acceptance |
+| Search | Bible/commentary basic + exact attribute modes, explicit intervals/complete last scope, private annotation context, advanced word dialects, bounded ordered batches, complete per-group result generations, stale-safe C/Swift reads, bounded selected/all text and restricted HTML export with C/Swift adapters, explicit bounded PNG embedding, native Mac text/HTML save/copy, progress/cancel, explicit saved-list import/application/edit/removal with verified snapshots and native Mac prefill | Remaining advanced module/range setup, URI/parallel/BibleSync abbreviation consumption, actual indexed execution, mixed families, advanced controls/settings, complete preview/export and full backend/corpus acceptance |
 | Library and installation | Module metadata/discovery subset | Favorites/hiding/grouping, sources/install/uninstall/index/cipher workflows |
 | Bookmarks and annotations | Pending | Hierarchy/order/colors, XML round trips, AndBible import, rendering precedence |
 | Writing and editing | Pending | Personal commentary, study pads, journals/prayer lists, compatible document storage |
@@ -56,3 +56,10 @@ owned C/Swift transport and explicit native Mac controls. See the
 Installed-ID collision exclusion, SDK registration order and post-range-setup
 resolution must be characterized together before implementing aliases. This
 source audit accepts no new behavior or whole parity group.
+
+
+Shared execution-time module abbreviation resolution now preserves raw request
+provenance and actual retained/export source IDs, with copied C/Swift transport
+and Mac/Linux hit consumers. Full Mac/portable and scoped sanitizers are recorded
+in the [current contract](module-abbreviations-workflows.md). Single-passage URI
+consumption is the next bounded reuse; broader families/corpus remain open.

@@ -20,12 +20,18 @@ if(XIPHOS_BUILD_GTK4_PREVIEW)
   add_executable(xiphos-linux-preview reader_app.cpp study_ui.cpp)
   target_link_libraries(xiphos-linux-preview PRIVATE linux_reader_model PkgConfig::GTK4 PkgConfig::WEBKIT PNG::PNG)
   if(BUILD_TESTING)
+
     # Opt-in desktop smoke; never part of unattended CTest/hosted runs.
     add_executable(linux_study_ui_smoke tests/study_ui_smoke.cpp study_ui.cpp)
     target_link_libraries(linux_study_ui_smoke PRIVATE linux_reader_model PkgConfig::GTK4 PkgConfig::WEBKIT PNG::PNG)
   endif()
 endif()
 if(BUILD_TESTING)
+  add_executable(linux_search_alias_model_test tests/search_alias_model_test.cpp)
+  target_link_libraries(linux_search_alias_model_test PRIVATE linux_reader_model)
+  add_test(NAME linux_search_alias_model COMMAND linux_search_alias_model_test "${CMAKE_CURRENT_BINARY_DIR}/core/module-resolution-fixture")
+  set_tests_properties(linux_search_alias_model PROPERTIES FIXTURES_REQUIRED module_resolution_fixture TIMEOUT 60)
+
   add_executable(linux_study_model_test tests/study_model_test.cpp)
   target_link_libraries(linux_study_model_test PRIVATE linux_reader_model)
   add_test(NAME linux_study_model COMMAND linux_study_model_test "${CMAKE_CURRENT_BINARY_DIR}/core/book-document-presentation-fixture" "${CMAKE_CURRENT_BINARY_DIR}/core/attribute-search-fixture" "${CMAKE_CURRENT_BINARY_DIR}/linux-study-fixture" "${CMAKE_CURRENT_BINARY_DIR}/core/verse-image-source-fixture")

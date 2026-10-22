@@ -34,12 +34,14 @@ void check(bool ok, const char *message) { if (!ok) throw std::runtime_error(mes
 template<class F> void rejects(F call) { bool failed=false; try { call(); } catch (const std::exception &) { failed=true; } check(failed,"Expected bounded resolution rejection"); }
 void create(const std::filesystem::path &root, const std::vector<detail::ModuleAliasEntry> &entries) {
   std::filesystem::create_directories(root/"mods.d");
-  std::filesystem::create_directories(root/"data");
-  check(sword::RawText::createModule((root/"data").string().c_str()) == 0, "Create original alias fixture");
-  { sword::RawText writer((root/"data").string().c_str()); writer.setKey("John1:1"); writer.setEntry("Original alias fixture prose."); }
   for (const auto &entry : entries) {
+    const auto data = root/"data"/entry.module;
+    std::filesystem::create_directories(data);
+    check(sword::RawText::createModule(data.string().c_str()) == 0, "Create original alias fixture");
+    { sword::RawText writer(data.string().c_str()); writer.setKey("John1:1");
+      writer.setEntry(("Original alias fixture prose for " + entry.module + ".").c_str()); }
     std::ofstream config(root/"mods.d"/(entry.module+".conf"));
-    config << "[" << entry.module << "]\nDataPath=./data/\nModDrv=RawText\nSourceType=Plain\nEncoding=UTF-8\nLang=en\nDescription=Original alias fixture\n";
+    config << "[" << entry.module << "]\nDataPath=./data/" << entry.module << "/\nModDrv=RawText\nSourceType=Plain\nEncoding=UTF-8\nLang=en\nDescription=Original alias fixture\n";
     if (entry.abbreviation) config << "Abbreviation=" << *entry.abbreviation << "\n";
     check(bool(config), "Write alias metadata");
   }

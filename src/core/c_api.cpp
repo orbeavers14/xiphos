@@ -1028,6 +1028,7 @@ xc_status xc_request_search_progress(const xc_request *request,xc_search_progres
   *out={static_cast<int>(control.phase()),control.percent(),control.cancel_requested()?1:0};return XC_OK;
 }
 const char *xc_search_module(const xc_search *r){return r?r->value.requested.module.c_str():nullptr;}
+const char *xc_search_source_module(const xc_search *r){return r?r->value.source_module().c_str():nullptr;}
 const char *xc_search_expression(const xc_search *r){return r?r->value.requested.expression.c_str():nullptr;}
 const char *xc_search_effective_expression(const xc_search *r){return r?r->value.effective_expression.c_str():nullptr;}
 const char *xc_search_reference(const xc_search *r,size_t index){return r&&index<r->value.references.size()?r->value.references[index].c_str():nullptr;}

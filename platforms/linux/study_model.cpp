@@ -227,7 +227,7 @@ bool ReaderModel::take_extended(xc_request *r) {
       const auto *result = xc_search_batch_group_result(b.get(), g);
       if (result) {
         xc_search_get_info(result, &copied.info);
-        for (size_t row = 0; row < copied.info.result_count; ++row) value.hits.push_back({copy(xc_search_module(result)), copy(xc_search_reference(result, row)), g, row});
+        for (size_t row = 0; row < copied.info.result_count; ++row) value.hits.push_back({copy(xc_search_source_module(result)), copy(xc_search_reference(result, row)), g, row});
       }
       value.groups.push_back(std::move(copied));
     }

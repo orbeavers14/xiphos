@@ -52,7 +52,7 @@ SearchExportMetadata resolve_search_export_rows(const SearchGeneration *generati
       if(value.status!=SearchGenerationReadStatus::ok||!value.result)return fail(SearchExportStatus::engine_error);
       if(value.result->limited||value.result->references.size()>available)return fail(SearchExportStatus::output_limit);
       for(const auto &key:value.result->references){
-        const auto &module=value.requested->module;
+        const auto &module=value.result->source_module();
         if(module.size()+key.size()>maximum_search_reference_bytes-bytes)return fail(SearchExportStatus::output_limit);
         bytes+=module.size()+key.size();rows.push_back({module,key,group,context(group)});
       }

@@ -14,7 +14,7 @@ and [shared handoff](handoff.md). This consolidated contract replaces superseded
 | Sidebar mode/case/bounds/last | src/main/search_sidebar.cc | Shared execution and basic Mac controls checked; full saved/corpus acceptance pending |
 | SDK results/index/scopes/cancel | src/backend/sword_main.cc | Shared capability, owned results/scope and cooperative control checked; actual indexed execution pending |
 | Attribute/include options/advanced word dialects | src/main/search_dialog.cc | Shared C++11 policy reused by GTK, owned C/C++/Swift execution and Mac advanced mode/annotation and ordered module controls checked; complete advanced setup pending |
-| Ordered module search | src/main/search_dialog.cc | Bounded shared worker/C/Swift service checked; Mac ordered module selection/grouped preview/export checked; abbreviations/mixed families and complete setup pending |
+| Ordered module search | src/main/search_dialog.cc | Bounded shared worker/C/Swift service checked; Mac ordered module selection/grouped preview/export checked; bounded execution-time abbreviation resolution checked; mixed families and complete setup pending |
 | Progress/preview/navigation/export | src/gtk/search_dialog.c; src/main/search_sidebar.cc; src/main/search_dialog.cc | Basic Mac progress/Stop/preview/navigation checked; advanced grouping/export pending |
 
 Sidebar settings retain a 255-byte search-text field while execution receives the
@@ -428,3 +428,15 @@ intended pane at the same reference, plus missing-source failure and window/clos
 isolation. Exact evidence is in the Mac handoff. Physical double-click delivery,
 standalone-only corpus, alternate versifications and full GTK/Windows acceptance
 remain pending.
+
+
+## Execution-time module abbreviations (2026-10-22)
+
+Search targets now use shared bounded SDK catalog resolution at execution. Raw
+ordered requested module tokens, saved XML and explicit range providers remain
+unchanged. Owned result identities retain the actual installed source for native
+preview/activation and every retained export path; optional context discloses
+requested and resolved identities. Exact-ID defaults remain unchanged. See the
+[registry/catalog/transport and provenance contract](module-abbreviations-workflows.md).
+This adds no frontend resolver, full mixed-family setup, URI/parallel/BibleSync
+alias acceptance or whole parity claim.

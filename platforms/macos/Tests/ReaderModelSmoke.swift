@@ -69,6 +69,46 @@ struct ReaderModelSmoke {
         second.close(); await worker.shutdown()
         print("Native shared search, scopes, result preview, navigation, stop and closure passed")
     }
+    @MainActor static func searchAliases(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let first = ReaderModel(worker: worker, startupError: nil), second = ReaderModel(worker: worker, startupError: nil)
+        try await idle(first); try await idle(second)
+        first.selection = "AFirst"; first.reference = "John1:1"; first.read(); try await idle(first)
+        first.reference = "John1:2"
+        let originalHTML = first.html, originalReference = first.renderedReference
+        let model = first.search, requested = ["Shared", "AFirst", "文字 café", "Shared"]
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("xiphos-alias-list-\(UUID().uuidString).xml")
+        defer { try? FileManager.default.removeItem(at: file) }
+        try Data("<Xiphos><modlists><modlist label='Aliases' list='Shared,AFirst,文字 café,Shared'/></modlists></Xiphos>".utf8).write(to: file)
+        model.loadSearchLists(path: file.path); try await searchIdle(model)
+        model.applySavedModuleList(at: 0); try await searchIdle(model)
+        model.expression = "Original"; model.scopeChoice = .bounds; model.boundsModule = "AFirst"; model.bounds = "John1:1"
+        model.search(); try await searchIdle(model)
+        guard model.selectedModules == requested, model.batchResult?.requestedModules == requested,
+              model.hits.map(\.module) == ["BSecond", "AFirst", "Unicode", "BSecond"],
+              model.batchResult?.groups[0].result?.requestedModule == "Shared",
+              model.batchResult?.groups[0].result?.module == "BSecond",
+              model.previewSource?.module == "BSecond", model.preview?.html.contains("prose for BSecond") == true,
+              first.html == originalHTML, first.renderedReference == originalReference, first.reference == "John1:2",
+              second.search.hits.isEmpty else { fatalError("Native alias batch must preserve draft tokens while previewing actual sources") }
+        model.expression = "Unsubmitted query"
+        model.exportScripture = true; model.exportSearchContext = true
+        var text: SearchExportPayload?
+        model.exportResults(allMatches: true) { text = $0 }; try await searchIdle(model)
+        guard text?.contents.contains("Resolved module: BSecond") == true,
+              text?.contents.contains("prose for BSecond") == true,
+              text?.contents.contains("prose for Unicode") == true,
+              model.expression == "Unsubmitted query", model.selectedModules == requested else { fatalError("Native alias export must use committed actual sources without applying draft state") }
+        model.exportFormat = .html
+        var html: SearchExportPayload?
+        model.exportResults(allMatches: true) { html = $0 }; try await searchIdle(model)
+        guard html?.contents.contains("prose for BSecond") == true else { fatalError("Native alias HTML export source") }
+        first.openSearchResult(model.hits[0]); try await idle(first)
+        guard first.selection == "BSecond", first.html.contains("prose for BSecond"),
+              model.selectedModules == requested, second.search.hits.isEmpty else { fatalError("Native alias activation must route actual source identity through core") }
+        first.close(); second.close(); await worker.shutdown()
+        print("Native aliases preserve requested tokens and actual preview/activation/export provenance")
+    }
     @MainActor static func savedSearchLists(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let tab = try await worker.createTab(), otherTab = try await worker.createTab()
@@ -1615,6 +1655,9 @@ struct ReaderModelSmoke {
         print("Native main note/reference hover destinations and guarded preference checks passed")
     }
     @MainActor static func main() async throws {
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--search-aliases" {
+            try await searchAliases(root: CommandLine.arguments[2]); return
+        }
         let selectedLocale = initializePreviewLocale()
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--lexical-layout" {
             try await lexicalLayout(root: CommandLine.arguments[2]); return

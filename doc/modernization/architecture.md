@@ -429,3 +429,16 @@ owned groups, and total copied output is bounded independently of complete final
 scope. See the consolidated [contract and validation gates](search-workflows.md).
 The experimental static C ABI is additive; this is not a stable dynamic binary
 compatibility or full advanced/native parity claim.
+
+
+### Shared module abbreviation ownership
+
+The retained GTK registration/lookup wrappers now consume a shared C++11 value
+registry. Native Reader lazily stages a bounded copied alias catalog on the same
+SDK owner, protects every exact installed ID, and preserves SDK registration
+order/collision behavior. Read-only copied C/Swift resolution is separate from
+application state. Search resolves only execution targets; raw requested tokens
+and explicit range providers stay unchanged. Owned actual source IDs flow through
+retention, text/HTML/resource export and Mac/Linux preview/activation. No frontend
+map or second SDK manager is introduced. See
+[alias contract and remaining URI/parallel/BibleSync gates](module-abbreviations-workflows.md).

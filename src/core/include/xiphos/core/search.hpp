@@ -81,6 +81,12 @@ struct SearchResult {
   bool index_fallback=false; // Explicit indexed request selected unindexed multiword instead.
   SearchGenerationInfo generation;
   bool generation_updated=false;
+  // Actual installed source selected by Reader. Raw requested.module stays
+  // unchanged. Empty supports older isolated source/metadata fixtures.
+  std::string resolved_module;
+  const std::string &source_module() const noexcept {
+    return resolved_module.empty() ? requested.module : resolved_module;
+  }
 };
 // One serialized job, in explicit request order (including duplicate modules).
 // Last-results requests chain through earlier successful groups, never a union.

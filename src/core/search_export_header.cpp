@@ -76,6 +76,8 @@ std::string SearchGeneration::export_source_summary() const
 		text += result.cancelled ? "stopped\n" : result.executed ? "completed\n"
 									 : "not executed (empty scope)\n";
 		text += "SDK result elements: " + std::to_string(result.total_results) + "\n";
+		if (result.source_module() != query.module)
+			text += "Resolved module: " + result.source_module() + "\n";
 	}
 	return text;
 }
@@ -85,8 +87,9 @@ std::string SearchGeneration::export_header(std::size_t index) const
 		throw std::logic_error("No successful export group");
 	const auto &query = requested_[index];
 	const auto &result = *groups_[index].result;
-	std::string text = "Search group " + std::to_string(index + 1) + "\nModule: " + query.module +
-			   "\nQuery: " + query.expression + "\nMode: " + mode_name(query.mode) +
+	std::string text = "Search group " + std::to_string(index + 1) + "\nModule: " + query.module;
+	if (result.source_module() != query.module) text += "\nResolved module: " + result.source_module();
+	text += "\nQuery: " + query.expression + "\nMode: " + mode_name(query.mode) +
 			   "\nCase sensitive: " + flag(query.case_sensitive) + "\nScope: ";
 	if (query.range)
 		text += "range (" + query.range->module + "): " + query.range->expression;

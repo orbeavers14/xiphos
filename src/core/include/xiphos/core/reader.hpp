@@ -46,7 +46,8 @@ public:
   // Explicit read-only alias resolution on this Reader owner. Catalog metadata
   // stages lazily; invalid alias metadata does not disable ordinary reading.
   ModuleNameResolution resolve_module_name(const std::string &requested);
-  // Initial whole-module Bible/regular-commentary search, with copied bounded
+  // Bible/regular-commentary search resolves target aliases while preserving
+  // raw requests and explicit bounds providers. Copied bounded
   // output and scoped accent/vowel filter settings. No history, session scope,
   // index creation or native UI. Optional cooperative controls never expose SDK state.
   SearchResult search_module(SearchQuery query,const SearchLimits &limits = {},std::shared_ptr<SearchControl> control = {});

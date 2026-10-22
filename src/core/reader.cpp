@@ -71,6 +71,15 @@ struct Reader::Impl {
   std::vector<Module> modules;
   std::unique_ptr<detail::ModuleAliasCatalog> aliases;
   std::mutex mutex;
+  ModuleNameResolution resolve_name(const std::string &requested) {
+    if (manager->Modules.find(requested.c_str()) != manager->Modules.end())
+      return {requested, requested, false};
+    if (!aliases) {
+      auto staged = std::make_unique<detail::ModuleAliasCatalog>(detail::capture_module_alias_catalog(*manager));
+      aliases = std::move(staged);
+    }
+    return aliases->resolve(requested);
+  }
   sword::SWModule &verse_module(const std::string &id, const std::string &reference) {
     if (reference.empty()) throw std::invalid_argument("Reference is empty");
     auto *module = manager->getModule(id.c_str());
@@ -111,15 +120,7 @@ const std::vector<Module> &Reader::modules() const { return impl_->modules; }
 ModuleNameResolution Reader::resolve_module_name(const std::string &requested) {
   detail::validate_search_module_name(requested);
   std::lock_guard<std::mutex> lock(impl_->mutex);
-  // Exact installed IDs require no alias metadata and remain available even
-  // when an unrelated module has unsupported alias configuration.
-  if (impl_->manager->Modules.find(requested.c_str()) != impl_->manager->Modules.end())
-    return {requested, requested, false};
-  if (!impl_->aliases) {
-    auto staged = std::make_unique<detail::ModuleAliasCatalog>(detail::capture_module_alias_catalog(*impl_->manager));
-    impl_->aliases = std::move(staged);
-  }
-  return impl_->aliases->resolve(requested);
+  return impl_->resolve_name(requested);
 }
 
 BookTree Reader::book_tree(const std::string &id, std::uint64_t offset) {
@@ -171,11 +172,15 @@ SearchResult Reader::search_impl(SearchQuery query,const SearchLimits &limits,st
   if(!nested_job)progress.emplace(control);
   detail::validate_search_query(query);
   std::lock_guard<std::mutex> lock(impl_->mutex);
-  auto *module=impl_->manager->getModule(query.module.c_str());
+  // Resolve only the execution target. The literal request and explicit range
+  // provider retain their original identities for setup and provenance.
+  const auto resolved = impl_->resolve_name(query.module);
+  auto *module = resolved.module ? impl_->manager->getModule(resolved.module->c_str()) : nullptr;
   if(!module)throw std::out_of_range("Search module is not installed");
   std::shared_ptr<const detail::SearchScope> staged;
   auto result=detail::capture_module_search(*impl_->manager,*module,std::move(query),limits,control,
     scope?scope->get():nullptr,scope?&staged:nullptr,{},previous_text,progress_begin,progress_end,allow_empty_output,retained,retention_limits);
+  result.resolved_module = *resolved.module; // Allocate before session publication.
   if(staged){*scope=std::move(staged);result.scope_updated=true;}
   if(scope&&*scope)result.scope=(*scope)->info();
   if(progress)progress->finish(result.cancelled);return result;
