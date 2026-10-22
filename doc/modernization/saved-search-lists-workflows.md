@@ -210,3 +210,25 @@ Normal Mac, ASan/UBSan and portable-on-Mac focused selections each pass4/4;
 GTK runtime OFF, ASan leaks OFF, dependencies partly instrumented. Additive
 C/Swift removal transport and explicit native list management remain next. No
 whole parity/platform/retirement acceptance follows.
+
+
+## Owned removal C/Swift transport (2026-10-22)
+
+`xc_worker_remove_search_list` is additive and returns the existing owned
+`xc_search_lists` snapshot. Kind is strict; required path and label copy before
+return with the same16-MiB pre-copy ceiling as saves. Empty labels are literal;
+NUL/invalid UTF-8/XML reject through the typed boundary. Shape failures clear
+output before submission; semantic/file/tab failures arrive at poll. Observer
+and result storage allocate before accepting mutation, and the existing nothrow
+snapshot move transfers the verified prepared value on successful poll.
+Take-once, lifetime and shutdown-draining rules match saves. No result layout or
+ABI version change, second owner, profile discovery or search application.
+
+Swift6 `CoreWorker.removeSearchList` copies the snapshot and rejects embedded
+NUL/oversized fields before conversion. Cancelled observers drain accepted
+removals. Tests check first-duplicate exposure, state isolation, literal inputs,
+pre-poll/take-once/failure ownership, copied submission, invalid shapes/text,
+missing profiles, closed tabs, dropped observers and shutdown. Normal Mac8/8
+including Swift and original dictionary fixture; C11 header syntax passes.
+Sanitizer/portable evidence and implementation checkpoint are in the Mac handoff.
+Native explicit removal and existing-choice prefill remain subsequent work.

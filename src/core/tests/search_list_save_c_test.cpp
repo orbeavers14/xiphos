@@ -47,14 +47,33 @@ int main(int argc,char **argv){try{
 #ifndef _WIN32
  check(std::filesystem::status(fresh).permissions()==(std::filesystem::perms::owner_read|std::filesystem::perms::owner_write),"New saved profile permissions remain private");
 #endif
+ // Removal shares the preallocated snapshot channel but never creates a profile.
+ std::string removalPath=fresh.u8string(),removalLabel="Fresh";
+ check(xc_worker_remove_search_list(worker,tab,removalPath.c_str(),1,removalLabel.c_str(),&request)==XC_OK&&!xc_request_take_search_lists(request),"Queue removal with pre-poll guard");
+ removalPath.clear();removalLabel="Changed";
+ check(wait(request)==XC_OK,"Removal copies path and label");auto *removed=xc_request_take_search_lists(request);
+ check(removed&&xc_search_lists_count(removed,1)==0&&!xc_request_take_search_lists(request),"Verified removal snapshot is owned and take-once");xc_request_release(request);
+ auto rejectRemoval=[&](const char *p,int kind,const char *name){request=reinterpret_cast<xc_request *>(1);check(xc_worker_remove_search_list(worker,tab,p,kind,name,&request)==XC_INVALID_ARGUMENT&&!request,"Invalid removal shape clears output");};
+ rejectRemoval(nullptr,0,"");rejectRemoval("",0,"");rejectRemoval(path.c_str(),2,"");rejectRemoval(path.c_str(),0,nullptr);rejectRemoval(path.c_str(),0,oversized.c_str());rejectRemoval(oversized.c_str(),0,"");
+ check(xc_worker_remove_search_list(nullptr,tab,path.c_str(),0,"",&request)==XC_INVALID_ARGUMENT&&!request&&xc_worker_remove_search_list(worker,tab,path.c_str(),0,"",nullptr)==XC_INVALID_ARGUMENT,"NULL removal worker/output rejected");
+ check(xc_worker_remove_search_list(worker,tab,path.c_str(),0,"\x01",&request)==XC_OK&&wait(request)==XC_INVALID_ARGUMENT&&!xc_request_take_search_lists(request)&&bytes(file)==before,"Malformed XML label fails before replacement");xc_request_release(request);
+ check(xc_worker_remove_search_list(worker,tab,(root/"absent.xml").u8string().c_str(),0,"Missing",&request)==XC_OK&&wait(request)!=XC_OK&&!xc_request_take_search_lists(request)&&!std::filesystem::exists(root/"absent.xml"),"Missing removal profile remains absent");xc_request_release(request);
+ xc_search_lists_release(removed);
  check(xc_worker_close_tab(worker,tab,&request)==XC_OK&&wait(request)==XC_OK,"Close save tab");xc_request_release(request);path=file.u8string();auto closed=run();check(closed.first==XC_INVALID_ARGUMENT&&!closed.second&&bytes(file)==before,"Closed tab rejects before persistent write");
+ check(xc_worker_remove_search_list(worker,tab,path.c_str(),0,"Original",&request)==XC_OK&&wait(request)==XC_INVALID_ARGUMENT&&!xc_request_take_search_lists(request)&&bytes(file)==before,"Closed removal tab preserves file");xc_request_release(request);
  check(xc_worker_create_tab(worker,&request)==XC_OK&&wait(request)==XC_OK,"Create draining tab");const auto live=xc_request_tab(request);xc_request_release(request);
  edit={XC_SAVED_SEARCH_MODULES,"Detached","Text"};check(xc_worker_save_search_list(worker,live,path.c_str(),&edit,&request)==XC_OK,"Accept detached observer write");xc_request_release(request);
  edit={XC_SAVED_SEARCH_RANGES,"Drain","John1:3"};check(xc_worker_save_search_list(worker,live,path.c_str(),&edit,&request)==XC_OK,"Accept save before shutdown");xc_worker_close(worker);
  check(wait(request)==XC_OK,"Shutdown drains accepted writes");auto *drained=xc_request_take_search_lists(request);xc_request_release(request);
  check(drained&&xc_search_lists_count(drained,0)==4&&xc_search_lists_count(drained,1)==3,"Returned stage includes preceding FIFO detached mutation");
+ check(xc_worker_open(root.u8string().c_str(),&worker)==XC_OK&&xc_worker_create_tab(worker,&request)==XC_OK&&wait(request)==XC_OK,"Create removal drain owner");const auto removalTab=xc_request_tab(request);xc_request_release(request);
+ check(xc_worker_remove_search_list(worker,removalTab,path.c_str(),0,"Original",&request)==XC_OK,"Accept detached removal");xc_request_release(request);
+ check(xc_worker_remove_search_list(worker,removalTab,path.c_str(),0,"Detached",&request)==XC_OK,"Accept shutdown removal");xc_worker_close(worker);
+ check(wait(request)==XC_OK,"Shutdown drains removals");auto *removalDrained=xc_request_take_search_lists(request);xc_request_release(request);
+ check(removalDrained&&xc_search_lists_count(removalDrained,0)==2&&std::string(xc_search_lists_value(removalDrained,0,0))=="Shadowed","FIFO removals expose later duplicate without invalidating prior snapshots");
  std::filesystem::remove(file);std::filesystem::remove(fresh);std::filesystem::remove(malformed);
  check(std::string(xc_search_lists_value(owned,0,0))=="Text, MissingModule,Text"&&std::string(xc_search_lists_value(drained,1,2))=="John1:3","Owned staged values survive request/worker/source teardown");
+ xc_search_lists_release(removalDrained);
  xc_search_lists_release(owned);xc_search_lists_release(drained);xc_search_lists_release(nullptr);
  std::cout<<"C verified saved-list writes, copied submission, strict bounds, failure preservation and owned stage lifetime passed\n";return 0;
 }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}

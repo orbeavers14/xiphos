@@ -22,7 +22,8 @@ scoped editor/chooser cancellation/new-file save/menu checked with original fixt
 See [saved-list contract](saved-search-lists-workflows.md#native-explicit-editor-2026-10-22).
 Shared first-label saved-list removal now also has C++ serialization, verified
 staged snapshots and FIFO execution; normal/sanitizer/portable scoped checks4/4
-each. C/Swift/native removal consumption remains next. No whole parity acceptance
+each. Additive owned C/Swift removal transport passes normal8/8 and ASan/UBSan, TSan
+and portable-on-Mac6/6 each. Native removal consumption remains next. No whole parity acceptance
 follows.
 
 Earlier export checkpoint (2026-10-22): shared retained search generations, selected/all

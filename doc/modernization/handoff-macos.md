@@ -877,13 +877,13 @@ indices, then remaining saved setup and shared advanced search/resource policies
 
 ### Shared saved-list removal (2026-10-22)
 
-Sequential `master`: extracting retained `xml_remove_node` first-section/first-
+Implementation `f0778e0` (pushed fork `master`). Sequential `master`: extracting retained `xml_remove_node` first-section/first-
 label behavior into explicit C++ serialization, verified staged file replacement
 and the existing FIFO worker. Later duplicate values become effective; unrelated
 XML survives. Missing items are no-ops, missing profiles reject without creation.
 No implicit search application. Existing C/Swift callers remain compatible;
 additive removal transport/native action is subsequent work. C++ normal, ASan/UBSan and portable-on-Mac selections pass4/4 each (0.37s,
-1.38s,0.58s respectively); GTK runtime OFF, sanitizer leaks OFF, dependencies
+1.38s,0.66s respectively); GTK runtime OFF, sanitizer leaks OFF, dependencies
 partly instrumented. Commands: build `core_search_list_save_test`,
 `core_search_lists_profile_test`, `core_profile_save_test`, `core_xml_profile_test`
 in `build/macos`, `build/sanitized`, `build/linux-models`, then
@@ -894,3 +894,22 @@ compiled as C11; no language/API layout increase. Logs: ignored
 Same documented SDK environment; no new full suite or desktop/corpus/Fedora/MSVC
 acceptance. Next: additive preallocated C/Swift transport and explicit native
 removal/prefill; preserve current draft/results and duplicate-shadow semantics.
+
+
+### Saved-list removal C/Swift transport (2026-10-22)
+
+Additive `xc_worker_remove_search_list` and Swift `CoreWorker.removeSearchList`
+reuse the same preallocated observer/result and owned snapshot channel as saves.
+Inputs copy before submission, kinds/path/labels are bounded, and poll moves the
+verified core snapshot without allocation. Accepted removals drain through
+observer cancellation and shutdown; no frontend XML or duplicate policy.
+Complete Mac build passes. Focused normal8/8 (3.19s, Swift profile adapter and
+original dictionary fixture included); ASan/UBSan6/6 (2.42s), TSan6/6 (3.55s),
+portable-on-Mac6/6. Commands: build the six search-list/profile/XML core targets
+used above, including `core_search_list_save_c_test` and `core_search_lists_c_test`;
+run `ctest --test-dir <dir> --output-on-failure -R '^core_(search_list.*|profile_save|xml_profile)$'`,
+adding `|^swift_profile_adapter$` for normal Mac. ASan leaks OFF, GTK runtime OFF,
+SDKs partly instrumented. Strict C11 header and whitespace checks pass.
+Logs: ignored `build/search-list-removal-adapters-*`. No new full suite,
+Fedora/MSVC/desktop removal or whole-feature acceptance. Next: native explicit
+removal and existing-choice prefill, retaining drafts/results/closed-window guards.

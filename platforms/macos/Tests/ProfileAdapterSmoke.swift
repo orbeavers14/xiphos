@@ -87,6 +87,19 @@ import Foundation
             edit: SavedSearchListEdit(kind: .ranges, label: "Accepted", value: "John1:4")) }
         saveTask.cancel(); let drainedSave = try await saveTask.value
         guard drainedSave.ranges.last?.value == "John1:4" else { fatalError("observer cancellation drains accepted save rather than pretending to undo it") }
+        let removed = try await worker.removeSearchList(tab: first, path: namedFile.path, kind: .modules, label: "Original")
+        guard removed.moduleLists[0].value == "Shadowed", removed.moduleLists[0].effectiveIndex == 0,
+              removed.ranges == drainedSave.ranges,
+              try await worker.history(first).count == history.count else { fatalError("typed removal delegates duplicate semantics without applying search state") }
+        let beforeRemovalErrors = try Data(contentsOf: namedFile)
+        for label in ["NUL\0label", "\u{01}", String(repeating: "x", count: 16*1024*1024+1)] {
+            do { _ = try await worker.removeSearchList(tab: first, path: namedFile.path, kind: .modules, label: label); fatalError("invalid removal accepted") }
+            catch is CoreError { }
+        }
+        guard try Data(contentsOf: namedFile) == beforeRemovalErrors else { fatalError("invalid typed removal overwrote profile") }
+        let removalTask = Task { try await worker.removeSearchList(tab: first, path: namedFile.path, kind: .ranges, label: "Accepted") }
+        removalTask.cancel(); let drainedRemoval = try await removalTask.value
+        guard !drainedRemoval.ranges.contains(where: { $0.label == "Accepted" }) else { fatalError("cancelled removal observer failed to drain accepted mutation") }
         try await worker.closeTab(first)
         do { _ = try await worker.importLexiconProfile(tab: first, path: source.path); fatalError("closed import tab accepted") }
         catch is CoreError { }
@@ -95,6 +108,8 @@ import Foundation
         do { _ = try await worker.parseSearchModuleList(tab: first, text: "DictionaryOne"); fatalError("closed module-list tab accepted") }
         catch is CoreError { }
         do { _ = try await worker.saveSearchList(tab: first, path: namedFile.path, edit: SavedSearchListEdit()); fatalError("closed save tab accepted") }
+        catch is CoreError { }
+        do { _ = try await worker.removeSearchList(tab: first, path: namedFile.path, kind: .modules, label: "Original"); fatalError("closed removal tab accepted") }
         catch is CoreError { }
         try await worker.closeTab(second); await worker.shutdown()
         guard edited.moduleLists[0].value == "DictionaryOne, MissingModule,DictionaryOne", drainedSave.ranges.last?.value == "John1:4" else { fatalError("copied staged snapshots survive shutdown") }

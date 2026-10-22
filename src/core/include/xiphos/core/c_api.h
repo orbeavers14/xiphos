@@ -767,6 +767,13 @@ typedef struct { int kind; const char *label, *value; } xc_saved_search_list_edi
  * Dropped observers do not cancel accepted writes; shutdown drains them. */
 xc_status xc_worker_save_search_list(xc_worker *worker, uint64_t tab, const char *path,
   const xc_saved_search_list_edit *edit, xc_request **out);
+/* Explicit first-label removal from an existing selected profile. Path/label
+ * are required UTF-8 <=16MiB; empty label is valid. Strict kind and copied inputs,
+ * preallocated observer/result, verified snapshot, take-once and draining rules
+ * match save_search_list. Missing items succeed; missing files fail. Later
+ * duplicate labels may become effective. No search/settings are applied. */
+xc_status xc_worker_remove_search_list(xc_worker *worker, uint64_t tab, const char *path,
+  int kind, const char *label, xc_request **out);
 /* Take once after successful poll. Strings borrow from the owned snapshot until
  * release. NULL attributes remain absent; empty strings remain explicit empty.
  * Invalid/null snapshot, kind or row yields zero count/NULL strings.

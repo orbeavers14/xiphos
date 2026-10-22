@@ -1282,6 +1282,23 @@ xc_status xc_worker_save_search_list(xc_worker *w, uint64_t tab, const char *pat
     return XC_OK;
   } catch (...) { return failure(); }
 }
+xc_status xc_worker_remove_search_list(xc_worker *w, uint64_t tab, const char *path,
+    int kind, const char *label, xc_request **out) {
+  if (!out) return XC_INVALID_ARGUMENT;
+  *out = nullptr;
+  constexpr auto maximum = xiphos::core::maximum_saved_search_text_bytes;
+  if (!w || !bounded_image_c_text(path, maximum) ||
+      (kind != XC_SAVED_SEARCH_MODULES && kind != XC_SAVED_SEARCH_RANGES) ||
+      !label || (*label && !bounded_image_c_text(label, maximum))) return XC_INVALID_ARGUMENT;
+  try {
+    auto request = std::make_unique<Request<xiphos::core::SavedSearchLists>>();
+    request->search_lists = std::make_unique<xc_search_lists>();
+    request->future = w->value.remove_search_list(tab, path,
+      static_cast<xiphos::core::SavedSearchListKind>(kind), label);
+    *out = request.release();
+    return XC_OK;
+  } catch (...) { return failure(); }
+}
 xc_status xc_worker_parse_search_module_list(xc_worker *w, uint64_t tab, const char *text, xc_request **out) {
   if (!text || (*text && !bounded_image_c_text(text, xiphos::core::maximum_saved_search_text_bytes))) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.parse_search_module_list(tab, text); });

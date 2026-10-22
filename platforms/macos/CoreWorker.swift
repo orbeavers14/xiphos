@@ -751,6 +751,23 @@ actor CoreWorker {
         defer { xc_search_lists_release(result) }
         return try CoreValues.searchLists(result)
     }
+    func removeSearchList(tab: UInt64, path: String, kind: SavedSearchListKind, label: String) async throws -> SavedSearchLists {
+        guard !path.isEmpty, [path, label].allSatisfy({ !$0.utf8.contains(0) && $0.utf8.count <= 16 * 1024 * 1024 }) else {
+            throw CoreError(status: XC_INVALID_ARGUMENT)
+        }
+        let handle = try worker()
+        let queued = path.withCString { file in label.withCString { name in
+            var request: OpaquePointer?
+            let status = xc_worker_remove_search_list(handle, tab, file, kind.rawValue, name, &request)
+            return (status, request)
+        } }
+        // Accepted removals drain even if the observer is cancelled.
+        let completed = try await wait(queued.0, queued.1)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_search_lists(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_search_lists_release(result) }
+        return try CoreValues.searchLists(result)
+    }
     func parseSearchModuleList(tab: UInt64, text: String) async throws -> [String] {
         guard !text.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?
