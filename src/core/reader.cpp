@@ -284,6 +284,10 @@ ReferenceChoices Reader::reference_choices(const std::string &id, const std::str
 PassageLink Reader::resolve_link(const std::string &current_module, const std::string &url) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto target = passage_link(url, current_module);
+  detail::validate_search_module_name(target.module);
+  const auto resolved = impl_->resolve_name(target.module);
+  if (!resolved.module) throw std::out_of_range("Passage link module is not installed");
+  target.module = *resolved.module;
   impl_->verse_module(target.module, target.reference);
   return target;
 }

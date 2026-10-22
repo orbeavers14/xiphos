@@ -9,7 +9,9 @@ on Mac135 passes+1 skip (136 registered,79.07s, GTK runtime OFF); focused ASan/U
 and TSan11/11 each. Scoped native saved-list/search/preview/activation window
 checked with distinct original prose. See [alias contract](module-abbreviations-workflows.md)
 and [Mac evidence](handoff-macos.md#alias-search-execution-and-source-provenance-2026-10-22).
-URI/parallel/BibleSync, full mixed-family/corpus/current platform acceptance and
+Typed single-passage URI alias resolution additionally passes normal12/12,
+ASan/UBSan10/10, TSan10/10 and Mac-hosted portable/Linux11/11 focused checks.
+showRef fallback, parallel/BibleSync, full mixed-family/corpus/current platform acceptance and
 all whole-parity/retirement gates remain open.
 
 

@@ -45,7 +45,8 @@ BookImageLink book_inline_image_link(const std::string &source);
 enum class BookLinkKind { note, image };
 BookLinkKind book_link_kind(const std::string &url);
 // Scoped single-reference subset of main/url.cc sword_uri + hex_decode.
-// Module abbreviations, ranges and fragments remain pending.
+// Parsing keeps module tokens literal. Reader resolves catalog aliases for
+// supported typed single-passage targets; ranges/fragments remain separate.
 PassageLink passage_link(const std::string &url, const std::string &current_module);
 std::string passage_uri(const std::string &reference);
 }

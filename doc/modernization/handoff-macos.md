@@ -1048,7 +1048,7 @@ requested/resolved identity retained through preview/export and all consumers.
 
 ### Alias search execution and source provenance (2026-10-22)
 
-Sequential `master`: only search execution targets resolve aliases on the same
+Implementation `50e8d71` (pushed fork `master`). Sequential `master`: only search execution targets resolve aliases on the same
 Reader owner. Raw requested module tokens and explicit range providers stay
 unchanged. Results additionally own installed source IDs; retention, visible/all
 text/HTML/rich export selection and Mac/Linux hit adapters consume those actual
@@ -1097,3 +1097,25 @@ menu/import/search/preview/activation evidence, not whole visual/accessibility/
 export-browser/corpus acceptance. A Linux model test was initially registered
 under the GTK runtime switch; corrected to the headless test block. Its explicit
 build and final full136-case portable run passed, as did TSan11/11.
+
+
+### Typed single-passage aliases (2026-10-22)
+
+Sequential `master` after `50e8d71`: reuse the same owner registry at Reader's
+single-passage resolution boundary. Pure parsing keeps literal module tokens;
+validated owned targets return actual installed IDs. Existing source/navigation
+pane fallback and explicit-module precedence remain intact. No navigation occurs
+until the host applies the returned target; unsupported non-verse modules/ranges/
+fragments/commands retain their separate gates. Existing C handles/Swift adapters
+carry actual IDs, with Swift resolveLink NUL guards before conversion.
+
+Final normal12/12 (8.68s), ASan/UBSan10/10 (15.40s), TSan10/10
+(17.21s), and portable/Linux model11/11 pass. Includes owned C/Swift, native
+Mac/Linux model URI navigation with unchanged search metadata, standalone RawLD
+non-verse rejection and exact-ID bypass of unrelated bad metadata. Retained
+show_ref checks installed IDs then falls back to settings.MainWindowModule; it
+does not resolve aliases. An explicit command guard prevents the URI change
+from leaking into that separate behavior. Existing note_dispatch already freezes
+and compares the complete callback; command fallback is the next bounded gap.
+No new full suite/UI URI click/corpus/current Fedora/MSVC or whole-feature
+acceptance. Same environment and sanitizer instrumentation limits as above.

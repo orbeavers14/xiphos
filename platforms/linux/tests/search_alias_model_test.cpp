@@ -19,5 +19,8 @@ int main(int argc,char **argv) {try {
  check(model.search_export().disposition==XC_SEARCH_EXPORT_OK&&model.search_export().text.find("Resolved module: BSecond")!=std::string::npos&&model.search_export().text.find("prose for Unicode")!=std::string::npos,"Alias export consumes actual source with requested provenance");
  check(model.activate_search_hit(0),"Activate actual alias source");settle(model);
  check(model.passage().bible=="BSecond"&&model.search_results().hits[0].module=="BSecond","Alias activation routes source through existing core");
+ const auto generation=model.search_results().generation.id;
+ check(model.follow("AFirst","bible://文字+caf%C3%A9/John1:1"),"Follow typed Unicode passage alias");settle(model);
+ check(model.passage().bible=="Unicode"&&model.search_results().generation.id==generation&&model.search_results().groups[0].module=="Shared","URI alias navigation retains requested search provenance");
  std::cout<<"Portable Linux alias preview/activation/export model checks passed\n";return 0;
  }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}

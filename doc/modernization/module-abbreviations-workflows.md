@@ -127,3 +127,25 @@ bounds providers, scope chaining, cancellation, closed/shutdown ownership and
 native Mac/Linux model preview/activation/export. Platform/corpus/complete
 advanced-search acceptance remains independent; URI/parallel/BibleSync alias
 consumption is subsequent work.
+
+
+## Typed single-passage URI resolution
+
+Reader.resolve_link now resolves exact installed IDs first and otherwise uses
+the same bounded alias catalog for sword:// and bible:// single-passage URIs.
+The pure parser preserves literal tokens, decoding and existing syntax gates.
+Owned targets contain the actual verse module ID; range/fragment/non-verse
+rejection remains intact. Explicit URI modules override current/navigation
+fallback, and resolution alone does not visit history or mutate search state.
+Existing C ownership and Swift adapters carry the result, with embedded-NUL
+guards before Swift C conversion. Mac/Linux models apply the returned actual ID.
+
+This does not enable aliases for showRef commands: retained show_ref uses exact
+module membership and falls back to the main module. Contextual commands retain
+their separate list path; the older single-command API explicitly guards exact
+membership before calling Reader. Shared command fallback remains open.
+Normal12/12, ASan/UBSan10/10, TSan10/10 and Mac-hosted portable/Linux11/11
+focused checks cover copied lifetime, shutdown, closed tabs, malformed input,
+non-verse aliases, URI/command distinction and unchanged search metadata. These
+are scoped checks; the previous complete search checkpoint remains the latest
+full regression. No URI GUI/corpus or whole-feature acceptance is claimed.

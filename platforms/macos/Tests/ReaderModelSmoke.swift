@@ -106,6 +106,10 @@ struct ReaderModelSmoke {
         first.openSearchResult(model.hits[0]); try await idle(first)
         guard first.selection == "BSecond", first.html.contains("prose for BSecond"),
               model.selectedModules == requested, second.search.hits.isEmpty else { fatalError("Native alias activation must route actual source identity through core") }
+        let generation = model.batchResult?.generation.id
+        first.followLink("bible://文字+caf%C3%A9/John1:1"); try await idle(first)
+        guard first.selection == "Unicode", first.html.contains("prose for Unicode"),
+              model.batchResult?.generation.id == generation, model.selectedModules == requested else { fatalError("URI alias navigation must consume actual source without changing search") }
         first.close(); second.close(); await worker.shutdown()
         print("Native aliases preserve requested tokens and actual preview/activation/export provenance")
     }

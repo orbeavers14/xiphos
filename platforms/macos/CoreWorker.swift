@@ -1273,6 +1273,7 @@ actor CoreWorker {
         return CoreValues.choices(result)
     }
     func resolveLink(_ uri: String, currentModule: String) async throws -> PassageTarget {
+        guard !uri.utf8.contains(0), !currentModule.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?
         let handle = try worker()
         let status = currentModule.withCString { module in

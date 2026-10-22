@@ -19,6 +19,17 @@ import Foundation
         let pending = Task { try await worker.resolveModuleName(tab: tab, requested: "Shared") }
         pending.cancel()
         guard try await pending.value == alias else { fatalError("Accepted read-only resolution did not drain") }
+        let passage = try await worker.resolveLink("sword://Shared/John1:1", currentModule: "AFirst")
+        guard passage.module == "BSecond", passage.reference == "John1:1",
+              try await worker.resolveLink("bible://文字+caf%C3%A9/John1:1", currentModule: "AFirst").module == "Unicode",
+              try await worker.resolveLink("sword:///John1:1", currentModule: "Shared").module == "BSecond" else { fatalError("Typed single-passage aliases use the shared catalog") }
+        let contextual = try await worker.resolveStudyLinkAt(tab: tab, currentModule: "AFirst", currentReference: "John1:1", uri: "sword://Shared/John1:1")
+        guard case .passage(let target) = contextual, target.module == "BSecond",
+              try await worker.history(tab).count == 0 else { fatalError("Contextual passage alias read must not navigate") }
+        for (uri, module) in [("sword://Shared/John1:1\0hidden", "AFirst"), ("sword://Shared/John1:1", "AFirst\0hidden")] {
+            do { _ = try await worker.resolveLink(uri, currentModule: module); fatalError("NUL link input accepted") }
+            catch is CoreError { }
+        }
         try await worker.closeTab(tab)
         do { _ = try await worker.resolveModuleName(tab: tab, requested: "Shared"); fatalError("Closed tab accepted") }
         catch is CoreError { }

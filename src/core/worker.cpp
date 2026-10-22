@@ -469,8 +469,16 @@ std::future<ResolvedStudyLink> StudyWorker::resolve_study_link(StudyTab tab, std
   return impl_->submit([tab, current_module = std::move(current_module), uri = std::move(uri)](Impl::State &s) -> ResolvedStudyLink {
     s.tab(tab); // Both kinds require an open study context.
     const auto target = xiphos::core::study_link(uri, current_module);
-    if (const auto *passage = std::get_if<PassageLink>(&target))
-      return s.reader.resolve_link(passage->module, passage_uri(passage->reference));
+    if (const auto *passage = std::get_if<PassageLink>(&target)) {
+      // showRef command fallback is a separate retained policy. Do not turn
+      // its existing exact-module behavior into URI alias resolution merely
+      // because both parsed values use PassageLink.
+      const bool passage_uri = uri.compare(0, 8, "sword://") == 0 || uri.compare(0, 8, "bible://") == 0;
+      if (!passage_uri && !std::any_of(s.reader.modules().begin(), s.reader.modules().end(),
+          [&](const Module &module) { return module.id == passage->module; }))
+        throw std::out_of_range("Command module is not installed");
+      return s.reader.resolve_link(passage->module, xiphos::core::passage_uri(passage->reference));
+    }
     return s.note_target(tab, std::get<StudyNoteLink>(target));
   });
 }

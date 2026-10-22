@@ -45,8 +45,11 @@ Mac/Linux preview/activation. Full Mac179 passes+1 index skip (180 registered);
 portable/Linux models on Mac135 passes+1 skip (136 registered, GTK runtime OFF);
 focused ASan/UBSan and TSan11/11 each. Scoped actual Mac window checked. See the
 [current alias contract](module-abbreviations-workflows.md) and platform evidence.
-No URI/parallel/BibleSync alias or whole-group acceptance is implied. Next bounded
-shared work: alias-aware single-passage URI resolution on the same owner.
+Typed single-passage URI resolution now consumes the same alias owner, with
+normal12/12, ASan/UBSan10/10, TSan10/10 and portable/Linux11/11 focused checks.
+No whole-group acceptance is implied. Next bounded shared work: retained showRef
+exact-module/main-module fallback; keep this separate from URI aliases.
+Parallel/BibleSync and corpus/platform gates remain open.
 
 Current search checkpoint: shared attribute execution `572f539` / Swift `a83d3c4`,
 annotation context `8ebeddc` / probe ordering `92bacfc`, canonical copied C request

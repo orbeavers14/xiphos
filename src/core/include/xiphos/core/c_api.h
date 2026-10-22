@@ -996,8 +996,8 @@ const char *xc_choices_reference(const xc_choices *choices, xc_choice_kind kind,
 const char *xc_choices_current_label(const xc_choices *choices, xc_choice_kind kind);
 void xc_choices_release(xc_choices *choices);
 /* Resolve single-reference sword:// or bible:// links. Empty URI module uses
- * current_module. Exact installed IDs only; no abbreviations/fallback, ranges,
- * fragments or passagestudy actions yet. No history/key mutation or I/O dispatch.
+ * current_module. Exact installed IDs and shared catalog aliases are supported;
+ * ranges, fragments and passagestudy actions remain outside this parser. No history/key mutation or I/O dispatch.
  * Output strings owned until release, including after reader close. */
 xc_status xc_resolve_link(xc_reader *reader, const char *current_module,
                           const char *uri, xc_link **out);

@@ -157,6 +157,11 @@ if(BUILD_TESTING)
   target_link_libraries(core_search_aliases_test PRIVATE Xiphos::Core)
   add_test(NAME core_search_aliases COMMAND core_search_aliases_test "${CMAKE_CURRENT_BINARY_DIR}/module-resolution-fixture")
   set_tests_properties(core_search_aliases PROPERTIES FIXTURES_REQUIRED module_resolution_fixture TIMEOUT 60)
+  add_executable(core_passage_aliases_test tests/passage_aliases_test.cpp)
+  target_link_libraries(core_passage_aliases_test PRIVATE Xiphos::Core)
+  add_test(NAME core_passage_aliases COMMAND core_passage_aliases_test "${CMAKE_CURRENT_BINARY_DIR}/module-resolution-fixture")
+  set_tests_properties(core_passage_aliases PROPERTIES FIXTURES_REQUIRED module_resolution_fixture TIMEOUT 60)
+
 
 
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../backend/sword_main.cc")
