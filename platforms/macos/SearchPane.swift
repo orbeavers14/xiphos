@@ -19,8 +19,13 @@ struct SearchPane: View {
                     .accessibilityLabel("Search text")
                 Picker("Match", selection: $model.mode) {
                     Text("Phrase").tag(CoreSearchMode.phrase)
-                    Text("Words").tag(CoreSearchMode.words)
+                    Text("Words (automatic)").tag(CoreSearchMode.words)
                     Text("Regular expression").tag(CoreSearchMode.regularExpression)
+                    Text("Lemma").tag(CoreSearchMode.lemma)
+                    Text("Morphology").tag(CoreSearchMode.morphology)
+                    Text("Footnote text").tag(CoreSearchMode.footnote)
+                    Text("Multiword").tag(CoreSearchMode.multiword)
+                    Text("Indexed query").tag(CoreSearchMode.indexed)
                 }.accessibilityLabel("Search match mode")
                 Picker("Scope", selection: $model.scopeChoice) {
                     ForEach(SearchScopeChoice.allCases) { Text($0.rawValue).tag($0) }
@@ -32,6 +37,19 @@ struct SearchPane: View {
                     TextField("John 1:1 - John 1:3", text: $model.bounds).accessibilityLabel("Search bounds")
                 }
                 Toggle("Case sensitive", isOn: $model.caseSensitive)
+                Toggle("Set annotation options", isOn: $model.setAnnotationOptions)
+                    .disabled(model.mode == .phrase)
+                    .help("Otherwise retain the previous search annotation settings. Phrase searches always retain prior settings.")
+                if model.setAnnotationOptions {
+                    VStack(alignment: .leading) {
+                        Toggle("Include Strong’s annotations", isOn: $model.searchStrongs)
+                        Toggle("Include morphology annotations", isOn: $model.searchMorphology)
+                        Toggle("Include footnotes", isOn: $model.searchFootnotes)
+                    }.disabled(model.mode == .phrase)
+                }
+                if model.mode == .phrase {
+                    Text("Phrase search keeps prior annotation settings.").font(.caption).foregroundStyle(.secondary)
+                }
             }.disabled(model.isBusy || hostBusy)
             HStack {
                 if model.isSearching || model.isExporting {
