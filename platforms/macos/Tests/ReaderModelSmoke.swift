@@ -98,6 +98,10 @@ struct ReaderModelSmoke {
               model.selectedModules.isEmpty, !model.searchMultipleModules, other.savedSearchLists.moduleLists.isEmpty else {
             fatalError("loading named choices preserves drafts, committed source/preview, scope and another window")
         }
+        guard model.savedSearchListEdit(kind: .modules, at: 1) == SavedSearchListEdit(label: "Original", value: "Text,MissingModule,Text,Commentary"),
+              model.savedSearchListEdit(kind: .ranges, at: 1) == SavedSearchListEdit(kind: .ranges, label: "Original", value: "John1:2"),
+              model.savedSearchListEdit(kind: .modules, at: 4) == nil,
+              model.savedSearchListEdit(kind: .modules, at: -1) == nil else { fatalError("prefill must consume core effective indices and retain missing values") }
         let saved = model.savedSearchLists
         model.loadSearchLists(path: bad.path); try await searchIdle(model)
         guard model.savedSearchLists == saved, model.hits == hits else { fatalError("failed profile replacement retains loaded lists/results") }
@@ -121,6 +125,21 @@ struct ReaderModelSmoke {
         model.saveSearchList(path: bad.path, edit: SavedSearchListEdit(kind: .ranges, label: "Rejected", value: "John1:1"))
         try await searchIdle(model)
         guard model.savedSearchLists == verified, try Data(contentsOf: bad) == Data("<Xiphos>".utf8) else { fatalError("failed save published or overwrote invalid profile") }
+        let removalFile = directory.appendingPathComponent("removal.xml")
+        try Data(source.utf8).write(to: removalFile)
+        model.removeSearchList(path: removalFile.path, kind: .modules, label: "Original")
+        guard model.isBusy, model.savedSearchListEdit(kind: .modules, at: 0) == nil else { fatalError("busy removal allows competing edit") }
+        model.applySavedRange(at: 0)
+        try await searchIdle(model)
+        guard model.savedSearchLists.moduleLists[0].value == "Shadowed", model.savedSearchLists.moduleLists.count == 5,
+              model.savedSearchLists.moduleLists[0].effectiveIndex == 0,
+              model.result?.generation.id == generation, model.scope == scope, model.preview?.html == preview,
+              model.hits == hits, model.expression == "Unsubmitted draft", model.scopeChoice == .last,
+              model.bounds == "Unsubmitted bounds", model.selectedModules.isEmpty, !model.searchMultipleModules,
+              other.savedSearchLists.moduleLists.isEmpty else { fatalError("removal changed current search or failed to publish verified duplicate exposure") }
+        let afterRemoval = model.savedSearchLists
+        model.removeSearchList(path: bad.path, kind: .ranges, label: "Original"); try await searchIdle(model)
+        guard model.savedSearchLists == afterRemoval, try Data(contentsOf: bad) == Data("<Xiphos>".utf8) else { fatalError("failed removal changed choices or file") }
         // Restore the original fixture through the service for the existing application checks.
         model.saveSearchList(path: file.path, edit: SavedSearchListEdit(label: "Original", value: "Text,MissingModule,Text,Commentary"))
         try await searchIdle(model)
@@ -179,6 +198,15 @@ struct ReaderModelSmoke {
         _ = try await worker.readSearchLists(tab: tab, path: file.path)
         try await Task.sleep(nanoseconds: 50_000_000)
         guard pending.savedSearchLists.moduleLists.isEmpty, !pending.isBusy else { fatalError("closed window published pending save") }
+        let removalClosed = SearchModel(); removalClosed.configure(worker: worker, tab: tab, modules: modules, preferred: "Text")
+        removalClosed.removeSearchList(path: removalFile.path, kind: .ranges, label: "Original"); removalClosed.close()
+        _ = try await worker.readSearchLists(tab: tab, path: removalFile.path)
+        try await Task.sleep(nanoseconds: 50_000_000)
+        guard removalClosed.savedSearchLists.ranges.isEmpty, !removalClosed.isBusy,
+              removalClosed.savedSearchListEdit(kind: .ranges, at: 0) == nil else { fatalError("closed window published pending removal") }
+        let beforeClosedRemoval = try Data(contentsOf: removalFile)
+        removalClosed.removeSearchList(path: removalFile.path, kind: .modules, label: "Original")
+        guard try Data(contentsOf: removalFile) == beforeClosedRemoval else { fatalError("closed window submitted removal") }
         other.close(); try await worker.closeTab(tab); await worker.shutdown()
         print("Native saved lists/ranges, shared first-match/tokenization, ordered execution, state retention and close guards passed")
     }

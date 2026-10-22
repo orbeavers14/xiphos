@@ -232,3 +232,21 @@ missing profiles, closed tabs, dropped observers and shutdown. Normal Mac8/8
 including Swift and original dictionary fixture; C11 header syntax passes.
 Sanitizer/portable evidence and implementation checkpoint are in the Mac handoff.
 Native explicit removal and existing-choice prefill remain subsequent work.
+
+
+## Native loaded-choice management (2026-10-22)
+
+Manage named lists provides a loaded-choice prefill menu for the chosen kind.
+It consumes copied core effective indices, including duplicate shadows, and
+retains absent values as unavailable rather than inventing an empty value.
+Explicit Remove opens an existing-profile chooser; cancellation submits nothing.
+The shared removal result replaces available choices only after success, and
+later duplicate labels can become effective. Draft selections, query/options,
+results/preview and last scope remain unchanged. Failures retain prior choices.
+Closed windows reject new actions and suppress pending publications; accepted
+removals can still drain. No second label/serialization/persistence engine.
+
+Native model/file checks cover successful removal, duplicate exposure, malformed
+file retention, busy/prefill guards, search isolation and pending closure. Scoped
+window checks cover prefill and chooser cancellation; actual GUI removal completion
+and full management/workflow/accessibility/corpus/Fedora/MSVC acceptance remain open.

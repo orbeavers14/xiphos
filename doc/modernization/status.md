@@ -26,6 +26,13 @@ each. Additive owned C/Swift removal transport passes normal8/8 and ASan/UBSan, 
 and portable-on-Mac6/6 each. Native removal consumption remains next. No whole parity acceptance
 follows.
 
+Native loaded-choice management now consumes core effective indices for prefill
+and shared verified removal snapshots. Focused8/8 and full Mac173 passes+1
+explicit index skip (174 registered,149.80s) pass on the combined tree. Scoped
+prefill/removal-chooser cancellation checked; actual GUI removal completion and
+whole advanced-search workflow acceptance remain open. Implementation/evidence:
+[Mac handoff](handoff-macos.md#native-saved-list-management-2026-10-22).
+
 Earlier export checkpoint (2026-10-22): shared retained search generations, selected/all
 text export and initial restricted passive HTML documents are implemented through
 one C++ owner with copied C/Swift values. Native Mac text save/copy at `5d52a11`

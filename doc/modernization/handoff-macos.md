@@ -898,7 +898,7 @@ removal/prefill; preserve current draft/results and duplicate-shadow semantics.
 
 ### Saved-list removal C/Swift transport (2026-10-22)
 
-Additive `xc_worker_remove_search_list` and Swift `CoreWorker.removeSearchList`
+Implementation `0dbfff9` (pushed fork `master`). Additive `xc_worker_remove_search_list` and Swift `CoreWorker.removeSearchList`
 reuse the same preallocated observer/result and owned snapshot channel as saves.
 Inputs copy before submission, kinds/path/labels are bounded, and poll moves the
 verified core snapshot without allocation. Accepted removals drain through
@@ -913,3 +913,26 @@ SDKs partly instrumented. Strict C11 header and whitespace checks pass.
 Logs: ignored `build/search-list-removal-adapters-*`. No new full suite,
 Fedora/MSVC/desktop removal or whole-feature acceptance. Next: native explicit
 removal and existing-choice prefill, retaining drafts/results/closed-window guards.
+
+
+### Native saved-list management (2026-10-22)
+
+Sequential `master`: Manage named lists sheet now prefills through core-provided
+effective indices and offers explicit first-label removal from a selected existing
+profile. Successful snapshots alone replace choices; no current draft/results/
+preview/scope application. Missing-value choices cannot silently prefill empty.
+Model checks cover duplicate prefill, removal exposure, busy exclusion, unchanged
+search/other windows, malformed-file retention and pending/closed-window guards.
+Local preview/model build and focused8/8 (8.19s) pass. Full Mac regression `ctest --test-dir build/macos --output-on-failure` passes
+173 +1 explicit index skip,174 registered,149.80s with isolated desktop pasteboard
+access. This is the combined removal-core/transport/native tree. Logs: ignored
+`build/native-list-management-{build,tests,full-tests}.log`. Same documented
+Mac27 ARM64/AppleClang21/Swift6.4/SWORD1.9.0.3916 environment.
+
+Disposable fixture UI: loaded original named profile, selected second duplicate
+in prefill menu, verified first value `Text,Commentary,Text` and Unicode label in
+fields. Opened Remove chooser and cancelled; current draft/results/status and
+profile bytes unchanged. Also cancelled an incidental Save chooser. Tested window
+closed, other windows left alone. Actual removal file mutation is covered in
+model/core/transport tests; no GUI removal completion, full physical input,
+accessibility, corpus or whole parity acceptance is claimed.

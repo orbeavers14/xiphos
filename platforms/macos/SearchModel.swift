@@ -147,6 +147,30 @@ struct SearchHit: Identifiable, Sendable, Equatable {
             } catch { if !self.closed && self.revision == token { self.message = error.localizedDescription } }
         }
     }
+    func savedSearchListEdit(kind: SavedSearchListKind, at index: Int) -> SavedSearchListEdit? {
+        guard !closed, !isBusy else { return nil }
+        let items = kind == .modules ? savedSearchLists.moduleLists : savedSearchLists.ranges
+        guard items.indices.contains(index) else { return nil }
+        let effective = items[index].effectiveIndex
+        guard items.indices.contains(effective), let label = items[effective].label,
+              let value = items[effective].value else { return nil }
+        return SavedSearchListEdit(kind: kind, label: label, value: value)
+    }
+    func removeSearchList(path: String, kind: SavedSearchListKind, label: String) {
+        guard !closed, !isBusy, let worker, let tab else { return }
+        revision &+= 1; let token = revision
+        isLoadingSearchSetup = true; message = "Removing saved search list…"
+        task = Task { [weak self] in
+            guard let self else { return }
+            defer { if !self.closed && self.revision == token { self.isLoadingSearchSetup = false; self.task = nil } }
+            do {
+                let copied = try await worker.removeSearchList(tab: tab, path: path, kind: kind, label: label)
+                guard !self.closed, self.revision == token else { return }
+                self.savedSearchLists = copied
+                self.message = "Saved list removal completed. Current search unchanged."
+            } catch { if !self.closed && self.revision == token { self.message = error.localizedDescription } }
+        }
+    }
     func applySavedModuleList(at index: Int) {
         guard !closed, !isBusy, let worker, let tab, savedSearchLists.moduleLists.indices.contains(index) else { return }
         let effective = savedSearchLists.moduleLists[index].effectiveIndex

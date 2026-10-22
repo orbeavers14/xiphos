@@ -19,7 +19,7 @@ struct SearchPane: View {
                 }.accessibilityLabel("Search module")
                 Menu("Saved search lists") {
                     Button("Load from Xiphos profile…") { chooseSearchProfile() }
-                    Button("Save or update a named list…") {
+                    Button("Manage named lists…") {
                         listEdit = SavedSearchListEdit()
                         editingSearchList = true
                     }
@@ -178,18 +178,33 @@ struct SearchPane: View {
         }.padding(8)
         .sheet(isPresented: $editingSearchList) {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Save or update a named search list").font(.headline)
+                Text("Named search list").font(.headline)
                 Picker("Kind", selection: $listEdit.kind) {
                     Text("Module list").tag(SavedSearchListKind.modules)
                     Text("Range").tag(SavedSearchListKind.ranges)
                 }
+                Menu("Use a loaded choice") {
+                    let items = listEdit.kind == .modules ? model.savedSearchLists.moduleLists : model.savedSearchLists.ranges
+                    ForEach(Array(items.enumerated()), id: \.offset) { item in
+                        if let label = item.element.label {
+                            Button(label.isEmpty ? "(Empty label)" : label) {
+                                if let edit = model.savedSearchListEdit(kind: listEdit.kind, at: item.offset) { listEdit = edit }
+                            }.disabled(model.savedSearchListEdit(kind: listEdit.kind, at: item.offset) == nil)
+                        }
+                    }
+                }
                 TextField("Label", text: $listEdit.label)
                 TextField(listEdit.kind == .modules ? "Comma-separated module names" : "Reference bounds", text: $listEdit.value)
-                Text("An existing label updates its first saved item. Other profile settings are preserved. Saving does not apply this choice to your search.").font(.caption)
+                Text("Save updates the first matching label. Remove deletes its first item; a later duplicate may become available. Other profile settings and your current search are preserved.").font(.caption)
                 HStack {
                     Button("Cancel", role: .cancel) { editingSearchList = false }.keyboardShortcut(.cancelAction)
+                    Button("Remove from profile…", role: .destructive) {
+                        let edit = listEdit
+                        editingSearchList = false
+                        chooseSearchListRemoval(edit)
+                    }.disabled(model.isBusy || hostBusy)
                     Spacer()
-                    Button("Choose profile…") {
+                    Button("Save to profile…") {
                         let edit = listEdit
                         editingSearchList = false
                         chooseSearchListDestination(edit)
@@ -201,6 +216,17 @@ struct SearchPane: View {
     private func resultRow(_ hit: SearchHit) -> some View {
         Text(hit.reference).tag(hit.id).contentShape(Rectangle())
             .onTapGesture(count: 2) { if canRead && !hostBusy { onRead(hit) } }
+    }
+    private func chooseSearchListRemoval(_ edit: SavedSearchListEdit) {
+        let panel = NSOpenPanel()
+        panel.title = "Remove named search list"
+        panel.message = "Remove the first matching label from the selected Xiphos profile. Later duplicates remain."
+        panel.prompt = "Remove"
+        panel.canChooseFiles = true; panel.canChooseDirectories = false; panel.allowsMultipleSelection = false
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            model.removeSearchList(path: url.path, kind: edit.kind, label: edit.label)
+        }
     }
     private func chooseSearchListDestination(_ edit: SavedSearchListEdit) {
         let panel = NSSavePanel()
