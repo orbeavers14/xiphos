@@ -69,6 +69,12 @@ struct SavedSearchList: Sendable, Equatable {
     let label: String?, value: String?
     let effectiveIndex: Int // Shared first-label lookup; duplicate shadows stay in core.
 }
+enum SavedSearchListKind: Int32, Sendable { case modules = 0, ranges = 1 }
+struct SavedSearchListEdit: Sendable, Equatable {
+    var kind: SavedSearchListKind = .modules
+    var label: String = ""
+    var value: String = ""
+}
 struct SavedSearchLists: Sendable, Equatable {
     let moduleLists: [SavedSearchList], ranges: [SavedSearchList]
 }

@@ -731,6 +731,26 @@ actor CoreWorker {
         defer { xc_search_lists_release(result) }
         return try CoreValues.searchLists(result)
     }
+    func saveSearchList(tab: UInt64, path: String, edit: SavedSearchListEdit) async throws -> SavedSearchLists {
+        let fields = [path, edit.label, edit.value]
+        guard !path.isEmpty, fields.allSatisfy({ !$0.utf8.contains(0) && $0.utf8.count <= 16 * 1024 * 1024 }) else {
+            throw CoreError(status: XC_INVALID_ARGUMENT)
+        }
+        let handle = try worker()
+        let queued = path.withCString { file in edit.label.withCString { label in edit.value.withCString { value in
+            var request: OpaquePointer?
+            var input = xc_saved_search_list_edit(kind: edit.kind.rawValue, label: label, value: value)
+            let status = xc_worker_save_search_list(handle, tab, file, &input, &request)
+            return (status, request)
+        } } }
+        // Saves are accepted FIFO mutations. Observer cancellation does not undo
+        // a write; wait drains the accepted operation and returns its staged value.
+        let completed = try await wait(queued.0, queued.1)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_search_lists(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_search_lists_release(result) }
+        return try CoreValues.searchLists(result)
+    }
     func parseSearchModuleList(tab: UInt64, text: String) async throws -> [String] {
         guard !text.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?

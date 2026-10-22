@@ -756,6 +756,17 @@ xc_status xc_worker_save_lexicon_profile(xc_worker *worker, uint64_t tab, const 
 xc_status xc_worker_read_search_lists(xc_worker *worker, uint64_t tab, const char *path, xc_request **out);
 xc_status xc_worker_parse_search_module_list(xc_worker *worker, uint64_t tab, const char *text, xc_request **out);
 typedef enum xc_saved_search_list_kind { XC_SAVED_SEARCH_MODULES = 0, XC_SAVED_SEARCH_RANGES = 1 } xc_saved_search_list_kind;
+typedef struct { int kind; const char *label, *value; } xc_saved_search_list_edit;
+/* Explicit selected-file edit. Path, edit and both attributes are required;
+ * empty label/value is valid. Each input is terminated UTF-8 <=16MiB. Kind is
+ * strict MODULES/RANGES. Inputs copy before return; tab and semantic/file errors
+ * arrive at poll. No automatic save, search, option or history application.
+ * Observer/result storage is allocated before submission. The shared core
+ * verifies a staged snapshot before replacement; successful take_search_lists
+ * transfers that owned snapshot once, including after worker/source teardown.
+ * Dropped observers do not cancel accepted writes; shutdown drains them. */
+xc_status xc_worker_save_search_list(xc_worker *worker, uint64_t tab, const char *path,
+  const xc_saved_search_list_edit *edit, xc_request **out);
 /* Take once after successful poll. Strings borrow from the owned snapshot until
  * release. NULL attributes remain absent; empty strings remain explicit empty.
  * Invalid/null snapshot, kind or row yields zero count/NULL strings.

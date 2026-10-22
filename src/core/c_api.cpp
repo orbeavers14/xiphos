@@ -154,7 +154,11 @@ struct xc_request {
   void store(xiphos::core::ContextualStudyLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::ResolvedStudyLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::ReferenceList v) { references = std::make_unique<xc_reference_list>(xc_reference_list{std::move(v)}); }
-  void store(xiphos::core::SavedSearchLists v) { search_lists = std::make_unique<xc_search_lists>(xc_search_lists{std::move(v)}); }
+  void store(xiphos::core::SavedSearchLists v) {
+    static_assert(std::is_nothrow_move_assignable_v<xiphos::core::SavedSearchLists>, "Prepared save snapshots must transfer without allocating");
+    if (search_lists) search_lists->value = std::move(v);
+    else search_lists = std::make_unique<xc_search_lists>(xc_search_lists{std::move(v)});
+  }
   void store(std::vector<std::string> v) { search_module_names = std::make_unique<xc_search_module_names>(xc_search_module_names{std::move(v)}); }
   void store(std::optional<xiphos::core::LexiconPreferences> v) { lexicons = std::make_unique<xc_lexicons>(xc_lexicons{std::move(v)}); }
   void store(xiphos::core::LexicalEntry v) { lexical = std::make_unique<xc_lexical_entry>(xc_lexical_entry{std::move(v)}); }
@@ -1257,6 +1261,26 @@ xc_status xc_worker_import_lexicon_profile(xc_worker *w, uint64_t tab, const cha
 xc_status xc_worker_read_search_lists(xc_worker *w, uint64_t tab, const char *path, xc_request **out) {
   if (!path || !*path) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.read_search_lists(tab, path); });
+}
+xc_status xc_worker_save_search_list(xc_worker *w, uint64_t tab, const char *path,
+    const xc_saved_search_list_edit *edit, xc_request **out) {
+  if (!out) return XC_INVALID_ARGUMENT;
+  *out = nullptr;
+  constexpr auto maximum = xiphos::core::maximum_saved_search_text_bytes;
+  if (!w || !edit || !bounded_image_c_text(path, maximum) ||
+      (edit->kind != XC_SAVED_SEARCH_MODULES && edit->kind != XC_SAVED_SEARCH_RANGES) ||
+      !edit->label || (*edit->label && !bounded_image_c_text(edit->label, maximum)) ||
+      !edit->value || (*edit->value && !bounded_image_c_text(edit->value, maximum))) return XC_INVALID_ARGUMENT;
+  try {
+    // Allocate both layers before accepting a persistent mutation. Poll then
+    // moves the already prepared core snapshot into this handle without allocation.
+    auto request = std::make_unique<Request<xiphos::core::SavedSearchLists>>();
+    request->search_lists = std::make_unique<xc_search_lists>();
+    request->future = w->value.save_search_list(tab, path,
+      {static_cast<xiphos::core::SavedSearchListKind>(edit->kind), edit->label, edit->value});
+    *out = request.release();
+    return XC_OK;
+  } catch (...) { return failure(); }
 }
 xc_status xc_worker_parse_search_module_list(xc_worker *w, uint64_t tab, const char *text, xc_request **out) {
   if (!text || (*text && !bounded_image_c_text(text, xiphos::core::maximum_saved_search_text_bytes))) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }

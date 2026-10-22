@@ -59,6 +59,34 @@ import Foundation
         }
         guard try await worker.history(first).count == history.count,
               try await worker.dictionaryHistory(tab: first) == dictionary else { fatalError("typed profile commands changed histories") }
+        let namedFile = root.appendingPathComponent("named-save.xml")
+        try Data(original.utf8).write(to: namedFile)
+        let edited = try await worker.saveSearchList(tab: first, path: namedFile.path,
+            edit: SavedSearchListEdit(kind: .modules, label: "Original", value: "DictionaryOne, MissingModule,DictionaryOne"))
+        guard edited.moduleLists[0].value == "DictionaryOne, MissingModule,DictionaryOne",
+              edited.moduleLists[1].value == "Shadowed", edited.moduleLists[1].effectiveIndex == 0,
+              try await worker.readSearchLists(tab: second, path: namedFile.path) == edited,
+              try Data(contentsOf: source) == Data(original.utf8) else { fatalError("typed save returns the verified shared snapshot and preserves source/duplicate semantics") }
+        let ranged = try await worker.saveSearchList(tab: first, path: namedFile.path,
+            edit: SavedSearchListEdit(kind: .ranges, label: "café α", value: " John1:2-3 "))
+        guard ranged.ranges[0].value == " John1:2-3 ",
+              try await worker.lexiconPreferences(tab: first) == imported,
+              try await worker.moduleEngineOptions(tab: first, module: "OriginalBible") == [.strongs],
+              try await worker.history(first).count == history.count else { fatalError("saved-list edit does not apply settings, history or normalize ranges") }
+        let beforeNamed = try Data(contentsOf: namedFile)
+        for edit in [SavedSearchListEdit(label: "NUL\0label", value: "Text"), SavedSearchListEdit(label: "Bad", value: "NUL\0value"), SavedSearchListEdit(label: "Bad", value: "\u{01}")] {
+            do { _ = try await worker.saveSearchList(tab: first, path: namedFile.path, edit: edit); fatalError("invalid edit accepted") }
+            catch is CoreError { }
+        }
+        for path in ["", "bad\0path", root.path] {
+            do { _ = try await worker.saveSearchList(tab: first, path: path, edit: SavedSearchListEdit()); fatalError("invalid save path accepted") }
+            catch is CoreError { }
+        }
+        guard try Data(contentsOf: namedFile) == beforeNamed else { fatalError("failed typed edits preserve destination") }
+        let saveTask = Task { try await worker.saveSearchList(tab: first, path: namedFile.path,
+            edit: SavedSearchListEdit(kind: .ranges, label: "Accepted", value: "John1:4")) }
+        saveTask.cancel(); let drainedSave = try await saveTask.value
+        guard drainedSave.ranges.last?.value == "John1:4" else { fatalError("observer cancellation drains accepted save rather than pretending to undo it") }
         try await worker.closeTab(first)
         do { _ = try await worker.importLexiconProfile(tab: first, path: source.path); fatalError("closed import tab accepted") }
         catch is CoreError { }
@@ -66,7 +94,10 @@ import Foundation
         catch is CoreError { }
         do { _ = try await worker.parseSearchModuleList(tab: first, text: "DictionaryOne"); fatalError("closed module-list tab accepted") }
         catch is CoreError { }
+        do { _ = try await worker.saveSearchList(tab: first, path: namedFile.path, edit: SavedSearchListEdit()); fatalError("closed save tab accepted") }
+        catch is CoreError { }
         try await worker.closeTab(second); await worker.shutdown()
+        guard edited.moduleLists[0].value == "DictionaryOne, MissingModule,DictionaryOne", drainedSave.ranges.last?.value == "John1:4" else { fatalError("copied staged snapshots survive shutdown") }
         guard searchLists.ranges[0].label == "café α", searchLists.moduleLists[1].effectiveIndex == 0 else { fatalError("named-list values after shutdown") }
         guard imported.greek == "DictionaryOne", imported.hebrew == "Unavailable & Hebrew", lookup.entry.module == "DictionaryOne" else { fatalError("copied typed results after shutdown") }
         print("Swift profile import/save, isolation, ownership and failure checks passed")
