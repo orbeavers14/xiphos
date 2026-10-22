@@ -350,7 +350,8 @@ generation; all export uses the retained complete generation, not flattened
 visible rows. The committed query is retained with batch presentation rather
 than read from an editable draft. Missing groups and duplicate modules do not
 shift export identities. Incomplete all-source exports still refuse by default;
-explicit native partial-source acceptance is a following slice. A new single
+explicit native partial-source acceptance is now available at `667f9b7` with
+shared disclosure as described below. A new single
 search clears batch presentation, and pre-publication Stop preserves the prior
 committed display. Reading history and independent tab state remain core-owned.
 
@@ -360,3 +361,29 @@ last-scope chaining, all-failed replacement, single-mode return and close guards
 Exact build/test evidence is in the Mac handoff. Full corpus/physical keyboard/
 menu/accessibility, actual indexed execution, saved settings and target-platform
 acceptance remain separate. No whole feature or retirement gate passes.
+
+## Explicit native incomplete-source export (2026-10-22)
+
+Implementation `667f9b7`: the default remains refusal for all-result export from
+stopped/failed/unattempted source searches. Native Export conditionally offers
+Export returned matches from incomplete search. It requires Include search details
+so shared text and HTML carry the core's incomplete-source disclosure. This is a
+bounded native presentation choice, not a change to shared formatting defaults.
+The model captures the explicit choice with the displayed generation and resets
+it only when a new result set is published. Changing options while export is
+queued cannot alter the prepared result.
+
+The existing shared `allowPartialSource` request flag owns acceptance. Native code
+never drops failed groups, reconstructs scope or labels a visible prefix as all
+returned matches. Selected export remains independent. Source metadata and actual
+returned groups survive in both native clipboard representations; Save uses exact
+complete shared bytes. Stale IDs, unavailable retention, resource/output limits
+and cancellation retain their existing refusal/Stop behavior. Failed/pre-publication
+searches keep the old displayed result and its associated choice.
+
+Final focused Mac regressions pass11/11, including original fixtures, basic and
+advanced models, shared batch/attribute/options adapters and native destinations.
+Named-pasteboard/temp-file checks verify exact disclosed HTML/text values. Positive
+partial output, default refusal, missing-details refusal, choice capture/reset,
+stale and capacity refusal are exercised. Full-suite evidence remains the prior
+batch checkpoint; no new complete-suite or physical/corpus/platform acceptance.

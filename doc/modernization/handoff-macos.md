@@ -516,3 +516,29 @@ Only original fixture content, temporary files and isolated named pasteboards ar
 used. No new sanitizer, physical native keyboard/menu/accessibility, actual index,
 corpus/Fedora/MSVC or complete parity acceptance. Next: explicit partial-source
 export choice and remaining advanced setup/saved workflows/resource policies.
+
+### Disclosed incomplete-source export checkpoint (2026-10-22)
+
+Implementation `667f9b7`, branch `modernization/native-partial-search-export`.
+Native all-result export still refuses incomplete sources by default. An explicit
+conditional toggle requires Include search details so existing shared text/HTML
+warnings travel with output. The captured flag passes to the existing core API;
+new committed single/batch results reset the choice. Selection export, source
+identity and all stale/capacity/resource/output/cancellation checks remain shared.
+No core/ABI/adapter or GTK3/Linux source changes.
+
+Preview/model/export builds pass. Final desktop-access
+`ctest --test-dir build/macos --output-on-failure -R 'reader_model_batch_search|reader_model_advanced_search|reader_model_search$|swift_attribute_search_adapter|swift_search_text_options|swift_search_batch|reader_model_search.*export'`
+passes11/11 (19.88 s, fixtures included). Whitespace/link checks pass. Logs:
+ignored `build/partial-export-{final-build,final-tests}.log`. Original-prose model
+checks cover explicit paired/complete text acceptance and source warnings, exact
+named-pasteboard/temp-file bytes, missing-details refusal, changed-choice capture,
+new-generation reset, stale refusal and retention-capacity refusal. Earlier narrow
+non-destination selection5/5 (14.90 s) is preliminary, not final destination evidence.
+
+The preceding full167-pass+1-index-skip suite belongs to `c17206e`; this focused
+native choice slice has no new full-suite/sanitizer, physical-input, actual-index,
+corpus or Fedora/MSVC acceptance. Shared SDK/compiler/configuration unchanged.
+No hosted jobs or user-data/general-clipboard changes. Next bounded work:
+explicit search-annotation-context reset, complete saved/advanced setup and
+remaining resource/semantic policies. No whole parity or retirement acceptance.

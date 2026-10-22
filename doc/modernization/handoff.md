@@ -23,7 +23,8 @@ and ordered bounded batches C++ `f86293b` / C `ad28750` / Swift `cf80541`. Basic
 native controls began at `0ca0bab`; advanced single-module modes and annotation
 controls now consume the shared service at `d26aa2d`. Ordered multi-module
 selection/grouped preview/export now consume the shared batch service at
-`c17206e`; explicit partial-source acceptance and complete advanced setup remain.
+`c17206e`; explicit native partial-source export with shared disclosure follows
+at `667f9b7`. Complete advanced setup/saved workflows remain.
 Complete typed last scope is independent of copied result prefixes. Search-only
 settings are per tab and physical SDK filters restore on every job. One FIFO
 owner handles batches, progress/Stop, scope and copied values. See the consolidated

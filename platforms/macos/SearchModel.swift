@@ -45,6 +45,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     @Published private(set) var isExporting = false
     @Published var exportScripture = false
     @Published var exportSearchContext = false
+    @Published var exportPartialSource = false
     @Published var exportFormat: SearchExportFormat = .plainText
     @Published var exportImages = false
     @Published private(set) var message = "Enter text to search."
@@ -56,6 +57,11 @@ struct SearchHit: Identifiable, Sendable, Equatable {
         if let batchResult { return (batchResult.generation, batchExpression) }
         if let result { return (result.generation, result.expression) }
         return nil
+    }
+    var hasIncompleteExportSource: Bool {
+        guard let source = exportSource else { return false }
+        return source.generation.cancelled || source.generation.failedGroups > 0 ||
+            source.generation.groupCount != source.generation.requestedCount
     }
     func addModule() {
         guard !closed, !isBusy, selectedModules.count < 32, modules.contains(where: { $0.id == module }) else { return }
@@ -134,6 +140,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
                     guard !self.closed, self.revision == token else { return }
                     self.scope = copied.scope
                     if copied.generationUpdated {
+                        self.exportPartialSource = false
                         self.batchExpression = submittedExpression; self.batchResult = copied; self.result = nil
                         var hits: [SearchHit] = []
                         for group in copied.groups {
@@ -157,6 +164,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
                     guard !self.closed, self.revision == token else { return }
                     self.scope = copied.scope
                     if copied.executed || !copied.cancelled {
+                        self.exportPartialSource = false
                         self.result = copied; self.batchResult = nil; self.batchExpression = ""
                         self.hits = copied.references.enumerated().map {
                             SearchHit(id: $0.offset, group: 0, row: $0.offset, module: copied.module, reference: $0.element)
@@ -219,6 +227,9 @@ struct SearchHit: Identifiable, Sendable, Equatable {
                                completion: @escaping @MainActor (SearchExportPayload) -> Void) {
         guard allMatches ? canExportAll : canExportSelected, let worker, let tab, let source = exportSource else { return }
         let selected = hits.first(where: { $0.id == selection }), includeScripture = exportScripture, includeContext = exportSearchContext
+        // The offered native partial-export choice requires shared context so
+        // incomplete documents carry the core's source-disposition disclosure.
+        let allowPartial = allMatches && hasIncompleteExportSource && exportPartialSource && includeContext
         // Capture displayed result identity and original query, never editable drafts
         // or a subsequently queried latest generation. Core rejects stale identity.
         let title = "Search results: \(source.expression)"
@@ -238,10 +249,10 @@ struct SearchHit: Identifiable, Sendable, Equatable {
                     let rows = allMatches ? [] : selected.map { [CoreSearchVisibleRow(group: $0.group, row: $0.row)] } ?? []
                     payload = .html(try await worker.exportSearchHTML(tab: tab, generation: source.generation.id,
                         selection: allMatches ? .allRetained : .visible, rows: rows, title: title,
-                        includeScripture: includeScripture, includeSearchContext: includeContext, images: images, plainTextMaxBytes: plainTextFallback ? 1024 * 1024 : nil, returnCancelledResults: true, onProgress: callback))
+                        includeScripture: includeScripture, includeSearchContext: includeContext, allowPartialSource: allowPartial, images: images, plainTextMaxBytes: plainTextFallback ? 1024 * 1024 : nil, returnCancelledResults: true, onProgress: callback))
                 } else if allMatches {
                     payload = .text(try await worker.exportSearchAllText(tab: tab, generation: source.generation.id,
-                        title: title, includeScripture: includeScripture, includeSearchContext: includeContext, returnCancelledResults: true, onProgress: callback))
+                        title: title, includeScripture: includeScripture, includeSearchContext: includeContext, allowPartialSource: allowPartial, returnCancelledResults: true, onProgress: callback))
                 } else {
                     guard let selected else { return }
                     payload = .text(try await worker.exportSearchVisibleText(tab: tab, generation: source.generation.id,
@@ -262,7 +273,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
                 case .invalidSelection: self.message = "Select a search passage to export."
                 case .outputLimit: self.message = "This export is too large. Select a passage or turn off scripture."
                 case .capacityExceeded: self.message = "Complete search results are unavailable. Export a selected passage instead."
-                case .sourceIncomplete: self.message = "The search stopped or some modules failed. Export a selected passage or run the search again."
+                case .sourceIncomplete: self.message = "The search stopped or some modules failed. Export a selected passage, or enable search details and explicitly choose to export returned matches."
                 case .moduleNotFound: self.message = "A searched module is no longer available. Run the search again."
                 case .engineError: self.message = "Unable to prepare this export. Try the search again."
                 case .unsupportedHTML:

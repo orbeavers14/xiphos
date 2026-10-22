@@ -68,7 +68,12 @@ registered (142.55 s), with isolated desktop pasteboard access. Each hit retains
 export; no native scope chaining or search engine was added. Full advanced
 settings/workflow and target-platform acceptance remain open.
 
-Next bounded work: explicit partial-source export choice, advanced search settings, remaining
+Explicit native partial-source export at `667f9b7` now uses the existing shared
+acceptance flag, requires shared context disclosure and resets on new results.
+Focused native/adapters/destination checks pass11/11; stale and capacity refusal
+remain enforced.
+
+Next bounded work: search-context reset and saved/advanced settings, remaining
 resource/style/semantic policies and workflow acceptance.
 Keep target-platform validation and other core services in view. No whole parity
 group, release or legacy retirement accepted: **0/38 groups, 0/3 release-ready apps**.
