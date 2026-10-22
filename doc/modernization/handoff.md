@@ -64,7 +64,7 @@ registered,145.28 s, plus scoped menu/picker/action checks with original fixture
 Shared explicit saved-list editing/staged persistence is now checked at
 `2e599e78` (5/5 normal, ASan/UBSan and portable-on-Mac); it returns a prepared
 owned snapshot. C/Swift save transport is checked at `c11b15b`; explicit native
-editing remains next.
+editing now consumes this transport; see the saved-list contract and Mac handoff.
 Complete saved setup and target-platform acceptance remain open.
 
 Prior full integrated shared HTML image checkpoint: **164 Mac passes + 1 index skip**

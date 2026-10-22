@@ -101,6 +101,30 @@ struct ReaderModelSmoke {
         let saved = model.savedSearchLists
         model.loadSearchLists(path: bad.path); try await searchIdle(model)
         guard model.savedSearchLists == saved, model.hits == hits else { fatalError("failed profile replacement retains loaded lists/results") }
+        model.saveSearchList(path: file.path, edit: SavedSearchListEdit(label: "Original", value: "Text,Commentary,Text"))
+        guard model.isBusy else { fatalError("save did not publish busy state") }
+        model.applySavedRange(at: 0) // Busy setup cannot alter the draft.
+        try await searchIdle(model)
+        guard model.savedSearchLists.moduleLists[0].value == "Text,Commentary,Text",
+              model.savedSearchLists.moduleLists[1].value == "Shadowed",
+              model.result?.generation.id == generation, model.scope == scope, model.preview?.html == preview,
+              model.hits == hits, model.expression == "Unsubmitted draft", model.scopeChoice == .last,
+              model.bounds == "Unsubmitted bounds", model.boundsModule == "Commentary",
+              model.selectedModules.isEmpty, !model.searchMultipleModules, other.savedSearchLists.moduleLists.isEmpty else {
+            fatalError("verified save changed search state or duplicate shadows")
+        }
+        model.saveSearchList(path: file.path, edit: SavedSearchListEdit(kind: .ranges, label: "café range", value: "John1:3"))
+        try await searchIdle(model)
+        guard model.savedSearchLists.ranges.last?.label == "café range", model.savedSearchLists.ranges.last?.value == "John1:3",
+              model.scopeChoice == .last, model.bounds == "Unsubmitted bounds" else { fatalError("range save applied its bounds") }
+        let verified = model.savedSearchLists
+        model.saveSearchList(path: bad.path, edit: SavedSearchListEdit(kind: .ranges, label: "Rejected", value: "John1:1"))
+        try await searchIdle(model)
+        guard model.savedSearchLists == verified, try Data(contentsOf: bad) == Data("<Xiphos>".utf8) else { fatalError("failed save published or overwrote invalid profile") }
+        // Restore the original fixture through the service for the existing application checks.
+        model.saveSearchList(path: file.path, edit: SavedSearchListEdit(label: "Original", value: "Text,MissingModule,Text,Commentary"))
+        try await searchIdle(model)
+        let savedBytes = try Data(contentsOf: file)
         model.applySavedModuleList(at: 1); try await searchIdle(model)
         let selected = ["Text", "MissingModule", "Text", "Commentary"]
         guard model.selectedModules == selected, model.searchMultipleModules,
@@ -129,7 +153,7 @@ struct ReaderModelSmoke {
         guard model.batchResult?.groups.count == 4, model.batchResult?.failureCount == 1,
               model.hits.map(\.module) == ["Text", "Text", "Commentary"], model.hits.allSatisfy({ $0.reference == "John 1:2" }),
               model.batchResult?.groups[0].result?.range?.module == "Commentary",
-              other.hits.isEmpty, try Data(contentsOf: file) == Data(source.utf8) else { fatalError("saved setup uses existing shared ordered batch/range execution without profile writes") }
+              other.hits.isEmpty, try Data(contentsOf: file) == savedBytes else { fatalError("saved setup uses existing shared ordered batch/range execution without profile writes") }
         model.applySavedModuleList(at: 1); model.close()
         try await Task.sleep(nanoseconds: 50_000_000)
         guard model.selectedModules == selected, !model.isLoadingSearchSetup else { fatalError("closed model published pending module setup") }
@@ -140,6 +164,21 @@ struct ReaderModelSmoke {
         try await worker.closeTab(otherTab)
         other.loadSearchLists(path: file.path); try await searchIdle(other)
         guard other.savedSearchLists.moduleLists.isEmpty else { fatalError("missing tab published loaded choices") }
+        other.saveSearchList(path: file.path, edit: SavedSearchListEdit(label: "Closed tab", value: "Text"))
+        try await searchIdle(other)
+        guard other.savedSearchLists.moduleLists.isEmpty else { fatalError("missing tab published saved choices") }
+        let closed = SearchModel(); closed.configure(worker: worker, tab: tab, modules: modules, preferred: "Text")
+        closed.close()
+        let beforeClosedSave = try Data(contentsOf: file)
+        closed.saveSearchList(path: file.path, edit: SavedSearchListEdit(label: "Closed window", value: "Text"))
+        guard try Data(contentsOf: file) == beforeClosedSave, !closed.isBusy else { fatalError("closed window submitted a save") }
+        let pending = SearchModel(); pending.configure(worker: worker, tab: tab, modules: modules, preferred: "Text")
+        pending.saveSearchList(path: file.path, edit: SavedSearchListEdit(label: "Pending close", value: "Text"))
+        pending.close()
+        // Accepted writes may drain, but a closed window must never publish them.
+        _ = try await worker.readSearchLists(tab: tab, path: file.path)
+        try await Task.sleep(nanoseconds: 50_000_000)
+        guard pending.savedSearchLists.moduleLists.isEmpty, !pending.isBusy else { fatalError("closed window published pending save") }
         other.close(); try await worker.closeTab(tab); await worker.shutdown()
         print("Native saved lists/ranges, shared first-match/tokenization, ordered execution, state retention and close guards passed")
     }

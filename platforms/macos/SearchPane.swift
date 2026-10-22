@@ -5,6 +5,8 @@ import UniformTypeIdentifiers
 
 struct SearchPane: View {
     @ObservedObject var model: SearchModel
+    @State private var editingSearchList = false
+    @State private var listEdit = SavedSearchListEdit()
     let hostBusy: Bool
     let canRead: Bool
     let onRead: (SearchHit) -> Void
@@ -17,6 +19,10 @@ struct SearchPane: View {
                 }.accessibilityLabel("Search module")
                 Menu("Saved search lists") {
                     Button("Load from Xiphos profile…") { chooseSearchProfile() }
+                    Button("Save or update a named list…") {
+                        listEdit = SavedSearchListEdit()
+                        editingSearchList = true
+                    }
                     if model.savedSearchLists.moduleLists.contains(where: { $0.label != nil }) {
                         Section("Module lists") {
                             ForEach(Array(model.savedSearchLists.moduleLists.enumerated()), id: \.offset) { item in
@@ -170,10 +176,41 @@ struct SearchPane: View {
                 } else if model.isPreviewLoading { ProgressView("Loading preview…").frame(minHeight: 100) }
             }
         }.padding(8)
+        .sheet(isPresented: $editingSearchList) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Save or update a named search list").font(.headline)
+                Picker("Kind", selection: $listEdit.kind) {
+                    Text("Module list").tag(SavedSearchListKind.modules)
+                    Text("Range").tag(SavedSearchListKind.ranges)
+                }
+                TextField("Label", text: $listEdit.label)
+                TextField(listEdit.kind == .modules ? "Comma-separated module names" : "Reference bounds", text: $listEdit.value)
+                Text("An existing label updates its first saved item. Other profile settings are preserved. Saving does not apply this choice to your search.").font(.caption)
+                HStack {
+                    Button("Cancel", role: .cancel) { editingSearchList = false }.keyboardShortcut(.cancelAction)
+                    Spacer()
+                    Button("Choose profile…") {
+                        let edit = listEdit
+                        editingSearchList = false
+                        chooseSearchListDestination(edit)
+                    }.keyboardShortcut(.defaultAction).disabled(model.isBusy || hostBusy)
+                }
+            }.padding().frame(width: 440)
+        }
     }
     private func resultRow(_ hit: SearchHit) -> some View {
         Text(hit.reference).tag(hit.id).contentShape(Rectangle())
             .onTapGesture(count: 2) { if canRead && !hostBusy { onRead(hit) } }
+    }
+    private func chooseSearchListDestination(_ edit: SavedSearchListEdit) {
+        let panel = NSSavePanel()
+        panel.title = "Save named search list"
+        panel.message = "Choose a Xiphos profile to update, or create a new profile. Only this named item is changed."
+        panel.nameFieldStringValue = "settings.xml"
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            model.saveSearchList(path: url.path, edit: edit)
+        }
     }
     private func chooseSearchProfile() {
         let panel = NSOpenPanel()

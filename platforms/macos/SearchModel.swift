@@ -130,6 +130,23 @@ struct SearchHit: Identifiable, Sendable, Equatable {
             } catch { if !self.closed && self.revision == token { self.message = error.localizedDescription } }
         }
     }
+    // The selected destination is explicit; only the verified returned snapshot
+    // is published. Saving never applies a choice to the current search draft.
+    func saveSearchList(path: String, edit: SavedSearchListEdit) {
+        guard !closed, !isBusy, let worker, let tab else { return }
+        revision &+= 1; let token = revision
+        isLoadingSearchSetup = true; message = "Saving search list…"
+        task = Task { [weak self] in
+            guard let self else { return }
+            defer { if !self.closed && self.revision == token { self.isLoadingSearchSetup = false; self.task = nil } }
+            do {
+                let copied = try await worker.saveSearchList(tab: tab, path: path, edit: edit)
+                guard !self.closed, self.revision == token else { return }
+                self.savedSearchLists = copied
+                self.message = "Search list saved. Choose a module list or range to apply."
+            } catch { if !self.closed && self.revision == token { self.message = error.localizedDescription } }
+        }
+    }
     func applySavedModuleList(at index: Int) {
         guard !closed, !isBusy, let worker, let tab, savedSearchLists.moduleLists.indices.contains(index) else { return }
         let effective = savedSearchLists.moduleLists[index].effectiveIndex

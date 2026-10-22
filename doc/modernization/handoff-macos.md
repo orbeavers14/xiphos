@@ -837,3 +837,39 @@ accessibility or whole-feature acceptance follows. No hosted builds, workflow
 changes, branch deletion or legacy retirement. Keep unrelated local files.
 Next bounded core-consuming slice: explicit native saved-list editing through
 `c11b15b`, with chooser cancellation, returned-snapshot and closed-window checks.
+
+
+## Native saved-list editor (2026-10-22)
+
+Task/branch: sequential `master`, consuming the existing verified shared save
+transport. Native sheet accepts explicit kind, label and raw value; a native save
+chooser selects an existing profile or a new destination. Only the returned
+verified snapshot replaces available choices. Search draft, results, preview,
+scope and other windows remain unchanged; no automatic choice application.
+
+Local build passes with desktop/compiler-plugin access (restricted Swift macro
+execution initially failed before compilation). Focused selection:
+`ctest --test-dir build/macos --output-on-failure -R 'reader_model_saved_search_lists|core_search_list|swift_profile|profile_adapter'`
+passes8/8,6.97s including generated fixtures. Model checks add successful/failed
+save isolation, preserved duplicate shadows, busy exclusion and closed-window/
+missing-tab rejection. Full regression `ctest --test-dir build/macos --output-on-failure` passes173
+plus1 explicit index skip,174 registered,125.66s with isolated desktop pasteboards.
+Final test-only extension adds range-save isolation, byte preservation during
+application and pending-close publication suppression; rebuilt model/focused8/8
+passes. Logs: ignored `build/native-list-edit-{build,tests,full-tests,final-build,final-tests}.log`.
+Environment remains Mac27 ARM64/AppleClang21/Swift6.4/SWORD1.9.0.3916,
+Apple XML2.9.13/GLib2.90.1 and pinned PNG1.6.59. No shared source/ABI changes
+require a new sanitizer or portable build for this frontend-only slice.
+
+Disposable original-prose search window: native editor and chooser opened;
+chooser Cancel returned with unchanged empty draft/results/status. A Unicode
+label `Original café` with `Text,Commentary,Text` saved successfully and appeared
+in the menu without applying. Static bytes match those literal values. Save-panel
+name-field automation converted the requested absolute name to a colon-delimited
+filename in the already selected disposable fixture directory; no user profile
+was accessed. Tested window closed; other existing windows left alone.
+No browser export preview, hosted workflow, new ABI/core policy, Fedora/MSVC,
+whole visual/workflow parity or retirement acceptance. No completion score change.
+
+Next bounded work: existing-choice prefill/list management over shared effective
+indices, then remaining saved setup and shared advanced search/resource policies.

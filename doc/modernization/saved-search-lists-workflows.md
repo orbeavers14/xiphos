@@ -112,8 +112,8 @@ The returned owned snapshot is allocated and parsed from the verified staged fil
 before replacement. On success it describes the committed document without a
 second frontend read; no search/history/preferences state is applied. Worker
 inputs copy before queueing and closed tabs reject before mutation. Dropping an
-observer does not cancel an accepted save; shutdown drains it. C/Swift save transport is now available at `c11b15b`; explicit native editing
-remains the next slice. No user-profile discovery or
+observer does not cancel an accepted save; shutdown drains it. C/Swift save transport is available at `c11b15b`; native explicit editing now
+consumes this service (see below). No user-profile discovery or
 automatic save is introduced by this API.
 
 ## Evidence and remaining work
@@ -127,7 +127,7 @@ FIFO read ownership, closed-tab failure and shutdown draining.
 
 Automatic startup application, module installation, saved query serialization,
 alias resolution, full mixed-family range setup and complete frontend workflow
-acceptance remain open. Native profile writing is not yet exposed. These remain separate work, along with
+acceptance remain open. Native explicit single-item profile writing is exposed; complete list management remains open. These remain separate work, along with
 corpus/locale, actual-index and current Fedora/MSVC validation. Existing GTK3
 source remains unchanged and no parity/retirement gate passes.
 
@@ -161,3 +161,24 @@ Dependencies remain partly instrumented; ASan leaks off. Logs use ignored
 `build/search-list-save-adapters-*`. This is scoped transport evidence, not new
 Fedora/MSVC/native editor/full-parity acceptance. Generated original-prose
 profiles only; no user profile, general clipboard or hosted workflow changed.
+
+
+## Native explicit editor (2026-10-22)
+
+The Saved search lists menu opens a native sheet for kind, literal label/value
+and an explicit profile destination chooser. Empty fields remain valid shared
+inputs. An existing label updates its first item; a new label creates one. Only
+successful verified returned snapshots replace the available module/range choices.
+No second file read, XML writer, comma parser or duplicate-label policy exists in
+the UI. Saving never applies a choice or changes draft/results/preview/last scope.
+Busy setup excludes competing application actions. Chooser cancellation submits
+nothing; failed saves retain loaded choices and original invalid files. Closed
+windows reject new actions and suppress publication from pending accepted writes;
+accepted core writes may still drain, as specified by the transport contract.
+
+Scoped native editor/chooser cancellation/new-file save/menu checks use generated
+original-prose fixtures. Model checks include module/range saves, duplicate shadows,
+failure retention, unchanged draft/results/scope/preview/other windows and pending
+close. Full Mac regression and final focused evidence are in the Mac handoff.
+Existing-item prefill/list management, deletion, complete saved setup, physical
+input/accessibility/corpus and other-platform acceptance remain open.
