@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 #include "session.hpp"
+#include "profile.hpp"
 #include <cstdint>
 #include <future>
 #include <memory>
@@ -109,6 +110,8 @@ public:
   // Explicit XML profile operations; import publishes a prepared replacement
   // to one tab and returns copied choices. Saved locale is not applied.
   std::future<std::optional<LexiconPreferences>> import_lexicon_profile(StudyTab tab, std::string path);
+  // Explicit selected-file read on the FIFO owner; validates the tab but changes no state.
+  std::future<SavedSearchLists> read_search_lists(StudyTab tab, std::string path);
   std::future<void> save_lexicon_profile(StudyTab tab, std::string path);
   std::future<LexicalEntry> visit_lexical(StudyTab tab, std::string module, std::string reference, std::string uri, int origin);
   std::future<LexicalEntry> read_lexical(StudyTab tab, std::string module, std::string reference,

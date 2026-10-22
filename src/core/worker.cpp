@@ -359,6 +359,12 @@ std::future<std::optional<LexiconPreferences>> StudyWorker::import_lexicon_profi
     return copied;
   });
 }
+std::future<SavedSearchLists> StudyWorker::read_search_lists(StudyTab tab, std::string path) {
+  return impl_->submit([tab, path = std::move(path)](Impl::State &s) {
+    (void)s.tab(tab);
+    return read_saved_search_lists(path);
+  });
+}
 std::future<void> StudyWorker::save_lexicon_profile(StudyTab tab, std::string path) {
   return impl_->submit([tab, path = std::move(path)](Impl::State &s) {
     const auto &preferences = s.tab(tab).lexicon_preferences();

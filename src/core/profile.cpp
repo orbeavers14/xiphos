@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/profile.hpp"
 #include "preference_file.hpp"
+#include "search_validation.hpp"
 #include <libxml/parser.h>
 #include <libxml/encoding.h>
 #include <filesystem>
@@ -107,6 +108,59 @@ StudyProfile parse_study_profile(const std::string &source) {
 }
 StudyProfile read_study_profile(const std::string &path) {
   return parse_study_profile(read_profile_source(path));
+}
+SavedSearchLists parse_saved_search_lists(const std::string &source) {
+  auto document = parse_document(source);
+  auto attribute = [](xmlNode *node, const char *name) -> std::optional<std::string> {
+    const std::unique_ptr<xmlChar, decltype(xmlFree)> text(xmlGetProp(node, BAD_CAST name), xmlFree);
+    if (!text) return std::nullopt;
+    return std::string(reinterpret_cast<const char *>(text.get()));
+  };
+  auto lists = [&](const char *section, const char *item) {
+    std::vector<SavedSearchList> result;
+    for (auto *group = xmlDocGetRootElement(document.get())->children; group; group = group->next) {
+      if (xmlStrcmp(group->name, BAD_CAST section)) continue;
+      for (auto *node = group->children; node; node = node->next) {
+        if (xmlStrcmp(node->name, BAD_CAST item)) continue;
+        if (result.size() == maximum_saved_search_lists)
+          throw std::invalid_argument("Too many saved search lists");
+        result.push_back({attribute(node, "label"), attribute(node, "list")});
+      }
+      break; // First section, even if empty; unlike scalar profile key traversal.
+    }
+    return result;
+  };
+  return {lists("modlists", "modlist"), lists("ranges", "range")};
+}
+SavedSearchLists read_saved_search_lists(const std::string &path) {
+  return parse_saved_search_lists(read_profile_source(path));
+}
+std::optional<std::string> saved_search_list_value(const std::vector<SavedSearchList> &items,
+                                                 const std::optional<std::string> &label) {
+  for (const auto &item : items) if (item.label == label) return item.value;
+  return std::nullopt;
+}
+std::vector<std::string> saved_search_module_names(const std::string &text) {
+  // Reject hidden suffixes even when they occur in otherwise empty fields.
+  if (text.find('\0') != std::string::npos)
+    throw std::invalid_argument("Saved module list contains NUL");
+  std::vector<std::string> result;
+  std::size_t start = 0;
+  while (start < text.size()) {
+    const auto end = text.find(',', start);
+    const auto count = (end == std::string::npos ? text.size() : end) - start;
+    if (count) {
+      if (result.size() == maximum_search_batch_modules)
+        throw std::invalid_argument("Saved module list exceeds search batch limit");
+      if (count > 4096) throw std::invalid_argument("Saved module name is too long");
+      auto module = text.substr(start, count);
+      detail::validate_search_module_name(module);
+      result.push_back(std::move(module));
+    }
+    if (end == std::string::npos) break;
+    start = end + 1;
+  }
+  return result;
 }
 SavedBookSelection parse_saved_book_selection(const std::string &source) {
   auto document = parse_document(source);
