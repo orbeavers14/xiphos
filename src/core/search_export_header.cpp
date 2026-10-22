@@ -44,6 +44,41 @@ const char *backend_name(int type)
 }
 const char *flag(bool enabled) { return enabled ? "on" : "off"; }
 } // namespace
+std::string SearchGeneration::export_source_summary() const
+{
+	std::string text = "Source search groups\n";
+	for (std::size_t index = 0; index < requested_.size(); ++index) {
+		const auto &query = requested_[index];
+		text += "Group " + std::to_string(index + 1) + "\nModule: " + query.module +
+			"\nQuery: " + query.expression + "\nStatus: ";
+		if (index >= groups_.size()) {
+			text += "not attempted\n";
+			continue;
+		}
+		const auto &group = groups_[index];
+		if (!group.result) {
+			switch (group.failure) {
+			case SearchBatchFailure::module_not_found:
+				text += "failed (module not found)\n";
+				break;
+			case SearchBatchFailure::invalid_request:
+				text += "failed (invalid request)\n";
+				break;
+			case SearchBatchFailure::engine_error:
+				text += "failed (engine error)\n";
+				break;
+			case SearchBatchFailure::none:
+				throw std::logic_error("Missing successful search result");
+			}
+			continue;
+		}
+		const auto &result = *group.result;
+		text += result.cancelled ? "stopped\n" : result.executed ? "completed\n"
+									 : "not executed (empty scope)\n";
+		text += "SDK result elements: " + std::to_string(result.total_results) + "\n";
+	}
+	return text;
+}
 std::string SearchGeneration::export_header(std::size_t index) const
 {
 	if (index >= groups_.size() || !groups_[index].result)

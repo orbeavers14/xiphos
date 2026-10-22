@@ -12,14 +12,15 @@ void validate_search_export_output(const std::string &title,std::size_t bytes){
 }
 SearchExportMetadata resolve_search_export_rows(const SearchGeneration *generation,std::uint64_t expected,
   SearchExportSelection selection,const std::vector<SearchVisibleRow> &selected,std::size_t max_rows,
-  bool allow_partial,const std::shared_ptr<SearchControl> &control,SearchExportRows &rows,bool include_context){
-  rows.clear();
+  bool allow_partial,const std::shared_ptr<SearchControl> &control,SearchExportDocument &document,bool include_context){
+  document={};
+  auto &rows=document.rows;
   if(!max_rows||max_rows>maximum_search_export_rows||
      (selection!=SearchExportSelection::visible&&selection!=SearchExportSelection::all_retained)||
      (selection==SearchExportSelection::visible&&(selected.empty()||selected.size()>maximum_search_export_rows))||
      (selection==SearchExportSelection::all_retained&&!selected.empty()))throw std::invalid_argument("Invalid search export selection");
   SearchExportMetadata out;out.selection=selection;if(generation)out.generation=generation->info();
-  auto fail=[&](SearchExportStatus status,std::optional<std::size_t> row=std::nullopt){out.status=status;out.failed_row=row;rows.clear();return out;};
+  auto fail=[&](SearchExportStatus status,std::optional<std::size_t> row=std::nullopt){out.status=status;out.failed_row=row;document={};return out;};
   if(!expected||expected!=out.generation.id)return fail(SearchExportStatus::stale);
   if(control&&control->cancel_requested())return fail(SearchExportStatus::cancelled);
   std::map<std::size_t,std::shared_ptr<const std::string>> contexts;
@@ -57,6 +58,7 @@ SearchExportMetadata resolve_search_export_rows(const SearchGeneration *generati
       }
     }
   }
+  if(include_context)document.source_summary=generation->export_source_summary();
   out.status=SearchExportStatus::ok;return out;
 }
 }

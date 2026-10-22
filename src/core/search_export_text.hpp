@@ -7,7 +7,6 @@
 #include <stdexcept>
 namespace xiphos::core::detail
 {
-using Rows = SearchExportRows;
 inline SearchTextExport fail_export(SearchTextExport out, SearchExportStatus status, std::optional<std::size_t> row = std::nullopt)
 {
 	out.status = status;
@@ -19,9 +18,10 @@ inline SearchTextExport fail_export(SearchTextExport out, SearchExportStatus sta
 inline bool stopped(const std::shared_ptr<SearchControl> &control) { return control && control->cancel_requested(); }
 // One document policy for explicit visible selections and complete returned keys.
 // The owning session supplies configured SDK reads, never a frontend renderer.
-inline SearchTextExport render_search_export_text(const std::string &title, std::size_t cap, const Rows &rows,
+inline SearchTextExport render_search_export_text(const std::string &title, std::size_t cap, const SearchExportDocument &document,
 						  SearchTextExport out, const std::shared_ptr<SearchControl> &control, const std::function<std::string(const std::string &, const std::string &, std::size_t)> &read, bool report_progress = true, bool include_context = false)
 {
+	const auto &rows = document.rows;
 	if (title.size() + 3 > cap)
 		return fail_export(std::move(out), SearchExportStatus::output_limit);
 	std::string staged = title + "\n\n";
@@ -30,6 +30,11 @@ inline SearchTextExport render_search_export_text(const std::string &title, std:
 		if (warning.size() > cap - staged.size() - 1)
 			return fail_export(std::move(out), SearchExportStatus::output_limit);
 		staged += warning;
+	}
+	if (!document.source_summary.empty()) {
+		if (document.source_summary.size() + 1 > cap - staged.size() - 1)
+			return fail_export(std::move(out), SearchExportStatus::output_limit);
+		staged += document.source_summary + "\n";
 	}
 	std::optional<std::size_t> previous_group;
 	for (std::size_t i = 0; i < rows.size(); ++i) {

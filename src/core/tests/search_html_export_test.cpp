@@ -76,6 +76,24 @@ int main(int argc,char **argv){try{
   auto incomplete=session.search_batch({{"Text","Original"},{"Missing","Original"}},limits);request={};request.generation=incomplete.generation.id;request.selection=SearchExportSelection::all_retained;
   check(session.export_search_html(request).status==SearchExportStatus::source_incomplete,"HTML shares incomplete-source default refusal");request.allow_partial_source=true;request.plain_text_max_bytes=8192;
   auto partial=session.export_search_html(request);check(partial.status==SearchExportStatus::ok&&partial.generation.failed_groups==1&&partial.plain_text.has_value()&&partial.html.find("only returned matches are included")!=std::string::npos,"Explicit partial HTML labels its source disposition in the document as well as metadata");
+  request.include_search_context=true;
+  auto disclosed=session.export_search_html(request);
+  check(disclosed.status==SearchExportStatus::ok&&disclosed.row_count==4&&
+    disclosed.html.find("Status: failed (module not found)")!=std::string::npos&&
+    disclosed.plain_text->find("Group 2\nModule: Missing")!=std::string::npos,
+    "Rich partial-source documents identify failed groups as well as returned matches");
+  auto empty_source=session.search_batch({{"Missing","<script>original</script>"},{"Text","NoMatchOriginalFixture"}});
+  request.generation=empty_source.generation.id;
+  auto empty_details=session.export_search_html(request);
+  check(empty_details.status==SearchExportStatus::ok&&!empty_details.row_count&&
+    empty_details.html.find("Query: &lt;script&gt;original&lt;/script&gt;")!=std::string::npos&&empty_details.html.find("<script>")==std::string::npos&&
+    empty_details.plain_text->find("Query: <script>original</script>")!=std::string::npos&&empty_details.plain_text->find("SDK result elements: 0")!=std::string::npos,
+    "Zero-row rich documents preserve escaped failed-query and successful-empty source provenance");
+  request.max_bytes=empty_details.html.size();request.plain_text_max_bytes=empty_details.plain_text->size();
+  check(session.export_search_html(request).html==empty_details.html,"Exact zero-row summary budgets succeed");
+  --*request.plain_text_max_bytes;auto short_summary=session.export_search_html(request);
+  check(short_summary.status==SearchExportStatus::output_limit&&short_summary.html.empty()&&!short_summary.plain_text&&!short_summary.row_count,
+    "One-byte-short zero-row summary companion discards both complete representations");
  }
  {
   Reader reader(argv[2]);StudySession session(reader);session.enable_module_preferences();session.set_lexical_layout_enabled(true);
