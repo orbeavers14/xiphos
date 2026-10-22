@@ -8,6 +8,8 @@ enum SearchScopeChoice: String, CaseIterable, Identifiable {
 }
 struct SearchHit: Identifiable, Sendable, Equatable {
     let id: Int
+    let group: Int
+    let row: Int
     let module: String
     let reference: String
 }
@@ -16,6 +18,8 @@ struct SearchHit: Identifiable, Sendable, Equatable {
 @MainActor final class SearchModel: ObservableObject {
     @Published private(set) var modules: [InstalledModule] = []
     @Published var module = ""
+    @Published var searchMultipleModules = false
+    @Published var selectedModules: [String] = []
     @Published var expression = ""
     @Published var mode: CoreSearchMode = .phrase
     @Published var caseSensitive = false
@@ -26,6 +30,8 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     @Published var scopeChoice: SearchScopeChoice = .all
     @Published var boundsModule = ""
     @Published var bounds = ""
+    @Published private(set) var batchResult: RenderedSearchBatch?
+    private var batchExpression = ""
     @Published private(set) var result: RenderedSearchResult?
     @Published private(set) var hits: [SearchHit] = []
     @Published private(set) var selection: Int?
@@ -43,12 +49,44 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     @Published var exportImages = false
     @Published private(set) var message = "Enter text to search."
     var isBusy: Bool { isSearching || isPreviewLoading || isClearing || isExporting }
-    var canSearch: Bool { !isBusy && !module.isEmpty && !expression.isEmpty }
+    var canSearch: Bool {
+        !isBusy && !expression.isEmpty && (searchMultipleModules ? (1...32).contains(selectedModules.count) : !module.isEmpty)
+    }
+    private var exportSource: (generation: CoreSearchGeneration, expression: String)? {
+        if let batchResult { return (batchResult.generation, batchExpression) }
+        if let result { return (result.generation, result.expression) }
+        return nil
+    }
+    func addModule() {
+        guard !closed, !isBusy, selectedModules.count < 32, modules.contains(where: { $0.id == module }) else { return }
+        selectedModules.append(module)
+    }
+    func removeModule(at index: Int) {
+        guard !closed, !isBusy, selectedModules.indices.contains(index) else { return }
+        selectedModules.remove(at: index)
+    }
+    func moveModule(at index: Int, by offset: Int) {
+        guard !closed, !isBusy, [-1,1].contains(offset), selectedModules.indices.contains(index),
+              selectedModules.indices.contains(index + offset) else { return }
+        selectedModules.swapAt(index, index + offset)
+    }
+    func groupMessage(_ index: Int) -> String {
+        guard let group = batchResult?.groups.first(where: { $0.requestIndex == index }) else { return "Not searched." }
+        switch group.status {
+        case .moduleNotFound: return "Module unavailable."
+        case .invalidRequest: return "Search not supported for this request."
+        case .engineError: return "Unable to search this module."
+        case .success:
+            if group.result?.cancelled == true { return "Search stopped; showing returned matches." }
+            if group.result?.limited == true { return "Showing returned passages; more matches are available." }
+            return group.result?.references.isEmpty == true ? "No returned matches." : ""
+        }
+    }
     var canExportSelected: Bool {
-        !closed && !isBusy && result?.generation.id != nil && result?.generation.id != 0 && hits.contains { $0.id == selection }
+        !closed && !isBusy && exportSource?.generation.id != nil && exportSource?.generation.id != 0 && hits.contains { $0.id == selection }
     }
     var canExportAll: Bool {
-        !closed && !isBusy && !hits.isEmpty && result?.generation.id != nil && result?.generation.id != 0
+        !closed && !isBusy && !hits.isEmpty && exportSource?.generation.id != nil && exportSource?.generation.id != 0
     }
     private var worker: CoreWorker?
     private var tab: UInt64?
@@ -73,6 +111,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     func search() {
         guard !closed, canSearch, let worker, let tab else { return }
         let submittedModule = module, submittedExpression = expression, submittedMode = mode
+        let submittedModules = searchMultipleModules ? selectedModules : nil
         let sensitive = caseSensitive, last = scopeChoice == .last
         let annotations = setAnnotationOptions ? CoreSearchTextOptions(strongs: searchStrongs,
             morphology: searchMorphology, footnotes: searchFootnotes) : nil
@@ -83,34 +122,63 @@ struct SearchHit: Identifiable, Sendable, Equatable {
             guard let self else { return }
             defer { if !self.closed && self.revision == token { self.isSearching = false; self.isPreviewLoading = false; self.task = nil } }
             do {
-                let copied = try await worker.searchModule(tab: tab, module: submittedModule, expression: submittedExpression,
-                    mode: submittedMode, caseSensitive: sensitive, range: range, withinLastResults: last, textOptions: annotations,
-                    returnCancelledResults: true, onProgress: { [weak self] progress in
-                        await self?.receive(progress, token: token)
-                    })
-                guard !self.closed, self.revision == token else { return }
-                self.scope = copied.scope
+                let callback: @Sendable (CoreSearchProgress) async -> Void = { [weak self] progress in
+                    await self?.receive(progress, token: token)
+                }
+                var published = false
+                if let submittedModules {
+                    let copied = try await worker.searchModules(tab: tab, modules: submittedModules,
+                        expression: submittedExpression, mode: submittedMode, caseSensitive: sensitive,
+                        range: range, withinLastResults: last, textOptions: annotations,
+                        returnCancelledResults: true, onProgress: callback)
+                    guard !self.closed, self.revision == token else { return }
+                    self.scope = copied.scope
+                    if copied.generationUpdated {
+                        self.batchExpression = submittedExpression; self.batchResult = copied; self.result = nil
+                        var hits: [SearchHit] = []
+                        for group in copied.groups {
+                            guard let result = group.result else { continue }
+                            for (row, reference) in result.references.enumerated() {
+                                hits.append(SearchHit(id: hits.count, group: group.requestIndex, row: row,
+                                    module: result.module, reference: reference))
+                            }
+                        }
+                        self.hits = hits; published = true
+                    }
+                    self.message = "\(copied.copiedResultCount) passages returned across \(copied.groups.count) of \(copied.requestedModules.count) module requests."
+                    if copied.failureCount > 0 { self.message += " \(copied.failureCount) module requests failed." }
+                    if copied.limited { self.message += " More results are available." }
+                    if copied.groups.contains(where: { $0.result?.indexFallback == true }) { self.message += " Index unavailable for some modules; used multiword fallback." }
+                    if copied.cancelled { self.message = "Search stopped. " + self.message }
+                } else {
+                    let copied = try await worker.searchModule(tab: tab, module: submittedModule, expression: submittedExpression,
+                        mode: submittedMode, caseSensitive: sensitive, range: range, withinLastResults: last,
+                        textOptions: annotations, returnCancelledResults: true, onProgress: callback)
+                    guard !self.closed, self.revision == token else { return }
+                    self.scope = copied.scope
+                    if copied.executed || !copied.cancelled {
+                        self.result = copied; self.batchResult = nil; self.batchExpression = ""
+                        self.hits = copied.references.enumerated().map {
+                            SearchHit(id: $0.offset, group: 0, row: $0.offset, module: copied.module, reference: $0.element)
+                        }
+                        published = true
+                    }
+                    if copied.cancelled { self.message = "Search stopped." }
+                    else if copied.limited { self.message = "Showing \(copied.references.count) passages. More results are available." }
+                    else { self.message = "\(copied.references.count) \(copied.references.count == 1 ? "passage" : "passages") found." }
+                    if copied.indexFallback && !copied.cancelled { self.message = "Index unavailable; used multiword search. " + self.message }
+                }
                 self.isSearching = false
-                // Pre-execution stop keeps the prior visible result and scope.
-                if copied.executed || !copied.cancelled {
-                    self.result = copied
-                    self.hits = copied.references.enumerated().map { SearchHit(id: $0.offset, module: copied.module, reference: $0.element) }
+                if published {
                     self.selection = nil; self.preview = nil; self.previewSource = nil
-                }
-                if copied.cancelled { self.message = "Search stopped." }
-                else if copied.limited { self.message = "Showing \(copied.references.count) passages. More results are available." }
-                else { self.message = "\(copied.references.count) \(copied.references.count == 1 ? "passage" : "passages") found." }
-                if copied.indexFallback && !copied.cancelled {
-                    self.message = "Index unavailable; used multiword search. " + self.message
-                }
-                if (copied.executed || !copied.cancelled), let first = self.hits.first {
-                    self.selection = first.id
-                    try await self.loadPreview(first, worker: worker, tab: tab, token: token)
+                    if let first = self.hits.first {
+                        self.selection = first.id
+                        try await self.loadPreview(first, worker: worker, tab: tab, token: token)
+                    }
                 }
             } catch {
                 guard !self.closed, self.revision == token else { return }
                 self.message = error.localizedDescription
-                // Engine publication can precede C/Swift presentation failure.
                 if let current = try? await worker.lastSearchScope(tab: tab), !self.closed, self.revision == token { self.scope = current }
             }
         }
@@ -149,8 +217,8 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     }
     private func exportPayload(allMatches: Bool, format: SearchExportFormat, embedImages: Bool, plainTextFallback: Bool = false,
                                completion: @escaping @MainActor (SearchExportPayload) -> Void) {
-        guard allMatches ? canExportAll : canExportSelected, let worker, let tab, let source = result else { return }
-        let selected = selection, includeScripture = exportScripture, includeContext = exportSearchContext
+        guard allMatches ? canExportAll : canExportSelected, let worker, let tab, let source = exportSource else { return }
+        let selected = hits.first(where: { $0.id == selection }), includeScripture = exportScripture, includeContext = exportSearchContext
         // Capture displayed result identity and original query, never editable drafts
         // or a subsequently queried latest generation. Core rejects stale identity.
         let title = "Search results: \(source.expression)"
@@ -167,7 +235,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
                 if format == .html {
                     var images = CoreHTMLImageOptions()
                     if embedImages && includeScripture { images.policy = .embeddedStaticPNG }
-                    let rows = allMatches ? [] : selected.map { [CoreSearchVisibleRow(group: 0, row: $0)] } ?? []
+                    let rows = allMatches ? [] : selected.map { [CoreSearchVisibleRow(group: $0.group, row: $0.row)] } ?? []
                     payload = .html(try await worker.exportSearchHTML(tab: tab, generation: source.generation.id,
                         selection: allMatches ? .allRetained : .visible, rows: rows, title: title,
                         includeScripture: includeScripture, includeSearchContext: includeContext, images: images, plainTextMaxBytes: plainTextFallback ? 1024 * 1024 : nil, returnCancelledResults: true, onProgress: callback))
@@ -177,7 +245,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
                 } else {
                     guard let selected else { return }
                     payload = .text(try await worker.exportSearchVisibleText(tab: tab, generation: source.generation.id,
-                        rows: [CoreSearchVisibleRow(group: 0, row: selected)], title: title, includeScripture: includeScripture, includeSearchContext: includeContext,
+                        rows: [CoreSearchVisibleRow(group: selected.group, row: selected.row)], title: title, includeScripture: includeScripture, includeSearchContext: includeContext,
                         returnCancelledResults: true, onProgress: callback))
                 }
                 guard !self.closed, self.revision == token else { return }
