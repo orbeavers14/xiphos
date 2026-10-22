@@ -5,6 +5,7 @@
 #include "search_control.hpp"
 #include "html_document.hpp"
 #include "export_images.hpp"
+#include "search_export_text.hpp"
 #include <glib.h>
 #include <array>
 #include <memory>
@@ -12,6 +13,7 @@
 namespace xiphos::core {
 SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest request,std::shared_ptr<SearchControl> control){
   detail::SearchControlScope progress(control);detail::validate_search_export_output(request.title,request.max_bytes);
+  if(request.plain_text_max_bytes)detail::validate_search_export_output(request.title,*request.plain_text_max_bytes);
   if(request.images.policy!=SearchHtmlImagePolicy::reject&&request.images.policy!=SearchHtmlImagePolicy::embedded_static_png)
     throw std::invalid_argument("Invalid HTML image export policy");
   // One cache for the entire job, tied to the row's actual module. The loader
@@ -80,6 +82,21 @@ SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest reques
   auto document=prefix+(css.empty()?std::string{}:"<style>"+css+"</style>")+middle+body+suffix;
   if(document.size()!=used||document.size()>request.max_bytes)throw std::logic_error("HTML document accounting mismatch");
   if(control&&control->cancel_requested())return finish(SearchExportStatus::cancelled);
+  std::optional<std::string> plain_text;
+  if(request.plain_text_max_bytes){
+    SearchTextExport text;
+    static_cast<SearchExportMetadata &>(text)=static_cast<const SearchExportMetadata &>(out);
+    // Reuse the text formatter and configured SDK reads on the same owner and
+    // already resolved rows. Neither representation is published on failure.
+    text=detail::render_search_export_text(request.title,*request.plain_text_max_bytes,rows,std::move(text),control,
+      [&](const auto &module,const auto &key,std::size_t bytes){
+        return reader_.read_stripped(module,key,module_engine_options(module),bytes);
+      },false);
+    if(text.status!=SearchExportStatus::ok)return finish(text.status,text.failed_row);
+    plain_text=std::move(text.text);
+  }
+  if(control&&control->cancel_requested())return finish(SearchExportStatus::cancelled);
+  out.plain_text=std::move(plain_text);
   out.html=std::move(document);out.row_count=rows.size();out.images=images.statistics();progress.finish(false);return out;
 }
 }

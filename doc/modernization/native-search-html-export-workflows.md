@@ -23,10 +23,10 @@ silently drop content or open a save dialog.
 Save uses NSSavePanel after document preparation, the corresponding plain-text
 or HTML content type/extension, and an atomic background UTF-8 write of the
 captured payload. It does not render or reload the document after the picker.
-Copy uses the owned plain-text or HTML NSPasteboard representation. HTML copy
-currently advertises HTML only; a shared plain-text fallback for rich clipboard
-clients remains a separate parity task. The frontend does not strip HTML or
-re-render scripture to invent that fallback. A failed payload is rejected before
+Copy uses the owned plain-text or HTML NSPasteboard representation. HTML Copy explicitly requests a bounded plain-text companion from the shared
+core and advertises both representations on one pasteboard item. Save continues
+to request HTML alone. The frontend does not strip HTML or re-render scripture
+to invent the fallback. See the [rich clipboard contract](rich-clipboard-workflows.md). A failed payload is rejected before
 changing existing file or pasteboard contents.
 
 ## Executed checks
@@ -59,7 +59,7 @@ Static evidence: `build/native-html-export-window-check.log`.
 This checks native controls/destination behavior, not browser-rendered HTML.
 The recorded browser local-file policy block remains in effect; no alternate URL
 or viewing surface was used. Full browser/CSP, corpus/visual, accessibility,
-rich-clipboard fallback, passage/print, saved preferences and GTK/WinUI destination
+passage/print, saved preferences and GTK/WinUI destination
 acceptance remain pending. No whole parity group or legacy retirement gate passed.
 The earlier full 164-pass + 1-skip Mac checkpoint belongs to `374147d`; this UI
 slice has focused/model/window evidence rather than a new full-suite run.

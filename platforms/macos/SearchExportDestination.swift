@@ -35,6 +35,9 @@ enum SearchExportDestination {
         guard payload.status == .success else { throw SearchExportDestinationError.incompletePayload }
         let item = NSPasteboardItem()
         guard item.setString(payload.contents, forType: payload.format == .html ? .html : .string) else { throw SearchExportDestinationError.clipboard }
+        if case .html(let value) = payload, let plainText = value.plainText {
+            guard item.setString(plainText, forType: .string) else { throw SearchExportDestinationError.clipboard }
+        }
         pasteboard.clearContents()
         guard pasteboard.writeObjects([item]) else { throw SearchExportDestinationError.clipboard }
     }

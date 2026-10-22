@@ -134,10 +134,10 @@ struct SearchHit: Identifiable, Sendable, Equatable {
             if case .text(let value) = $0 { completion(value) }
         }
     }
-    func exportResults(allMatches: Bool, completion: @escaping @MainActor (SearchExportPayload) -> Void) {
-        exportPayload(allMatches: allMatches, format: exportFormat, embedImages: exportImages, completion: completion)
+    func exportResults(allMatches: Bool, forClipboard: Bool = false, completion: @escaping @MainActor (SearchExportPayload) -> Void) {
+        exportPayload(allMatches: allMatches, format: exportFormat, embedImages: exportImages, plainTextFallback: forClipboard, completion: completion)
     }
-    private func exportPayload(allMatches: Bool, format: SearchExportFormat, embedImages: Bool,
+    private func exportPayload(allMatches: Bool, format: SearchExportFormat, embedImages: Bool, plainTextFallback: Bool = false,
                                completion: @escaping @MainActor (SearchExportPayload) -> Void) {
         guard allMatches ? canExportAll : canExportSelected, let worker, let tab, let source = result else { return }
         let selected = selection, includeScripture = exportScripture
@@ -160,7 +160,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
                     let rows = allMatches ? [] : selected.map { [CoreSearchVisibleRow(group: 0, row: $0)] } ?? []
                     payload = .html(try await worker.exportSearchHTML(tab: tab, generation: source.generation.id,
                         selection: allMatches ? .allRetained : .visible, rows: rows, title: title,
-                        includeScripture: includeScripture, images: images, returnCancelledResults: true, onProgress: callback))
+                        includeScripture: includeScripture, images: images, plainTextMaxBytes: plainTextFallback ? 1024 * 1024 : nil, returnCancelledResults: true, onProgress: callback))
                 } else if allMatches {
                     payload = .text(try await worker.exportSearchAllText(tab: tab, generation: source.generation.id,
                         title: title, includeScripture: includeScripture, returnCancelledResults: true, onProgress: callback))

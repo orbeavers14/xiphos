@@ -194,6 +194,7 @@ struct RenderedSearchHTMLExport: Sendable, Equatable {
     let issue: CoreHTMLExportIssue
     let images: CoreHTMLImageStatistics
     let html: String
+    let plainText: String?
 }
 struct RenderedSearchTextExport: Sendable, Equatable {
     let selection: CoreSearchExportSelection
