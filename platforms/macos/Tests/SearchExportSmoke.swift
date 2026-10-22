@@ -17,22 +17,23 @@ import AppKit
         model.expression = "PNG"; model.search(); try await idle(model)
         guard model.canExportSelected, model.canExportAll, let source = model.result else { fatalError("PNG search exports available") }
         model.expression = "Unsubmitted draft"; model.exportScripture = true; model.exportFormat = .html; model.exportImages = true
+        model.exportSearchContext = true
         var selected: SearchExportPayload?
         model.exportResults(allMatches: false, forClipboard: true) { selected = $0 }
-        model.exportFormat = .plainText; model.exportImages = false
+        model.exportFormat = .plainText; model.exportImages = false; model.exportSearchContext = false
         try await idle(model)
         guard case .html(let value) = selected, value.status == .success, value.rowCount == 1,
               value.selection == .visible, value.images.count == 1, value.images.originalBytes == 75,
               value.html.contains("Search results: PNG"), !value.html.contains("Unsubmitted"),
-              value.html.contains("data:image/png;base64,"), value.generation == source.generation else { fatalError("HTML action captures format/options and committed query before editable drafts change") }
+              value.html.contains("data:image/png;base64,"), value.html.contains("Query: PNG"), value.generation == source.generation else { fatalError("HTML action captures format/options and committed query before editable drafts change") }
         let plain = try await worker.exportSearchVisibleText(tab: tab, generation: source.generation.id,
-            rows: [CoreSearchVisibleRow(group: 0, row: 0)], title: "Search results: PNG", includeScripture: true)
+            rows: [CoreSearchVisibleRow(group: 0, row: 0)], title: "Search results: PNG", includeScripture: true, includeSearchContext: true)
         guard value.plainText == plain.text else { fatalError("Rich clipboard companion matches shared configured SDK text exactly") }
         model.exportFormat = .html; model.exportImages = true
         var all: SearchExportPayload?
         model.exportResults(allMatches: true) { all = $0 }; try await idle(model)
         guard case .html(let complete) = all, complete.status == .success, complete.selection == .allRetained,
-              complete.rowCount == 1, complete.images.count == 1, complete.plainText == nil, model.result == source,
+              complete.rowCount == 1, complete.images.count == 1, complete.plainText == nil, !complete.html.contains("xiphos-search-context"), model.result == source,
               try await worker.history(tab).count == 0 else { fatalError("All HTML consumes shared selection without navigation") }
         let board = NSPasteboard(name: NSPasteboard.Name("XiphosHTMLExportTest-" + UUID().uuidString))
         defer { board.releaseGlobally() }
@@ -84,10 +85,11 @@ import AppKit
         model.select(1);try await idle(model)
         guard model.canExportSelected, model.canExportAll, let source = model.result else { fatalError("Displayed result exposes native export actions") }
         model.expression = "Unsubmitted changed draft";model.exportScripture = true
+        model.exportSearchContext = true
         var selectedValue: RenderedSearchTextExport?
-        model.exportText(allMatches: false) { selectedValue = $0 };try await idle(model)
+        model.exportText(allMatches: false) { selectedValue = $0 };model.exportSearchContext = false;try await idle(model)
         guard let selected = selectedValue, selected.status == .success, selected.selection == .visible, selected.rowCount == 1,
-              selected.text.hasPrefix("Search results: Original\n\n"), selected.text.contains("John 1:2"),
+              selected.text.hasPrefix("Search results: Original\n\n"), selected.text.contains("Query: Original\nMode: Exact phrase"), selected.text.contains("John 1:2"),
               !selected.text.contains("John 1:1"), !selected.text.contains("Unsubmitted"), selected.includesScripture,
               selected.generation == source.generation, model.selection == 1 else { fatalError("Native export captures displayed identity and selection instead of drafts") }
         var allValue: RenderedSearchTextExport?

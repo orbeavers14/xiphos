@@ -40,6 +40,26 @@ int main(int argc,char **argv){try{
   !xc_search_html_export_size(rich_short)&&!xc_search_html_export_plain_text(rich_short)&&!rich_info.row_count,"C companion exhaustion cannot leak HTML-only success");xc_search_html_export_release(rich_short);
  request=reinterpret_cast<xc_request *>(1);
  check(xc_worker_export_search_rich_html(worker,tab,&input,&images,8*1024*1024+1,&request)==XC_INVALID_ARGUMENT&&!request,"C rejects oversized companion cap before enqueue");
+ check(xc_worker_export_search_rich_html_with_context(worker,tab,&input,&images,8192,1,&request)==XC_OK&&wait(request)==XC_OK,"C context HTML queues on existing owner");
+ auto *context=xc_request_take_search_html_export(request);xc_request_release(request);
+ check(context&&std::string(xc_search_html_export_html(context)).find("class=\"xiphos-search-context\"")!=std::string::npos&&
+  std::string(xc_search_html_export_plain_text(context)).find("Query: Original\nMode: Exact phrase")!=std::string::npos,
+  "C carries committed shared headers in both representations without changing result layouts");
+ xc_search_html_export_release(context);
+ xc_search_visible_row context_row{0,0};xc_search_text_export_request text_input;xc_search_text_export_request_default(&text_input);
+ text_input.generation=generation.id;text_input.rows=&context_row;text_input.row_count=1;
+ check(xc_worker_export_search_visible_text_with_context(worker,tab,&text_input,1,&request)==XC_OK&&wait(request)==XC_OK,"C selected context accepted");
+ auto *text_context=xc_request_take_search_text_export(request);xc_request_release(request);
+ check(text_context&&std::string(xc_search_text_export_text(text_context)).find("Search group 1\nModule: Text")!=std::string::npos,"C selected context is core text");xc_search_text_export_release(text_context);
+ xc_search_all_text_export_request all_input;xc_search_all_text_export_request_default(&all_input);all_input.generation=generation.id;
+ check(xc_worker_export_search_all_text_with_context(worker,tab,&all_input,1,&request)==XC_OK&&wait(request)==XC_OK,"C complete context accepted");
+ text_context=xc_request_take_search_text_export(request);xc_request_release(request);
+ check(text_context&&std::string(xc_search_text_export_text(text_context)).find("Search group 2\nModule: Commentary")!=std::string::npos,"C complete context includes groups beyond visible prefix");xc_search_text_export_release(text_context);
+ for(int flag:{-1,2}){
+  request=reinterpret_cast<xc_request *>(1);check(xc_worker_export_search_rich_html_with_context(worker,tab,&input,&images,8192,flag,&request)==XC_INVALID_ARGUMENT&&!request,"C rejects invalid HTML context flags and clears observer");
+  request=reinterpret_cast<xc_request *>(1);check(xc_worker_export_search_visible_text_with_context(worker,tab,&text_input,flag,&request)==XC_INVALID_ARGUMENT&&!request,"C rejects invalid selected context flags");
+  request=reinterpret_cast<xc_request *>(1);check(xc_worker_export_search_all_text_with_context(worker,tab,&all_input,flag,&request)==XC_INVALID_ARGUMENT&&!request,"C rejects invalid complete context flags");
+ }
  input.title="Original <query> café";input.max_rows=8;input.max_bytes=html.size();
  auto run=[&]{check(xc_worker_export_search_html(worker,tab,&input,&request)==XC_OK&&wait(request)==XC_OK,"HTML outcome request");auto *r=xc_request_take_search_html_export(request);xc_request_release(request);check(r&&xc_search_html_export_get_info(r,&info)==XC_OK,"Owned HTML outcome");return r;};
  auto *exact=run();check(std::string(xc_search_html_export_html(exact))==html,"Exact C HTML budget accepted");xc_search_html_export_release(exact);

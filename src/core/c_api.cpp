@@ -770,7 +770,12 @@ xc_status xc_worker_export_search_html_with_images(xc_worker *w,uint64_t tab,con
 }
 xc_status xc_worker_export_search_rich_html(xc_worker *w,uint64_t tab,const xc_search_html_export_request *input,
     const xc_search_html_image_options *images,size_t plain_text_max_bytes,xc_request **out){
+  return xc_worker_export_search_rich_html_with_context(w,tab,input,images,plain_text_max_bytes,0,out);
+}
+xc_status xc_worker_export_search_rich_html_with_context(xc_worker *w,uint64_t tab,const xc_search_html_export_request *input,
+    const xc_search_html_image_options *images,size_t plain_text_max_bytes,int include_search_context,xc_request **out){
   if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;
+  if(include_search_context!=0&&include_search_context!=1)return XC_INVALID_ARGUMENT;
   if(plain_text_max_bytes>xiphos::core::maximum_search_export_bytes)return XC_INVALID_ARGUMENT;
   if(!images||(images->policy!=XC_HTML_IMAGES_REJECT&&images->policy!=XC_HTML_IMAGES_EMBEDDED_STATIC_PNG)||
      !images->max_images||images->max_images>xiphos::core::maximum_search_export_images||
@@ -783,6 +788,7 @@ xc_status xc_worker_export_search_rich_html(xc_worker *w,uint64_t tab,const xc_s
      !input->max_bytes||input->max_bytes>xiphos::core::maximum_search_export_bytes||!input->max_rows||input->max_rows>xiphos::core::maximum_search_export_rows)return XC_INVALID_ARGUMENT;
   try{
     xiphos::core::SearchHtmlExportRequest copied;
+    copied.include_search_context=include_search_context!=0;
     if(plain_text_max_bytes)copied.plain_text_max_bytes=plain_text_max_bytes;
     copied.images={static_cast<xiphos::core::SearchHtmlImagePolicy>(images->policy),images->max_images,images->max_original_bytes,images->max_pixels};
     copied.generation=input->generation;copied.selection=static_cast<xiphos::core::SearchExportSelection>(input->selection);
@@ -819,12 +825,17 @@ void xc_search_text_export_request_default(xc_search_text_export_request *out){
   if(out)*out={0,nullptr,0,nullptr,0,1024*1024};
 }
 xc_status xc_worker_export_search_visible_text(xc_worker *w,uint64_t tab,const xc_search_text_export_request *input,xc_request **out){
+  return xc_worker_export_search_visible_text_with_context(w,tab,input,0,out);
+}
+xc_status xc_worker_export_search_visible_text_with_context(xc_worker *w,uint64_t tab,const xc_search_text_export_request *input,int include_search_context,xc_request **out){
   if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;
+  if(include_search_context!=0&&include_search_context!=1)return XC_INVALID_ARGUMENT;
   if(!w||!input||!input->rows||!input->row_count||input->row_count>xiphos::core::maximum_search_export_rows||
      (input->include_scripture!=0&&input->include_scripture!=1)||!input->max_bytes||input->max_bytes>xiphos::core::maximum_search_export_bytes)
     return XC_INVALID_ARGUMENT;
   try{
     xiphos::core::SearchTextExportRequest copied;
+    copied.include_search_context=include_search_context!=0;
     copied.generation=input->generation;copied.include_scripture=input->include_scripture!=0;copied.max_bytes=input->max_bytes;
     if(input->title){
       std::size_t size=0;while(size<=32768&&input->title[size])++size;
@@ -843,12 +854,17 @@ void xc_search_all_text_export_request_default(xc_search_all_text_export_request
   if(out)*out={0,nullptr,0,1024*1024,xiphos::core::maximum_search_export_rows,0};
 }
 xc_status xc_worker_export_search_all_text(xc_worker *w,uint64_t tab,const xc_search_all_text_export_request *input,xc_request **out){
+  return xc_worker_export_search_all_text_with_context(w,tab,input,0,out);
+}
+xc_status xc_worker_export_search_all_text_with_context(xc_worker *w,uint64_t tab,const xc_search_all_text_export_request *input,int include_search_context,xc_request **out){
   if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;
+  if(include_search_context!=0&&include_search_context!=1)return XC_INVALID_ARGUMENT;
   if(!w||!input||(input->include_scripture!=0&&input->include_scripture!=1)||
      (input->allow_partial_source!=0&&input->allow_partial_source!=1)||!input->max_bytes||
      input->max_bytes>xiphos::core::maximum_search_export_bytes||!input->max_rows||input->max_rows>xiphos::core::maximum_search_export_rows)return XC_INVALID_ARGUMENT;
   try{
     xiphos::core::SearchAllTextExportRequest copied;
+    copied.include_search_context=include_search_context!=0;
     copied.generation=input->generation;copied.include_scripture=input->include_scripture!=0;
     copied.max_bytes=input->max_bytes;copied.max_rows=input->max_rows;copied.allow_partial_source=input->allow_partial_source!=0;
     if(input->title){std::size_t size=0;while(size<=32768&&input->title[size])++size;if(size>32768)return XC_INVALID_ARGUMENT;copied.title.assign(input->title,size);}

@@ -56,6 +56,7 @@ struct SearchPane: View {
                         ForEach(SearchExportFormat.allCases) { Text($0.rawValue).tag($0) }
                     }.accessibilityLabel("Search export format")
                     Toggle("Include scripture", isOn: $model.exportScripture)
+                    Toggle("Include search details", isOn: $model.exportSearchContext)
                     if model.exportFormat == .html {
                         Toggle("Embed PNG images", isOn: $model.exportImages).disabled(!model.exportScripture)
                     }

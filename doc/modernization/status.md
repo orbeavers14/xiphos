@@ -56,9 +56,12 @@ checks in the [Mac handoff](handoff-macos.md).
 Optional C++ committed search-context headers at `66196e3` preserve first rows,
 duplicate groups, default bytes and existing output caps. Header text comes from
 retained metadata, with escaped HTML and matching rich clipboard companions.
-See [contract](export-context-workflows.md); explicit C/Swift/native options follow.
+Additive C/Swift/native options at `5831417` consume the same complete payloads;
+Mac Export now offers Include search details, default off. Scoped native/model/C
+checks pass16/16, ASan/UBSan11/11, portable core/GTK models26/26 on Mac and search
+regressions3/3. See [contract](export-context-workflows.md).
 
-Next bounded work: header transport/controls, advanced search settings, remaining
+Next bounded work: advanced search settings, remaining
 resource/style/semantic policies and workflow acceptance.
 Keep target-platform validation and other core services in view. No whole parity
 group, release or legacy retirement accepted: **0/38 groups, 0/3 release-ready apps**.

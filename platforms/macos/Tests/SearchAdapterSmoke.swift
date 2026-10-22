@@ -307,6 +307,15 @@ actor ProgressLog {
             do { _ = try await worker.exportSearchHTML(tab: tab, generation: search.generation.id, rows: rows, plainTextMaxBytes: cap); fatalError("Invalid companion cap") }
             catch is CoreError {}
         }
+        let context = try await worker.exportSearchHTML(tab: tab, generation: search.generation.id, rows: rows,
+            includeScripture: true, includeSearchContext: true, images: images, plainTextMaxBytes: 8192)
+        let contextText = try await worker.exportSearchVisibleText(tab: tab, generation: search.generation.id, rows: rows,
+            includeScripture: true, includeSearchContext: true)
+        guard context.status == .success, context.plainText == contextText.text,
+              context.html.contains("class=\"xiphos-search-context\""), contextText.text.contains("Query: Original\nMode: Exact phrase") else { fatalError("Swift copies shared context in selected text and paired HTML without building headers") }
+        let contextAll = try await worker.exportSearchAllText(tab: tab, generation: search.generation.id,
+            includeSearchContext: true)
+        guard contextAll.status == .success, contextAll.text.contains("Search group 1\nModule: OSISNotes") else { fatalError("Swift all retained text exposes the same core context flag") }
         let exact = try await worker.exportSearchHTML(tab: tab, generation: search.generation.id, rows: rows,
             includeScripture: true, maxBytes: output.html.utf8.count, images: images)
         guard exact == output else { fatalError("Exact final image document byte limit") }

@@ -34,6 +34,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     @Published private(set) var isClearing = false
     @Published private(set) var isExporting = false
     @Published var exportScripture = false
+    @Published var exportSearchContext = false
     @Published var exportFormat: SearchExportFormat = .plainText
     @Published var exportImages = false
     @Published private(set) var message = "Enter text to search."
@@ -140,7 +141,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     private func exportPayload(allMatches: Bool, format: SearchExportFormat, embedImages: Bool, plainTextFallback: Bool = false,
                                completion: @escaping @MainActor (SearchExportPayload) -> Void) {
         guard allMatches ? canExportAll : canExportSelected, let worker, let tab, let source = result else { return }
-        let selected = selection, includeScripture = exportScripture
+        let selected = selection, includeScripture = exportScripture, includeContext = exportSearchContext
         // Capture displayed result identity and original query, never editable drafts
         // or a subsequently queried latest generation. Core rejects stale identity.
         let title = "Search results: \(source.expression)"
@@ -160,14 +161,14 @@ struct SearchHit: Identifiable, Sendable, Equatable {
                     let rows = allMatches ? [] : selected.map { [CoreSearchVisibleRow(group: 0, row: $0)] } ?? []
                     payload = .html(try await worker.exportSearchHTML(tab: tab, generation: source.generation.id,
                         selection: allMatches ? .allRetained : .visible, rows: rows, title: title,
-                        includeScripture: includeScripture, images: images, plainTextMaxBytes: plainTextFallback ? 1024 * 1024 : nil, returnCancelledResults: true, onProgress: callback))
+                        includeScripture: includeScripture, includeSearchContext: includeContext, images: images, plainTextMaxBytes: plainTextFallback ? 1024 * 1024 : nil, returnCancelledResults: true, onProgress: callback))
                 } else if allMatches {
                     payload = .text(try await worker.exportSearchAllText(tab: tab, generation: source.generation.id,
-                        title: title, includeScripture: includeScripture, returnCancelledResults: true, onProgress: callback))
+                        title: title, includeScripture: includeScripture, includeSearchContext: includeContext, returnCancelledResults: true, onProgress: callback))
                 } else {
                     guard let selected else { return }
                     payload = .text(try await worker.exportSearchVisibleText(tab: tab, generation: source.generation.id,
-                        rows: [CoreSearchVisibleRow(group: 0, row: selected)], title: title, includeScripture: includeScripture,
+                        rows: [CoreSearchVisibleRow(group: 0, row: selected)], title: title, includeScripture: includeScripture, includeSearchContext: includeContext,
                         returnCancelledResults: true, onProgress: callback))
                 }
                 guard !self.closed, self.revision == token else { return }

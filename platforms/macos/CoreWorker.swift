@@ -349,7 +349,7 @@ actor CoreWorker {
         return queue(nil)
     }
     func exportSearchHTML(tab: UInt64, generation: UInt64, selection: CoreSearchExportSelection = .visible,
-                          rows: [CoreSearchVisibleRow] = [], title: String = "Search results", includeScripture: Bool = false,
+                          rows: [CoreSearchVisibleRow] = [], title: String = "Search results", includeScripture: Bool = false, includeSearchContext: Bool = false,
                           maxBytes: Int = 1024 * 1024, maxRows: Int = 10_000, allowPartialSource: Bool = false,
                           images: CoreHTMLImageOptions = CoreHTMLImageOptions(), plainTextMaxBytes: Int? = nil, returnCancelledResults: Bool = false,
                           onProgress: (@Sendable (CoreSearchProgress) async -> Void)? = nil) async throws -> RenderedSearchHTMLExport {
@@ -368,7 +368,7 @@ actor CoreWorker {
                 allow_partial_source: allowPartialSource ? 1 : 0)
             var imageOptions = xc_search_html_image_options(policy: images.policy.rawValue, max_images: images.maxImages,
                 max_original_bytes: images.maxOriginalBytes, max_pixels: images.maxPixels)
-            let status = xc_worker_export_search_rich_html(handle, tab, &input, &imageOptions, plainTextMaxBytes ?? 0, &request)
+            let status = xc_worker_export_search_rich_html_with_context(handle, tab, &input, &imageOptions, plainTextMaxBytes ?? 0, includeSearchContext ? 1 : 0, &request)
             return (status, request)
         } }
         let completed = try await wait(queued.0, queued.1, cancellingSearch: true,
@@ -394,7 +394,7 @@ actor CoreWorker {
                 originalBytes: imageInfo.original_bytes, pixels: imageInfo.pixels), html: html, plainText: plainText)
     }
     func exportSearchVisibleText(tab: UInt64, generation: UInt64, rows: [CoreSearchVisibleRow],
-                                 title: String = "Search results", includeScripture: Bool = false,
+                                 title: String = "Search results", includeScripture: Bool = false, includeSearchContext: Bool = false,
                                  maxBytes: Int = 1024 * 1024, returnCancelledResults: Bool = false,
                                  onProgress: (@Sendable (CoreSearchProgress) async -> Void)? = nil) async throws -> RenderedSearchTextExport {
         guard !rows.isEmpty, rows.count <= 10_000, rows.allSatisfy({ $0.group >= 0 && $0.row >= 0 }),
@@ -405,13 +405,13 @@ actor CoreWorker {
             var request: OpaquePointer?
             var input = xc_search_text_export_request(generation: generation, rows: buffer.baseAddress,
                 row_count: buffer.count, title: label, include_scripture: includeScripture ? 1 : 0, max_bytes: maxBytes)
-            let status = xc_worker_export_search_visible_text(handle, tab, &input, &request)
+            let status = xc_worker_export_search_visible_text_with_context(handle, tab, &input, includeSearchContext ? 1 : 0, &request)
             return (status, request)
         } }
         return try await searchTextExportValue(queued.0, queued.1, returnCancelledResults: returnCancelledResults, onProgress: onProgress)
     }
     func exportSearchAllText(tab: UInt64, generation: UInt64, title: String = "Search results",
-                             includeScripture: Bool = false, maxBytes: Int = 1024 * 1024, maxRows: Int = 10_000,
+                             includeScripture: Bool = false, includeSearchContext: Bool = false, maxBytes: Int = 1024 * 1024, maxRows: Int = 10_000,
                              allowPartialSource: Bool = false, returnCancelledResults: Bool = false,
                              onProgress: (@Sendable (CoreSearchProgress) async -> Void)? = nil) async throws -> RenderedSearchTextExport {
         guard !title.utf8.contains(0), title.utf8.count <= 32768, maxBytes > 0, maxRows > 0 else { throw CoreError(status: XC_INVALID_ARGUMENT) }
@@ -421,7 +421,7 @@ actor CoreWorker {
             var input = xc_search_all_text_export_request(generation: generation, title: label,
                 include_scripture: includeScripture ? 1 : 0, max_bytes: maxBytes, max_rows: maxRows,
                 allow_partial_source: allowPartialSource ? 1 : 0)
-            let status = xc_worker_export_search_all_text(handle, tab, &input, &request)
+            let status = xc_worker_export_search_all_text_with_context(handle, tab, &input, includeSearchContext ? 1 : 0, &request)
             return (status, request)
         }
         return try await searchTextExportValue(queued.0, queued.1, returnCancelledResults: returnCancelledResults, onProgress: onProgress)

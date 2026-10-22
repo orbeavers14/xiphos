@@ -599,6 +599,16 @@ xc_status xc_worker_export_search_rich_html(xc_worker *worker,uint64_t tab,
 /* Borrowed until release; NULL for absent/failed companion, size excludes NUL. */
 const char *xc_search_html_export_plain_text(const xc_search_html_export *result);
 size_t xc_search_html_export_plain_text_size(const xc_search_html_export *result);
+/* Optional committed search-context headers. Strict 0/1; copied before return.
+ * Existing request/info layouts and default output bytes remain unchanged.
+ * Header/warning bytes share each representation's existing aggregate cap. */
+xc_status xc_worker_export_search_visible_text_with_context(xc_worker *worker,uint64_t tab,
+  const xc_search_text_export_request *input,int include_search_context,xc_request **out);
+xc_status xc_worker_export_search_all_text_with_context(xc_worker *worker,uint64_t tab,
+  const xc_search_all_text_export_request *input,int include_search_context,xc_request **out);
+xc_status xc_worker_export_search_rich_html_with_context(xc_worker *worker,uint64_t tab,
+  const xc_search_html_export_request *input,const xc_search_html_image_options *images,
+  size_t plain_text_max_bytes,int include_search_context,xc_request **out);
 void xc_search_html_export_release(xc_search_html_export *result);
 xc_status xc_worker_create_tab(xc_worker *worker, xc_request **out);
 xc_status xc_worker_close_tab(xc_worker *worker, uint64_t tab, xc_request **out);

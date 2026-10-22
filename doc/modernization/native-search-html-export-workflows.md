@@ -7,7 +7,9 @@ save/copy support, not full export, print or cross-platform parity.
 The existing native Export menu now offers Plain text or HTML, selected passage
 or all returned matches, and Include scripture. HTML additionally offers Embed
 PNG images, enabled when scripture is included. Plain text remains the default;
-PNG embedding requires an explicit choice. These are native SwiftUI/AppKit
+PNG embedding requires an explicit choice. Include search details additionally
+opts into [committed core context headers](export-context-workflows.md) in both
+formats; it defaults off. These are native SwiftUI/AppKit
 controls. Search, scripture rendering, selection, resource validation, budgets
 and complete document assembly remain in the shared core.
 
