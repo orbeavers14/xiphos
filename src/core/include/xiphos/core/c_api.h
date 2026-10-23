@@ -657,6 +657,11 @@ xc_status xc_worker_visit_passage(xc_worker *worker, uint64_t tab, const char *m
 /* Explicit Bible links replace the Bible; commentary links replace commentary,
  * retaining the other pane. Returns the owned paired passage after recording. */
 xc_status xc_worker_visit_linked_passage(xc_worker *worker, uint64_t tab, const char *bible, const char *commentary, const char *target_module, const char *reference, xc_request **out);
+/* Same explicit visit with a copied transient pane anchor. NULL means absent,
+ * empty means top. Anchor never enters history; returned passage names its pane.
+ * Both linked-visit variants bound module fields to 4096 and reference/anchor to
+ * 32768 bytes before C copies; commentary remains required but may be empty. */
+xc_status xc_worker_visit_linked_passage_with_anchor(xc_worker *worker, uint64_t tab, const char *bible, const char *commentary, const char *target_module, const char *reference, const char *anchor, xc_request **out);
 xc_status xc_worker_navigate_passage(xc_worker *worker, uint64_t tab, int direction, xc_request **out);
 xc_status xc_worker_navigate_passage_chapter(xc_worker *worker, uint64_t tab, const char *module, const char *commentary, const char *reference, int direction, xc_request **out);
 xc_status xc_worker_history(xc_worker *worker, uint64_t tab, xc_request **out);
@@ -892,6 +897,10 @@ xc_entry *xc_request_take_entry(xc_request *request);
 xc_passage *xc_request_take_passage(xc_request *request);
 /* Borrowed strings valid until passage release; NULL handle -> NULL/zero.
  * Absent commentary -> empty module string and NULL commentary reference/HTML. */
+/* Borrowed transient explicit anchor and actual target pane module. Both NULL
+ * on ordinary reads/history navigation; explicit empty anchor remains non-NULL. */
+const char *xc_passage_anchor_module(const xc_passage *passage);
+const char *xc_passage_anchor(const xc_passage *passage);
 const char *xc_passage_module(const xc_passage *passage);
 const char *xc_passage_reference(const xc_passage *passage);
 const char *xc_passage_html(const xc_passage *passage);

@@ -1069,12 +1069,25 @@ xc_status xc_worker_visit_passage(xc_worker *w, uint64_t tab, const char *id, co
   if (!id || !*id || !commentary || !ref || !*ref) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.visit_passage(tab, id, commentary, ref); });
 }
-xc_status xc_worker_visit_linked_passage(xc_worker *w, uint64_t tab, const char *bible, const char *commentary,
-                                        const char *target, const char *ref, xc_request **out) {
-  if (!bible || !*bible || !commentary || !target || !*target || !ref || !*ref) {
+xc_status xc_worker_visit_linked_passage_with_anchor(xc_worker *w, uint64_t tab, const char *bible, const char *commentary,
+                                                     const char *target, const char *ref, const char *anchor, xc_request **out) {
+  using namespace xiphos::core;
+  if (!detail::study_link_c_text(bible, maximum_study_link_context_bytes, true) || !commentary ||
+      !detail::study_link_c_text(commentary, maximum_study_link_context_bytes, false) ||
+      !detail::study_link_c_text(target, maximum_study_link_context_bytes, true) ||
+      !detail::study_link_c_text(ref, maximum_study_link_uri_bytes, true) ||
+      !detail::study_link_c_text(anchor, maximum_study_link_uri_bytes, false)) {
     if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
   }
-  return queue_request(w, out, [=](auto &worker) { return worker.visit_linked_passage(tab, bible, commentary, {target, ref}); });
+  return queue_request(w, out, [=](auto &worker) {
+    PassageLink value{target, ref};
+    if (anchor) value.anchor = anchor;
+    return worker.visit_linked_passage(tab, bible, commentary, std::move(value));
+  });
+}
+xc_status xc_worker_visit_linked_passage(xc_worker *w, uint64_t tab, const char *bible, const char *commentary,
+                                        const char *target, const char *ref, xc_request **out) {
+  return xc_worker_visit_linked_passage_with_anchor(w, tab, bible, commentary, target, ref, nullptr, out);
 }
 xc_status xc_worker_navigate_passage(xc_worker *w, uint64_t tab, int direction, xc_request **out) {
   return queue_request(w, out, [=](auto &worker) { return worker.navigate_passage(tab, direction); });
@@ -1446,6 +1459,8 @@ xc_lexicons *xc_request_take_lexicons(xc_request *r) { return r && r->status == 
 xc_dictionary_entry *xc_request_take_dictionary_entry(xc_request *r) { return r && r->status == XC_OK ? r->dictionary.release() : nullptr; }
 xc_note *xc_request_take_note(xc_request *r) { return r && r->status == XC_OK ? r->note.release() : nullptr; }
 xc_passage *xc_request_take_passage(xc_request *r) { return r && r->status == XC_OK ? r->passage.release() : nullptr; }
+const char *xc_passage_anchor_module(const xc_passage *p) { return p && p->value.anchor ? p->value.anchor->module.c_str() : nullptr; }
+const char *xc_passage_anchor(const xc_passage *p) { return p && p->value.anchor ? p->value.anchor->text.c_str() : nullptr; }
 const char *xc_passage_module(const xc_passage *p) { return p ? p->value.module.c_str() : nullptr; }
 const char *xc_passage_reference(const xc_passage *p) { return p ? p->value.text.reference.c_str() : nullptr; }
 const char *xc_passage_html(const xc_passage *p) { return p ? p->value.text.html.c_str() : nullptr; }

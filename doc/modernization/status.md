@@ -11,9 +11,13 @@ actual alias/type dispatch and distinct DictionaryEntry C/Swift/Linux informatio
 preview consumption. Focused core 3/3, Mac model 2/2, portable 3/3, ASan/UBSan
 and TSan 3/3 each; C++11 complete callback oracle now compares 18,484 traces and
 19,562 anchor splits. Exact details and limits are in the [Mac handoff](handoff-macos.md)
-and [URI contract](passage-uri-workflows.md). Keyed clicks, native anchor UI,
-status/bookmark behavior, physical GUI URI interactions and corpus/platform
-acceptance remain open. No whole parity score or retirement gate changes.
+and [URI contract](passage-uri-workflows.md). Ordinary dictionary keyed clicks now consume shared Unicode normalization and
+dictionary history (`498f08e`). Owned verse anchors (`65fa7e4`) now apply through
+shared transient pane snapshots, copied C/Swift/Linux values and native model
+presentation. Offscreen real Mac WebKit verifies literal/named/top/repeated
+scrolling and disabled module scripts. Devotional/book/prayer clicks, status/
+bookmark behavior, physical GUI URI clicks and corpus/platform acceptance remain
+open; Linux GTK host runtime/compile and Windows presentation remain separate. No whole parity score or retirement gate changes.
 
 Earlier URI/reference continuation (2026-10-22): shared retained/native showRef
 fallback `4a71891`, complete URI callback oracle `d82bb6b`, unknown single-passage

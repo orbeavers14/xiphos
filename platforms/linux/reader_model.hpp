@@ -16,7 +16,7 @@ struct LexicalPresentation { std::string css; bool requested = false, applied = 
 struct Dictionary { std::string module, key, html, source_module, source_reference; };
 struct ReferenceChoice { std::string label, target; };
 struct Chapter { std::string html, anchor, title; LexicalPresentation lexical; };
-struct Passage { std::string bible, commentary, reference, bible_html, commentary_html; LexicalPresentation bible_lexical, commentary_lexical; };
+struct Passage { std::string bible, commentary, reference, bible_html, commentary_html; LexicalPresentation bible_lexical, commentary_lexical; std::string anchor_module; std::optional<std::string> anchor; uint64_t anchor_revision = 0; };
 struct BookNode { uint64_t offset = 0; std::string path, title; bool present = false, children = false; };
 struct BookDocument {
   std::string module, html, css, issue; BookNode nodes[5];
@@ -185,6 +185,7 @@ private:
   std::vector<std::string> dictionary_keys_;
   bool dictionary_back_ = false, dictionary_forward_ = false;
   size_t dictionary_history_count_ = 0;
+  uint64_t anchor_revision_ = 0;
   Chapter bible_chapter_, commentary_chapter_;
   bool show_chapter_ = false, show_commentary_chapter_ = false;
   unsigned display_flags_ = XC_CHAPTER_VERSE_NUMBERS | XC_CHAPTER_HIGHLIGHT_SELECTED;

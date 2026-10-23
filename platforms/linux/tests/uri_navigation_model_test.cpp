@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "reader_model.hpp"
+#include "reader_document.hpp"
 #include <chrono>
 #include <thread>
 #include <iostream>
@@ -28,5 +29,16 @@ int main(int argc,char **argv){try {
  check(model.dictionary().module=="Dictionary"&&model.dictionary().key=="ANCHOR-KEY!BEFORE"&&model.dictionary_history_count()==1&&model.passage().reference==before.reference&&model.can_back()==back&&model.search_results().generation.id==generation,"Dictionary URI click consumes typed raw key and shared history without Bible/search visit");
  check(model.follow("Personal","sword://D/alpha"),"Second dictionary URI click");settle(model);check(model.dictionary_can_back(),"Dictionary URI visits enable shared Back");
  check(model.navigate_dictionary_history(-1),"Navigate dictionary URI history");settle(model);check(model.dictionary().key=="ANCHOR-KEY!BEFORE"&&model.dictionary_can_forward(),"Dictionary URI visits reuse existing history navigation");
- std::cout<<"Portable normalized URI navigation and dictionary hover/click passed\n";return 0;
+ check(model.follow("Personal","sword://T/John3:16#main"),"Follow Bible anchored URI");settle(model);
+ check(model.passage().anchor_module=="Text"&&model.passage().anchor=="main","Shared snapshot targets Bible anchor pane");
+ check(model.follow("Personal","sword://N/John3:16#commentary"),"Follow commentary anchored URI");settle(model);
+ const auto anchor_revision=model.passage().anchor_revision;
+ check(model.passage().anchor_module=="Notes"&&model.passage().anchor=="commentary","Shared snapshot targets commentary pane only");
+ check(model.follow("Notes","sword://N/John3:16#commentary"),"Repeat same URI anchor");settle(model);check(model.passage().anchor_revision>anchor_revision,"Repeated same-content anchor has a new presentation event");
+ check(model.follow("Notes","sword://T/John3:16#"),"Follow explicit top anchor");settle(model);check(model.passage().anchor&&model.passage().anchor->empty()&&model.passage().anchor_module=="Text","Explicit empty anchor differs from absent");
+ check(model.visit("Text","Personal","John3:17"),"Ordinary visit after URI anchor");settle(model);check(!model.passage().anchor&&model.passage().anchor_module.empty(),"Ordinary refresh does not inherit anchor");
+ const auto script=anchor_scroll_script("café 文字\"\\'</script>");
+ check(script.find("café 文字\\\"\\\\'</script>")!=std::string::npos&&script.find("\\303")==std::string::npos,"Host anchor script preserves UTF-8 and escapes quote/backslash without octal byte corruption");
+ check(anchor_scroll_script("")=="window.scrollTo(0, 0); true;"&&anchor_scroll_script(std::string("a\n\0b",4)).find("a\\u000a\\u0000b")!=std::string::npos,"Host top/control literal encoding");
+ std::cout<<"Portable normalized URI navigation, dictionary hover/click and one-use pane anchors passed\n";return 0;
  }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}

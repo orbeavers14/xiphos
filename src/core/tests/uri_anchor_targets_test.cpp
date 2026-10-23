@@ -32,6 +32,15 @@ int main(int argc,char **argv){try{
   const auto missing=std::get<PassageLink>(worker.follow_pane_link_at(tab,"Text","Personal","John3:17","sword://Missing/John3:16-18#note").get());check(missing.module=="Text"&&missing.anchor=="note","Unknown range exact main fallback retains anchor");
   const auto sidebar=std::get<ReferenceList>(worker.follow_pane_link_at(tab,"Text","Personal","John3:17","sword://T/John3:16-18#note").get());check(sidebar.entries.size()==3&&sidebar.expression=="John3:16-18","Bible range stays sidebar after anchor split");
   check(worker.history(tab).get().entries.size()==before.entries.size()&&worker.history(other).get().entries.empty()&&worker.search_generation(tab).get().id==generation,"Anchor target resolution does not navigate or publish history/search");
+  for(const auto *token:{"T","N","P"}) {
+   auto target=std::get<PassageLink>(worker.follow_pane_link_at(tab,"Text","Personal","John3:17",std::string("sword://")+token+"/John3:16#first").get());
+   const auto applied=worker.visit_linked_passage(tab,"Text","Personal",target).get();
+   check(applied.anchor&&applied.anchor->module==target.module&&applied.anchor->text=="first","Shared navigation snapshot identifies only the actual URI target pane");
+   check(!worker.read_passage(tab,"Text","Personal","John3:16").get().anchor,"Ordinary refresh does not inherit a URI anchor");
+  }
+  auto empty=worker.visit_linked_passage(tab,"Text","Personal",{"Notes","John3:17",std::string()}).get();check(empty.anchor&&empty.anchor->text.empty()&&empty.anchor->module=="Notes","Explicit empty anchor remains assigned to commentary pane");
+  check(!worker.navigate_passage(tab,1).get().anchor,"History navigation does not replay a URI anchor");
+  for(const auto &location:worker.history(tab).get().entries)check(location.reference.find_first_of("#!")==std::string::npos,"History stores normalized references without anchors");
   std::string uri="sword://N/John3:16#owned";accepted=worker.follow_pane_link_at(tab,"Text","Personal","John3:17",uri);uri.clear();worker.close_tab(tab).get();
  }
  check(std::get<PassageLink>(accepted.get()).anchor=="owned","Anchor owns copied bytes through drain and shutdown");
@@ -41,6 +50,12 @@ int main(int argc,char **argv){try{
   auto *target=xc_request_take_link(request);check(target&&!xc_request_take_link(request),"C anchor target takes once");xc_request_release(request);
   const auto *anchor=xc_link_anchor(target);check(*suffix?anchor&&std::string(anchor)==(std::string(suffix)=="#"?"":"owned"):anchor==nullptr,"C null/empty/owned anchor semantics");xc_link_release(target);
  }
+ for(const char *anchor:{static_cast<const char *>(nullptr),"","quoted\"\\文字"}) {
+  check(xc_worker_visit_linked_passage_with_anchor(worker,tab,"Text","Personal","Notes","John3:17",anchor,&request)==XC_OK&&wait(request)==XC_OK,"C explicit anchored navigation");
+  auto *passage=xc_request_take_passage(request);check(passage&&!xc_request_take_passage(request),"C pane snapshot takes once");xc_request_release(request);
+  check(anchor?xc_passage_anchor(passage)&&std::string(xc_passage_anchor(passage))==anchor&&std::string(xc_passage_anchor_module(passage))=="Notes":!xc_passage_anchor(passage)&&!xc_passage_anchor_module(passage),"C pane snapshot distinguishes absent/empty/literal anchor");xc_passage_release(passage);
+ }
+ check(!xc_passage_anchor(nullptr)&&!xc_passage_anchor_module(nullptr),"Null pane anchor getters");
  check(xc_worker_follow_pane_link_at(worker,tab,"Text","Personal","John3:17","sword://N/John3:16#held",&request)==XC_OK,"C drain anchor target");xc_worker_close(worker);check(wait(request)==XC_OK,"C anchor request drains");auto *target=xc_request_take_link(request);xc_request_release(request);check(target&&std::string(xc_link_anchor(target))=="held"&&std::string(xc_link_module(target))=="Notes","C anchor target survives request and owner");xc_link_release(target);check(!xc_link_anchor(nullptr),"Null anchor getter");
  std::cout<<"Owned contextual anchor targets: precedence, single decoding, canonical owner routing, sidebar distinction, isolation and C lifetime passed\n";return 0;
  }catch(const std::exception &e){std::cerr<<e.what()<<'\n';return 1;}}

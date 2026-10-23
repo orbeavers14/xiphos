@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 import Foundation
 import AppKit
+import WebKit
 @main
 struct ReaderModelSmoke {
     // Original-prose variant fixtures contain no encoded text except spacing.
@@ -69,6 +70,72 @@ struct ReaderModelSmoke {
         second.close(); await worker.shutdown()
         print("Native shared search, scopes, result preview, navigation, stop and closure passed")
     }
+    @MainActor static func uriAnchorWebView() async throws {
+        let application = NSApplication.shared
+        application.setActivationPolicy(.prohibited)
+        let config = WKWebViewConfiguration()
+        config.websiteDataStore = .nonPersistent()
+        config.defaultWebpagePreferences.allowsContentJavaScript = false
+        let view = WKWebView(frame: NSRect(x: 0, y: 0, width: 600, height: 180), configuration: config)
+        let window = NSWindow(contentRect: view.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = view
+        let coordinator = PassageView.Coordinator()
+        var failures: [String] = []
+        coordinator.onScrollFailure = { failures.append($0) }
+        view.navigationDelegate = coordinator
+        let html = """
+            <div style="height:1100px">Original anchor fixture opening.</div>
+            <div id="café 文字&quot;\\'&lt;/script&gt;">Original Unicode destination.</div>
+            <div style="height:1100px">Original middle.</div>
+            <a name="named-target">Original named destination.</a>
+            <div style="height:1100px">Original fixture ending.</div>
+            <script>document.body.dataset.moduleRan = 'yes';</script>
+            """
+        coordinator.navigation = view.loadHTMLString(PassageView.documentHTML(html: html, css: ""), baseURL: nil)
+        func number(_ script: String) async throws -> Double {
+            try await withCheckedThrowingContinuation { continuation in
+                view.evaluateJavaScript(script, in: nil, in: .defaultClient) { result in
+                    switch result {
+                    case .success(let value): continuation.resume(returning: (value as? NSNumber)?.doubleValue ?? -1)
+                    case .failure(let error): continuation.resume(throwing: error)
+                    }
+                }
+            }
+        }
+        func until(_ script: String, _ message: String) async throws {
+            let deadline = Date().addingTimeInterval(15)
+            while true {
+                if (try? await number(script)) == 1 { return }
+                guard Date() < deadline else { fatalError(message + "; failures=" + failures.joined(separator: ",")) }
+                try await Task.sleep(nanoseconds: 10_000_000)
+            }
+        }
+        try await until("Number(document.readyState === 'complete' && document.body.scrollHeight > 3000)", "Original WebKit fixture loads")
+        guard try await number("Number(!document.body.dataset.moduleRan)") == 1 else { fatalError("Module scripts stay disabled during anchor presentation") }
+        coordinator.anchor = "café 文字\"\\'</script>"; coordinator.scrollToAnchor(view)
+        try await until("Number(window.scrollY > 1000 && window.scrollY < 1500)", "Unicode/quote/backslash anchor scrolls through isolated host code")
+        coordinator.anchor = "named-target"; coordinator.scrollToAnchor(view)
+        try await until("Number(window.scrollY > 2100)", "Legacy name anchor scrolls")
+        coordinator.anchor = ""; coordinator.scrollToAnchor(view)
+        try await until("Number(window.scrollY === 0)", "Explicit empty anchor scrolls to top")
+        coordinator.anchor = "named-target"; coordinator.scrollToAnchor(view)
+        try await until("Number(window.scrollY > 2100)", "Repeated target can scroll again after manual position changes")
+        coordinator.anchor = "obsolete-missing"; coordinator.scrollToAnchor(view)
+        coordinator.anchor = "named-target"; coordinator.anchorRevision &+= 1; coordinator.scrollToAnchor(view)
+        try await until("Number(window.scrollY > 2100)", "Latest anchor wins presentation")
+        try await Task.sleep(nanoseconds: 30_000_000)
+        guard failures.isEmpty else { fatalError("Valid/latest anchors do not publish obsolete scroll failures") }
+        coordinator.anchor = "missing-target"; coordinator.scrollToAnchor(view)
+        let deadline = Date().addingTimeInterval(10)
+        while failures.isEmpty {
+            guard Date() < deadline else { fatalError("Missing anchor reports a presentation failure") }
+            try await Task.sleep(nanoseconds: 1_000_000)
+        }
+        coordinator.anchor = nil; coordinator.scrollToAnchor(view)
+        window.contentView = nil; view.navigationDelegate = nil; window.close()
+        print("Offscreen native WebKit URI anchors: Unicode/quotes, named targets, top/repeat, missing target and disabled module scripts passed")
+    }
     @MainActor static func uriNavigation(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let targetTab = try await worker.createTab()
@@ -121,8 +188,22 @@ struct ReaderModelSmoke {
         guard first.dictionaryEntry?.key == "ALPHA", first.dictionaryHistory?.canBack == true else { fatalError("Dictionary URI clicks enable shared Back") }
         first.navigateDictionaryHistory(-1); try await idle(first)
         guard first.dictionaryEntry?.key == "ANCHOR-KEY!BEFORE", first.dictionaryHistory?.canForward == true else { fatalError("Dictionary URI visits use existing history navigation") }
+        first.followCommentaryLink("sword://T/John3:16#main"); try await idle(first)
+        guard first.renderedAnchor == "main", first.commentaryRenderedAnchor == nil else { fatalError("Bible URI anchor applies only to the shared target pane") }
+        first.followCommentaryLink("sword://N/John3:16#commentary"); try await idle(first)
+        let anchorRevision = first.commentaryAnchorRevision
+        guard first.renderedAnchor == nil, first.commentaryRenderedAnchor == "commentary" else { fatalError("Commentary URI anchor does not scroll the main Bible") }
+        first.followCommentaryLink("sword://N/John3:16#commentary"); try await idle(first)
+        guard first.commentaryAnchorRevision > anchorRevision else { fatalError("Repeated same-content URI anchor has a distinct presentation event") }
+        first.followCommentaryLink("sword://T/John3:16#"); try await idle(first)
+        guard first.renderedAnchor == "", first.commentaryRenderedAnchor == first.commentaryChapter?.selectedAnchor else { fatalError("Explicit empty URI anchor: main=\(String(reflecting: first.renderedAnchor)), commentary=\(String(reflecting: first.commentaryRenderedAnchor)), message=\(first.message)") }
+        first.reference = "John3:17"; first.read(); try await idle(first)
+        guard first.renderedAnchor == nil, first.commentaryRenderedAnchor == first.commentaryChapter?.selectedAnchor else { fatalError("Ordinary navigation does not inherit URI anchor") }
+        first.navigate(first.canBack ? -1 : 1); try await idle(first)
+        guard first.renderedAnchor == nil, first.commentaryRenderedAnchor == first.commentaryChapter?.selectedAnchor, second.renderedAnchor == nil,
+              second.html == secondHTML else { fatalError("History and sibling windows do not replay transient anchors") }
         first.close(); second.close(); await worker.shutdown()
-        print("Native normalized URI ranges and copied dictionary URI hover/click passed")
+        print("Native normalized URI ranges, dictionary hover/click and pane-specific transient anchors passed")
     }
     @MainActor static func searchAliases(root: String) async throws {
         let worker = try CoreWorker(root: root)
@@ -1727,6 +1808,9 @@ struct ReaderModelSmoke {
         print("Native main note/reference hover destinations and guarded preference checks passed")
     }
     @MainActor static func main() async throws {
+        if CommandLine.arguments.count == 2, CommandLine.arguments[1] == "--uri-anchor-webview" {
+            try await uriAnchorWebView(); return
+        }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--uri-navigation" {
             try await uriNavigation(root: CommandLine.arguments[2]); return
         }

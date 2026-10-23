@@ -1489,3 +1489,38 @@ consumes special_anchor exactly once in the first rendered pane. Native explicit
 target application, pane precedence and empty-anchor scrolling are next; current
 models do not apply the transported anchor yet. Same platform/sanitizer/corpus
 limits apply, with no new whole-group acceptance.
+
+### Shared transient pane anchors and native rendering (2026-10-22)
+
+After `65fa7e4`, shared explicit linked navigation returns an owned transient
+anchor plus actual target module. Bible targets select main; regular/personal
+commentary targets select commentary. Prepared before history publication; no
+anchor stored in session/history or replayed by ordinary refresh/history. C
+optional-anchor visits preserve null/empty/lifetime and bound every copied field;
+both old/new linked C variants reject oversized/unterminated values before
+observer/string allocation. Worker returns ready errors before FIFO admission.
+
+Mac/Linux models consume that target identity, preserve the other pane's ordinary
+selected-verse anchor and add repeat-event revisions. Empty means top. Hosts use
+isolated trusted scrolling with module scripts disabled, Unicode-preserving
+string encoding and ID/named-target lookup. Missing targets report failure; Mac
+ignores obsolete async failures. Linux host source is adapted, but GTK runtime
+and compilation remain OFF here; portable models/helper compile and pass.
+
+Core/admission/fixture recheck 4/4 (2.97s); portable selection 5/5 (7.04s), final
+helper/model recheck 2/2 (2.68s); ASan/UBSan 4/4 (7.51s); TSan 4/4 (9.80s).
+Final native model + offscreen real WebKit + fixture 3/3 (4.04s), WebKit itself
+0.44s. Real DOM checks cover UTF-8/quote/backslash/closing-script text, legacy
+named anchors, top/repeat, missing targets, disabled module scripts and obsolete
+completion suppression. No external content or module script executes. C11 and
+whitespace checks pass.
+
+Test corrections: reference-only history deduplication made Forward the valid
+direction after returning to the first reference; no history behavior changed.
+The Mac empty-anchor assertion initially expected no commentary anchor, but the
+regular commentary's ordinary chapter anchor correctly remained selected. The
+assertion now distinguishes transient URI overrides from default chapter anchors.
+A missing CSS argument in the new WebKit fixture was corrected before compilation
+and execution passed. No physical user click, full corpus, Fedora/MSVC or whole
+parity acceptance is implied. Next typed URI routes: devotional and book/prayer
+clicks, plus status/bookmark behavior.

@@ -188,5 +188,31 @@ Bible range URIs still return a sidebar snapshot after stripping the anchor and
 do not navigate. C xc_link_anchor returns NULL for absent and a borrowed empty
 string for explicit-empty; ownership follows the link handle. Swift copies that
 optional value before release. Older single URI APIs still reject fragments.
-This step transports targets only: native pane application/one-use scrolling
-remains a separate following slice, and resolution does not publish history.
+The initial transport step (`65fa7e4`) did not apply a view action. Shared explicit
+pane application now follows below; resolution itself still publishes no history.
+
+## Explicit pane anchor application
+
+Shared visit_linked_passage returns a transient PassageAnchor naming the actual
+Bible/commentary target module, prepared before the visit publishes history.
+The anchor appears only on that returned snapshot. Ordinary reads, refreshes and
+history navigation have no transient anchor; histories contain only normalized
+references. C adds an optional-anchor linked visit and borrowed passage getters,
+preserving NULL/empty semantics and copied lifetime. Both linked-visit C variants
+bound modules to 4096 bytes and reference/anchor to 32768 before argument copies
+or observer allocation; C++ rejects oversized/NUL fields before FIFO admission.
+
+Mac and Linux models consume the core target-pane identity, override only that
+pane's default selected-verse anchor, and retain the other pane's default. A local
+presentation revision permits repeated same-content/same-anchor clicks to scroll
+again. Explicit empty means top. Native hosts use isolated trusted code with
+module scripts disabled; ID and legacy named anchors work, literal UTF-8/quotes/
+backslashes remain data, and missing targets report a presentation failure. Mac
+discards obsolete async scroll failures after a newer anchor/navigation.
+
+An offscreen Mac WebKit fixture now exercises real DOM scrolling, including
+Unicode/quote/backslash/closing-script text, named targets, top/repeat, missing
+anchors, obsolete completions and disabled module scripts. This is rendering
+evidence, not a physical end-user URI click or full workflow acceptance. Linux
+model/helper checks run on Mac with GTK runtime OFF; changed GTK host code still
+requires a current Fedora build/runtime check. Windows presentation remains open.

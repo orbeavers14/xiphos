@@ -1211,7 +1211,8 @@ actor CoreWorker {
                                 html: String(cString: xc_passage_html(result)!),
                                 cleanupDiagnostics: CoreValues.cleanupDiagnostics(count: xc_passage_cleanup_count(result),
                                     kind: { xc_passage_cleanup_kind(result, $0) }, suffix: { xc_passage_cleanup_suffix(result, $0) }),
-                                lexical: CoreValues.lexicalLayout { xc_passage_lexical_layout(result, $0) }), commentary: commentary)
+                                lexical: CoreValues.lexicalLayout { xc_passage_lexical_layout(result, $0) }), commentary: commentary,
+            anchor: xc_passage_anchor(result).map { RenderedPassageAnchor(module: String(cString: xc_passage_anchor_module(result)!), text: String(cString: $0)) })
     }
     func studyPassage(tab: UInt64, module: String, commentary: String, reference: String, record: Bool = true) async throws -> RenderedStudyPassage {
         guard ![module, commentary, reference].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
@@ -1224,11 +1225,15 @@ actor CoreWorker {
         return try await passage(status, request)
     }
     func visitLinkedStudyPassage(tab: UInt64, bible: String, commentary: String, target: PassageTarget) async throws -> RenderedStudyPassage {
-        guard ![bible, commentary, target.module, target.reference].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        guard [bible, commentary, target.module].allSatisfy({ $0.utf8.count <= Int(XC_STUDY_LINK_MAX_CONTEXT_BYTES) && !$0.utf8.contains(0) }),
+              target.reference.utf8.count <= Int(XC_STUDY_LINK_MAX_URI_BYTES), !target.reference.utf8.contains(0),
+              target.anchor.map({ $0.utf8.count <= Int(XC_STUDY_LINK_MAX_URI_BYTES) && !$0.utf8.contains(0) }) != false else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?
         let handle = try worker()
         let status = bible.withCString { main in commentary.withCString { notes in target.module.withCString { module in target.reference.withCString { reference in
-            xc_worker_visit_linked_passage(handle, tab, main, notes, module, reference, &request)
+            CoreValues.withOptionalCString(target.anchor) { anchor in
+                xc_worker_visit_linked_passage_with_anchor(handle, tab, main, notes, module, reference, anchor, &request)
+            }
         } } } }
         return try await passage(status, request)
     }

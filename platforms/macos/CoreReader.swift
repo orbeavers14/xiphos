@@ -301,11 +301,13 @@ struct RenderedStudyNote: Sendable {
     let html: String
     let referenceList: String
 }
+struct RenderedPassageAnchor: Sendable { let module: String; let text: String }
 struct RenderedStudyPassage: Sendable {
     let module: String
     let commentaryModule: String
     let text: RenderedEntry
     let commentary: RenderedEntry?
+    let anchor: RenderedPassageAnchor?
 }
 struct RenderedCleanupDiagnostic: Sendable, Equatable {
     enum Kind: Int32, Sendable { case image = 0, fontFace = 1 }

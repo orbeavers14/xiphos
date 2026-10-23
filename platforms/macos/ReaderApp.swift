@@ -76,6 +76,9 @@ final class ReaderModel: ObservableObject {
     @Published var verseNumbers = true
     @Published var highlightSelected = true
     @Published var renderedAnchor: String?
+    @Published private(set) var commentaryRenderedAnchor: String?
+    @Published private(set) var renderedAnchorRevision: UInt64 = 0
+    @Published private(set) var commentaryAnchorRevision: UInt64 = 0
     @Published var choices: ReferenceChoices?
     @Published var canBack = false
     @Published var canForward = false
@@ -580,6 +583,9 @@ final class ReaderModel: ObservableObject {
         commentarySelection = pair?.commentaryModule ?? ""
         commentaryEntry = pair?.commentary
         self.commentaryChapter = commentaryChapter
+        commentaryRenderedAnchor = if let anchor = pair?.anchor, anchor.module == pair?.commentaryModule { anchor.text }
+            else { commentaryChapter?.selectedAnchor }
+        if let anchor = pair?.anchor, anchor.module == pair?.commentaryModule { commentaryAnchorRevision &+= 1 }
         showCommentaryChapter = commentaryMode
         commentaryHeadings = headings
         self.contentOptions = contentOptions
@@ -594,6 +600,9 @@ final class ReaderModel: ObservableObject {
             html = entry.html; renderedAnchor = nil; renderedReference = entry.reference
             lexicalPresentation = entry.lexical
             message = entry.html.isEmpty ? "This module has no text at this reference." : ""
+        }
+        if let anchor = pair?.anchor, anchor.module == module {
+            renderedAnchor = anchor.text; renderedAnchorRevision &+= 1
         }
         choices = selectors
         if updateInput { reference = entry.reference; selection = module }
@@ -733,7 +742,12 @@ final class ReaderModel: ObservableObject {
                     let pair = try await worker.visitLinkedStudyPassage(tab: tab, bible: displayedModule,
                         commentary: self.commentarySelection, target: target)
                     try await self.present(pair.text, module: pair.module, token: token, passage: pair)
-                } else { try await self.visitAndPresent(module: target.module, reference: target.reference, token: token) }
+                } else {
+                    try await self.visitAndPresent(module: target.module, reference: target.reference, token: token)
+                    if token == self.revision && !self.closed, let anchor = target.anchor {
+                        self.renderedAnchor = anchor; self.renderedAnchorRevision &+= 1
+                    }
+                }
             }
         }
     }
@@ -764,6 +778,7 @@ struct PassageView: NSViewRepresentable {
     let html: String
     var css: String = ""
     let anchor: String?
+    var anchorRevision: UInt64 = 0
     var onScrollFailure: (String) -> Void
     var onLink: (String) -> Void
     var onLinkHover: ((String) -> Void)? = nil
@@ -773,6 +788,7 @@ struct PassageView: NSViewRepresentable {
         var loadedCSS: String?
         var loadedInlineImages = false
         var anchor: String?
+        var anchorRevision: UInt64 = 0
         var navigation: WKNavigation?
         var onScrollFailure: ((String) -> Void)?
         var onLink: ((String) -> Void)?
@@ -788,9 +804,16 @@ struct PassageView: NSViewRepresentable {
                   let literal = String(data: data, encoding: .utf8) else { return }
             // Trusted host code runs in an isolated world. Module scripts stay
             // disabled and are never interpolated into this expression.
-            webView.evaluateJavaScript("document.getElementById(\(literal))?.scrollIntoView({block: 'start'});",
+            let script = anchor.isEmpty ? "window.scrollTo(0, 0); true;" : "(() => { const node = document.getElementById(\(literal)) || document.getElementsByName(\(literal))[0]; if (!node) return false; node.scrollIntoView({block: 'start'}); return true; })()"
+            let revision = anchorRevision, navigation = self.navigation
+            webView.evaluateJavaScript(script,
                 in: nil, in: .defaultClient) { [weak self] result in
-                    if case .failure = result { self?.onScrollFailure?("Unable to scroll to the selected verse.") }
+                    guard let self, self.anchor == anchor, self.anchorRevision == revision,
+                          self.navigation === navigation else { return }
+                    switch result {
+                    case .success(let value) where value as? Bool == true: break
+                    default: self.onScrollFailure?("Unable to scroll to the selected passage.")
+                    }
                 }
         }
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -840,8 +863,9 @@ struct PassageView: NSViewRepresentable {
         context.coordinator.onScrollFailure = onScrollFailure
         context.coordinator.onLink = onLink
         context.coordinator.onLinkHover = onLinkHover
-        let changedAnchor = context.coordinator.anchor != anchor
+        let changedAnchor = context.coordinator.anchor != anchor || context.coordinator.anchorRevision != anchorRevision
         context.coordinator.anchor = anchor
+        context.coordinator.anchorRevision = anchorRevision
         guard context.coordinator.loaded != html || context.coordinator.loadedCSS != css || context.coordinator.loadedInlineImages != allowsInlineImages else {
             if changedAnchor { context.coordinator.scrollToAnchor(view) }
             return
@@ -1186,7 +1210,7 @@ struct ReaderWindow: View {
                 if !model.renderedReference.isEmpty {
                     Text(model.renderedReference).font(.headline).padding(12)
                 }
-                PassageView(html: model.html, css: model.lexicalPresentation.css, anchor: model.renderedAnchor,
+                PassageView(html: model.html, css: model.lexicalPresentation.css, anchor: model.renderedAnchor, anchorRevision: model.renderedAnchorRevision,
                             onScrollFailure: { model.message = $0 }, onLink: { model.followLink($0) },
                             onLinkHover: { model.previewStudyLink($0) })
                 if !model.message.isEmpty {
@@ -1243,7 +1267,7 @@ struct ReaderWindow: View {
                             }
                             if let entry = model.commentaryEntry {
                                 Text(model.commentaryChapter?.title ?? entry.reference).font(.caption).padding(8)
-                                PassageView(html: model.commentaryChapter?.html ?? (entry.headingHTML + entry.html), css: (model.commentaryChapter?.lexical ?? entry.lexical).css, anchor: model.commentaryChapter?.selectedAnchor, onScrollFailure: { model.message = $0 },
+                                PassageView(html: model.commentaryChapter?.html ?? (entry.headingHTML + entry.html), css: (model.commentaryChapter?.lexical ?? entry.lexical).css, anchor: model.commentaryRenderedAnchor, anchorRevision: model.commentaryAnchorRevision, onScrollFailure: { model.message = $0 },
                                     onLink: { model.followCommentaryLink($0) },
                                     onLinkHover: { model.previewStudyLink($0) })
                                 if model.commentaryChapter?.verses.allSatisfy({ $0.html.isEmpty && $0.headingHTML.isEmpty }) ?? (entry.html.isEmpty && entry.headingHTML.isEmpty) {

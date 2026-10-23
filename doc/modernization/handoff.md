@@ -73,8 +73,13 @@ registered, 107.04s, GTK runtime OFF). Dictionary hover then passes core 3/3,
 Mac model 2/2, portable 3/3, ASan/UBSan and TSan 3/3 each, with native-disabled
 C++11 complete callback/anchor checks. These are model checks, not physical GUI
 URI interaction. SDK instrumentation, corpus/current Fedora/MSVC and whole
-parity gates remain open. Next bounded URI work: typed keyed clicks, native
-anchor consumption and status/bookmark behavior against the complete oracle.
+parity gates remain open. Ordinary dictionary URI clicks now use shared requested-key normalization and
+history (`498f08e`); owned verse anchors (`65fa7e4`) apply through transient
+shared target-pane snapshots and Mac/Linux models. Real offscreen Mac WebKit
+checks literal/named/top/repeat scrolling, missing/obsolete results and disabled
+module scripts. See platform evidence for exact scoped checks and Linux runtime
+limits. Next bounded URI work: devotional and book/prayer clicks, plus status/
+bookmark behavior against complete retained callbacks.
 Parallel/BibleSync and corpus/platform gates remain open.
 
 Current search checkpoint: shared attribute execution `572f539` / Swift `a83d3c4`,

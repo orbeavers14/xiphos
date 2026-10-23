@@ -31,6 +31,12 @@ int main(int argc,char **argv){try {
  const std::string fullContext(XC_STUDY_LINK_MAX_CONTEXT_BYTES,'c');
  {StudyWorker worker(root);const auto tab=worker.create_tab().get();
   const auto generation=worker.search_module(tab,{"AFirst","Original"}).get().generation.id;
+  rejected(worker.visit_linked_passage(tab,hugeContext,"",{"AFirst","John1:1"}));
+  rejected(worker.visit_linked_passage(tab,"AFirst",hugeContext,{"AFirst","John1:1"}));
+  rejected(worker.visit_linked_passage(tab,"AFirst","",{hugeContext,"John1:1"}));
+  rejected(worker.visit_linked_passage(tab,"AFirst","",{"AFirst",hugeUri}));
+  rejected(worker.visit_linked_passage(tab,"AFirst","",{"AFirst","John1:1",hugeUri}));
+  rejected(worker.visit_linked_passage(tab,"AFirst","",{"AFirst","John1:1",std::string("a\0b",3)}));
   rejected(worker.resolve_link("AFirst",hugeUri));rejected(worker.resolve_study_link(tab,"AFirst",hugeUri));
   rejected(worker.study_note_link(tab,"AFirst",hugeUri));rejected(worker.resolve_study_link_at(tab,"AFirst","John1:1",hugeUri));
   rejected(worker.follow_study_link_at(tab,"AFirst",hugeContext,"sword://AFirst/John1:1"));
@@ -56,6 +62,13 @@ int main(int argc,char **argv){try {
   {[&](const char *m,const char *c,const char *u,xc_request **o){return xc_worker_follow_pane_link_at(worker,tab,"AFirst",m,c,u,o);},true}
  };
  const std::vector<char> unterminated(XC_STUDY_LINK_MAX_URI_BYTES+1,'x');
+ for(bool anchored:{false,true})for(unsigned field=0;field<(anchored?5u:4u);++field){
+  const char *bible=field==0?hugeContext.c_str():"AFirst",*commentary=field==1?hugeContext.c_str():"",*target=field==2?hugeContext.c_str():"AFirst",*reference=field==3?unterminated.data():"John1:1",*anchor=field==4?unterminated.data():"";
+  request=reinterpret_cast<xc_request *>(1);largest=0;watching=true;
+  const auto status=anchored?xc_worker_visit_linked_passage_with_anchor(worker,tab,bible,commentary,target,reference,anchor,&request):xc_worker_visit_linked_passage(worker,tab,bible,commentary,target,reference,&request);
+  watching=false;check(status==XC_INVALID_ARGUMENT&&!request&&largest==0,"Both linked-visit C variants reject oversized/unterminated fields before copies/observer allocation");
+ }
+
  for(const auto &route:routes)for(unsigned which=0;which<4;++which){
   if(which==2&&!route.context)continue;
   request=reinterpret_cast<xc_request *>(1);largest=0;watching=true;

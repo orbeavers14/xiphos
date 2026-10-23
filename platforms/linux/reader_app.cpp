@@ -49,6 +49,7 @@ struct App {
   std::unique_ptr<xiphos::linux_preview::StudyUI> study_ui;
   std::vector<std::string> bibles, commentaries{""};
   std::string root, rendered, submitted_draft, bible_anchor, commentary_anchor;
+  bool bible_uri_anchor = false, commentary_uri_anchor = false;
   unsigned scroll_jobs = 0, scroll_successes = 0, bible_scroll_successes = 0;
   guint timer = 0;
   bool automatic_start = true, startup_read_started = false, startup_smoke = false;
@@ -145,12 +146,12 @@ GtkWidget *pane(App *app, const char *title, WebKitWebView **view) {
     auto *app = static_cast<App *>(data); if (event != WEBKIT_LOAD_FINISHED || app->closing) return;
     ++app->loaded;
     const auto &anchor = view == app->bible_view ? app->bible_anchor : view == app->commentary_view ? app->commentary_anchor : std::string();
-    if (anchor.empty()) return;
+    const bool explicit_anchor = view == app->bible_view ? app->bible_uri_anchor : view == app->commentary_view && app->commentary_uri_anchor;
+    if (anchor.empty() && !explicit_anchor) return;
     // Only a copied core-owned anchor enters trusted host code in an isolated
     // world. Module scripts stay disabled. Escaping prevents literal injection.
-    char *escaped = g_strescape(anchor.c_str(), nullptr);
-    const std::string script = "(() => { const node = document.getElementById(\"" + std::string(escaped) + "\"); if (!node) return false; node.scrollIntoView({block:'start'}); return true; })()";
-    g_free(escaped); ++app->scroll_jobs;
+    const std::string script = xiphos::linux_preview::anchor_scroll_script(anchor);
+    ++app->scroll_jobs;
     g_application_hold(G_APPLICATION(app->application));
     webkit_web_view_evaluate_javascript(view, script.c_str(), -1, "xiphos-host", nullptr, nullptr,
       +[](GObject *source, GAsyncResult *result, gpointer data) {
@@ -201,11 +202,15 @@ gboolean tick(gpointer data) {
   const auto commentary_html = app->model->show_commentary_chapter() ? app->model->commentary_chapter().html : passage.commentary_html;
   const auto &bible_css = app->model->show_chapter() ? app->model->bible_chapter().lexical.css : passage.bible_lexical.css;
   const auto &commentary_css = app->model->show_commentary_chapter() ? app->model->commentary_chapter().lexical.css : passage.commentary_lexical.css;
-  const auto identity = bible_css + "\n" + commentary_css + "\n" + passage.bible + "\n" + passage.commentary + "\n" + passage.reference + "\n" + bible_html + commentary_html;
+  const auto identity = bible_css + "\n" + commentary_css + "\n" + passage.bible + "\n" + passage.commentary + "\n" + passage.reference + "\n" + bible_html + commentary_html + "\n" + passage.anchor_module + "\n" + (passage.anchor ? *passage.anchor : "") + "\n" + std::to_string(passage.anchor_revision);
   if (!app->model->busy() && !passage.bible.empty() && identity != app->rendered) {
     app->rendered = identity;
     app->bible_anchor = app->model->show_chapter() ? app->model->bible_chapter().anchor : "";
     app->commentary_anchor = app->model->show_commentary_chapter() ? app->model->commentary_chapter().anchor : "";
+    app->bible_uri_anchor = passage.anchor.has_value() && passage.anchor_module == passage.bible;
+    app->commentary_uri_anchor = passage.anchor.has_value() && passage.anchor_module == passage.commentary;
+    if (app->bible_uri_anchor) app->bible_anchor = *passage.anchor;
+    if (app->commentary_uri_anchor) app->commentary_anchor = *passage.anchor;
     select(app->bible, app->bibles, passage.bible); select(app->commentary, app->commentaries, passage.commentary);
     if (app->submitted_draft == gtk_editable_get_text(GTK_EDITABLE(app->reference)))
       gtk_editable_set_text(GTK_EDITABLE(app->reference), passage.reference.c_str());

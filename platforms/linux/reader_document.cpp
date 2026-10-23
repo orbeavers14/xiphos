@@ -1,6 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "reader_document.hpp"
 namespace xiphos::linux_preview {
+std::string anchor_scroll_script(const std::string &anchor) {
+  if (anchor.empty()) return "window.scrollTo(0, 0); true;";
+  static const char hex[] = "0123456789abcdef";
+  std::string literal = "\"";
+  for (unsigned char byte : anchor) {
+    if (byte == '"' || byte == '\\') { literal += '\\'; literal += static_cast<char>(byte); }
+    else if (byte < 32) { literal += "\\u00"; literal += hex[byte >> 4]; literal += hex[byte & 15]; }
+    else literal += static_cast<char>(byte);
+  }
+  literal += '"';
+  return "(() => { const node = document.getElementById(" + literal + ") || document.getElementsByName(" + literal + ")[0]; if (!node) return false; node.scrollIntoView({block:'start'}); return true; })()";
+}
 std::string document(const std::string &body, const std::string &css, bool inline_images) {
   // No module scripts, external resources, frames or network requests. Native
   // policy routes user passage clicks through C++; no browser navigation engine.

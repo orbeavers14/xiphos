@@ -636,6 +636,12 @@ std::future<StudyPassage> StudyWorker::visit_passage(StudyTab tab, std::string m
 }
 std::future<StudyPassage> StudyWorker::visit_linked_passage(StudyTab tab, std::string bible, std::string commentary,
                                                           PassageLink target) {
+  if (!detail::study_link_text(bible, maximum_study_link_context_bytes) ||
+      !detail::study_link_text(commentary, maximum_study_link_context_bytes) ||
+      !detail::study_link_text(target.module, maximum_study_link_context_bytes) ||
+      !detail::study_link_text(target.reference, maximum_study_link_uri_bytes) ||
+      (target.anchor && !detail::study_link_text(*target.anchor, maximum_study_link_uri_bytes)))
+    return rejected_study_link<StudyPassage>();
   return impl_->submit([tab, bible = std::move(bible), commentary = std::move(commentary), target = std::move(target)](Impl::State &s) {
     return s.tab(tab).visit_linked_passage(bible, commentary, target);
   });

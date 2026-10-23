@@ -19,10 +19,12 @@ struct BookSelectionState {
 // The reader must outlive this C++ session; C ABI sessions retain their reader.
 // Owned synchronized pane snapshot. Commentary uses the normalized Bible
 // reference; each module still resolves that reference in its own versification.
+struct PassageAnchor { std::string module, text; };
 struct StudyPassage {
   std::string module, commentary_module;
   Entry text;
   std::optional<Entry> commentary;
+  std::optional<PassageAnchor> anchor; // Transient target pane; never stored in history.
 };
 class StudySession {
 public:

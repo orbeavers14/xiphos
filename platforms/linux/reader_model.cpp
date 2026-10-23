@@ -391,6 +391,10 @@ void ReaderModel::tick() {
     std::unique_ptr<xc_passage, decltype(&xc_passage_release)> result(xc_request_take_passage(completed.get()), xc_passage_release);
     if (!result) { error_ = "Missing passage snapshot."; return; }
     Passage value{copy(xc_passage_module(result.get())), copy(xc_passage_commentary_module(result.get())), copy(xc_passage_reference(result.get())), copy(xc_passage_html(result.get())), ""};
+    if (const auto *anchor = xc_passage_anchor(result.get())) {
+      value.anchor = anchor; value.anchor_module = copy(xc_passage_anchor_module(result.get()));
+      value.anchor_revision = ++anchor_revision_;
+    }
     const auto main_layout = copy_layout([&](auto *out) { return xc_passage_lexical_layout(result.get(), out); });
     if (!main_layout) { error_ = "Missing layout snapshot."; break; }
     value.bible_lexical = *main_layout;
@@ -499,7 +503,7 @@ void ReaderModel::tick() {
     const auto module = copy(xc_link_module(link.get())), reference = copy(xc_link_reference(link.get()));
     const auto *main = this->module(passage_.bible);
     if (main && main->type != "Biblical Texts") { visit(module, "", reference); break; }
-    auto submitted = xc_worker_visit_linked_passage(worker_, tab_, passage_.bible.c_str(), passage_.commentary.c_str(), module.c_str(), reference.c_str(), &next);
+    auto submitted = xc_worker_visit_linked_passage_with_anchor(worker_, tab_, passage_.bible.c_str(), passage_.commentary.c_str(), module.c_str(), reference.c_str(), xc_link_anchor(link.get()), &next);
     accept(submitted, next, Operation::passage); break;
   }
   }
