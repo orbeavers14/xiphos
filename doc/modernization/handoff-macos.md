@@ -1377,3 +1377,35 @@ Next: native read-only cloned navigation targets consuming this operation, then
 contextual unknown/regular/personal-commentary range URI dispatch. Preserve the
 older single-target API's decoded-reference contract and exact fallback module
 rules. Dictionary/book targets remain separate typed paths.
+
+
+### Cloned canonical URI navigation targets (2026-10-22, active)
+
+After shared normalization `8fcfa4c`, add Reader.navigation_target for exact
+installed Bible/commentary IDs. It clones the live VerseKey, applies the retained
+type-dependent normalization and returns copied full canonical text, rejecting
+invalid SDK output. No module position/flags, read rendering, history or frontend
+state is published. Existing Reader.resolve_link and older two-kind URI parser
+stay single-only and keep their decoded-reference contract. Contextual unknown
+range URIs use exact main fallback; regular/personal-commentary range aliases use
+their actual target module. Bible ranges still render bounded sidebar snapshots;
+dictionary/book keyed routes remain separate. Existing C link handles transport
+the target and hosts apply it through visit_linked_passage. No frontend normalizer.
+
+Core normal5/5 (4.65s) including complete URI and normalization oracles; native
+target test compares72 frozen SDK normalization/classification cases, cloned key
+isolation, canonical outputs, exact fallback, explicit host application, state
+isolation, C take-once/copied shutdown results, closed tabs and FIFO drains.
+ASan/UBSan10/10 (14.48s), TSan10/10 (17.04s), portable/core/model11/11 (8.62s)
+pass. Model seed changed to a populated reference; the Mac history assertion
+initially expected Back after returning to the startup reference. The retained
+reference-only deduplication correctly moves to the existing first entry (Forward
+available, Back unavailable); corrected the test rather than changing history.
+The initial suspicion about an empty personal-commentary fixture was not the
+cause of the history result. Also derived relative-key expectations from actual
+SDK behavior instead of assuming a bare number always means verse24.
+
+Final Mac/core selection passed 6/6 (5.89s); portable model recheck passed 2/2
+(1.94s). Same environment/SDK/sanitizer limits as above;
+no GUI URI interaction, broad corpus/locales/current Fedora/MSVC or whole parity
+acceptance. Next typed URI family remains dictionary/keyed hover/click plus anchors.

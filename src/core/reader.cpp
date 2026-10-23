@@ -7,6 +7,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/reader.hpp"
 #include "xiphos/core/study_link_admission.hpp"
+#include "xiphos/core/navigation_key.hpp"
 #include "book_tree_source.hpp"
 #include "book_resource_source.hpp"
 #include "verse_image_source.hpp"
@@ -300,6 +301,24 @@ PassageLink Reader::resolve_link(const std::string &current_module, const std::s
   }
   impl_->verse_module(target.module, target.reference);
   return target;
+}
+PassageLink Reader::navigation_target(const std::string &id, const std::string &expression) {
+  if (expression.empty() || !detail::study_link_arguments(id, {}, expression))
+    throw std::invalid_argument("Invalid navigation reference");
+  detail::validate_search_module_name(id);
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto &module = impl_->verse_module(id, expression);
+  const std::string type = module.getType();
+  if (type != "Biblical Texts" && type != "Commentaries")
+    throw std::invalid_argument("Navigation requires a Bible or commentary");
+  sword::VerseKey current(*static_cast<sword::VerseKey *>(module.getKey()));
+  // Use the full canonical text for the typed target, rather than the retained
+  // English-only short display label. Preserve its normalization/key rules.
+  auto reference = navigation_key_text(current, expression.c_str(),
+      type == "Biblical Texts" || regular_commentary(module.getType(), module.getConfigEntry("ModDrv")), nullptr);
+  if (current.getError() || reference.empty() || !detail::study_link_text(reference, maximum_study_link_uri_bytes))
+    throw std::invalid_argument("SWORD could not resolve navigation reference");
+  return {id, std::move(reference)};
 }
 ReferenceList Reader::read_reference_list(const std::string &id, const std::string &expression,
                                          const std::string &context) {

@@ -65,7 +65,7 @@ int main(int argc,char **argv){try{
   const auto defaultList=std::get<ReferenceList>(worker.follow_pane_link_at(tab,"AFirst","BSecond","John1:2","bible:///John1:1%3B1").get());
   check(defaultList.module=="AFirst"&&defaultList.entries.size()==2,"Module-less range URI uses committed main module");
   const auto unicodeList=std::get<ReferenceList>(worker.resolve_study_link_at(tab,"AFirst","John1:1","bible://文字+caf%C3%A9/John1:1%3B1").get());check(unicodeList.module=="Unicode","Unicode range alias resolution");
-  rejects<std::out_of_range>([&]{(void)worker.resolve_study_link_at(tab,"AFirst","John1:1","sword://Missing/John1:1-2").get();});
+  const auto unknownRange=std::get<PassageLink>(worker.resolve_study_link_at(tab,"AFirst","John1:1","sword://Missing/John1:1-2").get());check(unknownRange.module=="AFirst"&&unknownRange.reference=="John 1:1","Unknown range URI returns normalized main navigation target rather than sidebar");
   rejects<std::invalid_argument>([&]{(void)worker.resolve_study_link(tab,"AFirst","sword://Shared/John1:1-2").get();});
   rejects<std::invalid_argument>([&]{(void)worker.resolve_study_link_at(tab,"AFirst","John1:1",std::string("sword://Shared/")+std::string(32768,'1')).get();});
   const auto cappedUri=std::get<ReferenceList>(worker.resolve_study_link_at(tab,"AFirst","John1:1","sword://Shared/Gen1:1-Gen50:26%3BExod1:1-Exod40:38").get());
@@ -84,7 +84,8 @@ int main(int argc,char **argv){try{
  {std::ofstream config(dictRoot/"mods.d/notes.conf");config<<"[Notes]\nDataPath=./commentary/\nModDrv=RawCom\nSourceType=Plain\nEncoding=UTF-8\nLang=en\nDescription=Original commentary type fixture\nAbbreviation=N\n";}
  {Reader dictionary(dictRoot.u8string());check(dictionary.resolve_module_name("Lex").module=="Dictionary","Non-verse alias registers before passage-family rejection");rejects<std::invalid_argument>([&]{dictionary.resolve_link("Dictionary","sword://Lex/John1:1");});}
  {StudyWorker typed(dictRoot.u8string());const auto tab=typed.create_tab().get();
-  for(const auto *module:{"Lex","N"})rejects<std::invalid_argument>([&]{(void)typed.resolve_study_link_at(tab,"Notes","John1:1",std::string("sword://")+module+"/John1:1-2").get();});
+  rejects<std::invalid_argument>([&]{(void)typed.resolve_study_link_at(tab,"Notes","John1:1","sword://Lex/John1:1-2").get();});
+  const auto commentaryRange=std::get<PassageLink>(typed.resolve_study_link_at(tab,"Notes","John1:1","sword://N/John1:1-2").get());check(commentaryRange.module=="Notes"&&commentaryRange.reference=="John 1:1","Known commentary range is a normalized navigation target rather than a Bible sidebar");
   const auto command=std::get<ReferenceList>(typed.resolve_study_link_at(tab,"Notes","John1:1","passagestudy.jsp?action=showRef&type=scripRef&module=Notes&value=John1:1-2").get());check(command.module=="Notes"&&command.entries.size()==2,"Command commentary lists remain separate from Bible-only URI range routing");
  }
  xc_reader *reader=nullptr;xc_link *link=nullptr;

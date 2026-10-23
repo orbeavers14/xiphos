@@ -67,13 +67,16 @@ struct StudyWorker::Impl {
         const bool is_passage_uri = uri.compare(0, 8, "sword://") == 0 || uri.compare(0, 8, "bible://") == 0;
         if (is_passage_uri) {
           const auto resolved = reader.resolve_module_name(list->module);
-          if (!resolved.module) throw std::out_of_range("Range URI module is not installed");
+          if (!resolved.module) {
+            const auto &main_module = navigation_module.empty() ? current_module : navigation_module;
+            return reader.navigation_target(main_module, list->expression);
+          }
           const bool sidebar = passage_uri_reference_list(resolved.module->c_str(), list->expression.c_str(),
               [&](const char *id) {
                 return std::any_of(reader.modules().begin(), reader.modules().end(),
                     [&](const Module &module) { return module.id == id && module.type == "Biblical Texts"; });
               });
-          if (!sidebar) throw std::invalid_argument("Range URI preview requires a Bible module");
+          if (!sidebar) return reader.navigation_target(*resolved.module, list->expression);
           return session.read_reference_list(*resolved.module, list->expression, current_reference);
         }
         ReferenceList result;

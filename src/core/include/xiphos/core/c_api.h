@@ -719,7 +719,9 @@ xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_req
 /* Contextual showRef dispatch returns a reference list. Contextual sword/bible
  * list/range URIs (at most 32768 bytes) return a bounded reference list for an
  * installed Bible target, after alias resolution; omitted modules use main
- * navigation context. Unknown or non-Bible range targets remain errors.
+ * navigation context. Unknown offered modules use the exact main fallback and
+ * commentary range targets return a normalized link for explicit host navigation.
+ * Dictionary/book range targets remain outside this verse navigation route.
  * Single passage URIs and notes
  * return their existing kinds. Strong's/morphology return an owned lexical
  * preview after explicit tab lexicon configuration. Source context/URI must

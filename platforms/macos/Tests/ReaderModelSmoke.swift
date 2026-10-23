@@ -69,6 +69,33 @@ struct ReaderModelSmoke {
         second.close(); await worker.shutdown()
         print("Native shared search, scopes, result preview, navigation, stop and closure passed")
     }
+    @MainActor static func uriNavigation(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let first = ReaderModel(worker: worker, startupError: nil), second = ReaderModel(worker: worker, startupError: nil)
+        try await idle(first); try await idle(second)
+        first.selection = "Text"; first.chooseCommentary("Personal"); try await idle(first)
+        first.reference = "John3:17"; first.read(); try await idle(first)
+        guard first.renderedReference == "John 3:17", first.commentaryEntry?.html.contains("Original Personal") == true else { fatalError("URI navigation fixture seed must render before checking history") }
+        let secondHTML = second.html, secondReference = second.renderedReference
+        first.followCommentaryLink("sword://N/John3:16-18"); try await idle(first)
+        guard first.selection == "Text", first.commentarySelection == "Notes", first.renderedReference == "John 3:16",
+              first.commentaryEntry?.html.contains("Original Notes") == true, first.html.contains("Original Text"),
+              first.canForward else { fatalError("Commentary URI range: module=\(first.selection ?? "nil"), commentary=\(first.commentarySelection), ref=\(first.renderedReference), back=\(first.canBack), message=\(first.message), body=\(fixtureWords(first.commentaryEntry?.html ?? "")), main=\(fixtureWords(first.html))") }
+        first.followCommentaryLink("sword://Missing/Genesis1:1-2"); try await idle(first)
+        guard first.selection == "Text", first.renderedReference == "Genesis 1:1", first.html.contains("Original Text"),
+              first.commentarySelection == "Notes" else { fatalError("Unknown range URI uses main fallback rather than source commentary") }
+        first.followCommentaryLink("bible://P/John3:16-18"); try await idle(first)
+        guard first.selection == "Text", first.commentarySelection == "Personal", first.renderedReference == "John 3:16",
+              first.commentaryEntry?.html.contains("Original Personal") == true else { fatalError("Personal commentary URI normalizes on the shared owner") }
+        let html = first.html, reference = first.renderedReference, back = first.canBack
+        first.reference = "John4:2"
+        first.followCommentaryLink("sword://T/John3:16-18"); try await idle(first)
+        guard first.referencePreview?.module == "Text", first.referencePreview?.entries.count == 3,
+              first.html == html, first.renderedReference == reference, first.reference == "John4:2", first.canBack == back,
+              second.html == secondHTML, second.renderedReference == secondReference else { fatalError("Bible range preview preserves main/draft/history/window state") }
+        first.close(); second.close(); await worker.shutdown()
+        print("Native normalized URI range/commentary/main fallback and sidebar distinction passed")
+    }
     @MainActor static func searchAliases(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let first = ReaderModel(worker: worker, startupError: nil), second = ReaderModel(worker: worker, startupError: nil)
@@ -1672,6 +1699,9 @@ struct ReaderModelSmoke {
         print("Native main note/reference hover destinations and guarded preference checks passed")
     }
     @MainActor static func main() async throws {
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--uri-navigation" {
+            try await uriNavigation(root: CommandLine.arguments[2]); return
+        }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--search-aliases" {
             try await searchAliases(root: CommandLine.arguments[2]); return
         }

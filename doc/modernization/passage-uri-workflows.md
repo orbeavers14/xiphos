@@ -56,8 +56,13 @@ Bible-only sidebar decision. Literal URI tokens and decoded expressions stage
 before owner alias/type resolution. Installed Bible targets return bounded owned
 reference snapshots, preserving supplied source reference, ordered duplicates,
 per-tab rendering options, actual source identity and limited disclosure. Missing
-URI modules use main navigation context. Unknown/non-Bible range targets remain
-errors; retained fallback/navigation for those cases is still a separate gap.
+URI modules use main navigation context. Unknown range modules now return a
+canonical target in the exact installed main module; known regular/personal
+commentary ranges return a canonical target in their actual module. Those cases
+use a cloned live VerseKey and shared retained normalization, with full canonical
+reference text rather than its English-only short display label. The host applies
+the target through existing shared navigation/history. Bible ranges still return
+sidebar previews. Dictionary/book range routes remain separate typed work.
 Contextual URI input is capped at 32768 bytes; rendered and link-only native
 previews cap the ordered prefix at 2000 total entries with visible truncation
 disclosure. Older two-kind/Reader single-target APIs keep strict single references.
@@ -102,5 +107,8 @@ Navigation normalization now shares retained get_valid_key's key mutation and
 label operation in C++11 CoreRender. The wrapper's fallback/malloc ownership and
 locale/type conditions remain intact. A complete frozen/current adapter matrix
 compares13,446 real SDK key traces across RawText/RawCom/RawFiles and KJV/KJVA.
-This is the normalization prerequisite for remaining range navigation; native
-cloned target consumption and full navbar/XML/IPC acceptance remain separate.
+Native cloned target consumption now compares72 cases against the frozen full
+get_valid_key and module classification using original Text/alternate-canon/
+regular/personal fixtures. Cloned resolution preserves subsequent relative key
+behavior and publishes no history/search change. Full navbar/XML/IPC and broad
+locale/corpus acceptance remain separate.

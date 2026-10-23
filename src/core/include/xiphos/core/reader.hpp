@@ -110,6 +110,11 @@ public:
   // Single-passage URI aliases resolve before unknown offered names fall back
   // to the exact installed current/main ID. No navigation or history mutation.
   PassageLink resolve_link(const std::string &current_module, const std::string &url);
+  // Exact installed Bible/commentary ID; clone the live key and apply retained
+  // navigation normalization, returning full canonical text. No aliases, reads,
+  // position/flag changes, history or frontend navigation. May normalize ranges
+  // to one target as the retained navigation controls do.
+  PassageLink navigation_target(const std::string &module, const std::string &expression);
   // Owned targets/guard metadata, capped at 2000 total references with limited
   // disclosure. Shared link-only HTML presents that flag. Does not render
   // verse bodies or change the module key/filter state.
