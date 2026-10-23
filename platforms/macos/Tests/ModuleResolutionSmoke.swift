@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 import Foundation
+import XiphosCore
 @main struct ModuleResolutionSmoke {
     static func main() async throws {
         guard CommandLine.arguments.count == 2 else { fatalError("Generated alias fixture required") }
@@ -38,6 +39,26 @@ import Foundation
         guard case .references(let rangePreview) = range, rangePreview.module == "BSecond", rangePreview.context == "John 1:2", rangePreview.entries.count == 3,
               rangePreview.entries[0].html.contains("prose for BSecond"), rangePreview.entries[0].reference == rangePreview.entries[2].reference,
               try await worker.history(tab).count == 0 else { fatalError("Swift Bible range alias returns copied ordered actual-source preview") }
+        let hugeURI = String(repeating: "u", count: Int(XC_STUDY_LINK_MAX_URI_BYTES) + 1)
+        let hugeContext = String(repeating: "é", count: Int(XC_STUDY_LINK_MAX_CONTEXT_BYTES) / 2) + "x"
+        for operation in 0..<7 {
+            do {
+                switch operation {
+                case 0: _ = try await worker.resolveLink(hugeURI, currentModule: "AFirst")
+                case 1: _ = try await worker.resolveStudyLink(tab: tab, currentModule: hugeContext, uri: "sword://AFirst/John1:1")
+                case 2: _ = try await worker.studyNoteLink(tab: tab, currentModule: "AFirst", uri: hugeURI)
+                case 3: _ = try await worker.resolveStudyLinkAt(tab: tab, currentModule: "AFirst", currentReference: hugeContext, uri: "sword://AFirst/John1:1")
+                case 4: _ = try await worker.followStudyLinkAt(tab: tab, currentModule: "AFirst", currentReference: "John1:1", uri: "sword://AFirst/John1:1", navigationModule: hugeContext)
+                case 5: _ = try await worker.hoverStudyLinkAt(tab: tab, currentModule: "AFirst", currentReference: "John1:1", uri: hugeURI)
+                default: _ = try await worker.resolveStudyLink(tab: tab, currentModule: "AFirst", uri: "sword://AFirst/John1:1\0hidden")
+                }
+                fatalError("Oversized/NUL link admitted")
+            } catch let error as CoreError { guard error.status == XC_INVALID_ARGUMENT else { throw error } }
+        }
+        let unicodeCap = String(repeating: "é", count: Int(XC_STUDY_LINK_MAX_CONTEXT_BYTES) / 2)
+        var uriCap = "sword://AFirst/John1:1"
+        uriCap += String(repeating: " ", count: Int(XC_STUDY_LINK_MAX_URI_BYTES) - uriCap.utf8.count)
+        guard try await worker.resolveLink(uriCap, currentModule: unicodeCap).module == "AFirst", try await worker.history(tab).count == 0 else { fatalError("Swift exact byte bounds and state isolation") }
         try await worker.closeTab(tab)
         do { _ = try await worker.resolveModuleName(tab: tab, requested: "Shared"); fatalError("Closed tab accepted") }
         catch is CoreError { }

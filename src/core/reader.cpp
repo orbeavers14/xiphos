@@ -6,6 +6,7 @@
 #include "xiphos/core/note_rendering.hpp"
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/reader.hpp"
+#include "xiphos/core/study_link_admission.hpp"
 #include "book_tree_source.hpp"
 #include "book_resource_source.hpp"
 #include "verse_image_source.hpp"
@@ -282,6 +283,8 @@ ReferenceChoices Reader::reference_choices(const std::string &id, const std::str
   return xiphos::core::reference_choices(impl_->verse_module(id, reference), reference);
 }
 PassageLink Reader::resolve_link(const std::string &current_module, const std::string &url) {
+  if (!detail::study_link_arguments(current_module, {}, url))
+    throw std::invalid_argument("Study link exceeds byte bounds or contains NUL");
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto target = passage_link(url, current_module);
   detail::validate_search_module_name(target.module);

@@ -922,8 +922,16 @@ actor CoreWorker {
         let status = xc_worker_set_cross_reference_preview_list(try worker(), tab, enabled ? 1 : 0, &request)
         xc_request_release(try await wait(status, request))
     }
+    private func admitStudyLink(module: String, reference: String = "", uri: String, navigation: String? = nil) throws {
+        let contextLimit = Int(XC_STUDY_LINK_MAX_CONTEXT_BYTES)
+        guard module.utf8.count <= contextLimit, reference.utf8.count <= contextLimit,
+              uri.utf8.count <= Int(XC_STUDY_LINK_MAX_URI_BYTES),
+              navigation.map({ $0.utf8.count <= contextLimit }) ?? true,
+              ![module, reference, uri].contains(where: { $0.utf8.contains(0) }),
+              navigation?.utf8.contains(0) != true else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+    }
     func hoverStudyLinkAt(tab: UInt64, currentModule: String, currentReference: String, uri: String) async throws -> HoveredStudyLink {
-        guard ![currentModule, currentReference, uri].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        try admitStudyLink(module: currentModule, reference: currentReference, uri: uri)
         var request: OpaquePointer?
         let handle = try worker()
         let status = currentModule.withCString { module in
@@ -950,8 +958,7 @@ actor CoreWorker {
         try await contextualStudyLinkAt(tab: tab, currentModule: currentModule, currentReference: currentReference, uri: uri, record: true, navigationModule: navigationModule)
     }
     private func contextualStudyLinkAt(tab: UInt64, currentModule: String, currentReference: String, uri: String, record: Bool, navigationModule: String? = nil) async throws -> ContextualStudyLink {
-        guard ![currentModule, currentReference, uri].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
-        guard navigationModule?.utf8.contains(0) != true else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        try admitStudyLink(module: currentModule, reference: currentReference, uri: uri, navigation: navigationModule)
         var request: OpaquePointer?
         let handle = try worker()
         let status = currentModule.withCString { id in
@@ -991,6 +998,7 @@ actor CoreWorker {
             reference: String(cString: xc_link_reference(result)!)))
     }
     func resolveStudyLink(tab: UInt64, currentModule: String, uri: String) async throws -> ResolvedStudyLink {
+        try admitStudyLink(module: currentModule, uri: uri)
         var request: OpaquePointer?
         let handle = try worker()
         let status = currentModule.withCString { id in
@@ -1008,6 +1016,7 @@ actor CoreWorker {
             reference: String(cString: xc_link_reference(result)!)))
     }
     func studyNoteLink(tab: UInt64, currentModule: String, uri: String) async throws -> RenderedStudyNote {
+        try admitStudyLink(module: currentModule, uri: uri)
         var request: OpaquePointer?
         let handle = try worker()
         let status = currentModule.withCString { id in
@@ -1273,7 +1282,7 @@ actor CoreWorker {
         return CoreValues.choices(result)
     }
     func resolveLink(_ uri: String, currentModule: String) async throws -> PassageTarget {
-        guard !uri.utf8.contains(0), !currentModule.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        try admitStudyLink(module: currentModule, uri: uri)
         var request: OpaquePointer?
         let handle = try worker()
         let status = currentModule.withCString { module in

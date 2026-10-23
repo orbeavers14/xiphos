@@ -43,6 +43,11 @@ typedef struct xc_reference_list xc_reference_list;
 typedef struct xc_session xc_session;
 typedef struct xc_chapter xc_chapter;
 typedef struct xc_link xc_link;
+/* Study-link admission bounds are UTF-8 byte counts, excluding the terminator.
+ * URI limits cover passage and command links; context covers each module and
+ * source reference. Oversized C submissions return INVALID_ARGUMENT with null
+ * output before copying/queueing. Existing null/empty requirements still apply. */
+enum { XC_STUDY_LINK_MAX_URI_BYTES = 32768, XC_STUDY_LINK_MAX_CONTEXT_BYTES = 4096 };
 typedef struct xc_choices xc_choices;
 typedef struct xc_worker xc_worker;
 typedef struct xc_request xc_request;

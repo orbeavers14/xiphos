@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/link.hpp"
+#include "xiphos/core/study_link_admission.hpp"
 #include "xiphos/core/book_document.hpp"
 #include <stdexcept>
 #include <map>
@@ -30,7 +31,7 @@ std::string decode(const std::string &url) {
 }
 namespace {
 PassageLink passage_target(const std::string &url, const std::string &current_module, bool single) {
-  if (!single && url.size() > 32768) throw std::invalid_argument("Contextual passage URI exceeds byte limit");
+  if (!single && url.size() > maximum_study_link_uri_bytes) throw std::invalid_argument("Contextual passage URI exceeds byte limit");
   // Require the whole URI, unlike the legacy handler's substring dispatch.
   // External content must not accidentally become an internal study command.
   const auto decoded = decode(url);

@@ -1320,3 +1320,35 @@ evidence earlier in this continuation remains separate from URI/model checks.
 No hosted build, reset credit or parity/retirement score change. Stopping near
 the current usage window limit with checked/published work and explicit next-step
 pre-copy admission audit above.
+
+
+### Study-link admission continuation (2026-10-22)
+
+Sequential master after fetched `f8ba862`; tree had only unrelated .DS_Store.
+The owner asked to work through the usage window, which refreshed to3% used.
+Implement public C byte constants with core static assertions, bounded C scanning
+before request/string allocation, owner-independent ready exceptional C++ futures
+before FIFO admission, synchronous Reader bounds, and Swift guards before C-string
+conversion. Seven existing main study-link worker routes share32768 URI/4096 per
+module/source-reference bounds; nullable/empty rules and valid-request ownership
+stay as before. C callers get immediate INVALID_ARGUMENT/null output on oversized
+input. C++ callers already own the by-value arguments; no claim about allocations
+while constructing those arguments. No frontend parsing or extra SDK worker.
+
+Normal focused7/7 (3.63s); combined core/Swift3/3 (2.68s); ASan/UBSan7/7
+(9.00s), TSan7/7 (10.93s), Mac-hosted portable7/7 (4.74s). Dedicated allocator
+interposition verifies no C++ observer/string allocation on submitting-thread C
+rejection; nonterminated max+1 buffers exercise bounded scans under sanitizers.
+Exact UTF-8 byte caps, each oversized field, seven routes, ready futures, live/
+closed tabs, state isolation, valid argument copying and shutdown result lifetime
+are covered. An initial expected reference length used a wrong hardcoded prefix
+length; fixed the test to derive the actual prefix size before passing checks.
+C11 header syntax and whitespace pass. Same Mac/SDK/instrumentation limits as
+prior checkpoint, ASan leaks OFF; no new GUI/corpus/Fedora/MSVC/full parity claim.
+
+Next source seam: unknown/non-Bible URI range navigation depends on retained
+BackEnd::get_valid_key, called by main_update_nav_controls. Characterize/extract
+its module-key mutation, conditional auto-normalization and exact en short-label
+choice before claiming those routes match legacy. Dictionary URI hover also
+needs a separate typed raw-key route rather than pretending it is a lexical
+command or a verse reference.

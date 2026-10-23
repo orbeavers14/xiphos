@@ -128,6 +128,9 @@ public:
   std::future<DictionaryEntry> navigate_dictionary(StudyTab tab, std::string module, std::string key, int direction);
   std::future<DictionaryEntry> read_dictionary(StudyTab tab, std::string module, std::string key);
   std::future<ReferenceList> read_reference_list(StudyTab tab, std::string module, std::string expression, std::string context);
+  // Study-link inputs use study_link_admission.hpp byte bounds; oversized/NUL
+  // caller-owned values produce ready exceptional futures before queueing.
+  // Valid copied requests keep FIFO/tab/lifetime behavior.
   // showRef previews use the supplied source reference and never visit history.
   // Requested modules use exact membership, falling back to the navigation/main
   // module (current_module for older single-context calls), never URI aliases.

@@ -6,6 +6,7 @@
 #include <type_traits>
 #include "xiphos/core/worker.hpp"
 #include "xiphos/core/session.hpp"
+#include "xiphos/core/study_link_admission.hpp"
 #include "search_control.hpp"
 struct xc_reader { std::shared_ptr<xiphos::core::Reader> value; explicit xc_reader(const char *p) : value(std::make_shared<xiphos::core::Reader>(p ? p : "")) {} };
 struct xc_session {
@@ -288,6 +289,14 @@ template<class T> struct Request final : xc_request {
 };
 template<class F> struct FutureValue;
 template<class T> struct FutureValue<std::future<T>> { using Type = T; };
+static_assert(XC_STUDY_LINK_MAX_URI_BYTES == xiphos::core::maximum_study_link_uri_bytes, "C/core URI byte limits differ");
+static_assert(XC_STUDY_LINK_MAX_CONTEXT_BYTES == xiphos::core::maximum_study_link_context_bytes, "C/core context byte limits differ");
+bool admitted_link_context(const char *value, bool required = false) {
+  return xiphos::core::detail::study_link_c_text(value, xiphos::core::maximum_study_link_context_bytes, required);
+}
+bool admitted_link_uri(const char *value) {
+  return xiphos::core::detail::study_link_c_text(value, xiphos::core::maximum_study_link_uri_bytes, true);
+}
 bool bounded_image_c_text(const char *text,std::size_t maximum){
   if(!text||!*text)return false;
   for(std::size_t i=0;i<=maximum;++i)if(!text[i])return true;
@@ -1198,21 +1207,21 @@ xc_status xc_worker_clear_engine_options(xc_worker *w, uint64_t tab, xc_request 
 }
 xc_status xc_worker_follow_pane_link_at(xc_worker *w, uint64_t tab, const char *navigation, const char *source,
                                        const char *ref, const char *uri, xc_request **out) {
-  if (!navigation || !*navigation || !source || !*source || !ref || !*ref || !uri || !*uri) {
+  if (!admitted_link_context(navigation, true) || !admitted_link_context(source, true) || !admitted_link_context(ref, true) || !admitted_link_uri(uri)) {
     if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
   }
   return queue_request(w, out, [=](auto &worker) { return worker.follow_pane_link_at(tab, navigation, source, ref, uri); });
 }
 xc_status xc_worker_follow_study_link_at(xc_worker *w, uint64_t tab, const char *id, const char *context, const char *uri, xc_request **out) {
-  if (!context || !*context || !uri || !*uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  if (!admitted_link_context(id) || !admitted_link_context(context, true) || !admitted_link_uri(uri)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.follow_study_link_at(tab, id ? id : "", context, uri); });
 }
 xc_status xc_worker_resolve_study_link_at(xc_worker *w, uint64_t tab, const char *id, const char *context, const char *uri, xc_request **out) {
-  if (!context || !*context || !uri || !*uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  if (!admitted_link_context(id) || !admitted_link_context(context, true) || !admitted_link_uri(uri)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.resolve_study_link_at(tab, id ? id : "", context, uri); });
 }
 xc_status xc_worker_hover_study_link_at(xc_worker *w, uint64_t tab, const char *id, const char *context, const char *uri, xc_request **out) {
-  if (!context || !*context || !uri || !*uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  if (!admitted_link_context(id) || !admitted_link_context(context, true) || !admitted_link_uri(uri)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.hover_study_link_at(tab, id ? id : "", context, uri); });
 }
 xc_status xc_worker_set_cross_reference_preview_list(xc_worker *w, uint64_t tab, int enabled, xc_request **out) {
@@ -1232,11 +1241,11 @@ xc_status xc_request_cross_reference_preview_list(const xc_request *r, int *enab
 }
 int xc_request_no_presentation(const xc_request *r) { return r && r->status == XC_OK && r->no_presentation; }
 xc_status xc_worker_resolve_study_link(xc_worker *w, uint64_t tab, const char *id, const char *uri, xc_request **out) {
-  if (!uri || !*uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  if (!admitted_link_context(id) || !admitted_link_uri(uri)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.resolve_study_link(tab, id ? id : "", uri); });
 }
 xc_status xc_worker_study_note_link(xc_worker *w, uint64_t tab, const char *id, const char *uri, xc_request **out) {
-  if (!uri || !*uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  if (!admitted_link_context(id) || !admitted_link_uri(uri)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.study_note_link(tab, id ? id : "", uri); });
 }
 xc_status xc_worker_enable_lexicon_preferences(xc_worker *w, uint64_t tab, xc_request **out) {
@@ -1414,7 +1423,7 @@ xc_status xc_worker_reference_choices(xc_worker *w, const char *id, const char *
   return queue_request(w, out, [=](auto &worker) { return worker.reference_choices(id, ref); });
 }
 xc_status xc_worker_resolve_link(xc_worker *w, const char *id, const char *uri, xc_request **out) {
-  if (!uri || !*uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
+  if (!admitted_link_context(id) || !admitted_link_uri(uri)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.resolve_link(id ? id : "", uri); });
 }
 xc_status xc_request_poll(xc_request *r) {
@@ -1640,7 +1649,7 @@ void xc_choices_release(xc_choices *c) { delete c; }
 xc_status xc_resolve_link(xc_reader *r, const char *current, const char *uri, xc_link **out) {
   if (!out) return XC_INVALID_ARGUMENT;
   *out = nullptr;
-  if (!r || !uri || !*uri) return XC_INVALID_ARGUMENT;
+  if (!r || !admitted_link_context(current) || !admitted_link_uri(uri)) return XC_INVALID_ARGUMENT;
   try { *out = new xc_link{r->value->resolve_link(current ? current : "", uri)}; return XC_OK; }
   catch (...) { return failure(); }
 }

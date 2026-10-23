@@ -5,6 +5,7 @@
 #include "xiphos/core/note_presentation.h"
 #include "xiphos/core/reference_command.hpp"
 #include "xiphos/core/passage_uri.hpp"
+#include "xiphos/core/study_link_admission.hpp"
 #include <condition_variable>
 #include <deque>
 #include <functional>
@@ -17,6 +18,14 @@
 #include <utility>
 #include <algorithm>
 namespace xiphos::core {
+namespace {
+template<class T> std::future<T> rejected_study_link() {
+  std::promise<T> result;
+  auto future = result.get_future();
+  result.set_exception(std::make_exception_ptr(std::invalid_argument("Study link exceeds byte bounds or contains NUL")));
+  return future;
+}
+}
 struct StudyWorker::Impl {
   struct State {
     Reader reader;
@@ -354,6 +363,7 @@ std::future<bool> StudyWorker::cross_reference_preview_list(StudyTab tab) {
 }
 std::future<StudyHoverLink> StudyWorker::hover_study_link_at(StudyTab tab, std::string current_module,
                                                          std::string current_reference, std::string uri) {
+  if (!detail::study_link_arguments(current_module, current_reference, uri)) return rejected_study_link<StudyHoverLink>();
   return impl_->submit([tab, current_module = std::move(current_module), current_reference = std::move(current_reference),
                         uri = std::move(uri)](Impl::State &s) -> StudyHoverLink {
     auto &session = s.tab(tab);
@@ -477,24 +487,28 @@ std::future<ReferenceList> StudyWorker::read_reference_list(StudyTab tab, std::s
 std::future<ContextualStudyLink> StudyWorker::follow_pane_link_at(StudyTab tab, std::string navigation_module,
                                                                 std::string source_module, std::string current_reference,
                                                                 std::string uri) {
+  if (!detail::study_link_arguments(source_module, current_reference, uri, navigation_module)) return rejected_study_link<ContextualStudyLink>();
   return impl_->submit([tab, navigation_module = std::move(navigation_module), source_module = std::move(source_module),
                         current_reference = std::move(current_reference), uri = std::move(uri)](Impl::State &s) {
     return s.study_link_at(tab, source_module, current_reference, uri, true, navigation_module);
   });
 }
 std::future<ContextualStudyLink> StudyWorker::follow_study_link_at(StudyTab tab, std::string current_module, std::string current_reference, std::string uri) {
+  if (!detail::study_link_arguments(current_module, current_reference, uri)) return rejected_study_link<ContextualStudyLink>();
   return impl_->submit([tab, current_module = std::move(current_module), current_reference = std::move(current_reference),
                         uri = std::move(uri)](Impl::State &s) -> ContextualStudyLink {
     return s.study_link_at(tab, current_module, current_reference, uri, true);
   });
 }
 std::future<ContextualStudyLink> StudyWorker::resolve_study_link_at(StudyTab tab, std::string current_module, std::string current_reference, std::string uri) {
+  if (!detail::study_link_arguments(current_module, current_reference, uri)) return rejected_study_link<ContextualStudyLink>();
   return impl_->submit([tab, current_module = std::move(current_module), current_reference = std::move(current_reference),
                         uri = std::move(uri)](Impl::State &s) -> ContextualStudyLink {
     return s.study_link_at(tab, current_module, current_reference, uri, false);
   });
 }
 std::future<ResolvedStudyLink> StudyWorker::resolve_study_link(StudyTab tab, std::string current_module, std::string uri) {
+  if (!detail::study_link_arguments(current_module, {}, uri)) return rejected_study_link<ResolvedStudyLink>();
   return impl_->submit([tab, current_module = std::move(current_module), uri = std::move(uri)](Impl::State &s) -> ResolvedStudyLink {
     s.tab(tab); // Both kinds require an open study context.
     if (current_module.find('\0') != std::string::npos)
@@ -519,6 +533,7 @@ std::future<ResolvedStudyLink> StudyWorker::resolve_study_link(StudyTab tab, std
   });
 }
 std::future<StudyNote> StudyWorker::study_note_link(StudyTab tab, std::string current_module, std::string uri) {
+  if (!detail::study_link_arguments(current_module, {}, uri)) return rejected_study_link<StudyNote>();
   return impl_->submit([tab, current_module = std::move(current_module), uri = std::move(uri)](Impl::State &s) {
     return s.note_link(tab, current_module, uri);
   });
@@ -682,6 +697,7 @@ std::future<ReferenceChoices> StudyWorker::reference_choices(std::string module,
   });
 }
 std::future<PassageLink> StudyWorker::resolve_link(std::string module, std::string uri) {
+  if (!detail::study_link_arguments(module, {}, uri)) return rejected_study_link<PassageLink>();
   return impl_->submit([module = std::move(module), uri = std::move(uri)](Impl::State &s) {
     return s.reader.resolve_link(module, uri);
   });

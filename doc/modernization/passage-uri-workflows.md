@@ -78,6 +78,21 @@ decoded again. This tightens the native typed parser boundary; the complete
 retained callback oracle does not claim malformed legacy URL safety.
 
 
-The contextual byte check is a parser acceptance limit after worker argument
-copying. Pre-copy C/worker admission bounds are separate follow-up work; this
-continuation does not claim bounded allocation for arbitrarily large callers.
+Study-link admission now rejects URIs over32768 bytes and each module/source
+reference over4096 bytes at all existing main study-link C entry points, before
+observer/string allocation. Bounds exclude the NUL terminator. Existing nullable
+current-module and required-context rules remain unchanged. Invalid C submissions
+return XC_INVALID_ARGUMENT and clear output immediately, rather than returning a
+queued request that later fails. Valid syntax/module/tab checks remain on the
+single SDK owner. C++ by-value inputs are already caller-owned; oversized/NUL
+values return ready exceptional futures before FIFO admission. This does not
+claim to prevent allocations in caller argument construction. Synchronous
+Reader.resolve_link uses the same bounds. Swift guards imported C constants and
+embedded NUL before withCString, including older resolveStudyLink/studyNoteLink.
+
+The admission test interposes C++ allocation on the submitting thread and proves
+oversized/unterminated C calls create neither an observer nor a string copy.
+It also checks exact byte boundaries with Unicode, invalid navigation/context
+fields, seven request routes, synchronous C, ready futures, valid copying/drain,
+search/history isolation and post-owner result lifetime. Other APIs (book-only
+links, direct reads, resources) retain their separate admission contracts.
