@@ -1352,3 +1352,28 @@ its module-key mutation, conditional auto-normalization and exact en short-label
 choice before claiming those routes match legacy. Dictionary URI hover also
 needs a separate typed raw-key route rather than pretending it is a lexical
 command or a verse reference.
+
+
+### Shared navigation-key normalization (2026-10-22)
+
+After `69db801`, freeze complete BackEnd::get_valid_key and compile its current
+source-extracted adapter against real RawText/RawCom/RawFiles keys. Extract the
+mutation/label operation into C++11 CoreRender navigation_key_text. Retained
+wrapper still returns strdup-owned bytes and missing-module Gen.1.1, forces
+auto-normalization only for Bible/regular commentary, retains other flags, and
+uses a short label only for exact locale en (null/empty/EN/other use full text).
+No legacy source removed or frontend normalization added.
+
+13,446 frozen/current comparisons cover KJV/KJVA, starting contexts, relative/
+range/list/invalid/out-of-canon references, initial auto/intros flags, type modes,
+label bytes, final key/error/flags and callback order; owned copied labels survive
+key mutation. Normal1/1 (1.37s), native-disabled strict C++11 1/1 (1.56s);
+ASan/UBSan1/1 (3.03s), TSan1/1 (2.82s), portable1/1 (1.24s). Initial test enum/int
+initializer-list deduction failed strict compilation; explicit vector<int> fixed
+the test before passing checks. This characterizes get_valid_key itself, not full
+navbar/XML/IPC or corpus/locale workflow acceptance.
+
+Next: native read-only cloned navigation targets consuming this operation, then
+contextual unknown/regular/personal-commentary range URI dispatch. Preserve the
+older single-target API's decoded-reference contract and exact fallback module
+rules. Dictionary/book targets remain separate typed paths.

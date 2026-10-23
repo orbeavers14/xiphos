@@ -96,3 +96,11 @@ It also checks exact byte boundaries with Unicode, invalid navigation/context
 fields, seven request routes, synchronous C, ready futures, valid copying/drain,
 search/history isolation and post-owner result lifetime. Other APIs (book-only
 links, direct reads, resources) retain their separate admission contracts.
+
+
+Navigation normalization now shares retained get_valid_key's key mutation and
+label operation in C++11 CoreRender. The wrapper's fallback/malloc ownership and
+locale/type conditions remain intact. A complete frozen/current adapter matrix
+compares13,446 real SDK key traces across RawText/RawCom/RawFiles and KJV/KJVA.
+This is the normalization prerequisite for remaining range navigation; native
+cloned target consumption and full navbar/XML/IPC acceptance remain separate.

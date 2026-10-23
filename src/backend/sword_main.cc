@@ -45,6 +45,7 @@
 #include "backend/sword_main.hh"
 #include "xiphos/core/render.hpp"
 #include "xiphos/core/reference_list.hpp"
+#include "xiphos/core/navigation_key.hpp"
 
 #include "main/mod_mgr.h"
 #include "main/settings.h"
@@ -398,19 +399,9 @@ char *BackEnd::get_valid_key(const char *module_name, const char *key)
 		return strdup("Gen.1.1");
 
 	VerseKey *vkey = (VerseKey *)(SWKey *)(*mod);
-	char *mykey;
-
 	int t = module_type(module_name);
-	if ((t == TEXT_TYPE) || (t == COMMENTARY_TYPE))
-		vkey->setAutoNormalize(1);
-	vkey->setText(key);
-
-	// what's with this flagrant anglocentrism?
-	if (sword_locale && !strcmp(sword_locale, "en"))
-		mykey = strdup((char *)vkey->getShortText());
-	else
-		mykey = strdup((char *)vkey->getText());
-	return mykey;
+	return strdup(xiphos::core::navigation_key_text(*vkey, key,
+	    (t == TEXT_TYPE) || (t == COMMENTARY_TYPE), sword_locale).c_str());
 }
 
 char *BackEnd::key_get_book(const char *module_name, const char *key)
