@@ -497,7 +497,18 @@ void ReaderModel::tick() {
     }
     break;
   }
+  case Operation::book_link:
   case Operation::link: {
+    std::unique_ptr<xc_book_uri_target, decltype(&xc_book_uri_target_release)> book(xc_request_take_book_uri_target(completed.get()), xc_book_uri_target_release);
+    if (book) {
+      const auto *tree = xc_book_uri_target_tree(book.get());
+      const auto module = copy(xc_book_tree_module(tree)), key = copy(xc_book_uri_target_key(book.get()));
+      const auto *anchor = xc_book_uri_target_anchor(book.get());
+      pending_book_anchor_ = anchor ? std::make_optional(std::string(anchor)) : std::nullopt;
+      const xc_saved_book_selection target{module.c_str(), key.c_str(), nullptr};
+      const auto submitted = xc_worker_restore_book_document_selection(worker_, tab_, &target, XC_BOOK_RESTORE_DISPLAY_KEY, &next);
+      accept(submitted, next, Operation::book_uri_document); break;
+    }
     std::unique_ptr<xc_link, decltype(&xc_link_release)> link(xc_request_take_link(completed.get()), xc_link_release);
     if (!link) { if (take_image(completed.get())) return; if (!take_preview(completed.get(), false)) error_ = "Unsupported study link result."; return; }
     const auto module = copy(xc_link_module(link.get())), reference = copy(xc_link_reference(link.get()));

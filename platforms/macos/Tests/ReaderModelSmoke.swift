@@ -136,6 +136,39 @@ struct ReaderModelSmoke {
         window.contentView = nil; view.navigationDelegate = nil; window.close()
         print("Offscreen native WebKit URI anchors: Unicode/quotes, named targets, top/repeat, missing target and disabled module scripts passed")
     }
+    @MainActor static func bookUriNavigation(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let first = ReaderModel(worker: worker, startupError: nil), second = ReaderModel(worker: worker, startupError: nil)
+        try await idle(first); try await idle(second)
+        first.selection = "Text"; first.reference = "John3:17"; first.read(); try await idle(first)
+        let html = first.html, reference = first.renderedReference, back = first.canBack, forward = first.canForward, otherHTML = second.html
+        first.reference = "John4:2"
+        first.followLink("sword://Manual/%2FPart+One#uri-book-target"); try await idle(first)
+        guard first.showingBook, first.bookDocument?.tree.module == "Book", first.bookDocument?.tree.node.path == "/Part One",
+              first.bookDocument?.resourceHTML.contains("Original Book") == true, first.bookDocument?.resourceHTML.contains("uri-book-target") == true,
+              first.bookAnchor == "uri-book-target", first.bookBrowser?.module == "Book", first.html == html,
+              first.renderedReference == reference, first.reference == "John4:2", first.canBack == back, first.canForward == forward,
+              second.bookDocument == nil, second.html == otherHTML else { fatalError("Native book URI selects actual shared document with anchor and preserves main/draft/history/window") }
+        first.followBookLink("bible://Pray/%2F123+Numeric+Title#"); try await idle(first)
+        guard first.bookDocument?.tree.module == "Prayer", first.bookDocument?.tree.node.path == "/123 Numeric Title",
+              first.bookAnchor == "", first.html == html, first.reference == "John4:2" else { fatalError("Book-origin prayer target preserves numeric slash path and explicit top anchor") }
+        first.followBookLink("sword://Manual/0"); try await idle(first)
+        guard first.bookDocument?.tree.module == "Book", first.bookDocument?.tree.node.path == "/Part One", first.bookAnchor == nil else { fatalError("Numeric URI startup uses shared minimum four and clears transient anchor") }
+        first.followBookLink("sword:///John3:16"); try await idle(first)
+        guard first.renderedReference == "John 3:16", first.selection == "Text", first.showingBook,
+              first.bookDocument?.tree.module == "Book" else { fatalError("Book-origin omitted module updates main Bible while retaining book pane") }
+        let reading = first.html, historyBack = first.canBack, historyForward = first.canForward
+        first.followBookLink("sword://T/16-17"); try await idle(first)
+        guard first.referencePreview?.entries.count == 2, first.referencePreview?.entries.first?.reference == "John 3:16",
+              first.html == reading, first.canBack == historyBack, first.canForward == historyForward else { fatalError("Book-origin relative Bible range uses live main verse and remains a preview") }
+        first.bookKey = ""; first.readBookKey(); try await idle(first)
+        guard first.bookDocument?.tree.node.offset == 0, first.bookDocument?.tree.node.path == "", first.bookAnchor == nil else { fatalError("Explicit empty book path stays root rather than numeric startup") }
+        let kept = first.bookDocument
+        first.followBookLink("sword://Manual/%2FMissing"); try await idle(first)
+        guard first.bookDocument == kept, !first.message.isEmpty, second.bookDocument == nil else { fatalError("Failed book URI retains committed presentation and sibling state") }
+        first.close(); second.close(); await worker.shutdown()
+        print("Native actual book/prayer URI documents, book-origin main/reference routing, anchors, root/startup and state isolation passed")
+    }
     @MainActor static func uriNavigation(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let targetTab = try await worker.createTab()
@@ -1808,6 +1841,9 @@ struct ReaderModelSmoke {
         print("Native main note/reference hover destinations and guarded preference checks passed")
     }
     @MainActor static func main() async throws {
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--book-uri-navigation" {
+            try await bookUriNavigation(root: CommandLine.arguments[2]); return
+        }
         if CommandLine.arguments.count == 2, CommandLine.arguments[1] == "--uri-anchor-webview" {
             try await uriAnchorWebView(); return
         }

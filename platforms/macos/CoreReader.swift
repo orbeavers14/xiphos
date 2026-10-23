@@ -103,6 +103,8 @@ struct BookTree: Sendable, Equatable {
     let node: BookNode
     let parent: BookNode?, firstChild: BookNode?, previousSibling: BookNode?, nextSibling: BookNode?
 }
+struct RenderedBookUriTarget: Sendable { let tree: BookTree; let key: String; let anchor: String? }
+enum RenderedBookPaneLink: Sendable { case study(ContextualStudyLink); case book(RenderedBookLink) }
 struct RenderedBookEntry: Sendable, Equatable {
     let tree: BookTree
     let html: String
@@ -358,6 +360,7 @@ struct PassageTarget: Sendable {
     }
 }
 enum ContextualStudyLink: Sendable {
+    case book(RenderedBookUriTarget)
     case dictionary(RenderedDictionaryEntry)
     case image(RenderedVerseImage)
     case passage(PassageTarget)
@@ -588,6 +591,11 @@ enum CoreValues {
         let data = count == 0 ? Data() : Data(bytes: xc_book_image_data_bytes(result)!, count: count)
         return RenderedBookImage(module: String(cString: xc_book_image_module(source)!),
             filename: String(cString: xc_book_image_filename(source)!), mediaType: String(cString: xc_book_image_media_type(source)!), data: data)
+    }
+    static func bookUriTarget(_ result: OpaquePointer) -> RenderedBookUriTarget {
+        RenderedBookUriTarget(tree: bookTree(xc_book_uri_target_tree(result)!),
+            key: String(cString: xc_book_uri_target_key(result)!),
+            anchor: xc_book_uri_target_anchor(result).map { String(cString: $0) })
     }
     static func bookDocument(_ result: OpaquePointer) -> RenderedBookDocument {
         let sections = (0..<xc_book_document_count(result)).map { index in

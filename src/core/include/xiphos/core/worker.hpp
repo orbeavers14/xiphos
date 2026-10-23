@@ -14,6 +14,7 @@ struct StudySearch { std::shared_ptr<SearchControl> control; std::future<SearchR
 // retains numeric-prefix/path interpretation for explicit later application.
 struct BookUriTarget { BookTree tree; std::string key; std::optional<std::string> anchor; };
 using ContextualStudyLink = std::variant<PassageLink, StudyNote, ReferenceList, LexicalEntry, VerseImageResource, DictionaryEntry, BookUriTarget>;
+using BookPaneLink = std::variant<ContextualStudyLink, BookFollowLink>;
 using ResolvedStudyLink = std::variant<PassageLink, StudyNote>;
 using StudyHoverLink = std::variant<std::monostate, StudyNote, ReferenceList, LexicalEntry, DictionaryEntry>;
 struct DictionaryHistorySnapshot {
@@ -85,6 +86,10 @@ public:
   std::future<BookImageTarget> book_image_link(StudyTab tab, std::string uri);
   std::future<BookImageResource> read_book_image_link(StudyTab tab, std::string uri);
   std::future<BookFollowLink> follow_book_link(StudyTab tab, std::string uri);
+  // Committed book notes/images keep their source; module URIs reuse contextual
+  // routing with the supplied live main reference for Bible range previews.
+  std::future<BookPaneLink> follow_book_pane_link_at(StudyTab tab, std::string main_module,
+                                                   std::string main_reference, std::string uri);
   std::future<BookEntry> select_book(StudyTab tab, BookSelectionTarget target);
   std::future<std::optional<BookEntry>> navigate_book(StudyTab tab, BookNavigation direction);
   std::future<std::optional<BookEntry>> restore_book_selection(StudyTab tab, SavedBookSelection saved, BookRestoreMode mode);

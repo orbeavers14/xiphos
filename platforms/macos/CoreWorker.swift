@@ -591,6 +591,25 @@ actor CoreWorker {
         defer { xc_book_image_data_release(image) }
         return .image(CoreValues.bookImage(image))
     }
+    func followBookPaneLink(tab: UInt64, mainModule: String, mainReference: String, uri: String) async throws -> RenderedBookPaneLink {
+        try admitStudyLink(module: mainModule, reference: mainReference, uri: uri)
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = mainModule.withCString { module in mainReference.withCString { reference in uri.withCString {
+            xc_worker_follow_book_pane_link_at(handle, tab, module, reference, $0, &request)
+        } } }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        if let note = xc_request_take_book_note(completed) {
+            defer { xc_book_note_release(note) }
+            return .book(.note(RenderedBookNote(tree: CoreValues.bookTree(xc_book_note_tree(note)!), content: noteValue(xc_book_note_content(note)!))))
+        }
+        if let image = xc_request_take_book_image_data(completed) {
+            defer { xc_book_image_data_release(image) }
+            return .book(.image(CoreValues.bookImage(image)))
+        }
+        return .study(try contextualLinkValue(completed))
+    }
     func bookChildren(module: String, parent: UInt64, after: UInt64? = nil, limit: UInt32 = 64) async throws -> BookChildren {
         guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?
@@ -980,6 +999,13 @@ actor CoreWorker {
         }
         let completed = try await wait(status, request)
         defer { xc_request_release(completed) }
+        return try contextualLinkValue(completed)
+    }
+    private func contextualLinkValue(_ completed: OpaquePointer) throws -> ContextualStudyLink {
+        if let result = xc_request_take_book_uri_target(completed) {
+            defer { xc_book_uri_target_release(result) }
+            return .book(CoreValues.bookUriTarget(result))
+        }
         if let result = xc_request_take_dictionary_entry(completed) {
             defer { xc_dictionary_entry_release(result) }
             return .dictionary(CoreValues.dictionaryEntry(result))

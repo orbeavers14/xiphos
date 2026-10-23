@@ -182,6 +182,7 @@ struct xc_request {
     book_selection_present = v.has_value();
     if (v) book_document = std::make_unique<xc_book_document>(std::move(*v));
   }
+  void store(xiphos::core::BookPaneLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::BookFollowLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::VerseImageResource v){verse_image=std::make_unique<xc_verse_image>(xc_verse_image{std::move(v)});}
   void store(xiphos::core::BookImageResource v) { book_image_data = std::make_unique<xc_book_image_data>(std::move(v)); }
@@ -616,6 +617,17 @@ void xc_book_image_release(xc_book_image *image) { delete image; }
 xc_status xc_worker_follow_book_link(xc_worker *w, uint64_t tab, const char *uri, xc_request **out) {
   if (!uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.follow_book_link(tab, uri); });
+}
+xc_status xc_worker_follow_book_pane_link_at(xc_worker *w, uint64_t tab, const char *main_module,
+                                             const char *main_reference, const char *uri, xc_request **out) {
+  using namespace xiphos::core;
+  if (!detail::study_link_c_text(main_module, maximum_study_link_context_bytes, false) ||
+      !detail::study_link_c_text(main_reference, maximum_study_link_context_bytes, false) ||
+      !detail::study_link_c_text(uri, maximum_study_link_uri_bytes, true)) {
+    if (out) *out = nullptr; return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w, out, [=](auto &worker) { return worker.follow_book_pane_link_at(tab,
+      main_module ? main_module : "", main_reference ? main_reference : "", uri); });
 }
 xc_status xc_worker_read_book_image_link(xc_worker *w, uint64_t tab, const char *uri, xc_request **out) {
   if (!uri) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }

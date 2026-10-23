@@ -6,6 +6,13 @@
 #include <memory>
 namespace xiphos::linux_preview {
 namespace {
+struct BookAnchorState {
+  std::optional<std::string> anchor;
+  uint64_t revision = 0;
+  GWeakRef status;
+  explicit BookAnchorState(GObject *label) { g_weak_ref_init(&status, label); }
+  ~BookAnchorState() { g_weak_ref_clear(&status); }
+};
 GtkWidget *box(GtkWidget *parent, bool horizontal = false) {
   auto *w = gtk_box_new(horizontal ? GTK_ORIENTATION_HORIZONTAL : GTK_ORIENTATION_VERTICAL, 4);
   if (parent) gtk_box_append(GTK_BOX(parent), w); return w;
@@ -114,7 +121,29 @@ GtkWidget *StudyUI::book_pane() {
     book_options_[i] = check(bar, options[i]); g_object_set_data(G_OBJECT(book_options_[i]), "option", GINT_TO_POINTER(i));
     g_signal_connect(book_options_[i], "toggled", G_CALLBACK((+[](GtkCheckButton *w, gpointer data) { auto *s = static_cast<StudyUI *>(data); if (!s->updating_ && s->model_) s->model_->book_option(GPOINTER_TO_INT(g_object_get_data(G_OBJECT(w), "option")), gtk_check_button_get_active(w)); })), this);
   }
-  book_label_ = label(book_box_, ""); gtk_box_append(GTK_BOX(book_box_), view(&book_view_, true)); book_status_ = label(book_box_, ""); return book_box_;
+  book_label_ = label(book_box_, ""); gtk_box_append(GTK_BOX(book_box_), view(&book_view_, true)); book_status_ = label(book_box_, "");
+  g_object_set_data_full(G_OBJECT(book_view_), "book-anchor-state", new BookAnchorState(G_OBJECT(book_status_)),
+      +[](gpointer p) { delete static_cast<BookAnchorState *>(p); });
+  g_signal_connect(book_view_, "load-changed", G_CALLBACK(+[](WebKitWebView *view, WebKitLoadEvent event, gpointer) {
+    if (event != WEBKIT_LOAD_FINISHED) return;
+    auto *state = static_cast<BookAnchorState *>(g_object_get_data(G_OBJECT(view), "book-anchor-state"));
+    if (!state || !state->anchor) return;
+    const auto script = anchor_scroll_script(*state->anchor);
+    auto *revision = new uint64_t(state->revision);
+    webkit_web_view_evaluate_javascript(view, script.c_str(), -1, "xiphos-host", nullptr, nullptr,
+        +[](GObject *source, GAsyncResult *result, gpointer data) {
+          std::unique_ptr<uint64_t> revision(static_cast<uint64_t *>(data));
+          GError *error = nullptr;
+          auto *value = webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(source), result, &error);
+          auto *current = static_cast<BookAnchorState *>(g_object_get_data(source, "book-anchor-state"));
+          if (current && current->revision == *revision && (!value || error || !jsc_value_to_boolean(value))) {
+            auto *status = g_weak_ref_get(&current->status);
+            if (status) { gtk_label_set_text(GTK_LABEL(status), "Unable to scroll to the selected book section."); g_object_unref(status); }
+          }
+          g_clear_object(&value); g_clear_error(&error);
+        }, revision);
+  }), nullptr);
+  return book_box_;
 }
 GtkWidget *StudyUI::search_pane() {
   auto *outer = box(nullptr); auto *scroll = gtk_scrolled_window_new(); gtk_widget_set_vexpand(scroll, TRUE); gtk_box_append(GTK_BOX(outer), scroll);
@@ -237,8 +266,11 @@ void StudyUI::tick(ReaderModel &model) {
     populated_ = true;
   }
   const auto &book = model.book();
-  const auto identity = book.module + book.nodes[0].path + book.html + book.css;
+  const auto identity = book.module + book.nodes[0].path + book.html + book.css + (book.anchor ? *book.anchor : "") + std::to_string(book.anchor_revision);
   if (identity != book_identity_) {
+    if (auto *state = static_cast<BookAnchorState *>(g_object_get_data(G_OBJECT(book_view_), "book-anchor-state"))) {
+      state->anchor = book.anchor; ++state->revision;
+    }
     book_identity_ = identity; gtk_editable_set_text(GTK_EDITABLE(book_key_), book.nodes[0].path.c_str()); gtk_label_set_text(GTK_LABEL(book_label_), book.nodes[0].path.c_str());
     webkit_web_view_load_html(book_view_, document(book.html, book.css, true).c_str(), "xiphos-preview://study/");
     gtk_label_set_text(GTK_LABEL(book_status_), book.issue.c_str());

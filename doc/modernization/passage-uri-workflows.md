@@ -234,3 +234,32 @@ a borrowed owned tree/key/anchor, surviving request and worker close. Older stri
 single-passage APIs remain unchanged; book hover stays no-presentation. Native
 book-target consumption and cross-links originating inside a book are the next
 separate slice. No whole book/prayer workflow acceptance follows.
+
+## Native book-target consumption and book-origin links
+
+Mac and Linux models now consume copied book URI targets through existing shared
+display-key restoration/document selection. They preserve path-root versus numeric
+startup, actual target module, presentation/resource options and transient anchors.
+Ordinary book navigation clears the anchor; local presentation revisions support
+repeat targets. Mac BookPane uses the existing trusted isolated renderer; the GTK
+book host is adapted to the same UTF-8 literal helper with weak-label lifetime and
+obsolete-render checks, pending a current Fedora compile/runtime pass.
+
+A shared book-pane command requires a committed document. It keeps note/image
+commands on that owned book source, while module URIs reuse contextual routing
+with separately supplied live main reference. This prevents relative Bible range
+previews from using a tree path and keeps omitted modules tied to main context.
+Explicit installed URI modules may work without main context; omitted/unknown
+modules reject when no main context exists. C admission bounds inputs before
+copies; worker rejection precedes FIFO admission. Original book-only APIs retain
+their previous contracts. Main-origin and book-origin results use the same native
+study-target presentation helper rather than separate navigation logic.
+
+Scoped model checks cover actual Book/prayer documents, named/empty anchors,
+main/draft/history/search/sibling isolation, book-origin Bible navigation and
+relative previews, root/startup distinction and failure retention. Physical URI
+clicks and full book/prayer/corpus/platform acceptance remain open. The next
+anchor audit must include the full retained HtmlOutput consumer: unknown-module
+fallback calls commentary before Bible, and dictionary display can consume the
+global anchor despite receiving a stripped key. Earlier callback-only traces did
+not emulate HtmlOutput consumption; those two native anchor cases remain open.

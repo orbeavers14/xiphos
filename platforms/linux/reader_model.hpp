@@ -21,6 +21,7 @@ struct BookNode { uint64_t offset = 0; std::string path, title; bool present = f
 struct BookDocument {
   std::string module, html, css, issue; BookNode nodes[5];
   int images = -1, fonts = -1, spacing = -1, numbers = -1;
+  std::optional<std::string> anchor; uint64_t anchor_revision = 0;
 };
 struct BookContents { std::string module; BookNode parent, up; std::vector<BookNode> nodes; std::optional<uint64_t> after; };
 struct Image { std::string module, source; std::vector<unsigned char> bytes; unsigned revision = 0; };
@@ -144,7 +145,7 @@ public:
   const std::string &error() const { return error_; }
   unsigned revision() const { return revision_; }
 private:
-  enum class Operation { book_document, book_children, book_key, book_option, book_link, search_batch, search_preview, search_export, search_reset, search_scope, search_lists, search_names, catalog, tab, preferences, passage, history, link, refresh, clear, presentation, bible_chapter, commentary_chapter, choices, dictionary, dictionary_choices, dictionary_history, dictionary_clear, engine_options, bible_options, commentary_options, saved, enable_lexicons, lexicons, lexicon_changed, reference_preference, reference_preference_changed, references, entry, lexical_layout, note_numbering, heading_note_links };
+  enum class Operation { book_document, book_uri_document, book_children, book_key, book_option, book_link, search_batch, search_preview, search_export, search_reset, search_scope, search_lists, search_names, catalog, tab, preferences, passage, history, link, refresh, clear, presentation, bible_chapter, commentary_chapter, choices, dictionary, dictionary_choices, dictionary_history, dictionary_clear, engine_options, bible_options, commentary_options, saved, enable_lexicons, lexicons, lexicon_changed, reference_preference, reference_preference_changed, references, entry, lexical_layout, note_numbering, heading_note_links };
   bool take_extended(xc_request *request);
   bool take_image(xc_request *request);
   BookDocument book_;
@@ -152,6 +153,8 @@ private:
   Image image_;
   bool append_book_children_ = false;
   uint64_t pending_book_parent_ = 0;
+  std::optional<std::string> pending_book_anchor_;
+  uint64_t book_anchor_revision_ = 0;
   BookNode pending_book_up_;
   SearchResults search_results_;
   Preview search_preview_;

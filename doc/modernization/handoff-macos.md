@@ -1558,3 +1558,36 @@ regression 7/7 (4.72s), ASan/UBSan 2/2 (1.07s), TSan 2/2 (1.34s), portable
 list inference; corrected to explicit vector<string> before compilation passed.
 Same environment/SDK limits; no native book URI click, current Fedora/MSVC or
 whole book/prayer acceptance is claimed.
+
+### Native book URI selection and shared book-origin dispatch (2026-10-22)
+
+After target transport `54aa353`, Mac and Linux models consume actual copied book
+URI targets through existing shared display-key document restoration. Preserve
+explicit root versus numeric minimum-four, prayer/list families, raw title
+punctuation, reading/search/history/window isolation and transient anchors. Mac
+BookPane uses existing isolated anchor rendering. GTK book host source uses the
+same UTF-8 script helper, weak status lifetime and render-revision guard; GTK
+compile/runtime remains OFF here.
+
+New book-pane C++/C command requires a committed document. Delegates notes/images
+to existing owned book-source handling; module URIs use contextual dispatch with
+separate live main module/reference, so relative Bible lists never use tree paths.
+Missing main context is allowed only for explicit installed modules. Admission
+checks precede C copies/observer and worker FIFO. Swift copies target and nested
+book/study variants and shares the main study-result presenter. Linux similarly
+reuses its contextual handler and shared document pipeline. No new SDK owner.
+
+Core/book-origin/admission selection 3/3 (2.56s); native new book model plus fixture
+2/2 (1.42s), portable new model plus fixture 2/2 (1.13s); combined existing/new
+book-note/document publication/native models 11/11 (9.65s). ASan/UBSan 3/3
+(4.75s), TSan 3/3 (6.47s). C11 and whitespace checks pass. No physical URI click,
+current Fedora/MSVC, broad corpus or whole book/prayer acceptance.
+
+Next corrective audit: complete HtmlOutput in gtk/utilities.c consumes the global
+special anchor once. Unknown URI fallback calls commentary before Bible when
+commentary is visible; dictionary display calls HtmlOutput too, despite receiving
+a stripped key. The current callback oracle logs dispatch but its display stubs
+do not consume that global anchor. Extend the oracle through that complete
+consumer, then correct native fallback-pane/dictionary-anchor handling. Do not
+claim those cases match full retained rendering yet. Devotional date/pane rules
+and status/bookmark behavior remain separate pending routes.

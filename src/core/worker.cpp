@@ -322,6 +322,25 @@ std::future<BookImageResource> StudyWorker::read_book_image_link(StudyTab tab, s
 std::future<BookFollowLink> StudyWorker::follow_book_link(StudyTab tab, std::string uri) {
   return impl_->submit([tab, uri = std::move(uri)](Impl::State &s) { return s.tab(tab).follow_book_link(uri); });
 }
+std::future<BookPaneLink> StudyWorker::follow_book_pane_link_at(StudyTab tab, std::string main_module,
+                                                               std::string main_reference, std::string uri) {
+  if (!detail::study_link_arguments(main_module, main_reference, uri)) return rejected_study_link<BookPaneLink>();
+  return impl_->submit([tab, main_module = std::move(main_module), main_reference = std::move(main_reference),
+                        uri = std::move(uri)](Impl::State &s) -> BookPaneLink {
+    auto &session = s.tab(tab);
+    const auto &selected = session.book_selection();
+    if (!selected || !selected->document) throw std::invalid_argument("Select a book document before following its link");
+    if (uri.compare(0, 8, "sword://") == 0 || uri.compare(0, 8, "bible://") == 0) {
+      if (main_module.empty()) {
+        const auto parsed = module_uri_link(uri);
+        if (parsed.module.empty() || !s.uri_module(parsed.module))
+          throw std::invalid_argument("Book-origin URI requires main context for module fallback");
+      }
+      return s.study_link_at(tab, selected->tree.module, main_reference, uri, true, main_module);
+    }
+    return session.follow_book_link(uri);
+  });
+}
 std::future<BookEntry> StudyWorker::select_book(StudyTab tab, BookSelectionTarget target) {
   return impl_->submit([tab, target = std::move(target)](Impl::State &s) { return s.tab(tab).select_book(target); });
 }

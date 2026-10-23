@@ -44,6 +44,15 @@ int main(int argc,char **argv){try{
   rejects<std::invalid_argument>([&]{(void)worker.resolve_study_link_at(tab,"Text","John3:17","sword://Unsafe/%2FPart+One").get();});
   for(const auto &bad:std::vector<std::string>{"sword://Manual/2147483648","sword://Manual/a%GG",std::string("sword://Manual/")+std::string(4097,'a')})rejects<std::invalid_argument>([&]{(void)worker.follow_study_link_at(tab,"Text","John3:17",bad).get();});
   check(!worker.book_selection(tab).get()&&!worker.book_selection(other).get()&&worker.history(tab).get().entries.size()==history.entries.size()&&worker.dictionary_history(tab).get().entries.empty()&&worker.search_generation(tab).get().id==generation,"Book target resolution does not select/render/persist or visit Bible/dictionary/search/sibling state");
+  rejects<std::invalid_argument>([&]{(void)worker.follow_book_pane_link_at(tab,"Text","John3:16","sword://Manual/0").get();});
+  (void)worker.select_book_document(tab,book_display_target("Book","/Part One")).get();
+  const auto from_book=worker.follow_book_pane_link_at(tab,"Text","John3:16","sword://Pray/%2F123+Numeric+Title#book").get();
+  const auto &book_target=std::get<BookUriTarget>(std::get<ContextualStudyLink>(from_book));check(book_target.tree.module=="Prayer"&&book_target.tree.node.path=="/123 Numeric Title"&&book_target.anchor=="book","Committed book-origin URI reuses contextual actual target routing");
+  const auto from_main=worker.follow_book_pane_link_at(tab,"Text","John3:16","sword:///John3:17").get();check(std::get<PassageLink>(std::get<ContextualStudyLink>(from_main)).module=="Text","Book-origin omitted URI module defaults to main Bible");
+  const auto ranges=worker.follow_book_pane_link_at(tab,"Text","John3:16","sword://T/16-17").get();const auto &refs=std::get<ReferenceList>(std::get<ContextualStudyLink>(ranges));check(refs.entries.size()==2&&refs.entries.front().reference=="John 3:16","Book-origin relative Bible preview uses live main reference rather than source path");
+  const auto explicit_without_main=worker.follow_book_pane_link_at(tab,"","","sword://Manual/0").get();check(std::get<BookUriTarget>(std::get<ContextualStudyLink>(explicit_without_main)).tree.module=="Book","Explicit installed book URI works without a main Bible");
+  for(const auto *bad:{"sword:///0","sword://Missing/John3:16"})rejects<std::invalid_argument>([&]{(void)worker.follow_book_pane_link_at(tab,"","",bad).get();});
+  check(worker.book_selection(tab).get()->node.path=="/Part One"&&worker.history(tab).get().entries.size()==history.entries.size(),"Book-origin target/preview calls preserve committed book and main history");
   std::string uri="sword://Manual/%2FPart+One#copied";accepted=worker.follow_pane_link_at(tab,"Text","Text","John3:17",uri);uri.clear();worker.close_tab(tab).get();rejects<std::invalid_argument>([&]{(void)worker.follow_study_link_at(tab,"Text","John3:17","sword://Manual/0").get();});
  }
  held=std::get<BookUriTarget>(accepted.get());check(held.tree.module=="Book"&&held.anchor=="copied","Book target owns source/key/anchor through drain and shutdown");

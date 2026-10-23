@@ -56,6 +56,8 @@ final class ReaderModel: ObservableObject {
     @Published private(set) var verseImage: VerseImagePreview?
     @Published private(set) var bookNote: RenderedBookNote?
     @Published private(set) var bookDocument: RenderedBookDocument?
+    @Published private(set) var bookAnchor: String?
+    @Published private(set) var bookAnchorRevision: UInt64 = 0
     var bookEntry: RenderedBookEntry? { bookDocument?.sections.first?.entry }
     @Published private(set) var bookBrowser: BookTree?
     @Published private(set) var bookChildren: BookChildren?
@@ -389,6 +391,7 @@ final class ReaderModel: ObservableObject {
     private func presentBook(_ entry: RenderedBookDocument, updateInput: Bool = true) {
         bookNote = nil
         bookDocument = entry
+        bookAnchor = nil
         if updateInput { bookKey = entry.tree.node.path }
         showingBook = true; message = ""
     }
@@ -430,11 +433,17 @@ final class ReaderModel: ObservableObject {
     func followBookLink(_ uri: String) {
         guard !closed, !isBusy, let worker, let tab, bookDocument != nil else { return }
         run { token in
-            let link: RenderedBookLink
-            do { link = try await worker.followBookLink(tab: tab, uri: uri) }
+            let link: RenderedBookPaneLink
+            do { link = try await worker.followBookPaneLink(tab: tab, mainModule: self.displayedModule ?? "",
+                mainReference: self.displayedEntry?.reference ?? "", uri: uri) }
             catch { throw BookLinkError() }
             guard token == self.revision && !self.closed else { return }
-            switch link {
+            if case .study(let target) = link {
+                try await self.presentStudyLink(target, mainModule: self.displayedModule, clearNote: false, token: token)
+                return
+            }
+            guard case .book(let bookLink) = link else { return }
+            switch bookLink {
             case .note(let note):
                 self.studyNote = nil; self.referencePreview = nil
                 self.bookNote = note; self.message = ""
@@ -714,7 +723,21 @@ final class ReaderModel: ObservableObject {
         let module = currentModule ?? displayedModule
         let context = currentReference ?? displayedEntry.reference
         run { token in
-            switch try await worker.followStudyLinkAt(tab: tab, currentModule: module, currentReference: context, uri: uri, navigationModule: navigationModule) {
+            let link = try await worker.followStudyLinkAt(tab: tab, currentModule: module, currentReference: context, uri: uri, navigationModule: navigationModule)
+            try await self.presentStudyLink(link, mainModule: displayedModule, clearNote: currentReference == nil, token: token)
+        }
+    }
+    private func presentStudyLink(_ link: ContextualStudyLink, mainModule: String?, clearNote: Bool, token: UInt64) async throws {
+        guard let worker, let tab else { return }
+        switch link {
+            case .book(let target):
+                let children = try await worker.bookChildren(module: target.tree.module, parent: target.tree.node.offset)
+                guard let entry = try await worker.restoreBookDocumentSelection(tab: tab,
+                    saved: .init(module: target.tree.module, key: target.key, offsetText: nil), mode: .displayKey) else { throw BookSelectionError() }
+                guard token == self.revision && !self.closed else { return }
+                self.bookBrowser = entry.tree; self.bookChildren = children
+                self.presentBook(entry); self.bookAnchor = target.anchor
+                if target.anchor != nil { self.bookAnchorRevision &+= 1 }
             case .image(let source):
                 let preview: VerseImagePreview
                 do { preview = try await VerseImagePreview.decode(source) }
@@ -727,7 +750,7 @@ final class ReaderModel: ObservableObject {
                 self.bookNote = nil; self.studyNote = note; self.message = ""
             case .references(let references):
                 guard token == self.revision && !self.closed else { return }
-                if currentReference == nil { self.studyNote = nil }
+                if clearNote { self.studyNote = nil }
                 self.bookNote = nil; self.referencePreview = references; self.message = ""
             case .dictionary(let entry):
                 let history = try await worker.dictionaryHistory(tab: tab)
@@ -738,17 +761,17 @@ final class ReaderModel: ObservableObject {
                     source: PassageTarget(module: lexical.module, reference: lexical.sourceReference),
                     lexical: lexical, history: history, token: token)
             case .passage(let target):
-                if self.modules.contains(where: { $0.id == displayedModule && $0.type == "Biblical Texts" }) {
+                if let displayedModule = mainModule, self.modules.contains(where: { $0.id == displayedModule && $0.type == "Biblical Texts" }) {
                     let pair = try await worker.visitLinkedStudyPassage(tab: tab, bible: displayedModule,
                         commentary: self.commentarySelection, target: target)
                     try await self.present(pair.text, module: pair.module, token: token, passage: pair)
+                    if token == self.revision && !self.closed, target.module == pair.commentaryModule { self.showingBook = false }
                 } else {
                     try await self.visitAndPresent(module: target.module, reference: target.reference, token: token)
                     if token == self.revision && !self.closed, let anchor = target.anchor {
                         self.renderedAnchor = anchor; self.renderedAnchorRevision &+= 1
                     }
                 }
-            }
         }
     }
     func showReferencedPassages() {

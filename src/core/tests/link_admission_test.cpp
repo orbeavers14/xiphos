@@ -37,6 +37,9 @@ int main(int argc,char **argv){try {
   rejected(worker.visit_linked_passage(tab,"AFirst","",{"AFirst",hugeUri}));
   rejected(worker.visit_linked_passage(tab,"AFirst","",{"AFirst","John1:1",hugeUri}));
   rejected(worker.visit_linked_passage(tab,"AFirst","",{"AFirst","John1:1",std::string("a\0b",3)}));
+  rejected(worker.follow_book_pane_link_at(tab,"AFirst","John1:1",hugeUri));
+  rejected(worker.follow_book_pane_link_at(tab,hugeContext,"John1:1","sword://AFirst/John1:1"));
+  rejected(worker.follow_book_pane_link_at(tab,"AFirst",hugeContext,"sword://AFirst/John1:1"));
   rejected(worker.resolve_link("AFirst",hugeUri));rejected(worker.resolve_study_link(tab,"AFirst",hugeUri));
   rejected(worker.study_note_link(tab,"AFirst",hugeUri));rejected(worker.resolve_study_link_at(tab,"AFirst","John1:1",hugeUri));
   rejected(worker.follow_study_link_at(tab,"AFirst",hugeContext,"sword://AFirst/John1:1"));
@@ -59,7 +62,8 @@ int main(int argc,char **argv){try {
   {[&](const char *m,const char *c,const char *u,xc_request **o){return xc_worker_resolve_study_link_at(worker,tab,m,c,u,o);},true},
   {[&](const char *m,const char *c,const char *u,xc_request **o){return xc_worker_follow_study_link_at(worker,tab,m,c,u,o);},true},
   {[&](const char *m,const char *c,const char *u,xc_request **o){return xc_worker_hover_study_link_at(worker,tab,m,c,u,o);},true},
-  {[&](const char *m,const char *c,const char *u,xc_request **o){return xc_worker_follow_pane_link_at(worker,tab,"AFirst",m,c,u,o);},true}
+  {[&](const char *m,const char *c,const char *u,xc_request **o){return xc_worker_follow_pane_link_at(worker,tab,"AFirst",m,c,u,o);},true},
+  {[&](const char *m,const char *c,const char *u,xc_request **o){return xc_worker_follow_book_pane_link_at(worker,tab,m,c,u,o);},true}
  };
  const std::vector<char> unterminated(XC_STUDY_LINK_MAX_URI_BYTES+1,'x');
  for(bool anchored:{false,true})for(unsigned field=0;field<(anchored?5u:4u);++field){

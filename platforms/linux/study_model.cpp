@@ -65,7 +65,7 @@ bool ReaderModel::close_book() {
 }
 bool ReaderModel::follow_book(const std::string &uri) {
   if (!ready() || busy() || book_.module.empty() || has_nul(uri)) return false;
-  xc_request *r = nullptr; auto s = xc_worker_follow_book_link(worker_, tab_, uri.c_str(), &r);
+  xc_request *r = nullptr; auto s = xc_worker_follow_book_pane_link_at(worker_, tab_, passage_.bible.c_str(), passage_.reference.c_str(), uri.c_str(), &r);
   return accept(s, r, Operation::book_link);
 }
 bool ReaderModel::take_image(xc_request *r) {
@@ -169,7 +169,8 @@ bool ReaderModel::parse_search_modules(const std::string &text) {
 }
 bool ReaderModel::take_extended(xc_request *r) {
   switch (operation_) {
-  case Operation::book_document: {
+  case Operation::book_document:
+  case Operation::book_uri_document: {
     std::unique_ptr<xc_book_document, decltype(&xc_book_document_release)> d(xc_request_take_book_document(r), xc_book_document_release);
     if (!d) { if (xc_request_book_selection_present(r) != 0) error_ = "Missing book document."; return true; }
     BookDocument value; const auto *tree = xc_book_document_tree(d.get()); value.module = copy(xc_book_tree_module(tree));
@@ -183,6 +184,10 @@ bool ReaderModel::take_extended(xc_request *r) {
     value.numbers = xc_book_document_note_numbers(d.get());
     if (xc_book_document_inline_issue_count(d.get())) value.issue = "Some book images could not be loaded.";
     if (xc_book_document_stylesheet_issue(d.get())) value.issue += " The module stylesheet could not be loaded.";
+    if (operation_ == Operation::book_uri_document) {
+      value.anchor = std::move(pending_book_anchor_); pending_book_anchor_.reset();
+      if (value.anchor) value.anchor_revision = ++book_anchor_revision_;
+    }
     const bool changed_module = book_.module != value.module; book_ = std::move(value);
     if (changed_module) { book_contents_ = {}; browse_book(); }
     return true;
@@ -210,7 +215,7 @@ bool ReaderModel::take_extended(xc_request *r) {
   case Operation::book_link: {
     if (take_image(r)) return true;
     std::unique_ptr<xc_book_note, decltype(&xc_book_note_release)> n(xc_request_take_book_note(r), xc_book_note_release);
-    if (!n) { error_ = "Unsupported book link result."; return true; }
+    if (!n) return false; // Module URIs reuse the contextual study result handler.
     const auto *content = xc_book_note_content(n.get());
     note_ = {copy(xc_note_module(content)), copy(xc_note_reference(content)), copy(xc_note_html(content)), ""};
     references_ = {}; showing_references_ = false; return true;

@@ -266,6 +266,12 @@ void xc_book_image_release(xc_book_image *image);
  * take_book_image_data on success. Native hosts do not parse command strings.
  * Both results retain their source and do not replace the selected root. */
 xc_status xc_worker_follow_book_link(xc_worker *worker, uint64_t tab, const char *uri, xc_request **out);
+/* Requires a committed book document. Note/image commands retain book source;
+ * module URIs return contextual study result kinds, including owned book targets.
+ * main_reference is live main reading context for Bible lists, never a book path.
+ * Optional main strings may be NULL/empty for explicit installed URI modules;
+ * omitted/unknown URI modules require main context. Bounded before C copies. */
+xc_status xc_worker_follow_book_pane_link_at(xc_worker *worker, uint64_t tab, const char *main_module, const char *main_reference, const char *uri, xc_request **out);
 xc_status xc_worker_read_book_image_link(xc_worker *worker, uint64_t tab, const char *uri, xc_request **out);
 xc_book_image_data *xc_request_take_book_image_data(xc_request *request);
 /* Borrowed source/bytes until data release; do not release the source separately. */
