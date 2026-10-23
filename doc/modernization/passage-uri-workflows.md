@@ -350,3 +350,15 @@ targets and relative main references, and switches to known commentary. Actual
 shared book/dictionary HTML also consumes copied named anchors automatically
 on load in real WebKit. Module JavaScript remains disabled. This strengthens
 callback/model evidence while physical interaction and GTK rendering stay open.
+
+## Complete devotional renderer characterization
+
+The complete retained devotional renderer now has 1,536 frozen/current traces
+through deterministic clock, installed-module, rendering and widget seams. Unlike
+the dispatcher, it accepts any five-byte entry and indexes month_names using
+atoi(entry)-1: 99.99 requests index98, 00.00/ab.cd request -1. A guarded lookup
+records these requests without unsafe array access. Native presentation must
+resolve invalid-month handling explicitly; the test does not bless that legacy
+access. It also records first installed fallback, warn-but-continue when absent,
+target display restoration, preview/sidebar selection and entry/button updates
+only after non-null rendered text. Native devotional UI remains pending.

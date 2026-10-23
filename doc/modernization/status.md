@@ -1,5 +1,11 @@
 # Modernization status and acceptance
 
+Latest test-only addition: complete devotional rendering now has 1,536
+frozen/current traces across five configurations; strict C++11 all6/6 passes.
+The guarded month lookup exposes retained invalid-month indexing without unsafe
+execution. Resolve that policy before native dated-pane presentation. This adds
+one test after the full checkpoint below; detailed evidence is in the Mac handoff.
+
 Final verified checkpoint (2026-10-22): full Mac **195 passes plus one explicit
 index skip** (196 registered, 137.71s), including actual offscreen WebKit URI
 activation. Full Mac-hosted portable core/Linux models **148 passes plus one

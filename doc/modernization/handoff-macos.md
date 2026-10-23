@@ -1741,3 +1741,31 @@ hover/raw semantics distinct. Status/bookmark presentation and physical UI
 activation remain separate. Current Fedora/GTK/MSVC, corpus/locale/index acceptance
 and whole parity groups remain open (0/38 accepted; planning estimate unchanged).
 No hosted builds, purchases, reset credits or profile migrations were used.
+
+### Complete devotional renderer characterization (2026-10-22)
+
+Final test-only slice freezes complete main_display_devotional from `595e127`
+with GPL notice and compiles the current extracted function. 1,536 full-function
+traces cover absent/selected modules, installed-list fallback, missing rendered
+text, target-widget versus sidebar/preview, entry/button availability and supplied
+date strings. Deterministic July9 and guarded month-name lookup keep the oracle
+independent of host clock and prevent reproducing unsafe array reads. The first
+extraction matched a signature in a comment; anchoring the actual function at a
+newline corrected that test setup before all checks passed.
+
+Retained renderer uses any five-byte entry, not the dispatcher's NN.NN test.
+99.99 asks for month index98; 00.00 and ab.cd ask for -1. The guarded lookup logs
+these index requests and supplies an inert placeholder, so the test characterizes
+the decision without claiming real out-of-bounds execution is valid. No production
+behavior changed. Native devotional design must resolve this invalid-month policy
+explicitly instead of copying the unchecked month_names indexing. Calendar-day
+validation is also absent (02.30 passes). No installed module warns but still
+continues to clock/render; successful target rendering restores dictDisplay;
+missing text does not publish entry/button updates.
+
+Normal1/1 (0.40s), portable1/1 (0.36s), ASan/UBSan1/1 (0.49s), TSan1/1
+(0.52s); native-disabled C++11 full libraries build and6/6 tests pass (2.57s).
+This adds one registered test after the full196-case Mac/149-case portable
+checkpoint above; do not relabel those complete counts as fresh197/150-case runs.
+Next work can now use both complete dictionary dispatch and devotional rendering
+oracles. Still no native dated-pane implementation or whole-parity acceptance.
