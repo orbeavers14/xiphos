@@ -669,6 +669,10 @@ xc_status xc_worker_visit_linked_passage(xc_worker *worker, uint64_t tab, const 
  * Both linked-visit variants bound module fields to 4096 and reference/anchor to
  * 32768 bytes before C copies; commentary remains required but may be empty. */
 xc_status xc_worker_visit_linked_passage_with_anchor(xc_worker *worker, uint64_t tab, const char *bible, const char *commentary, const char *target_module, const char *reference, const char *anchor, xc_request **out);
+/* Apply the copied fallback policy from xc_link_anchor_main_fallback. Boolean
+ * flags are exactly 0/1. Unknown URI anchors use visible commentary first;
+ * known targets always use their actual pane. Existing variants mean known target. */
+xc_status xc_worker_visit_linked_passage_with_anchor_policy(xc_worker *worker, uint64_t tab, const char *bible, const char *commentary, const char *target_module, const char *reference, const char *anchor, int main_fallback, int commentary_visible, xc_request **out);
 xc_status xc_worker_navigate_passage(xc_worker *worker, uint64_t tab, int direction, xc_request **out);
 xc_status xc_worker_navigate_passage_chapter(xc_worker *worker, uint64_t tab, const char *module, const char *commentary, const char *reference, int direction, xc_request **out);
 xc_status xc_worker_history(xc_worker *worker, uint64_t tab, xc_request **out);
@@ -1057,6 +1061,8 @@ const char *xc_link_reference(const xc_link *link);
  * an empty string means an explicit empty anchor. Older single APIs reject anchors.
  * Parsing/transport alone does not scroll a view or store history. */
 const char *xc_link_anchor(const xc_link *link);
+/* True for an anchored unknown URI fallback; apply with current commentary visibility. */
+int xc_link_anchor_main_fallback(const xc_link *link);
 void xc_link_release(xc_link *link);
 /* Chapter snapshots include every verse, including empty entries, using the
  * module's versification. Strings survive reader/session close until release.

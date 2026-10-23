@@ -96,6 +96,7 @@ struct StudyWorker::Impl {
         const auto resolved = reader.resolve_module_name(passage->module);
         auto result = reader.navigation_target(resolved.module ? *resolved.module : main_module, passage->reference);
         result.anchor = passage->anchor;
+        result.anchor_main_fallback = !resolved.module;
         return result;
       }
       if (const auto *list = std::get_if<ReferenceListLink>(&target)) {
@@ -106,6 +107,7 @@ struct StudyWorker::Impl {
             const auto &main_module = navigation_module.empty() ? current_module : navigation_module;
             auto result = reader.navigation_target(main_module, list->expression);
             result.anchor = list->anchor;
+            result.anchor_main_fallback = list->anchor.has_value();
             return result;
           }
           const bool sidebar = passage_uri_reference_list(resolved.module->c_str(), list->expression.c_str(),
@@ -661,15 +663,15 @@ std::future<StudyPassage> StudyWorker::visit_passage(StudyTab tab, std::string m
   });
 }
 std::future<StudyPassage> StudyWorker::visit_linked_passage(StudyTab tab, std::string bible, std::string commentary,
-                                                          PassageLink target) {
+                                                          PassageLink target, bool commentary_visible) {
   if (!detail::study_link_text(bible, maximum_study_link_context_bytes) ||
       !detail::study_link_text(commentary, maximum_study_link_context_bytes) ||
       !detail::study_link_text(target.module, maximum_study_link_context_bytes) ||
       !detail::study_link_text(target.reference, maximum_study_link_uri_bytes) ||
       (target.anchor && !detail::study_link_text(*target.anchor, maximum_study_link_uri_bytes)))
     return rejected_study_link<StudyPassage>();
-  return impl_->submit([tab, bible = std::move(bible), commentary = std::move(commentary), target = std::move(target)](Impl::State &s) {
-    return s.tab(tab).visit_linked_passage(bible, commentary, target);
+  return impl_->submit([tab, bible = std::move(bible), commentary = std::move(commentary), target = std::move(target), commentary_visible](Impl::State &s) {
+    return s.tab(tab).visit_linked_passage(bible, commentary, target, commentary_visible);
   });
 }
 std::future<StudyPassage> StudyWorker::navigate_passage(StudyTab tab, int direction) {

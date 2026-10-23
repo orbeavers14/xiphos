@@ -26,7 +26,7 @@ int main(int argc,char **argv){try{
   for(const auto *token:{"T","N","P","Missing",""})for(const auto *suffix:{"#tag","!note","#","%23caf%C3%A9+%E6%96%87%E5%AD%97","#%22%5C%27%3C%2Fscript%3E"}){
    const auto target=std::get<PassageLink>(worker.follow_pane_link_at(tab,"Text","Personal","John3:17",std::string("sword://")+token+"/John3:16"+suffix).get());
    const std::string expected=std::string(token)=="N"?"Notes":std::string(token)=="P"?"Personal":"Text";
-   check(target.module==expected&&target.reference=="John 3:16"&&target.anchor,"Owner returns actual canonical Bible/commentary target with owned anchor");
+   check(target.module==expected&&target.reference=="John 3:16"&&target.anchor&&target.anchor_main_fallback==(std::string(token)=="Missing"),"Owner returns actual canonical Bible/commentary target with owned anchor");
   }
   const auto commentary=std::get<PassageLink>(worker.follow_pane_link_at(tab,"Text","Personal","John3:17","sword://N/John3:16-18#note").get());check(commentary.module=="Notes"&&commentary.anchor=="note","Commentary ranges retain navigation anchor");
   const auto missing=std::get<PassageLink>(worker.follow_pane_link_at(tab,"Text","Personal","John3:17","sword://Missing/John3:16-18#note").get());check(missing.module=="Text"&&missing.anchor=="note","Unknown range exact main fallback retains anchor");
@@ -37,6 +37,12 @@ int main(int argc,char **argv){try{
    const auto applied=worker.visit_linked_passage(tab,"Text","Personal",target).get();
    check(applied.anchor&&applied.anchor->module==target.module&&applied.anchor->text=="first","Shared navigation snapshot identifies only the actual URI target pane");
    check(!worker.read_passage(tab,"Text","Personal","John3:16").get().anchor,"Ordinary refresh does not inherit a URI anchor");
+  }
+  const auto fallback=std::get<PassageLink>(worker.follow_pane_link_at(tab,"Text","Notes","John3:17","sword://Missing/John3:16#fallback").get());
+  check(fallback.anchor_main_fallback,"Unknown anchored target retains retained fallback render order");
+  for(bool visible:{false,true}){
+   const auto applied=worker.visit_linked_passage(tab,"Text","Notes",fallback,visible).get();
+   check(applied.anchor&&applied.anchor->module==(visible?"Notes":"Text")&&applied.anchor->text=="fallback","Unknown fallback anchor selects first actually visible pane");
   }
   auto empty=worker.visit_linked_passage(tab,"Text","Personal",{"Notes","John3:17",std::string()}).get();check(empty.anchor&&empty.anchor->text.empty()&&empty.anchor->module=="Notes","Explicit empty anchor remains assigned to commentary pane");
   check(!worker.navigate_passage(tab,1).get().anchor,"History navigation does not replay a URI anchor");
@@ -55,6 +61,13 @@ int main(int argc,char **argv){try{
   auto *passage=xc_request_take_passage(request);check(passage&&!xc_request_take_passage(request),"C pane snapshot takes once");xc_request_release(request);
   check(anchor?xc_passage_anchor(passage)&&std::string(xc_passage_anchor(passage))==anchor&&std::string(xc_passage_anchor_module(passage))=="Notes":!xc_passage_anchor(passage)&&!xc_passage_anchor_module(passage),"C pane snapshot distinguishes absent/empty/literal anchor");xc_passage_release(passage);
  }
+ check(xc_worker_follow_pane_link_at(worker,tab,"Text","Notes","John3:17","sword://Missing/John3:16#fallback",&request)==XC_OK&&wait(request)==XC_OK,"C fallback anchor target");
+ auto *fallback=xc_request_take_link(request);xc_request_release(request);check(fallback&&xc_link_anchor_main_fallback(fallback)==1,"C copied fallback metadata");
+ for(int visible:{0,1}){
+  check(xc_worker_visit_linked_passage_with_anchor_policy(worker,tab,"Text","Notes",xc_link_module(fallback),xc_link_reference(fallback),xc_link_anchor(fallback),xc_link_anchor_main_fallback(fallback),visible,&request)==XC_OK&&wait(request)==XC_OK,"C apply explicit fallback visibility");
+  auto *passage=xc_request_take_passage(request);xc_request_release(request);check(passage&&std::string(xc_passage_anchor_module(passage))==(visible?"Notes":"Text"),"C shared fallback chooses visible commentary before Bible");xc_passage_release(passage);
+ }
+ xc_link_release(fallback);check(!xc_link_anchor_main_fallback(nullptr),"Null fallback getter");
  check(!xc_passage_anchor(nullptr)&&!xc_passage_anchor_module(nullptr),"Null pane anchor getters");
  check(xc_worker_follow_pane_link_at(worker,tab,"Text","Personal","John3:17","sword://N/John3:16#held",&request)==XC_OK,"C drain anchor target");xc_worker_close(worker);check(wait(request)==XC_OK,"C anchor request drains");auto *target=xc_request_take_link(request);xc_request_release(request);check(target&&std::string(xc_link_anchor(target))=="held"&&std::string(xc_link_module(target))=="Notes","C anchor target survives request and owner");xc_link_release(target);check(!xc_link_anchor(nullptr),"Null anchor getter");
  std::cout<<"Owned contextual anchor targets: precedence, single decoding, canonical owner routing, sidebar distinction, isolation and C lifetime passed\n";return 0;

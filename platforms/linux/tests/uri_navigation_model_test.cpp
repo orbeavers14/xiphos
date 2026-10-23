@@ -35,6 +35,7 @@ int main(int argc,char **argv){try {
  const auto anchor_revision=model.passage().anchor_revision;
  check(model.passage().anchor_module=="Notes"&&model.passage().anchor=="commentary","Shared snapshot targets commentary pane only");
  check(model.follow("Notes","sword://N/John3:16#commentary"),"Repeat same URI anchor");settle(model);check(model.passage().anchor_revision>anchor_revision,"Repeated same-content anchor has a new presentation event");
+ check(model.follow("Notes","sword://Missing/John3:16#fallback"),"Unknown anchored fallback");settle(model);check(model.passage().anchor_module=="Notes"&&model.passage().anchor=="fallback","Unknown fallback applies anchor to visible commentary first");
  check(model.follow("Notes","sword://T/John3:16#"),"Follow explicit top anchor");settle(model);check(model.passage().anchor&&model.passage().anchor->empty()&&model.passage().anchor_module=="Text","Explicit empty anchor differs from absent");
  check(model.visit("Text","Personal","John3:17"),"Ordinary visit after URI anchor");settle(model);check(!model.passage().anchor&&model.passage().anchor_module.empty(),"Ordinary refresh does not inherit anchor");
  const auto script=anchor_scroll_script("café 文字\"\\'</script>");

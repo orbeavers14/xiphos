@@ -65,6 +65,11 @@ int main(int argc,char **argv){try {
   {[&](const char *m,const char *c,const char *u,xc_request **o){return xc_worker_follow_pane_link_at(worker,tab,"AFirst",m,c,u,o);},true},
   {[&](const char *m,const char *c,const char *u,xc_request **o){return xc_worker_follow_book_pane_link_at(worker,tab,m,c,u,o);},true}
  };
+ for(const auto &flags:std::vector<std::pair<int,int>>{{-1,0},{2,1},{0,-1},{1,2}}){
+  request=reinterpret_cast<xc_request *>(1);largest=0;watching=true;
+  const auto status=xc_worker_visit_linked_passage_with_anchor_policy(worker,tab,"AFirst","","AFirst","John1:1","anchor",flags.first,flags.second,&request);
+  watching=false;check(status==XC_INVALID_ARGUMENT&&!request&&largest==0,"Invalid fallback/visibility booleans reject before copies/observer allocation");
+ }
  const std::vector<char> unterminated(XC_STUDY_LINK_MAX_URI_BYTES+1,'x');
  for(bool anchored:{false,true})for(unsigned field=0;field<(anchored?5u:4u);++field){
   const char *bible=field==0?hugeContext.c_str():"AFirst",*commentary=field==1?hugeContext.c_str():"",*target=field==2?hugeContext.c_str():"AFirst",*reference=field==3?unterminated.data():"John1:1",*anchor=field==4?unterminated.data():"";

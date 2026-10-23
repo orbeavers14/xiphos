@@ -763,7 +763,7 @@ final class ReaderModel: ObservableObject {
             case .passage(let target):
                 if let displayedModule = mainModule, self.modules.contains(where: { $0.id == displayedModule && $0.type == "Biblical Texts" }) {
                     let pair = try await worker.visitLinkedStudyPassage(tab: tab, bible: displayedModule,
-                        commentary: self.commentarySelection, target: target)
+                        commentary: self.commentarySelection, target: target, commentaryVisible: !self.showingBook)
                     try await self.present(pair.text, module: pair.module, token: token, passage: pair)
                     if token == self.revision && !self.closed, target.module == pair.commentaryModule { self.showingBook = false }
                 } else {

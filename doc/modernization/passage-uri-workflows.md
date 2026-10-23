@@ -281,3 +281,20 @@ the stripped lookup key. Bible range sidebar returns before output and retains
 the previously characterized split leak. This characterizes stream/callback
 behavior, not GTK DOM rendering or broad legacy resource correctness. Native
 fallback/dictionary anchor corrections follow from these stronger observations.
+
+## Unknown fallback anchor visibility correction
+
+Anchored unknown-module targets now retain a copied main-fallback flag. Explicit
+shared application receives current commentary visibility and assigns the
+transient anchor to commentary first when visible, otherwise main Bible. Known
+Bible/commentary targets retain their ordinary actual-pane rule. The flag is
+separate from reference/history and survives copied C/Swift transport. Existing
+linked-visit C variants keep known-target semantics; an added policy entry point
+accepts exactly 0/1 fallback/visibility flags with the same pre-copy bounds.
+
+Mac supplies actual book/commentary display state, including a selected but
+hidden commentary while a book is shown. Linux supplies its visible paired
+commentary state. Core and native models check both visible/hidden cases and
+known-commentary switching from the book pane. This corrects the earlier native
+unknown-anchor assumption using complete retained output evidence. Dictionary
+anchor transport remains the following correction.

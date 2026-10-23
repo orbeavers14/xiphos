@@ -354,9 +354,9 @@ struct ReferenceChoices: Sendable {
     let bookLabel: String; let chapterLabel: String; let verseLabel: String
 }
 struct PassageTarget: Sendable {
-    let module: String; let reference: String; let anchor: String?
-    init(module: String, reference: String, anchor: String? = nil) {
-        self.module = module; self.reference = reference; self.anchor = anchor
+    let module: String; let reference: String; let anchor: String?; let anchorMainFallback: Bool
+    init(module: String, reference: String, anchor: String? = nil, anchorMainFallback: Bool = false) {
+        self.module = module; self.reference = reference; self.anchor = anchor; self.anchorMainFallback = anchorMainFallback
     }
 }
 enum ContextualStudyLink: Sendable {
@@ -674,7 +674,7 @@ enum CoreValues {
     }
     static func link(_ result: OpaquePointer) -> PassageTarget {
         PassageTarget(module: String(cString: xc_link_module(result)!),
-                      reference: String(cString: xc_link_reference(result)!), anchor: xc_link_anchor(result).map { String(cString: $0) })
+                      reference: String(cString: xc_link_reference(result)!), anchor: xc_link_anchor(result).map { String(cString: $0) }, anchorMainFallback: xc_link_anchor_main_fallback(result) != 0)
     }
     static func withOptionalCString<R>(_ value: String?, _ body: (UnsafePointer<CChar>?) -> R) -> R {
         guard let value else { return body(nil) }

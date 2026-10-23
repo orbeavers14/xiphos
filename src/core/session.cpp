@@ -551,14 +551,16 @@ StudyPassage StudySession::visit_passage(const std::string &module, const std::s
   return result;
 }
 StudyPassage StudySession::visit_linked_passage(const std::string &bible, const std::string &commentary,
-                                                const PassageLink &target) {
+                                                const PassageLink &target, bool commentary_visible) {
   require_module(target.module);
   for (const auto &module : reader_.modules()) {
     if (module.id != target.module) continue;
     // Copy optional anchor before navigation/history publication. The target
     // module selects the first rendered pane, matching retained one-use routing.
     std::optional<PassageAnchor> anchor;
-    if (target.anchor) anchor = PassageAnchor{target.module, *target.anchor};
+    if (target.anchor) anchor = PassageAnchor{
+        target.anchor_main_fallback && commentary_visible && !commentary.empty() ? commentary : target.module,
+        *target.anchor};
     if (module.type == "Biblical Texts" || module.type == "Commentaries") {
       auto result = module.type == "Biblical Texts" ? visit_passage(target.module, commentary, target.reference)
           : visit_passage(bible, target.module, target.reference);

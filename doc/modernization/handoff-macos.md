@@ -1605,3 +1605,20 @@ Bible-sidebar early return/leak. No GTK DOM or whole rendering acceptance.
 Original + new consumer tests 2/2 in each configuration: normal 0.57s, ASan/UBSan
 1.02s, TSan 1.85s, portable 0.38s, native-disabled C++11 0.34s. Native corrections
 for unknown fallback pane visibility and dictionary anchor transport are next.
+
+### Unknown URI fallback anchor pane correction (2026-10-22)
+
+Complete consumer oracle `ca50a33` proves commentary-before-Bible consumption on
+unknown fallback. Native targets now copy anchor_main_fallback; shared explicit
+application takes current commentary visibility and chooses commentary when
+visible, otherwise main. C getter/new policy request and Swift/Linux copies
+preserve this metadata; flags reject unless exactly 0/1 before copies/observer.
+Older linked-visit C variants retain known-target semantics. Mac supplies hidden
+commentary state while book display is active; known commentary links switch back
+to that pane. Ordinary reads/history still clear transient anchors.
+
+Core 5/5 (4.12s), native paired/book models plus fixtures 4/4 (5.84s), portable
+7/7 (8.61s), ASan/UBSan 5/5 (8.70s), TSan 5/5 (11.54s) pass. Includes positive
+C policy application, copied routing flags, invalid flags with zero submission
+allocations, hidden/visible commentary and book-origin context. Same SDK/platform
+limits; dictionary anchor transport is next, with no whole parity acceptance.

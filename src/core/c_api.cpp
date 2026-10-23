@@ -1090,10 +1090,12 @@ xc_status xc_worker_visit_passage(xc_worker *w, uint64_t tab, const char *id, co
   if (!id || !*id || !commentary || !ref || !*ref) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.visit_passage(tab, id, commentary, ref); });
 }
-xc_status xc_worker_visit_linked_passage_with_anchor(xc_worker *w, uint64_t tab, const char *bible, const char *commentary,
-                                                     const char *target, const char *ref, const char *anchor, xc_request **out) {
+xc_status xc_worker_visit_linked_passage_with_anchor_policy(xc_worker *w, uint64_t tab, const char *bible, const char *commentary,
+                                                            const char *target, const char *ref, const char *anchor,
+                                                            int main_fallback, int commentary_visible, xc_request **out) {
   using namespace xiphos::core;
-  if (!detail::study_link_c_text(bible, maximum_study_link_context_bytes, true) || !commentary ||
+  if ((main_fallback != 0 && main_fallback != 1) || (commentary_visible != 0 && commentary_visible != 1) ||
+      !detail::study_link_c_text(bible, maximum_study_link_context_bytes, true) || !commentary ||
       !detail::study_link_c_text(commentary, maximum_study_link_context_bytes, false) ||
       !detail::study_link_c_text(target, maximum_study_link_context_bytes, true) ||
       !detail::study_link_c_text(ref, maximum_study_link_uri_bytes, true) ||
@@ -1103,8 +1105,13 @@ xc_status xc_worker_visit_linked_passage_with_anchor(xc_worker *w, uint64_t tab,
   return queue_request(w, out, [=](auto &worker) {
     PassageLink value{target, ref};
     if (anchor) value.anchor = anchor;
-    return worker.visit_linked_passage(tab, bible, commentary, std::move(value));
+    value.anchor_main_fallback = main_fallback != 0;
+    return worker.visit_linked_passage(tab, bible, commentary, std::move(value), commentary_visible != 0);
   });
+}
+xc_status xc_worker_visit_linked_passage_with_anchor(xc_worker *w, uint64_t tab, const char *bible, const char *commentary,
+                                                     const char *target, const char *ref, const char *anchor, xc_request **out) {
+  return xc_worker_visit_linked_passage_with_anchor_policy(w, tab, bible, commentary, target, ref, anchor, 0, 1, out);
 }
 xc_status xc_worker_visit_linked_passage(xc_worker *w, uint64_t tab, const char *bible, const char *commentary,
                                         const char *target, const char *ref, xc_request **out) {
@@ -1696,6 +1703,7 @@ xc_status xc_resolve_link(xc_reader *r, const char *current, const char *uri, xc
 }
 const char *xc_link_module(const xc_link *link) { return link ? link->value.module.c_str() : nullptr; }
 const char *xc_link_reference(const xc_link *link) { return link ? link->value.reference.c_str() : nullptr; }
+int xc_link_anchor_main_fallback(const xc_link *link) { return link && link->value.anchor_main_fallback ? 1 : 0; }
 const char *xc_link_anchor(const xc_link *link) { return link && link->value.anchor ? link->value.anchor->c_str() : nullptr; }
 void xc_link_release(xc_link *link) { delete link; }
 xc_status xc_read_chapter(xc_reader *r, const char *id, const char *ref, xc_chapter **out) {

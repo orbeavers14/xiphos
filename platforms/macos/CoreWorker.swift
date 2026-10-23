@@ -1029,7 +1029,7 @@ actor CoreWorker {
         guard let result = xc_request_take_link(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
         defer { xc_link_release(result) }
         return .passage(PassageTarget(module: String(cString: xc_link_module(result)!),
-            reference: String(cString: xc_link_reference(result)!), anchor: xc_link_anchor(result).map { String(cString: $0) }))
+            reference: String(cString: xc_link_reference(result)!), anchor: xc_link_anchor(result).map { String(cString: $0) }, anchorMainFallback: xc_link_anchor_main_fallback(result) != 0))
     }
     func resolveStudyLink(tab: UInt64, currentModule: String, uri: String) async throws -> ResolvedStudyLink {
         try admitStudyLink(module: currentModule, uri: uri)
@@ -1047,7 +1047,7 @@ actor CoreWorker {
         guard let result = xc_request_take_link(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
         defer { xc_link_release(result) }
         return .passage(PassageTarget(module: String(cString: xc_link_module(result)!),
-            reference: String(cString: xc_link_reference(result)!), anchor: xc_link_anchor(result).map { String(cString: $0) }))
+            reference: String(cString: xc_link_reference(result)!), anchor: xc_link_anchor(result).map { String(cString: $0) }, anchorMainFallback: xc_link_anchor_main_fallback(result) != 0))
     }
     func studyNoteLink(tab: UInt64, currentModule: String, uri: String) async throws -> RenderedStudyNote {
         try admitStudyLink(module: currentModule, uri: uri)
@@ -1250,7 +1250,7 @@ actor CoreWorker {
         } } }
         return try await passage(status, request)
     }
-    func visitLinkedStudyPassage(tab: UInt64, bible: String, commentary: String, target: PassageTarget) async throws -> RenderedStudyPassage {
+    func visitLinkedStudyPassage(tab: UInt64, bible: String, commentary: String, target: PassageTarget, commentaryVisible: Bool = true) async throws -> RenderedStudyPassage {
         guard [bible, commentary, target.module].allSatisfy({ $0.utf8.count <= Int(XC_STUDY_LINK_MAX_CONTEXT_BYTES) && !$0.utf8.contains(0) }),
               target.reference.utf8.count <= Int(XC_STUDY_LINK_MAX_URI_BYTES), !target.reference.utf8.contains(0),
               target.anchor.map({ $0.utf8.count <= Int(XC_STUDY_LINK_MAX_URI_BYTES) && !$0.utf8.contains(0) }) != false else { throw CoreError(status: XC_INVALID_ARGUMENT) }
@@ -1258,7 +1258,7 @@ actor CoreWorker {
         let handle = try worker()
         let status = bible.withCString { main in commentary.withCString { notes in target.module.withCString { module in target.reference.withCString { reference in
             CoreValues.withOptionalCString(target.anchor) { anchor in
-                xc_worker_visit_linked_passage_with_anchor(handle, tab, main, notes, module, reference, anchor, &request)
+                xc_worker_visit_linked_passage_with_anchor_policy(handle, tab, main, notes, module, reference, anchor, target.anchorMainFallback ? 1 : 0, commentaryVisible ? 1 : 0, &request)
             }
         } } } }
         return try await passage(status, request)

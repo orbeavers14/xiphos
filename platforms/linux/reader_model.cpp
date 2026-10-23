@@ -514,7 +514,7 @@ void ReaderModel::tick() {
     const auto module = copy(xc_link_module(link.get())), reference = copy(xc_link_reference(link.get()));
     const auto *main = this->module(passage_.bible);
     if (main && main->type != "Biblical Texts") { visit(module, "", reference); break; }
-    auto submitted = xc_worker_visit_linked_passage_with_anchor(worker_, tab_, passage_.bible.c_str(), passage_.commentary.c_str(), module.c_str(), reference.c_str(), xc_link_anchor(link.get()), &next);
+    auto submitted = xc_worker_visit_linked_passage_with_anchor_policy(worker_, tab_, passage_.bible.c_str(), passage_.commentary.c_str(), module.c_str(), reference.c_str(), xc_link_anchor(link.get()), xc_link_anchor_main_fallback(link.get()), passage_.commentary.empty() ? 0 : 1, &next);
     accept(submitted, next, Operation::passage); break;
   }
   }

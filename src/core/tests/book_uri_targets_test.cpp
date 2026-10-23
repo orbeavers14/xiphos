@@ -3,6 +3,7 @@
 #include "xiphos/core/c_api.h"
 #include <rawgenbook.h>
 #include <rawtext.h>
+#include <rawcom.h>
 #include <treekeyidx.h>
 #include <filesystem>
 #include <fstream>
@@ -23,6 +24,9 @@ void fixture(const fs::path &root){fs::remove_all(root);fs::create_directories(r
  {std::ofstream config(root/"mods.d/verse-key.conf");config<<"[UnsafeBook]\nDataPath=./data/Book\nModDrv=RawGenBook\nKeyType=VerseKey\nAbbreviation=Unsafe\n";}
  fs::create_directories(root/"data/Text");check(RawText::createModule((root/"data/Text").string().c_str())==0,"Create original Bible URI fixture");
  {RawText writer((root/"data/Text").string().c_str());writer.setKey("John3:16");writer.setEntry("Original main Bible URI prose.");writer.setKey("John3:17");writer.setEntry("Original next Bible URI prose.");}
+ fs::create_directories(root/"data/Notes");check(RawCom::createModule((root/"data/Notes").string().c_str())==0,"Create original commentary URI fixture");
+ {RawCom writer((root/"data/Notes").string().c_str());writer.setKey("John3:16");writer.setEntry("Original commentary URI prose.");writer.setKey("John3:17");writer.setEntry("Original next commentary URI prose.");}
+ {std::ofstream config(root/"mods.d/notes.conf");config<<"[Notes]\nDataPath=./data/Notes/\nModDrv=RawCom\nSourceType=Plain\nEncoding=UTF-8\nLang=en\nAbbreviation=N\n";}
  {std::ofstream config(root/"mods.d/text.conf");config<<"[Text]\nDataPath=./data/Text/\nModDrv=RawText\nSourceType=Plain\nEncoding=UTF-8\nLang=en\nAbbreviation=T\n";}
 }
 int main(int argc,char **argv){try{

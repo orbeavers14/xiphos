@@ -14,7 +14,11 @@ LexicalLink lexical_link(const std::string &url, const std::string &current_modu
 // anchor stripping, module fallback or catalog lookup. Hover retains raw key.
 struct ModuleUriLink { std::string module, key; };
 ModuleUriLink module_uri_link(const std::string &url);
-struct PassageLink { std::string module, reference; std::optional<std::string> anchor = std::nullopt; };
+struct PassageLink {
+  std::string module, reference;
+  std::optional<std::string> anchor = std::nullopt;
+  bool anchor_main_fallback = false; // Unknown URI: first visible commentary, then main.
+};
 struct StudyNoteLink { std::string module, reference, identifier, type; };
 struct ReferenceListLink { std::string module, expression; std::optional<std::string> anchor = std::nullopt; };
 // Image ownership follows the committed source pane, not a declared URI module.

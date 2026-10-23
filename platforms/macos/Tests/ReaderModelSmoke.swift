@@ -141,6 +141,7 @@ struct ReaderModelSmoke {
         let first = ReaderModel(worker: worker, startupError: nil), second = ReaderModel(worker: worker, startupError: nil)
         try await idle(first); try await idle(second)
         first.selection = "Text"; first.reference = "John3:17"; first.read(); try await idle(first)
+        first.chooseCommentary("Notes"); try await idle(first)
         let html = first.html, reference = first.renderedReference, back = first.canBack, forward = first.canForward, otherHTML = second.html
         first.reference = "John4:2"
         first.followLink("sword://Manual/%2FPart+One#uri-book-target"); try await idle(first)
@@ -161,6 +162,10 @@ struct ReaderModelSmoke {
         first.followBookLink("sword://T/16-17"); try await idle(first)
         guard first.referencePreview?.entries.count == 2, first.referencePreview?.entries.first?.reference == "John 3:16",
               first.html == reading, first.canBack == historyBack, first.canForward == historyForward else { fatalError("Book-origin relative Bible range uses live main verse and remains a preview") }
+        first.followBookLink("sword://Missing/John3:17#hidden-main"); try await idle(first)
+        guard first.showingBook, first.renderedAnchor == "hidden-main", first.commentaryRenderedAnchor == first.commentaryChapter?.selectedAnchor else { fatalError("Unknown fallback skips hidden commentary while book pane is shown") }
+        first.followBookLink("sword://N/John3:16#commentary"); try await idle(first)
+        guard !first.showingBook, first.renderedAnchor == nil, first.commentaryRenderedAnchor == "commentary" else { fatalError("Known commentary URI selects its pane from book display") }
         first.bookKey = ""; first.readBookKey(); try await idle(first)
         guard first.bookDocument?.tree.node.offset == 0, first.bookDocument?.tree.node.path == "", first.bookAnchor == nil else { fatalError("Explicit empty book path stays root rather than numeric startup") }
         let kept = first.bookDocument
@@ -228,6 +233,8 @@ struct ReaderModelSmoke {
         guard first.renderedAnchor == nil, first.commentaryRenderedAnchor == "commentary" else { fatalError("Commentary URI anchor does not scroll the main Bible") }
         first.followCommentaryLink("sword://N/John3:16#commentary"); try await idle(first)
         guard first.commentaryAnchorRevision > anchorRevision else { fatalError("Repeated same-content URI anchor has a distinct presentation event") }
+        first.followCommentaryLink("sword://Missing/John3:16#fallback"); try await idle(first)
+        guard first.renderedAnchor == nil, first.commentaryRenderedAnchor == "fallback" else { fatalError("Unknown URI fallback consumes anchor in visible commentary before main") }
         first.followCommentaryLink("sword://T/John3:16#"); try await idle(first)
         guard first.renderedAnchor == "", first.commentaryRenderedAnchor == first.commentaryChapter?.selectedAnchor else { fatalError("Explicit empty URI anchor: main=\(String(reflecting: first.renderedAnchor)), commentary=\(String(reflecting: first.commentaryRenderedAnchor)), message=\(first.message)") }
         first.reference = "John3:17"; first.read(); try await idle(first)

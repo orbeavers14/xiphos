@@ -156,7 +156,7 @@ public:
   std::future<Entry> read_commentary_entry_snapshot(StudyTab tab,std::string module,std::string reference);
   std::future<StudyPassage> read_passage(StudyTab tab, std::string module, std::string commentary, std::string reference);
   std::future<StudyPassage> visit_passage(StudyTab tab, std::string module, std::string commentary, std::string reference);
-  std::future<StudyPassage> visit_linked_passage(StudyTab tab, std::string bible, std::string commentary, PassageLink target);
+  std::future<StudyPassage> visit_linked_passage(StudyTab tab, std::string bible, std::string commentary, PassageLink target, bool commentary_visible = true);
   std::future<StudyPassage> navigate_passage(StudyTab tab, int direction);
   std::future<StudyPassage> navigate_passage_chapter(StudyTab tab, std::string module, std::string commentary,
                                                   std::string reference, int direction);
