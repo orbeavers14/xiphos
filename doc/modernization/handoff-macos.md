@@ -1591,3 +1591,17 @@ do not consume that global anchor. Extend the oracle through that complete
 consumer, then correct native fallback-pane/dictionary-anchor handling. Do not
 claim those cases match full retained rendering yet. Devotional date/pane rules
 and status/bookmark behavior remain separate pending routes.
+
+### Complete retained URI/HtmlOutput anchor oracle (2026-10-22)
+
+After book integration `39ead32`, freeze complete HtmlOutput with GPL notice and
+extract current function into a strict C++11 consumer oracle. Shared test host
+keeps original callback matrix unchanged and optionally drives complete output
+stream/jump seams. 432 frozen/current URI-plus-output traces prove first rendered
+pane one-use, visible commentary precedence for unknown fallback, dictionary
+global-anchor consumption, explicit empty anchors, notebook preservation and
+Bible-sidebar early return/leak. No GTK DOM or whole rendering acceptance.
+
+Original + new consumer tests 2/2 in each configuration: normal 0.57s, ASan/UBSan
+1.02s, TSan 1.85s, portable 0.38s, native-disabled C++11 0.34s. Native corrections
+for unknown fallback pane visibility and dictionary anchor transport are next.

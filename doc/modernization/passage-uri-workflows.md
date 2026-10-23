@@ -263,3 +263,21 @@ anchor audit must include the full retained HtmlOutput consumer: unknown-module
 fallback calls commentary before Bible, and dictionary display can consume the
 global anchor despite receiving a stripped key. Earlier callback-only traces did
 not emulate HtmlOutput consumption; those two native anchor cases remain open.
+
+## Complete retained anchor consumer characterization
+
+A new strict C++11 oracle freezes complete HtmlOutput from `39ead32`, retains its
+GPL notice and compiles the current extracted function. It reuses the full URI
+callback host and runs both complete URI/HtmlOutput pairs through deterministic
+stream/jump seams: 432 frozen/current traces match across families/aliases,
+references/ranges, commentary visibility, notebook switches and literal/empty
+anchors. Original 18,484 callback and 19,562 split checks remain separate.
+
+The full consumer proves that a successful render consumes special_anchor once.
+Known Bible/commentary/dictionary/book/prayer paths consume in their target pane;
+unknown fallback consumes in commentary when shown, otherwise Bible. Dictionary
+HtmlOutput sees the global anchor even though its display callback receives only
+the stripped lookup key. Bible range sidebar returns before output and retains
+the previously characterized split leak. This characterizes stream/callback
+behavior, not GTK DOM rendering or broad legacy resource correctness. Native
+fallback/dictionary anchor corrections follow from these stronger observations.
