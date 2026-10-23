@@ -211,3 +211,7 @@ shared accessible status paragraph when limited, retaining the committed-context
 Back link. Skipped counts for capped previews cover the inspected prefix; original
 expression/context stay available. This is a native preview transport bound, not complete URI range or
 legacy rendering acceptance.
+
+Dictionary URI clicks additionally carry transient owned anchors separately from
+normalized lookup/history keys. Raw and hover entry handles have no anchor. See
+[the full URI consumer correction](passage-uri-workflows.md#dictionary-uri-anchor-consumption).

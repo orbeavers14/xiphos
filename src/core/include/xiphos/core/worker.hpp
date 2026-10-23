@@ -13,7 +13,8 @@ struct StudySearch { std::shared_ptr<SearchControl> control; std::future<SearchR
 // Read-only resolved general-book/prayer URI target. Raw stripped display key
 // retains numeric-prefix/path interpretation for explicit later application.
 struct BookUriTarget { BookTree tree; std::string key; std::optional<std::string> anchor; };
-using ContextualStudyLink = std::variant<PassageLink, StudyNote, ReferenceList, LexicalEntry, VerseImageResource, DictionaryEntry, BookUriTarget>;
+struct DictionaryUriEntry { DictionaryEntry entry; std::optional<std::string> anchor; };
+using ContextualStudyLink = std::variant<PassageLink, StudyNote, ReferenceList, LexicalEntry, VerseImageResource, DictionaryUriEntry, BookUriTarget>;
 using BookPaneLink = std::variant<ContextualStudyLink, BookFollowLink>;
 using ResolvedStudyLink = std::variant<PassageLink, StudyNote>;
 using StudyHoverLink = std::variant<std::monostate, StudyNote, ReferenceList, LexicalEntry, DictionaryEntry>;

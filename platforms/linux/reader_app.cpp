@@ -48,8 +48,8 @@ struct App {
   std::unique_ptr<ReaderModel> model;
   std::unique_ptr<xiphos::linux_preview::StudyUI> study_ui;
   std::vector<std::string> bibles, commentaries{""};
-  std::string root, rendered, submitted_draft, bible_anchor, commentary_anchor;
-  bool bible_uri_anchor = false, commentary_uri_anchor = false;
+  std::string root, rendered, submitted_draft, bible_anchor, commentary_anchor, dictionary_anchor;
+  bool bible_uri_anchor = false, commentary_uri_anchor = false, dictionary_uri_anchor = false;
   unsigned scroll_jobs = 0, scroll_successes = 0, bible_scroll_successes = 0;
   guint timer = 0;
   bool automatic_start = true, startup_read_started = false, startup_smoke = false;
@@ -145,8 +145,8 @@ GtkWidget *pane(App *app, const char *title, WebKitWebView **view) {
   g_signal_connect(*view, "load-changed", G_CALLBACK(+[](WebKitWebView *view, WebKitLoadEvent event, gpointer data) {
     auto *app = static_cast<App *>(data); if (event != WEBKIT_LOAD_FINISHED || app->closing) return;
     ++app->loaded;
-    const auto &anchor = view == app->bible_view ? app->bible_anchor : view == app->commentary_view ? app->commentary_anchor : std::string();
-    const bool explicit_anchor = view == app->bible_view ? app->bible_uri_anchor : view == app->commentary_view && app->commentary_uri_anchor;
+    const auto &anchor = view == app->bible_view ? app->bible_anchor : view == app->commentary_view ? app->commentary_anchor : view == app->dictionary_view ? app->dictionary_anchor : std::string();
+    const bool explicit_anchor = view == app->bible_view ? app->bible_uri_anchor : view == app->commentary_view ? app->commentary_uri_anchor : view == app->dictionary_view && app->dictionary_uri_anchor;
     if (anchor.empty() && !explicit_anchor) return;
     // Only a copied core-owned anchor enters trusted host code in an isolated
     // world. Module scripts stay disabled. Escaping prevents literal injection.
@@ -260,12 +260,14 @@ gboolean tick(gpointer data) {
   }
   for (auto *selector : app->selectors) gtk_widget_set_sensitive(selector, enabled && !passage.bible.empty());
   const auto &dictionary = app->model->dictionary();
-  const auto dictionary_identity = dictionary.module + "\n" + dictionary.key + "\n" + dictionary.html;
+  const auto dictionary_identity = dictionary.module + "\n" + dictionary.key + "\n" + dictionary.html + (dictionary.anchor ? *dictionary.anchor : "") + std::to_string(dictionary.anchor_revision);
   if (!app->model->busy() && dictionary_identity != app->dictionary_identity) {
     app->dictionary_identity = dictionary_identity;
     select(app->dictionary_module, app->dictionaries, dictionary.module);
     if (app->dictionary_submitted == gtk_editable_get_text(GTK_EDITABLE(app->dictionary_key)))
       gtk_editable_set_text(GTK_EDITABLE(app->dictionary_key), dictionary.key.c_str());
+    app->dictionary_uri_anchor = dictionary.anchor.has_value();
+    app->dictionary_anchor = dictionary.anchor.value_or("");
     webkit_web_view_load_html(app->dictionary_view, document(dictionary.html).c_str(), "xiphos-preview://study/");
   }
   std::string dictionary_choices_identity;

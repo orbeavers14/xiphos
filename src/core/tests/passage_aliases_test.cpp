@@ -84,7 +84,7 @@ int main(int argc,char **argv){try{
  {std::ofstream config(dictRoot/"mods.d/notes.conf");config<<"[Notes]\nDataPath=./commentary/\nModDrv=RawCom\nSourceType=Plain\nEncoding=UTF-8\nLang=en\nDescription=Original commentary type fixture\nAbbreviation=N\n";}
  {Reader dictionary(dictRoot.u8string());check(dictionary.resolve_module_name("Lex").module=="Dictionary","Non-verse alias registers before passage-family rejection");rejects<std::invalid_argument>([&]{dictionary.resolve_link("Dictionary","sword://Lex/John1:1");});}
  {StudyWorker typed(dictRoot.u8string());const auto tab=typed.create_tab().get();
-  check(std::get<DictionaryEntry>(typed.resolve_study_link_at(tab,"Notes","John1:1","sword://Lex/John1:1-2").get()).module=="Dictionary","Known dictionary URI punctuation uses keyed read rather than verse navigation");
+  check(std::get<DictionaryUriEntry>(typed.resolve_study_link_at(tab,"Notes","John1:1","sword://Lex/John1:1-2").get()).entry.module=="Dictionary","Known dictionary URI punctuation uses keyed read rather than verse navigation");
   const auto commentaryRange=std::get<PassageLink>(typed.resolve_study_link_at(tab,"Notes","John1:1","sword://N/John1:1-2").get());check(commentaryRange.module=="Notes"&&commentaryRange.reference=="John 1:1","Known commentary range is a normalized navigation target rather than a Bible sidebar");
   const auto command=std::get<ReferenceList>(typed.resolve_study_link_at(tab,"Notes","John1:1","passagestudy.jsp?action=showRef&type=scripRef&module=Notes&value=John1:1-2").get());check(command.module=="Notes"&&command.entries.size()==2,"Command commentary lists remain separate from Bible-only URI range routing");
  }

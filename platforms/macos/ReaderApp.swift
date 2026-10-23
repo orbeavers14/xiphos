@@ -65,6 +65,7 @@ final class ReaderModel: ObservableObject {
     @Published var dictionarySelection: String?
     @Published var dictionaryKey = ""
     @Published private(set) var dictionaryEntry: RenderedDictionaryEntry?
+    @Published private(set) var dictionaryAnchorRevision: UInt64 = 0
     @Published private(set) var dictionaryChoices: DictionaryChoices?
     @Published private(set) var dictionaryHistory: CoreDictionaryHistoryState?
     @Published private(set) var dictionarySource: PassageTarget?
@@ -371,6 +372,7 @@ final class ReaderModel: ObservableObject {
         guard token == revision && !closed else { return }
         showingBook = false
         dictionaryEntry = entry; dictionaryKey = entry.key; dictionarySelection = entry.module
+        if entry.anchor != nil { dictionaryAnchorRevision &+= 1 }
         dictionarySource = source; dictionaryChoices = choices; lexicalPreview = lexical
         if let history { dictionaryHistory = history }
         message = ""
@@ -1350,7 +1352,7 @@ struct ReaderWindow: View {
                     Divider()
                     if let entry = model.dictionaryEntry {
                         Text("\(entry.module) • \(entry.key)").font(.caption).padding(8)
-                        PassageView(html: entry.html, anchor: nil, onScrollFailure: { model.message = $0 },
+                        PassageView(html: entry.html, anchor: entry.anchor, anchorRevision: model.dictionaryAnchorRevision, onScrollFailure: { model.message = $0 },
                                     onLink: { model.followLink($0, currentModule: model.dictionarySource?.module, currentReference: model.dictionarySource?.reference) },
                                     onLinkHover: { model.previewStudyLink($0) })
                     } else {

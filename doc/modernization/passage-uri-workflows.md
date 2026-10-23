@@ -298,3 +298,15 @@ commentary state. Core and native models check both visible/hidden cases and
 known-commentary switching from the book pane. This corrects the earlier native
 unknown-anchor assumption using complete retained output evidence. Dictionary
 anchor transport remains the following correction.
+
+## Dictionary URI anchor consumption
+
+Contextual dictionary results now carry an owned optional anchor beside the raw
+entry. The retained splitter supplies the suffix; explicit follow normalizes and
+records only the requested lookup key. A distinct DictionaryUriEntry wrapper
+keeps shared C++11 content and hover results unchanged. The C entry getter copies
+through Swift/Linux; nil means no scroll, empty means top. Pane revisions permit
+repeated identical targets. Ordinary entry reads, hover and history snapshots
+carry no URI anchor. This corrects the earlier callback-only assumption using
+the full HtmlOutput oracle. Native model checks cover copying, repeat/top and
+history clearing; physical activation and GTK DOM acceptance remain separate.

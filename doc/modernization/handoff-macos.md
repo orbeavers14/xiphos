@@ -1622,3 +1622,21 @@ Core 5/5 (4.12s), native paired/book models plus fixtures 4/4 (5.84s), portable
 C policy application, copied routing flags, invalid flags with zero submission
 allocations, hidden/visible commentary and book-origin context. Same SDK/platform
 limits; dictionary anchor transport is next, with no whole parity acceptance.
+
+### Owned dictionary URI anchor consumption (2026-10-22)
+
+Complete retained HtmlOutput evidence now drives dictionary URI anchor transport.
+Contextual dispatch returns a DictionaryUriEntry wrapper containing the ordinary
+entry and an optional owned anchor; lookup/history receive only the stripped,
+normalized requested key. Raw/hover/history entries retain no anchor. The copied
+C getter preserves absent versus explicit empty; Swift/Linux dictionary panes
+apply transient anchors with revisions for repeated identical targets. Ordinary
+reads and history navigation clear the metadata. Shared C++11 DictionaryEntry
+content remains unchanged. Original ThML fixture prose includes a named target.
+
+Core 5/5 (4.11s), native models plus actual offscreen WebKit and fixtures 5/5
+(6.79s), portable 4/4 (4.46s), ASan/UBSan 3/3 (4.39s), TSan 3/3 (5.21s) pass.
+Native-disabled C++11 full libraries build and 4/4 tests pass (2.01s). Strict C11
+header and whitespace checks pass. Includes owner-close copies, repeated/empty
+anchors and clearing on ordinary/history reads. GTK compile/runtime, physical
+URI activation, devotional date/pane routing and broad acceptance remain open.

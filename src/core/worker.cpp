@@ -75,10 +75,12 @@ struct StudyWorker::Impl {
           // Devotional click selection has its own dated-pane policy. Do not
           // silently treat it as a normal dictionary history visit.
           if (!module->dictionary) throw std::invalid_argument("URI target requires devotional navigation");
-          passage_uri_anchor(keyed.key.data());
+          std::optional<std::string> anchor;
+          if (const auto *text = passage_uri_anchor(keyed.key.data())) anchor = text;
           keyed.key.resize(std::strlen(keyed.key.c_str()));
           const auto key = record_lexical ? dictionary_click_key(keyed.key) : keyed.key;
-          return record_lexical ? session.visit_dictionary(module->id, key) : session.read_dictionary(module->id, key);
+          auto entry = record_lexical ? session.visit_dictionary(module->id, key) : session.read_dictionary(module->id, key);
+          return DictionaryUriEntry{std::move(entry), std::move(anchor)};
         }
         if (module && module->type == "Generic Books") {
           std::optional<std::string> anchor;

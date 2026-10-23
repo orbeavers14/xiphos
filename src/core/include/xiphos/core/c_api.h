@@ -1129,6 +1129,9 @@ const char *xc_lexical_entry_dictionary_html(const xc_lexical_entry *entry);
 void xc_lexical_entry_release(xc_lexical_entry *entry);
 const char *xc_dictionary_entry_module(const xc_dictionary_entry *entry);
 const char *xc_dictionary_entry_key(const xc_dictionary_entry *entry);
+/* Transient contextual dictionary URI anchor. NULL for raw/hover/history reads;
+ * explicit empty means top. Owned with entry; never part of the requested key. */
+const char *xc_dictionary_entry_anchor(const xc_dictionary_entry *entry);
 const char *xc_dictionary_entry_html(const xc_dictionary_entry *entry);
 void xc_dictionary_entry_release(xc_dictionary_entry *entry);
 const char *xc_note_module(const xc_note *note);

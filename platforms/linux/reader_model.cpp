@@ -132,6 +132,9 @@ bool ReaderModel::take_preview(xc_request *request, bool hover) {
     if (hover) information_ = {copy(xc_dictionary_entry_module(dictionary.get())), copy(xc_dictionary_entry_key(dictionary.get())), copy(xc_dictionary_entry_html(dictionary.get())), ""};
     else {
       dictionary_ = {copy(xc_dictionary_entry_module(dictionary.get())), copy(xc_dictionary_entry_key(dictionary.get())), copy(xc_dictionary_entry_html(dictionary.get())), "", ""};
+      if (const auto *anchor = xc_dictionary_entry_anchor(dictionary.get())) {
+        dictionary_.anchor = anchor; dictionary_.anchor_revision = ++dictionary_anchor_revision_;
+      }
       xc_request *next = nullptr;
       const auto status = xc_worker_dictionary_choices(worker_, tab_, dictionary_.module.c_str(), dictionary_.key.c_str(), &next);
       accept(status, next, Operation::dictionary_choices);

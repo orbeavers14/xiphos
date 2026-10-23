@@ -13,7 +13,7 @@ struct Preview { std::string module, reference, html, expression; size_t count =
 using Lexicons = std::array<std::optional<std::string>, 5>;
 struct Presentation { bool chapter = false, headings = true, double_space = false; int images = -1, font_faces = -1, note_numbers = -1; };
 struct LexicalPresentation { std::string css; bool requested = false, applied = false; };
-struct Dictionary { std::string module, key, html, source_module, source_reference; };
+struct Dictionary { std::string module, key, html, source_module, source_reference; std::optional<std::string> anchor; uint64_t anchor_revision = 0; };
 struct ReferenceChoice { std::string label, target; };
 struct Chapter { std::string html, anchor, title; LexicalPresentation lexical; };
 struct Passage { std::string bible, commentary, reference, bible_html, commentary_html; LexicalPresentation bible_lexical, commentary_lexical; std::string anchor_module; std::optional<std::string> anchor; uint64_t anchor_revision = 0; };
@@ -189,6 +189,7 @@ private:
   bool dictionary_back_ = false, dictionary_forward_ = false;
   size_t dictionary_history_count_ = 0;
   uint64_t anchor_revision_ = 0;
+  uint64_t dictionary_anchor_revision_ = 0;
   Chapter bible_chapter_, commentary_chapter_;
   bool show_chapter_ = false, show_commentary_chapter_ = false;
   unsigned display_flags_ = XC_CHAPTER_VERSE_NUMBERS | XC_CHAPTER_HIGHLIGHT_SELECTED;

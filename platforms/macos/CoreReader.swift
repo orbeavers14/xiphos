@@ -284,7 +284,7 @@ struct SavedBookSelection: Sendable {
     var module: String?, key: String?, offsetText: String?
 }
 struct DictionaryChoices: Sendable, Equatable { let module: String; let key: String; let keys: [String] }
-struct RenderedDictionaryEntry: Sendable { let module: String; let key: String; let html: String }
+struct RenderedDictionaryEntry: Sendable { let module: String; let key: String; let html: String; var anchor: String? = nil }
 struct RenderedReferenceList: Sendable {
     let module: String
     let context: String
@@ -726,7 +726,7 @@ enum CoreValues {
     }
     static func dictionaryEntry(_ result: OpaquePointer) -> RenderedDictionaryEntry {
         RenderedDictionaryEntry(module: String(cString: xc_dictionary_entry_module(result)!),
-            key: String(cString: xc_dictionary_entry_key(result)!), html: String(cString: xc_dictionary_entry_html(result)!))
+            key: String(cString: xc_dictionary_entry_key(result)!), html: String(cString: xc_dictionary_entry_html(result)!), anchor: xc_dictionary_entry_anchor(result).map { String(cString: $0) })
     }
     static func referenceList(_ result: OpaquePointer) -> RenderedReferenceList {
         RenderedReferenceList(module: String(cString: xc_reference_list_module(result)!),

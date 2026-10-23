@@ -38,7 +38,7 @@ struct xc_lexicons { std::optional<xiphos::core::LexiconPreferences> value; };
 struct xc_lexical_entry { xiphos::core::LexicalEntry value; };
 struct xc_dictionary_choices { xiphos::core::DictionaryChoices value; };
 struct xc_dictionary_history { xiphos::core::DictionaryHistorySnapshot value; };
-struct xc_dictionary_entry { xiphos::core::DictionaryEntry value; };
+struct xc_dictionary_entry { xiphos::core::DictionaryEntry value; std::optional<std::string> anchor; };
 struct xc_book_tree { xiphos::core::BookTree value; };
 struct xc_book_uri_target {
   xc_book_tree tree;
@@ -176,6 +176,7 @@ struct xc_request {
   void store(xiphos::core::LexicalEntry v) { lexical = std::make_unique<xc_lexical_entry>(xc_lexical_entry{std::move(v)}); }
   void store(xiphos::core::DictionaryChoices v) { dictionary_choices = std::make_unique<xc_dictionary_choices>(xc_dictionary_choices{std::move(v)}); }
   void store(xiphos::core::DictionaryHistorySnapshot v) { dictionary_history = std::make_unique<xc_dictionary_history>(xc_dictionary_history{std::move(v)}); }
+  void store(xiphos::core::DictionaryUriEntry v) { dictionary = std::make_unique<xc_dictionary_entry>(xc_dictionary_entry{std::move(v.entry), std::move(v.anchor)}); }
   void store(xiphos::core::DictionaryEntry v) { dictionary = std::make_unique<xc_dictionary_entry>(xc_dictionary_entry{std::move(v)}); }
   void store(std::optional<xiphos::core::BookDocument> v) {
     book_selection_result = true;
@@ -1807,6 +1808,7 @@ const char *xc_lexical_entry_dictionary_key(const xc_lexical_entry *entry) { ret
 const char *xc_lexical_entry_dictionary_html(const xc_lexical_entry *entry) { return entry ? entry->value.entry.html.c_str() : nullptr; }
 void xc_lexical_entry_release(xc_lexical_entry *entry) { delete entry; }
 const char *xc_dictionary_entry_module(const xc_dictionary_entry *entry) { return entry ? entry->value.module.c_str() : nullptr; }
+const char *xc_dictionary_entry_anchor(const xc_dictionary_entry *entry) { return entry && entry->anchor ? entry->anchor->c_str() : nullptr; }
 const char *xc_dictionary_entry_key(const xc_dictionary_entry *entry) { return entry ? entry->value.key.c_str() : nullptr; }
 const char *xc_dictionary_entry_html(const xc_dictionary_entry *entry) { return entry ? entry->value.html.c_str() : nullptr; }
 void xc_dictionary_entry_release(xc_dictionary_entry *entry) { delete entry; }

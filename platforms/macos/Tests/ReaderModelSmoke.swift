@@ -217,15 +217,20 @@ struct ReaderModelSmoke {
         first.previewStudyLink("sword:///alpha"); try await previewIdle(first)
         guard first.informationDictionary?.module == "Dictionary" else { fatalError("Empty module hover does not replace information preview through main fallback") }
         first.followCommentaryLink("sword://D/anchor-key!before%23after"); try await idle(first)
-        guard first.dictionaryEntry?.module == "Dictionary", first.dictionaryEntry?.key == "ANCHOR-KEY!BEFORE",
+        guard first.dictionaryEntry?.module == "Dictionary", first.dictionaryEntry?.key == "ANCHOR-KEY!BEFORE", first.dictionaryEntry?.anchor == "after",
               first.dictionaryHistory?.entries.last?.key == "ANCHOR-KEY!BEFORE", first.dictionarySource == nil,
               first.lexicalPreview == nil, first.renderedReference == reference, first.html == html,
               first.reference == "John4:2", first.canBack == back, first.canForward == forward,
               second.dictionaryEntry == nil else { fatalError("Dictionary URI click uses shared keyed history/presentation without Bible or lexical source changes") }
+        let dictionaryRevision = first.dictionaryAnchorRevision
+        first.followCommentaryLink("sword://D/anchor-key!before%23after"); try await idle(first)
+        guard first.dictionaryAnchorRevision > dictionaryRevision else { fatalError("Repeated dictionary URI anchor is a new presentation event") }
+        first.followCommentaryLink("sword://D/alpha#"); try await idle(first)
+        guard first.dictionaryEntry?.anchor == "" else { fatalError("Explicit empty dictionary anchor requests top") }
         first.followCommentaryLink("sword://D/alpha"); try await idle(first)
-        guard first.dictionaryEntry?.key == "ALPHA", first.dictionaryHistory?.canBack == true else { fatalError("Dictionary URI clicks enable shared Back") }
+        guard first.dictionaryEntry?.anchor == nil, first.dictionaryEntry?.key == "ALPHA", first.dictionaryHistory?.canBack == true else { fatalError("Dictionary URI clicks enable shared Back") }
         first.navigateDictionaryHistory(-1); try await idle(first)
-        guard first.dictionaryEntry?.key == "ANCHOR-KEY!BEFORE", first.dictionaryHistory?.canForward == true else { fatalError("Dictionary URI visits use existing history navigation") }
+        guard first.dictionaryEntry?.key == "ANCHOR-KEY!BEFORE", first.dictionaryEntry?.anchor == nil, first.dictionaryHistory?.canForward == true else { fatalError("Dictionary URI visits use existing history navigation") }
         first.followCommentaryLink("sword://T/John3:16#main"); try await idle(first)
         guard first.renderedAnchor == "main", first.commentaryRenderedAnchor == nil else { fatalError("Bible URI anchor applies only to the shared target pane") }
         first.followCommentaryLink("sword://N/John3:16#commentary"); try await idle(first)
