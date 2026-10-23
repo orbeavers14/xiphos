@@ -10,7 +10,10 @@ namespace xiphos::core {
 using StudyTab = std::uint64_t;
 struct StudyBatchSearch { std::shared_ptr<SearchControl> control; std::future<SearchBatchResult> result; };
 struct StudySearch { std::shared_ptr<SearchControl> control; std::future<SearchResult> result; };
-using ContextualStudyLink = std::variant<PassageLink, StudyNote, ReferenceList, LexicalEntry, VerseImageResource, DictionaryEntry>;
+// Read-only resolved general-book/prayer URI target. Raw stripped display key
+// retains numeric-prefix/path interpretation for explicit later application.
+struct BookUriTarget { BookTree tree; std::string key; std::optional<std::string> anchor; };
+using ContextualStudyLink = std::variant<PassageLink, StudyNote, ReferenceList, LexicalEntry, VerseImageResource, DictionaryEntry, BookUriTarget>;
 using ResolvedStudyLink = std::variant<PassageLink, StudyNote>;
 using StudyHoverLink = std::variant<std::monostate, StudyNote, ReferenceList, LexicalEntry, DictionaryEntry>;
 struct DictionaryHistorySnapshot {

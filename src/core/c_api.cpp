@@ -40,6 +40,13 @@ struct xc_dictionary_choices { xiphos::core::DictionaryChoices value; };
 struct xc_dictionary_history { xiphos::core::DictionaryHistorySnapshot value; };
 struct xc_dictionary_entry { xiphos::core::DictionaryEntry value; };
 struct xc_book_tree { xiphos::core::BookTree value; };
+struct xc_book_uri_target {
+  xc_book_tree tree;
+  std::string key;
+  std::optional<std::string> anchor;
+  explicit xc_book_uri_target(xiphos::core::BookUriTarget value)
+      : tree{std::move(value.tree)}, key(std::move(value.key)), anchor(std::move(value.anchor)) {}
+};
 struct xc_book_children { xiphos::core::BookChildren value; };
 struct xc_book_entry {
   xc_book_tree tree;
@@ -103,6 +110,7 @@ struct xc_request {
   std::unique_ptr<xc_dictionary_history> dictionary_history;
   std::unique_ptr<xc_dictionary_entry> dictionary;
   std::unique_ptr<xc_book_tree> book_tree;
+  std::unique_ptr<xc_book_uri_target> book_uri_target;
   std::unique_ptr<xc_book_entry> book_entry;
   std::shared_ptr<xiphos::core::SearchControl> search_control;
   std::unique_ptr<xc_search> search_result;
@@ -179,6 +187,7 @@ struct xc_request {
   void store(xiphos::core::BookImageResource v) { book_image_data = std::make_unique<xc_book_image_data>(std::move(v)); }
   void store(xiphos::core::BookImageTarget v) { book_image = std::make_unique<xc_book_image>(xc_book_image{std::move(v)}); }
   void store(xiphos::core::BookDocument v) { book_document = std::make_unique<xc_book_document>(std::move(v)); }
+  void store(xiphos::core::BookUriTarget v) { book_uri_target = std::make_unique<xc_book_uri_target>(std::move(v)); }
   void store(xiphos::core::BookTree v) { book_tree = std::make_unique<xc_book_tree>(xc_book_tree{std::move(v)}); }
   void store(std::optional<xiphos::core::BookTree> v) {
     book_selection_result = true;
@@ -1523,6 +1532,11 @@ void xc_passage_release(xc_passage *p) { delete p; }
 xc_entry *xc_request_take_entry(xc_request *r) { return r && r->status == XC_OK ? r->entry.release() : nullptr; }
 xc_chapter *xc_request_take_chapter(xc_request *r) { return r && r->status == XC_OK ? r->chapter.release() : nullptr; }
 xc_choices *xc_request_take_choices(xc_request *r) { return r && r->status == XC_OK ? r->choices.release() : nullptr; }
+xc_book_uri_target *xc_request_take_book_uri_target(xc_request *r) { return r && r->status == XC_OK ? r->book_uri_target.release() : nullptr; }
+const xc_book_tree *xc_book_uri_target_tree(const xc_book_uri_target *target) { return target ? &target->tree : nullptr; }
+const char *xc_book_uri_target_key(const xc_book_uri_target *target) { return target ? target->key.c_str() : nullptr; }
+const char *xc_book_uri_target_anchor(const xc_book_uri_target *target) { return target && target->anchor ? target->anchor->c_str() : nullptr; }
+void xc_book_uri_target_release(xc_book_uri_target *target) { delete target; }
 xc_link *xc_request_take_link(xc_request *r) { return r && r->status == XC_OK ? r->link.release() : nullptr; }
 xc_catalog *xc_request_take_catalog(xc_request *r) { return r && r->status == XC_OK ? r->catalog.release() : nullptr; }
 xc_history *xc_request_take_history(xc_request *r) { return r && r->status == XC_OK ? r->history.release() : nullptr; }

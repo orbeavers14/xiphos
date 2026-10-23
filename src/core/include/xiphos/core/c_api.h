@@ -17,6 +17,7 @@ typedef struct xc_dictionary_choices xc_dictionary_choices;
 typedef struct xc_dictionary_history xc_dictionary_history;
 typedef struct xc_dictionary_entry xc_dictionary_entry;
 typedef struct xc_book_tree xc_book_tree;
+typedef struct xc_book_uri_target xc_book_uri_target;
 typedef struct xc_book_entry xc_book_entry;
 typedef struct xc_book_document xc_book_document;
 typedef struct xc_book_image xc_book_image;
@@ -727,8 +728,10 @@ xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_req
  * navigation context. Unknown offered modules use the exact main fallback and
  * commentary range targets return a normalized link for explicit host navigation.
  * Ordinary dictionary URI targets return take_dictionary_entry with a decoded
- * arbitrary key and the retained click anchor removed. Devotional/book click
- * targets remain separate typed routes. Dictionary resolve does not visit history.
+ * arbitrary key and the retained click anchor removed. Devotional clicks remain
+ * separate. Dictionary resolve does not visit history.
+ * Installed indexed general-book/prayer URI targets return take_book_uri_target
+ * with resolved actual tree source and raw stripped display key. No book visit.
  * Single passage URIs and notes
  * return their existing kinds. Strong's/morphology return an owned lexical
  * preview after explicit tab lexicon configuration. Source context/URI must
@@ -940,6 +943,15 @@ void xc_passage_release(xc_passage *passage);
 xc_chapter *xc_request_take_chapter(xc_request *request);
 xc_choices *xc_request_take_choices(xc_request *request);
 xc_link *xc_request_take_link(xc_request *request);
+/* Contextual general-book/prayer URI targets resolve through private query keys.
+ * No document read, book/tab selection, history or persistence occurs. Tree is
+ * borrowed from this take-once handle; key/anchor are copied owned text. NULL
+ * anchor differs from explicit empty. Older single-passage APIs stay strict. */
+xc_book_uri_target *xc_request_take_book_uri_target(xc_request *request);
+const xc_book_tree *xc_book_uri_target_tree(const xc_book_uri_target *target);
+const char *xc_book_uri_target_key(const xc_book_uri_target *target);
+const char *xc_book_uri_target_anchor(const xc_book_uri_target *target);
+void xc_book_uri_target_release(xc_book_uri_target *target);
 xc_catalog *xc_request_take_catalog(xc_request *request);
 xc_history *xc_request_take_history(xc_request *request);
 size_t xc_catalog_count(const xc_catalog *catalog);

@@ -216,3 +216,21 @@ anchors, obsolete completions and disabled module scripts. This is rendering
 evidence, not a physical end-user URI click or full workflow acceptance. Linux
 model/helper checks run on Mac with GTK runtime OFF; changed GTK host code still
 requires a current Fedora build/runtime check. Windows presentation remains open.
+
+## Resolved general-book/prayer URI targets
+
+Contextual module URIs now recognize installed indexed Generic Books, including
+prayer lists, before verse parsing. After owner alias resolution and retained
+anchor splitting, book_display_target interprets the raw display key; private SDK
+query keys return the owned actual tree source. BookUriTarget preserves raw key,
+canonical tree/offset and optional anchor. Numeric-prefix/minimum-four behavior,
+relative display paths, slash numeric titles, empty explicit root, Unicode,
+percent-looking text and punctuation use existing characterized book services.
+Missing snaps, unsafe key drivers and oversized/overflowed addresses reject.
+
+This target lookup does not select/render a book, visit Bible/dictionary history,
+change search or write a profile. C exposes a distinct take-once book target with
+a borrowed owned tree/key/anchor, surviving request and worker close. Older strict
+single-passage APIs remain unchanged; book hover stays no-presentation. Native
+book-target consumption and cross-links originating inside a book are the next
+separate slice. No whole book/prayer workflow acceptance follows.

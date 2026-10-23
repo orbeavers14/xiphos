@@ -1538,3 +1538,23 @@ it for saved display restoration. Numeric-prefix/path, minimum-four and bounds
 behavior stays equal to complete extracted main_display_book. Normal 1/1 (0.12s),
 ASan/UBSan 1/1 (0.13s), TSan 1/1 (1.38s), portable 1/1 (0.22s) pass. No SDK
 selection, rendering, persistence or native URI book acceptance in this step.
+
+### Resolved owned book/prayer URI targets (2026-10-22)
+
+After direct display policy `cc39c27`, contextual GenericBook/prayer URIs resolve
+aliases, strip the shared anchor and return BookUriTarget with actual owned SDK
+tree, raw display key and optional anchor. Reuses book_display_target and private
+resolve_book_target queries; no book/document selection, read, history or profile
+write. Distinct take-once C handle borrows owned tree/key/anchor with shutdown
+lifetime. Native consumption/book-origin cross-link dispatch follows separately.
+
+Original-prose RawGenBook/prayer/Text fixture covers numeric-prefix and minimum
+four, relative/path/Unicode/list/query titles, hash-over-bang, percent-once, explicit
+root versus numeric startup, unsafe VerseKey driver, missing paths, bounds, main
+versus source, hover, history/search/sibling isolation, closed tabs, FIFO draining
+and C kind/ownership/null getters. Core normal 1/1 (0.61s), combined book/URI
+regression 7/7 (4.72s), ASan/UBSan 2/2 (1.07s), TSan 2/2 (1.34s), portable
+2/2 (0.63s) pass. Initial test used mixed string-literal/std::string initializer
+list inference; corrected to explicit vector<string> before compilation passed.
+Same environment/SDK limits; no native book URI click, current Fedora/MSVC or
+whole book/prayer acceptance is claimed.

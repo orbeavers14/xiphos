@@ -80,6 +80,13 @@ struct StudyWorker::Impl {
           const auto key = record_lexical ? dictionary_click_key(keyed.key) : keyed.key;
           return record_lexical ? session.visit_dictionary(module->id, key) : session.read_dictionary(module->id, key);
         }
+        if (module && module->type == "Generic Books") {
+          std::optional<std::string> anchor;
+          if (const auto *text = passage_uri_anchor(keyed.key.data())) anchor = text;
+          keyed.key.resize(std::strlen(keyed.key.c_str()));
+          auto tree = reader.resolve_book_target(book_display_target(module->id, keyed.key));
+          return BookUriTarget{std::move(tree), std::move(keyed.key), std::move(anchor)};
+        }
       }
       const auto target = navigation_module.empty() ? xiphos::core::contextual_study_link(uri, current_module)
           : xiphos::core::contextual_study_link(uri, current_module, navigation_module);
