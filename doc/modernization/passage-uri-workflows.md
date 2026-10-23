@@ -1,5 +1,14 @@
 # Passage URI dispatch boundaries
 
+Current implementation through `5460417` includes ordinary dictionary clicks,
+owned Book/prayer URI targets, native book-origin dispatch and transient pane
+anchors. Full consumer evidence corrected unknown fallback pane visibility and
+dictionary anchor transport. Real offscreen WebKit now exercises actual DOM link
+activation through native worker services and automatic scrolling of shared
+book/dictionary output. Chronological sections below describe the earlier scoped
+steps; later corrections supersede their open-item notes. Native devotional pane
+state, status/bookmark behavior and full platform/corpus acceptance remain open.
+
 Updated 2026-10-22. This records retained behavior and partial native coverage;
 no whole workflow or new parity group is accepted.
 

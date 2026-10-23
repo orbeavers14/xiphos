@@ -1706,3 +1706,38 @@ anchors remain distinct even at an identical revision. GTK host source consumes
 the tested comparison; its compile/runtime still require the current Linux host.
 Portable model/preview/dispatcher/fixtures 7/7 (4.58s) pass, including a regression
 that first reproduces the old flattened collision. No broad GTK acceptance claim.
+
+### Final URI continuation regression checkpoint (2026-10-22)
+
+Code through `5460417` is pushed to the authorized orbeavers14/xiphos fork;
+remote HEAD is master, verified directly. Full Mac 195 passes plus one explicit
+index skip (196 registered, 137.71s). Full portable core/Linux models on Mac
+148 passes plus one index skip (149 registered, 119.47s), followed by the final
+dictionary presentation collision checks and preview/fixtures 7/7 (4.58s).
+Native-disabled strict C++11 all libraries build and5/5 pass (2.66s); expanded
+dictionary route matrix passes ASan/UBSan1/1 (1.16s), TSan1/1 (1.70s). Earlier
+full checkpoint after dictionary anchors was Mac192 passes+1 skip (193 registered,
+163.92s), portable147 passes+1 skip (148 registered,113.79s). C11 public header,
+shell syntax, changed-document links and whitespace checks pass.
+
+An intermediate host full run timed out after core_uri_anchor_targets printed
+success. No reproducible fault was identified: 12 CTest repetitions and64 fresh
+sequential processes (10.15s) passed, and the final full host run passed. Preserve
+that observation if teardown stalls again. Additional ASan/UBSan and TSan runs
+repeated both the fixture and anchor target16 times each without failure
+(33.23s and44.06s respectively; SDK/framework coverage remains partial). Capture
+a live process stack before
+changing shutdown policy. A subsequent full run launched inside the restricted
+sandbox could not create Launch Services extensions for real WebKit tests; stop
+only its identified processes and rerun with host access. The final complete run
+above used that access. Do not mislabel the restricted run as an application fix.
+
+Next substantive route: build native devotional dated-pane state using the
+complete dispatcher oracle and shared DictionaryDisplayRoute, preserving the
+changed-module guard, NN.NN shape-only rule, host-local-today fallback and early
+return before dictionary history. Characterize complete main_display_devotional
+before transporting a new native result. Keep ordinary dictionary history and
+hover/raw semantics distinct. Status/bookmark presentation and physical UI
+activation remain separate. Current Fedora/GTK/MSVC, corpus/locale/index acceptance
+and whole parity groups remain open (0/38 accepted; planning estimate unchanged).
+No hosted builds, purchases, reset credits or profile migrations were used.

@@ -1,5 +1,31 @@
 # Modernization status and acceptance
 
+Final verified checkpoint (2026-10-22): full Mac **195 passes plus one explicit
+index skip** (196 registered, 137.71s), including actual offscreen WebKit URI
+activation. Full Mac-hosted portable core/Linux models **148 passes plus one
+index skip** (149 registered, 119.47s), followed by the final dictionary identity
+model/preview/fixture checks 7/7 (4.58s). Native-disabled strict C++11 all5/5
+(2.66s); expanded dictionary route ASan/UBSan1/1 (1.16s), TSan1/1 (1.70s).
+GTK compile/runtime remains OFF. See the Mac handoff for the earlier shutdown
+timeout, sandbox-blocked run, repeat evidence and exact scope.
+
+Current URI checkpoint (2026-10-22, through `5460417`): owned Bible/commentary,
+dictionary, Book/prayer targets now flow through the shared FIFO owner and copied
+C/Swift/Linux values. Unknown fallback anchors follow actual commentary visibility;
+dictionary anchors stay separate from lookup/history. Real offscreen Mac WebKit
+activates links through production navigation callbacks, cancels browser navigation
+and automatically scrolls actual shared book/dictionary HTML. Complete retained
+URI/HtmlOutput and dictionary/devotional display oracles guard the extracted
+C++11 policies, including 12,887 full dictionary dispatch comparisons. Dictionary
+presentation comparison now prevents anchor/revision collisions. See the
+[Mac handoff](handoff-macos.md) and [URI contract](passage-uri-workflows.md).
+
+Native devotional date/pane state, status/bookmark behavior, physical GUI clicks,
+current Fedora/MSVC, corpus acceptance and retirement gates remain open. GTK
+compile/runtime is OFF on this Mac. No whole-parity acceptance increase. All
+checked commits are published to the authorized fork's `master`; this does not
+claim upstream integration. The chronological sections below retain prior evidence.
+
 Current URI continuation (2026-10-22): pre-copy C/pre-FIFO worker study-link
 admission `69db801`, shared strict C++11 navigation normalization `8fcfa4c`,
 cloned canonical unknown/commentary URI range targets `7c116dc`, and shared

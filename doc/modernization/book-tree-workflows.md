@@ -655,3 +655,16 @@ delegates to that function; startup-offset restoration remains distinct. This
 step does no SDK lookup, read, selection or persistence. Complete extracted
 main_display_book comparisons cover both direct and saved entry points, with
 normal, portable, ASan/UBSan and TSan checks. It prepares typed book URI routing.
+
+## Owned module URI targets and book-origin navigation
+
+Book/prayer module URIs now resolve on the FIFO owner to actual-module BookTree,
+raw requested display key and optional owned anchor. Native hosts reuse shared
+display-key document restoration, preserving numeric minimum-four versus explicit
+empty root. Book-origin module links carry live main module/reference separately
+from the committed tree path; notes/images retain their existing book source.
+Copied C/Swift/Linux adapters preserve ownership and transient anchors. Real Mac
+offscreen WebKit activation covers Book/prayer targets, relative main references,
+commentary switching and automatic scrolling in actual shared book HTML. Physical
+interaction and GTK/current Fedora/MSVC/corpus acceptance remain open. See the
+[URI contract](passage-uri-workflows.md) and [Mac evidence](handoff-macos.md).
