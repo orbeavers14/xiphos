@@ -75,6 +75,24 @@ template<class Handler> Trace run(Handler handler,const std::string &uri,bool cl
  return trace;
 }
 int main(){try {
+ // Exhaust short strings against the literal retained split, including empty
+ // anchors, repeated markers, UTF-8 bytes and hash-after-bang precedence.
+ std::size_t anchor_cases=0;
+ const std::string alphabet="ab/#!";
+ std::function<void(std::string,int)> anchors = [&](std::string input,int remaining) {
+  std::vector<char> expected(input.begin(),input.end()), actual_key=expected;
+  expected.push_back(0);actual_key.push_back(0);
+  char *old=std::strchr(expected.data(),'#');
+  if(!old)old=std::strchr(expected.data(),'!');
+  if(old)*old++='\0';
+  char *now=xiphos::core::passage_uri_anchor(actual_key.data());
+  check(bool(old)==bool(now),"Anchor presence differs");
+  check(expected==actual_key,"Anchor split changes retained bytes");
+  if(old)check(old-expected.data()==now-actual_key.data() && std::strcmp(old,now)==0,"Anchor ownership/offset differs");
+  ++anchor_cases;
+  if(remaining)for(char c:alphabet)anchors(input+c,remaining-1);
+ };
+ anchors("",6);anchors("café/文字",2);
  std::size_t comparisons=0;
  for(const char *main:{"Text","Commentary","Missing"})for(const char *module:{"","Text","T","文字 café","Commentary","Percom","Dictionary","D","Book","Prayer","Missing","Gone"})
  for(const char *reference:{"John3:16","John3:16-18","John3:16;17","John3:16,17","John3:16#tag","John3:16!note","John3:16!earlier#later","café"})
@@ -92,5 +110,5 @@ int main(){try {
  check(missing.history&&missing.buffers==0,"Unknown URI routes through main navigation and records history");
  const auto range=run(actual::sword_uri,"sword://T/John3:16-18",true,"Text",false,0,false);
  check(!range.history&&range.buffers==1,"Bible range routes sidebar before final history flag and retains observed legacy split leak");
- std::cout<<"Complete retained URI/preview dispatch: "<<comparisons<<" frozen/actual callback and state traces agree\n";return 0;
+ std::cout<<"Complete retained URI/preview dispatch: "<<comparisons<<" frozen/actual callback and state traces agree; "<<anchor_cases<<" anchor splits agree\n";return 0;
  }catch(const std::exception &e){std::cerr<<e.what()<<'\n';return 1;}}

@@ -112,3 +112,10 @@ get_valid_key and module classification using original Text/alternate-canon/
 regular/personal fixtures. Cloned resolution preserves subsequent relative key
 behavior and publishes no history/search change. Full navbar/XML/IPC and broad
 locale/corpus acceptance remain separate.
+
+The retained click anchor split now uses a shared strict C++11 helper. It mutates
+only a caller-owned reference buffer, returns a borrowed suffix (including an
+empty suffix), and prefers the first hash over any earlier bang. The complete
+frozen/current callback matrix remains equal; 19,562 short/Unicode-prefix cases
+also compare every resulting byte and anchor offset with the literal retained
+branch. This helper alone does not add native anchor presentation.

@@ -751,9 +751,7 @@ gint sword_uri(const gchar *url, gboolean clicked)
 		tmpkey = work_buf[MODULE];
 	} else
 		tmpkey = work_buf[KEY];
-	if ((settings.special_anchor = strchr(tmpkey, '#')) ||
-	    (settings.special_anchor = strchr(tmpkey, '!')))
-		*(settings.special_anchor++) = '\0';
+	settings.special_anchor = xiphos::core::passage_uri_anchor(tmpkey);
 
 	XI_message(("work_buf: %s, %s",
 		    work_buf[MODULE],

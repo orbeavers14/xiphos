@@ -1409,3 +1409,13 @@ Final Mac/core selection passed 6/6 (5.89s); portable model recheck passed 2/2
 (1.94s). Same environment/SDK/sanitizer limits as above;
 no GUI URI interaction, broad corpus/locales/current Fedora/MSVC or whole parity
 acceptance. Next typed URI family remains dictionary/keyed hover/click plus anchors.
+
+### Shared retained URI anchor split (2026-10-22)
+
+After `7c116dc`, extracted the retained in-place click anchor split into the
+C++11 passage URI helper. Hash takes precedence over bang regardless of order;
+null versus empty anchors and caller-owned buffer offsets remain distinct.
+Complete frozen/current callback comparison and 19,562 exhaustive short/Unicode
+prefix splits pass native-disabled C++11 (0.31s), ASan/UBSan (0.94s), and TSan
+(2.14s), one test per configuration. The sanitizer library/SDK limits above
+still apply. No native anchor UI or whole workflow acceptance is implied.
