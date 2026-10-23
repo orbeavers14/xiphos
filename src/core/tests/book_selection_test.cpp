@@ -52,6 +52,8 @@ int main(){
     const SavedBookSelection saved{std::string("Book"),key,std::string("24")};
     const auto candidate=saved_book_target(saved,BookRestoreMode::display_key);
     check(candidate && candidate->module=="Book" && candidate->address==actual_legacy::run(key.c_str()),"Candidate matches extracted actual legacy display selection branch");
+    const auto direct=book_display_target("Book",key);
+    check(direct.module=="Book"&&direct.address==candidate->address,"Direct display policy reuses saved-display rules and complete retained branch");
   }
   SavedBookSelection saved{std::string("Book"),std::nullopt,std::nullopt};
   check(saved_book_target(saved,BookRestoreMode::display_key)->address==actual_legacy::run(nullptr),"Missing key matches null display key -> offset four");
@@ -66,6 +68,9 @@ int main(){
   check(std::get<std::string>(saved_book_target(saved,BookRestoreMode::display_key)->address)=="/Part One" && std::get<std::uint64_t>(saved_book_target(saved,BookRestoreMode::initial_window)->address)==24,"Distinct restore contexts retain stale-offset versus newer-path behavior");
   saved.key="";saved.offset_text=std::nullopt;
   check(std::get<std::string>(saved_book_target(saved,BookRestoreMode::display_key)->address).empty() && std::get<std::uint64_t>(saved_book_target(saved,BookRestoreMode::initial_window)->address)==4,"Explicit empty path differs from missing initial offset");
+  for(const auto &bad:{std::string("2147483648"),std::string(4097,'0'),std::string("4\0tail",6)})rejects([&]{book_display_target("Book",bad);});
+  rejects([&]{book_display_target("","/Part One");});
+  rejects([&]{book_display_target(std::string("Book\0tail",9),"/Part One");});
   saved.key="6";check(std::get<std::uint64_t>(saved_book_target(saved,BookRestoreMode::display_key)->address)==6,"Candidate does not invent SDK alignment or existence validation");
   for(const auto &bad:{"2147483648","999999999999999999999999999999999999999999"}){
     saved.key=bad;saved.offset_text=bad;

@@ -32,6 +32,15 @@ BookSelectionTarget book_reading_target(BookSelectionTarget target) {
     if (*offset < 4) *offset = 4;
   return target;
 }
+BookSelectionTarget book_display_target(std::string module, std::string key) {
+  if (module.empty() || module.find('\0') != std::string::npos)
+    throw std::invalid_argument("Book module is empty or contains NUL");
+  valid_text(key);
+  BookSelectionTarget result{std::move(module), std::uint64_t(4)};
+  if (!key.empty() && digit(key.front())) result.address = prefix(key);
+  else result.address = std::move(key);
+  return book_reading_target(std::move(result));
+}
 std::optional<BookSelectionTarget> saved_book_target(const SavedBookSelection &saved, BookRestoreMode mode) {
   if (mode != BookRestoreMode::display_key && mode != BookRestoreMode::initial_window)
     throw std::invalid_argument("Unknown book restore mode");
@@ -46,11 +55,7 @@ std::optional<BookSelectionTarget> saved_book_target(const SavedBookSelection &s
       break;
     }
     case BookRestoreMode::display_key: {
-      const auto text = saved.key.value_or("0");
-      valid_text(text);
-      if (!text.empty() && digit(text.front())) result.address = prefix(text);
-      else result.address = text;
-      break;
+      return book_display_target(*saved.module, saved.key.value_or("0"));
     }
     default: throw std::invalid_argument("Unknown book restore mode");
   }

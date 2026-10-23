@@ -1524,3 +1524,17 @@ A missing CSS argument in the new WebKit fixture was corrected before compilatio
 and execution passed. No physical user click, full corpus, Fedora/MSVC or whole
 parity acceptance is implied. Next typed URI routes: devotional and book/prayer
 clicks, plus status/bookmark behavior.
+
+### Full URI-pane checkpoint and direct book display policy (2026-10-22)
+
+Through transient-pane implementation `db2f46e`, fresh full Mac 189 passes plus
+one explicit index skip (190 registered, 161.83s); full Mac-hosted portable/Linux
+144 passes plus one index skip (145 registered, 113.68s), GTK runtime OFF. Includes
+real offscreen Mac WebKit scrolling; physical URI clicks, current Fedora/MSVC and
+whole parity gates remain open. These supersede the full 186/142 registered runs.
+
+Next, expose book_display_target from the existing saved-display policy and reuse
+it for saved display restoration. Numeric-prefix/path, minimum-four and bounds
+behavior stays equal to complete extracted main_display_book. Normal 1/1 (0.12s),
+ASan/UBSan 1/1 (0.13s), TSan 1/1 (1.38s), portable 1/1 (0.22s) pass. No SDK
+selection, rendering, persistence or native URI book acceptance in this step.

@@ -644,3 +644,14 @@ shared settings and refresh. Its original-prose window showed *n1/*x1 then
 retaining the selected root. Off removed digits, On restored counters from one.
 Draft/history/source behavior is model-checked; generic closed-owner guards are retained. Whole corpus, hover,
 fonts/RTL, saved-tab/visibility workflows and other-platform UI remain pending.
+
+## Direct display-input target policy (2026-10-22)
+
+book_display_target exposes the already-characterized display-key policy without
+constructing saved-profile data: digit-leading keys use the bounded numeric
+prefix and minimum offset four; all other keys stay paths, including explicit
+empty root and numeric-looking slash titles. Saved display-key restoration now
+delegates to that function; startup-offset restoration remains distinct. This
+step does no SDK lookup, read, selection or persistence. Complete extracted
+main_display_book comparisons cover both direct and saved entry points, with
+normal, portable, ASan/UBSan and TSan checks. It prepares typed book URI routing.

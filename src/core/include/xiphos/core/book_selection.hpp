@@ -13,6 +13,10 @@ struct BookSelectionTarget {
 // Shared application reading rule: numeric offsets below four select four.
 // Explicit path roots remain paths; low-level source queries keep offset zero.
 BookSelectionTarget book_reading_target(BookSelectionTarget target);
+// Retained display-input interpretation without a saved profile: digit-leading
+// keys use the bounded numeric prefix and minimum four; other keys are paths.
+// Does not resolve an SDK node, select a book, persist or render.
+BookSelectionTarget book_display_target(std::string module, std::string key);
 // A candidate, not a selected/rendered entry. Initial-window restore reads the
 // separate saved offset; tab/display restore reads key (missing -> "0").
 // Missing/empty module -> no book. SDK existence/alignment/path resolution,
