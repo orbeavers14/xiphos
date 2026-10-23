@@ -29,6 +29,16 @@ std::string decode(const std::string &url) {
   return value;
 }
 }
+ModuleUriLink module_uri_link(const std::string &url) {
+  if (url.size() > maximum_study_link_uri_bytes ||
+      (url.compare(0, 8, "sword://") != 0 && url.compare(0, 8, "bible://") != 0))
+    throw std::invalid_argument("Unsupported or oversized module URI");
+  const auto decoded = decode(url);
+  const auto slash = decoded.find('/', 8);
+  if (slash == std::string::npos || slash + 1 == decoded.size())
+    throw std::invalid_argument("Module URI requires a keyed path");
+  return {decoded.substr(8, slash - 8), decoded.substr(slash + 1)};
+}
 namespace {
 PassageLink passage_target(const std::string &url, const std::string &current_module, bool single) {
   if (!single && url.size() > maximum_study_link_uri_bytes) throw std::invalid_argument("Contextual passage URI exceeds byte limit");

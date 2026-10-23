@@ -942,6 +942,10 @@ actor CoreWorker {
         let completed = try await wait(status, request)
         defer { xc_request_release(completed) }
         if xc_request_no_presentation(completed) != 0 { return .noPresentation }
+        if let result = xc_request_take_dictionary_entry(completed) {
+            defer { xc_dictionary_entry_release(result) }
+            return .dictionary(CoreValues.dictionaryEntry(result))
+        }
         if let result = xc_request_take_reference_list(completed) {
             defer { xc_reference_list_release(result) }
             return .references(CoreValues.referenceList(result))

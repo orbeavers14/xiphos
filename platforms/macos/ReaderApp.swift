@@ -83,6 +83,7 @@ final class ReaderModel: ObservableObject {
     @Published private(set) var referencePreview: RenderedReferenceList?
     @Published private(set) var lexicalPreview: RenderedLexicalEntry?
     @Published private(set) var informationPreview: RenderedLexicalEntry?
+    @Published private(set) var informationDictionary: RenderedDictionaryEntry?
     @Published private(set) var informationNote: RenderedStudyNote?
     @Published private(set) var crossReferencesInVerseList = true
     @Published private(set) var isPreviewLoading = false
@@ -118,6 +119,7 @@ final class ReaderModel: ObservableObject {
         isPreviewLoading = false
         informationPreview = nil
         informationNote = nil
+        informationDictionary = nil
         bookImage = nil; verseImage = nil
         if let worker, let tab {
             self.tab = nil
@@ -194,10 +196,12 @@ final class ReaderModel: ObservableObject {
                       self.revision == displayToken else { return }
                 switch result {
                 case .noPresentation: break
+                case .dictionary(let entry):
+                    self.informationDictionary = entry; self.informationPreview = nil; self.informationNote = nil
                 case .lexical(let entry):
-                    self.informationPreview = entry; self.informationNote = nil
+                    self.informationPreview = entry; self.informationNote = nil; self.informationDictionary = nil
                 case .note(let note):
-                    self.informationNote = note; self.informationPreview = nil
+                    self.informationNote = note; self.informationPreview = nil; self.informationDictionary = nil
                 case .references(let references):
                     self.bookNote = nil; self.referencePreview = references; self.studyNote = nil
                 }
@@ -1069,6 +1073,18 @@ struct ReaderWindow: View {
                         Text(preview.entry.module).font(.caption).foregroundStyle(.secondary).padding(.horizontal, 8)
                         PassageView(html: preview.entry.html, anchor: nil, onScrollFailure: { model.message = $0 },
                                     onLink: { model.followLink($0, currentModule: preview.module, currentReference: preview.sourceReference) },
+                                    onLinkHover: { model.previewStudyLink($0) })
+                    }.frame(minHeight: 140, idealHeight: 220)
+                } else if let entry = model.informationDictionary {
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack {
+                            Text("Information Preview").font(.headline)
+                            Spacer()
+                            if model.isPreviewLoading { ProgressView().controlSize(.small) }
+                        }.padding(8)
+                        Text("\(entry.module) • \(entry.key)").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 8)
+                        PassageView(html: entry.html, anchor: nil, onScrollFailure: { model.message = $0 },
+                                    onLink: { model.followLink($0, currentModule: entry.module, currentReference: entry.key) },
                                     onLinkHover: { model.previewStudyLink($0) })
                     }.frame(minHeight: 140, idealHeight: 220)
                 } else if let note = model.informationNote {

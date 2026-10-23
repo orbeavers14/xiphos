@@ -358,6 +358,7 @@ enum ContextualStudyLink: Sendable {
     case lexical(RenderedLexicalEntry)
 }
 enum HoveredStudyLink: Sendable {
+    case dictionary(RenderedDictionaryEntry)
     case noPresentation
     case note(RenderedStudyNote)
     case references(RenderedReferenceList)

@@ -127,6 +127,11 @@ bool ReaderModel::close_preview() {
   note_ = {}; references_ = {}; showing_references_ = false; ++revision_; return true;
 }
 bool ReaderModel::take_preview(xc_request *request, bool hover) {
+  std::unique_ptr<xc_dictionary_entry, decltype(&xc_dictionary_entry_release)> dictionary(xc_request_take_dictionary_entry(request), xc_dictionary_entry_release);
+  if (dictionary && hover) {
+    information_ = {copy(xc_dictionary_entry_module(dictionary.get())), copy(xc_dictionary_entry_key(dictionary.get())), copy(xc_dictionary_entry_html(dictionary.get())), ""};
+    return true;
+  }
   std::unique_ptr<xc_note, decltype(&xc_note_release)> note(xc_request_take_note(request), xc_note_release);
   if (note) {
     Preview value{copy(xc_note_module(note.get())), copy(xc_note_reference(note.get())), copy(xc_note_html(note.get())), copy(xc_note_reference_list(note.get()))};

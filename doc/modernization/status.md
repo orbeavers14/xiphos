@@ -1,6 +1,21 @@
 # Modernization status and acceptance
 
-Current URI/reference continuation (2026-10-22): shared retained/native showRef
+Current URI continuation (2026-10-22): pre-copy C/pre-FIFO worker study-link
+admission `69db801`, shared strict C++11 navigation normalization `8fcfa4c`,
+cloned canonical unknown/commentary URI range targets `7c116dc`, and shared
+retained anchor splitting `1ba31d6`. Full checkpoint through `7c116dc`: Mac
+185 passes plus one explicit index skip (186 registered, 162.04s); Mac-hosted
+portable/Linux models 141 passes plus one index skip (142 registered, 107.04s,
+GTK runtime OFF). Dictionary URI hover now has bounded copied keyed parsing,
+actual alias/type dispatch and distinct DictionaryEntry C/Swift/Linux information
+preview consumption. Focused core 3/3, Mac model 2/2, portable 3/3, ASan/UBSan
+and TSan 3/3 each; C++11 complete callback oracle now compares 18,484 traces and
+19,562 anchor splits. Exact details and limits are in the [Mac handoff](handoff-macos.md)
+and [URI contract](passage-uri-workflows.md). Keyed clicks, native anchor UI,
+status/bookmark behavior, physical GUI URI interactions and corpus/platform
+acceptance remain open. No whole parity score or retirement gate changes.
+
+Earlier URI/reference continuation (2026-10-22): shared retained/native showRef
 fallback `4a71891`, complete URI callback oracle `d82bb6b`, unknown single-passage
 fallback `d4097b5`, aggregate native rendered preview bound `3458b0a`, and shared
 Bible URI range routing `fbfea5b`. Normal6/6, ASan/UBSan11/11, TSan11/11 and
@@ -10,11 +25,10 @@ visibly disclose truncation (`9ce2756`); malformed escapes reject before fallbac
 (`c70cca9`). Final full Mac181 passes+1 index skip (182 registered,153.04s),
 Mac-hosted portable/Linux137 passes+1 skip (138 registered,106.42s); focused
 ASan/UBSan11/11 (16.98s), TSan11/11 (20.22s). Native-disabled C++11 libraries
-build and registry/URI oracles2/2 pass. These fresh complete runs supersede the
-historical full-selection/recheck results below.
+build and registry/URI oracles2/2 pass. Those complete runs preceded the current checkpoint above.
 See [URI contract](passage-uri-workflows.md) and [Mac handoff](handoff-macos.md).
-Unknown/non-Bible range navigation, anchors, keyed URI families, physical GUI URI
-clicks and corpus/current Fedora/MSVC acceptance remain open. No whole parity
+At that earlier checkpoint, unknown/non-Bible ranges and dictionary hover were
+still open; current scoped progress is recorded above. No whole parity
 group or retirement gate changes.
 
 Current alias-search checkpoint (2026-10-22): shared C++11 registry, bounded

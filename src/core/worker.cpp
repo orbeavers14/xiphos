@@ -373,6 +373,18 @@ std::future<StudyHoverLink> StudyWorker::hover_study_link_at(StudyTab tab, std::
     if (current_reference.empty() || uri.empty() || current_module.find('\0') != std::string::npos ||
         current_reference.find('\0') != std::string::npos || uri.find('\0') != std::string::npos)
       throw std::invalid_argument("Hover requires copied source context and a valid URI");
+    if (uri.compare(0, 8, "sword://") == 0 || uri.compare(0, 8, "bible://") == 0) {
+      const auto keyed = module_uri_link(uri);
+      // Retained hover only finds the module separator in the first 20 bytes.
+      // Empty declared modules do not use the main-module click fallback.
+      if (keyed.module.empty() || keyed.module.size() >= 20) return std::monostate{};
+      const auto resolved = s.reader.resolve_module_name(keyed.module);
+      if (!resolved.module) return std::monostate{};
+      const auto found = std::find_if(s.reader.modules().begin(), s.reader.modules().end(),
+          [&](const Module &module) { return module.id == *resolved.module; });
+      if (found == s.reader.modules().end() || found->type != "Lexicons / Dictionaries") return std::monostate{};
+      return session.read_dictionary(*resolved.module, keyed.key);
+    }
     const auto target = xiphos::core::contextual_hover_link(uri, current_module, current_reference);
     if (std::holds_alternative<PassageLink>(target) || std::holds_alternative<ReferenceListLink>(target) || std::holds_alternative<VerseImageLink>(target))
       return std::monostate{};

@@ -1,6 +1,6 @@
 # Click, hover and lexicon-profile contracts
 
-Current scoped implementation and evidence, 2026-10-11. Frozen legacy handlers
+Current scoped implementation and evidence, 2026-10-22. Frozen legacy handlers
 come from CrossWire `c9976a8`; executable callback comparisons are distinct from
 complete GTK/native runtime acceptance. No feature group is officially accepted.
 See [status](status.md), [parity matrix](parity-matrix.md),
@@ -17,7 +17,7 @@ is retained in Git history rather than duplicated in the repository.
 | Footnote (`showNote`, type containing n) | Render Footnote body into information viewer | No corresponding body-display branch in inspected main handler | Complete frozen/actual show_note callback characterization; SDK output/runtime acceptance pending |
 | Cross-reference note (type containing x) | If xrefs_in_verse_list is enabled, display sidebar list; otherwise information viewer contains reference links and Back to current verse | Display the sidebar verse list | Complete frozen/actual show_note callback characterization; default setting is enabled; scoped native preference/hover routing implemented, full acceptance pending |
 | Explicit reference list (`showRef`) | No action in inspected show_ref | Display sidebar verse list | Shared C++11 dispatcher reused by GTK/native, complete frozen/actual show_ref traces including fallback, scoped native preview checks; whole workflow acceptance pending |
-| sword:// dictionary entry | Render dictionary text in information viewer | Module-type routing determines display | Complete frozen/current callback matrix; actual SDK/keyed navigation acceptance remains open |
+| sword:// dictionary entry | Render dictionary text in information viewer | Module-type routing determines display | Complete frozen/current callback matrix; copied raw-key dictionary hover with C/Swift/Linux model checks; physical GUI and keyed click acceptance remain open |
 | sword:// non-dictionary reference | Update status text or bookmark tag information | Navigate appropriate pane | Complete frozen/current callback matrix; status/bookmark native behavior remains open |
 | Pointer leaves a link | Set in_url to zero, release cached URI, emit URI_SELECTED with null; no information-preview clear in inspected callback | Not applicable | Source observation in webkit/wk-html.c link_handler |
 
@@ -52,10 +52,15 @@ attributes, retrieval and HTML remain in existing branches. It builds without
 the experimental C++17 native core. Detached-dialog policy remains separate.
 
 `StudyWorker::hover_study_link_at` and the C request API return copied body notes,
-ordered reference lists, raw lexical entries or a no-presentation marker. Per-tab
+ordered reference lists, raw lexical entries, DictionaryEntry URI previews or a
+no-presentation marker. Per-tab
 cross-reference list mode defaults true; typed getter/setter commands do not visit
 histories. Note/list retrieval uses existing shared settings and parsers. Explicit
-showRef and passage hover return no presentation. The parser accepts the strict
+showRef and non-dictionary passage hover return no presentation. Dictionary URI
+hover preserves the entire decoded keyed path, resolves declared aliases on the
+owner and follows the retained nonempty/short declared-module scan. It uses
+existing dictionary handles and information previews without history visits; see
+the [URI contract](passage-uri-workflows.md) for bounds and exact coverage. The parser accepts the strict
 local n/x domain; missing/mismatched notes and invalid context/URLs reject.
 
 `contextual_hover_link` reuses the URI decoder. Absent/empty or decoded passages

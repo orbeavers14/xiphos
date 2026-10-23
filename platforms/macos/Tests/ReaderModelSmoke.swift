@@ -93,8 +93,18 @@ struct ReaderModelSmoke {
         guard first.referencePreview?.module == "Text", first.referencePreview?.entries.count == 3,
               first.html == html, first.renderedReference == reference, first.reference == "John4:2", first.canBack == back,
               second.html == secondHTML, second.renderedReference == secondReference else { fatalError("Bible range preview preserves main/draft/history/window state") }
+        let dictionaryBefore = first.dictionaryEntry, forward = first.canForward
+        first.previewStudyLink("sword://D/alpha-beta;gamma,delta/part%23tag!note?query"); try await previewIdle(first)
+        guard first.informationDictionary?.module == "Dictionary",
+              first.informationDictionary?.key == "ALPHA-BETA;GAMMA,DELTA/PART#TAG!NOTE?QUERY",
+              first.informationDictionary?.html.contains("Original Dictionary") == true,
+              first.html == html, first.renderedReference == reference, first.reference == "John4:2",
+              first.canBack == back, first.canForward == forward, first.dictionaryEntry?.key == dictionaryBefore?.key,
+              second.informationDictionary == nil, second.html == secondHTML else { fatalError("Dictionary URI hover preserves raw keyed lookup and reading/draft/history/window state") }
+        first.previewStudyLink("sword:///alpha"); try await previewIdle(first)
+        guard first.informationDictionary?.module == "Dictionary" else { fatalError("Empty module hover does not replace information preview through main fallback") }
         first.close(); second.close(); await worker.shutdown()
-        print("Native normalized URI range/commentary/main fallback and sidebar distinction passed")
+        print("Native normalized URI ranges and copied dictionary URI hover passed")
     }
     @MainActor static func searchAliases(root: String) async throws {
         let worker = try CoreWorker(root: root)

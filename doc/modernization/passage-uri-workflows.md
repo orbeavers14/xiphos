@@ -70,8 +70,8 @@ No main/history/search mutation occurs when the preview is returned.
 
 The retained GTK callback now calls the same C++11 Bible/range decision; complete
 18,436-trace frozen/current comparison preserves type-lookup callback order.
-Native anchors, dictionary hover/keyed-module navigation and status/bookmark behavior must be
-implemented and checked independently against the retained callback evidence.
+Native anchors, keyed-module click navigation and status/bookmark behavior remain
+separate work. Dictionary URI hover now has the scoped copied path below.
 See [alias policy](module-abbreviations-workflows.md),
 [hover policy](hover-workflows.md) and [platform evidence](handoff-macos.md).
 
@@ -119,3 +119,29 @@ empty suffix), and prefers the first hash over any earlier bang. The complete
 frozen/current callback matrix remains equal; 19,562 short/Unicode-prefix cases
 also compare every resulting byte and anchor offset with the literal retained
 branch. This helper alone does not add native anchor presentation.
+
+## Dictionary URI hover
+
+Main hover recognizes bounded exact sword/bible origins, decodes once with the
+retained plus-space rule, resolves declared aliases on the SDK owner, and reads
+actual dictionary-family modules (including DailyDevotion SWLD modules) with
+per-tab options. The full decoded keyed path is preserved, including `-;,/?!#`;
+hover does not apply the click anchor split or scripture parser. Module URI
+parsing returns copied strings and rejects malformed escapes, control bytes,
+missing/empty paths and input beyond 32768 bytes. Older single-passage and
+contextual click APIs retain their existing narrower syntax.
+
+The retained hover's separator search is limited to the first 20 module bytes:
+only nonempty declared tokens shorter than 20 bytes can preview. A short alias
+may resolve to a longer actual ID. An empty declared module does not inherit
+the main Bible. Missing/non-dictionary/too-long declared modules return the
+existing no-presentation result; status/bookmark text remains a separate gate.
+
+A new DictionaryEntry hover alternative uses the existing C dictionary take
+handle with take-once ownership; it is not a lexical result. Swift and Linux
+models consume that copied value in the information viewer. Navigation, reading
+drafts, search generations, dictionary history and other tabs remain unchanged.
+Accepted requests drain during shutdown and copied entries outlive the owner.
+The complete retained callback oracle adds 48 keyed dictionary traces (18,484
+total), including raw punctuation/Unicode, daily dictionaries and 19/20-byte
+declared names. Model checks are not physical GUI interaction or corpus proof.

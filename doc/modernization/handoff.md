@@ -57,16 +57,25 @@ C/Swift and native Mac/Linux model checks. Contextual installed Bible URI
 ranges now share the retained sidebar decision and use capped2000-reference
 previews (`fbfea5b`), with normal6/6, ASan/UBSan11/11, TSan11/11 and
 portable/Linux12/12 checks. Aggregate target/link-only disclosure follows the
-same policy. Unknown/non-Bible range navigation, anchors and keyed URI families
-remain separate; see [URI contract](passage-uri-workflows.md).
-Final implementation `c70cca9` is pushed to fork master. Fresh full Mac181
-passes+1 index skip (182 registered,153.04s); Mac-hosted portable/Linux137
-passes+1 skip (138 registered,106.42s); focused ASan/UBSan and TSan11/11 each.
-See platform handoff for exact environment, SDK instrumentation and limitations.
-Next bounded work: pre-copy URI admission checks at C/worker boundaries; parser
-byte bounds currently run after argument copies. Then unknown/non-Bible range,
-anchor and keyed URI routes against the complete oracle. Parallel/BibleSync and
-corpus/platform gates remain open.
+same policy. Pre-copy C and pre-FIFO worker admission now rejects oversized/NUL
+study links (`69db801`), with ready errors and preserved nullable field rules.
+Retained navigation normalization is shared with strict C++11 (`8fcfa4c`), and
+cloned native targets handle unknown/main fallback and regular/personal commentary
+range URIs (`7c116dc`). Shared retained anchor splitting follows at `1ba31d6`.
+Dictionary URI hover now returns a distinct copied DictionaryEntry through C,
+Swift and Linux information previews, preserving arbitrary decoded keyed paths,
+retained short declared-module lookup and navigation/history/search isolation.
+See the [URI contract](passage-uri-workflows.md) for exact scope.
+
+Full checkpoint through `7c116dc`: Mac 185 passes plus one index skip (186
+registered, 162.04s); Mac-hosted portable/Linux 141 passes plus one skip (142
+registered, 107.04s, GTK runtime OFF). Dictionary hover then passes core 3/3,
+Mac model 2/2, portable 3/3, ASan/UBSan and TSan 3/3 each, with native-disabled
+C++11 complete callback/anchor checks. These are model checks, not physical GUI
+URI interaction. SDK instrumentation, corpus/current Fedora/MSVC and whole
+parity gates remain open. Next bounded URI work: typed keyed clicks, native
+anchor consumption and status/bookmark behavior against the complete oracle.
+Parallel/BibleSync and corpus/platform gates remain open.
 
 Current search checkpoint: shared attribute execution `572f539` / Swift `a83d3c4`,
 annotation context `8ebeddc` / probe ordering `92bacfc`, canonical copied C request

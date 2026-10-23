@@ -9,6 +9,10 @@ enum class LexicalLinkKind { strongs, morphology };
 // Parsed source context, not a selected dictionary. Selection is a separate policy.
 struct LexicalLink { LexicalLinkKind kind; std::string module, type, value, passage; };
 LexicalLink lexical_link(const std::string &url, const std::string &current_module);
+// Decoded module URI with an arbitrary keyed path. No scripture parsing,
+// anchor stripping, module fallback or catalog lookup. Hover retains raw key.
+struct ModuleUriLink { std::string module, key; };
+ModuleUriLink module_uri_link(const std::string &url);
 struct PassageLink { std::string module, reference; };
 struct StudyNoteLink { std::string module, reference, identifier, type; };
 struct ReferenceListLink { std::string module, expression; };

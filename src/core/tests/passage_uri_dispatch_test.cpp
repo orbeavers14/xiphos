@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include <glib.h>
+#include <algorithm>
 #include "xiphos/core/passage_uri.hpp"
 #include <cstring>
 #include <functional>
@@ -106,6 +107,21 @@ int main(){try {
   const auto expected=run(frozen::sword_uri,uri,true,"Text",true,1,true);
   check(run(actual::sword_uri,uri,true,"Text",true,1,true)==expected,"URI fallback/reentry trace differs");++comparisons;
  }
+ // Keyed URI hover passes the entire decoded path to rendering. Click alone
+ // strips anchors; dictionary list punctuation never selects the Bible sidebar.
+ types["Daily"]=DICTIONARY_TYPE;types["LongDictionaryNameX"]=DICTIONARY_TYPE;types["LongDictionaryName20"]=DICTIONARY_TYPE;
+ aliases["DailyAlias"]="Daily";aliases["L20"]="LongDictionaryName20";
+ for(const auto *module:{"D","DailyAlias","LongDictionaryNameX","LongDictionaryName20","L20",""})
+ for(const auto *key:{"alpha-beta;gamma,delta/part#tag!note?query","café 文字","literal%20key","plus+key"})for(bool clicked:{false,true}) {
+  const std::string uri=std::string("sword://")+module+"/"+key;
+  const auto expected=run(frozen::sword_uri,uri,clicked,"Text",true,1,false);
+  check(run(actual::sword_uri,uri,clicked,"Text",true,1,false)==expected,"Keyed dictionary URI full callback trace differs");++comparisons;
+ }
+ const std::string raw_key="alpha-beta;gamma,delta/part#tag!note?query";
+ const auto dictionary_hover=run(actual::sword_uri,"sword://D/"+raw_key,false,"Text",true,1,false);
+ check(!dictionary_hover.history && std::find(dictionary_hover.calls.begin(),dictionary_hover.calls.end(),"render:Dictionary:"+raw_key)!=dictionary_hover.calls.end(),"Dictionary hover renders entire decoded raw key without history");
+ const auto long_hover=run(actual::sword_uri,"sword://LongDictionaryName20/alpha",false,"Text",true,1,false);
+ check(std::none_of(long_hover.calls.begin(),long_hover.calls.end(),[](const std::string &call){return call.compare(0,7,"render:")==0;}),"Retained hover misses separators beyond its 20-byte scan");
  const auto missing=run(actual::sword_uri,"sword://Missing/John3:16",true,"Text",false,0,false);
  check(missing.history&&missing.buffers==0,"Unknown URI routes through main navigation and records history");
  const auto range=run(actual::sword_uri,"sword://T/John3:16-18",true,"Text",false,0,false);

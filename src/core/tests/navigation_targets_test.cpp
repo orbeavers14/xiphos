@@ -33,8 +33,8 @@ template<class E,class F>void rejects(F f){try{f();}catch(const E &){return;}thr
 xc_status wait(xc_request *r){xc_status s;const auto end=std::chrono::steady_clock::now()+std::chrono::seconds(20);while((s=xc_request_poll(r))==XC_PENDING){check(std::chrono::steady_clock::now()<end,"Navigation target poll deadline");std::this_thread::sleep_for(std::chrono::milliseconds(1));}return s;}
 void fixture(const std::filesystem::path &root){
  std::filesystem::remove_all(root);std::filesystem::create_directories(root/"mods.d");
- for(const auto *id:{"Text","TextAlt","Notes","Personal","Dictionary"}){
-  const bool bible=std::string(id).find("Text")==0,alt=std::string(id)=="TextAlt",personal=std::string(id)=="Personal",dict=std::string(id)=="Dictionary";
+ for(const auto *id:{"Text","TextAlt","Notes","Personal","Dictionary","Daily","LongDictionaryNameX","LongDictionaryName20"}){
+  const bool bible=std::string(id).find("Text")==0,alt=std::string(id)=="TextAlt",personal=std::string(id)=="Personal",dict=std::string(id)=="Dictionary"||std::string(id)=="Daily"||std::string(id).find("LongDictionary")==0;
   const auto data=root/id;std::filesystem::create_directories(data);
   const std::string canon=alt?"KJVA":"KJV",driver=dict?"RawLD":bible?"RawText":personal?"RawFiles":"RawCom";
   const auto prefix=dict?data/"entries":data;
@@ -43,10 +43,10 @@ void fixture(const std::filesystem::path &root){
   if(dict)writer.reset(new RawLD(prefix.string().c_str()));
   else if(bible)writer.reset(new RawText(prefix.string().c_str(),nullptr,nullptr,nullptr,ENC_UTF8,DIRECTION_LTR,FMT_PLAIN,"en",canon.c_str()));
   else if(personal)writer.reset(new RawFiles(prefix.string().c_str()));else writer.reset(new RawCom(prefix.string().c_str()));
-  for(const auto *reference:dict?std::vector<const char *>{"alpha"}:std::vector<const char *>{"Genesis1:1","John3:16","John3:17"}){writer->setKey(reference);writer->setEntry(("Original "+std::string(id)+" navigation prose.").c_str());}
-  const std::string alias=dict?"D":bible?(alt?"TA":"T"):personal?"P":"N";
+  for(const auto *reference:dict?std::vector<const char *>{"alpha","alpha-beta;gamma,delta/part#tag!note?query","café 文字","literal%20key","plus+key"}:std::vector<const char *>{"Genesis1:1","John3:16","John3:17"}){writer->setKey(reference);writer->setEntry(("Original "+std::string(id)+" navigation prose.").c_str());}
+  const std::string alias=dict?(std::string(id)=="Dictionary"?"D":std::string(id)=="Daily"?"DailyAlias":std::string(id)=="LongDictionaryNameX"?"L19":"L20"):bible?(alt?"TA":"T"):personal?"P":"N";
   std::ofstream config(root/"mods.d"/(std::string(id)+".conf"));
-  config<<'['<<id<<"]\nDataPath=./"<<id<<(dict?"/entries":"/")<<"\nModDrv="<<driver<<"\nSourceType=Plain\nEncoding=UTF-8\nLang=en\nVersification="<<canon<<"\nDescription=Original navigation fixture\nAbbreviation="<<alias<<'\n';check(bool(config),"Write fixture catalog");
+  config<<'['<<id<<"]\nDataPath=./"<<id<<(dict?"/entries":"/")<<"\nModDrv="<<driver<<"\nSourceType=Plain\nEncoding=UTF-8\nLang=en\nVersification="<<canon<<"\nDescription=Original navigation fixture\nAbbreviation="<<alias<<'\n';if(std::string(id)=="Daily")config<<"Feature=DailyDevotion\n";check(bool(config),"Write fixture catalog");
  }
 }
 int main(int argc,char **argv){try {

@@ -12,7 +12,7 @@ struct StudyBatchSearch { std::shared_ptr<SearchControl> control; std::future<Se
 struct StudySearch { std::shared_ptr<SearchControl> control; std::future<SearchResult> result; };
 using ContextualStudyLink = std::variant<PassageLink, StudyNote, ReferenceList, LexicalEntry, VerseImageResource>;
 using ResolvedStudyLink = std::variant<PassageLink, StudyNote>;
-using StudyHoverLink = std::variant<std::monostate, StudyNote, ReferenceList, LexicalEntry>;
+using StudyHoverLink = std::variant<std::monostate, StudyNote, ReferenceList, LexicalEntry, DictionaryEntry>;
 struct DictionaryHistorySnapshot {
   std::vector<DictionaryLocation> entries;
   std::size_t cursor = 0;

@@ -743,9 +743,12 @@ xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_req
 xc_status xc_worker_follow_pane_link_at(xc_worker *worker, uint64_t tab, const char *navigation_module, const char *source_module, const char *reference, const char *uri, xc_request **out);
 xc_status xc_worker_follow_study_link_at(xc_worker *worker, uint64_t tab, const char *current_module, const char *current_reference, const char *uri, xc_request **out);
 xc_status xc_worker_resolve_study_link_at(xc_worker *worker, uint64_t tab, const char *current_module, const char *current_reference, const char *uri, xc_request **out);
-/* Main hover only; use existing note/reference-list/lexical snapshot takes.
- * showRef and passage links return an explicit no-presentation marker; no
- * status-text/dictionary-URI/dialog hover is implemented by this slice.
+/* Main hover only; use existing note/reference-list/lexical/dictionary takes.
+ * Dictionary sword/bible URIs resolve aliases and return copied dictionary entries;
+ * raw decoded keys retain slash/punctuation/anchors. Retained hover requires a
+ * nonempty declared module shorter than 20 bytes; no main-module fallback.
+ * Other passage links/showRef return explicit no-presentation; status/dialog
+ * hover remains separate.
  * No history visits; preference is copied per tab and defaults enabled. */
 xc_status xc_worker_hover_study_link_at(xc_worker *worker, uint64_t tab, const char *current_module, const char *current_reference, const char *uri, xc_request **out);
 xc_status xc_worker_set_cross_reference_preview_list(xc_worker *worker, uint64_t tab, int enabled, xc_request **out);

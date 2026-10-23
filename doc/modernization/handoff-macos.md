@@ -1419,3 +1419,28 @@ Complete frozen/current callback comparison and 19,562 exhaustive short/Unicode
 prefix splits pass native-disabled C++11 (0.31s), ASan/UBSan (0.94s), and TSan
 (2.14s), one test per configuration. The sanitizer library/SDK limits above
 still apply. No native anchor UI or whole workflow acceptance is implied.
+
+### Full continuation checkpoint and dictionary URI hover (2026-10-22)
+
+Full checkpoint through `7c116dc`: Mac 185 passes plus one explicit index skip
+(186 registered, 162.04s); Mac-hosted portable/Linux models 141 passes plus one
+index skip (142 registered, 107.04s), GTK runtime OFF. These supersede the prior
+full 182/138 registered runs. They include admission, shared normalization and
+cloned navigation targets, before dictionary URI hover additions.
+
+Dictionary hover now uses copied keyed parsing and actual owner alias/type
+resolution, preserving whole decoded paths and the retained short declared
+module scan. It accepts SDK dictionary-family DailyDevotion modules separately
+from lexical choice eligibility. Uses existing DictionaryEntry C handles, typed
+Swift consumption and Linux information presentation; no navigation/history visit.
+Original-prose fixture adds punctuation/slash/anchor/query keys, Unicode, encoded
+percent/plus, daily dictionaries, 19/20-byte module IDs and short aliases to long
+IDs. Complete callback oracle now compares 18,484 traces plus 19,562 anchor splits.
+
+Core normal 3/3 (1.87s); native Mac model plus fixture 2/2 (2.88s); portable model
+and core 3/3 (2.75s); ASan/UBSan 3/3 (4.58s); native-disabled C++11 complete URI
+oracle 1/1 (0.30s). TSan 3/3 (5.15s) passes. Final existing/new hover and admission selection 13/13
+(8.27s). Same SDK and sanitizer coverage
+limits apply. No physical GUI hover, corpus/current Fedora/MSVC or whole parity
+acceptance. Next URI work is keyed clicks, native anchor consumption and retained
+status/bookmark behavior, each through shared core services.
