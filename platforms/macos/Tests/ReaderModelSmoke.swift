@@ -136,6 +136,141 @@ struct ReaderModelSmoke {
         window.contentView = nil; view.navigationDelegate = nil; window.close()
         print("Offscreen native WebKit URI anchors: Unicode/quotes, named targets, top/repeat, missing target and disabled module scripts passed")
     }
+    @MainActor static func uriActivationWebView(root: String, bookOrigin: Bool = false) async throws {
+        NSApplication.shared.setActivationPolicy(.prohibited)
+        let worker = try CoreWorker(root: root)
+        let model = ReaderModel(worker: worker, startupError: nil)
+        try await idle(model)
+        model.selection = "Text"; model.reference = "John3:16"; model.read(); try await idle(model)
+        if bookOrigin {
+            model.followLink("sword://Manual/%2FPart+One"); try await idle(model)
+            guard model.showingBook, model.bookDocument?.tree.module == "Book" else { fatalError("Book activation starts with a committed owned document") }
+        }
+        let config = WKWebViewConfiguration()
+        config.websiteDataStore = .nonPersistent()
+        config.defaultWebpagePreferences.allowsContentJavaScript = false
+        let view = WKWebView(frame: NSRect(x: 0, y: 0, width: 600, height: 180), configuration: config)
+        let window = NSWindow(contentRect: view.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false; window.contentView = view
+        let coordinator = PassageView.Coordinator()
+        var links: [String] = []
+        coordinator.onLink = { uri in
+            links.append(uri)
+            if bookOrigin { model.followBookLink(uri) } else { model.followLink(uri) }
+        }
+        view.navigationDelegate = coordinator
+        let html = """
+            <p id="source">Original native URI activation fixture.</p>
+            <a id="book" href="sword://Manual/%2FPart+One#uri-book-target">Original book link.</a>
+            <a id="prayer" href="bible://Pray/%2F123+Numeric+Title#">Original prayer link.</a>
+            <a id="relative" href="sword:///16-17">Original book-context reference link.</a>
+            <a id="commentary" href="sword://N/John3:16#commentary">Original commentary link.</a>
+            <a id="verse" href="sword://T/John3:17#web-target">Original verse link.</a>
+            <a id="dictionary" href="sword://D/alpha#dictionary-target">Original dictionary link.</a>
+            <a id="range" href="sword://T/John3:16-18">Original reference list link.</a>
+            <a id="invalid" href="sword://D/%FF">Original invalid UTF-8 link.</a>
+            <script>document.body.dataset.moduleRan = 'yes';</script>
+            """
+        coordinator.navigation = view.loadHTMLString(PassageView.documentHTML(html: html, css: ""), baseURL: nil)
+        func evaluate(_ script: String) async throws -> Bool {
+            try await withCheckedThrowingContinuation { continuation in
+                view.evaluateJavaScript(script, in: nil, in: .defaultClient) { result in
+                    switch result {
+                    case .success(let value): continuation.resume(returning: value as? Bool == true)
+                    case .failure(let error): continuation.resume(throwing: error)
+                    }
+                }
+            }
+        }
+        let deadline = Date().addingTimeInterval(15)
+        while (try? await evaluate("document.readyState === 'complete' && !!document.getElementById('source')")) != true {
+            guard Date() < deadline else { fatalError("Native link activation fixture loads") }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        func activate(_ id: String) async throws {
+            let count = links.count
+            _ = try await evaluate("document.getElementById('" + id + "').click(); true;")
+            let deadline = Date().addingTimeInterval(10)
+            while links.count == count {
+                guard Date() < deadline else { fatalError("WebKit linkActivated reaches host callback: " + id) }
+                try await Task.sleep(nanoseconds: 1_000_000)
+            }
+            try await idle(model)
+            guard links.count == count + 1,
+                  try await evaluate("!!document.getElementById('source') && !document.body.dataset.moduleRan"),
+                  view.url?.scheme == "about" else { fatalError("Core activation cancels browser navigation and keeps module scripts disabled") }
+        }
+        func verifyRenderedAnchor(_ html: String, _ anchor: String) async throws {
+            let config = WKWebViewConfiguration()
+            config.websiteDataStore = .nonPersistent()
+            config.defaultWebpagePreferences.allowsContentJavaScript = false
+            let destination = WKWebView(frame: view.frame, configuration: config)
+            let destinationWindow = NSWindow(contentRect: destination.frame, styleMask: .borderless, backing: .buffered, defer: false)
+            destinationWindow.isReleasedWhenClosed = false; destinationWindow.contentView = destination
+            let presenter = PassageView.Coordinator()
+            var failure: String?
+            presenter.anchor = anchor; presenter.onScrollFailure = { failure = $0 }
+            destination.navigationDelegate = presenter
+            let body = "<div style='height:1100px'>Original destination introduction.</div>" + html + "<div style='height:1100px'>Original destination ending.</div>"
+            presenter.navigation = destination.loadHTMLString(PassageView.documentHTML(html: body, css: ""), baseURL: nil)
+            let deadline = Date().addingTimeInterval(15)
+            while true {
+                let scrolled: Bool = try await withCheckedThrowingContinuation { continuation in
+                    destination.evaluateJavaScript("document.readyState === 'complete' && window.scrollY > 1000", in: nil, in: .defaultClient) { result in
+                        switch result {
+                        case .success(let value): continuation.resume(returning: value as? Bool == true)
+                        case .failure: continuation.resume(returning: false)
+                        }
+                    }
+                }
+                if scrolled { break }
+                guard Date() < deadline, failure == nil else { fatalError("Actual shared module output consumes copied anchor automatically on load: " + (failure ?? anchor)) }
+                try await Task.sleep(nanoseconds: 10_000_000)
+            }
+            destinationWindow.contentView = nil; destination.navigationDelegate = nil; destinationWindow.close()
+        }
+        if bookOrigin {
+            let reading = model.html, reference = model.renderedReference, back = model.canBack, forward = model.canForward
+            try await activate("book")
+            guard model.bookDocument?.tree.module == "Book", model.bookDocument?.tree.node.path == "/Part One",
+                  model.bookAnchor == "uri-book-target" else { fatalError("Real book-origin activation resolves and presents owned Book target") }
+            try await verifyRenderedAnchor(model.bookDocument!.resourceHTML, model.bookAnchor!)
+            try await activate("prayer")
+            guard model.bookDocument?.tree.module == "Prayer", model.bookDocument?.tree.node.path == "/123 Numeric Title",
+                  model.bookAnchor == "", model.html == reading, model.renderedReference == reference,
+                  model.canBack == back, model.canForward == forward else { fatalError("Real prayer activation preserves main/history and explicit empty anchor") }
+            try await activate("relative")
+            guard model.referencePreview?.entries.map(\.reference) == ["John 3:16", "John 3:17"], model.html == reading,
+                  model.bookDocument?.tree.module == "Prayer" else { fatalError("Activated book-origin relative list uses live main reference rather than tree path") }
+            try await activate("commentary")
+            guard !model.showingBook, model.commentarySelection == "Notes", model.commentaryRenderedAnchor == "commentary" else {
+                fatalError("Activated known commentary switches from book pane through shared dispatch")
+            }
+        } else {
+            try await activate("verse")
+            guard model.renderedReference == "John 3:17", model.renderedAnchor == "web-target",
+                  model.html.contains("Original Text") else { fatalError("Real WebKit activation reaches shared Bible navigation with copied anchor") }
+            let reading = model.html, reference = model.renderedReference, back = model.canBack, forward = model.canForward
+            try await activate("dictionary")
+            guard model.dictionaryEntry?.module == "Dictionary", model.dictionaryEntry?.key == "ALPHA",
+                  model.dictionaryEntry?.anchor == "dictionary-target", model.dictionaryEntry?.html.contains("dictionary-target") == true,
+                  model.html == reading, model.renderedReference == reference, model.canBack == back, model.canForward == forward else {
+                fatalError("Real dictionary activation reaches owned shared entry/history without Bible navigation")
+            }
+            try await verifyRenderedAnchor(model.dictionaryEntry!.html, model.dictionaryEntry!.anchor!)
+            try await activate("range")
+            guard model.referencePreview?.entries.count == 3, model.html == reading,
+                  model.canBack == back, model.canForward == forward else { fatalError("Real range activation remains a shared sidebar preview") }
+            let dictionary = model.dictionaryEntry?.html
+            try await activate("invalid")
+            guard model.html == reading, model.dictionaryEntry?.html == dictionary, !model.message.isEmpty else {
+                fatalError("Rejected activated URI preserves committed document and reports failure")
+            }
+        }
+        window.contentView = nil; view.navigationDelegate = nil; window.close()
+        model.close(); await worker.shutdown()
+        print(bookOrigin ? "Offscreen real WebKit book-origin activation: owned book/prayer targets, relative main context and commentary switching passed" : "Offscreen real WebKit activation: canceled browser navigation, shared Bible/dictionary/range dispatch and invalid URI retention passed")
+    }
     @MainActor static func bookUriNavigation(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let first = ReaderModel(worker: worker, startupError: nil), second = ReaderModel(worker: worker, startupError: nil)
@@ -1853,6 +1988,12 @@ struct ReaderModelSmoke {
         print("Native main note/reference hover destinations and guarded preference checks passed")
     }
     @MainActor static func main() async throws {
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--book-uri-activation-webview" {
+            try await uriActivationWebView(root: CommandLine.arguments[2], bookOrigin: true); return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--uri-activation-webview" {
+            try await uriActivationWebView(root: CommandLine.arguments[2]); return
+        }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--book-uri-navigation" {
             try await bookUriNavigation(root: CommandLine.arguments[2]); return
         }

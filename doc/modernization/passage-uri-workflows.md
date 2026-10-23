@@ -330,3 +330,14 @@ Retained host handling preserves local-date lookup and callback order. The
 complete-function oracle now covers all 10,000 numeric date shapes and seven
 short/long prefixes (12,887 total comparisons). Native devotional presentation
 remains a separate service; this extraction preserves the characterized rules.
+
+## Real native WebKit activation evidence
+
+Original-prose offscreen DOM links now exercise the production WK navigation
+delegate and native model/worker services. Browser navigation is canceled before
+shared Bible/dictionary/range dispatch; invalid UTF-8 preserves committed output.
+Book-origin activation uses an existing owned document, resolves Book/prayer
+targets and relative main references, and switches to known commentary. Actual
+shared book/dictionary HTML also consumes copied named anchors automatically
+on load in real WebKit. Module JavaScript remains disabled. This strengthens
+callback/model evidence while physical interaction and GTK rendering stay open.

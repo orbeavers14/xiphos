@@ -1674,3 +1674,24 @@ C++11 all 5/5 (2.66s); expanded ASan/UBSan 1/1 (1.16s), TSan 1/1 (1.70s)
 pass. Shared route plus exhaustive Unicode key checks ASan/UBSan 2/2 (12.76s),
 TSan 2/2 (23.32s) passed before expanding the date-shape matrix. Full normal
 regressions are recorded at the next final checkpoint.
+
+### Real offscreen WebKit URI activation (2026-10-22)
+
+New original-prose DOM link fixtures activate actual anchors in a nonpersistent
+WKWebView with module JavaScript disabled. Production PassageView.Coordinator
+receives linkActivated, cancels browser navigation and routes to ReaderModel's
+shared worker service. Bible visits copy anchors; dictionary entry/history stays
+separate from Bible history; ranges remain sidebar previews; rejected UTF-8 URIs
+preserve committed output and report failure. The source document remains loaded.
+Book-origin coverage starts with a committed shared book document and uses the
+production followBookLink path: actual Book/prayer targets, explicit empty anchor,
+relative main-verse context and known-commentary pane switching. A second real
+WebKit view loads actual shared dictionary/book HTML and automatically consumes
+the copied named anchor in didFinish, with original-prose spacers proving scroll.
+
+Focused native WebKit/core/fixtures 7/7 (4.91s), including the expanded 12,887
+dictionary dispatcher comparisons and anchor-target shutdown check. The first
+activation attempt used a stale model executable because its file name was
+passed instead of macos_reader_model_test; rebuilding the actual target corrected
+that test setup. This is offscreen DOM activation, not physical mouse/SwiftUI
+interaction or GTK rendering acceptance.
