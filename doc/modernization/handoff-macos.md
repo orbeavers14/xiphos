@@ -1658,3 +1658,19 @@ without silently correcting them or claiming native devotional pane support.
 Normal 1/1 (0.07s), portable 1/1 (0.20s), ASan/UBSan 1/1 (0.24s), TSan 1/1
 (0.71s) pass; native-disabled full C++11 libraries and all 5/5 tests pass (2.09s).
 The oracle covers full dispatcher callbacks, not GTK rendering/date-picker UI.
+
+### Shared C++11 dictionary/devotional route policy (2026-10-22)
+
+The complete dispatcher oracle now guards dictionary_display_route in the
+shared C++11 rendering seam. It returns ordinary dictionary, supplied devotional
+key or host-local-today; it performs no SDK/UI/clock work or allocation. Retained
+main_display_dictionary consumes the decision at its existing changed-module
+branch. The host still supplies local today lazily and preserves callback order.
+No new native devotional pane is claimed. Expanded complete-function comparisons
+cover every 10,000 NN.NN numeric shape plus seven short/long prefixes: 12,887
+frozen/current traces, including null module/feature/key helper guards.
+
+C++11 all 5/5 (2.66s); expanded ASan/UBSan 1/1 (1.16s), TSan 1/1 (1.70s)
+pass. Shared route plus exhaustive Unicode key checks ASan/UBSan 2/2 (12.76s),
+TSan 2/2 (23.32s) passed before expanding the date-shape matrix. Full normal
+regressions are recorded at the next final checkpoint.

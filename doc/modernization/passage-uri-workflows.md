@@ -322,3 +322,11 @@ to Grace; matching uppercase entry refreshes rather than activates. Invalid
 UTF-8 returns after module/pane updates but before history/tab publication. The
 frozen function and deterministic clock preserve these observable ordering
 rules. Native devotional routing remains pending its dated-pane state service.
+
+The complete dispatcher now delegates its changed-module decision to shared
+C++11 dictionary_display_route. The policy returns dictionary, supplied
+devotional key or host-local-today without SDK/UI/clock access or allocation.
+Retained host handling preserves local-date lookup and callback order. The
+complete-function oracle now covers all 10,000 numeric date shapes and seven
+short/long prefixes (12,887 total comparisons). Native devotional presentation
+remains a separate service; this extraction preserves the characterized rules.

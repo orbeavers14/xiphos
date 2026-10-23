@@ -73,6 +73,24 @@ int main(){try{
  for(bool available:{false,true})for(bool installed:{false,true})for(bool entry:{false,true}) {
   check(run(actual::main_display_dictionary,name,key,current,feature,available,installed,entry)==run(frozen::main_display_dictionary,name,key,current,feature,available,installed,entry),"Complete dictionary/devotional display trace differs");++comparisons;
  }
+ // Compare complete dispatch for every five-byte numeric date shape and each
+ // prefix, exercising bounded short-string reads under the sanitizer builds.
+ for(int value=0;value<10000;++value) {
+  std::string key="00.00";int digits=value;
+  for(int index:{4,3,1,0}) { key[index]=static_cast<char>('0'+digits%10);digits/=10; }
+  check(run(actual::main_display_dictionary,"Target",key.c_str(),"Other","DailyDevotion",true,true,true)==
+        run(frozen::main_display_dictionary,"Target",key.c_str(),"Other","DailyDevotion",true,true,true),"Complete numeric date-shape dispatch differs");++comparisons;
+ }
+ for(const char *key:{"","0","00","00.","00.0","00.00","00.000"}) {
+  check(run(actual::main_display_dictionary,"Target",key,"Other","DailyDevotion",true,true,true)==
+        run(frozen::main_display_dictionary,"Target",key,"Other","DailyDevotion",true,true,true),"Short/long date prefix dispatch differs");++comparisons;
+ }
+ using xiphos::core::dictionary_display_route;using xiphos::core::DictionaryDisplayRoute;
+ check(dictionary_display_route(nullptr,"Target","DailyDevotion",nullptr)==DictionaryDisplayRoute::dictionary &&
+       dictionary_display_route("Other",nullptr,"DailyDevotion",nullptr)==DictionaryDisplayRoute::dictionary &&
+       dictionary_display_route("Other","Target",nullptr,nullptr)==DictionaryDisplayRoute::dictionary &&
+       dictionary_display_route("Other","Target","DailyDevotion",nullptr)==DictionaryDisplayRoute::devotional_today,
+       "Shared route handles absent module/feature/key without clock or dereference");
  const auto switched=run(actual::main_display_dictionary,"Target","bad","Other","DailyDevotion",true,true,true);
  check(has(switched,"clock:")&&has(switched,"dev-render:Target:07.09")&&!has(switched,"history:"),"Switched devotional invalid date uses deterministic today and returns before dictionary/history");
  const auto shape=run(actual::main_display_dictionary,"Target","99.99","Other","DailyDevotion",true,true,true);

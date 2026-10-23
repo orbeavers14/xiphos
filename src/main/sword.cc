@@ -1188,13 +1188,10 @@ void main_display_dictionary(const char *mod_name,
 	if (strcmp(settings.DictWindowModule, mod_name)) {
 		// new dict -- is it actually a devotional?
 		time_t curtime;
-		if (feature && !strcmp(feature, "DailyDevotion")) {
-			if ((strlen(key) != 5) ||
-			    (key[0] < '0') || (key[0] > '9') ||
-			    (key[1] < '0') || (key[1] > '9') ||
-			    (key[2] != '.') ||
-			    (key[3] < '0') || (key[3] > '9') ||
-			    (key[4] < '0') || (key[4] > '9')) {
+		const auto route = xiphos::core::dictionary_display_route(
+		    settings.DictWindowModule, mod_name, feature, key);
+		if (route != xiphos::core::DictionaryDisplayRoute::dictionary) {
+			if (route == xiphos::core::DictionaryDisplayRoute::devotional_today) {
 				struct tm *loctime;
 				curtime = time(NULL);
 				loctime = localtime(&curtime);
