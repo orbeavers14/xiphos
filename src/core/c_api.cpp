@@ -1655,6 +1655,7 @@ xc_status xc_resolve_link(xc_reader *r, const char *current, const char *uri, xc
 }
 const char *xc_link_module(const xc_link *link) { return link ? link->value.module.c_str() : nullptr; }
 const char *xc_link_reference(const xc_link *link) { return link ? link->value.reference.c_str() : nullptr; }
+const char *xc_link_anchor(const xc_link *link) { return link && link->value.anchor ? link->value.anchor->c_str() : nullptr; }
 void xc_link_release(xc_link *link) { delete link; }
 xc_status xc_read_chapter(xc_reader *r, const char *id, const char *ref, xc_chapter **out) {
   return xc_read_chapter_with_options(r, id, ref,

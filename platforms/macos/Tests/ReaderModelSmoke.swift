@@ -71,6 +71,14 @@ struct ReaderModelSmoke {
     }
     @MainActor static func uriNavigation(root: String) async throws {
         let worker = try CoreWorker(root: root)
+        let targetTab = try await worker.createTab()
+        for suffix in ["", "#", "#copied%22%5C%27%3C%2Fscript%3E"] {
+            let resolved = try await worker.resolveStudyLinkAt(tab: targetTab, currentModule: "Text", currentReference: "John3:17", uri: "sword://N/John3:16" + suffix)
+            guard case .passage(let target) = resolved, target.module == "Notes",
+                  target.reference == (suffix.isEmpty ? "John3:16" : "John 3:16"),
+                  target.anchor == (suffix.isEmpty ? nil : suffix == "#" ? "" : "copied\"\\'</script>") else { fatalError("Swift copies absent/empty/literal URI anchors separately from canonical target") }
+        }
+        try await worker.closeTab(targetTab)
         let first = ReaderModel(worker: worker, startupError: nil), second = ReaderModel(worker: worker, startupError: nil)
         try await idle(first); try await idle(second)
         first.selection = "Text"; first.chooseCommentary("Personal"); try await idle(first)

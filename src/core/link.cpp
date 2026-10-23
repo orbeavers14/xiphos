@@ -2,6 +2,7 @@
 #include "xiphos/core/link.hpp"
 #include "xiphos/core/study_link_admission.hpp"
 #include "xiphos/core/book_document.hpp"
+#include "xiphos/core/passage_uri.hpp"
 #include <stdexcept>
 #include <map>
 namespace xiphos::core {
@@ -60,9 +61,16 @@ PassageLink passage_target(const std::string &url, const std::string &current_mo
   return result;
 }
 ContextualStudyCommandLink contextual_passage(const std::string &url, const std::string &current_module) {
-  const auto target = passage_target(url, current_module, false);
+  auto keyed = module_uri_link(url);
+  PassageLink target{keyed.module.empty() ? current_module : keyed.module, std::move(keyed.key)};
+  if (const auto *anchor = passage_uri_anchor(target.reference.data())) {
+    target.anchor = anchor;
+    target.reference.resize(std::strlen(target.reference.c_str()));
+  }
+  if (target.module.empty() || target.reference.empty() || target.reference.find_first_of("?/") != std::string::npos)
+    throw std::invalid_argument("Contextual passage URI has unsupported module/reference syntax");
   if (target.reference.find_first_of("-;,") != std::string::npos)
-    return ReferenceListLink{target.module, target.reference};
+    return ReferenceListLink{target.module, target.reference, target.anchor};
   return target;
 }
 }

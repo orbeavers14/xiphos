@@ -1026,6 +1026,10 @@ xc_status xc_resolve_link(xc_reader *reader, const char *current_module,
                           const char *uri, xc_link **out);
 const char *xc_link_module(const xc_link *link);
 const char *xc_link_reference(const xc_link *link);
+/* Contextual verse URI anchor, copied with this target. NULL means absent;
+ * an empty string means an explicit empty anchor. Older single APIs reject anchors.
+ * Parsing/transport alone does not scroll a view or store history. */
+const char *xc_link_anchor(const xc_link *link);
 void xc_link_release(xc_link *link);
 /* Chapter snapshots include every verse, including empty entries, using the
  * module's versification. Strings survive reader/session close until release.

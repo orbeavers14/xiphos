@@ -1003,7 +1003,7 @@ actor CoreWorker {
         guard let result = xc_request_take_link(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
         defer { xc_link_release(result) }
         return .passage(PassageTarget(module: String(cString: xc_link_module(result)!),
-            reference: String(cString: xc_link_reference(result)!)))
+            reference: String(cString: xc_link_reference(result)!), anchor: xc_link_anchor(result).map { String(cString: $0) }))
     }
     func resolveStudyLink(tab: UInt64, currentModule: String, uri: String) async throws -> ResolvedStudyLink {
         try admitStudyLink(module: currentModule, uri: uri)
@@ -1021,7 +1021,7 @@ actor CoreWorker {
         guard let result = xc_request_take_link(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
         defer { xc_link_release(result) }
         return .passage(PassageTarget(module: String(cString: xc_link_module(result)!),
-            reference: String(cString: xc_link_reference(result)!)))
+            reference: String(cString: xc_link_reference(result)!), anchor: xc_link_anchor(result).map { String(cString: $0) }))
     }
     func studyNoteLink(tab: UInt64, currentModule: String, uri: String) async throws -> RenderedStudyNote {
         try admitStudyLink(module: currentModule, uri: uri)

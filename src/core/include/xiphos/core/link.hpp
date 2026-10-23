@@ -4,6 +4,7 @@
 #include <cstdint>
 #include "book_resource.hpp"
 #include <variant>
+#include <optional>
 namespace xiphos::core {
 enum class LexicalLinkKind { strongs, morphology };
 // Parsed source context, not a selected dictionary. Selection is a separate policy.
@@ -13,9 +14,9 @@ LexicalLink lexical_link(const std::string &url, const std::string &current_modu
 // anchor stripping, module fallback or catalog lookup. Hover retains raw key.
 struct ModuleUriLink { std::string module, key; };
 ModuleUriLink module_uri_link(const std::string &url);
-struct PassageLink { std::string module, reference; };
+struct PassageLink { std::string module, reference; std::optional<std::string> anchor = std::nullopt; };
 struct StudyNoteLink { std::string module, reference, identifier, type; };
-struct ReferenceListLink { std::string module, expression; };
+struct ReferenceListLink { std::string module, expression; std::optional<std::string> anchor = std::nullopt; };
 // Image ownership follows the committed source pane, not a declared URI module.
 struct VerseImageLink {std::string module,uri;};
 using ContextualStudyCommandLink = std::variant<PassageLink, StudyNoteLink, ReferenceListLink, LexicalLink, VerseImageLink>;

@@ -1469,3 +1469,23 @@ selection and change its notebook. Daily URI clicks explicitly reject until that
 service/presentation is characterized; hover still reads the actual dictionary.
 Native Bible/commentary anchor consumption, book/prayer routes, status/bookmark
 behavior, physical GUI URI clicks and broad corpus/platform acceptance remain open.
+
+### Owned contextual verse anchor targets (2026-10-22)
+
+After dictionary clicks `498f08e`, contextual verse parsing now owns an optional
+anchor separate from reference/module. Shared retained split preserves absent vs
+empty, hash-over-bang precedence and literal decoded suffixes. Anchored single
+Bible/commentary/unknown targets use cloned canonical navigation; commentary and
+unknown range targets retain anchors; Bible ranges remain stripped sidebar
+previews. Existing strict single APIs reject anchors. C getter and Swift copies
+preserve lifetime without a view action or history mutation.
+
+Core normal 6/6 (4.83s); Swift/model plus fixture 2/2 (2.82s); portable 2/2
+(1.68s); ASan/UBSan 2/2 (2.66s); TSan 2/2 (4.19s). Includes literal quote,
+backslash, closing-script text, Unicode, escaped percent, null/empty C pointers,
+copied shutdown results, actual module/fallback/range identity and isolation.
+The anchor string is data; no scripts/content were executed. Retained utilities.c
+consumes special_anchor exactly once in the first rendered pane. Native explicit
+target application, pane precedence and empty-anchor scrolling are next; current
+models do not apply the transported anchor yet. Same platform/sanitizer/corpus
+limits apply, with no new whole-group acceptance.

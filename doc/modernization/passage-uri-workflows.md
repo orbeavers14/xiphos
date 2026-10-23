@@ -172,3 +172,21 @@ Contextual DailyDevotion clicks explicitly reject pending that typed service,
 rather than adding an ordinary dictionary history entry. Book/prayer clicks,
 Bible/commentary anchor presentation and status/bookmark behavior remain separate
 acceptance gates. No whole URI workflow or GUI/corpus acceptance is claimed.
+
+## Owned contextual verse anchors
+
+Contextual sword/bible parsing now separates the decoded click anchor from the
+reference before routing. PassageLink and staged ReferenceListLink carry an
+optional owned suffix, retaining absent versus explicit-empty anchors, hash-over-
+bang precedence, Unicode and single-decode semantics. Anchor bytes remain literal
+data, including quotes, slashes and percent-looking text. Query/slash reference
+syntax, controls, malformed escapes and empty references still reject.
+
+Anchored single Bible/commentary/unknown-main targets use the cloned canonical
+navigation helper; commentary/unknown range targets retain the copied anchor.
+Bible range URIs still return a sidebar snapshot after stripping the anchor and
+do not navigate. C xc_link_anchor returns NULL for absent and a borrowed empty
+string for explicit-empty; ownership follows the link handle. Swift copies that
+optional value before release. Older single URI APIs still reject fragments.
+This step transports targets only: native pane application/one-use scrolling
+remains a separate following slice, and resolution does not publish history.

@@ -83,22 +83,34 @@ struct StudyWorker::Impl {
       }
       const auto target = navigation_module.empty() ? xiphos::core::contextual_study_link(uri, current_module)
           : xiphos::core::contextual_study_link(uri, current_module, navigation_module);
-      if (std::holds_alternative<PassageLink>(target))
-        return reader.resolve_link(navigation_module.empty() ? current_module : navigation_module, uri);
+      if (const auto *passage = std::get_if<PassageLink>(&target)) {
+        const auto &main_module = navigation_module.empty() ? current_module : navigation_module;
+        if (!passage->anchor) return reader.resolve_link(main_module, uri);
+        const auto resolved = reader.resolve_module_name(passage->module);
+        auto result = reader.navigation_target(resolved.module ? *resolved.module : main_module, passage->reference);
+        result.anchor = passage->anchor;
+        return result;
+      }
       if (const auto *list = std::get_if<ReferenceListLink>(&target)) {
         const bool is_passage_uri = uri.compare(0, 8, "sword://") == 0 || uri.compare(0, 8, "bible://") == 0;
         if (is_passage_uri) {
           const auto resolved = reader.resolve_module_name(list->module);
           if (!resolved.module) {
             const auto &main_module = navigation_module.empty() ? current_module : navigation_module;
-            return reader.navigation_target(main_module, list->expression);
+            auto result = reader.navigation_target(main_module, list->expression);
+            result.anchor = list->anchor;
+            return result;
           }
           const bool sidebar = passage_uri_reference_list(resolved.module->c_str(), list->expression.c_str(),
               [&](const char *id) {
                 return std::any_of(reader.modules().begin(), reader.modules().end(),
                     [&](const Module &module) { return module.id == id && module.type == "Biblical Texts"; });
               });
-          if (!sidebar) return reader.navigation_target(*resolved.module, list->expression);
+          if (!sidebar) {
+            auto result = reader.navigation_target(*resolved.module, list->expression);
+            result.anchor = list->anchor;
+            return result;
+          }
           return session.read_reference_list(*resolved.module, list->expression, current_reference);
         }
         ReferenceList result;
