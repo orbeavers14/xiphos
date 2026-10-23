@@ -1640,3 +1640,21 @@ Native-disabled C++11 full libraries build and 4/4 tests pass (2.01s). Strict C1
 header and whitespace checks pass. Includes owner-close copies, repeated/empty
 anchors and clearing on ordinary/history reads. GTK compile/runtime, physical
 URI activation, devotional date/pane routing and broad acceptance remain open.
+
+### Complete dictionary/devotional display characterization (2026-10-22)
+
+Freeze complete main_display_dictionary from `0babbf7` with its GPL notice, and
+extract the current complete dispatcher. Strict C++11 deterministic host seams
+compare 2,880 traces across absent/same/different modules, installed/available
+gates, features, keys, date shapes, invalid UTF-8 and missing devotional widgets.
+The clock seam supplies July 9 independent of host time zone. Calendar-invalid
+99.99 is retained because the legacy branch validates only NN.NN shape. A changed
+DailyDevotion module redirects to its pane and returns before dictionary history;
+an absent/current dictionary module follows ordinary dictionary handling even
+with that feature. Null key becomes Grace. Invalid UTF-8 can follow module/pane
+changes but returns before history/tab publication. Record these ordering rules
+without silently correcting them or claiming native devotional pane support.
+
+Normal 1/1 (0.07s), portable 1/1 (0.20s), ASan/UBSan 1/1 (0.24s), TSan 1/1
+(0.71s) pass; native-disabled full C++11 libraries and all 5/5 tests pass (2.09s).
+The oracle covers full dispatcher callbacks, not GTK rendering/date-picker UI.

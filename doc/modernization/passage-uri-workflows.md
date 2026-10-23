@@ -310,3 +310,15 @@ repeated identical targets. Ordinary entry reads, hover and history snapshots
 carry no URI anchor. This corrects the earlier callback-only assumption using
 the full HtmlOutput oracle. Native model checks cover copying, repeat/top and
 history clearing; physical activation and GTK DOM acceptance remain separate.
+
+## Complete dictionary/devotional display characterization
+
+A strict C++11 complete-function oracle compares 2,880 frozen/current dispatch
+traces. On a changed module, DailyDevotion redirects to its own pane; keys with
+exact NN.NN shape pass unchanged, all others use local today. This is shape-only
+validation, including 99.99. Absent/current dictionary module selection bypasses
+that redirect and follows ordinary dictionary casing/history. Null key defaults
+to Grace; matching uppercase entry refreshes rather than activates. Invalid
+UTF-8 returns after module/pane updates but before history/tab publication. The
+frozen function and deterministic clock preserve these observable ordering
+rules. Native devotional routing remains pending its dated-pane state service.
