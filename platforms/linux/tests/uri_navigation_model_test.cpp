@@ -41,6 +41,12 @@ int main(int argc,char **argv){try {
  check(model.follow("Notes","sword://Missing/John3:16#fallback"),"Unknown anchored fallback");settle(model);check(model.passage().anchor_module=="Notes"&&model.passage().anchor=="fallback","Unknown fallback applies anchor to visible commentary first");
  check(model.follow("Notes","sword://T/John3:16#"),"Follow explicit top anchor");settle(model);check(model.passage().anchor&&model.passage().anchor->empty()&&model.passage().anchor_module=="Text","Explicit empty anchor differs from absent");
  check(model.visit("Text","Personal","John3:17"),"Ordinary visit after URI anchor");settle(model);check(!model.passage().anchor&&model.passage().anchor_module.empty(),"Ordinary refresh does not inherit anchor");
+ Dictionary first_render{"Dictionary","ALPHA","<p>Original identity fixture.</p>","","",std::string("a1"),2};
+ auto next_render=first_render;next_render.anchor="a";next_render.anchor_revision=12;
+ check(first_render.html+*first_render.anchor+std::to_string(first_render.anchor_revision)==next_render.html+*next_render.anchor+std::to_string(next_render.anchor_revision),"Regression fixture reproduces old concatenated presentation collision");
+ check(!same_dictionary_presentation(first_render,next_render)&&same_dictionary_presentation(first_render,first_render),"Distinct literal anchor/revision pair must trigger document presentation");
+ next_render=first_render;next_render.anchor.reset();first_render.anchor=std::string();
+ check(!same_dictionary_presentation(first_render,next_render),"Explicit empty top differs from absent dictionary scroll even at identical revision");
  const auto script=anchor_scroll_script("café 文字\"\\'</script>");
  check(script.find("café 文字\\\"\\\\'</script>")!=std::string::npos&&script.find("\\303")==std::string::npos,"Host anchor script preserves UTF-8 and escapes quote/backslash without octal byte corruption");
  check(anchor_scroll_script("")=="window.scrollTo(0, 0); true;"&&anchor_scroll_script(std::string("a\n\0b",4)).find("a\\u000a\\u0000b")!=std::string::npos,"Host top/control literal encoding");

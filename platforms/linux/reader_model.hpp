@@ -14,6 +14,12 @@ using Lexicons = std::array<std::optional<std::string>, 5>;
 struct Presentation { bool chapter = false, headings = true, double_space = false; int images = -1, font_faces = -1, note_numbers = -1; };
 struct LexicalPresentation { std::string css; bool requested = false, applied = false; };
 struct Dictionary { std::string module, key, html, source_module, source_reference; std::optional<std::string> anchor; uint64_t anchor_revision = 0; };
+// Compare document fields separately: concatenating anchor and revision can
+// confuse ("a1", 2) with ("a", 12), suppressing a required repeated scroll.
+inline bool same_dictionary_presentation(const Dictionary &left, const Dictionary &right) {
+  return left.module == right.module && left.key == right.key && left.html == right.html &&
+    left.anchor == right.anchor && left.anchor_revision == right.anchor_revision;
+}
 struct ReferenceChoice { std::string label, target; };
 struct Chapter { std::string html, anchor, title; LexicalPresentation lexical; };
 struct Passage { std::string bible, commentary, reference, bible_html, commentary_html; LexicalPresentation bible_lexical, commentary_lexical; std::string anchor_module; std::optional<std::string> anchor; uint64_t anchor_revision = 0; };

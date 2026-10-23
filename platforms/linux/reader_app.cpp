@@ -43,7 +43,9 @@ struct App {
   std::string sidebar_identity, information_identity, hover_uri;
   WebKitWebView *dictionary_view = nullptr;
   std::vector<std::string> dictionaries;
-  std::string dictionary_identity, dictionary_choices_identity, dictionary_submitted;
+  xiphos::linux_preview::Dictionary rendered_dictionary;
+  bool dictionary_loaded = false;
+  std::string dictionary_choices_identity, dictionary_submitted;
   WebKitWebView *bible_view = nullptr, *commentary_view = nullptr;
   std::unique_ptr<ReaderModel> model;
   std::unique_ptr<xiphos::linux_preview::StudyUI> study_ui;
@@ -260,9 +262,9 @@ gboolean tick(gpointer data) {
   }
   for (auto *selector : app->selectors) gtk_widget_set_sensitive(selector, enabled && !passage.bible.empty());
   const auto &dictionary = app->model->dictionary();
-  const auto dictionary_identity = dictionary.module + "\n" + dictionary.key + "\n" + dictionary.html + (dictionary.anchor ? *dictionary.anchor : "") + std::to_string(dictionary.anchor_revision);
-  if (!app->model->busy() && dictionary_identity != app->dictionary_identity) {
-    app->dictionary_identity = dictionary_identity;
+  if (!app->model->busy() && (!app->dictionary_loaded ||
+      !xiphos::linux_preview::same_dictionary_presentation(dictionary, app->rendered_dictionary))) {
+    app->rendered_dictionary = dictionary; app->dictionary_loaded = true;
     select(app->dictionary_module, app->dictionaries, dictionary.module);
     if (app->dictionary_submitted == gtk_editable_get_text(GTK_EDITABLE(app->dictionary_key)))
       gtk_editable_set_text(GTK_EDITABLE(app->dictionary_key), dictionary.key.c_str());

@@ -1695,3 +1695,14 @@ activation attempt used a stale model executable because its file name was
 passed instead of macos_reader_model_test; rebuilding the actual target corrected
 that test setup. This is offscreen DOM activation, not physical mouse/SwiftUI
 interaction or GTK rendering acceptance.
+
+### Dictionary presentation identity correction (2026-10-22)
+
+Review found a concrete GTK dictionary reload collision: identical HTML followed
+by anchor a1/revision2 flattens to the same identity as anchor a/revision12.
+Replace concatenated identities with fieldwise copied Dictionary presentation
+comparison, including optional anchor and revision. Explicit empty and absent
+anchors remain distinct even at an identical revision. GTK host source consumes
+the tested comparison; its compile/runtime still require the current Linux host.
+Portable model/preview/dispatcher/fixtures 7/7 (4.58s) pass, including a regression
+that first reproduces the old flattened collision. No broad GTK acceptance claim.
