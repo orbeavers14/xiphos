@@ -5,6 +5,7 @@
 #include "xiphos/core/note_presentation.h"
 #include "xiphos/core/reference_command.hpp"
 #include "xiphos/core/passage_uri.hpp"
+#include "xiphos/core/dictionary.hpp"
 #include "xiphos/core/study_link_admission.hpp"
 #include <condition_variable>
 #include <deque>
@@ -52,6 +53,13 @@ struct StudyWorker::Impl {
       return id && std::any_of(reader.modules().begin(), reader.modules().end(),
           [&](const Module &module) { return module.id == id; });
     }
+    const Module *uri_module(const std::string &token) {
+      const auto resolved = reader.resolve_module_name(token);
+      if (!resolved.module) return nullptr;
+      const auto found = std::find_if(reader.modules().begin(), reader.modules().end(),
+          [&](const Module &module) { return module.id == *resolved.module; });
+      return found == reader.modules().end() ? nullptr : &*found;
+    }
     ContextualStudyLink study_link_at(StudyTab tab, const std::string &current_module,
                                      const std::string &current_reference, const std::string &uri, bool record_lexical,
                                      const std::string &navigation_module = "") {
@@ -59,6 +67,20 @@ struct StudyWorker::Impl {
       if (current_module.find('\0') != std::string::npos || navigation_module.find('\0') != std::string::npos ||
           current_reference.find('\0') != std::string::npos)
         throw std::invalid_argument("Study link context contains NUL");
+      if (uri.compare(0, 8, "sword://") == 0 || uri.compare(0, 8, "bible://") == 0) {
+        auto keyed = module_uri_link(uri);
+        const auto &main_module = navigation_module.empty() ? current_module : navigation_module;
+        const auto *module = uri_module(keyed.module.empty() ? main_module : keyed.module);
+        if (module && module->type == "Lexicons / Dictionaries") {
+          // Devotional click selection has its own dated-pane policy. Do not
+          // silently treat it as a normal dictionary history visit.
+          if (!module->dictionary) throw std::invalid_argument("URI target requires devotional navigation");
+          passage_uri_anchor(keyed.key.data());
+          keyed.key.resize(std::strlen(keyed.key.c_str()));
+          const auto key = record_lexical ? dictionary_click_key(keyed.key) : keyed.key;
+          return record_lexical ? session.visit_dictionary(module->id, key) : session.read_dictionary(module->id, key);
+        }
+      }
       const auto target = navigation_module.empty() ? xiphos::core::contextual_study_link(uri, current_module)
           : xiphos::core::contextual_study_link(uri, current_module, navigation_module);
       if (std::holds_alternative<PassageLink>(target))
@@ -378,12 +400,9 @@ std::future<StudyHoverLink> StudyWorker::hover_study_link_at(StudyTab tab, std::
       // Retained hover only finds the module separator in the first 20 bytes.
       // Empty declared modules do not use the main-module click fallback.
       if (keyed.module.empty() || keyed.module.size() >= 20) return std::monostate{};
-      const auto resolved = s.reader.resolve_module_name(keyed.module);
-      if (!resolved.module) return std::monostate{};
-      const auto found = std::find_if(s.reader.modules().begin(), s.reader.modules().end(),
-          [&](const Module &module) { return module.id == *resolved.module; });
-      if (found == s.reader.modules().end() || found->type != "Lexicons / Dictionaries") return std::monostate{};
-      return session.read_dictionary(*resolved.module, keyed.key);
+      const auto *module = s.uri_module(keyed.module);
+      if (!module || module->type != "Lexicons / Dictionaries") return std::monostate{};
+      return session.read_dictionary(module->id, keyed.key);
     }
     const auto target = xiphos::core::contextual_hover_link(uri, current_module, current_reference);
     if (std::holds_alternative<PassageLink>(target) || std::holds_alternative<ReferenceListLink>(target) || std::holds_alternative<VerseImageLink>(target))

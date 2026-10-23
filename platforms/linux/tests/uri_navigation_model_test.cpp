@@ -24,5 +24,9 @@ int main(int argc,char **argv){try {
  const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(20);
  do{model.tick();check(std::chrono::steady_clock::now()<deadline,"Dictionary hover model deadline");std::this_thread::sleep_for(std::chrono::milliseconds(1));}while(model.preview_busy());
  check(model.information().module=="Dictionary"&&model.information().reference=="ALPHA-BETA;GAMMA,DELTA/PART#TAG!NOTE?QUERY"&&model.information().html.find("Original Dictionary")!=std::string::npos&&model.passage().reference==before.reference&&model.can_back()==back&&model.search_results().generation.id==generation,"Typed dictionary information preview retains arbitrary SDK key and reading/search/history");
- std::cout<<"Portable normalized URI navigation and dictionary information preview passed\n";return 0;
+ check(model.follow("Personal","sword://D/anchor-key!before%23after"),"Follow dictionary URI click");settle(model);
+ check(model.dictionary().module=="Dictionary"&&model.dictionary().key=="ANCHOR-KEY!BEFORE"&&model.dictionary_history_count()==1&&model.passage().reference==before.reference&&model.can_back()==back&&model.search_results().generation.id==generation,"Dictionary URI click consumes typed raw key and shared history without Bible/search visit");
+ check(model.follow("Personal","sword://D/alpha"),"Second dictionary URI click");settle(model);check(model.dictionary_can_back(),"Dictionary URI visits enable shared Back");
+ check(model.navigate_dictionary_history(-1),"Navigate dictionary URI history");settle(model);check(model.dictionary().key=="ANCHOR-KEY!BEFORE"&&model.dictionary_can_forward(),"Dictionary URI visits reuse existing history navigation");
+ std::cout<<"Portable normalized URI navigation and dictionary hover/click passed\n";return 0;
  }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}

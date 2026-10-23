@@ -721,7 +721,9 @@ xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_req
  * installed Bible target, after alias resolution; omitted modules use main
  * navigation context. Unknown offered modules use the exact main fallback and
  * commentary range targets return a normalized link for explicit host navigation.
- * Dictionary/book range targets remain outside this verse navigation route.
+ * Ordinary dictionary URI targets return take_dictionary_entry with a decoded
+ * arbitrary key and the retained click anchor removed. Devotional/book click
+ * targets remain separate typed routes. Dictionary resolve does not visit history.
  * Single passage URIs and notes
  * return their existing kinds. Strong's/morphology return an owned lexical
  * preview after explicit tab lexicon configuration. Source context/URI must
@@ -731,8 +733,9 @@ xc_status xc_worker_clear_engine_options(xc_worker *worker, uint64_t tab, xc_req
  * copied bytes owned by the actual source module, not a declared URI module.
  * Image hover is no-presentation with no file read; filename status text remains
  * a separate UI gate. Older resolve_study_link retains its two-kind contract. */
-/* Explicit click dispatch records successful lexical visits in dictionary
- * history; other command kinds retain preview/target behavior. No Bible visit.
+/* Explicit click dispatch records successful lexical and ordinary dictionary URI
+ * visits in dictionary history; dictionary URI keys use shared Unicode uppercase.
+ * Other kinds retain preview/target behavior. No Bible visit.
  * Legacy Unicode-uppercase requested key is recorded; raw command metadata is retained. */
 /* Main study panes distinguish default Bible navigation from note/lexical
  * source context. Same result kinds/lexical recording as follow_study_link_at.

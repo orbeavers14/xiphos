@@ -128,8 +128,14 @@ bool ReaderModel::close_preview() {
 }
 bool ReaderModel::take_preview(xc_request *request, bool hover) {
   std::unique_ptr<xc_dictionary_entry, decltype(&xc_dictionary_entry_release)> dictionary(xc_request_take_dictionary_entry(request), xc_dictionary_entry_release);
-  if (dictionary && hover) {
-    information_ = {copy(xc_dictionary_entry_module(dictionary.get())), copy(xc_dictionary_entry_key(dictionary.get())), copy(xc_dictionary_entry_html(dictionary.get())), ""};
+  if (dictionary) {
+    if (hover) information_ = {copy(xc_dictionary_entry_module(dictionary.get())), copy(xc_dictionary_entry_key(dictionary.get())), copy(xc_dictionary_entry_html(dictionary.get())), ""};
+    else {
+      dictionary_ = {copy(xc_dictionary_entry_module(dictionary.get())), copy(xc_dictionary_entry_key(dictionary.get())), copy(xc_dictionary_entry_html(dictionary.get())), "", ""};
+      xc_request *next = nullptr;
+      const auto status = xc_worker_dictionary_choices(worker_, tab_, dictionary_.module.c_str(), dictionary_.key.c_str(), &next);
+      accept(status, next, Operation::dictionary_choices);
+    }
     return true;
   }
   std::unique_ptr<xc_note, decltype(&xc_note_release)> note(xc_request_take_note(request), xc_note_release);

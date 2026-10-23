@@ -103,8 +103,18 @@ struct ReaderModelSmoke {
               second.informationDictionary == nil, second.html == secondHTML else { fatalError("Dictionary URI hover preserves raw keyed lookup and reading/draft/history/window state") }
         first.previewStudyLink("sword:///alpha"); try await previewIdle(first)
         guard first.informationDictionary?.module == "Dictionary" else { fatalError("Empty module hover does not replace information preview through main fallback") }
+        first.followCommentaryLink("sword://D/anchor-key!before%23after"); try await idle(first)
+        guard first.dictionaryEntry?.module == "Dictionary", first.dictionaryEntry?.key == "ANCHOR-KEY!BEFORE",
+              first.dictionaryHistory?.entries.last?.key == "ANCHOR-KEY!BEFORE", first.dictionarySource == nil,
+              first.lexicalPreview == nil, first.renderedReference == reference, first.html == html,
+              first.reference == "John4:2", first.canBack == back, first.canForward == forward,
+              second.dictionaryEntry == nil else { fatalError("Dictionary URI click uses shared keyed history/presentation without Bible or lexical source changes") }
+        first.followCommentaryLink("sword://D/alpha"); try await idle(first)
+        guard first.dictionaryEntry?.key == "ALPHA", first.dictionaryHistory?.canBack == true else { fatalError("Dictionary URI clicks enable shared Back") }
+        first.navigateDictionaryHistory(-1); try await idle(first)
+        guard first.dictionaryEntry?.key == "ANCHOR-KEY!BEFORE", first.dictionaryHistory?.canForward == true else { fatalError("Dictionary URI visits use existing history navigation") }
         first.close(); second.close(); await worker.shutdown()
-        print("Native normalized URI ranges and copied dictionary URI hover passed")
+        print("Native normalized URI ranges and copied dictionary URI hover/click passed")
     }
     @MainActor static func searchAliases(root: String) async throws {
         let worker = try CoreWorker(root: root)

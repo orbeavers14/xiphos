@@ -1444,3 +1444,28 @@ oracle 1/1 (0.30s). TSan 3/3 (5.15s) passes. Final existing/new hover and admiss
 limits apply. No physical GUI hover, corpus/current Fedora/MSVC or whole parity
 acceptance. Next URI work is keyed clicks, native anchor consumption and retained
 status/bookmark behavior, each through shared core services.
+
+### Ordinary dictionary URI click consumption (2026-10-22)
+
+After hover `c6125e8`, contextual ordinary dictionary URI clicks bypass scripture
+parsing, strip the shared retained anchor, apply shared Unicode uppercase and
+visit existing dictionary history. Resolve-only reads do not visit. Requested
+normalized history keys remain distinct from SDK matches. Existing C dictionary
+handles and Mac/Linux dictionary presentation/choices/history consume the copied
+result, without lexical metadata or a Bible/search visit. Omitted URI modules
+use main context, explicit long IDs work on click, and short hover rules remain.
+
+New core checks cover punctuation/slashes, hash-over-bang precedence, empty
+anchors/keys, partial SDK matches, actual IDs, raw resolves, dictionary Back,
+rejected input/history isolation, sibling tabs, closed tabs, FIFO draining and C
+kind/take-once ownership. Model checks exercise click plus Back/Forward and
+reading/draft/window isolation. Core normal 5/5 (4.23s); Mac model 2/2 (3.06s);
+portable 4/4 (2.92s); ASan/UBSan 3/3 (3.27s); TSan 3/3 (5.10s). C11 header and
+whitespace checks pass. Same platform/SDK/sanitizer limits apply.
+
+Inspection found a separate DailyDevotion branch in main_display_dictionary:
+switching module may replace a non-date key with today's date, update devotional
+selection and change its notebook. Daily URI clicks explicitly reject until that
+service/presentation is characterized; hover still reads the actual dictionary.
+Native Bible/commentary anchor consumption, book/prayer routes, status/bookmark
+behavior, physical GUI URI clicks and broad corpus/platform acceptance remain open.

@@ -43,7 +43,7 @@ void fixture(const std::filesystem::path &root){
   if(dict)writer.reset(new RawLD(prefix.string().c_str()));
   else if(bible)writer.reset(new RawText(prefix.string().c_str(),nullptr,nullptr,nullptr,ENC_UTF8,DIRECTION_LTR,FMT_PLAIN,"en",canon.c_str()));
   else if(personal)writer.reset(new RawFiles(prefix.string().c_str()));else writer.reset(new RawCom(prefix.string().c_str()));
-  for(const auto *reference:dict?std::vector<const char *>{"alpha","alpha-beta;gamma,delta/part#tag!note?query","café 文字","literal%20key","plus+key"}:std::vector<const char *>{"Genesis1:1","John3:16","John3:17"}){writer->setKey(reference);writer->setEntry(("Original "+std::string(id)+" navigation prose.").c_str());}
+  for(const auto *reference:dict?std::vector<const char *>{"alpha","alpha-beta;gamma,delta/part","anchor-key","anchor-key!before","alpha-beta;gamma,delta/part#tag!note?query","café 文字","literal%20key","plus+key"}:std::vector<const char *>{"Genesis1:1","John3:16","John3:17"}){writer->setKey(reference);writer->setEntry(("Original "+std::string(id)+" navigation prose."+(dict?" Key "+std::string(reference):"")).c_str());}
   const std::string alias=dict?(std::string(id)=="Dictionary"?"D":std::string(id)=="Daily"?"DailyAlias":std::string(id)=="LongDictionaryNameX"?"L19":"L20"):bible?(alt?"TA":"T"):personal?"P":"N";
   std::ofstream config(root/"mods.d"/(std::string(id)+".conf"));
   config<<'['<<id<<"]\nDataPath=./"<<id<<(dict?"/entries":"/")<<"\nModDrv="<<driver<<"\nSourceType=Plain\nEncoding=UTF-8\nLang=en\nVersification="<<canon<<"\nDescription=Original navigation fixture\nAbbreviation="<<alias<<'\n';if(std::string(id)=="Daily")config<<"Feature=DailyDevotion\n";check(bool(config),"Write fixture catalog");
@@ -75,7 +75,7 @@ int main(int argc,char **argv){try {
   const auto personal=std::get<PassageLink>(worker.resolve_study_link_at(tab,"Text","John3:23","bible://P/John3:16-18").get());
   check(unknown.module=="Text"&&notes.module=="Notes"&&personal.module=="Personal"&&unknown.reference=="John 3:16"&&notes.reference==unknown.reference&&personal.reference==unknown.reference,"Unknown URI ranges use exact main; commentary aliases use their actual module and canonical target");
   const auto bible=std::get<ReferenceList>(worker.follow_pane_link_at(tab,"Text","Notes","John3:23","sword://T/John3:16-18").get());check(bible.module=="Text"&&bible.entries.size()==3,"Bible ranges retain sidebar classification");
-  rejects<std::invalid_argument>([&]{(void)worker.resolve_study_link_at(tab,"Text","John3:23","sword://D/John3:16-18").get();});
+  rejects<std::invalid_argument>([&]{(void)worker.resolve_study_link_at(tab,"Text","John3:23","sword://DailyAlias/John3:16-18").get();});
   rejects<std::out_of_range>([&]{(void)worker.follow_pane_link_at(tab,"T","Notes","John3:23","sword://Missing/John3:16-18").get();});
   check(worker.search_generation(tab).get().id==generation&&worker.history(tab).get().entries.empty(),"Target resolution does not publish navigation/search changes");
   const auto visited=worker.visit_linked_passage(tab,"Text","Personal",notes).get();check(visited.module=="Text"&&visited.commentary_module=="Notes"&&visited.commentary&&visited.commentary->html.find("Original Notes")!=std::string::npos&&worker.history(tab).get().entries.size()==1,"Existing shared host application navigates correct commentary and records one visit");

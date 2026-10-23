@@ -128,8 +128,8 @@ actual dictionary-family modules (including DailyDevotion SWLD modules) with
 per-tab options. The full decoded keyed path is preserved, including `-;,/?!#`;
 hover does not apply the click anchor split or scripture parser. Module URI
 parsing returns copied strings and rejects malformed escapes, control bytes,
-missing/empty paths and input beyond 32768 bytes. Older single-passage and
-contextual click APIs retain their existing narrower syntax.
+missing/empty paths and input beyond 32768 bytes. Older single-passage APIs retain their existing narrower syntax; contextual
+ordinary dictionary clicks use the keyed route described below.
 
 The retained hover's separator search is limited to the first 20 module bytes:
 only nonempty declared tokens shorter than 20 bytes can preview. A short alias
@@ -145,3 +145,30 @@ Accepted requests drain during shutdown and copied entries outlive the owner.
 The complete retained callback oracle adds 48 keyed dictionary traces (18,484
 total), including raw punctuation/Unicode, daily dictionaries and 19/20-byte
 declared names. Model checks are not physical GUI interaction or corpus proof.
+
+## Ordinary dictionary URI clicks
+
+Contextual URI dispatch now recognizes ordinary installed dictionaries before
+scripture parsing. It resolves explicit aliases (without the hover token-length
+limit); omitted tokens use main navigation context. Keys retain slash/list/query
+bytes, then the shared click helper strips the first hash, or first bang if no
+hash exists. A hash takes precedence over an earlier bang. Empty resulting keys
+reject. Explicit follows apply the existing Unicode uppercase key policy and
+record the actual module plus normalized requested key through shared dictionary
+history. The returned DictionaryEntry independently carries the SDK-matched key.
+Resolve-only requests read without adding history. Unknown/non-dictionary paths
+keep their prior verse routing; older two-kind/Reader single URI APIs stay strict.
+
+C contextual results use take_dictionary_entry; Swift/Linux present through
+existing dictionary choices/history services with no fabricated lexical source.
+Reading drafts, Bible navigation/history, committed search and sibling windows
+are preserved. Back/Forward uses existing dictionary navigation. Native dictionary
+clicks do not consume their stripped anchor as a scroll destination; the retained
+dictionary display branch likewise receives only the stripped key.
+
+DailyDevotion hover is a raw SDK dictionary read, but its click route has a
+separate retained date/pane/module-switch contract in main_display_dictionary.
+Contextual DailyDevotion clicks explicitly reject pending that typed service,
+rather than adding an ordinary dictionary history entry. Book/prayer clicks,
+Bible/commentary anchor presentation and status/bookmark behavior remain separate
+acceptance gates. No whole URI workflow or GUI/corpus acceptance is claimed.

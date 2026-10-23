@@ -720,6 +720,9 @@ final class ReaderModel: ObservableObject {
                 guard token == self.revision && !self.closed else { return }
                 if currentReference == nil { self.studyNote = nil }
                 self.bookNote = nil; self.referencePreview = references; self.message = ""
+            case .dictionary(let entry):
+                let history = try await worker.dictionaryHistory(tab: tab)
+                try await self.presentDictionary(entry, source: nil, history: history, token: token)
             case .lexical(let lexical):
                 let history = try await worker.dictionaryHistory(tab: tab)
                 try await self.presentDictionary(lexical.entry,
