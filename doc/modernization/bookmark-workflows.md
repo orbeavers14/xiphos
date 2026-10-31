@@ -110,3 +110,41 @@ space and was corrected after the complete map/call-order comparisons passed.
 Native planning validates parent/kind/depth/sibling order and aggregate copied
 text bounds, including caller-constructed snapshots. Physical highlight rendering,
 personal-note precedence and native annotations remain unaccepted.
+
+## Exact-catalog owned annotation maps
+
+`Reader::bookmark_tags` and the explicit FIFO/C selected-file command now expand
+eligible candidates into owned OSIS verse groups with ordered candidate-index
+occurrences. Generic absent/empty module identities qualify. Installed exact Bible
+IDs and regular commentaries qualify regardless of the current control Bible;
+personal RawFiles commentary, dictionary/devotional, missing IDs and abbreviations
+do not. This preserves the retained exact-catalog policy rather than importing the
+search/parallel abbreviation policy. Every candidate retains eligibility state,
+including candidates after a limited inspected prefix. No source mutation occurs.
+
+The parser uses the control module's cloned reference-list key. OSIS grouping then
+uses a fresh VerseKey with that locale, as retained code does, rather than promising
+accurate cross-versification equivalence. Twenty-seven complete map comparisons
+cover installed KJV/KJVA Bible and regular-commentary controls and nine source-module
+classes. They verify keys remain stable and grouping/duplicates agree. Module
+filtering is now production core behavior, unlike the earlier controlled-class host.
+
+Default bounds are8192 distinct verses,32768 occurrences and16MiB copied string
+bytes. Maximum configurable counts are65536 verses and262144 occurrences; source
+and owned string caps remain16MiB. Reference strings are <=32768 bytes and control
+module IDs <=4096. Metadata that cannot fit fails; encountering another verse,
+occurrence or returned-reference byte beyond a bound discloses `limited` with the
+complete ordered prefix. Duplicates on an existing verse consume occurrences, not
+distinct-verse slots. Exact complete limits do not claim truncation. Retained
+per-range SDK parser limits also disclose partial results. Skipped module/reference
+counts and ignored source subtrees remain visible. These caps do not bound SDK
+internal allocation. No CSS, DOM, user-note rendering or annotation precedence is
+applied by the map service.
+
+The C interface copies all inputs, supports default/explicit limits, preallocates
+owned result storage and publishes successful results without allocation at poll.
+Tests cover invalid admission without allocation, injected observer/envelope
+failure, copied inputs, exact-limit/prefix semantics, malformed UTF-8, unsupported
+controls, take-once ownership and shutdown drain. Owned groups survive source and
+worker teardown. A test initially counted its own path temporary in admission
+allocation measurements; the path is now prepared outside the measured region.

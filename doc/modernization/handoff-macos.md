@@ -2057,3 +2057,26 @@ correction tag-only1/1 (.83s), no sanitizer errors (leaks OFF). Whitespace passe
 Next: exact installed module eligibility and owned bounded SDK tag maps, with
 reference/options/key restoration and FIFO/C transport. Then personal annotation
 precedence; keep complete native session restore, editors/install/sync tracked.
+
+## 2026-10-31 — owned exact-catalog annotation maps and C ABI
+
+e4c5333 adds Reader/FIFO owned grouped tag maps with exact installed eligibility,
+ordered duplicate overlaps, source/color provenance and disclosed count/string
+limits. Twenty-seven complete retained real-catalog/SDK map comparisons cover
+KJV/KJVA Bible and regular-commentary controls, personal/dictionary/devotional/
+missing/alias/generic source cases. Tests cover exact/prefix verse/occurrence/byte
+caps, source bytes, key/options/history/sibling preservation and copied FIFO args.
+A shape expectation incorrectly required an excluded bookmark's third verse;
+corrected after exact encoded-map equality passed. Final strengthened tests:
+normal2/2 (1.25s), portable2/2 (1.52s), ASan/UBSan2/2 (2.67s), TSan2/2 (3.96s).
+
+73f88b4 exposes default/explicit limits, eligibility/provenance, owned grouped
+occurrences and diagnostics through C. Zero allocation on rejected structural
+admission/successful polling, injected envelope failure, copied args, take-once
+survival and drain pass. One test counted its own path temporary; fixed the
+measurement. Normal C+fixture2/2 (1.27s). Final portable annotation suite4/4
+(3.31s), ASan/UBSan4/4 (5.53s), TSan4/4 (7.57s); strict C11 header passes.
+Full Mac211-test and portable164-test builds/runs are underway. No native tag
+presentation, CSS application, personal annotation precedence, precise cross-canon
+mapping or whole-parity acceptance. Next: shared retained highlight priority,
+personal annotation storage, then editor/install/sync and complete session restore.
