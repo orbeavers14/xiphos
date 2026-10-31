@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include <glib.h>
+#include "xiphos/core/devotional.hpp"
 #include <ctime>
 #include <cstring>
 #include <cstdlib>
@@ -7,6 +8,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <utility>
 static std::vector<std::string> trace;
 static std::string copy(const char *s){return s?s:"<null>";}
 static void log(const char *a,const char *b=nullptr,const char *c=nullptr){trace.push_back(std::string(a)+":"+copy(b)+":"+copy(c));}
@@ -44,6 +46,7 @@ static struct MonthNames{
  const char *operator[](int index)const{
   log("month-index",std::to_string(index).c_str());
   static const char *names[]={"January","February","March","April","May","June","July","August","September","October","November","December"};
+  if(index<0||index>=12)log("invalid-month-index",std::to_string(index).c_str());
   return index>=0&&index<12?names[index]:"<invalid-month>";
  }
 } month_names;
@@ -74,9 +77,23 @@ int main(){try{
  for(const char *module:std::vector<const char *>{nullptr,"ChosenDevotional"})
  for(const char *date:{"","07.09","12.31","02.30","99.99","00.00","ab.cd","07x09","-1.01","7.09","07.09x","07.99"})
  for(bool installed:{false,true})for(bool text:{false,true})for(bool entry:{false,true})for(bool button:{false,true})for(bool target:{false,true})for(bool sidebar:{false,true}){
-  check(run(actual::main_display_devotional,module,date,installed,text,entry,button,target,sidebar)==run(frozen::main_display_devotional,module,date,installed,text,entry,button,target,sidebar),"Complete devotional render trace differs");++comparisons;
+  auto expected=run(frozen::main_display_devotional,module,date,installed,text,entry,button,target,sidebar);
+  if(has(expected,"invalid-month-index:")) {
+   expected=run(frozen::main_display_devotional,module,"",installed,text,entry,button,target,sidebar);
+   // No rendered text preserves the original entry even after date fallback.
+   if(!text)for(auto &event:expected)if(event.compare(0,6,"final:")==0)event+=date;
+  }
+  const auto result=run(actual::main_display_devotional,module,date,installed,text,entry,button,target,sidebar);
+  check(!has(result,"invalid-month-index:")&&result==expected,"Complete devotional render differs outside the explicit unsafe-month fallback");++comparisons;
  }
- const auto bad=run(actual::main_display_devotional,"ChosenDevotional","99.99",true,true,true,true,true,false);
+ for(int value=0;value<10000;++value){
+  std::string key="00.00";int digits=value;for(int index:{4,3,1,0}){key[index]=static_cast<char>('0'+digits%10);digits/=10;}
+  auto expected=run(frozen::main_display_devotional,"ChosenDevotional",key.c_str(),true,true,true,true,false,true);
+  if(has(expected,"invalid-month-index:"))expected=run(frozen::main_display_devotional,"ChosenDevotional","",true,true,true,true,false,true);
+  const auto result=run(actual::main_display_devotional,"ChosenDevotional",key.c_str(),true,true,true,true,false,true);
+  check(!has(result,"invalid-month-index:")&&result==expected,"Numeric date key differs outside bounded month correction");++comparisons;
+ }
+ const auto bad=run(frozen::main_display_devotional,"ChosenDevotional","99.99",true,true,true,true,true,false);
  check(has(bad,"month-index:98:")&&has(bad,"render:ChosenDevotional:99.99")&&has(bad,"restored:yes:"),"Shape-only dispatched date requests out-of-range month indexing in retained renderer; guarded host records without UB");
  const auto missing=run(actual::main_display_devotional,nullptr,"",false,false,false,false,false,false);
  check(has(missing,"warning:")&&has(missing,"clock:")&&has(missing,"render:<null>:07.09"),"No installed devotional warns but continues to clock/render seam");
@@ -84,5 +101,16 @@ int main(){try{
  check(has(fallback,"xml:devotional:InstalledDevotional")&&has(fallback,"sidebar:InstalledDevotional:<b>July 9</b>")&&has(fallback,"entry:07.09:")&&has(fallback,"button:Local<07.09>:"),"First installed fallback, local today and sidebar title/entry/button publication agree");
  const auto empty=run(actual::main_display_devotional,"ChosenDevotional","07.09",true,false,true,true,true,false);
  check(!has(empty,"temporary-display:")&&!has(empty,"entry:")&&!has(empty,"local-format:"),"No rendered text leaves entry/button/display untouched");
- std::cout<<"Complete devotional renderer: "<<comparisons<<" frozen/current traces, guarded month-index hazard, installed fallback, target/preview and publication order agree\n";return 0;
+ const auto corrected=run(actual::main_display_devotional,"ChosenDevotional","99.99",true,true,true,true,false,true);
+ check(!has(corrected,"invalid-month-index:")&&has(corrected,"render:ChosenDevotional:07.09")&&has(corrected,"sidebar:ChosenDevotional:<b>July 9</b>")&&has(corrected,"entry:07.09:"),"Invalid month uses safe today consistently for rendering, title and published entry");
+ using xiphos::core::devotional_date;
+ const auto leap=devotional_date("02.29",7,9),noncalendar=devotional_date("02.30",7,9),separator=devotional_date("07x09",7,9);
+ check(leap.key=="02.29"&&leap.month==2&&leap.day==29&&!leap.used_today&&noncalendar.day==30&&!noncalendar.used_today&&separator.key=="07x09"&&separator.day==9,"Safe legacy keys preserve leap/noncalendar days and separator semantics");
+ for(int month=1;month<=12;++month)for(int day=1;day<=31;++day){
+  const auto date=devotional_date("",month,day);check(date.key.size()==5&&date.month==month&&date.day==day&&date.used_today,"Host-local date roundtrip");
+  const auto supplied=devotional_date(date.key,7,9);check(supplied.key==date.key&&supplied.month==month&&supplied.day==day&&!supplied.used_today,"Every bounded month/day key remains selectable");
+ }
+ for(const auto &bad:std::vector<std::string>{std::string("07\0.9",5)}){bool rejected=false;try{(void)devotional_date(bad,7,9);}catch(const std::invalid_argument &){rejected=true;}check(rejected,"Embedded NUL rejects before selection");}
+ for(const auto &today:std::vector<std::pair<int,int>>{{0,9},{13,9},{7,0},{7,32}}){bool rejected=false;try{(void)devotional_date("07.09",today.first,today.second);}catch(const std::invalid_argument &){rejected=true;}check(rejected,"Invalid host-local bounds reject");}
+ std::cout<<"Complete devotional renderer: "<<comparisons<<" frozen/current traces, safe-month parity, invalid-month today fallback, installed fallback, target/preview and publication order agree\n";return 0;
 }catch(const std::exception &e){std::cerr<<e.what()<<'\n';return 1;}}

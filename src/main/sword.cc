@@ -29,6 +29,7 @@
 #include <swmgr.h>
 #include <swmodule.h>
 #include "xiphos/core/dictionary.hpp"
+#include "xiphos/core/devotional.hpp"
 #include "xiphos/core/dictionary_history.hpp"
 #include "xiphos/core/module_abbreviations.hpp"
 #include <stdexcept>
@@ -1450,7 +1451,6 @@ static gchar *format_devot_date_local(const gchar *mmdd)
 
 void main_display_devotional(GtkWidget *target_widget)
 {
-	gchar buf[10];
 	gchar *prettybuf;
 	time_t curtime;
 	struct tm *loctime;
@@ -1476,21 +1476,13 @@ void main_display_devotional(GtkWidget *target_widget)
 	 */
 	curtime = time(NULL);
 	loctime = localtime(&curtime);
-	strftime(buf, 10, "%m.%d", loctime);   /* date par défaut = aujourd'hui */
-
-	if (widgets.entry_devotional &&
-		strlen(gtk_entry_get_text(GTK_ENTRY(widgets.entry_devotional))) == 5) {
-		/* utiliser la date saisie/sélectionnée */
-		strncpy(buf, gtk_entry_get_text(GTK_ENTRY(widgets.entry_devotional)), 10);
-		int month = atoi(buf);
-		int day   = atoi(buf+3);
-		prettybuf = g_strdup_printf("<b>%s %d</b>",
-					    gettext(month_names[month - 1]), day);
-	} else {
-		prettybuf = g_strdup_printf("<b>%s %d</b>",
-					    gettext(month_names[loctime->tm_mon]),
-					    loctime->tm_mday);
-	}
+	const auto date = xiphos::core::devotional_date(
+	    widgets.entry_devotional
+	        ? gtk_entry_get_text(GTK_ENTRY(widgets.entry_devotional)) : "",
+	    loctime->tm_mon + 1, loctime->tm_mday);
+	const char *buf = date.key.c_str();
+	prettybuf = g_strdup_printf("<b>%s %d</b>",
+	                            gettext(month_names[date.month - 1]), date.day);
 
 	text = backend->get_render_text(settings.devotionalmod, buf);
 	if (text) {
