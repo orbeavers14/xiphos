@@ -38,6 +38,7 @@ struct xc_lexicons { std::optional<xiphos::core::LexiconPreferences> value; };
 struct xc_lexical_entry { xiphos::core::LexicalEntry value; };
 struct xc_dictionary_choices { xiphos::core::DictionaryChoices value; };
 struct xc_dictionary_history { xiphos::core::DictionaryHistorySnapshot value; };
+struct xc_parallel_selection { std::optional<xiphos::core::ParallelSelection> value; };
 struct xc_parallel_chapter { xiphos::core::ParallelChapter value; };
 struct xc_devotional_entry { xiphos::core::DevotionalEntry value; };
 struct xc_dictionary_entry { xiphos::core::DictionaryEntry value; std::optional<std::string> anchor; };
@@ -113,6 +114,7 @@ struct xc_request {
   std::unique_ptr<xc_dictionary_entry> dictionary;
   std::unique_ptr<xc_devotional_entry> devotional;
   std::unique_ptr<xc_parallel_chapter> parallel;
+  std::unique_ptr<xc_parallel_selection> parallel_selection;
   std::unique_ptr<xc_book_tree> book_tree;
   std::unique_ptr<xc_book_uri_target> book_uri_target;
   std::unique_ptr<xc_book_entry> book_entry;
@@ -180,7 +182,8 @@ struct xc_request {
   void store(xiphos::core::LexicalEntry v) { lexical = std::make_unique<xc_lexical_entry>(xc_lexical_entry{std::move(v)}); }
   void store(xiphos::core::DictionaryChoices v) { dictionary_choices = std::make_unique<xc_dictionary_choices>(xc_dictionary_choices{std::move(v)}); }
   void store(xiphos::core::DictionaryHistorySnapshot v) { dictionary_history = std::make_unique<xc_dictionary_history>(xc_dictionary_history{std::move(v)}); }
-  void store(xiphos::core::ParallelChapter v) { parallel = std::make_unique<xc_parallel_chapter>(xc_parallel_chapter{std::move(v)}); }
+  void store(std::optional<xiphos::core::ParallelSelection> v) { static_assert(std::is_nothrow_move_assignable<decltype(v)>::value, "Parallel selection publication must not allocate"); parallel_selection->value = std::move(v); }
+  void store(xiphos::core::ParallelChapter v) { static_assert(std::is_nothrow_move_assignable<xiphos::core::ParallelChapter>::value, "Parallel publication must not allocate"); parallel->value = std::move(v); }
   void store(xiphos::core::DevotionalEntry v) { devotional = std::make_unique<xc_devotional_entry>(xc_devotional_entry{std::move(v)}); }
   void store(xiphos::core::DictionaryUriEntry v) { dictionary = std::make_unique<xc_dictionary_entry>(xc_dictionary_entry{std::move(v.entry), std::move(v.anchor)}); }
   void store(xiphos::core::DictionaryEntry v) { dictionary = std::make_unique<xc_dictionary_entry>(xc_dictionary_entry{std::move(v)}); }
@@ -294,6 +297,12 @@ xc_status failure() noexcept {
   catch (...) { return XC_ENGINE_ERROR; }
 }
 template<class T> struct Request final : xc_request {
+  // Allocate parallel result envelopes before accepting a state-changing job;
+  // polling then only moves owned values into already allocated storage.
+  Request() {
+    if constexpr (std::is_same_v<T,xiphos::core::ParallelChapter>) parallel = std::make_unique<xc_parallel_chapter>();
+    if constexpr (std::is_same_v<T,std::optional<xiphos::core::ParallelSelection>>) parallel_selection = std::make_unique<xc_parallel_selection>();
+  }
   std::future<T> future;
   void update() override {
     if (status != XC_PENDING || future.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return;
@@ -1427,8 +1436,8 @@ xc_status xc_worker_navigate_dictionary(xc_worker *w, uint64_t tab, const char *
   }
   return queue_request(w, out, [=](auto &worker) { return worker.navigate_dictionary(tab, id, key, direction); });
 }
-xc_status xc_worker_read_parallel(xc_worker *w, uint64_t tab, const char *const *ids,
-    size_t count, const char *reference, unsigned flags, int headings, size_t max_bytes, xc_request **out) {
+static xc_status queue_parallel_request(xc_worker *w, uint64_t tab, const char *const *ids,
+    size_t count, const char *reference, unsigned flags, int headings, size_t max_bytes, xc_request **out, bool visit) {
   if (out) *out = nullptr;
   if (!w || !out || !ids || !count || count > XC_PARALLEL_MAX_COLUMNS || (flags & ~((1u << 18)-1)) ||
       (headings != 0 && headings != 1) || !max_bytes || max_bytes > XC_PARALLEL_MAX_SNAPSHOT_BYTES ||
@@ -1441,9 +1450,36 @@ xc_status xc_worker_read_parallel(xc_worker *w, uint64_t tab, const char *const 
   static_assert(XC_PARALLEL_MAX_SNAPSHOT_BYTES == xiphos::core::maximum_parallel_snapshot_bytes, "Parallel byte bounds differ");
   return queue_request(w, out, [=](auto &worker) {
     std::vector<std::string> modules;modules.reserve(count);for(size_t index=0;index<count;++index)modules.emplace_back(ids[index]);
-    return worker.read_parallel(tab, std::move(modules), reference, options_from_flags(flags), headings != 0, max_bytes);
+    return visit ? worker.visit_parallel(tab, std::move(modules), reference, options_from_flags(flags), headings != 0, max_bytes)
+                 : worker.read_parallel(tab, std::move(modules), reference, options_from_flags(flags), headings != 0, max_bytes);
   });
 }
+xc_status xc_worker_read_parallel(xc_worker *w,uint64_t tab,const char *const *ids,size_t count,const char *reference,unsigned flags,int headings,size_t max_bytes,xc_request **out) {
+  return queue_parallel_request(w,tab,ids,count,reference,flags,headings,max_bytes,out,false);
+}
+xc_status xc_worker_visit_parallel(xc_worker *w,uint64_t tab,const char *const *ids,size_t count,const char *reference,unsigned flags,int headings,size_t max_bytes,xc_request **out) {
+  return queue_parallel_request(w,tab,ids,count,reference,flags,headings,max_bytes,out,true);
+}
+xc_status xc_worker_navigate_parallel_chapter(xc_worker *w,uint64_t tab,int direction,xc_request **out) {
+  if(direction!=-1&&direction!=1){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
+  return queue_request(w,out,[=](auto &worker){return worker.navigate_parallel_chapter(tab,direction);});
+}
+xc_status xc_worker_parallel_selection(xc_worker *w,uint64_t tab,xc_request **out) {
+  return queue_request(w,out,[=](auto &worker){return worker.parallel_selection(tab);});
+}
+xc_status xc_worker_clear_parallel_selection(xc_worker *w,uint64_t tab,xc_request **out) {
+  return queue_request(w,out,[=](auto &worker){return worker.clear_parallel_selection(tab);});
+}
+xc_parallel_selection *xc_request_take_parallel_selection(xc_request *r){return r&&r->status==XC_OK?r->parallel_selection.release():nullptr;}
+int xc_parallel_selection_present(const xc_parallel_selection *s){return s&&s->value.has_value();}
+size_t xc_parallel_selection_module_count(const xc_parallel_selection *s){return s&&s->value?s->value->modules.size():0;}
+const char *xc_parallel_selection_module(const xc_parallel_selection *s,size_t index){return s&&s->value&&index<s->value->modules.size()?s->value->modules[index].c_str():nullptr;}
+const char *xc_parallel_selection_control(const xc_parallel_selection *s){return s&&s->value?s->value->control_module.c_str():nullptr;}
+const char *xc_parallel_selection_reference(const xc_parallel_selection *s){return s&&s->value?s->value->reference.c_str():nullptr;}
+unsigned xc_parallel_selection_engine_flags(const xc_parallel_selection *s){return s&&s->value?options_to_flags(s->value->options):0;}
+int xc_parallel_selection_headings(const xc_parallel_selection *s){return s&&s->value&&s->value->headings;}
+size_t xc_parallel_selection_max_bytes(const xc_parallel_selection *s){return s&&s->value?s->value->max_bytes:0;}
+void xc_parallel_selection_release(xc_parallel_selection *s){delete s;}
 xc_parallel_chapter *xc_request_take_parallel_chapter(xc_request *r) { return r && r->status == XC_OK ? r->parallel.release() : nullptr; }
 const char *xc_parallel_control_module(const xc_parallel_chapter *p) { return p ? p->value.control_module.c_str() : nullptr; }
 const char *xc_parallel_reference(const xc_parallel_chapter *p) { return p ? p->value.reference.c_str() : nullptr; }

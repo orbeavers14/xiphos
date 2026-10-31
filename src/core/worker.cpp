@@ -550,6 +550,31 @@ std::future<DictionaryEntry> StudyWorker::navigate_dictionary(StudyTab tab, std:
     return s.tab(tab).navigate_dictionary(module, key, direction);
   });
 }
+std::future<ParallelChapter> StudyWorker::visit_parallel(StudyTab tab, std::vector<std::string> modules,
+    std::string reference, EngineOptions options, bool headings, std::size_t max_bytes) {
+  if (!parallel_read_arguments(modules, reference, max_bytes)) {
+    std::promise<ParallelChapter> rejected;
+    rejected.set_exception(std::make_exception_ptr(std::invalid_argument("Invalid bounded parallel visit")));
+    return rejected.get_future();
+  }
+  return impl_->submit([tab, modules = std::move(modules), reference = std::move(reference), options, headings, max_bytes](Impl::State &s) {
+    return s.tab(tab).visit_parallel(modules, reference, options, headings, max_bytes);
+  });
+}
+std::future<ParallelChapter> StudyWorker::navigate_parallel_chapter(StudyTab tab, int direction) {
+  if (direction != -1 && direction != 1) {
+    std::promise<ParallelChapter> rejected;
+    rejected.set_exception(std::make_exception_ptr(std::invalid_argument("Invalid parallel chapter direction")));
+    return rejected.get_future();
+  }
+  return impl_->submit([tab, direction](Impl::State &s) { return s.tab(tab).navigate_parallel_chapter(direction); });
+}
+std::future<std::optional<ParallelSelection>> StudyWorker::parallel_selection(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s) { return s.tab(tab).parallel_selection(); });
+}
+std::future<void> StudyWorker::clear_parallel_selection(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s) { s.tab(tab).clear_parallel_selection(); });
+}
 std::future<ParallelChapter> StudyWorker::read_parallel(StudyTab tab, std::vector<std::string> modules,
     std::string reference, EngineOptions options, bool headings, std::size_t max_bytes) {
   if (!parallel_read_arguments(modules, reference, max_bytes)) {

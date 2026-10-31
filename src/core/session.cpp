@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+#include <type_traits>
 #include "xiphos/core/session.hpp"
 #include <stdexcept>
-#include <type_traits>
 #include <functional>
 #include "xiphos/core/heading_note_presentation.hpp"
 #include "xiphos/core/note_markers.hpp"
@@ -202,6 +202,21 @@ DictionaryEntry StudySession::navigate_dictionary(const std::string &module, con
   const auto options = module_engine_options(module);
   return options ? reader_.navigate_dictionary(module, key, direction, *options)
                  : reader_.navigate_dictionary(module, key, direction);
+}
+ParallelChapter StudySession::visit_parallel(const std::vector<std::string> &modules, const std::string &reference,
+    const EngineOptions &options, bool headings, std::size_t max_bytes) {
+  ParallelSelection staged{modules, {}, {}, options, headings, max_bytes};
+  auto result = reader_.read_parallel(modules, reference, options, headings, max_bytes);
+  staged.control_module = result.control_module;staged.reference = result.reference;
+  static_assert(std::is_nothrow_move_assignable<ParallelSelection>::value && std::is_nothrow_move_constructible<ParallelSelection>::value, "Parallel selection publication must not allocate");
+  parallel_selection_ = std::move(staged);
+  return result;
+}
+ParallelChapter StudySession::navigate_parallel_chapter(int direction) {
+  if (!parallel_selection_) throw std::invalid_argument("No committed parallel selection");
+  const auto &selected = *parallel_selection_;
+  const auto reference = reader_.adjacent_chapter(selected.control_module, selected.reference, direction);
+  return visit_parallel(selected.modules, reference, selected.options, selected.headings, selected.max_bytes);
 }
 ParallelChapter StudySession::read_parallel(const std::vector<std::string> &modules, const std::string &reference,
     const EngineOptions &options, bool headings, std::size_t max_bytes) {

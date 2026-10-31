@@ -18,6 +18,7 @@ typedef struct xc_dictionary_history xc_dictionary_history;
 typedef struct xc_dictionary_entry xc_dictionary_entry;
 typedef struct xc_devotional_entry xc_devotional_entry;
 typedef struct xc_parallel_chapter xc_parallel_chapter;
+typedef struct xc_parallel_selection xc_parallel_selection;
 typedef struct xc_book_tree xc_book_tree;
 typedef struct xc_book_uri_target xc_book_uri_target;
 typedef struct xc_book_entry xc_book_entry;
@@ -902,6 +903,27 @@ typedef enum xc_parallel_column_status { XC_PARALLEL_READY, XC_PARALLEL_MISSING,
 xc_status xc_worker_read_parallel(xc_worker *worker, uint64_t tab,
     const char *const *modules, size_t count, const char *reference,
     unsigned engine_flags, int headings, size_t max_bytes, xc_request **out);
+/* Visit publishes lightweight per-tab parallel selection only after a complete
+ * successful read; failure/read-only preview preserves the previous selection.
+ * Chapter navigation (-1/+1) uses committed control/options and does not visit
+ * main history. Clearing selection does not clear main/dictionary/search state.
+ * Selection snapshots are take-once envelopes: present==0 means no selection. */
+xc_status xc_worker_visit_parallel(xc_worker *worker, uint64_t tab,
+    const char *const *modules, size_t count, const char *reference,
+    unsigned engine_flags, int headings, size_t max_bytes, xc_request **out);
+xc_status xc_worker_navigate_parallel_chapter(xc_worker *worker, uint64_t tab, int direction, xc_request **out);
+xc_status xc_worker_parallel_selection(xc_worker *worker, uint64_t tab, xc_request **out);
+xc_status xc_worker_clear_parallel_selection(xc_worker *worker, uint64_t tab, xc_request **out);
+xc_parallel_selection *xc_request_take_parallel_selection(xc_request *request);
+int xc_parallel_selection_present(const xc_parallel_selection *selection);
+size_t xc_parallel_selection_module_count(const xc_parallel_selection *selection);
+const char *xc_parallel_selection_module(const xc_parallel_selection *selection, size_t index);
+const char *xc_parallel_selection_control(const xc_parallel_selection *selection);
+const char *xc_parallel_selection_reference(const xc_parallel_selection *selection);
+unsigned xc_parallel_selection_engine_flags(const xc_parallel_selection *selection);
+int xc_parallel_selection_headings(const xc_parallel_selection *selection);
+size_t xc_parallel_selection_max_bytes(const xc_parallel_selection *selection);
+void xc_parallel_selection_release(xc_parallel_selection *selection);
 xc_parallel_chapter *xc_request_take_parallel_chapter(xc_request *request);
 const char *xc_parallel_control_module(const xc_parallel_chapter *chapter);
 const char *xc_parallel_reference(const xc_parallel_chapter *chapter);

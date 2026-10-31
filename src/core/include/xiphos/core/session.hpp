@@ -73,6 +73,11 @@ public:
   const DictionaryHistory &dictionary_history() const { return dictionary_history_; }
   void clear_dictionary_history() { dictionary_history_.clear(); }
   DictionaryEntry navigate_dictionary(const std::string &module, const std::string &key, int direction);
+  ParallelChapter visit_parallel(const std::vector<std::string> &modules, const std::string &reference,
+      const EngineOptions &options, bool headings, std::size_t max_bytes = maximum_parallel_snapshot_bytes);
+  ParallelChapter navigate_parallel_chapter(int direction);
+  std::optional<ParallelSelection> parallel_selection() const { return parallel_selection_; }
+  void clear_parallel_selection() { parallel_selection_.reset(); }
   ParallelChapter read_parallel(const std::vector<std::string> &modules, const std::string &reference,
       const EngineOptions &options, bool headings, std::size_t max_bytes = maximum_parallel_snapshot_bytes);
   DevotionalEntry read_devotional(const std::string &module, const std::string &entered,
@@ -169,6 +174,7 @@ private:
   SearchRetentionLimits search_retention_limits_;
   std::optional<SearchTextOptions> search_text_options_;
   std::optional<BookSelectionState> book_selection_;
+  std::optional<ParallelSelection> parallel_selection_;
   Reader &reader_;
   std::optional<LexiconPreferences> lexicons_;
   std::optional<EngineOptions> options_;

@@ -135,6 +135,12 @@ public:
   std::future<DictionaryHistorySnapshot> dictionary_history(StudyTab tab);
   std::future<void> clear_dictionary_history(StudyTab tab);
   std::future<DictionaryEntry> navigate_dictionary(StudyTab tab, std::string module, std::string key, int direction);
+  std::future<ParallelChapter> visit_parallel(StudyTab tab, std::vector<std::string> modules,
+      std::string reference, EngineOptions options, bool headings,
+      std::size_t max_bytes = maximum_parallel_snapshot_bytes);
+  std::future<ParallelChapter> navigate_parallel_chapter(StudyTab tab, int direction);
+  std::future<std::optional<ParallelSelection>> parallel_selection(StudyTab tab);
+  std::future<void> clear_parallel_selection(StudyTab tab);
   std::future<ParallelChapter> read_parallel(StudyTab tab, std::vector<std::string> modules,
       std::string reference, EngineOptions options, bool headings,
       std::size_t max_bytes = maximum_parallel_snapshot_bytes);

@@ -81,6 +81,12 @@ int main(int argc,char **argv){try {
   [&](xc_request **o){return xc_worker_read_parallel(worker,tab,parallelIds,1,"John1:1",0,1,XC_PARALLEL_MAX_SNAPSHOT_BYTES+1,o);}
  };
  for(const auto &submit:invalidParallel){request=reinterpret_cast<xc_request *>(1);largest=0;watching=true;const auto status=submit(&request);watching=false;check(status==XC_INVALID_ARGUMENT&&!request&&largest==0,"Invalid parallel C request allocates neither observer nor owned input before bounds validation");}
+ request=reinterpret_cast<xc_request *>(1);largest=0;watching=true;
+ const auto invalidParallelDirection=xc_worker_navigate_parallel_chapter(worker,tab,0,&request);
+ watching=false;check(invalidParallelDirection==XC_INVALID_ARGUMENT&&!request&&largest==0,"Invalid parallel chapter direction rejects before observer allocation");
+ check(xc_worker_visit_parallel(worker,tab,parallelIds,1,"John1:1",0,0,XC_PARALLEL_MAX_SNAPSHOT_BYTES,&request)==XC_OK,"Parallel visit preallocates result before accepting work");
+ largest=0;watching=true;const auto published=wait(request);watching=false;
+ check(published==XC_OK&&largest==0,"Parallel result polling allocates nothing after committed visit");xc_parallel_chapter_release(xc_request_take_parallel_chapter(request));xc_request_release(request);
  using Submit=std::function<xc_status(const char *,const char *,const char *,xc_request **)>;
  struct Route {Submit call;bool context;};
  const std::vector<Route> routes={

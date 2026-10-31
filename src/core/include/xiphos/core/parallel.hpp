@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 #include <cstddef>
+#include "engine_options.hpp"
 #include <string>
 #include <vector>
 namespace sword { class SWModule; }
@@ -26,6 +27,15 @@ struct ParallelChapter {
   std::vector<ParallelRow> rows;
   std::size_t snapshot_bytes = 0;
 };
+// Lightweight committed per-tab intent, suitable for future session storage.
+// Raw module tokens retain order; actual control/reference come from success.
+struct ParallelSelection {
+  std::vector<std::string> modules;
+  std::string control_module, reference;
+  EngineOptions options;
+  bool headings;
+  std::size_t max_bytes;
+};
 struct ParallelReferences {
   std::string reference, title;
   unsigned selected_verse;
@@ -34,7 +44,8 @@ struct ParallelReferences {
 // Owned textual row plan following the retained first-control rule. Uses cloned
 // VerseKeys and the control's own canon/locale; does not move the live module.
 // Rejects invalid/non-verse input and chapters over1024 rows. This is retained
-// textual alignment, not a claim of cross-canon verse equivalence.
+// textual alignment, not a claim of cross-canon verse equivalence. Expressions
+// use SDK control-key interpretation before counting the canonical chapter.
 ParallelReferences parallel_references(sword::SWModule &control,
     const std::string &reference, const char *locale = nullptr);
 struct ParallelLayout {

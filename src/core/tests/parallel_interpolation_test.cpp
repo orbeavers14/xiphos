@@ -34,5 +34,9 @@ int main(int argc,char **argv){try{
   check(std::string(module->getKeyText())==before,"Parallel row planning preserves live module position even on invalid input");
  }
  check(plans>=24&&rejected>0,"Row-plan comparison includes valid and explicitly rejected SDK input");
+ const auto legacyPartial=run(frozen::interpolate_parallel_display,baseline,{"TextA"},"24",true,false,false,"en");
+ auto *partialModule=now.getModule("TextA");partialModule->setKey("John3:23");
+ const auto partial=xiphos::core::parallel_references(*partialModule,"24","en");
+ check(partial.selected_verse==static_cast<unsigned>(legacyPartial.selected)&&partial.rows.size()==legacyPartial.cells.size(),"Bare numeric SDK reference retains the complete frozen control interpretation and row count");
  std::cout<<"Complete real-SDK parallel interpolation: "<<comparisons<<" frozen/current traces; "<<plans<<" owned plans and "<<rejected<<" bounded SDK rejections across KJV/KJVA/Synodal, aliases, sparse notes, missing modules, headings and gates agree\n";return 0;
 }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}
