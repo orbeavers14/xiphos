@@ -2018,3 +2018,23 @@ then bookmark-only1/1 (1.03s). Leak detection OFF, SDK/framework coverage partia
 retained bookmark oracle leaks unchanged. No whole-parity acceptance increase.
 Next: revision-checked verified bookmark edits/moves and FIFO/C transport, then
 annotation/color policy; full native session state/restoration remains tracked.
+
+## 2026-10-31 — revision-checked bookmark edits and transport
+
+238220f adds verified atomic insert/update/remove/move with exact-source revision
+checks, missing-file insert policy, folder-cycle rejection, post-removal destination
+positions and unknown XML preservation. New writes avoid the retained empty-label
+fixed-buffer/NULL hazard; native reads retain safe bounded metadata. Normal1/1
+(.36s), portable1/1 (.35s), ASan/UBSan1/1 (1.22s), TSan1/1 (1.97s).
+
+7102d57 adds FIFO commands and owned C snapshots/field/parent metadata. Tests prove
+copied inputs, stale revision rejection, closed-tab checks before IO, mutation
+isolation, pre-admission observer/envelope allocation failure, allocation-free
+successful polling, take-once survival and drain-on-shutdown for dropped edits.
+Normal bookmark2/2 (.61s); portable bookmark/tab/parallel transport4/4 (.89s),
+ASan/UBSan4/4 (1.74s), TSan4/4 (2.38s). Strict C11 header/whitespace pass. No full
+suite since this new C API; prior full tab checkpoint remains explicitly scoped.
+F22 records partial core evidence only. No native bookmark UI/drag-drop, full
+import-export or annotation/color precedence acceptance. Next: characterize tag
+traversal/overlap/module eligibility and build an owned annotation plan alongside
+complete session-state restoration work. Devotionals remain deferred.
