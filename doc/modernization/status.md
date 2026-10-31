@@ -5,13 +5,15 @@ atomic imports (`b9d15e5`, `b7b7d23`, `01a75e4`); compatible tab XML round trips
 and owned transport (`4411783`, `7d5f491`); revision-checked bookmark edits and owned
 annotation maps (`238220f`, `7102d57`, `e4c5333`, `73f88b4`); shared retained
 highlight priority (`23aba44`); [verse-note storage/cache/transport](personal-annotations.md)
-(`b589779`, `70ffb33`, `f6d9bf4`). These are scoped core services, not complete
-native UI/restart/session or whole-parity acceptance. Latest full checkpoint
-through56a8ed0: Mac216 passes+one skip; portable169 passes+one skip. Later focused
+(`b589779`, `70ffb33`, `f6d9bf4`). These scoped services and native restart checks
+do not establish whole-parity acceptance. Latest full checkpoint through7399d81:
+Mac218 passes+one skip; portable170 passes+one skip. Later focused
 checks and limits are in the Mac handoff. SDK-owned note targets now exist (`ad97fba`), and live tab capture exports committed
 reading/dictionary/book selections independently of history. Versioned native core snapshots
-and strict all-tab restoration now exist; host restart/window integration remains open.
-Next: editing, installation and sync; devotionals
+and strict all-tab restoration now exist. Native Mac launch/close/quit integration
+and fresh-process/offscreen window checks now exist; other-host restart/detach and
+visual acceptance remain open. Shared [document editing](editing-workflows.md) has
+revision-checked exact-source storage; rich editing/module writes, installation and sync remain. Devotionals
 remain deferred.
 
 Parallel checkpoint (2026-10-30): complete real-SDK interpolation oracle
@@ -20,8 +22,8 @@ and atomic per-tab selection/chapter navigation `bcb159e`. Missing columns retai
 slots; options/history remain independent; failed visits retain prior selection.
 See the [parallel contract](parallel-reading-workflows.md) for limits, evidence,
 intentional alias-heading correction and native/persistence/compatibility gates.
-Named-set repositories and compatible tab storage now exist; complete session
-state/restoration and native workflow remain open.
+Named-set repositories, compatible tab storage and native core state/restoration
+now exist. Full native workflow/detach and other-host restart remain open.
 Devotionals remain deferred. No whole-parity acceptance increase.
 
 ## Current owner priorities (2026-10-30)

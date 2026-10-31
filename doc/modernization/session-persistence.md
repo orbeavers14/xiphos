@@ -166,3 +166,44 @@ This closes the core state/storage/replacement foundation, not native restart UI
 acceptance or full F05 parity. SwiftUI/WinUI/GTK4 still need explicit integration
 with host-owned window state and real restart workflows. Physical Windows/Fedora
 checks remain open. Next core priorities remain editing, installation and sync.
+
+## Native macOS restart integration
+
+The native preview now uses an app-owned session controller and AppKit window
+lifecycle over the same single shared worker. Startup reads/restores once, then
+hydrates ordered windows without recorded visits. It restores current core reading,
+dictionary/book content, both history cursors and configured options. Host metadata
+also retains chapter/verse-number/highlight choices, unsubmitted reading/dictionary/
+book/search drafts, visible nonrecording dictionary results and their source context,
+window frames and active-window identity. Last-results search scope becomes All text
+because result generations deliberately do not survive restart.
+
+The native snapshot's optional bounded `host` payload is opaque to C++. macOS uses
+a versioned JSON envelope keyed by host and retains other hosts' payloads when
+saving. Metadata contributes to the existing16MiB aggregate limit and is bounded
+to32768 bytes per tab. Older snapshots without it remain valid. Unsupported host
+versions reject before core replacement; core intent is exposed through borrowed
+C getters rather than a second XML parser in Swift. UI hydration can fail after
+core staging; startup cleans the new IDs and retains the saved file in that case.
+
+Save Session, window close and Quit use shared atomic snapshot storage. Closing
+one window saves the remainder; closing the last saves that window for next launch.
+Quit waits for settled operations and successful saving before replying to AppKit.
+Prepared quit allows window closure without another save. Failures keep windows
+open or offer Cancel/Quit Without Saving. A failed startup restore blocks automatic
+replacement of that source; Save Session As provides explicit separate recovery.
+There is no crash-recovery/autosave-on-force-kill claim.
+
+The default file is `org.xiphos.native-preview/session.xml` under the user's
+Application Support directory, separate from legacy profiles. `XIPHOS_SESSION_PATH`
+provides an explicit override; a successful user-selected Save As becomes the next
+startup path through native preferences. Tests always select disposable paths.
+Frames constrain to an available screen when displays change. No-module and empty
+saved sessions retain their existing explicit policies; a saved zero-window set
+is not silently converted to a reading tab.
+
+The native test saves in one process and restores in another, checking ordered
+windows, active identity, drafts, content and unchanged history. Another subprocess
+creates offscreen NSWindows and exercises real close delegates, frame restoration
+and prepared-quit closure. Full interactive/visual acceptance, multi-monitor manual
+workflows, native detach, and other-host restart integration remain open.

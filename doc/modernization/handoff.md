@@ -29,8 +29,10 @@ plus one index skip; portable168 passes plus one index skip at that checkpoint.
 See [session persistence](session-persistence.md) for the newer native format.
 Versioned native session snapshots and strict all-tab restoration now exist in the
 shared C++ worker/C API (`56a8ed0`); see [session persistence](session-persistence.md#versioned-native-core-snapshots-2026-10-31).
-Host restart/window integration remains open. Next core areas: editing, installation
-and sync. Devotionals remain deferred. No whole-parity acceptance increase.
+macOS startup/close/quit now integrates that storage (`0434152`, `f3cfb3a`) and has
+fresh-process/offscreen window checks. Other-host restart/detach and visual acceptance remain open.
+[Shared editing](editing-workflows.md) now has revision-checked source-document
+storage (`7399d81`); next are rich editing/module writes, installation and sync. Devotionals remain deferred. No whole-parity acceptance increase.
 
 ## Current owner priorities (2026-10-30)
 

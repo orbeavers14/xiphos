@@ -2222,3 +2222,55 @@ Graph refresh:607 detected code/configuration files,10873 final nodes,29387 edge
 and72 with no modeled symbols, including a partial session_snapshot.cpp parse.
 These are extractor limitations, not compiler failures; use source/tests to verify
 important findings. Report/audit retain those warnings; generated graph stays local.
+
+
+### 2026-10-31 native restart and next editing slice
+
+0434152 integrates native startup/close/quit with the shared snapshot; f3cfb3a
+adds offscreen close/quit/frame checks, C-string lifetime/NUL guards and explicit
+zero-window Save As. The app owns one worker and ordered AppKit reading windows.
+It restores once and hydrates without history visits. Opaque bounded host metadata
+retains view choices, unsubmitted drafts, nonrecording dictionary display/context,
+frames and active identity while preserving other hosts' payloads. No second XML
+parser or navigation/persistence engine was added to Swift. Default storage is
+Application Support under the stable preview bundle identity; explicit environment
+and Save As paths are supported. Tests select disposable paths only.
+
+Close saves the remaining windows; last close retains that window for restart.
+Quit waits for saving and then allows window closure without extra writes. Failures
+permit Cancel/Quit Without Saving; failed startup restoration protects its source
+until explicit separate Save As. Zero-window explicit Save As writes an empty
+snapshot; automatic quit with no open windows retains the last saved session.
+There is no forced-kill/crash-autosave or complete visual/detach acceptance claim.
+
+7399d81 moves into the next core priority: owned UTF-8 editor-source open/save with
+exact-byte SHA256 revisions and the shared verified same-directory transaction.
+Empty source/BOM/line endings/markup/percent text retain bytes. Create and replace
+are distinct; stale/external changes fail. Regular-file, UTF-8/NUL and4MiB bounds
+apply; tab validity precedes IO. FIFO/C ownership, preallocated result publication,
+no-allocation committed polling and dropped-save draining are tested. This is source
+storage, not rich editor UI or atomic RawFiles/RawGenBook module writes.
+
+Full Mac218 passes+one index skip (219 registered,174.84s); portable170 passes+one
+skip (171 registered,142.68s). Focused ASan/UBSan11/11 (13.67s, retained oracle leak
+checking off), TSan11/11 (26.06s); native-off strict C++11 all10/10 (18.12s). Logs:
+build/restart-editor-{macos,linux-models,sanitized,thread-sanitized,legacy-search-policy}-{configure,build,tests}.log.
+Final app-only empty-session branch/test refinement: rebuilt app and native test;
+core fixture+restart2/2 (4.27s), build/restart-empty-final-{build,tests}.log.
+Restart test saves/reopens in separate fresh processes, then exercises real
+NSWindow delegates/frames/quit preparation offscreen. No windows are displayed.
+Strict C11 public header, whitespace and changed-document relative links pass.
+Existing SDK deployment-target/retained deprecated-function warnings remain.
+
+Graphify assisted boundary discovery; source verified the relevant relationships.
+The local structural map is refreshed separately and remains untracked, with AST
+coverage/heuristic-edge caveats and zero external AI calls. Do not commit generated
+map/build data. Next: retained rich formatting/link contracts and native editor over
+shared source storage, then revision-safe SWORD module editing, installation and
+sync. Devotionals stay deferred. Physical Windows/Fedora checks, other-host restart,
+native detach and full visual/workflow acceptance remain open.
+
+Final local Graphify refresh through7399d81:613 code/configuration files,10998
+nodes,29772 edges,352 communities; source hashes unchanged by mapping. Extractor
+coverage warnings remain57 partially parsed files and72 with no modeled symbols.
+Raw extraction/coverage and graph health diagnostics are retained locally.
