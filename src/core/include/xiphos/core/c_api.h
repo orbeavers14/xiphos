@@ -837,6 +837,28 @@ typedef struct {int action;const char *label,*note;} xc_annotation_edit; /* note
 typedef enum xc_annotation_field {XC_ANNOTATION_ELEMENT=0,XC_ANNOTATION_LABEL,XC_ANNOTATION_NOTE,XC_ANNOTATION_MODULE,XC_ANNOTATION_BOOK} xc_annotation_field;
 typedef struct {int chapter,verse,packed;} xc_annotation_address;
 typedef struct {int chapter,verse,packed;size_t record;} xc_annotation_entry;
+/* SDK-owned target/verse-note commands. Exact installed verse-key control is
+ * required; no KJV/first-module fallback. A cloned key preserves reading position,
+ * locale/versification and flags. Stored labels are bounded and never truncated.
+ * Generic notes use the explicit control canon with an empty stored module.
+ * Specific module IDs containing spaces cannot use the legacy label encoding.
+ * These commands do not visit/change reading state or apply cached highlights. */
+typedef struct xc_annotation_target xc_annotation_target;
+typedef struct {int action,generic;const char *module,*reference,*note;} xc_verse_annotation_edit;
+xc_status xc_worker_annotation_target(xc_worker *worker,uint64_t tab,const char *module,const char *reference,int generic,xc_request **out);
+xc_status xc_worker_edit_verse_annotation(xc_worker *worker,uint64_t tab,const char *path,const xc_verse_annotation_edit *edit,xc_request **out);
+xc_status xc_worker_read_verse_annotation_cache(xc_worker *worker,uint64_t tab,const char *path,const char *module,const char *reference,xc_request **out);
+xc_annotation_target *xc_request_take_annotation_target(xc_request *request);
+const char *xc_annotation_target_control_module(const xc_annotation_target *target);
+const char *xc_annotation_target_reference(const xc_annotation_target *target);
+const char *xc_annotation_target_label(const xc_annotation_target *target);
+const char *xc_annotation_target_stored_module(const xc_annotation_target *target);
+const char *xc_annotation_target_book(const xc_annotation_target *target);
+int xc_annotation_target_chapter(const xc_annotation_target *target);
+int xc_annotation_target_verse(const xc_annotation_target *target);
+int xc_annotation_target_packed(const xc_annotation_target *target);
+int xc_annotation_target_generic(const xc_annotation_target *target);
+void xc_annotation_target_release(xc_annotation_target *target);
 xc_status xc_worker_read_annotations(xc_worker *worker,uint64_t tab,const char *path,xc_request **out);
 xc_status xc_worker_edit_annotations(xc_worker *worker,uint64_t tab,const char *path,const xc_annotation_edit *edit,xc_request **out);
 xc_status xc_worker_read_annotation_cache(xc_worker *worker,uint64_t tab,const char *path,const char *module,const char *book,xc_request **out);

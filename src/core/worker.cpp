@@ -490,6 +490,26 @@ template<class T> std::future<T> selected_profile_rejection() {
   result.set_exception(std::current_exception());return future;
 }
 }
+std::future<AnnotationTarget> StudyWorker::annotation_target(StudyTab tab,std::string module,std::string reference,bool generic) {
+  if(!annotation_reference_arguments(module,reference)){
+    std::promise<AnnotationTarget> rejected;auto future=rejected.get_future();rejected.set_exception(std::make_exception_ptr(std::invalid_argument("Invalid annotation target arguments")));return future;
+  }
+  return impl_->submit([tab,module=std::move(module),reference=std::move(reference),generic](Impl::State &s){(void)s.tab(tab);return s.reader.annotation_target(module,reference,generic);});
+}
+std::future<AnnotationProfile> StudyWorker::edit_verse_annotation(StudyTab tab,std::string path,std::string module,std::string reference,bool generic,AnnotationAction action,std::string note) {
+  try {selected_profile_path(path);if(!annotation_reference_arguments(module,reference))throw std::invalid_argument("Invalid annotation target arguments");validate_annotation_note(action,note);}
+  catch(...){return selected_profile_rejection<AnnotationProfile>();}
+  return impl_->submit([tab,path=std::move(path),module=std::move(module),reference=std::move(reference),generic,action,note=std::move(note)](Impl::State &s){
+    (void)s.tab(tab);const auto target=s.reader.annotation_target(module,reference,generic);return xiphos::core::edit_annotations(path,{action,target.label,note});
+  });
+}
+std::future<AnnotationCache> StudyWorker::read_verse_annotation_cache(StudyTab tab,std::string path,std::string module,std::string reference) {
+  try {selected_profile_path(path);if(!annotation_reference_arguments(module,reference))throw std::invalid_argument("Invalid annotation target arguments");}
+  catch(...){return selected_profile_rejection<AnnotationCache>();}
+  return impl_->submit([tab,path=std::move(path),module=std::move(module),reference=std::move(reference)](Impl::State &s){
+    (void)s.tab(tab);const auto target=s.reader.annotation_target(module,reference,true);return legacy_annotation_cache(xiphos::core::read_annotations(path),target.control_module,target.address.book);
+  });
+}
 std::future<AnnotationProfile> StudyWorker::read_annotations(StudyTab tab,std::string path) {
   try {selected_profile_path(path);}catch(...){return selected_profile_rejection<AnnotationProfile>();}
   return impl_->submit([tab,path=std::move(path)](Impl::State &s){(void)s.tab(tab);return xiphos::core::read_annotations(path);});

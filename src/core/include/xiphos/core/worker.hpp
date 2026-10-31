@@ -124,6 +124,9 @@ public:
   std::future<std::optional<LexiconPreferences>> import_lexicon_profile(StudyTab tab, std::string path);
   // Explicit selected-file read on the FIFO owner; validates the tab but changes no state.
   // Explicit profile storage only: FIFO, copied snapshots, tab checked before IO.
+  std::future<AnnotationTarget> annotation_target(StudyTab tab, std::string module, std::string reference, bool generic=false);
+  std::future<AnnotationProfile> edit_verse_annotation(StudyTab tab, std::string path, std::string module, std::string reference, bool generic, AnnotationAction action, std::string note = {});
+  std::future<AnnotationCache> read_verse_annotation_cache(StudyTab tab, std::string path, std::string module, std::string reference);
   std::future<AnnotationProfile> read_annotations(StudyTab tab, std::string path);
   std::future<AnnotationProfile> edit_annotations(StudyTab tab, std::string path, AnnotationEdit edit);
   std::future<AnnotationCache> read_annotation_cache(StudyTab tab, std::string path, std::string module, std::string book);

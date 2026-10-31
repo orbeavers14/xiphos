@@ -127,6 +127,20 @@ ModuleNameResolution Reader::resolve_module_name(const std::string &requested) {
   return impl_->resolve_name(requested);
 }
 
+AnnotationTarget Reader::annotation_target(const std::string &id,const std::string &reference,bool generic) {
+  if(!annotation_reference_arguments(id,reference))throw std::invalid_argument("Invalid annotation reference arguments");
+  detail::validate_xml_text(id,4096);detail::validate_xml_text(reference,32768);std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto &module=impl_->verse_module(id,reference);sword::VerseKey current(*static_cast<sword::VerseKey *>(module.getKey()));
+  current.setText(reference.c_str());
+  if(current.getError()||current.getChapter()<1||current.getVerse()<1||current.getVerse()>=1000)
+    throw std::invalid_argument("SWORD could not resolve an annotation verse");
+  const auto *book=current.getOSISBookName();if(!book)throw std::runtime_error("Annotation target has no OSIS book");
+  AnnotationTarget result;result.control_module=module.getName();result.reference=current.getText();
+  detail::validate_xml_text(result.control_module,4096);detail::validate_xml_text(result.reference,32768);
+  result.address={generic?"":result.control_module,book,current.getChapter(),current.getVerse(),0};result.label=annotation_label(result.address);
+  auto decoded=decode_annotation_label(result.label);if(!decoded)throw std::runtime_error("Canonical annotation target failed verification");
+  result.address=std::move(*decoded);return result;
+}
 BookmarkTags Reader::bookmark_tags(const BookmarkSnapshot &snapshot,const std::string &id,
     const std::string &context,const BookmarkTagLimits &limits) {
   if(!bookmark_tag_arguments(id,context,limits))throw std::invalid_argument("Invalid bounded bookmark tag query");

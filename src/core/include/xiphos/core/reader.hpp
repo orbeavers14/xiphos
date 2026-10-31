@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 #include "bookmark_tags.hpp"
+#include "annotations.hpp"
 #include "module_resolution.hpp"
 #include "reference_list.hpp"
 #include "render.hpp"
@@ -50,6 +51,7 @@ public:
   // stages lazily; invalid alias metadata does not disable ordinary reading.
   // Read-only owned annotation map: exact catalog eligibility, retained BFS and
   // fresh-key OSIS normalization; explicit prefix limits/diagnostics, no rendering.
+  AnnotationTarget annotation_target(const std::string &module,const std::string &reference,bool generic=false);
   BookmarkTags bookmark_tags(const BookmarkSnapshot &snapshot,const std::string &module,
       const std::string &context,const BookmarkTagLimits &limits = {});
   ModuleNameResolution resolve_module_name(const std::string &requested);

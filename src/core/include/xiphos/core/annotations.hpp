@@ -13,6 +13,14 @@ struct AnnotationAddress {
   std::string module,book;
   int chapter=0,verse=0,packed=0; // Retained1000*chapter+verse cache key.
 };
+struct AnnotationTarget {
+  std::string control_module,reference,label;
+  AnnotationAddress address; // Stored module is empty for a generic note.
+};
+// Canonical persisted identity only; never truncates a module/reference. A stored
+// module containing a space cannot round trip through the retained first-space format.
+std::string annotation_label(const AnnotationAddress &address);
+bool annotation_reference_arguments(const std::string &module,const std::string &reference);
 struct AnnotationRecord {
   std::string element;
   std::optional<std::string> label,note;
@@ -49,6 +57,7 @@ struct AnnotationEdit {
   AnnotationAction action=AnnotationAction::save;
   std::string label,note;
 };
+void validate_annotation_note(AnnotationAction action,const std::string &note);
 void validate_annotation_edit(const AnnotationEdit &edit);
 // Save replaces the first markedverse with the exact label or appends one. Remove
 // deletes only its first matching item. Unknown fields/duplicates/sections remain.

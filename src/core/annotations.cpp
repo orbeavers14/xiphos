@@ -98,12 +98,24 @@ AnnotationCache legacy_annotation_cache(const AnnotationProfile &profile,const s
   }
   result.entries.reserve(entries.size());for(auto &entry:entries)result.entries.push_back(std::move(entry.second));return result;
 }
+bool annotation_reference_arguments(const std::string &module,const std::string &reference) {
+  return !module.empty()&&!reference.empty()&&module.size()<=4096&&reference.size()<=32768&&module.find('\0')==std::string::npos&&reference.find('\0')==std::string::npos;
+}
+std::string annotation_label(const AnnotationAddress &address) {
+  detail::validate_xml_text(address.module,maximum_annotation_label_bytes);detail::validate_xml_text(address.book,maximum_annotation_label_bytes);
+  if(address.module.find(' ')!=std::string::npos)throw std::invalid_argument("Stored annotation module contains the label separator");
+  auto label=address.module+" "+address.book+"."+std::to_string(address.chapter)+"."+std::to_string(address.verse);
+  validate_annotation_edit({AnnotationAction::save,label,""});return label;
+}
+void validate_annotation_note(AnnotationAction action,const std::string &note) {
+  if(action==AnnotationAction::remove){if(!note.empty())throw std::invalid_argument("Remove has unexpected annotation content");return;}
+  if(action!=AnnotationAction::save)throw std::invalid_argument("Unknown annotation edit");detail::validate_xml_text(note,maximum_annotation_note_bytes);
+}
 void validate_annotation_edit(const AnnotationEdit &edit) {
   detail::validate_xml_text(edit.label,maximum_annotation_label_bytes);
-  if(edit.action==AnnotationAction::remove){if(!edit.note.empty())throw std::invalid_argument("Remove has unexpected annotation content");return;}
+  validate_annotation_note(edit.action,edit.note);if(edit.action==AnnotationAction::remove)return;
   if(edit.label.empty())throw std::invalid_argument("Annotation label is required");
-  if(edit.action!=AnnotationAction::save)throw std::invalid_argument("Unknown annotation edit");
-  detail::validate_xml_text(edit.note,maximum_annotation_note_bytes);const auto address=decode_annotation_label(edit.label);
+  const auto address=decode_annotation_label(edit.label);
   if(!address||address->book.empty()||address->chapter<=0||address->verse<=0||address->verse>=1000||
       address->module+" "+address->book+"."+std::to_string(address->chapter)+"."+std::to_string(address->verse)!=edit.label)
     throw std::invalid_argument("New annotation label must safely round trip canonically");
