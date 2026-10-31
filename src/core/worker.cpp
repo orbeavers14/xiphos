@@ -584,6 +584,31 @@ std::future<ParallelChapter> StudyWorker::visit_parallel(StudyTab tab, std::vect
     return s.tab(tab).visit_parallel(modules, reference, options, headings, max_bytes);
   });
 }
+std::future<ParallelChapter> StudyWorker::visit_parallel_profile(StudyTab tab, std::string path,
+    std::optional<std::string> key, std::string reference, EngineOptions options, bool headings, std::size_t max_bytes) {
+  try {
+    parallel_profile_path(path);
+    if (key && (key->empty() || key->size() > maximum_saved_parallel_key_bytes || key->find('\0') != std::string::npos))
+      throw std::invalid_argument("Invalid saved parallel key");
+    // Validate scalar render arguments before accepting IO; actual stored column
+    // count is checked after the selected-file read, never silently truncated.
+    if (!parallel_read_arguments({""}, reference, max_bytes))
+      throw std::invalid_argument("Invalid saved parallel visit arguments");
+  } catch (...) { return parallel_profile_rejection<ParallelChapter>(); }
+  return impl_->submit([tab, path = std::move(path), key = std::move(key), reference = std::move(reference), options, headings, max_bytes](Impl::State &s) {
+    auto &session = s.tab(tab);
+    const auto profile = read_saved_parallel_profile(path);
+    const auto *modules = profile.startup_modules ? &*profile.startup_modules : nullptr;
+    if (key) {
+      const auto found = std::find_if(profile.sets.begin(), profile.sets.end(), [&](const auto &set) { return set.key == *key; });
+      if (found == profile.sets.end()) throw std::invalid_argument("Saved parallel key is not listed");
+      modules = found->modules ? &*found->modules : nullptr;
+    }
+    if (!modules || !parallel_read_arguments(*modules, reference, max_bytes))
+      throw std::invalid_argument("Saved parallel selection is absent or exceeds rendering bounds");
+    return session.visit_parallel(*modules, reference, options, headings, max_bytes);
+  });
+}
 std::future<ParallelChapter> StudyWorker::navigate_parallel_chapter(StudyTab tab, int direction) {
   if (direction != -1 && direction != 1) {
     std::promise<ParallelChapter> rejected;

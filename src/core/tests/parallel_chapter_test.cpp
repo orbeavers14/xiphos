@@ -4,6 +4,8 @@
 #include "xiphos/core/c_api.h"
 #include <chrono>
 #include <thread>
+#include <filesystem>
+#include <fstream>
 using namespace xiphos::core;
 template<class E,class F>void rejects(F f){try{f();}catch(const E &){return;}throw std::runtime_error("Expected parallel rejection");}
 static xc_status wait(xc_request *request){const auto end=std::chrono::steady_clock::now()+std::chrono::seconds(30);xc_status status;while((status=xc_request_poll(request))==XC_PENDING){check(std::chrono::steady_clock::now()<end,"Parallel deadline");std::this_thread::sleep_for(std::chrono::milliseconds(1));}return status;}
@@ -70,6 +72,24 @@ int main(int argc,char **argv){try{
   (void)worker.visit_parallel(other,{"RtlText"},"Psalms3:2",{},false).get();worker.clear_parallel_selection(tab).get();
   check(!worker.parallel_selection(tab).get()&&worker.parallel_selection(other).get()->control_module=="RtlText"&&worker.history(tab).get().entries.size()==history.entries.size()&&worker.search_generation(tab).get().id==generation,"Parallel state and clearing are independent across tabs and main/search history");
   rejects<std::invalid_argument>([&]{(void)worker.navigate_parallel_chapter(tab,1).get();});
+  const auto profile=(std::filesystem::u8path(root)/"parallel-import.xml").u8string();
+  std::filesystem::remove(std::filesystem::u8path(profile));
+  (void)worker.edit_parallel_profile(tab,profile,{ParallelProfileAction::save,"Study_Set","",{"TextAAlias","Missing","TextAlt","TextAAlias",""},true}).get();
+  std::string copiedPath=profile,copiedKey="Study_Set",copiedReference="John3:16";
+  auto imported=worker.visit_parallel_profile(tab,copiedPath,copiedKey,copiedReference,{},true);copiedPath.clear();copiedKey.clear();copiedReference.clear();
+  const auto applied=imported.get();check(applied.columns.size()==5&&applied.columns[0].module=="TextA"&&applied.columns[1].status==ParallelColumnStatus::missing,"Explicit named profile import renders copied alias/missing/duplicate/empty slots");
+  const auto savedSelection=worker.parallel_selection(tab).get();
+  check(savedSelection->modules==std::vector<std::string>({"TextAAlias","Missing","TextAlt","TextAAlias",""})&&savedSelection->reference=="John 3:16","Imported selection retains raw intent");
+  (void)worker.edit_parallel_profile(tab,profile,{ParallelProfileAction::save,"TooMany","",std::vector<std::string>(maximum_parallel_columns+1,"TextA"),false}).get();
+  (void)worker.edit_parallel_profile(tab,profile,{ParallelProfileAction::save,"Empty","",{},false}).get();
+  (void)worker.edit_parallel_profile(tab,profile,{ParallelProfileAction::save,"Unavailable","",{"Missing"},false}).get();
+  for(const auto *key:{"TooMany","Empty","Absent"})rejects<std::invalid_argument>([&]{(void)worker.visit_parallel_profile(tab,profile,key,"John4:1",{},false).get();});
+  rejects<std::out_of_range>([&]{(void)worker.visit_parallel_profile(tab,profile,"Unavailable","John4:1",{},false).get();});
+  rejects<std::invalid_argument>([&]{(void)worker.visit_parallel_profile(tab,profile,"Study_Set","John4:1",{},false,1).get();});
+  check(worker.parallel_selection(tab).get()->reference==savedSelection->reference&&worker.parallel_selection(other).get()->control_module=="RtlText","Failed imports preserve target selection and sibling tab");
+  (void)worker.visit_parallel_profile(tab,profile,std::nullopt,"John4:1",{},false).get();
+  check(worker.parallel_selection(tab).get()->reference=="John 4:1"&&read_saved_parallel_profile(profile).current_key=="Study_Set","Startup import applies effective modules without writing current metadata");
+  check(worker.history(tab).get().entries.size()==history.entries.size()&&worker.search_generation(tab).get().id==generation&&worker.module_engine_options(tab,"TextA").get()->strongs,"Import preserves main options/history/search");
   std::vector<std::string> ids={"TextAAlias","TextAlt"};accepted=worker.read_parallel(tab,ids,"John3:16",{},true);ids.clear();worker.close_tab(tab).get();
  }
  owned=accepted.get();check(owned.columns[0].module=="TextA"&&!owned.rows[15].cells[0].html.empty(),"Accepted parallel copies drain after tab/worker close");
@@ -81,6 +101,13 @@ int main(int argc,char **argv){try{
  check(xc_worker_navigate_parallel_chapter(worker,tab,1,&request)==XC_OK&&wait(request)==XC_OK,"C adjacent parallel chapter");auto *next=xc_request_take_parallel_chapter(request);check(std::string(xc_parallel_reference(next))=="John 4:1","C chapter navigation result");xc_parallel_chapter_release(next);xc_request_release(request);
  const char *missing[]={"Missing","TextA"};check(xc_worker_visit_parallel(worker,tab,missing,2,"John3:16",0,1,XC_PARALLEL_MAX_SNAPSHOT_BYTES,&request)==XC_OK&&wait(request)==XC_MODULE_NOT_FOUND,"C failed visit status");check(!xc_request_take_parallel_chapter(request),"C failed visit publishes no partial snapshot");xc_request_release(request);
  check(xc_worker_parallel_selection(worker,tab,&request)==XC_OK&&wait(request)==XC_OK,"C state after failed visit");auto *retained=xc_request_take_parallel_selection(request);check(std::string(xc_parallel_selection_reference(retained))=="John 4:1"&&xc_parallel_selection_engine_flags(retained)==XC_ENGINE_STRONGS&&!xc_parallel_selection_headings(retained),"C failure retains prior committed reference/options");xc_parallel_selection_release(retained);xc_request_release(request);
+ const auto profile=(std::filesystem::u8path(root)/"parallel-import.xml").u8string();
+ check(xc_worker_visit_parallel_profile(worker,tab,profile.c_str(),"TooMany","John3:16",0,1,XC_PARALLEL_MAX_SNAPSHOT_BYTES,&request)==XC_OK&&wait(request)==XC_INVALID_ARGUMENT,"C oversized stored list fails without truncation");xc_request_release(request);
+ std::string copiedPath=profile,copiedKey="Study_Set";
+ check(xc_worker_visit_parallel_profile(worker,tab,copiedPath.c_str(),copiedKey.c_str(),"John3:16",0,1,XC_PARALLEL_MAX_SNAPSHOT_BYTES,&request)==XC_OK,"C profile visit accepted");copiedPath.clear();copiedKey.clear();
+ check(wait(request)==XC_OK,"C profile visit rendered");auto *imported=xc_request_take_parallel_chapter(request);check(xc_parallel_column_count(imported)==5,"C copied profile import retains all columns");xc_parallel_chapter_release(imported);xc_request_release(request);
+ check(xc_worker_visit_parallel_profile(worker,tab,profile.c_str(),nullptr,"John4:1",0,0,XC_PARALLEL_MAX_SNAPSHOT_BYTES,&request)==XC_OK&&wait(request)==XC_OK,"C null-key startup selection");xc_request_release(request);
+ check(xc_worker_visit_parallel_profile(worker,tab,profile.c_str(),"","John3:16",0,1,XC_PARALLEL_MAX_SNAPSHOT_BYTES,&request)==XC_INVALID_ARGUMENT&&!request,"C empty explicit key rejects before acceptance");
  check(xc_worker_clear_parallel_selection(worker,tab,&request)==XC_OK&&wait(request)==XC_OK,"C clear parallel state");xc_request_release(request);
  check(xc_worker_parallel_selection(worker,tab,&request)==XC_OK&&wait(request)==XC_OK,"C inspect cleared state");auto *cleared=xc_request_take_parallel_selection(request);check(!xc_parallel_selection_present(cleared),"C cleared state absent");xc_parallel_selection_release(cleared);xc_request_release(request);
  check(xc_worker_visit_parallel(worker,tab,ids,5,"John3:16",0,1,XC_PARALLEL_MAX_SNAPSHOT_BYTES,&request)==XC_OK,"C parallel visit accepts");ids[0]="Dictionary";

@@ -141,6 +141,12 @@ public:
   std::future<ParallelChapter> visit_parallel(StudyTab tab, std::vector<std::string> modules,
       std::string reference, EngineOptions options, bool headings,
       std::size_t max_bytes = maximum_parallel_snapshot_bytes);
+  // Explicit selected-file import; null key uses effective startup fallback,
+  // otherwise first listed raw key. Renders before committing one tab selection.
+  // Never edits profile metadata; storage-only activation is a separate command.
+  std::future<ParallelChapter> visit_parallel_profile(StudyTab tab, std::string path,
+      std::optional<std::string> key, std::string reference, EngineOptions options,
+      bool headings, std::size_t max_bytes = maximum_parallel_snapshot_bytes);
   std::future<ParallelChapter> navigate_parallel_chapter(StudyTab tab, int direction);
   std::future<std::optional<ParallelSelection>> parallel_selection(StudyTab tab);
   std::future<void> clear_parallel_selection(StudyTab tab);

@@ -1492,6 +1492,16 @@ xc_status xc_worker_read_parallel(xc_worker *w,uint64_t tab,const char *const *i
 xc_status xc_worker_visit_parallel(xc_worker *w,uint64_t tab,const char *const *ids,size_t count,const char *reference,unsigned flags,int headings,size_t max_bytes,xc_request **out) {
   return queue_parallel_request(w,tab,ids,count,reference,flags,headings,max_bytes,out,true);
 }
+xc_status xc_worker_visit_parallel_profile(xc_worker *w,uint64_t tab,const char *path,const char *key,
+    const char *reference,unsigned flags,int headings,size_t max_bytes,xc_request **out) {
+  if (!bounded_image_c_text(path,4096) || (key && !bounded_image_c_text(key,4096)) ||
+      (flags & ~((1u<<18)-1)) || (headings!=0 && headings!=1) || !max_bytes || max_bytes>XC_PARALLEL_MAX_SNAPSHOT_BYTES ||
+      !xiphos::core::detail::study_link_c_text(reference,XC_PARALLEL_MAX_REFERENCE_BYTES,true)) {
+    if(out)*out=nullptr;return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w,out,[=](auto &worker){return worker.visit_parallel_profile(tab,path,
+    key?std::make_optional(std::string(key)):std::nullopt,reference,options_from_flags(flags),headings!=0,max_bytes);});
+}
 xc_status xc_worker_navigate_parallel_chapter(xc_worker *w,uint64_t tab,int direction,xc_request **out) {
   if(direction!=-1&&direction!=1){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
   return queue_request(w,out,[=](auto &worker){return worker.navigate_parallel_chapter(tab,direction);});

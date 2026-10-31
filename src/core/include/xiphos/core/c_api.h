@@ -956,6 +956,15 @@ xc_status xc_worker_read_parallel(xc_worker *worker, uint64_t tab,
 xc_status xc_worker_visit_parallel(xc_worker *worker, uint64_t tab,
     const char *const *modules, size_t count, const char *reference,
     unsigned engine_flags, int headings, size_t max_bytes, xc_request **out);
+/* Import a selected saved profile into one tab with atomic render/selection
+ * commit. NULL key selects effective legacy startup modules; nonempty key selects
+ * the first listed raw identity. Path/key <=4096 bytes. Reference/options/limits,
+ * copied inputs and owned parallel result follow visit_parallel. No profile writes.
+ * Missing/empty/oversized stored lists, file errors or failed rendering preserve
+ * the previous tab selection. Imported lists are never silently truncated. */
+xc_status xc_worker_visit_parallel_profile(xc_worker *worker,uint64_t tab,
+  const char *path,const char *key,const char *reference,unsigned option_flags,
+  int headings,size_t max_snapshot_bytes,xc_request **out);
 xc_status xc_worker_navigate_parallel_chapter(xc_worker *worker, uint64_t tab, int direction, xc_request **out);
 xc_status xc_worker_parallel_selection(xc_worker *worker, uint64_t tab, xc_request **out);
 xc_status xc_worker_clear_parallel_selection(xc_worker *worker, uint64_t tab, xc_request **out);
