@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/profile.hpp"
 #include "preference_file.hpp"
+#include "xml_document.hpp"
 #include "xiphos/core/tab_profile.hpp"
 #include "search_validation.hpp"
 #include <libxml/parser.h>
-#include <libxml/encoding.h>
 #include <libxml/chvalid.h>
 #include <filesystem>
 #include <fstream>
 #include <memory>
-#include <mutex>
 #include <stdexcept>
 #include <array>
 #include <algorithm>
@@ -18,50 +17,10 @@
 #include <limits>
 namespace xiphos::core {
 namespace {
-constexpr std::size_t maximum_profile_bytes = 16 * 1024 * 1024;
-using Document = std::unique_ptr<xmlDoc, decltype(&xmlFreeDoc)>;
-using Parser = std::unique_ptr<xmlParserCtxt, decltype(&xmlFreeParserCtxt)>;
-// Stop at the declaration before parsing/loading any DTD. Do not change the
-// process-wide entity loader, error handler or substitution defaults.
-void reject_doctype(void *data, const xmlChar *, const xmlChar *, const xmlChar *) {
-  auto *context = static_cast<xmlParserCtxt *>(data);
-  *static_cast<bool *>(context->_private) = true;
-  xmlStopParser(context);
-}
-Document parse_document(const std::string &source, const char *expected_root = "Xiphos") {
-  if (source.empty() || source.size() > maximum_profile_bytes)
-    throw std::invalid_argument("Xiphos profile size is invalid");
-  static std::once_flag initialized;
-  std::call_once(initialized, [] { xmlInitParser(); });
-  // Older libxml2 accepts a NUL after a complete document as end-of-input,
-  // concealing trailing bytes. Check code units while retaining UTF-16/UCS-4.
-  const auto encoding = xmlDetectCharEncoding(reinterpret_cast<const unsigned char *>(source.data()),
-      static_cast<int>(source.size() < 4 ? source.size() : 4));
-  std::size_t unit = 1;
-  if (encoding == XML_CHAR_ENCODING_UTF16LE || encoding == XML_CHAR_ENCODING_UTF16BE ||
-      encoding == XML_CHAR_ENCODING_UCS2) unit = 2;
-  else if (encoding == XML_CHAR_ENCODING_UCS4LE || encoding == XML_CHAR_ENCODING_UCS4BE ||
-      encoding == XML_CHAR_ENCODING_UCS4_2143 || encoding == XML_CHAR_ENCODING_UCS4_3412) unit = 4;
-  if (source.size() % unit) throw std::invalid_argument("Xiphos profile encoding is incomplete");
-  for (std::size_t offset = 0; offset < source.size(); offset += unit) {
-    bool zero = true;
-    for (std::size_t byte = 0; byte < unit; ++byte) zero = zero && source[offset + byte] == '\0';
-    if (zero) throw std::invalid_argument("Xiphos profile contains an invalid NUL character");
-  }
-  Parser parser(xmlNewParserCtxt(), xmlFreeParserCtxt);
-  if (!parser) throw std::bad_alloc();
-  bool has_doctype = false;
-  parser->_private = &has_doctype;
-  parser->sax->internalSubset = reject_doctype;
-  Document document(xmlCtxtReadMemory(parser.get(), source.data(), static_cast<int>(source.size()),
-      nullptr, nullptr, XML_PARSE_NONET | XML_PARSE_NOERROR | XML_PARSE_NOWARNING), xmlFreeDoc);
-  if (has_doctype) throw std::invalid_argument("Xiphos profiles with DTD declarations are unsupported");
-  if (!document || !parser->wellFormed)
-    throw std::invalid_argument("Xiphos profile XML is malformed");
-  auto *root = xmlDocGetRootElement(document.get());
-  if (!root || xmlStrcmp(root->name, BAD_CAST expected_root))
-    throw std::invalid_argument("Xiphos profile root is invalid");
-  return document;
+constexpr std::size_t maximum_profile_bytes = detail::maximum_xml_document_bytes;
+using Document = detail::XmlDocument;
+Document parse_document(const std::string &source,const char *expected_root="Xiphos") {
+  return detail::parse_xml_document(source,expected_root);
 }
 // Match xml_find_prop traversal, including later duplicate sections when
 // earlier ones do not contain this key. Empty/child-only values remain null.
@@ -176,15 +135,8 @@ SavedParallelProfile read_saved_parallel_profile(const std::string &path) {
   return parse_saved_parallel_profile(read_profile_source(path));
 }
 namespace {
-void parallel_xml_text(const std::string &text, std::size_t maximum) {
-  parallel_text(text, maximum);
-  for (std::size_t at = 0; at < text.size();) {
-    int length = static_cast<int>(std::min<std::size_t>(4, text.size() - at));
-    const int codepoint = xmlGetUTF8Char(BAD_CAST text.data() + at, &length);
-    if (codepoint < 0 || length <= 0 || !xmlIsCharQ(codepoint))
-      throw std::invalid_argument("Invalid XML parallel profile text");
-    at += static_cast<std::size_t>(length);
-  }
+void parallel_xml_text(const std::string &text,std::size_t maximum) {
+  detail::validate_xml_text(text,maximum);
 }
 void parallel_key(const std::string &key) {
   parallel_xml_text(key, maximum_saved_parallel_key_bytes);
