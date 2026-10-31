@@ -2216,3 +2216,9 @@ window/detach state, query drafts, physical Windows/Fedora checks and whole F05
 acceptance remain open. No frontend UI was added. Next core work: editing,
 installation and sync; devotionals remain deferred. Checked commits may be pushed
 to the explicitly authorized origin master; no upstream merge claim.
+
+Graph refresh:607 detected code/configuration files,10873 final nodes,29387 edges,
+361 communities. AST coverage warnings identify57 files with parser limitations
+and72 with no modeled symbols, including a partial session_snapshot.cpp parse.
+These are extractor limitations, not compiler failures; use source/tests to verify
+important findings. Report/audit retain those warnings; generated graph stays local.
