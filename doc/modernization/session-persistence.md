@@ -49,3 +49,28 @@ checks do not replace an interprocess locking/sync protocol.
 This groundwork does not accept the full tabs/detach/session parity group. Broader
 Windows/Fedora and real native restart workflows remain required alongside portable
 core validation.
+
+## Checked compatible repository
+
+The explicit repository now serializes/saves raw legacy tab sessions through the
+shared verified same-directory replacement transaction. Known attributes are
+replaced or removed according to their optional values. Existing tab nodes are
+reused by position across all `tabs` sections, retaining unknown attributes and
+children; surplus owned tabs are removed and new tabs append to the last section.
+Unrelated sections/comments/root attributes survive semantically. Positional
+association is a legacy limitation: the format has no stable tab IDs. It is not
+a merge or tab-identity protocol. Serialization may normalize formatting/encoding.
+
+The FIFO worker and owned C interface expose explicit storage read/save without
+applying a session. All paths, version strings, tab arrays and fields copy before
+submission returns. C admission bounds every scalar and the aggregate before
+observer/copy allocation. Worker validation rejects invalid paths and session text
+before the queue; tab validity is checked before IO. Result storage is allocated
+before accepting a write and committed result publication uses no-throw moves.
+Tests inject observer/envelope allocation failures and confirm no write occurs;
+successful polling allocates nothing. Dropped accepted saves drain at shutdown.
+A zero-tab file stays zero tabs rather than manufacturing a default UI tab.
+
+The characterization host compares20 complete frozen/current legacy load cases
+and9 complete writer cases. Widgets and implicit file-discovery branches are
+stubbed; this does not claim actual GTK interaction or native restart acceptance.

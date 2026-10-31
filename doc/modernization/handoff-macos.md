@@ -1977,3 +1977,21 @@ is generalized without changing existing default Xiphos checks. Strict C11 heade
 changed-doc relative links and whitespace pass. Full native persistence still
 requires broader core state; see session-persistence.md. Next: verified legacy tab
 round-trip storage, then full native session intent and other owner priorities.
+
+## 2026-10-31 — verified tab round trips and storage transport
+
+4411783 adds raw legacy tab serialization and verified atomic save, preserving
+unknown positional tab data/comments/sections. Added9 full frozen/current writer
+cases alongside20 full loader cases. 7d5f491 exposes FIFO storage and owned C
+snapshots, structural/aggregate admission, raw fields and shared visibility policy.
+Tests inject observer/envelope allocation failure before acceptance, prove zero
+allocations when polling a committed save, copied nested inputs, source/worker
+survival, closed-tab rejection before writes and drain-on-shutdown. No open-tab
+restoration occurs; complete new-core state remains a separate next step.
+
+Normal tab repository/transport2/2 (.72s). Final portable XML/parallel/tab5/5
+(.80s), ASan/UBSan5/5 (1.36s; leaks OFF), TSan5/5 (2.09s); native-disabled strict
+C++11 all9/9 (6.34s, before transport-only changes). Strict C11 header passes.
+Full Mac and portable model rebuild/test runs are underway at this checkpoint;
+results will be appended when complete. Preserved unrelated .DS_Store. No hosted
+builds, purchases, reset credits, devotional work or frontend expansion.
