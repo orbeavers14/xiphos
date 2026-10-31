@@ -31,6 +31,7 @@ struct xc_search_batch {
   }
 };
 struct xc_reference_list { xiphos::core::ReferenceList value; };
+struct xc_parallel_profile { xiphos::core::SavedParallelProfile value; };
 struct xc_search_lists { xiphos::core::SavedSearchLists value; };
 struct xc_search_module_names { std::vector<std::string> value; };
 struct xc_module_resolution { xiphos::core::ModuleNameResolution value; };
@@ -136,6 +137,7 @@ struct xc_request {
   std::unique_ptr<xc_book_note> book_note;
   std::unique_ptr<xc_lexical_entry> lexical;
   std::unique_ptr<xc_lexicons> lexicons;
+  std::unique_ptr<xc_parallel_profile> parallel_profile;
   std::unique_ptr<xc_search_lists> search_lists;
   std::unique_ptr<xc_search_module_names> search_module_names;
   std::unique_ptr<xc_module_resolution> module_resolution;
@@ -171,6 +173,10 @@ struct xc_request {
   void store(xiphos::core::ContextualStudyLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::ResolvedStudyLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::ReferenceList v) { references = std::make_unique<xc_reference_list>(xc_reference_list{std::move(v)}); }
+  void store(xiphos::core::SavedParallelProfile v) {
+    static_assert(std::is_nothrow_move_assignable_v<xiphos::core::SavedParallelProfile>, "Committed parallel profile publication must not allocate");
+    parallel_profile->value = std::move(v);
+  }
   void store(xiphos::core::SavedSearchLists v) {
     static_assert(std::is_nothrow_move_assignable_v<xiphos::core::SavedSearchLists>, "Prepared save snapshots must transfer without allocating");
     if (search_lists) search_lists->value = std::move(v);
@@ -300,6 +306,7 @@ template<class T> struct Request final : xc_request {
   // Allocate parallel result envelopes before accepting a state-changing job;
   // polling then only moves owned values into already allocated storage.
   Request() {
+    if constexpr (std::is_same_v<T,xiphos::core::SavedParallelProfile>) parallel_profile = std::make_unique<xc_parallel_profile>();
     if constexpr (std::is_same_v<T,xiphos::core::ParallelChapter>) parallel = std::make_unique<xc_parallel_chapter>();
     if constexpr (std::is_same_v<T,std::optional<xiphos::core::ParallelSelection>>) parallel_selection = std::make_unique<xc_parallel_selection>();
   }
@@ -1332,6 +1339,31 @@ xc_status xc_worker_resolve_module_name(xc_worker *w, uint64_t tab, const char *
   if (!bounded_image_c_text(requested, 4096)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.resolve_module_name(tab, requested); });
 }
+xc_status xc_worker_read_parallel_profile(xc_worker *w,uint64_t tab,const char *path,xc_request **out) {
+  if (!bounded_image_c_text(path,4096)) { if(out)*out=nullptr;return XC_INVALID_ARGUMENT; }
+  return queue_request(w,out,[=](auto &worker){return worker.read_parallel_profile(tab,path);});
+}
+xc_status xc_worker_edit_parallel_profile(xc_worker *w,uint64_t tab,const char *path,const xc_parallel_profile_edit *edit,xc_request **out) {
+  if (!out) return XC_INVALID_ARGUMENT;
+  *out=nullptr;
+  if (!w || !edit || !bounded_image_c_text(path,4096) || !bounded_image_c_text(edit->key,4096) ||
+      edit->action<XC_PARALLEL_PROFILE_SAVE || edit->action>XC_PARALLEL_PROFILE_ACTIVATE ||
+      (edit->make_current!=0 && edit->make_current!=1) || edit->module_count>4096 ||
+      (edit->module_count && !edit->modules)) return XC_INVALID_ARGUMENT;
+  if (edit->action==XC_PARALLEL_PROFILE_RENAME ? !bounded_image_c_text(edit->replacement_key,4096) : edit->replacement_key!=nullptr)
+    return XC_INVALID_ARGUMENT;
+  if (edit->action!=XC_PARALLEL_PROFILE_SAVE && (edit->modules || edit->module_count || edit->make_current)) return XC_INVALID_ARGUMENT;
+  for(size_t i=0;i<edit->module_count;++i)
+    if(!edit->modules[i] || (*edit->modules[i] && !bounded_image_c_text(edit->modules[i],4096))) return XC_INVALID_ARGUMENT;
+  return queue_request(w,out,[=](auto &worker){
+    xiphos::core::ParallelProfileEdit copy;
+    copy.action=static_cast<xiphos::core::ParallelProfileAction>(edit->action);
+    copy.key=edit->key;copy.replacement_key=edit->replacement_key?edit->replacement_key:"";
+    copy.make_current=edit->make_current!=0;copy.modules.reserve(edit->module_count);
+    for(size_t i=0;i<edit->module_count;++i)copy.modules.emplace_back(edit->modules[i]);
+    return worker.edit_parallel_profile(tab,path,std::move(copy));
+  });
+}
 xc_status xc_worker_read_search_lists(xc_worker *w, uint64_t tab, const char *path, xc_request **out) {
   if (!path || !*path) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.read_search_lists(tab, path); });
@@ -1583,6 +1615,7 @@ void xc_request_release(xc_request *r) { delete r; }
 uint64_t xc_request_tab(const xc_request *r) { return r && r->status == XC_OK ? r->tab : 0; }
 xc_reference_list *xc_request_take_reference_list(xc_request *r) { return r && r->status == XC_OK ? r->references.release() : nullptr; }
 xc_lexical_entry *xc_request_take_lexical_entry(xc_request *r) { return r && r->status == XC_OK ? r->lexical.release() : nullptr; }
+xc_parallel_profile *xc_request_take_parallel_profile(xc_request *r) { return r && r->status==XC_OK ? r->parallel_profile.release() : nullptr; }
 xc_search_lists *xc_request_take_search_lists(xc_request *r) { return r && r->status == XC_OK ? r->search_lists.release() : nullptr; }
 xc_module_resolution *xc_request_take_module_resolution(xc_request *r) { return r && r->status == XC_OK ? r->module_resolution.release() : nullptr; }
 const char *xc_module_resolution_requested(const xc_module_resolution *r) { return r ? r->value.requested.c_str() : nullptr; }
@@ -1866,6 +1899,22 @@ const char *xc_reference_list_entry_html(const xc_reference_list *r, size_t i) {
 int xc_reference_list_limited(const xc_reference_list *r) { return r && r->value.limited; }
 unsigned xc_reference_list_skipped(const xc_reference_list *r) { return r ? r->value.skipped : 0; }
 void xc_reference_list_release(xc_reference_list *r) { delete r; }
+size_t xc_parallel_profile_count(const xc_parallel_profile *p){return p?p->value.sets.size():0;}
+const char *xc_parallel_profile_names_text(const xc_parallel_profile *p){return p&&p->value.names_text?p->value.names_text->c_str():nullptr;}
+const char *xc_parallel_profile_current_key(const xc_parallel_profile *p){return p&&p->value.current_key?p->value.current_key->c_str():nullptr;}
+const char *xc_parallel_profile_active_modules_text(const xc_parallel_profile *p){return p&&p->value.active_modules_text?p->value.active_modules_text->c_str():nullptr;}
+const char *xc_parallel_profile_startup_modules_text(const xc_parallel_profile *p){return p&&p->value.startup_modules_text?p->value.startup_modules_text->c_str():nullptr;}
+int xc_parallel_profile_startup_source(const xc_parallel_profile *p){return p?static_cast<int>(p->value.startup_source):0;}
+const char *xc_parallel_profile_legacy_slot(const xc_parallel_profile *p,size_t i){return p&&i<5&&p->value.legacy_slots[i]?p->value.legacy_slots[i]->c_str():nullptr;}
+static const xiphos::core::SavedParallelSet *parallel_profile_set(const xc_parallel_profile *p,size_t i){return p&&i<p->value.sets.size()?&p->value.sets[i]:nullptr;}
+const char *xc_parallel_profile_key(const xc_parallel_profile *p,size_t i){auto *s=parallel_profile_set(p,i);return s?s->key.c_str():nullptr;}
+const char *xc_parallel_profile_display_name(const xc_parallel_profile *p,size_t i){auto *s=parallel_profile_set(p,i);return s?s->display_name.c_str():nullptr;}
+const char *xc_parallel_profile_module_text(const xc_parallel_profile *p,size_t i){auto *s=parallel_profile_set(p,i);return s&&s->module_text?s->module_text->c_str():nullptr;}
+size_t xc_parallel_profile_module_count(const xc_parallel_profile *p,size_t i){auto *s=parallel_profile_set(p,i);return s&&s->modules?s->modules->size():0;}
+const char *xc_parallel_profile_module(const xc_parallel_profile *p,size_t i,size_t j){auto *s=parallel_profile_set(p,i);return s&&s->modules&&j<s->modules->size()?(*s->modules)[j].c_str():nullptr;}
+size_t xc_parallel_profile_startup_module_count(const xc_parallel_profile *p){return p&&p->value.startup_modules?p->value.startup_modules->size():0;}
+const char *xc_parallel_profile_startup_module(const xc_parallel_profile *p,size_t j){return p&&p->value.startup_modules&&j<p->value.startup_modules->size()?(*p->value.startup_modules)[j].c_str():nullptr;}
+void xc_parallel_profile_release(xc_parallel_profile *p){delete p;}
 static const std::vector<xiphos::core::SavedSearchList> *search_list_items(const xc_search_lists *lists, int kind) {
   if (!lists) return nullptr;
   if (kind == XC_SAVED_SEARCH_MODULES) return &lists->value.module_lists;

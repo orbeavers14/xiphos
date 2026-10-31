@@ -121,6 +121,9 @@ public:
   // to one tab and returns copied choices. Saved locale is not applied.
   std::future<std::optional<LexiconPreferences>> import_lexicon_profile(StudyTab tab, std::string path);
   // Explicit selected-file read on the FIFO owner; validates the tab but changes no state.
+  // Explicit profile storage only: FIFO, copied snapshots, tab checked before IO.
+  std::future<SavedParallelProfile> read_parallel_profile(StudyTab tab, std::string path);
+  std::future<SavedParallelProfile> edit_parallel_profile(StudyTab tab, std::string path, ParallelProfileEdit edit);
   std::future<SavedSearchLists> read_search_lists(StudyTab tab, std::string path);
   std::future<std::vector<std::string>> parse_search_module_list(StudyTab tab, std::string text);
   std::future<SavedSearchLists> save_search_list(StudyTab tab, std::string path, SavedSearchListEdit edit);

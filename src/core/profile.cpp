@@ -248,6 +248,7 @@ bool parallel_optional_text(const std::optional<std::string> &actual, const std:
   return expected.empty() ? !actual || actual->empty() : actual && *actual == expected;
 }
 }
+void validate_parallel_profile_edit(const ParallelProfileEdit &edit) { validate_parallel_edit(edit); }
 std::string serialize_parallel_profile_edit(const std::string &source, const ParallelProfileEdit &edit) {
   validate_parallel_edit(edit);
   const auto before = parse_saved_parallel_profile(source);

@@ -47,6 +47,7 @@ struct ParallelProfileEdit {
 // and shadowed duplicates. New keys must be bounded XML local names after the
 // legacy prefix; reserved metadata suffixes names/current reject. No implicit
 // naming conversion, module resolution, rendering or home/profile discovery.
+void validate_parallel_profile_edit(const ParallelProfileEdit &edit);
 std::string serialize_parallel_profile_edit(const std::string &xml, const ParallelProfileEdit &edit);
 // Verified same-directory atomic replacement; missing files may be created only
 // by save. Prepared owned snapshot is returned without post-replacement reads.

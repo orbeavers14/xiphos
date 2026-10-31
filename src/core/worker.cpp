@@ -480,6 +480,29 @@ std::future<ModuleNameResolution> StudyWorker::resolve_module_name(StudyTab tab,
     return s.reader.resolve_module_name(requested);
   });
 }
+namespace {
+void parallel_profile_path(const std::string &path) {
+  if (path.empty() || path.size() > 4096 || path.find('\0') != std::string::npos)
+    throw std::invalid_argument("Parallel profile path is invalid");
+}
+template<class T> std::future<T> parallel_profile_rejection() {
+  std::promise<T> result;auto future = result.get_future();
+  result.set_exception(std::current_exception());return future;
+}
+}
+std::future<SavedParallelProfile> StudyWorker::read_parallel_profile(StudyTab tab, std::string path) {
+  try { parallel_profile_path(path); } catch (...) { return parallel_profile_rejection<SavedParallelProfile>(); }
+  return impl_->submit([tab, path = std::move(path)](Impl::State &s) {
+    (void)s.tab(tab);return read_saved_parallel_profile(path);
+  });
+}
+std::future<SavedParallelProfile> StudyWorker::edit_parallel_profile(StudyTab tab, std::string path, ParallelProfileEdit edit) {
+  try { parallel_profile_path(path);validate_parallel_profile_edit(edit); }
+  catch (...) { return parallel_profile_rejection<SavedParallelProfile>(); }
+  return impl_->submit([tab, path = std::move(path), edit = std::move(edit)](Impl::State &s) {
+    (void)s.tab(tab);return xiphos::core::edit_parallel_profile(path, edit);
+  });
+}
 std::future<SavedSearchLists> StudyWorker::read_search_lists(StudyTab tab, std::string path) {
   return impl_->submit([tab, path = std::move(path)](Impl::State &s) {
     (void)s.tab(tab);

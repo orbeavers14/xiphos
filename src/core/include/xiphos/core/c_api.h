@@ -815,6 +815,51 @@ const char *xc_module_resolution_requested(const xc_module_resolution *result);
 const char *xc_module_resolution_module(const xc_module_resolution *result);
 int xc_module_resolution_via_abbreviation(const xc_module_resolution *result);
 void xc_module_resolution_release(xc_module_resolution *result);
+/* Explicit bounded legacy parallel profile storage. No tab selection is applied.
+ * Path/key/replacement/module strings are copied before return; path/key/token
+ * limits4096 bytes, max4096 module tokens, max1024 listed sets and16MiB owned
+ * snapshot. Key is raw stored identity. New keys must round trip through XML;
+ * names/current metadata suffixes and commas reject. Structural C inputs reject
+ * before submission; UTF-8/XML/tab/file errors arrive at poll. Save may create a
+ * missing profile; other edits require an existing file. Observer/result storage
+ * precedes acceptance; dropped observers do not cancel writes, shutdown drains.
+ * Owned results are take-once; borrowed strings survive until result release.
+ * Missing and explicit empty XML text retain the legacy scalar distinction.
+ * Save upserts without adding duplicate labels; existing duplicates remain.
+ * Rename rejects destination collisions; remove uses raw keys; activate of an
+ * empty/missing definition retains the old active modules. See workflow contract.
+ */
+typedef struct xc_parallel_profile xc_parallel_profile;
+typedef enum xc_parallel_profile_action {
+  XC_PARALLEL_PROFILE_SAVE=0, XC_PARALLEL_PROFILE_RENAME=1,
+  XC_PARALLEL_PROFILE_REMOVE=2, XC_PARALLEL_PROFILE_ACTIVATE=3
+} xc_parallel_profile_action;
+typedef struct {
+  int action;
+  const char *key;
+  const char *replacement_key; /* rename only; NULL otherwise */
+  const char *const *modules; size_t module_count; /* save only */
+  int make_current; /* save only, strict0/1 */
+} xc_parallel_profile_edit;
+xc_status xc_worker_read_parallel_profile(xc_worker *worker,uint64_t tab,const char *path,xc_request **out);
+xc_status xc_worker_edit_parallel_profile(xc_worker *worker,uint64_t tab,const char *path,const xc_parallel_profile_edit *edit,xc_request **out);
+xc_parallel_profile *xc_request_take_parallel_profile(xc_request *request);
+size_t xc_parallel_profile_count(const xc_parallel_profile *profile);
+const char *xc_parallel_profile_names_text(const xc_parallel_profile *profile);
+const char *xc_parallel_profile_current_key(const xc_parallel_profile *profile);
+const char *xc_parallel_profile_active_modules_text(const xc_parallel_profile *profile);
+const char *xc_parallel_profile_startup_modules_text(const xc_parallel_profile *profile);
+/* Startup source:0 none,1 configured,2 legacy slots,3 named set. Invalid ->0. */
+int xc_parallel_profile_startup_source(const xc_parallel_profile *profile);
+const char *xc_parallel_profile_legacy_slot(const xc_parallel_profile *profile,size_t slot);
+const char *xc_parallel_profile_key(const xc_parallel_profile *profile,size_t row);
+const char *xc_parallel_profile_display_name(const xc_parallel_profile *profile,size_t row);
+const char *xc_parallel_profile_module_text(const xc_parallel_profile *profile,size_t row);
+size_t xc_parallel_profile_module_count(const xc_parallel_profile *profile,size_t row);
+const char *xc_parallel_profile_module(const xc_parallel_profile *profile,size_t row,size_t column);
+size_t xc_parallel_profile_startup_module_count(const xc_parallel_profile *profile);
+const char *xc_parallel_profile_startup_module(const xc_parallel_profile *profile,size_t column);
+void xc_parallel_profile_release(xc_parallel_profile *profile);
 typedef enum xc_saved_search_list_kind { XC_SAVED_SEARCH_MODULES = 0, XC_SAVED_SEARCH_RANGES = 1 } xc_saved_search_list_kind;
 typedef struct { int kind; const char *label, *value; } xc_saved_search_list_edit;
 /* Explicit selected-file edit. Path, edit and both attributes are required;
