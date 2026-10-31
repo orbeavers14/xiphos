@@ -74,3 +74,30 @@ A zero-tab file stays zero tabs rather than manufacturing a default UI tab.
 The characterization host compares20 complete frozen/current legacy load cases
 and9 complete writer cases. Widgets and implicit file-discovery branches are
 stubbed; this does not claim actual GTK interaction or native restart acceptance.
+
+## Live tab capture (2026-10-31)
+
+Committed reading and dictionary selections are now independent of history lists.
+Successful visits and back/forward update them; previews and failed reads do not.
+Clearing history retains the current location. Explicit selection-clear commands
+are separate. A same-reference visit can therefore retain the actual new module
+pair even when the compatible history deduplication keeps its first module pair.
+Main-pane lexical clicks commit dictionary intent; dialog/read-only lookups do not.
+
+The FIFO worker and C ABI can capture an explicit ordered list of live tab IDs,
+and atomically save that capture through the compatible XML repository. They copy
+committed text/commentary/reference, dictionary module/key and selected book offset;
+the host supplies pane/commentary/parallel visibility. Unknown, closed or duplicate
+tab IDs reject the whole capture before a file changes. Empty tabs remain empty:
+there is no guessed first module or SDK-global current-key fallback. Limits remain
+256 tabs,32768 bytes per field and16MiB retained text. C input arrays/version are
+copied before returning; request/result envelopes are allocated before acceptance.
+Committed entry/passage/dictionary/lexical result polling only moves owned data,
+including contextual dictionary/lexical alternatives; unused envelopes are never
+published as results.
+
+This exports the legacy subset only. It does not restore live tabs, histories,
+parallel columns/options, preferences, active tab or window geometry. The complete
+replacement/restore contract above remains open. The standalone session-capture
+fixture uses only disposable original prose and covers cleared histories, module
+switches, ordered saves, failure retention, C ownership and shutdown draining.

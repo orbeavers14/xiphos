@@ -2143,3 +2143,35 @@ No native note UI/rich commentary editor, automatic cache application, complete
 session restore, installation or sync acceptance. Next: keep reading/dictionary
 selection independent of history clearing for reliable tab capture, then compatible
 session capture/remaining owner core priorities. Devotionals remain deferred.
+
+
+### 2026-10-31 committed selections and live tab capture
+
+Implementation9e338ba: reading/dictionary intent survives compatible history clear
+and same-reference deduplication. Successful visits/back/forward update selection;
+previews/read-only/dialog lexical queries and failed reads retain it. Explicit
+clear-selection commands are separate. Ordered FIFO/C capture/save exports actual
+committed module/reference/dictionary/book-offset fields with host visibility;
+unknown/closed/duplicate tabs fail before file replacement. No empty-tab fallback.
+C observer/result envelopes precede acceptance for entry/passage/dictionary/lexical
+mutations, including contextual variants; polling performs no envelope allocation,
+and unused alternatives stay unpublished. Standalone original-prose capture fixture
+checks history clears, module switches, failure retention, copied inputs, ownership,
+zero-allocation polling and dropped-save draining. Strict C11 header passed.
+
+Final source checkpoint through9e338ba: full Mac215 passes+one index skip
+(216 registered,173.04s); full portable168 passes+one index skip
+(169 registered,144.54s). ASan/UBSan19/19 (29.79s, legacy oracle leak checking off);
+TSan19/19 (53.59s), scoped to session/tab/history/dictionary/lexical/contextual/paired
+regressions. Strict native-off C++11 all10/10 (19.14s). Logs:
+`build/session-final-{macos,linux-models,sanitized,thread-sanitized,legacy-search-policy}-{configure,build,tests}.log`.
+Builds still report installed Homebrew dylib deployment-target warnings. Portable
+models run on Mac; Windows/Fedora physical compatibility is pending. Changed-doc
+relative links and whitespace passed. No whole-parity acceptance increase.
+
+Next: complete validated native session snapshot/atomic restoration (histories,
+parallel intent/options, preferences and host active-tab/window policy remain open),
+then editing, installation and sync. Legacy XML capture is only a compatible subset.
+SDK-owned note targets already exist in ad97fba; rich commentary editor and native
+annotation presentation remain open. Devotionals stay deferred. All checked work is
+intended for the explicitly authorized origin master; do not claim upstream merge.

@@ -7,9 +7,9 @@ annotation maps (`238220f`, `7102d57`, `e4c5333`, `73f88b4`); shared retained
 highlight priority (`23aba44`); [verse-note storage/cache/transport](personal-annotations.md)
 (`b589779`, `70ffb33`, `f6d9bf4`). These are scoped core services, not complete
 native UI/restart/session or whole-parity acceptance. Latest full checkpoint
-through73f88b4: Mac210 passes+one skip; portable163 passes+one skip. Later focused
-checks and limits are in the Mac handoff. Next: SDK-owned note targets, then
-complete session state/restoration, editors, installation and sync; devotionals
+through9e338ba: Mac215 passes+one skip; portable168 passes+one skip. Later focused
+checks and limits are in the Mac handoff. SDK-owned note targets now exist (`ad97fba`), and live tab capture exports committed
+reading/dictionary/book selections independently of history. Next: complete session state/restoration, editors, installation and sync; devotionals
 remain deferred.
 
 Parallel checkpoint (2026-10-30): complete real-SDK interpolation oracle

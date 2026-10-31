@@ -22,7 +22,10 @@ compatible tab round trips/transport now exist (`4411783`, `7d5f491`).
 Revision-checked bookmarks/owned tag maps and shared highlight priority are checked
 (`238220f`, `7102d57`, `e4c5333`, `73f88b4`, `23aba44`);
 [verse-note repository/cache/transport](personal-annotations.md) now exists
-(`b589779`, `70ffb33`, `f6d9bf4`). Next: SDK-owned note targets and
+(`b589779`, `70ffb33`, `f6d9bf4`), with SDK-owned note targets (`ad97fba`).
+Committed reading/dictionary selections now survive history clearing; ordered live
+tab capture/save exports the compatible subset (`9e338ba`). Full Mac215 passes
+plus one index skip; portable168 passes plus one index skip. Next:
 [complete session persistence](session-persistence.md), then the other owner priorities.
 Devotionals remain deferred. No whole-parity acceptance increase.
 
