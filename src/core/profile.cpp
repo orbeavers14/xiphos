@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/profile.hpp"
 #include "preference_file.hpp"
+#include "xiphos/core/tab_profile.hpp"
 #include "search_validation.hpp"
 #include <libxml/parser.h>
 #include <libxml/encoding.h>
@@ -27,7 +28,7 @@ void reject_doctype(void *data, const xmlChar *, const xmlChar *, const xmlChar 
   *static_cast<bool *>(context->_private) = true;
   xmlStopParser(context);
 }
-Document parse_document(const std::string &source) {
+Document parse_document(const std::string &source, const char *expected_root = "Xiphos") {
   if (source.empty() || source.size() > maximum_profile_bytes)
     throw std::invalid_argument("Xiphos profile size is invalid");
   static std::once_flag initialized;
@@ -58,7 +59,7 @@ Document parse_document(const std::string &source) {
   if (!document || !parser->wellFormed)
     throw std::invalid_argument("Xiphos profile XML is malformed");
   auto *root = xmlDocGetRootElement(document.get());
-  if (!root || xmlStrcmp(root->name, BAD_CAST "Xiphos"))
+  if (!root || xmlStrcmp(root->name, BAD_CAST expected_root))
     throw std::invalid_argument("Xiphos profile root is invalid");
   return document;
 }
@@ -356,6 +357,44 @@ SavedParallelProfile edit_parallel_profile(const std::string &path, const Parall
     prepared = read_saved_parallel_profile(file.u8string());
   }, maximum_profile_bytes);
   return prepared;
+}
+bool saved_tab_yes(const std::optional<std::string> &text) { return text && *text == "yes"; }
+TabVisibility saved_tab_visibility(const SavedTab &tab, TabVisibility fallback) {
+  if (!tab.show_texts) return fallback;
+  return {saved_tab_yes(tab.show_texts), saved_tab_yes(tab.show_preview),
+          saved_tab_yes(tab.show_commentaries), saved_tab_yes(tab.show_dictionaries)};
+}
+SavedTabSession parse_saved_tab_session(const std::string &source) {
+  auto document = parse_document(source, "Xiphos_Tabs");
+  SavedTabSession result;
+  auto attribute = [&](xmlNode *node, const char *key) -> std::optional<std::string> {
+    const std::unique_ptr<xmlChar, decltype(xmlFree)> text(xmlGetProp(node, BAD_CAST key), xmlFree);
+    if (!text) return std::nullopt;
+    std::string copied(reinterpret_cast<const char *>(text.get()));
+    if (copied.size() > maximum_saved_tab_text_bytes || copied.size() > maximum_saved_tab_snapshot_bytes-result.snapshot_bytes)
+      throw std::invalid_argument("Saved tab text exceeds bounds");
+    result.snapshot_bytes += copied.size();return copied;
+  };
+  auto *root = xmlDocGetRootElement(document.get());result.version = attribute(root,"Version");
+  for (auto *section = root->children; section; section = section->next) {
+    if (section->type != XML_ELEMENT_NODE || xmlStrcmp(section->name,BAD_CAST "tabs")) continue;
+    for (auto *node = section->children; node; node = node->next) {
+      if (node->type != XML_ELEMENT_NODE || xmlStrcmp(node->name,BAD_CAST "tab")) continue;
+      if (result.tabs.size() == maximum_saved_tabs) throw std::invalid_argument("Too many saved tabs");
+      SavedTab tab;
+      tab.text_module=attribute(node,"text_mod");tab.commentary_module=attribute(node,"commentary_mod");
+      tab.dictionary_module=attribute(node,"dictlex_mod");tab.book_module=attribute(node,"book_mod");
+      tab.reference=attribute(node,"text_commentary_key");tab.dictionary_key=attribute(node,"dictlex_key");
+      tab.book_offset_text=attribute(node,"book_offset");tab.commentary_showing=attribute(node,"comm_showing");
+      tab.show_texts=attribute(node,"showtexts");tab.show_preview=attribute(node,"showpreview");
+      tab.show_commentaries=attribute(node,"showcomms");tab.show_dictionaries=attribute(node,"showdicts");
+      tab.show_parallel=attribute(node,"showparallel");result.tabs.push_back(std::move(tab));
+    }
+  }
+  return result;
+}
+SavedTabSession read_saved_tab_session(const std::string &path) {
+  return parse_saved_tab_session(read_profile_source(path));
 }
 StudyProfile parse_study_profile(const std::string &source) {
   auto document = parse_document(source);
