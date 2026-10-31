@@ -20,6 +20,12 @@ using ContextualStudyLink = std::variant<PassageLink, StudyNote, ReferenceList, 
 using BookPaneLink = std::variant<ContextualStudyLink, BookFollowLink>;
 using ResolvedStudyLink = std::variant<PassageLink, StudyNote>;
 using StudyHoverLink = std::variant<std::monostate, StudyNote, ReferenceList, LexicalEntry, DictionaryEntry>;
+struct StudyTabCapture {
+  StudyTab tab=0;
+  bool commentary_showing=false;
+  TabVisibility visibility;
+  bool parallel_showing=false; // Explicit host visibility, never inferred from selection.
+};
 struct DictionaryHistorySnapshot {
   std::vector<DictionaryLocation> entries;
   std::size_t cursor = 0;
@@ -133,6 +139,12 @@ public:
   std::future<BookmarkTags> read_bookmark_tags(StudyTab tab, std::string path, std::string module, std::string context, BookmarkTagLimits limits = {});
   std::future<BookmarkSnapshot> read_bookmarks(StudyTab tab, std::string path);
   std::future<BookmarkSnapshot> edit_bookmarks(StudyTab tab, std::string path, std::optional<std::string> revision, BookmarkEdit edit);
+  std::future<std::optional<Location>> reading_selection(StudyTab tab);
+  std::future<std::optional<DictionaryLocation>> dictionary_selection(StudyTab tab);
+  std::future<void> clear_reading_selection(StudyTab tab);
+  std::future<void> clear_dictionary_selection(StudyTab tab);
+  std::future<SavedTabSession> capture_tabs(std::vector<StudyTabCapture> tabs,std::optional<std::string> version = {});
+  std::future<SavedTabSession> save_tabs(std::string path,std::vector<StudyTabCapture> tabs,std::optional<std::string> version = {});
   std::future<SavedTabSession> read_tab_session(StudyTab tab, std::string path);
   std::future<SavedTabSession> save_tab_session(StudyTab tab, std::string path, SavedTabSession session);
   std::future<SavedParallelProfile> read_parallel_profile(StudyTab tab, std::string path);

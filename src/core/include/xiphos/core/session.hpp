@@ -165,6 +165,11 @@ public:
                                   const DisplayOptions &display = {});
   Chapter read_chapter(const std::string &module, const std::string &reference,
                        const DisplayOptions &display = {});
+  // Last successful recorded intent, independent of history cursor/dedup/clear.
+  const std::optional<Location> &reading_selection() const { return reading_selection_; }
+  const std::optional<DictionaryLocation> &dictionary_selection() const { return dictionary_selection_; }
+  void clear_reading_selection() { reading_selection_.reset(); }
+  void clear_dictionary_selection() { dictionary_selection_.reset(); }
   const History &history() const { return history_; }
   void clear_history() { history_.clear(); }
 private:
@@ -195,6 +200,12 @@ private:
   Chapter present_content(const std::string &module, Chapter chapter, const DisplayOptions &display, bool commentary);
   LexicalEntry lookup_lexical(const std::string &module, const std::string &reference,
                             const std::string &uri, int origin, bool click);
+  std::optional<Location> reading_selection_;
+  std::optional<DictionaryLocation> dictionary_selection_;
+  void record_reading(Location location);
+  void move_reading(int direction,Location location);
+  void record_dictionary(DictionaryLocation location);
+  void move_dictionary(int direction,DictionaryLocation location);
   History history_;
   DictionaryHistory dictionary_history_;
 };

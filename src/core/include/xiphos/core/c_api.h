@@ -983,6 +983,21 @@ typedef enum xc_tab_field {
 typedef struct {const char *fields[XC_TAB_FIELD_COUNT];} xc_saved_tab;
 typedef struct {const char *version;const xc_saved_tab *tabs;size_t tab_count;} xc_saved_tab_session;
 typedef struct {int texts,preview,commentaries,dictionaries;} xc_tab_visibility;
+/* Capture ordered live core locations at FIFO execution time, independently of
+ * history dedup/clearing. Host supplies only pane visibility; it is not inferred
+ * from selection. Unknown/duplicate tab IDs reject. No implicit SDK/global-key
+ * fallback for empty tabs. Count<=256; optional version<=32768 UTF-8/XML bytes.
+ * Save captures all rows before verified replacement and returns the prepared
+ * owned legacy session. This subset does not persist per-tab options/history,
+ * parallel column intent or native window geometry/active-tab ownership. */
+typedef struct {uint64_t tab;xc_tab_visibility visibility;int commentary_showing,parallel_showing;} xc_tab_capture;
+void xc_tab_capture_default(xc_tab_capture *capture);
+xc_status xc_worker_capture_tabs(xc_worker *worker,const xc_tab_capture *tabs,size_t count,const char *version,xc_request **out);
+xc_status xc_worker_save_tabs(xc_worker *worker,const char *path,const xc_tab_capture *tabs,size_t count,const char *version,xc_request **out);
+/* Clear committed intent only, preserving history; ordinary history clear keeps
+ * last successful intent. Read-only previews never replace committed intent. */
+xc_status xc_worker_clear_reading_selection(xc_worker *worker,uint64_t tab,xc_request **out);
+xc_status xc_worker_clear_dictionary_selection(xc_worker *worker,uint64_t tab,xc_request **out);
 xc_status xc_worker_read_tab_session(xc_worker *worker,uint64_t tab,const char *path,xc_request **out);
 xc_status xc_worker_save_tab_session(xc_worker *worker,uint64_t tab,const char *path,const xc_saved_tab_session *session,xc_request **out);
 xc_tab_session *xc_request_take_tab_session(xc_request *request);

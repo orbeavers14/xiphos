@@ -158,6 +158,22 @@ Chapter StudySession::present_content(const std::string &module, Chapter chapter
   return chapter;
 }
 
+void StudySession::record_reading(Location location) {
+  std::optional<Location> staged{std::move(location)};
+  static_assert(std::is_nothrow_move_assignable<decltype(reading_selection_)>::value,"Reading selection publication must not allocate");
+  history_.visit(*staged);reading_selection_=std::move(staged);
+}
+void StudySession::move_reading(int direction,Location location) {
+  std::optional<Location> staged{std::move(location)};history_.move(direction);reading_selection_=std::move(staged);
+}
+void StudySession::record_dictionary(DictionaryLocation location) {
+  std::optional<DictionaryLocation> staged{std::move(location)};
+  static_assert(std::is_nothrow_move_assignable<decltype(dictionary_selection_)>::value,"Dictionary selection publication must not allocate");
+  dictionary_history_.visit(*staged);dictionary_selection_=std::move(staged);
+}
+void StudySession::move_dictionary(int direction,DictionaryLocation location) {
+  std::optional<DictionaryLocation> staged{std::move(location)};dictionary_history_.move(direction);dictionary_selection_=std::move(staged);
+}
 void StudySession::set_lexicon_preferences(const LexiconPreferences &preferences) {
   (void)borrow_lexicon_preferences(preferences);
   auto replacement = std::make_optional(preferences);
@@ -184,18 +200,19 @@ LexicalEntry StudySession::lookup_lexical(const std::string &module, const std::
   const bool main_click = click && origin == XIPHOS_LEXICON_MAIN;
   const auto key = main_click ? dictionary_click_key(command.value) : command.value;
   auto entry = read_dictionary(selected, key);
-  if (main_click) dictionary_history_.visit({selected, key});
-  return {std::move(command), context, std::move(entry)};
+  LexicalEntry result{std::move(command),context,std::move(entry)};
+  if(main_click)record_dictionary({selected,key});
+  return result;
 }
 DictionaryEntry StudySession::visit_dictionary(const std::string &module, const std::string &key) {
   auto entry = read_dictionary(module, key);
-  dictionary_history_.visit({module, key});
+  record_dictionary({module,key});
   return entry;
 }
 DictionaryEntry StudySession::navigate_dictionary_history(int direction) {
   const auto target = dictionary_history_.destination(direction);
   auto entry = read_dictionary(target.module, target.key);
-  dictionary_history_.move(direction);
+  move_dictionary(direction,{target.module,target.key});
   return entry;
 }
 DictionaryEntry StudySession::navigate_dictionary(const std::string &module, const std::string &key, int direction) {
@@ -571,7 +588,7 @@ StudyPassage StudySession::visit_passage(const std::string &module, const std::s
   auto result = read_passage(module, commentary, reference);
   // Render both panes before committing history. Preserve the characterized
   // reference-only deduplication, including its first recorded module pair.
-  history_.visit({result.text.reference, module, commentary});
+  record_reading({result.text.reference,module,commentary});
   return result;
 }
 StudyPassage StudySession::visit_linked_passage(const std::string &bible, const std::string &commentary,
@@ -606,7 +623,7 @@ StudyPassage StudySession::navigate_passage(int direction) {
   auto result = !bible && location.commentary.empty()
       ? StudyPassage{location.module, "", read_entry(location.module, location.reference), std::nullopt}
       : read_passage(location.module, location.commentary, location.reference);
-  history_.move(direction);
+  move_reading(direction,{result.text.reference,location.module,location.commentary});
   return result;
 }
 StudyPassage StudySession::navigate_passage_chapter(const std::string &module, const std::string &commentary,
@@ -615,7 +632,7 @@ StudyPassage StudySession::navigate_passage_chapter(const std::string &module, c
 }
 Entry StudySession::visit(const std::string &module, const std::string &reference) {
   auto entry = read_entry(module, reference);
-  history_.visit({entry.reference, module, ""});
+  record_reading({entry.reference,module,""});
   return entry;
 }
 Entry StudySession::navigate_chapter(const std::string &module, const std::string &reference,
@@ -625,7 +642,7 @@ Entry StudySession::navigate_chapter(const std::string &module, const std::strin
 Entry StudySession::navigate(int direction) {
   const auto &location = history_.destination(direction);
   auto entry = read_entry(location.module, location.reference);
-  history_.move(direction);
+  move_reading(direction,{entry.reference,location.module,location.commentary});
   return entry;
 }
 }

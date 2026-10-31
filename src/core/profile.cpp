@@ -359,7 +359,7 @@ const std::array<TabAttribute,13> tab_attributes{{
   {"showcomms",&SavedTab::show_commentaries},{"showdicts",&SavedTab::show_dictionaries},
   {"showparallel",&SavedTab::show_parallel}
 }};
-void validate_tab_session(const SavedTabSession &session) {
+std::size_t validate_tab_session(const SavedTabSession &session) {
   if(session.tabs.size()>maximum_saved_tabs)throw std::invalid_argument("Too many saved tabs");
   std::size_t bytes=0;
   auto text=[&](const std::optional<std::string> &value){if(value){
@@ -369,6 +369,7 @@ void validate_tab_session(const SavedTabSession &session) {
   }};
   text(session.version);
   for(const auto &tab:session.tabs)for(const auto &field:tab_attributes)text(tab.*field.second);
+  return bytes;
 }
 void set_tab_attribute(xmlNode *node,const char *key,const std::optional<std::string> &value) {
   if(value) { if(!xmlSetProp(node,BAD_CAST key,BAD_CAST value->c_str()))throw std::bad_alloc(); }
@@ -381,7 +382,8 @@ bool same_tab_session(const SavedTabSession &left,const SavedTabSession &right) 
   return true;
 }
 }
-void validate_saved_tab_session(const SavedTabSession &session) { validate_tab_session(session); }
+void validate_saved_tab_session(const SavedTabSession &session) { (void)validate_tab_session(session); }
+std::size_t saved_tab_session_bytes(const SavedTabSession &session) { return validate_tab_session(session); }
 std::string serialize_saved_tab_session(const SavedTabSession &session,const std::string &original) {
   validate_tab_session(session);
   auto document=parse_document(original,"Xiphos_Tabs");

@@ -38,6 +38,22 @@ struct StudyWorker::Impl {
       if (found == tabs.end()) throw std::invalid_argument("Study tab is closed or unknown");
       return *found->second;
     }
+    SavedTabSession capture_tabs(const std::vector<StudyTabCapture> &captures,const std::optional<std::string> &version) {
+      if(captures.size()>maximum_saved_tabs)throw std::invalid_argument("Too many captured tabs");
+      SavedTabSession result;result.version=version;std::vector<StudyTab> seen;seen.reserve(captures.size());result.tabs.reserve(captures.size());
+      for(const auto &capture:captures){
+        if(std::find(seen.begin(),seen.end(),capture.tab)!=seen.end())throw std::invalid_argument("Captured tabs must be unique");seen.push_back(capture.tab);
+        const auto &session=tab(capture.tab);SavedTab saved;
+        if(session.reading_selection()){const auto &location=*session.reading_selection();saved.text_module=location.module;saved.commentary_module=location.commentary;saved.reference=location.reference;}
+        if(session.dictionary_selection()){const auto &location=*session.dictionary_selection();saved.dictionary_module=location.module;saved.dictionary_key=location.key;}
+        if(session.book_selection()){const auto &book=session.book_selection()->tree;saved.book_module=book.module;saved.book_offset_text=std::to_string(book.node.offset);}
+        saved.commentary_showing=capture.commentary_showing?"yes":"no";saved.show_texts=capture.visibility.texts?"yes":"no";
+        saved.show_preview=capture.visibility.preview?"yes":"no";saved.show_commentaries=capture.visibility.commentaries?"yes":"no";
+        saved.show_dictionaries=capture.visibility.dictionaries?"yes":"no";saved.show_parallel=capture.parallel_showing?"yes":"no";result.tabs.push_back(std::move(saved));
+      }
+      result.snapshot_bytes=saved_tab_session_bytes(result);return result;
+    }
+
     StudyNote note_target(StudyTab id, const StudyNoteLink &link, bool render_body = true) {
       auto &session = tab(id);
       auto note = render_body ? session.study_note(link.module, link.reference, link.identifier)
@@ -541,6 +557,27 @@ std::future<BookmarkSnapshot> StudyWorker::edit_bookmarks(StudyTab tab,std::stri
   return impl_->submit([tab,path=std::move(path),revision=std::move(revision),edit=std::move(edit)](Impl::State &s){
     (void)s.tab(tab);return xiphos::core::edit_bookmarks(path,revision,edit);
   });
+}
+std::future<std::optional<Location>> StudyWorker::reading_selection(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s){return s.tab(tab).reading_selection();});
+}
+std::future<std::optional<DictionaryLocation>> StudyWorker::dictionary_selection(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s){return s.tab(tab).dictionary_selection();});
+}
+std::future<void> StudyWorker::clear_reading_selection(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s){s.tab(tab).clear_reading_selection();});
+}
+std::future<void> StudyWorker::clear_dictionary_selection(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s){s.tab(tab).clear_dictionary_selection();});
+}
+std::future<SavedTabSession> StudyWorker::capture_tabs(std::vector<StudyTabCapture> tabs,std::optional<std::string> version) {
+  if(tabs.size()>maximum_saved_tabs||(version&&(version->size()>maximum_saved_tab_text_bytes||version->find('\0')!=std::string::npos))){std::promise<SavedTabSession> rejected;auto future=rejected.get_future();rejected.set_exception(std::make_exception_ptr(std::invalid_argument("Too many captured tabs")));return future;}
+  return impl_->submit([tabs=std::move(tabs),version=std::move(version)](Impl::State &s){return s.capture_tabs(tabs,version);});
+}
+std::future<SavedTabSession> StudyWorker::save_tabs(std::string path,std::vector<StudyTabCapture> tabs,std::optional<std::string> version) {
+  try {selected_profile_path(path);if(tabs.size()>maximum_saved_tabs||(version&&(version->size()>maximum_saved_tab_text_bytes||version->find('\0')!=std::string::npos)))throw std::invalid_argument("Invalid captured tab bounds");}
+  catch(...){return selected_profile_rejection<SavedTabSession>();}
+  return impl_->submit([path=std::move(path),tabs=std::move(tabs),version=std::move(version)](Impl::State &s){return save_saved_tab_session(path,s.capture_tabs(tabs,version));});
 }
 std::future<SavedTabSession> StudyWorker::read_tab_session(StudyTab tab, std::string path) {
   try { selected_profile_path(path); } catch (...) { return selected_profile_rejection<SavedTabSession>(); }

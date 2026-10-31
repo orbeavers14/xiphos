@@ -115,6 +115,11 @@ struct xc_request {
   bool preview_preference_result = false, preview_preference = true, no_presentation = false;
   std::optional<xiphos::core::EngineOptions> options;
   std::optional<xiphos::core::ModulePresentationOptions> presentation;
+  // Prepared envelopes are not published result alternatives until store().
+  std::unique_ptr<xc_entry> prepared_entry;
+  std::unique_ptr<xc_passage> prepared_passage;
+  std::unique_ptr<xc_dictionary_entry> prepared_dictionary;
+  std::unique_ptr<xc_lexical_entry> prepared_lexical;
   std::unique_ptr<xc_reference_list> references;
   std::unique_ptr<xc_dictionary_choices> dictionary_choices;
   std::unique_ptr<xc_dictionary_history> dictionary_history;
@@ -175,7 +180,10 @@ struct xc_request {
   void store(xiphos::core::SearchScopeInfo v) {search_scope=v;}
   void store(xiphos::core::SearchBatchResult v) { search_batch=std::make_unique<xc_search_batch>(std::move(v)); }
   void store(xiphos::core::SearchResult v) { search_result = std::make_unique<xc_search>(xc_search{std::move(v)}); }
-  void store(xiphos::core::StudyPassage v) { passage = std::make_unique<xc_passage>(xc_passage{std::move(v)}); }
+  void store(xiphos::core::StudyPassage v) {
+    static_assert(std::is_nothrow_move_assignable_v<xiphos::core::StudyPassage>,"Committed passage publication must not allocate");
+    if(!passage){passage=std::move(prepared_passage);if(!passage)passage=std::make_unique<xc_passage>();}passage->value=std::move(v);
+  }
   void store(xiphos::core::ModulePresentationOptions v) { presentation = v; }
   void store(uint64_t v) { tab = v; }
   void store(bool v) { preview_preference = v; preview_preference_result = true; }
@@ -218,14 +226,22 @@ struct xc_request {
   void store(xiphos::core::ModuleNameResolution v) { module_resolution = std::make_unique<xc_module_resolution>(xc_module_resolution{std::move(v)}); }
   void store(std::vector<std::string> v) { search_module_names = std::make_unique<xc_search_module_names>(xc_search_module_names{std::move(v)}); }
   void store(std::optional<xiphos::core::LexiconPreferences> v) { lexicons = std::make_unique<xc_lexicons>(xc_lexicons{std::move(v)}); }
-  void store(xiphos::core::LexicalEntry v) { lexical = std::make_unique<xc_lexical_entry>(xc_lexical_entry{std::move(v)}); }
+  void store(xiphos::core::LexicalEntry v) {
+    static_assert(std::is_nothrow_move_assignable_v<xiphos::core::LexicalEntry>,"Committed lexical publication must not allocate");
+    if(!lexical){lexical=std::move(prepared_lexical);if(!lexical)lexical=std::make_unique<xc_lexical_entry>();}lexical->value=std::move(v);
+  }
   void store(xiphos::core::DictionaryChoices v) { dictionary_choices = std::make_unique<xc_dictionary_choices>(xc_dictionary_choices{std::move(v)}); }
   void store(xiphos::core::DictionaryHistorySnapshot v) { dictionary_history = std::make_unique<xc_dictionary_history>(xc_dictionary_history{std::move(v)}); }
   void store(std::optional<xiphos::core::ParallelSelection> v) { static_assert(std::is_nothrow_move_assignable<decltype(v)>::value, "Parallel selection publication must not allocate"); parallel_selection->value = std::move(v); }
   void store(xiphos::core::ParallelChapter v) { static_assert(std::is_nothrow_move_assignable<xiphos::core::ParallelChapter>::value, "Parallel publication must not allocate"); parallel->value = std::move(v); }
   void store(xiphos::core::DevotionalEntry v) { devotional = std::make_unique<xc_devotional_entry>(xc_devotional_entry{std::move(v)}); }
-  void store(xiphos::core::DictionaryUriEntry v) { dictionary = std::make_unique<xc_dictionary_entry>(xc_dictionary_entry{std::move(v.entry), std::move(v.anchor)}); }
-  void store(xiphos::core::DictionaryEntry v) { dictionary = std::make_unique<xc_dictionary_entry>(xc_dictionary_entry{std::move(v)}); }
+  void store(xiphos::core::DictionaryUriEntry v) {
+    store(std::move(v.entry));static_assert(std::is_nothrow_move_assignable_v<decltype(v.anchor)>,"Dictionary anchors must move without allocation");dictionary->anchor=std::move(v.anchor);
+  }
+  void store(xiphos::core::DictionaryEntry v) {
+    static_assert(std::is_nothrow_move_assignable_v<xiphos::core::DictionaryEntry>,"Committed dictionary publication must not allocate");
+    if(!dictionary){dictionary=std::move(prepared_dictionary);if(!dictionary)dictionary=std::make_unique<xc_dictionary_entry>();}dictionary->value=std::move(v);dictionary->anchor.reset();
+  }
   void store(std::optional<xiphos::core::BookDocument> v) {
     book_selection_result = true;
     book_selection_present = v.has_value();
@@ -253,7 +269,10 @@ struct xc_request {
   void store(xiphos::core::BookChildren v) { book_children = std::make_unique<xc_book_children>(xc_book_children{std::move(v)}); }
   void store(xiphos::core::BookNote v) { book_note = std::make_unique<xc_book_note>(std::move(v)); }
   void store(xiphos::core::StudyNote v) { note = std::make_unique<xc_note>(xc_note{std::move(v)}); }
-  void store(xiphos::core::Entry v) { entry = std::make_unique<xc_entry>(xc_entry{std::move(v)}); }
+  void store(xiphos::core::Entry v) {
+    static_assert(std::is_nothrow_move_assignable_v<xiphos::core::Entry>,"Committed entry publication must not allocate");
+    if(!entry){entry=std::move(prepared_entry);if(!entry)entry=std::make_unique<xc_entry>();}entry->value=std::move(v);
+  }
   void store(xiphos::core::Chapter v) { chapter = std::make_unique<xc_chapter>(xc_chapter{std::move(v)}); }
   void store(xiphos::core::ReferenceChoices v) { choices = std::make_unique<xc_choices>(xc_choices{std::move(v)}); }
   void store(xiphos::core::PassageLink v) { link = std::make_unique<xc_link>(xc_link{std::move(v)}); }
@@ -339,6 +358,10 @@ template<class T> struct Request final : xc_request {
   // Allocate result envelopes before accepting a state-changing job;
   // polling then only moves owned values into already allocated storage.
   Request() {
+    if constexpr (std::is_same_v<T,xiphos::core::Entry>) prepared_entry=std::make_unique<xc_entry>();
+    if constexpr (std::is_same_v<T,xiphos::core::StudyPassage>) prepared_passage=std::make_unique<xc_passage>();
+    if constexpr (std::is_same_v<T,xiphos::core::DictionaryEntry>||std::is_same_v<T,xiphos::core::DictionaryUriEntry>||std::is_same_v<T,xiphos::core::ContextualStudyLink>||std::is_same_v<T,xiphos::core::BookPaneLink>) prepared_dictionary=std::make_unique<xc_dictionary_entry>();
+    if constexpr (std::is_same_v<T,xiphos::core::LexicalEntry>||std::is_same_v<T,xiphos::core::ContextualStudyLink>||std::is_same_v<T,xiphos::core::BookPaneLink>) prepared_lexical=std::make_unique<xc_lexical_entry>();
     if constexpr (std::is_same_v<T,xiphos::core::AnnotationTarget>) annotation_target = std::make_unique<xc_annotation_target>();
     if constexpr (std::is_same_v<T,xiphos::core::AnnotationProfile>) annotations = std::make_unique<xc_annotations>();
     if constexpr (std::is_same_v<T,xiphos::core::AnnotationCache>) annotation_cache = std::make_unique<xc_annotation_cache>();
@@ -1451,6 +1474,24 @@ static const std::array<std::optional<std::string> xiphos::core::SavedTab::*,XC_
  &xiphos::core::SavedTab::show_preview,&xiphos::core::SavedTab::show_commentaries,&xiphos::core::SavedTab::show_dictionaries,
  &xiphos::core::SavedTab::show_parallel
 }};
+void xc_tab_capture_default(xc_tab_capture *capture){if(capture)*capture={0,{1,1,1,1},0,0};}
+static xc_status queue_tab_capture(xc_worker *w,const char *path,const xc_tab_capture *tabs,size_t count,const char *version,xc_request **out,bool save){
+ if(out)*out=nullptr;
+ if(!w||!out||count>xiphos::core::maximum_saved_tabs||(count&&!tabs)||(save&&!bounded_image_c_text(path,4096))||
+    (version&&*version&&!bounded_image_c_text(version,32768)))return XC_INVALID_ARGUMENT;
+ for(size_t i=0;i<count;++i)for(int flag:{tabs[i].visibility.texts,tabs[i].visibility.preview,tabs[i].visibility.commentaries,tabs[i].visibility.dictionaries,tabs[i].commentary_showing,tabs[i].parallel_showing})
+   if(flag!=0&&flag!=1)return XC_INVALID_ARGUMENT;
+ return queue_request(w,out,[=](auto &worker){
+  std::vector<xiphos::core::StudyTabCapture> copied;copied.reserve(count);
+  for(size_t i=0;i<count;++i)copied.push_back({tabs[i].tab,tabs[i].commentary_showing!=0,{tabs[i].visibility.texts!=0,tabs[i].visibility.preview!=0,tabs[i].visibility.commentaries!=0,tabs[i].visibility.dictionaries!=0},tabs[i].parallel_showing!=0});
+  const auto copied_version=version?std::make_optional(std::string(version)):std::nullopt;
+  return save?worker.save_tabs(path,std::move(copied),copied_version):worker.capture_tabs(std::move(copied),copied_version);
+ });
+}
+xc_status xc_worker_capture_tabs(xc_worker *w,const xc_tab_capture *tabs,size_t count,const char *version,xc_request **out){return queue_tab_capture(w,nullptr,tabs,count,version,out,false);}
+xc_status xc_worker_save_tabs(xc_worker *w,const char *path,const xc_tab_capture *tabs,size_t count,const char *version,xc_request **out){return queue_tab_capture(w,path,tabs,count,version,out,true);}
+xc_status xc_worker_clear_reading_selection(xc_worker *w,uint64_t tab,xc_request **out){return queue_request(w,out,[=](auto &worker){return worker.clear_reading_selection(tab);});}
+xc_status xc_worker_clear_dictionary_selection(xc_worker *w,uint64_t tab,xc_request **out){return queue_request(w,out,[=](auto &worker){return worker.clear_dictionary_selection(tab);});}
 xc_status xc_worker_read_tab_session(xc_worker *w,uint64_t tab,const char *path,xc_request **out){
  if(!bounded_image_c_text(path,4096)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
  return queue_request(w,out,[=](auto &worker){return worker.read_tab_session(tab,path);});
