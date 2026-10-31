@@ -815,6 +815,36 @@ const char *xc_module_resolution_requested(const xc_module_resolution *result);
 const char *xc_module_resolution_module(const xc_module_resolution *result);
 int xc_module_resolution_via_abbreviation(const xc_module_resolution *result);
 void xc_module_resolution_release(xc_module_resolution *result);
+/* Explicit legacy Xiphos_Tabs repository; never applies/restores open tabs.
+ * Paths <=4096 bytes, up to256 saved tabs, each optional UTF-8/XML attribute
+ * <=32768 bytes,16MiB aggregate owned text. NULL is absent, empty is explicit.
+ * Raw keys/offsets/flags are not normalized. All inputs copy before return.
+ * Structural bounds reject before copying; semantic/tab/file errors arrive at
+ * poll. Saves preserve unrelated positional XML, prepare/verify before atomic
+ * replacement and drain on shutdown. Owned take-once snapshots survive source,
+ * request and worker teardown; strings borrow until release. */
+typedef struct xc_tab_session xc_tab_session;
+typedef enum xc_tab_field {
+ XC_TAB_TEXT_MODULE=0,XC_TAB_COMMENTARY_MODULE,XC_TAB_DICTIONARY_MODULE,XC_TAB_BOOK_MODULE,
+ XC_TAB_REFERENCE,XC_TAB_DICTIONARY_KEY,XC_TAB_BOOK_OFFSET_TEXT,XC_TAB_COMMENTARY_SHOWING,
+ XC_TAB_SHOW_TEXTS,XC_TAB_SHOW_PREVIEW,XC_TAB_SHOW_COMMENTARIES,XC_TAB_SHOW_DICTIONARIES,
+ XC_TAB_SHOW_PARALLEL,XC_TAB_FIELD_COUNT
+} xc_tab_field;
+typedef struct {const char *fields[XC_TAB_FIELD_COUNT];} xc_saved_tab;
+typedef struct {const char *version;const xc_saved_tab *tabs;size_t tab_count;} xc_saved_tab_session;
+typedef struct {int texts,preview,commentaries,dictionaries;} xc_tab_visibility;
+xc_status xc_worker_read_tab_session(xc_worker *worker,uint64_t tab,const char *path,xc_request **out);
+xc_status xc_worker_save_tab_session(xc_worker *worker,uint64_t tab,const char *path,const xc_saved_tab_session *session,xc_request **out);
+xc_tab_session *xc_request_take_tab_session(xc_request *request);
+const char *xc_tab_session_version(const xc_tab_session *session);
+size_t xc_tab_session_count(const xc_tab_session *session);
+const char *xc_tab_session_field(const xc_tab_session *session,size_t row,int field);
+/* Exact legacy visibility: all four fallback flags apply only when showtexts is
+ * absent. Strict boolean fallback required; output cleared on invalid arguments. */
+xc_status xc_tab_session_visibility(const xc_tab_session *session,size_t row,const xc_tab_visibility *fallback,xc_tab_visibility *out);
+int xc_tab_session_commentary_showing(const xc_tab_session *session,size_t row);
+int xc_tab_session_parallel_showing(const xc_tab_session *session,size_t row);
+void xc_tab_session_release(xc_tab_session *session);
 /* Explicit bounded legacy parallel profile storage. No tab selection is applied.
  * Path/key/replacement/module strings are copied before return; path/key/token
  * limits4096 bytes, max4096 module tokens, max1024 listed sets and16MiB owned

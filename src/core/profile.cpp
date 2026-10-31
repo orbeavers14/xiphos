@@ -429,6 +429,7 @@ bool same_tab_session(const SavedTabSession &left,const SavedTabSession &right) 
   return true;
 }
 }
+void validate_saved_tab_session(const SavedTabSession &session) { validate_tab_session(session); }
 std::string serialize_saved_tab_session(const SavedTabSession &session,const std::string &original) {
   validate_tab_session(session);
   auto document=parse_document(original,"Xiphos_Tabs");

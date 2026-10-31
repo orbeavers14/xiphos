@@ -481,24 +481,34 @@ std::future<ModuleNameResolution> StudyWorker::resolve_module_name(StudyTab tab,
   });
 }
 namespace {
-void parallel_profile_path(const std::string &path) {
+void selected_profile_path(const std::string &path) {
   if (path.empty() || path.size() > 4096 || path.find('\0') != std::string::npos)
-    throw std::invalid_argument("Parallel profile path is invalid");
+    throw std::invalid_argument("Selected profile path is invalid");
 }
-template<class T> std::future<T> parallel_profile_rejection() {
+template<class T> std::future<T> selected_profile_rejection() {
   std::promise<T> result;auto future = result.get_future();
   result.set_exception(std::current_exception());return future;
 }
 }
+std::future<SavedTabSession> StudyWorker::read_tab_session(StudyTab tab, std::string path) {
+  try { selected_profile_path(path); } catch (...) { return selected_profile_rejection<SavedTabSession>(); }
+  return impl_->submit([tab,path=std::move(path)](Impl::State &s){(void)s.tab(tab);return read_saved_tab_session(path);});
+}
+std::future<SavedTabSession> StudyWorker::save_tab_session(StudyTab tab, std::string path, SavedTabSession session) {
+  try { selected_profile_path(path);validate_saved_tab_session(session); } catch (...) { return selected_profile_rejection<SavedTabSession>(); }
+  return impl_->submit([tab,path=std::move(path),session=std::move(session)](Impl::State &s){
+    (void)s.tab(tab);return save_saved_tab_session(path,session);
+  });
+}
 std::future<SavedParallelProfile> StudyWorker::read_parallel_profile(StudyTab tab, std::string path) {
-  try { parallel_profile_path(path); } catch (...) { return parallel_profile_rejection<SavedParallelProfile>(); }
+  try { selected_profile_path(path); } catch (...) { return selected_profile_rejection<SavedParallelProfile>(); }
   return impl_->submit([tab, path = std::move(path)](Impl::State &s) {
     (void)s.tab(tab);return read_saved_parallel_profile(path);
   });
 }
 std::future<SavedParallelProfile> StudyWorker::edit_parallel_profile(StudyTab tab, std::string path, ParallelProfileEdit edit) {
-  try { parallel_profile_path(path);validate_parallel_profile_edit(edit); }
-  catch (...) { return parallel_profile_rejection<SavedParallelProfile>(); }
+  try { selected_profile_path(path);validate_parallel_profile_edit(edit); }
+  catch (...) { return selected_profile_rejection<SavedParallelProfile>(); }
   return impl_->submit([tab, path = std::move(path), edit = std::move(edit)](Impl::State &s) {
     (void)s.tab(tab);return xiphos::core::edit_parallel_profile(path, edit);
   });
@@ -587,14 +597,14 @@ std::future<ParallelChapter> StudyWorker::visit_parallel(StudyTab tab, std::vect
 std::future<ParallelChapter> StudyWorker::visit_parallel_profile(StudyTab tab, std::string path,
     std::optional<std::string> key, std::string reference, EngineOptions options, bool headings, std::size_t max_bytes) {
   try {
-    parallel_profile_path(path);
+    selected_profile_path(path);
     if (key && (key->empty() || key->size() > maximum_saved_parallel_key_bytes || key->find('\0') != std::string::npos))
       throw std::invalid_argument("Invalid saved parallel key");
     // Validate scalar render arguments before accepting IO; actual stored column
     // count is checked after the selected-file read, never silently truncated.
     if (!parallel_read_arguments({""}, reference, max_bytes))
       throw std::invalid_argument("Invalid saved parallel visit arguments");
-  } catch (...) { return parallel_profile_rejection<ParallelChapter>(); }
+  } catch (...) { return selected_profile_rejection<ParallelChapter>(); }
   return impl_->submit([tab, path = std::move(path), key = std::move(key), reference = std::move(reference), options, headings, max_bytes](Impl::State &s) {
     auto &session = s.tab(tab);
     const auto profile = read_saved_parallel_profile(path);

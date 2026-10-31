@@ -2,6 +2,7 @@
 #pragma once
 #include "lexical.hpp"
 #include "parallel_profile.hpp"
+#include "tab_profile.hpp"
 #include <vector>
 namespace xiphos::core {
 // Owned, read-only subset of the legacy Xiphos XML profile. Unknown settings

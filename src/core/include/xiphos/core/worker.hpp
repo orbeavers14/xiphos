@@ -122,6 +122,8 @@ public:
   std::future<std::optional<LexiconPreferences>> import_lexicon_profile(StudyTab tab, std::string path);
   // Explicit selected-file read on the FIFO owner; validates the tab but changes no state.
   // Explicit profile storage only: FIFO, copied snapshots, tab checked before IO.
+  std::future<SavedTabSession> read_tab_session(StudyTab tab, std::string path);
+  std::future<SavedTabSession> save_tab_session(StudyTab tab, std::string path, SavedTabSession session);
   std::future<SavedParallelProfile> read_parallel_profile(StudyTab tab, std::string path);
   std::future<SavedParallelProfile> edit_parallel_profile(StudyTab tab, std::string path, ParallelProfileEdit edit);
   std::future<SavedSearchLists> read_search_lists(StudyTab tab, std::string path);

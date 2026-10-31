@@ -31,6 +31,7 @@ struct xc_search_batch {
   }
 };
 struct xc_reference_list { xiphos::core::ReferenceList value; };
+struct xc_tab_session { xiphos::core::SavedTabSession value; };
 struct xc_parallel_profile { xiphos::core::SavedParallelProfile value; };
 struct xc_search_lists { xiphos::core::SavedSearchLists value; };
 struct xc_search_module_names { std::vector<std::string> value; };
@@ -137,6 +138,7 @@ struct xc_request {
   std::unique_ptr<xc_book_note> book_note;
   std::unique_ptr<xc_lexical_entry> lexical;
   std::unique_ptr<xc_lexicons> lexicons;
+  std::unique_ptr<xc_tab_session> tab_session;
   std::unique_ptr<xc_parallel_profile> parallel_profile;
   std::unique_ptr<xc_search_lists> search_lists;
   std::unique_ptr<xc_search_module_names> search_module_names;
@@ -173,6 +175,10 @@ struct xc_request {
   void store(xiphos::core::ContextualStudyLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::ResolvedStudyLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::ReferenceList v) { references = std::make_unique<xc_reference_list>(xc_reference_list{std::move(v)}); }
+  void store(xiphos::core::SavedTabSession v) {
+    static_assert(std::is_nothrow_move_assignable_v<xiphos::core::SavedTabSession>, "Committed tab session publication must not allocate");
+    tab_session->value=std::move(v);
+  }
   void store(xiphos::core::SavedParallelProfile v) {
     static_assert(std::is_nothrow_move_assignable_v<xiphos::core::SavedParallelProfile>, "Committed parallel profile publication must not allocate");
     parallel_profile->value = std::move(v);
@@ -303,9 +309,10 @@ xc_status failure() noexcept {
   catch (...) { return XC_ENGINE_ERROR; }
 }
 template<class T> struct Request final : xc_request {
-  // Allocate parallel result envelopes before accepting a state-changing job;
+  // Allocate result envelopes before accepting a state-changing job;
   // polling then only moves owned values into already allocated storage.
   Request() {
+    if constexpr (std::is_same_v<T,xiphos::core::SavedTabSession>) tab_session = std::make_unique<xc_tab_session>();
     if constexpr (std::is_same_v<T,xiphos::core::SavedParallelProfile>) parallel_profile = std::make_unique<xc_parallel_profile>();
     if constexpr (std::is_same_v<T,xiphos::core::ParallelChapter>) parallel = std::make_unique<xc_parallel_chapter>();
     if constexpr (std::is_same_v<T,std::optional<xiphos::core::ParallelSelection>>) parallel_selection = std::make_unique<xc_parallel_selection>();
@@ -1339,6 +1346,36 @@ xc_status xc_worker_resolve_module_name(xc_worker *w, uint64_t tab, const char *
   if (!bounded_image_c_text(requested, 4096)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.resolve_module_name(tab, requested); });
 }
+static const std::array<std::optional<std::string> xiphos::core::SavedTab::*,XC_TAB_FIELD_COUNT> saved_tab_fields{{
+ &xiphos::core::SavedTab::text_module,&xiphos::core::SavedTab::commentary_module,&xiphos::core::SavedTab::dictionary_module,
+ &xiphos::core::SavedTab::book_module,&xiphos::core::SavedTab::reference,&xiphos::core::SavedTab::dictionary_key,
+ &xiphos::core::SavedTab::book_offset_text,&xiphos::core::SavedTab::commentary_showing,&xiphos::core::SavedTab::show_texts,
+ &xiphos::core::SavedTab::show_preview,&xiphos::core::SavedTab::show_commentaries,&xiphos::core::SavedTab::show_dictionaries,
+ &xiphos::core::SavedTab::show_parallel
+}};
+xc_status xc_worker_read_tab_session(xc_worker *w,uint64_t tab,const char *path,xc_request **out){
+ if(!bounded_image_c_text(path,4096)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
+ return queue_request(w,out,[=](auto &worker){return worker.read_tab_session(tab,path);});
+}
+xc_status xc_worker_save_tab_session(xc_worker *w,uint64_t tab,const char *path,const xc_saved_tab_session *session,xc_request **out){
+ if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;
+ if(!w||!session||!bounded_image_c_text(path,4096)||session->tab_count>256||(session->tab_count&&!session->tabs))return XC_INVALID_ARGUMENT;
+ auto valid=[](const char *text){return !text||!*text||bounded_image_c_text(text,32768);};
+ if(!valid(session->version))return XC_INVALID_ARGUMENT;
+ // Check total admitted C bytes before constructing observers or argument copies.
+ std::size_t bytes=session->version?std::strlen(session->version):0;
+ for(size_t i=0;i<session->tab_count;++i)for(const char *text:session->tabs[i].fields){
+  if(!valid(text))return XC_INVALID_ARGUMENT;
+  const auto size=text?std::strlen(text):0;
+  if(size>16*1024*1024-bytes)return XC_INVALID_ARGUMENT;bytes+=size;
+ }
+ return queue_request(w,out,[=](auto &worker){
+  xiphos::core::SavedTabSession copied;if(session->version)copied.version=session->version;copied.tabs.resize(session->tab_count);
+  for(size_t i=0;i<session->tab_count;++i)for(size_t j=0;j<XC_TAB_FIELD_COUNT;++j)
+   if(session->tabs[i].fields[j])copied.tabs[i].*saved_tab_fields[j]=session->tabs[i].fields[j];
+  return worker.save_tab_session(tab,path,std::move(copied));
+ });
+}
 xc_status xc_worker_read_parallel_profile(xc_worker *w,uint64_t tab,const char *path,xc_request **out) {
   if (!bounded_image_c_text(path,4096)) { if(out)*out=nullptr;return XC_INVALID_ARGUMENT; }
   return queue_request(w,out,[=](auto &worker){return worker.read_parallel_profile(tab,path);});
@@ -1625,6 +1662,7 @@ void xc_request_release(xc_request *r) { delete r; }
 uint64_t xc_request_tab(const xc_request *r) { return r && r->status == XC_OK ? r->tab : 0; }
 xc_reference_list *xc_request_take_reference_list(xc_request *r) { return r && r->status == XC_OK ? r->references.release() : nullptr; }
 xc_lexical_entry *xc_request_take_lexical_entry(xc_request *r) { return r && r->status == XC_OK ? r->lexical.release() : nullptr; }
+xc_tab_session *xc_request_take_tab_session(xc_request *r){return r&&r->status==XC_OK?r->tab_session.release():nullptr;}
 xc_parallel_profile *xc_request_take_parallel_profile(xc_request *r) { return r && r->status==XC_OK ? r->parallel_profile.release() : nullptr; }
 xc_search_lists *xc_request_take_search_lists(xc_request *r) { return r && r->status == XC_OK ? r->search_lists.release() : nullptr; }
 xc_module_resolution *xc_request_take_module_resolution(xc_request *r) { return r && r->status == XC_OK ? r->module_resolution.release() : nullptr; }
@@ -1909,6 +1947,23 @@ const char *xc_reference_list_entry_html(const xc_reference_list *r, size_t i) {
 int xc_reference_list_limited(const xc_reference_list *r) { return r && r->value.limited; }
 unsigned xc_reference_list_skipped(const xc_reference_list *r) { return r ? r->value.skipped : 0; }
 void xc_reference_list_release(xc_reference_list *r) { delete r; }
+const char *xc_tab_session_version(const xc_tab_session *s){return s&&s->value.version?s->value.version->c_str():nullptr;}
+size_t xc_tab_session_count(const xc_tab_session *s){return s?s->value.tabs.size():0;}
+const char *xc_tab_session_field(const xc_tab_session *s,size_t row,int field){
+ if(!s||row>=s->value.tabs.size()||field<0||field>=XC_TAB_FIELD_COUNT)return nullptr;
+ const auto &value=s->value.tabs[row].*saved_tab_fields[static_cast<size_t>(field)];return value?value->c_str():nullptr;
+}
+xc_status xc_tab_session_visibility(const xc_tab_session *s,size_t row,const xc_tab_visibility *fallback,xc_tab_visibility *out){
+ if(!out)return XC_INVALID_ARGUMENT;
+ const auto copied=fallback?*fallback:xc_tab_visibility{};*out={};
+ if(!s||row>=s->value.tabs.size()||!fallback)return XC_INVALID_ARGUMENT;
+ for(int flag:{copied.texts,copied.preview,copied.commentaries,copied.dictionaries})if(flag!=0&&flag!=1)return XC_INVALID_ARGUMENT;
+ const auto value=xiphos::core::saved_tab_visibility(s->value.tabs[row],{copied.texts!=0,copied.preview!=0,copied.commentaries!=0,copied.dictionaries!=0});
+ *out={value.texts,value.preview,value.commentaries,value.dictionaries};return XC_OK;
+}
+int xc_tab_session_commentary_showing(const xc_tab_session *s,size_t row){return s&&row<s->value.tabs.size()&&xiphos::core::saved_tab_yes(s->value.tabs[row].commentary_showing);}
+int xc_tab_session_parallel_showing(const xc_tab_session *s,size_t row){return s&&row<s->value.tabs.size()&&xiphos::core::saved_tab_yes(s->value.tabs[row].show_parallel);}
+void xc_tab_session_release(xc_tab_session *s){delete s;}
 size_t xc_parallel_profile_count(const xc_parallel_profile *p){return p?p->value.sets.size():0;}
 const char *xc_parallel_profile_names_text(const xc_parallel_profile *p){return p&&p->value.names_text?p->value.names_text->c_str():nullptr;}
 const char *xc_parallel_profile_current_key(const xc_parallel_profile *p){return p&&p->value.current_key?p->value.current_key->c_str():nullptr;}
