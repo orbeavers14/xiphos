@@ -38,6 +38,7 @@ struct xc_lexicons { std::optional<xiphos::core::LexiconPreferences> value; };
 struct xc_lexical_entry { xiphos::core::LexicalEntry value; };
 struct xc_dictionary_choices { xiphos::core::DictionaryChoices value; };
 struct xc_dictionary_history { xiphos::core::DictionaryHistorySnapshot value; };
+struct xc_parallel_chapter { xiphos::core::ParallelChapter value; };
 struct xc_devotional_entry { xiphos::core::DevotionalEntry value; };
 struct xc_dictionary_entry { xiphos::core::DictionaryEntry value; std::optional<std::string> anchor; };
 struct xc_book_tree { xiphos::core::BookTree value; };
@@ -111,6 +112,7 @@ struct xc_request {
   std::unique_ptr<xc_dictionary_history> dictionary_history;
   std::unique_ptr<xc_dictionary_entry> dictionary;
   std::unique_ptr<xc_devotional_entry> devotional;
+  std::unique_ptr<xc_parallel_chapter> parallel;
   std::unique_ptr<xc_book_tree> book_tree;
   std::unique_ptr<xc_book_uri_target> book_uri_target;
   std::unique_ptr<xc_book_entry> book_entry;
@@ -178,6 +180,7 @@ struct xc_request {
   void store(xiphos::core::LexicalEntry v) { lexical = std::make_unique<xc_lexical_entry>(xc_lexical_entry{std::move(v)}); }
   void store(xiphos::core::DictionaryChoices v) { dictionary_choices = std::make_unique<xc_dictionary_choices>(xc_dictionary_choices{std::move(v)}); }
   void store(xiphos::core::DictionaryHistorySnapshot v) { dictionary_history = std::make_unique<xc_dictionary_history>(xc_dictionary_history{std::move(v)}); }
+  void store(xiphos::core::ParallelChapter v) { parallel = std::make_unique<xc_parallel_chapter>(xc_parallel_chapter{std::move(v)}); }
   void store(xiphos::core::DevotionalEntry v) { devotional = std::make_unique<xc_devotional_entry>(xc_devotional_entry{std::move(v)}); }
   void store(xiphos::core::DictionaryUriEntry v) { dictionary = std::make_unique<xc_dictionary_entry>(xc_dictionary_entry{std::move(v.entry), std::move(v.anchor)}); }
   void store(xiphos::core::DictionaryEntry v) { dictionary = std::make_unique<xc_dictionary_entry>(xc_dictionary_entry{std::move(v)}); }
@@ -1424,6 +1427,51 @@ xc_status xc_worker_navigate_dictionary(xc_worker *w, uint64_t tab, const char *
   }
   return queue_request(w, out, [=](auto &worker) { return worker.navigate_dictionary(tab, id, key, direction); });
 }
+xc_status xc_worker_read_parallel(xc_worker *w, uint64_t tab, const char *const *ids,
+    size_t count, const char *reference, unsigned flags, int headings, size_t max_bytes, xc_request **out) {
+  if (out) *out = nullptr;
+  if (!w || !out || !ids || !count || count > XC_PARALLEL_MAX_COLUMNS || (flags & ~((1u << 18)-1)) ||
+      (headings != 0 && headings != 1) || !max_bytes || max_bytes > XC_PARALLEL_MAX_SNAPSHOT_BYTES ||
+      !xiphos::core::detail::study_link_c_text(reference, XC_PARALLEL_MAX_REFERENCE_BYTES, true)) return XC_INVALID_ARGUMENT;
+  for (size_t index=0;index<count;++index)
+    if (!ids[index] || !xiphos::core::detail::study_link_c_text(ids[index], XC_PARALLEL_MAX_MODULE_BYTES, false)) return XC_INVALID_ARGUMENT;
+  static_assert(XC_PARALLEL_MAX_COLUMNS == xiphos::core::maximum_parallel_columns, "Parallel column bounds differ");
+  static_assert(XC_PARALLEL_MAX_MODULE_BYTES == xiphos::core::maximum_parallel_module_bytes, "Parallel module bounds differ");
+  static_assert(XC_PARALLEL_MAX_REFERENCE_BYTES == xiphos::core::maximum_parallel_reference_bytes, "Parallel reference bounds differ");
+  static_assert(XC_PARALLEL_MAX_SNAPSHOT_BYTES == xiphos::core::maximum_parallel_snapshot_bytes, "Parallel byte bounds differ");
+  return queue_request(w, out, [=](auto &worker) {
+    std::vector<std::string> modules;modules.reserve(count);for(size_t index=0;index<count;++index)modules.emplace_back(ids[index]);
+    return worker.read_parallel(tab, std::move(modules), reference, options_from_flags(flags), headings != 0, max_bytes);
+  });
+}
+xc_parallel_chapter *xc_request_take_parallel_chapter(xc_request *r) { return r && r->status == XC_OK ? r->parallel.release() : nullptr; }
+const char *xc_parallel_control_module(const xc_parallel_chapter *p) { return p ? p->value.control_module.c_str() : nullptr; }
+const char *xc_parallel_reference(const xc_parallel_chapter *p) { return p ? p->value.reference.c_str() : nullptr; }
+const char *xc_parallel_title(const xc_parallel_chapter *p) { return p ? p->value.title.c_str() : nullptr; }
+unsigned xc_parallel_selected_verse(const xc_parallel_chapter *p) { return p ? p->value.selected_verse : 0; }
+size_t xc_parallel_snapshot_bytes(const xc_parallel_chapter *p) { return p ? p->value.snapshot_bytes : 0; }
+size_t xc_parallel_column_count(const xc_parallel_chapter *p) { return p ? p->value.columns.size() : 0; }
+size_t xc_parallel_row_count(const xc_parallel_chapter *p) { return p ? p->value.rows.size() : 0; }
+static const xiphos::core::ParallelColumn *parallel_column(const xc_parallel_chapter *p,size_t column) { return p && column < p->value.columns.size() ? &p->value.columns[column] : nullptr; }
+static const xiphos::core::ParallelCell *parallel_cell(const xc_parallel_chapter *p,size_t row,size_t column) {
+  const auto *c=parallel_column(p,column);return c && c->status == xiphos::core::ParallelColumnStatus::ready && row < p->value.rows.size() ? &p->value.rows[row].cells[column] : nullptr;
+}
+xc_parallel_column_status xc_parallel_column_state(const xc_parallel_chapter *p,size_t column) {
+  const auto *c=parallel_column(p,column);if(!c)return XC_PARALLEL_INVALID;
+  switch(c->status){case xiphos::core::ParallelColumnStatus::ready:return XC_PARALLEL_READY;case xiphos::core::ParallelColumnStatus::missing:return XC_PARALLEL_MISSING;case xiphos::core::ParallelColumnStatus::unsupported:return XC_PARALLEL_UNSUPPORTED;}return XC_PARALLEL_INVALID;
+}
+const char *xc_parallel_column_requested(const xc_parallel_chapter *p,size_t column) { const auto *c=parallel_column(p,column);return c?c->requested_module.c_str():nullptr; }
+const char *xc_parallel_column_module(const xc_parallel_chapter *p,size_t column) { const auto *c=parallel_column(p,column);return c?c->module.c_str():nullptr; }
+int xc_parallel_column_via_abbreviation(const xc_parallel_chapter *p,size_t column) { const auto *c=parallel_column(p,column);return c&&c->via_abbreviation; }
+int xc_parallel_column_is_bible(const xc_parallel_chapter *p,size_t column) { const auto *c=parallel_column(p,column);return c&&c->bible; }
+int xc_parallel_column_is_rtl(const xc_parallel_chapter *p,size_t column) { const auto *c=parallel_column(p,column);return c&&c->right_to_left; }
+const char *xc_parallel_row_reference(const xc_parallel_chapter *p,size_t row) { return p&&row<p->value.rows.size()?p->value.rows[row].reference.c_str():nullptr; }
+unsigned xc_parallel_row_ordinal(const xc_parallel_chapter *p,size_t row) { return p&&row<p->value.rows.size()?p->value.rows[row].ordinal:0; }
+const char *xc_parallel_cell_reference(const xc_parallel_chapter *p,size_t row,size_t column) { const auto *cell=parallel_cell(p,row,column);return cell?cell->reference.c_str():nullptr; }
+const char *xc_parallel_cell_html(const xc_parallel_chapter *p,size_t row,size_t column) { const auto *cell=parallel_cell(p,row,column);return cell?cell->html.c_str():nullptr; }
+size_t xc_parallel_cell_heading_count(const xc_parallel_chapter *p,size_t row,size_t column) { const auto *cell=parallel_cell(p,row,column);return cell?cell->headings.size():0; }
+const char *xc_parallel_cell_heading(const xc_parallel_chapter *p,size_t row,size_t column,size_t heading) { const auto *cell=parallel_cell(p,row,column);return cell&&heading<cell->headings.size()?cell->headings[heading].c_str():nullptr; }
+void xc_parallel_chapter_release(xc_parallel_chapter *p) { delete p; }
 xc_status xc_worker_read_devotional(xc_worker *w, uint64_t tab, const char *id, const char *date,
     int month, int day, xc_request **out) {
   if (out) *out = nullptr;

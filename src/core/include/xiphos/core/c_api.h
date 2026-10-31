@@ -17,6 +17,7 @@ typedef struct xc_dictionary_choices xc_dictionary_choices;
 typedef struct xc_dictionary_history xc_dictionary_history;
 typedef struct xc_dictionary_entry xc_dictionary_entry;
 typedef struct xc_devotional_entry xc_devotional_entry;
+typedef struct xc_parallel_chapter xc_parallel_chapter;
 typedef struct xc_book_tree xc_book_tree;
 typedef struct xc_book_uri_target xc_book_uri_target;
 typedef struct xc_book_entry xc_book_entry;
@@ -883,6 +884,45 @@ void xc_dictionary_history_release(xc_dictionary_history *history);
 /* One dictionary key step (-1/+1), preserving SDK boundary behavior and tab
  * options. Returns the owned dictionary kind; does not visit Bible history. */
 xc_status xc_worker_navigate_dictionary(xc_worker *worker, uint64_t tab, const char *module, const char *key, int direction, xc_request **out);
+/* Read-only textual parallel chapter. Raw column order/duplicates/empty slots
+ * remain; bounded aliases resolve through the shared catalog. First column must
+ * be an installed Bible or regular verse commentary. Later missing/unsupported
+ * columns retain their slots and have NULL cell data. This is first-control
+ * textual alignment, not cross-versification equivalence. No history/search or
+ * main-reading options are changed. Explicit engine_flags use XC_ENGINE_*;
+ * headings is exactly0/1. Strings are owned by the take-once chapter until release.
+ * Input validation precedes observer/argument allocation. max_bytes counts all
+ * owned string bytes, must be1..XC_PARALLEL_MAX_SNAPSHOT_BYTES; overflow fails
+ * the whole request without publishing a partial result. SDK internal rendering
+ * allocations are not covered by that returned-snapshot bound. */
+enum { XC_PARALLEL_MAX_COLUMNS = 32, XC_PARALLEL_MAX_MODULE_BYTES = 4096,
+       XC_PARALLEL_MAX_REFERENCE_BYTES = 32768, XC_PARALLEL_MAX_SNAPSHOT_BYTES = 16*1024*1024 };
+typedef enum xc_parallel_column_status { XC_PARALLEL_READY, XC_PARALLEL_MISSING,
+    XC_PARALLEL_UNSUPPORTED, XC_PARALLEL_INVALID } xc_parallel_column_status;
+xc_status xc_worker_read_parallel(xc_worker *worker, uint64_t tab,
+    const char *const *modules, size_t count, const char *reference,
+    unsigned engine_flags, int headings, size_t max_bytes, xc_request **out);
+xc_parallel_chapter *xc_request_take_parallel_chapter(xc_request *request);
+const char *xc_parallel_control_module(const xc_parallel_chapter *chapter);
+const char *xc_parallel_reference(const xc_parallel_chapter *chapter);
+const char *xc_parallel_title(const xc_parallel_chapter *chapter);
+unsigned xc_parallel_selected_verse(const xc_parallel_chapter *chapter);
+size_t xc_parallel_snapshot_bytes(const xc_parallel_chapter *chapter);
+size_t xc_parallel_column_count(const xc_parallel_chapter *chapter);
+size_t xc_parallel_row_count(const xc_parallel_chapter *chapter);
+xc_parallel_column_status xc_parallel_column_state(const xc_parallel_chapter *chapter, size_t column);
+const char *xc_parallel_column_requested(const xc_parallel_chapter *chapter, size_t column);
+const char *xc_parallel_column_module(const xc_parallel_chapter *chapter, size_t column);
+int xc_parallel_column_via_abbreviation(const xc_parallel_chapter *chapter, size_t column);
+int xc_parallel_column_is_bible(const xc_parallel_chapter *chapter, size_t column);
+int xc_parallel_column_is_rtl(const xc_parallel_chapter *chapter, size_t column);
+const char *xc_parallel_row_reference(const xc_parallel_chapter *chapter, size_t row);
+unsigned xc_parallel_row_ordinal(const xc_parallel_chapter *chapter, size_t row);
+const char *xc_parallel_cell_reference(const xc_parallel_chapter *chapter, size_t row, size_t column);
+const char *xc_parallel_cell_html(const xc_parallel_chapter *chapter, size_t row, size_t column);
+size_t xc_parallel_cell_heading_count(const xc_parallel_chapter *chapter, size_t row, size_t column);
+const char *xc_parallel_cell_heading(const xc_parallel_chapter *chapter, size_t row, size_t column, size_t heading);
+void xc_parallel_chapter_release(xc_parallel_chapter *chapter);
 /* Exact installed DailyDevotion module; no alias/first-module fallback or history
  * visit. Host supplies local today (month1..12, day1..31); date NULL/empty uses
  * today. Invalid month selection also uses today; other safe legacy date-key

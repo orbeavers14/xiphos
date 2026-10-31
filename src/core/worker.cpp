@@ -550,6 +550,17 @@ std::future<DictionaryEntry> StudyWorker::navigate_dictionary(StudyTab tab, std:
     return s.tab(tab).navigate_dictionary(module, key, direction);
   });
 }
+std::future<ParallelChapter> StudyWorker::read_parallel(StudyTab tab, std::vector<std::string> modules,
+    std::string reference, EngineOptions options, bool headings, std::size_t max_bytes) {
+  if (!parallel_read_arguments(modules, reference, max_bytes)) {
+    std::promise<ParallelChapter> rejected;
+    rejected.set_exception(std::make_exception_ptr(std::invalid_argument("Invalid bounded parallel request")));
+    return rejected.get_future();
+  }
+  return impl_->submit([tab, modules = std::move(modules), reference = std::move(reference), options, headings, max_bytes](Impl::State &s) {
+    return s.tab(tab).read_parallel(modules, reference, options, headings, max_bytes);
+  });
+}
 std::future<DevotionalEntry> StudyWorker::read_devotional(StudyTab tab, std::string module,
     std::string entered, int month, int day) {
   if (!devotional_read_arguments(module, entered, month, day)) {

@@ -452,6 +452,66 @@ std::string Reader::select_lexicon(const LexicalLink &command, const std::string
   if (!selected || !*selected) throw std::invalid_argument("No lexicon selected for this command");
   return selected;
 }
+ParallelChapter Reader::read_parallel(const std::vector<std::string> &requested,
+    const std::string &reference, const EngineOptions &options, bool headings, std::size_t max_bytes) {
+  if (!parallel_read_arguments(requested, reference, max_bytes))
+    throw std::invalid_argument("Invalid bounded parallel request");
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  ParallelChapter result;
+  std::vector<sword::SWModule *> modules;
+  for (const auto &token : requested) {
+    auto resolution = token.empty() ? ModuleNameResolution{token, {}, false} : impl_->resolve_name(token);
+    auto *module = resolution.module ? impl_->manager->getModule(resolution.module->c_str()) : nullptr;
+    const bool bible = module && std::string(module->getType()) == "Biblical Texts";
+    const bool supported = module && dynamic_cast<sword::VerseKey *>(module->getKey()) &&
+      (bible || regular_commentary(module->getType(), module->getConfigEntry("ModDrv")));
+    result.columns.push_back({token, resolution.module.value_or(""), !module ? ParallelColumnStatus::missing :
+      supported ? ParallelColumnStatus::ready : ParallelColumnStatus::unsupported,
+      resolution.via_abbreviation, bible, module && module->getDirection() == sword::DIRECTION_RTL});
+    modules.push_back(supported ? module : nullptr);
+  }
+  if (!modules.front()) {
+    if (result.columns.front().status == ParallelColumnStatus::missing)
+      throw std::out_of_range("First parallel control is not installed: " + requested.front());
+    throw std::invalid_argument("First parallel control is not a supported verse module");
+  }
+  auto plan = parallel_references(*modules.front(), reference);
+  result.control_module = result.columns.front().module;result.reference = std::move(plan.reference);
+  result.title = std::move(plan.title);result.selected_verse = plan.selected_verse;
+  auto account = [&](const std::string &text) {
+    if (text.size() > max_bytes - result.snapshot_bytes)
+      throw std::invalid_argument("Parallel snapshot exceeds byte bounds");
+    result.snapshot_bytes += text.size();
+  };
+  account(result.control_module);account(result.reference);account(result.title);
+  for (const auto &column : result.columns) { account(column.requested_module);account(column.module); }
+  struct RestoreKeys {
+    std::vector<std::pair<sword::SWModule *, sword::VerseKey>> keys;
+    ~RestoreKeys() { for (auto &saved : keys) *static_cast<sword::VerseKey *>(saved.first->getKey()) = saved.second; }
+  } restore;
+  for (auto *module : modules) if (module) {
+    bool found = false;for (const auto &saved : restore.keys) if (saved.first == module) found = true;
+    if (!found) restore.keys.emplace_back(module, *static_cast<sword::VerseKey *>(module->getKey()));
+  }
+  ScopedEngineOptions scope(*impl_->manager, options);
+  result.rows.reserve(plan.rows.size());
+  for (std::size_t index = 0; index < plan.rows.size(); ++index) {
+    ParallelRow row{plan.rows[index], static_cast<unsigned>(index + 1), {}};account(row.reference);
+    row.cells.reserve(modules.size());
+    for (auto *module : modules) {
+      ParallelCell cell;
+      if (module) {
+        module->setKey(row.reference.c_str());
+        if (headings) cell.headings = render_preverse_headings(*module);
+        cell.html = render_entry(*module, row.reference.c_str());cell.reference = module->getKeyText();
+        account(cell.reference);account(cell.html);for (const auto &heading : cell.headings) account(heading);
+      }
+      row.cells.push_back(std::move(cell));
+    }
+    result.rows.push_back(std::move(row));
+  }
+  return result;
+}
 DevotionalEntry Reader::read_devotional(const std::string &module, const std::string &entered,
     int month, int day) { return devotional_impl(module, entered, month, day, nullptr); }
 DevotionalEntry Reader::read_devotional(const std::string &module, const std::string &entered,

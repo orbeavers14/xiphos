@@ -135,6 +135,9 @@ public:
   std::future<DictionaryHistorySnapshot> dictionary_history(StudyTab tab);
   std::future<void> clear_dictionary_history(StudyTab tab);
   std::future<DictionaryEntry> navigate_dictionary(StudyTab tab, std::string module, std::string key, int direction);
+  std::future<ParallelChapter> read_parallel(StudyTab tab, std::vector<std::string> modules,
+      std::string reference, EngineOptions options, bool headings,
+      std::size_t max_bytes = maximum_parallel_snapshot_bytes);
   // Bounded admission before FIFO; host supplies local today. No history visit.
   std::future<DevotionalEntry> read_devotional(StudyTab tab, std::string module,
       std::string entered, int today_month, int today_day);

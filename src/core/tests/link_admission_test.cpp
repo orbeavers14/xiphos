@@ -64,6 +64,23 @@ int main(int argc,char **argv){try {
   const auto status=xc_worker_read_devotional(worker,tab,"AFirst",nullptr,date.first,date.second,&request);
   watching=false;check(status==XC_INVALID_ARGUMENT&&!request&&largest==0,"Devotional invalid local date rejects before C allocation");
  }
+ const char *parallelIds[]={"AFirst"},*nullParallel[]={nullptr},*largeParallel[]={hugeContext.c_str()};
+ using InvalidParallel=std::function<xc_status(xc_request **)>;
+ const std::vector<InvalidParallel> invalidParallel={
+  [&](xc_request **o){return xc_worker_read_parallel(worker,tab,nullptr,1,"John1:1",0,1,1024,o);},
+  [&](xc_request **o){return xc_worker_read_parallel(worker,tab,parallelIds,0,"John1:1",0,1,1024,o);},
+  [&](xc_request **o){return xc_worker_read_parallel(worker,tab,parallelIds,XC_PARALLEL_MAX_COLUMNS+1,"John1:1",0,1,1024,o);},
+  [&](xc_request **o){return xc_worker_read_parallel(worker,tab,nullParallel,1,"John1:1",0,1,1024,o);},
+  [&](xc_request **o){return xc_worker_read_parallel(worker,tab,largeParallel,1,"John1:1",0,1,1024,o);},
+  [&](xc_request **o){return xc_worker_read_parallel(worker,tab,parallelIds,1,hugeUri.c_str(),0,1,1024,o);},
+  [&](xc_request **o){return xc_worker_read_parallel(worker,tab,parallelIds,1,nullptr,0,1,1024,o);},
+  [&](xc_request **o){return xc_worker_read_parallel(worker,tab,parallelIds,1,"",0,1,1024,o);},
+  [&](xc_request **o){return xc_worker_read_parallel(worker,tab,parallelIds,1,"John1:1",1u<<31,1,1024,o);},
+  [&](xc_request **o){return xc_worker_read_parallel(worker,tab,parallelIds,1,"John1:1",0,2,1024,o);},
+  [&](xc_request **o){return xc_worker_read_parallel(worker,tab,parallelIds,1,"John1:1",0,1,0,o);},
+  [&](xc_request **o){return xc_worker_read_parallel(worker,tab,parallelIds,1,"John1:1",0,1,XC_PARALLEL_MAX_SNAPSHOT_BYTES+1,o);}
+ };
+ for(const auto &submit:invalidParallel){request=reinterpret_cast<xc_request *>(1);largest=0;watching=true;const auto status=submit(&request);watching=false;check(status==XC_INVALID_ARGUMENT&&!request&&largest==0,"Invalid parallel C request allocates neither observer nor owned input before bounds validation");}
  using Submit=std::function<xc_status(const char *,const char *,const char *,xc_request **)>;
  struct Route {Submit call;bool context;};
  const std::vector<Route> routes={

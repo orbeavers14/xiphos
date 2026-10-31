@@ -203,6 +203,10 @@ DictionaryEntry StudySession::navigate_dictionary(const std::string &module, con
   return options ? reader_.navigate_dictionary(module, key, direction, *options)
                  : reader_.navigate_dictionary(module, key, direction);
 }
+ParallelChapter StudySession::read_parallel(const std::vector<std::string> &modules, const std::string &reference,
+    const EngineOptions &options, bool headings, std::size_t max_bytes) {
+  return reader_.read_parallel(modules, reference, options, headings, max_bytes);
+}
 DevotionalEntry StudySession::read_devotional(const std::string &module, const std::string &entered, int month, int day) {
   const auto options = module_engine_options(module);
   return options ? reader_.read_devotional(module, entered, month, day, *options)

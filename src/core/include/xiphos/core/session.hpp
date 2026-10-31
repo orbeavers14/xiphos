@@ -73,6 +73,8 @@ public:
   const DictionaryHistory &dictionary_history() const { return dictionary_history_; }
   void clear_dictionary_history() { dictionary_history_.clear(); }
   DictionaryEntry navigate_dictionary(const std::string &module, const std::string &key, int direction);
+  ParallelChapter read_parallel(const std::vector<std::string> &modules, const std::string &reference,
+      const EngineOptions &options, bool headings, std::size_t max_bytes = maximum_parallel_snapshot_bytes);
   DevotionalEntry read_devotional(const std::string &module, const std::string &entered,
                                   int today_month, int today_day);
   DictionaryEntry read_dictionary(const std::string &module, const std::string &key);

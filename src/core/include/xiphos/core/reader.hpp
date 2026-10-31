@@ -8,6 +8,7 @@
 #include "engine_options.hpp"
 #include "content.hpp"
 #include "devotional.hpp"
+#include "parallel.hpp"
 #include "link.hpp"
 #include "navigation.hpp"
 #include "lexical.hpp"
@@ -142,6 +143,12 @@ public:
   // Selection uses a cloned source key; returns an owned selected module name.
   std::string select_lexicon(const LexicalLink &command, const std::string &source_reference,
                             int origin, const LexiconPreferences &preferences);
+  // Read-only owned textual chapter matrix. First resolved Bible/regular
+  // commentary drives rows; missing/unsupported later columns keep their slots.
+  // Explicit parallel options are scoped independently from ordinary tab reads.
+  ParallelChapter read_parallel(const std::vector<std::string> &modules,
+      const std::string &reference, const EngineOptions &options, bool headings,
+      std::size_t max_bytes = maximum_parallel_snapshot_bytes);
   // Exact installed DailyDevotion SWLD only; copied date/matched key/HTML.
   // Read-only session semantics; no dictionary casing/history or module fallback.
   DevotionalEntry read_devotional(const std::string &module, const std::string &entered,

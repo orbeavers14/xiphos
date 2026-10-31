@@ -5,6 +5,27 @@
 #include <vector>
 namespace sword { class SWModule; }
 namespace xiphos { namespace core {
+constexpr std::size_t maximum_parallel_columns = 32;
+constexpr std::size_t maximum_parallel_module_bytes = 4096;
+constexpr std::size_t maximum_parallel_reference_bytes = 32768;
+constexpr std::size_t maximum_parallel_snapshot_bytes = 16 * 1024 * 1024;
+bool parallel_read_arguments(const std::vector<std::string> &modules,
+    const std::string &reference, std::size_t max_bytes) noexcept;
+enum class ParallelColumnStatus { ready, missing, unsupported };
+struct ParallelColumn {
+  std::string requested_module, module;
+  ParallelColumnStatus status;
+  bool via_abbreviation, bible, right_to_left;
+};
+struct ParallelCell { std::string reference, html; std::vector<std::string> headings; };
+struct ParallelRow { std::string reference; unsigned ordinal; std::vector<ParallelCell> cells; };
+struct ParallelChapter {
+  std::string control_module, reference, title;
+  unsigned selected_verse;
+  std::vector<ParallelColumn> columns;
+  std::vector<ParallelRow> rows;
+  std::size_t snapshot_bytes = 0;
+};
 struct ParallelReferences {
   std::string reference, title;
   unsigned selected_verse;

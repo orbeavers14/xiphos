@@ -6,6 +6,15 @@
 #include <memory>
 #include <stdexcept>
 namespace xiphos { namespace core {
+bool parallel_read_arguments(const std::vector<std::string> &modules,
+    const std::string &reference, std::size_t max_bytes) noexcept {
+  if (modules.empty() || modules.size() > maximum_parallel_columns || reference.empty() ||
+      reference.size() > maximum_parallel_reference_bytes || reference.find('\0') != std::string::npos ||
+      !max_bytes || max_bytes > maximum_parallel_snapshot_bytes) return false;
+  for (const auto &module : modules)
+    if (module.size() > maximum_parallel_module_bytes || module.find('\0') != std::string::npos) return false;
+  return true;
+}
 ParallelReferences parallel_references(sword::SWModule &control,
     const std::string &reference, const char *locale) {
   if (reference.empty() || reference.size() > 32768 || reference.find('\0') != std::string::npos)
