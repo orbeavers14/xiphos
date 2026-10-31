@@ -36,6 +36,7 @@ struct xc_annotations { xiphos::core::AnnotationProfile value; };
 struct xc_annotation_cache { xiphos::core::AnnotationCache value; };
 struct xc_bookmark_tags { xiphos::core::BookmarkTags value; };
 struct xc_bookmarks { xiphos::core::BookmarkSnapshot value; };
+struct xc_editable_document {xiphos::core::EditableDocument value;};
 struct xc_native_session {xiphos::core::NativeSessionSnapshot value;};
 struct xc_native_session_text {std::string value;};
 struct xc_restored_session {xiphos::core::RestoredSession value;};
@@ -123,6 +124,7 @@ struct xc_request {
   std::unique_ptr<xc_passage> prepared_passage;
   std::unique_ptr<xc_dictionary_entry> prepared_dictionary;
   std::unique_ptr<xc_lexical_entry> prepared_lexical;
+  std::unique_ptr<xc_editable_document> editable_document;
   std::unique_ptr<xc_native_session> native_session;
   std::unique_ptr<xc_restored_session> restored_session;
   std::unique_ptr<xc_reference_list> references;
@@ -215,6 +217,7 @@ struct xc_request {
     static_assert(std::is_nothrow_move_assignable_v<xiphos::core::BookmarkSnapshot>, "Committed bookmarks publication must not allocate");
     bookmarks->value=std::move(v);
   }
+  void store(xiphos::core::EditableDocument v) {static_assert(std::is_nothrow_move_assignable_v<decltype(v)>,"Editor publication must not allocate");editable_document->value=std::move(v);}
   void store(xiphos::core::NativeSessionSnapshot v) {
     static_assert(std::is_nothrow_move_assignable_v<decltype(v)>,"Snapshot publication must not allocate");native_session->value=std::move(v);
   }
@@ -369,6 +372,7 @@ template<class T> struct Request final : xc_request {
   // Allocate result envelopes before accepting a state-changing job;
   // polling then only moves owned values into already allocated storage.
   Request() {
+    if constexpr (std::is_same_v<T,xiphos::core::EditableDocument>) editable_document=std::make_unique<xc_editable_document>();
     if constexpr (std::is_same_v<T,xiphos::core::NativeSessionSnapshot>) native_session=std::make_unique<xc_native_session>();
     if constexpr (std::is_same_v<T,xiphos::core::RestoredSession>) restored_session=std::make_unique<xc_restored_session>();
     if constexpr (std::is_same_v<T,xiphos::core::Entry>) prepared_entry=std::make_unique<xc_entry>();
@@ -1487,6 +1491,17 @@ static const std::array<std::optional<std::string> xiphos::core::SavedTab::*,XC_
  &xiphos::core::SavedTab::show_preview,&xiphos::core::SavedTab::show_commentaries,&xiphos::core::SavedTab::show_dictionaries,
  &xiphos::core::SavedTab::show_parallel
 }};
+xc_status xc_worker_read_editable_document(xc_worker *w,uint64_t tab,const char *path,xc_request **out){if(!bounded_image_c_text(path,4096)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}return queue_request(w,out,[=](auto &worker){return worker.read_editable_document(tab,path);});}
+xc_status xc_worker_save_editable_document(xc_worker *w,uint64_t tab,const char *path,const char *expected,const char *text,xc_request **out){
+ if(out)*out=nullptr;if(!w||!out||!bounded_image_c_text(path,4096)||!text||(*text&&!bounded_image_c_text(text,xiphos::core::maximum_editable_document_bytes))||
+  !xiphos::core::editable_document_text(text)||(expected&&(!bounded_image_c_text(expected,64)||!xiphos::core::editable_document_revision(expected))))return XC_INVALID_ARGUMENT;
+ return queue_request(w,out,[=](auto &worker){return worker.save_editable_document(tab,path,expected?std::make_optional(std::string(expected)):std::nullopt,text);});
+}
+xc_editable_document *xc_request_take_editable_document(xc_request *r){return r&&r->status==XC_OK?r->editable_document.release():nullptr;}
+const char *xc_editable_document_text(const xc_editable_document *d){return d?d->value.text.c_str():nullptr;}
+const char *xc_editable_document_revision(const xc_editable_document *d){return d?d->value.revision.c_str():nullptr;}
+size_t xc_editable_document_bytes(const xc_editable_document *d){return d?d->value.text.size():0;}
+void xc_editable_document_release(xc_editable_document *d){delete d;}
 void xc_native_tab_capture_default(xc_native_tab_capture *capture){if(capture)*capture={0,nullptr,{1,1,1,1},0,0,nullptr};}
 void xc_session_capabilities_default(xc_session_capabilities *capabilities){if(capabilities)*capabilities={0,0,0};}
 static bool native_capabilities(const xc_session_capabilities *c){return !c||((c->lexical_layout==0||c->lexical_layout==1)&&(c->note_numbering==0||c->note_numbering==1)&&(c->heading_note_links==0||c->heading_note_links==1));}

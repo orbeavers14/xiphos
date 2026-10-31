@@ -601,6 +601,14 @@ void validate_native_capture(const std::vector<NativeTabCapture> &tabs,const std
   skeleton.tabs.reserve(tabs.size());for(const auto &tab:tabs)skeleton.tabs.push_back({tab.key,{},{},false,false,tab.host_state});validate_native_session(skeleton);
 }
 }
+std::future<EditableDocument> StudyWorker::read_editable_document(StudyTab tab,std::string path) {
+  try{selected_profile_path(path);}catch(...){return selected_profile_rejection<EditableDocument>();}
+  return impl_->submit([tab,path=std::move(path)](Impl::State &s){(void)s.tab(tab);return xiphos::core::read_editable_document(path);});
+}
+std::future<EditableDocument> StudyWorker::save_editable_document(StudyTab tab,std::string path,std::optional<std::string> expected,std::string text) {
+  try{selected_profile_path(path);if(!editable_document_text(text)||(expected&&!editable_document_revision(*expected)))throw std::invalid_argument("Invalid editor document arguments");}catch(...){return selected_profile_rejection<EditableDocument>();}
+  return impl_->submit([tab,path=std::move(path),expected=std::move(expected),text=std::move(text)](Impl::State &s){(void)s.tab(tab);return xiphos::core::save_editable_document(path,expected,text);});
+}
 std::future<NativeSessionSnapshot> StudyWorker::read_native_session(std::string path) {
   try{selected_profile_path(path);}catch(...){return selected_profile_rejection<NativeSessionSnapshot>();}
   return impl_->submit([path=std::move(path)](Impl::State &){return xiphos::core::read_native_session(path);});

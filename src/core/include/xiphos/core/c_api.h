@@ -990,6 +990,19 @@ typedef struct {int texts,preview,commentaries,dictionaries;} xc_tab_visibility;
  * Save captures all rows before verified replacement and returns the prepared
  * owned legacy session. This subset does not persist per-tab options/history,
  * parallel column intent or native window geometry/active-tab ownership. */
+/* File-editor source storage, separate from SWORD module entries. UTF-8/NUL-free
+ * text <=4MiB, exact byte preservation. NULL revision creates only a missing
+ * file; replacement requires the last owned SHA256 revision. Closed tabs and
+ * stale revisions have no file effect. Copied inputs; take-once owned results;
+ * observer/result storage allocates before acceptance, never at committed poll. */
+typedef struct xc_editable_document xc_editable_document;
+xc_status xc_worker_read_editable_document(xc_worker *worker,uint64_t tab,const char *path,xc_request **out);
+xc_status xc_worker_save_editable_document(xc_worker *worker,uint64_t tab,const char *path,const char *expected_revision,const char *text,xc_request **out);
+xc_editable_document *xc_request_take_editable_document(xc_request *request);
+const char *xc_editable_document_text(const xc_editable_document *document);
+const char *xc_editable_document_revision(const xc_editable_document *document);
+size_t xc_editable_document_bytes(const xc_editable_document *document);
+void xc_editable_document_release(xc_editable_document *document);
 /* Versioned native session, distinct from legacy tab XML. Copied arguments;
  * owned take-once results. Capture/save preserve caller order and opaque keys.
  * Restore/load replace ALL live tabs atomically and return fresh ID mappings;

@@ -4,6 +4,7 @@
 #include "profile.hpp"
 #include "bookmarks.hpp"
 #include "annotations.hpp"
+#include "editable_document.hpp"
 #include <cstdint>
 #include <future>
 #include <memory>
@@ -160,6 +161,8 @@ public:
   std::future<std::optional<DictionaryLocation>> dictionary_selection(StudyTab tab);
   std::future<void> clear_reading_selection(StudyTab tab);
   std::future<void> clear_dictionary_selection(StudyTab tab);
+  std::future<EditableDocument> read_editable_document(StudyTab tab,std::string path);
+  std::future<EditableDocument> save_editable_document(StudyTab tab,std::string path,std::optional<std::string> expected_revision,std::string text);
   std::future<NativeSessionSnapshot> read_native_session(std::string path);
   std::future<NativeSessionSnapshot> capture_native_session(std::vector<NativeTabCapture> tabs,std::optional<std::string> active_key = {});
   std::future<NativeSessionSnapshot> save_native_session(std::string path,std::vector<NativeTabCapture> tabs,std::optional<std::string> active_key = {});
