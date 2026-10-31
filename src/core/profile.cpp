@@ -396,6 +396,80 @@ SavedTabSession parse_saved_tab_session(const std::string &source) {
 SavedTabSession read_saved_tab_session(const std::string &path) {
   return parse_saved_tab_session(read_profile_source(path));
 }
+namespace {
+using TabAttribute = std::pair<const char *,std::optional<std::string> SavedTab::*>;
+const std::array<TabAttribute,13> tab_attributes{{
+  {"text_mod",&SavedTab::text_module},{"commentary_mod",&SavedTab::commentary_module},
+  {"dictlex_mod",&SavedTab::dictionary_module},{"book_mod",&SavedTab::book_module},
+  {"text_commentary_key",&SavedTab::reference},{"dictlex_key",&SavedTab::dictionary_key},
+  {"book_offset",&SavedTab::book_offset_text},{"comm_showing",&SavedTab::commentary_showing},
+  {"showtexts",&SavedTab::show_texts},{"showpreview",&SavedTab::show_preview},
+  {"showcomms",&SavedTab::show_commentaries},{"showdicts",&SavedTab::show_dictionaries},
+  {"showparallel",&SavedTab::show_parallel}
+}};
+void validate_tab_session(const SavedTabSession &session) {
+  if(session.tabs.size()>maximum_saved_tabs)throw std::invalid_argument("Too many saved tabs");
+  std::size_t bytes=0;
+  auto text=[&](const std::optional<std::string> &value){if(value){
+    parallel_xml_text(*value,maximum_saved_tab_text_bytes);
+    if(value->size()>maximum_saved_tab_snapshot_bytes-bytes)throw std::invalid_argument("Saved tab snapshot exceeds bounds");
+    bytes+=value->size();
+  }};
+  text(session.version);
+  for(const auto &tab:session.tabs)for(const auto &field:tab_attributes)text(tab.*field.second);
+}
+void set_tab_attribute(xmlNode *node,const char *key,const std::optional<std::string> &value) {
+  if(value) { if(!xmlSetProp(node,BAD_CAST key,BAD_CAST value->c_str()))throw std::bad_alloc(); }
+  else xmlUnsetProp(node,BAD_CAST key);
+}
+bool same_tab_session(const SavedTabSession &left,const SavedTabSession &right) {
+  if(left.version!=right.version||left.tabs.size()!=right.tabs.size())return false;
+  for(std::size_t i=0;i<left.tabs.size();++i)for(const auto &field:tab_attributes)
+    if(left.tabs[i].*field.second!=right.tabs[i].*field.second)return false;
+  return true;
+}
+}
+std::string serialize_saved_tab_session(const SavedTabSession &session,const std::string &original) {
+  validate_tab_session(session);
+  auto document=parse_document(original,"Xiphos_Tabs");
+  // Validate known source fields too before normalizing an existing file.
+  (void)parse_saved_tab_session(original);
+  auto *root=xmlDocGetRootElement(document.get());set_tab_attribute(root,"Version",session.version);
+  std::vector<xmlNode *> nodes;xmlNode *last_section=nullptr;
+  for(auto *section=root->children;section;section=section->next){
+    if(section->type!=XML_ELEMENT_NODE||xmlStrcmp(section->name,BAD_CAST "tabs"))continue;
+    last_section=section;
+    for(auto *node=section->children;node;node=node->next)
+      if(node->type==XML_ELEMENT_NODE&&!xmlStrcmp(node->name,BAD_CAST "tab"))nodes.push_back(node);
+  }
+  if(!last_section&&!session.tabs.empty()) {
+    last_section=xmlNewChild(root,nullptr,BAD_CAST "tabs",nullptr);if(!last_section)throw std::bad_alloc();
+  }
+  while(nodes.size()<session.tabs.size()) {
+    auto *node=xmlNewChild(last_section,nullptr,BAD_CAST "tab",nullptr);if(!node)throw std::bad_alloc();nodes.push_back(node);
+  }
+  for(std::size_t i=0;i<nodes.size();++i) {
+    if(i>=session.tabs.size()){xmlUnlinkNode(nodes[i]);xmlFreeNode(nodes[i]);continue;}
+    for(const auto &field:tab_attributes)set_tab_attribute(nodes[i],field.first,session.tabs[i].*field.second);
+  }
+  xmlChar *buffer=nullptr;int length=0;xmlDocDumpFormatMemoryEnc(document.get(),&buffer,&length,"UTF-8",0);
+  const std::unique_ptr<xmlChar,decltype(xmlFree)> owned(buffer,xmlFree);
+  if(!buffer||length<=0)throw std::runtime_error("Saved tabs serialization failed");
+  std::string result(reinterpret_cast<const char *>(buffer),static_cast<std::size_t>(length));
+  if(!same_tab_session(parse_saved_tab_session(result),session))throw std::runtime_error("Saved tabs round-trip verification failed");
+  return result;
+}
+SavedTabSession save_saved_tab_session(const std::string &path,const SavedTabSession &session) {
+  validate_tab_session(session);SavedTabSession prepared;
+  detail::replace_preference_file(path,[&](const std::filesystem::path &file,const std::string &original,bool existed){
+    const auto serialized=serialize_saved_tab_session(session,existed?original:"<Xiphos_Tabs/>");
+    {std::ofstream output(file,std::ios::binary);output.exceptions(std::ios::badbit|std::ios::failbit);
+     output.write(serialized.data(),static_cast<std::streamsize>(serialized.size()));output.close();}
+    if(detail::read_preference_file(file,maximum_profile_bytes)!=serialized)throw std::runtime_error("Saved tabs staged bytes differ");
+    prepared=read_saved_tab_session(file.u8string());
+  },maximum_profile_bytes);
+  return prepared;
+}
 StudyProfile parse_study_profile(const std::string &source) {
   auto document = parse_document(source);
   StudyProfile result;

@@ -28,6 +28,7 @@ static struct Widgets{void *page=nullptr;}widgets;
 static bool stop_refresh,sync_on;
 static const char *default_tab_filename="unused";
 static std::vector<std::string> events;
+#define _(text) (text)
 #define GTK_BOX(x) (x)
 #define XI_message(...) ((void)0)
 static void gui_generic_warning_modal(const char *){events.push_back("warning");}
@@ -48,6 +49,14 @@ namespace frozen {
 }
 namespace actual {
 #include "legacy_tab_load_actual.inc"
+}
+static const gchar *true_false2yes_no(int value){return value?"yes":"no";}
+#define VERSION "fixture-version"
+namespace frozen_save {
+#include "legacy_tab_save.inc"
+}
+namespace actual_save {
+#include "legacy_tab_save_actual.inc"
 }
 static void check(bool ok,const char *message){if(!ok)throw std::runtime_error(message);}
 template<class F>static void rejects(F f){try{f();}catch(const std::invalid_argument &){return;}throw std::runtime_error("Expected tab profile rejection");}
@@ -83,5 +92,32 @@ int main(int argc,char **argv){try{
  for(const auto &bad:std::vector<std::string>{"","<Xiphos/>","<Xiphos_Tabs>","<!DOCTYPE Xiphos_Tabs [<!ENTITY x 'hidden'>]><Xiphos_Tabs/>",std::string("<Xiphos_Tabs/>\0tail",18)})rejects([&]{parse_saved_tab_session(bad);});
  std::string many="<Xiphos_Tabs><tabs>";for(std::size_t i=0;i<maximum_saved_tabs;++i)many+="<tab/>";check(parse_saved_tab_session(many+"</tabs></Xiphos_Tabs>").tabs.size()==maximum_saved_tabs,"Exact tab count bound");rejects([&]{parse_saved_tab_session(many+"<tab/></tabs></Xiphos_Tabs>");});
  rejects([&]{parse_saved_tab_session("<Xiphos_Tabs><tabs><tab text_mod='"+std::string(maximum_saved_tab_text_bytes+1,'x')+"'/></tabs></Xiphos_Tabs>");});
+
+ auto bytes=[](const std::filesystem::path &p){std::ifstream in(p,std::ios::binary);return std::string(std::istreambuf_iterator<char>(in),{});};
+ const auto source="<Xiphos_Tabs custom='keep' Version='old'><!--keep--><tabs custom='section'><tab custom='first' text_mod='Old'><unknown/></tab><other/></tabs><tabs><tab custom='second'/><tab custom='surplus'/></tabs><unrelated/></Xiphos_Tabs>";
+ SavedTabSession replacement;replacement.version="new&<>文字";SavedTab first;first.text_module="Text&<>文字";first.reference="John3:16";first.book_offset_text=" 12tail";first.show_texts="";first.show_preview="yes";replacement.tabs={first,SavedTab{}};
+ const auto serialized=serialize_saved_tab_session(replacement,source);const auto roundtrip=parse_saved_tab_session(serialized);
+ check(roundtrip.version==replacement.version&&roundtrip.tabs.size()==2&&roundtrip.tabs[0].text_module==first.text_module&&roundtrip.tabs[0].reference==first.reference&&roundtrip.tabs[0].show_texts==""&&!roundtrip.tabs[1].text_module,"Raw optional known attributes round trip with XML literals");
+ for(const auto *kept:{"custom=\"keep\"","<!--keep-->","custom=\"section\"","custom=\"first\"","<unknown/>","<other/>","custom=\"second\"","<unrelated/>"})check(serialized.find(kept)!=std::string::npos,"Tab export preserves unrelated positional nodes/attributes");
+ check(serialized.find("surplus")==std::string::npos&&serialized.find("text_mod=\"Old\"")==std::string::npos,"Surplus owned tabs and replaced known attributes removed");
+ replacement.tabs.push_back(first);check(parse_saved_tab_session(serialize_saved_tab_session(replacement,serialized)).tabs.size()==3,"New owned tabs append after existing tabs in final section");
+ const auto fresh=root/"fresh-tabs.xml";std::filesystem::remove(fresh);const auto saved=save_saved_tab_session(fresh.u8string(),replacement);check(saved.tabs.size()==3&&saved.version==replacement.version,"Missing selected file saves prepared owned snapshot");
+ const auto permissions=std::filesystem::status(fresh).permissions(),before=permissions;const auto original=bytes(fresh);
+ auto invalid=replacement;invalid.tabs[0].text_module=std::string("A\0B",3);rejects([&]{save_saved_tab_session(fresh.u8string(),invalid);});
+ invalid=replacement;invalid.version=std::string(1,'\1');rejects([&]{save_saved_tab_session(fresh.u8string(),invalid);});
+ invalid=replacement;invalid.tabs.resize(maximum_saved_tabs+1);rejects([&]{save_saved_tab_session(fresh.u8string(),invalid);});
+ check(bytes(fresh)==original&&std::filesystem::status(fresh).permissions()==before,"Invalid export preserves source bytes and permissions");
+ replacement.tabs.clear();const auto cleared=save_saved_tab_session(fresh.u8string(),replacement);check(cleared.tabs.empty()&&std::filesystem::status(fresh).permissions()==permissions,"Zero-tab explicit save removes all owned tab records");
+ // Complete retained writer characterization on explicit existing paths.
+ for(int count:{0,1,3})for(int flags:{0,1,2}){
+  PASSAGE_TAB_INFO tab{};tab.text_mod=const_cast<char *>("Text&<>文字");tab.commentary_mod=const_cast<char *>("Notes");tab.dictlex_mod=const_cast<char *>("Dictionary");tab.book_mod=const_cast<char *>("Book");tab.text_commentary_key=const_cast<char *>("John3:16");tab.dictlex_key=const_cast<char *>("key");tab.book_offset=const_cast<char *>("42");tab.comm_showing=tab.showtexts=tab.showpreview=tab.showcomms=tab.showdicts=tab.showparallel=flags;
+  for(int i=0;i<count;++i)passage_list=g_list_append(passage_list,&tab);
+  {std::ofstream out(file);out<<"placeholder";}frozen_save::gui_save_tabs(file.u8string().c_str());const auto expected=bytes(file);
+  actual_save::gui_save_tabs(file.u8string().c_str());check(bytes(file)==expected,"Complete frozen/current writer bytes match");
+  const auto native=parse_saved_tab_session(expected);check(native.tabs.size()==static_cast<std::size_t>(count)&&native.version=="fixture-version","Read complete legacy saved file");
+  const auto exported=parse_saved_tab_session(serialize_saved_tab_session(native));check(exported.tabs.size()==native.tabs.size()&&exported.version==native.version,"Native export round trips complete legacy writer metadata");
+  for(std::size_t i=0;i<native.tabs.size();++i){same(native.tabs[i],exported.tabs[i]);check(saved_tab_yes(native.tabs[i].show_parallel)==(flags!=0),"Legacy any nonzero flag writes yes");visibility(saved_tab_visibility(native.tabs[i],{}),saved_tab_visibility(exported.tabs[i],{}));}
+  g_list_free(passage_list);passage_list=nullptr;
+ }
  std::cout<<"Tab profiles: "<<comparisons<<" complete frozen/current loader comparisons, raw attributes, visibility fallback and bounds passed\n";return 0;
 }catch(const std::exception &e){std::cerr<<e.what()<<'\n';return 1;}}

@@ -30,4 +30,9 @@ TabVisibility saved_tab_visibility(const SavedTab &tab,TabVisibility fallback);
 // No default tab creation, selected tab, home path, write or rendering side effect.
 SavedTabSession parse_saved_tab_session(const std::string &xml);
 SavedTabSession read_saved_tab_session(const std::string &path);
+// Positional legacy export: reuse existing tab nodes/unknown data at each index,
+// remove surplus owned tab nodes and append new ones to the last tabs section.
+// Raw optional attributes round trip; no effective-default rewrite is implied.
+std::string serialize_saved_tab_session(const SavedTabSession &session,const std::string &original = "<Xiphos_Tabs/>");
+SavedTabSession save_saved_tab_session(const std::string &path,const SavedTabSession &session);
 }
