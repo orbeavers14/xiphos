@@ -2175,3 +2175,44 @@ then editing, installation and sync. Legacy XML capture is only a compatible sub
 SDK-owned note targets already exist in ad97fba; rich commentary editor and native
 annotation presentation remain open. Devotionals stay deferred. All checked work is
 intended for the explicitly authorized origin master; do not claim upstream merge.
+
+
+### 2026-10-31 versioned native core restoration
+
+Implementation56a8ed0 adds StudySessionState/NativeSessionSnapshot, a strict
+XiphosSession version1 codec, verified atomic explicit-path storage and FIFO/C
+read/capture/save/restore/load. Graphify queries first traced StudySession's owned
+selections, histories and options plus worker/storage boundaries; important
+relationships were checked in source. A later code-only local Graphify refresh
+updates untracked graphify-out; no paid/semantic AI calls. That graph includes
+inferred static-resolution artifacts and is not a runtime proof.
+
+The full snapshot stores exact current intent and histories/cursors, requested and
+actual book address/document mode, raw parallel intent/control/options, explicit
+engine/presentation preferences, lexicons, preview/search policy, ordered host tab
+keys, active key and visibility. No SDK pointers/HTML/search generations/jobs or
+migration capabilities persist. Strict required-module/provenance failures preserve
+all old tabs and IDs; dormant preferences remain. All tabs/result mappings stage
+before one no-allocation map swap. Success returns fresh IDs; zero tabs closes all.
+C result envelopes precede admission; polling only moves owned values. Secure
+schema rejects unknown/future fields rather than silently dropping them. Existing
+unrelated XML is refused on save. Complete limits/contracts are in
+[session persistence](session-persistence.md#versioned-native-core-snapshots-2026-10-31).
+
+Full local Mac216 passes+one index skip (217 registered,173.50s); portable169 passes
++one skip (170 registered,147.93s). Focused ASan/UBSan12/12 (17.46s, retained oracle
+leak detection disabled), TSan12/12 (31.72s); native-off strict C++11 all10/10
+(21.28s). Logs: build/native-state-{macos,linux-models,sanitized,thread-sanitized,
+legacy-search-policy}-{configure,build,tests}.log. Final test-only strengthening
+checks discarded search generations with retained annotation policy and no tab-ID
+consumption on failed staging: native session passes Mac1/1 (1.02s), portable1/1
+(1.06s), ASan1/1 (2.07s), TSan1/1 (2.99s), under
+build/native-state-final-{macos,linux-models,sanitized,thread-sanitized}-{build,tests}.log.
+Strict C11 public-header syntax and whitespace pass. Disposable original prose only.
+Existing SDK dylib deployment-target/retained sprintf deprecation warnings remain.
+
+This completes the shared state/storage/replacement foundation; native app restart,
+window/detach state, query drafts, physical Windows/Fedora checks and whole F05
+acceptance remain open. No frontend UI was added. Next core work: editing,
+installation and sync; devotionals remain deferred. Checked commits may be pushed
+to the explicitly authorized origin master; no upstream merge claim.

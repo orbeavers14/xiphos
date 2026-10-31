@@ -25,9 +25,12 @@ Revision-checked bookmarks/owned tag maps and shared highlight priority are chec
 (`b589779`, `70ffb33`, `f6d9bf4`), with SDK-owned note targets (`ad97fba`).
 Committed reading/dictionary selections now survive history clearing; ordered live
 tab capture/save exports the compatible subset (`9e338ba`). Full Mac215 passes
-plus one index skip; portable168 passes plus one index skip. Next:
-[complete session persistence](session-persistence.md), then the other owner priorities.
-Devotionals remain deferred. No whole-parity acceptance increase.
+plus one index skip; portable168 passes plus one index skip at that checkpoint.
+See [session persistence](session-persistence.md) for the newer native format.
+Versioned native session snapshots and strict all-tab restoration now exist in the
+shared C++ worker/C API (`56a8ed0`); see [session persistence](session-persistence.md#versioned-native-core-snapshots-2026-10-31).
+Host restart/window integration remains open. Next core areas: editing, installation
+and sync. Devotionals remain deferred. No whole-parity acceptance increase.
 
 ## Current owner priorities (2026-10-30)
 

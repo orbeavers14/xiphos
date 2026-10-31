@@ -28,13 +28,14 @@ rewrites a source file or searches the home directory. It accepts up to256 tabs,
 32768 bytes per retained attribute and16MiB total retained text, with the shared
 secure XML parser rejecting malformed/DTD-bearing/NUL-hidden documents.
 
-## Complete new-core restoration still required
+## Native restoration design and remaining host gates
 
-A complete native snapshot needs per-tab main and dictionary selections/history
+The native snapshot design covers per-tab main and dictionary selections/history
 with cursors; book raw/display selection; parallel raw intent, resolved control,
 reference and explicit options; tab-wide and per-module engine/presentation
 preferences; lexical/preview preferences; and tab order/active tab intent.
-Search input policy and a deliberate policy for retained results must be defined.
+Search annotation/retention policy is saved; result generations are discarded.
+Search query drafts remain host-owned.
 Window geometry, detach ownership and native UI selection belong at the host seam.
 SDK pointers, rendered DOM objects and active jobs are never persistence objects.
 
@@ -101,3 +102,67 @@ parallel columns/options, preferences, active tab or window geometry. The comple
 replacement/restore contract above remains open. The standalone session-capture
 fixture uses only disposable original prose and covers cleared histories, module
 switches, ordered saves, failure retention, C ownership and shutdown draining.
+
+## Versioned native core snapshots (2026-10-31)
+
+The shared core now has a distinct strict `XiphosSession` version1 format, with
+owned `StudySessionState`/`NativeSessionSnapshot` values. It does not replace or
+reinterpret `Xiphos_Tabs`. Native snapshots retain ordered opaque host tab keys,
+an optional active key, explicit pane/commentary/parallel visibility, committed
+reading/dictionary intent, both complete histories/cursors, raw book target plus
+resolved path/offset and document-selection mode, parallel raw columns/control/
+reference/options, configured/unconfigured tab and per-module engine options,
+explicit presentation preferences, module-default opt-in, optional lexicons,
+cross-reference preview policy, search annotation policy and search retention limits.
+Absent versus empty optional strings remain distinct. Engine flags retain their
+exact values rather than passing through lossy legacy preference encodings.
+
+Rendered HTML/assets, SDK objects, current search results/scopes/generation IDs,
+active jobs and migration capability flags are deliberately transient. Search
+query drafts, window geometry, detach ownership and native pane/view selection
+outside the explicit supplied flags remain host responsibilities. Host rendering
+capabilities are passed explicitly to restoration; module availability fields are
+recomputed, not trusted from storage. Dormant preferences for uninstalled modules
+and unresolved lexicon preference IDs remain metadata, without fallback selection.
+
+The FIFO worker captures/saves the explicit ordered list, and restores/loads the
+entire tab set. It first validates the snapshot and stages every replacement
+session on the engine thread. Current reading/dictionary/book/parallel content is
+validated through existing reading services. Required history/selection module
+identities must be installed exactly; aliases and first-module fallbacks are not
+substituted. Saved parallel control/reference and book path/offset must still
+resolve identically. Intentionally missing parallel column slots remain supported
+when the saved control still resolves identically. A missing required module or
+changed book/control rejects the whole replacement. No history replay/dedup or
+list trimming occurs. Selections can remain present with empty cleared histories.
+
+Only after every tab and the complete result mapping are allocated does the worker
+swap the replacement map into place. New IDs are monotonic; successful replacement
+invalidates all old IDs and returns key-to-ID mappings plus active-tab/visibility
+metadata. Failure preserves every old tab and the ID counter. A zero-tab snapshot
+explicitly closes all tabs without creating a fallback. Existing queued work keeps
+FIFO ordering; commands addressing old IDs after a successful restore fail normally.
+
+Bounds:256 tabs,50 entries per history,1024 entries per module-preference map,
+4096-byte module/tab IDs,32768-byte text fields,16MiB aggregate text and16MiB XML.
+The shared secure XML parser rejects DTDs, malformed XML, hidden NUL and invalid
+text. Unsupported versions, unknown schema fields/namespaces, duplicate tab keys,
+duplicate singleton sections, bad cursors, nonbinary booleans and invalid content
+preferences reject. Native saves own the complete strict document: an existing
+unrelated, extended or unsupported document is refused rather than overwritten.
+Writes use verified same-directory replacement with staged byte/round-trip checks;
+observed external-change checks are still not an interprocess lock or sync merge.
+
+The C11 surface provides owned offline parse/serialize, worker read/capture/save/
+restore/load and take-once snapshot/mapping handles. Inputs copy before submission
+returns. Observer/result envelopes allocate before accepting state-changing jobs;
+committed polling performs no result allocation. Accepted dropped saves drain at
+shutdown. Handle strings survive source/worker teardown until their owner releases
+them. The new standalone fixture covers schema failures, Unicode/escaping, restart,
+exact history restoration, cleared-history selection, dormant preferences, failure
+retention, book provenance, C admission/allocation/lifetime and drain behavior.
+
+This closes the core state/storage/replacement foundation, not native restart UI
+acceptance or full F05 parity. SwiftUI/WinUI/GTK4 still need explicit integration
+with host-owned window state and real restart workflows. Physical Windows/Fedora
+checks remain open. Next core priorities remain editing, installation and sync.
