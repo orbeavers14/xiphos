@@ -4,6 +4,8 @@
 #include "preference_file.hpp"
 #include <glib.h>
 #include <filesystem>
+#include <fstream>
+#include <algorithm>
 #include <limits>
 #include <map>
 #include <memory>
@@ -96,4 +98,54 @@ AnnotationCache legacy_annotation_cache(const AnnotationProfile &profile,const s
   }
   result.entries.reserve(entries.size());for(auto &entry:entries)result.entries.push_back(std::move(entry.second));return result;
 }
+void validate_annotation_edit(const AnnotationEdit &edit) {
+  detail::validate_xml_text(edit.label,maximum_annotation_label_bytes);
+  if(edit.action==AnnotationAction::remove){if(!edit.note.empty())throw std::invalid_argument("Remove has unexpected annotation content");return;}
+  if(edit.label.empty())throw std::invalid_argument("Annotation label is required");
+  if(edit.action!=AnnotationAction::save)throw std::invalid_argument("Unknown annotation edit");
+  detail::validate_xml_text(edit.note,maximum_annotation_note_bytes);const auto address=decode_annotation_label(edit.label);
+  if(!address||address->book.empty()||address->chapter<=0||address->verse<=0||address->verse>=1000||
+      address->module+" "+address->book+"."+std::to_string(address->chapter)+"."+std::to_string(address->verse)!=edit.label)
+    throw std::invalid_argument("New annotation label must safely round trip canonically");
+}
+std::string serialize_annotation_edit(const std::string &source,const AnnotationEdit &edit) {
+  validate_annotation_edit(edit);const auto before=parse_annotations(source);auto document=detail::parse_xml_document(source,"Xiphos");
+  auto *root=xmlDocGetRootElement(document.get());xmlNode *section=nullptr,*target=nullptr;
+  for(auto *node=root->children;node;node=node->next)if(!xmlStrcmp(node->name,BAD_CAST "osisrefmarkedverses")){section=node;break;}
+  if(section&&section->type!=XML_ELEMENT_NODE)throw std::invalid_argument("Annotation section is not an element");
+  if(section)for(auto *node=section->children;node;node=node->next){
+    if(node->type!=XML_ELEMENT_NODE||xmlStrcmp(node->name,BAD_CAST "markedverse"))continue;
+    const std::unique_ptr<xmlChar,decltype(xmlFree)> label(xmlGetProp(node,BAD_CAST "label"),xmlFree);
+    if(label&&edit.label==reinterpret_cast<const char *>(label.get())){target=node;break;}
+  }
+  if(edit.action==AnnotationAction::remove) {
+    if(!target)return source;xmlUnlinkNode(target);xmlFreeNode(target);
+  } else {
+    if(!section){section=xmlNewChild(root,nullptr,BAD_CAST "osisrefmarkedverses",nullptr);if(!section)throw std::bad_alloc();}
+    if(!target){target=xmlNewChild(section,nullptr,BAD_CAST "markedverse",nullptr);if(!target)throw std::bad_alloc();
+      if(!xmlSetProp(target,BAD_CAST "label",BAD_CAST edit.label.c_str()))throw std::bad_alloc();}
+    if(!xmlSetProp(target,BAD_CAST "list",BAD_CAST edit.note.c_str()))throw std::bad_alloc();
+  }
+  xmlChar *buffer=nullptr;int length=0;xmlDocDumpFormatMemoryEnc(document.get(),&buffer,&length,"UTF-8",0);
+  const std::unique_ptr<xmlChar,decltype(xmlFree)> owned(buffer,xmlFree);
+  if(!buffer||length<=0)throw std::runtime_error("Annotation serialization failed");std::string result(reinterpret_cast<const char *>(buffer),static_cast<std::size_t>(length));
+  const auto verified=parse_annotations(result);
+  auto matches=[&](const AnnotationRecord &record){return record.element=="markedverse"&&record.label==edit.label;};
+  if(edit.action==AnnotationAction::save){const auto found=std::find_if(verified.records.begin(),verified.records.end(),matches);
+    if(found==verified.records.end()||found->note!=edit.note)throw std::runtime_error("Annotation content failed round-trip verification");
+  } else if(verified.records.size()+1!=before.records.size())throw std::runtime_error("Annotation removal count failed verification");
+  return result;
+}
+AnnotationProfile edit_annotations(const std::string &path,const AnnotationEdit &edit) {
+  validate_annotation_edit(edit);AnnotationProfile prepared;
+  detail::replace_preference_file(path,[&](const std::filesystem::path &file,const std::string &source,bool existed){
+    if(!existed&&edit.action!=AnnotationAction::save)throw std::invalid_argument("Cannot remove annotations from a missing profile");
+    const auto serialized=serialize_annotation_edit(existed?source:"<Xiphos/>",edit);
+    {std::ofstream output(file,std::ios::binary);output.exceptions(std::ios::badbit|std::ios::failbit);output.write(serialized.data(),static_cast<std::streamsize>(serialized.size()));output.close();}
+    if(detail::read_preference_file(file,detail::maximum_xml_document_bytes)!=serialized)throw std::runtime_error("Staged annotation bytes differ");
+    prepared=read_annotations(file.u8string());
+  },detail::maximum_xml_document_bytes);
+  return prepared;
+}
+
 }

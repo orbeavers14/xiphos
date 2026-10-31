@@ -44,6 +44,18 @@ std::string annotation_note_html(const std::string &note);
 // unknown element labels. No home lookup, conversion, rendering or writes.
 AnnotationProfile parse_annotations(const std::string &xml);
 AnnotationProfile read_annotations(const std::string &path);
+enum class AnnotationAction { save,remove };
+struct AnnotationEdit {
+  AnnotationAction action=AnnotationAction::save;
+  std::string label,note;
+};
+void validate_annotation_edit(const AnnotationEdit &edit);
+// Save replaces the first markedverse with the exact label or appends one. Remove
+// deletes only its first matching item. Unknown fields/duplicates/sections remain.
+// New saves require safe canonical positive chapter/verse labels (verse<1000).
+// Remove also accepts malformed raw labels so imported records can be repaired.
+std::string serialize_annotation_edit(const std::string &xml,const AnnotationEdit &edit);
+AnnotationProfile edit_annotations(const std::string &path,const AnnotationEdit &edit);
 // Characterized legacy cursor behavior, including unlabeled/whitespace barriers
 // and malformed-label prefix abort. Generic module matches all; ASCII-insensitive
 // module/book comparison. No installed module or active tab required.
