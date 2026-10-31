@@ -92,6 +92,88 @@ std::string read_profile_source(const std::string &path) {
   return detail::read_preference_file(file, maximum_profile_bytes);
 }
 }
+namespace {
+void parallel_text(const std::string &text, std::size_t maximum) {
+  if (text.size() > maximum || text.find('\0') != std::string::npos || !xmlCheckUTF8(BAD_CAST text.c_str()))
+    throw std::invalid_argument("Invalid saved parallel text");
+}
+std::vector<std::string> parallel_split(const std::string &text, std::size_t maximum_count, std::size_t maximum_token) {
+  parallel_text(text, maximum_profile_bytes);
+  std::vector<std::string> result;
+  if (text.empty()) return result;
+  std::size_t start = 0;
+  for (;;) {
+    const auto end = text.find(',', start);
+    const auto size = (end == std::string::npos ? text.size() : end) - start;
+    if (result.size() == maximum_count || size > maximum_token)
+      throw std::invalid_argument("Saved parallel list exceeds storage bounds");
+    result.push_back(text.substr(start, size));
+    if (end == std::string::npos) break;
+    start = end + 1;
+  }
+  return result;
+}
+}
+std::vector<std::string> saved_parallel_module_names(const std::string &text) {
+  return parallel_split(text, maximum_saved_parallel_modules, 4096);
+}
+std::string parallel_set_key(const std::string &display_name) {
+  parallel_text(display_name, maximum_saved_parallel_key_bytes);
+  auto key = display_name;std::replace(key.begin(), key.end(), ' ', '_');return key;
+}
+std::string parallel_set_display_name(const std::string &key) {
+  parallel_text(key, maximum_saved_parallel_key_bytes);
+  auto display = key;std::replace(display.begin(), display.end(), '_', ' ');return display;
+}
+SavedParallelProfile parse_saved_parallel_profile(const std::string &source) {
+  auto document = parse_document(source);
+  SavedParallelProfile result;
+  auto account = [&](const std::string &text) {
+    if (text.size() > maximum_saved_parallel_snapshot_bytes - result.snapshot_bytes)
+      throw std::invalid_argument("Saved parallel snapshot exceeds byte bounds");
+    result.snapshot_bytes += text.size();
+  };
+  auto scalar = [&](const std::string &key) {
+    auto text = value(document.get(), "modules", key.c_str());if (text) account(*text);return text;
+  };
+  auto modules = [&](const std::optional<std::string> &text) -> std::optional<std::vector<std::string>> {
+    if (!text || text->empty()) return std::nullopt;
+    auto tokens = saved_parallel_module_names(*text);for (const auto &token : tokens) account(token);return tokens;
+  };
+  auto definition = [&](const std::string &key) -> std::optional<std::string> {
+    parallel_text(key, maximum_saved_parallel_key_bytes);
+    return key.empty() ? std::nullopt : value(document.get(), "modules", ("parallel_set_" + key).c_str());
+  };
+  result.names_text = scalar("parallel_set_names");result.current_key = scalar("parallel_set_current");
+  result.active_modules_text = scalar("parallels");
+  for (std::size_t index = 0; index < result.legacy_slots.size(); ++index)
+    result.legacy_slots[index] = scalar("int" + std::to_string(index + 1));
+  if (result.names_text) for (auto &key : parallel_split(*result.names_text, maximum_saved_parallel_sets, maximum_saved_parallel_key_bytes)) {
+    account(key);auto display = parallel_set_display_name(key);account(display);
+    auto text = definition(key);if (text) account(*text);auto selected = modules(text);
+    result.sets.push_back({std::move(key), std::move(display), std::move(text), std::move(selected)});
+  }
+  auto active = result.active_modules_text;
+  if (active && !active->empty()) result.startup_source = ParallelStartupSource::configured;
+  else {
+    std::string migrated;
+    for (const auto &slot : result.legacy_slots) if (slot && !slot->empty()) {
+      if (!migrated.empty()) migrated += ',';migrated += *slot;
+      if (migrated.size() > maximum_profile_bytes) throw std::invalid_argument("Legacy parallel list exceeds byte bounds");
+    }
+    if (!migrated.empty()) { active = std::move(migrated);result.startup_source = ParallelStartupSource::legacy_slots; }
+  }
+  if (result.current_key && !result.current_key->empty()) {
+    auto text = definition(*result.current_key);
+    if (text && !text->empty()) { active = std::move(text);result.startup_source = ParallelStartupSource::named_set; }
+  }
+  if (active && !active->empty()) { result.startup_modules_text = std::move(active);account(*result.startup_modules_text); }
+  result.startup_modules = modules(result.startup_modules_text);
+  return result;
+}
+SavedParallelProfile read_saved_parallel_profile(const std::string &path) {
+  return parse_saved_parallel_profile(read_profile_source(path));
+}
 StudyProfile parse_study_profile(const std::string &source) {
   auto document = parse_document(source);
   StudyProfile result;
