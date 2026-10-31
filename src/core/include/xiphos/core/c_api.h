@@ -990,6 +990,45 @@ typedef struct {int texts,preview,commentaries,dictionaries;} xc_tab_visibility;
  * Save captures all rows before verified replacement and returns the prepared
  * owned legacy session. This subset does not persist per-tab options/history,
  * parallel column intent or native window geometry/active-tab ownership. */
+/* Versioned native session, distinct from legacy tab XML. Copied arguments;
+ * owned take-once results. Capture/save preserve caller order and opaque keys.
+ * Restore/load replace ALL live tabs atomically and return fresh ID mappings;
+ * old IDs become invalid only on success. Required missing modules reject the
+ * entire restore; dormant preferences are retained. Empty snapshots close all
+ * tabs. Search results/jobs, rendered content and host window geometry are not
+ * persisted. Capabilities are supplied by the host, never loaded from XML.
+ * Bounds: 256 tabs, 50 entries/history, 1024 module preferences/map, 4096-byte
+ * IDs, 32768-byte text, 16MiB XML/aggregate text. Unknown schema fields reject.
+ * Envelopes allocate before admission; committed result polling does not allocate.
+ * Returned strings remain owned by their handle; release after use. */
+typedef struct xc_native_session xc_native_session;
+typedef struct xc_native_session_text xc_native_session_text;
+typedef struct xc_restored_session xc_restored_session;
+typedef struct {uint64_t tab;const char *key;xc_tab_visibility visibility;int commentary_showing,parallel_showing;} xc_native_tab_capture;
+typedef struct {int lexical_layout,note_numbering,heading_note_links;} xc_session_capabilities;
+void xc_native_tab_capture_default(xc_native_tab_capture *capture);
+void xc_session_capabilities_default(xc_session_capabilities *capabilities);
+xc_status xc_native_session_parse(const char *xml,xc_native_session **out);
+xc_status xc_native_session_serialize(const xc_native_session *session,xc_native_session_text **out);
+const char *xc_native_session_text_data(const xc_native_session_text *text);
+void xc_native_session_text_release(xc_native_session_text *text);
+size_t xc_native_session_tab_count(const xc_native_session *session);
+const char *xc_native_session_tab_key(const xc_native_session *session,size_t index);
+const char *xc_native_session_active_key(const xc_native_session *session);
+void xc_native_session_release(xc_native_session *session);
+xc_status xc_worker_read_native_session(xc_worker *worker,const char *path,xc_request **out);
+xc_status xc_worker_capture_native_session(xc_worker *worker,const xc_native_tab_capture *tabs,size_t count,const char *active_key,xc_request **out);
+xc_status xc_worker_save_native_session(xc_worker *worker,const char *path,const xc_native_tab_capture *tabs,size_t count,const char *active_key,xc_request **out);
+xc_status xc_worker_restore_native_session(xc_worker *worker,const xc_native_session *session,const xc_session_capabilities *capabilities,xc_request **out);
+xc_status xc_worker_load_native_session(xc_worker *worker,const char *path,const xc_session_capabilities *capabilities,xc_request **out);
+xc_native_session *xc_request_take_native_session(xc_request *request);
+xc_restored_session *xc_request_take_restored_session(xc_request *request);
+size_t xc_restored_session_tab_count(const xc_restored_session *session);
+uint64_t xc_restored_session_tab_id(const xc_restored_session *session,size_t index);
+const char *xc_restored_session_tab_key(const xc_restored_session *session,size_t index);
+uint64_t xc_restored_session_active_tab(const xc_restored_session *session); /* 0 = absent */
+xc_status xc_restored_session_visibility(const xc_restored_session *session,size_t index,xc_tab_visibility *visibility,int *commentary_showing,int *parallel_showing);
+void xc_restored_session_release(xc_restored_session *session);
 typedef struct {uint64_t tab;xc_tab_visibility visibility;int commentary_showing,parallel_showing;} xc_tab_capture;
 void xc_tab_capture_default(xc_tab_capture *capture);
 xc_status xc_worker_capture_tabs(xc_worker *worker,const xc_tab_capture *tabs,size_t count,const char *version,xc_request **out);

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 #include "history.hpp"
+#include "session_state.hpp"
 #include "dictionary_history.hpp"
 #include "reader.hpp"
 #include "presentation.hpp"
@@ -29,6 +30,10 @@ struct StudyPassage {
 class StudySession {
 public:
   explicit StudySession(Reader &reader) : reader_(reader) {}
+  StudySessionState capture_state() const;
+  // Stage a new session; strict required-module/book provenance validation.
+  // Callers publish only after all tabs are successfully staged.
+  static std::unique_ptr<StudySession> from_state(Reader &reader,const StudySessionState &state,SessionCapabilities capabilities = {});
   // Search updates only this session's complete last-result scope, never reading/history.
   SearchResult search_module(SearchQuery query,const SearchLimits &limits = {},std::shared_ptr<SearchControl> control = {});
   // Up to 32 validated queries. Output budgets span all groups; execution and

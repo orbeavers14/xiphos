@@ -38,6 +38,30 @@ struct StudyWorker::Impl {
       if (found == tabs.end()) throw std::invalid_argument("Study tab is closed or unknown");
       return *found->second;
     }
+    NativeSessionSnapshot capture_native(const std::vector<NativeTabCapture> &captures,const std::optional<std::string> &active) {
+      NativeSessionSnapshot snapshot;snapshot.active_key=active;std::vector<StudyTab> seen;
+      if(captures.size()>maximum_saved_tabs)throw std::invalid_argument("Too many native tabs");
+      snapshot.tabs.reserve(captures.size());seen.reserve(captures.size());
+      for(const auto &capture:captures){
+        if(std::find(seen.begin(),seen.end(),capture.tab)!=seen.end())throw std::invalid_argument("Duplicate live tab in native capture");
+        seen.push_back(capture.tab);snapshot.tabs.push_back({capture.key,tab(capture.tab).capture_state(),capture.visibility,capture.commentary_showing,capture.parallel_showing});
+      }
+      validate_native_session(snapshot);return snapshot;
+    }
+    RestoredSession restore_native(const NativeSessionSnapshot &snapshot,SessionCapabilities capabilities) {
+      validate_native_session(snapshot);
+      if(snapshot.tabs.size()>std::numeric_limits<StudyTab>::max()-next_tab)throw std::overflow_error("Study tab IDs exhausted");
+      std::map<StudyTab,std::unique_ptr<StudySession>> replacement;RestoredSession result;result.tabs.reserve(snapshot.tabs.size());auto next=next_tab;
+      for(const auto &saved:snapshot.tabs){
+        auto session=StudySession::from_state(reader,saved.state,capabilities);
+        result.tabs.push_back({saved.key,next,saved.visibility,saved.commentary_showing,saved.parallel_showing});
+        if(snapshot.active_key&&*snapshot.active_key==saved.key)result.active_tab=next;
+        replacement.emplace(next,std::move(session));++next;
+      }
+      // No allocation, rendering or further validation after this commit point.
+      static_assert(std::is_nothrow_move_constructible_v<RestoredSession>,"Restored mapping publication must not allocate");
+      tabs.swap(replacement);next_tab=next;return result;
+    }
     SavedTabSession capture_tabs(const std::vector<StudyTabCapture> &captures,const std::optional<std::string> &version) {
       if(captures.size()>maximum_saved_tabs)throw std::invalid_argument("Too many captured tabs");
       SavedTabSession result;result.version=version;std::vector<StudyTab> seen;seen.reserve(captures.size());result.tabs.reserve(captures.size());
@@ -569,6 +593,33 @@ std::future<void> StudyWorker::clear_reading_selection(StudyTab tab) {
 }
 std::future<void> StudyWorker::clear_dictionary_selection(StudyTab tab) {
   return impl_->submit([tab](Impl::State &s){s.tab(tab).clear_dictionary_selection();});
+}
+namespace {
+void validate_native_capture(const std::vector<NativeTabCapture> &tabs,const std::optional<std::string> &active) {
+  NativeSessionSnapshot skeleton;skeleton.active_key=active;
+  if(tabs.size()>maximum_saved_tabs)throw std::invalid_argument("Too many native tabs");
+  skeleton.tabs.reserve(tabs.size());for(const auto &tab:tabs)skeleton.tabs.push_back({tab.key,{},{},false,false});validate_native_session(skeleton);
+}
+}
+std::future<NativeSessionSnapshot> StudyWorker::read_native_session(std::string path) {
+  try{selected_profile_path(path);}catch(...){return selected_profile_rejection<NativeSessionSnapshot>();}
+  return impl_->submit([path=std::move(path)](Impl::State &){return xiphos::core::read_native_session(path);});
+}
+std::future<NativeSessionSnapshot> StudyWorker::capture_native_session(std::vector<NativeTabCapture> tabs,std::optional<std::string> active) {
+  try{validate_native_capture(tabs,active);}catch(...){return selected_profile_rejection<NativeSessionSnapshot>();}
+  return impl_->submit([tabs=std::move(tabs),active=std::move(active)](Impl::State &s){return s.capture_native(tabs,active);});
+}
+std::future<NativeSessionSnapshot> StudyWorker::save_native_session(std::string path,std::vector<NativeTabCapture> tabs,std::optional<std::string> active) {
+  try{selected_profile_path(path);validate_native_capture(tabs,active);}catch(...){return selected_profile_rejection<NativeSessionSnapshot>();}
+  return impl_->submit([path=std::move(path),tabs=std::move(tabs),active=std::move(active)](Impl::State &s){return xiphos::core::save_native_session(path,s.capture_native(tabs,active));});
+}
+std::future<RestoredSession> StudyWorker::restore_native_session(NativeSessionSnapshot snapshot,SessionCapabilities capabilities) {
+  try{validate_native_session(snapshot);}catch(...){return selected_profile_rejection<RestoredSession>();}
+  return impl_->submit([snapshot=std::move(snapshot),capabilities](Impl::State &s){return s.restore_native(snapshot,capabilities);});
+}
+std::future<RestoredSession> StudyWorker::load_native_session(std::string path,SessionCapabilities capabilities) {
+  try{selected_profile_path(path);}catch(...){return selected_profile_rejection<RestoredSession>();}
+  return impl_->submit([path=std::move(path),capabilities](Impl::State &s){return s.restore_native(xiphos::core::read_native_session(path),capabilities);});
 }
 std::future<SavedTabSession> StudyWorker::capture_tabs(std::vector<StudyTabCapture> tabs,std::optional<std::string> version) {
   if(tabs.size()>maximum_saved_tabs||(version&&(version->size()>maximum_saved_tab_text_bytes||version->find('\0')!=std::string::npos))){std::promise<SavedTabSession> rejected;auto future=rejected.get_future();rejected.set_exception(std::make_exception_ptr(std::invalid_argument("Too many captured tabs")));return future;}

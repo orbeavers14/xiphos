@@ -26,6 +26,22 @@ struct StudyTabCapture {
   TabVisibility visibility;
   bool parallel_showing=false; // Explicit host visibility, never inferred from selection.
 };
+struct NativeTabCapture {
+  StudyTab tab=0;
+  std::string key;
+  TabVisibility visibility;
+  bool commentary_showing=false,parallel_showing=false;
+};
+struct RestoredSessionTab {
+  std::string key;
+  StudyTab tab=0;
+  TabVisibility visibility;
+  bool commentary_showing=false,parallel_showing=false;
+};
+struct RestoredSession {
+  std::vector<RestoredSessionTab> tabs;
+  std::optional<StudyTab> active_tab;
+};
 struct DictionaryHistorySnapshot {
   std::vector<DictionaryLocation> entries;
   std::size_t cursor = 0;
@@ -143,6 +159,14 @@ public:
   std::future<std::optional<DictionaryLocation>> dictionary_selection(StudyTab tab);
   std::future<void> clear_reading_selection(StudyTab tab);
   std::future<void> clear_dictionary_selection(StudyTab tab);
+  std::future<NativeSessionSnapshot> read_native_session(std::string path);
+  std::future<NativeSessionSnapshot> capture_native_session(std::vector<NativeTabCapture> tabs,std::optional<std::string> active_key = {});
+  std::future<NativeSessionSnapshot> save_native_session(std::string path,std::vector<NativeTabCapture> tabs,std::optional<std::string> active_key = {});
+  // Replace the entire live tab set only after validation/rendering of all tabs.
+  // All previous tab IDs become invalid; new IDs are never reused. Strict policy
+  // rejects unavailable required selections/history; dormant preferences survive.
+  std::future<RestoredSession> restore_native_session(NativeSessionSnapshot snapshot,SessionCapabilities capabilities = {});
+  std::future<RestoredSession> load_native_session(std::string path,SessionCapabilities capabilities = {});
   std::future<SavedTabSession> capture_tabs(std::vector<StudyTabCapture> tabs,std::optional<std::string> version = {});
   std::future<SavedTabSession> save_tabs(std::string path,std::vector<StudyTabCapture> tabs,std::optional<std::string> version = {});
   std::future<SavedTabSession> read_tab_session(StudyTab tab, std::string path);

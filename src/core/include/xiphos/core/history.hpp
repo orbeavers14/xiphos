@@ -20,6 +20,7 @@ public:
   const std::vector<Location> &entries() const { return entries_; }
   size_t cursor() const { return cursor_; }
 private:
+  friend class StudySession;
   std::vector<Location> entries_;
   size_t cursor_ = 0;
 };

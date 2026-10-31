@@ -36,6 +36,9 @@ struct xc_annotations { xiphos::core::AnnotationProfile value; };
 struct xc_annotation_cache { xiphos::core::AnnotationCache value; };
 struct xc_bookmark_tags { xiphos::core::BookmarkTags value; };
 struct xc_bookmarks { xiphos::core::BookmarkSnapshot value; };
+struct xc_native_session {xiphos::core::NativeSessionSnapshot value;};
+struct xc_native_session_text {std::string value;};
+struct xc_restored_session {xiphos::core::RestoredSession value;};
 struct xc_tab_session { xiphos::core::SavedTabSession value; };
 struct xc_parallel_profile { xiphos::core::SavedParallelProfile value; };
 struct xc_search_lists { xiphos::core::SavedSearchLists value; };
@@ -120,6 +123,8 @@ struct xc_request {
   std::unique_ptr<xc_passage> prepared_passage;
   std::unique_ptr<xc_dictionary_entry> prepared_dictionary;
   std::unique_ptr<xc_lexical_entry> prepared_lexical;
+  std::unique_ptr<xc_native_session> native_session;
+  std::unique_ptr<xc_restored_session> restored_session;
   std::unique_ptr<xc_reference_list> references;
   std::unique_ptr<xc_dictionary_choices> dictionary_choices;
   std::unique_ptr<xc_dictionary_history> dictionary_history;
@@ -209,6 +214,12 @@ struct xc_request {
   void store(xiphos::core::BookmarkSnapshot v) {
     static_assert(std::is_nothrow_move_assignable_v<xiphos::core::BookmarkSnapshot>, "Committed bookmarks publication must not allocate");
     bookmarks->value=std::move(v);
+  }
+  void store(xiphos::core::NativeSessionSnapshot v) {
+    static_assert(std::is_nothrow_move_assignable_v<decltype(v)>,"Snapshot publication must not allocate");native_session->value=std::move(v);
+  }
+  void store(xiphos::core::RestoredSession v) {
+    static_assert(std::is_nothrow_move_assignable_v<decltype(v)>,"Restore publication must not allocate");restored_session->value=std::move(v);
   }
   void store(xiphos::core::SavedTabSession v) {
     static_assert(std::is_nothrow_move_assignable_v<xiphos::core::SavedTabSession>, "Committed tab session publication must not allocate");
@@ -358,6 +369,8 @@ template<class T> struct Request final : xc_request {
   // Allocate result envelopes before accepting a state-changing job;
   // polling then only moves owned values into already allocated storage.
   Request() {
+    if constexpr (std::is_same_v<T,xiphos::core::NativeSessionSnapshot>) native_session=std::make_unique<xc_native_session>();
+    if constexpr (std::is_same_v<T,xiphos::core::RestoredSession>) restored_session=std::make_unique<xc_restored_session>();
     if constexpr (std::is_same_v<T,xiphos::core::Entry>) prepared_entry=std::make_unique<xc_entry>();
     if constexpr (std::is_same_v<T,xiphos::core::StudyPassage>) prepared_passage=std::make_unique<xc_passage>();
     if constexpr (std::is_same_v<T,xiphos::core::DictionaryEntry>||std::is_same_v<T,xiphos::core::DictionaryUriEntry>||std::is_same_v<T,xiphos::core::ContextualStudyLink>||std::is_same_v<T,xiphos::core::BookPaneLink>) prepared_dictionary=std::make_unique<xc_dictionary_entry>();
@@ -1474,6 +1487,42 @@ static const std::array<std::optional<std::string> xiphos::core::SavedTab::*,XC_
  &xiphos::core::SavedTab::show_preview,&xiphos::core::SavedTab::show_commentaries,&xiphos::core::SavedTab::show_dictionaries,
  &xiphos::core::SavedTab::show_parallel
 }};
+void xc_native_tab_capture_default(xc_native_tab_capture *capture){if(capture)*capture={0,nullptr,{1,1,1,1},0,0};}
+void xc_session_capabilities_default(xc_session_capabilities *capabilities){if(capabilities)*capabilities={0,0,0};}
+static bool native_capabilities(const xc_session_capabilities *c){return !c||((c->lexical_layout==0||c->lexical_layout==1)&&(c->note_numbering==0||c->note_numbering==1)&&(c->heading_note_links==0||c->heading_note_links==1));}
+static xiphos::core::SessionCapabilities copied_capabilities(const xc_session_capabilities *c){return c?xiphos::core::SessionCapabilities{c->lexical_layout!=0,c->note_numbering!=0,c->heading_note_links!=0}:xiphos::core::SessionCapabilities{};}
+xc_status xc_native_session_parse(const char *xml,xc_native_session **out){
+ if(out)*out=nullptr;if(!out||!bounded_image_c_text(xml,xiphos::core::maximum_session_bytes))return XC_INVALID_ARGUMENT;
+ try{auto result=std::make_unique<xc_native_session>();result->value=xiphos::core::parse_native_session(xml);*out=result.release();return XC_OK;}catch(...){return failure();}
+}
+xc_status xc_native_session_serialize(const xc_native_session *session,xc_native_session_text **out){
+ if(out)*out=nullptr;if(!session||!out)return XC_INVALID_ARGUMENT;try{auto result=std::make_unique<xc_native_session_text>();result->value=xiphos::core::serialize_native_session(session->value);*out=result.release();return XC_OK;}catch(...){return failure();}
+}
+const char *xc_native_session_text_data(const xc_native_session_text *text){return text?text->value.c_str():nullptr;}
+void xc_native_session_text_release(xc_native_session_text *text){delete text;}
+size_t xc_native_session_tab_count(const xc_native_session *session){return session?session->value.tabs.size():0;}
+const char *xc_native_session_tab_key(const xc_native_session *session,size_t at){return session&&at<session->value.tabs.size()?session->value.tabs[at].key.c_str():nullptr;}
+const char *xc_native_session_active_key(const xc_native_session *session){return session&&session->value.active_key?session->value.active_key->c_str():nullptr;}
+void xc_native_session_release(xc_native_session *session){delete session;}
+static xc_status queue_native_capture(xc_worker *w,const char *path,const xc_native_tab_capture *tabs,size_t count,const char *active,xc_request **out,bool save){
+ if(out)*out=nullptr;
+ if(!w||!out||count>xiphos::core::maximum_saved_tabs||(count&&!tabs)||(save&&!bounded_image_c_text(path,4096))||(active&&!bounded_image_c_text(active,4096)))return XC_INVALID_ARGUMENT;
+ for(size_t i=0;i<count;++i){if(!bounded_image_c_text(tabs[i].key,4096))return XC_INVALID_ARGUMENT;for(int flag:{tabs[i].visibility.texts,tabs[i].visibility.preview,tabs[i].visibility.commentaries,tabs[i].visibility.dictionaries,tabs[i].commentary_showing,tabs[i].parallel_showing})if(flag!=0&&flag!=1)return XC_INVALID_ARGUMENT;}
+ return queue_request(w,out,[=](auto &worker){std::vector<xiphos::core::NativeTabCapture> rows;rows.reserve(count);for(size_t i=0;i<count;++i)rows.push_back({tabs[i].tab,tabs[i].key,{tabs[i].visibility.texts!=0,tabs[i].visibility.preview!=0,tabs[i].visibility.commentaries!=0,tabs[i].visibility.dictionaries!=0},tabs[i].commentary_showing!=0,tabs[i].parallel_showing!=0});auto key=active?std::make_optional(std::string(active)):std::nullopt;return save?worker.save_native_session(path,std::move(rows),std::move(key)):worker.capture_native_session(std::move(rows),std::move(key));});
+}
+xc_status xc_worker_capture_native_session(xc_worker *w,const xc_native_tab_capture *tabs,size_t count,const char *active,xc_request **out){return queue_native_capture(w,nullptr,tabs,count,active,out,false);}
+xc_status xc_worker_save_native_session(xc_worker *w,const char *path,const xc_native_tab_capture *tabs,size_t count,const char *active,xc_request **out){return queue_native_capture(w,path,tabs,count,active,out,true);}
+xc_status xc_worker_read_native_session(xc_worker *w,const char *path,xc_request **out){if(!bounded_image_c_text(path,4096)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}return queue_request(w,out,[=](auto &worker){return worker.read_native_session(path);});}
+xc_status xc_worker_restore_native_session(xc_worker *w,const xc_native_session *session,const xc_session_capabilities *capabilities,xc_request **out){if(!session||!native_capabilities(capabilities)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}const auto copied=copied_capabilities(capabilities);return queue_request(w,out,[=](auto &worker){return worker.restore_native_session(session->value,copied);});}
+xc_status xc_worker_load_native_session(xc_worker *w,const char *path,const xc_session_capabilities *capabilities,xc_request **out){if(!bounded_image_c_text(path,4096)||!native_capabilities(capabilities)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}const auto copied=copied_capabilities(capabilities);return queue_request(w,out,[=](auto &worker){return worker.load_native_session(path,copied);});}
+xc_native_session *xc_request_take_native_session(xc_request *r){return r&&r->status==XC_OK?r->native_session.release():nullptr;}
+xc_restored_session *xc_request_take_restored_session(xc_request *r){return r&&r->status==XC_OK?r->restored_session.release():nullptr;}
+size_t xc_restored_session_tab_count(const xc_restored_session *s){return s?s->value.tabs.size():0;}
+uint64_t xc_restored_session_tab_id(const xc_restored_session *s,size_t at){return s&&at<s->value.tabs.size()?s->value.tabs[at].tab:0;}
+const char *xc_restored_session_tab_key(const xc_restored_session *s,size_t at){return s&&at<s->value.tabs.size()?s->value.tabs[at].key.c_str():nullptr;}
+uint64_t xc_restored_session_active_tab(const xc_restored_session *s){return s&&s->value.active_tab?*s->value.active_tab:0;}
+xc_status xc_restored_session_visibility(const xc_restored_session *s,size_t at,xc_tab_visibility *visibility,int *commentary,int *parallel){if(!s||at>=s->value.tabs.size()||!visibility||!commentary||!parallel)return XC_INVALID_ARGUMENT;const auto &tab=s->value.tabs[at];*visibility={tab.visibility.texts,tab.visibility.preview,tab.visibility.commentaries,tab.visibility.dictionaries};*commentary=tab.commentary_showing;*parallel=tab.parallel_showing;return XC_OK;}
+void xc_restored_session_release(xc_restored_session *s){delete s;}
 void xc_tab_capture_default(xc_tab_capture *capture){if(capture)*capture={0,{1,1,1,1},0,0};}
 static xc_status queue_tab_capture(xc_worker *w,const char *path,const xc_tab_capture *tabs,size_t count,const char *version,xc_request **out,bool save){
  if(out)*out=nullptr;

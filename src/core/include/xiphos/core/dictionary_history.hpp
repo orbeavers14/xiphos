@@ -18,6 +18,7 @@ public:
   const std::vector<DictionaryLocation> &entries() const { return entries_; }
   std::size_t cursor() const { return cursor_; }
 private:
+  friend class StudySession;
   std::vector<DictionaryLocation> entries_;
   std::size_t cursor_ = 0;
 };
