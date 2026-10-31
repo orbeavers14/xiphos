@@ -11,6 +11,13 @@ Swordreader / Sword Reader; no rename selected. See the
 [shared core roadmap](shared-core-roadmap.md#future-translation-sources-beyond-sword-modules)
 for provider capabilities, licensing checkpoints and naming/identity compatibility.
 
+Core update (2026-10-30, `f0cd37d`): shared C++11 devotional date selection
+now drives retained rendering and replaces unsafe month-name indexing with a
+local-today fallback. All11,536 renderer comparisons and372 bounded date
+combinations are checked. Focused normal/portable/ASan/TSan2/2 each; C++11 all6/6.
+See the [devotional contract](devotional-workflows.md). Native devotional service
+and presentation remain pending; no whole-parity acceptance increase.
+
 Latest test-only addition: complete devotional rendering now has 1,536
 frozen/current traces across five configurations; strict C++11 all6/6 passes.
 The guarded month lookup exposes retained invalid-month indexing without unsafe

@@ -27,6 +27,11 @@ implementation of these services. The detailed requirements remain in the
 with a consuming frontend to expose boundary problems early. Existing GTK3 is
 the behavior/design reference; keep it operational and retain retirement gates.
 
+Devotional date selection now has a shared C++11 policy consumed by retained
+rendering, with an explicit safe fallback for invalid month indexing (`f0cd37d`).
+See the [contract and next owned-service boundary](devotional-workflows.md).
+Native devotional state/transport/presentation remain pending.
+
 ## Future translation sources beyond SWORD modules
 
 Owner requirement, recorded 2026-10-30: eventually support translations such as

@@ -1786,3 +1786,25 @@ Fetched origin and confirmed master matched before editing; preserve unrelated
 .DS_Store. Documentation-only validation: relative-link targets and git diff
 whitespace checks; no builds or tests needed. Next: implement existing core slices,
 then design provider capabilities before adding an actual licensed provider.
+
+### Shared devotional date policy and invalid-month correction (2026-10-30)
+
+On master, implementation `f0cd37d` adds owned C++11 devotional_date selection
+with host-supplied local today and month bounds. Retained main_display_devotional
+now consumes it. Safe five-byte keys retain atoi month/day and exact key behavior;
+unsafe months fall back to today rather than indexing outside month_names. No
+calendar-day tightening, dictionary history change, C ABI or native pane added.
+The [devotional contract](devotional-workflows.md) records the intentional bug
+correction and remaining service boundary. Full-function renderer comparisons
+now cover11,536 cases, plus372 direct date combinations and invalid inputs.
+
+Actual local checks: normal2/2 (2.37s), portable2/2 (2.27s), ASan/UBSan2/2
+(3.25s), TSan2/2 (4.57s); native-disabled strict C++11 libraries build and6/6
+pass (3.51s). Complete extracted retained callbacks compile in that C++11 target;
+no full GTK application/native full-suite rerun or current Fedora/MSVC claim.
+Environment remains the existing Mac SDK/configurations; leak detection is OFF
+in the ASan selection and SDK/framework instrumentation partial. Fetched origin
+and confirmed master matched before editing; unrelated .DS_Store preserved.
+Whitespace and changed-document links checked. Next: owned devotional entry
+service on the existing owner, preserving separate date selection/history, then
+C transport and native consumption. No whole-parity acceptance increase.
