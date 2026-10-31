@@ -2080,3 +2080,22 @@ Full Mac211-test and portable164-test builds/runs are underway. No native tag
 presentation, CSS application, personal annotation precedence, precise cross-canon
 mapping or whole-parity acceptance. Next: shared retained highlight priority,
 personal annotation storage, then editor/install/sync and complete session restore.
+
+## 2026-10-31 — full annotation checkpoint and shared highlight priority
+
+Full Mac through73f88b4:210 passes+one explicit index skip (211 registered,
+169.44s), including Swift6 importers/real offscreen WebKit. Full portable core/Linux
+models on Mac:163 passes+one skip (164 registered,114.11s; GTK runtime OFF).
+These runs precede the shared priority change below.
+
+23aba44 adds a C11/C++11 no-allocation color-priority helper and reuses it in the
+retained RenderOneChapter decision block. All512 complete frozen/current block
+cases match annotation/tag/current-verse priority and exact color-role pointers,
+including null colors and nonzero negative flags. Scope is decision block, not
+whole-renderer/GTK runtime acceptance. Native-disabled strict C++11 all10/10
+(7.63s). Priority+annotation normal5/5 (2.83s), portable5/5 (2.94s),
+ASan/UBSan5/5 (4.75s; leaks OFF), TSan5/5 (6.33s). Legacy oracle SDK/framework
+coverage remains partial. No native UI additions or whole-parity acceptance.
+Next: characterize/read personal annotation XML/cache semantics safely, then
+verified note edits and transport. Continue other owner core priorities; no
+further devotional work unless reprioritized.

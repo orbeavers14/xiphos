@@ -148,3 +148,18 @@ failure, copied inputs, exact-limit/prefix semantics, malformed UTF-8, unsupport
 controls, take-once ownership and shutdown drain. Owned groups survive source and
 worker teardown. A test initially counted its own path temporary in admission
 allocation measurements; the path is now prepared outside the measured region.
+
+## Shared highlight priority
+
+23aba44 extracts the complete retained per-verse decision block into a no-allocation
+C11/C++11 policy used by GTK and available to native consumers. Annotation
+highlighting wins inside the existing outer tag span, using the retained swapped
+foreground/background roles. A tag suppresses current-verse highlight/text colors.
+Without either higher-priority case, the current verse uses either the configured
+background highlight or text-only color. All nonzero legacy flags remain true.
+
+The complete frozen decision block and current shared adapter compare512 cases,
+including mismatched chapter/verse, null color settings and negative/non-boolean
+legacy flags. Strict C11 linkage is checked in the same C++11 test target. This is
+scoped priority equivalence; surrounding paragraph/HTML treatment, actual GTK
+rendering and native annotation composition are separate acceptance work.
