@@ -38,6 +38,7 @@
 #include "gui/widgets.h"
 
 #include "main/parallel_view.h"
+#include "xiphos/core/parallel.hpp"
 #include "main/global_ops.hh"
 #include "main/lists.h"
 #include "main/sword.h"
@@ -939,7 +940,8 @@ void main_update_parallel_page_detached(void)
 
 	/* get the per-column percentage width. */
 	/* 2 => 50, 4 => 25, 5 => 20, 10 => 10, ... */
-	fraction = (parallel_count ? (100 / parallel_count) : 100);
+	const auto layout = xiphos::core::parallel_layout(parallel_count);
+	fraction = layout.column_percent;
 
 	// identify the module whose v11n and CSS display defaults will drive us.
 	// should be 1st parallel module.
@@ -991,7 +993,7 @@ void main_update_parallel_page_detached(void)
 	snprintf(buf, 499, "%d", settings.intCurVerse);
 
 	HtmlOutput((char *)(settings.imageresize
-				? AnalyzeForImageSize((char *)text.c_str(), parallel_count*2/3,
+				? AnalyzeForImageSize((char *)text.c_str(), static_cast<int>(layout.image_scale),
 						      GDK_WINDOW(gtk_widget_get_window(widgets.html_parallel_dialog)))
 				: (char *)text.c_str()),
 		   widgets.html_parallel_dialog, NULL, buf);
