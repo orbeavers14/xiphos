@@ -174,6 +174,188 @@ SavedParallelProfile parse_saved_parallel_profile(const std::string &source) {
 SavedParallelProfile read_saved_parallel_profile(const std::string &path) {
   return parse_saved_parallel_profile(read_profile_source(path));
 }
+namespace {
+void parallel_xml_text(const std::string &text, std::size_t maximum) {
+  parallel_text(text, maximum);
+  for (std::size_t at = 0; at < text.size();) {
+    int length = static_cast<int>(std::min<std::size_t>(4, text.size() - at));
+    const int codepoint = xmlGetUTF8Char(BAD_CAST text.data() + at, &length);
+    if (codepoint < 0 || length <= 0 || !xmlIsCharQ(codepoint))
+      throw std::invalid_argument("Invalid XML parallel profile text");
+    at += static_cast<std::size_t>(length);
+  }
+}
+void parallel_key(const std::string &key) {
+  parallel_xml_text(key, maximum_saved_parallel_key_bytes);
+  const auto node = "parallel_set_" + key;
+  if (key.empty() || key == "names" || key == "current" || key.find(',') != std::string::npos ||
+      xmlValidateNCName(BAD_CAST node.c_str(), 0) != 0)
+    throw std::invalid_argument("Parallel set key cannot round trip as a legacy XML field");
+}
+std::string parallel_join(const std::vector<std::string> &items) {
+  if (items.size() > maximum_saved_parallel_modules)
+    throw std::invalid_argument("Too many stored parallel modules");
+  std::string result;
+  for (std::size_t index = 0; index < items.size(); ++index) {
+    parallel_xml_text(items[index], 4096);
+    if (items[index].find(',') != std::string::npos)
+      throw std::invalid_argument("Parallel module token contains an unescaped comma");
+    const auto extra = items[index].size() + (index ? 1 : 0);
+    if (extra > maximum_profile_bytes - result.size())
+      throw std::invalid_argument("Stored parallel modules exceed byte bounds");
+    if (index) result += ',';result += items[index];
+  }
+  return result;
+}
+void validate_parallel_edit(const ParallelProfileEdit &edit) {
+  parallel_key(edit.key);
+  switch (edit.action) {
+    case ParallelProfileAction::save:
+      if (!edit.replacement_key.empty()) throw std::invalid_argument("Save does not rename a parallel set");
+      (void)parallel_join(edit.modules);break;
+    case ParallelProfileAction::rename:
+      parallel_key(edit.replacement_key);
+      if (!edit.modules.empty() || edit.make_current) throw std::invalid_argument("Rename has unexpected parallel fields");
+      break;
+    case ParallelProfileAction::remove:
+    case ParallelProfileAction::activate:
+      if (!edit.replacement_key.empty() || !edit.modules.empty() || edit.make_current)
+        throw std::invalid_argument("Unexpected parallel edit fields");
+      break;
+    default: throw std::invalid_argument("Unknown parallel profile edit");
+  }
+}
+xmlNode *parallel_first_section(xmlDoc *document) {
+  for (auto *node = xmlDocGetRootElement(document)->children; node; node = node->next)
+    if (!xmlStrcmp(node->name, BAD_CAST "modules")) return node;
+  return nullptr;
+}
+void set_parallel_value(xmlDoc *document, const std::string &key, const std::string &text) {
+  auto *target = find_value_node(document, "modules", key.c_str());
+  if (!target) {
+    auto *section = parallel_first_section(document);
+    if (!section) section = xmlNewChild(xmlDocGetRootElement(document), nullptr, BAD_CAST "modules", nullptr);
+    if (!section) throw std::bad_alloc();
+    target = xmlNewChild(section, nullptr, BAD_CAST key.c_str(), nullptr);
+    if (!target) throw std::bad_alloc();
+  }
+  auto *content = xmlNewText(BAD_CAST text.c_str());
+  if (!content) throw std::bad_alloc();
+  xmlNodeSetContent(target, nullptr);
+  if (!xmlAddChild(target, content)) { xmlFreeNode(content);throw std::bad_alloc(); }
+}
+bool parallel_optional_text(const std::optional<std::string> &actual, const std::string &expected) {
+  return expected.empty() ? !actual || actual->empty() : actual && *actual == expected;
+}
+}
+std::string serialize_parallel_profile_edit(const std::string &source, const ParallelProfileEdit &edit) {
+  validate_parallel_edit(edit);
+  const auto before = parse_saved_parallel_profile(source);
+  auto document = parse_document(source);
+  auto listed = [&](const std::string &key) {
+    return std::any_of(before.sets.begin(), before.sets.end(), [&](const auto &set) { return set.key == key; });
+  };
+  auto definition = [&](const std::string &key) { return value(document.get(), "modules", ("parallel_set_" + key).c_str()); };
+  std::optional<std::string> expected_names, expected_current, expected_modules, renamed_definition;
+  bool check_renamed_definition = false;
+  const auto node_key = "parallel_set_" + edit.key;
+  switch (edit.action) {
+    case ParallelProfileAction::save: {
+      const auto text = parallel_join(edit.modules);
+      set_parallel_value(document.get(), node_key, text);
+      if (!listed(edit.key)) {
+        expected_names = before.names_text && !before.names_text->empty() ? *before.names_text + "," + edit.key : edit.key;
+        set_parallel_value(document.get(), "parallel_set_names", *expected_names);
+      }
+      if (edit.make_current) {
+        expected_current = edit.key;set_parallel_value(document.get(), "parallel_set_current", edit.key);
+        if (!text.empty()) { expected_modules = text;set_parallel_value(document.get(), "parallels", text); }
+      }
+      break;
+    }
+    case ParallelProfileAction::rename: {
+      if (!listed(edit.key)) throw std::invalid_argument("Cannot rename an unlisted parallel set");
+      if (edit.key == edit.replacement_key) return source;
+      const auto replacement = "parallel_set_" + edit.replacement_key;
+      renamed_definition = definition(edit.key);check_renamed_definition = true;
+      if (listed(edit.replacement_key) || find_value_node(document.get(), "modules", replacement.c_str()))
+        throw std::invalid_argument("Parallel rename would overwrite an existing key");
+      if (auto *node = find_value_node(document.get(), "modules", node_key.c_str())) {
+        xmlNodeSetName(node, BAD_CAST replacement.c_str());
+        if (!node->name || xmlStrcmp(node->name, BAD_CAST replacement.c_str())) throw std::bad_alloc();
+      }
+      std::string names;
+      for (std::size_t index = 0; index < before.sets.size(); ++index) {
+        if (index) names += ',';names += before.sets[index].key == edit.key ? edit.replacement_key : before.sets[index].key;
+      }
+      expected_names = std::move(names);set_parallel_value(document.get(), "parallel_set_names", *expected_names);
+      if (before.current_key == edit.key) {
+        expected_current = edit.replacement_key;set_parallel_value(document.get(), "parallel_set_current", *expected_current);
+      }
+      break;
+    }
+    case ParallelProfileAction::remove: {
+      if (!listed(edit.key)) return source;
+      std::string names;
+      for (const auto &set : before.sets) if (set.key != edit.key) {
+        // Match the complete retained delete callback's empty-token fold.
+        if (!names.empty()) names += ',';names += set.key;
+      }
+      expected_names = std::move(names);set_parallel_value(document.get(), "parallel_set_names", *expected_names);
+      // Retained removal is scoped to the first modules section only.
+      if (auto *section = parallel_first_section(document.get())) for (auto *node = section->children; node; node = node->next)
+        if (!xmlStrcmp(node->name, BAD_CAST node_key.c_str())) { xmlUnlinkNode(node);xmlFreeNode(node);break; }
+      if (before.current_key == edit.key) {
+        expected_current = "";set_parallel_value(document.get(), "parallel_set_current", "");
+      }
+      break;
+    }
+    case ParallelProfileAction::activate: {
+      if (!listed(edit.key)) throw std::invalid_argument("Cannot activate an unlisted parallel set");
+      expected_current = edit.key;set_parallel_value(document.get(), "parallel_set_current", edit.key);
+      const auto text = definition(edit.key);
+      if (text && !text->empty()) { expected_modules = *text;set_parallel_value(document.get(), "parallels", *text); }
+      break;
+    }
+  }
+  xmlChar *serialized = nullptr;int length = 0;
+  xmlDocDumpFormatMemoryEnc(document.get(), &serialized, &length, "UTF-8", 0);
+  const std::unique_ptr<xmlChar, decltype(xmlFree)> owned(serialized, xmlFree);
+  if (!serialized || length <= 0) throw std::runtime_error("Parallel profile serialization failed");
+  std::string result(reinterpret_cast<const char *>(serialized), static_cast<std::size_t>(length));
+  const auto verified = parse_saved_parallel_profile(result);
+  if ((expected_names && !parallel_optional_text(verified.names_text, *expected_names)) ||
+      (expected_current && !parallel_optional_text(verified.current_key, *expected_current)) ||
+      (expected_modules && !parallel_optional_text(verified.active_modules_text, *expected_modules)))
+    throw std::runtime_error("Parallel profile metadata failed verification");
+  if (check_renamed_definition) {
+    const auto found = std::find_if(verified.sets.begin(), verified.sets.end(), [&](const auto &set) { return set.key == edit.replacement_key; });
+    if (found == verified.sets.end() || found->module_text != renamed_definition)
+      throw std::runtime_error("Renamed parallel definition failed verification");
+  }
+  if (edit.action == ParallelProfileAction::save) {
+    auto expected = parallel_join(edit.modules);
+    const auto found = std::find_if(verified.sets.begin(), verified.sets.end(), [&](const auto &set) { return set.key == edit.key; });
+    if (found == verified.sets.end() || !parallel_optional_text(found->module_text, expected))
+      throw std::runtime_error("Saved parallel set failed verification");
+  }
+  return result;
+}
+SavedParallelProfile edit_parallel_profile(const std::string &path, const ParallelProfileEdit &edit) {
+  validate_parallel_edit(edit);
+  SavedParallelProfile prepared;
+  detail::replace_preference_file(path, [&](const std::filesystem::path &file, const std::string &original, bool existed) {
+    if (!existed && edit.action != ParallelProfileAction::save)
+      throw std::invalid_argument("Cannot edit parallel sets in a missing profile");
+    const auto serialized = serialize_parallel_profile_edit(existed ? original : "<Xiphos/>", edit);
+    { std::ofstream output(file, std::ios::binary);output.exceptions(std::ios::badbit | std::ios::failbit);
+      output.write(serialized.data(), static_cast<std::streamsize>(serialized.size()));output.close(); }
+    if (detail::read_preference_file(file, maximum_profile_bytes) != serialized)
+      throw std::runtime_error("Written parallel profile failed verification");
+    prepared = read_saved_parallel_profile(file.u8string());
+  }, maximum_profile_bytes);
+  return prepared;
+}
 StudyProfile parse_study_profile(const std::string &source) {
   auto document = parse_document(source);
   StudyProfile result;

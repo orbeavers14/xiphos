@@ -97,5 +97,62 @@ int main(int argc,char **argv){try{
  for(const auto &bad:std::vector<std::string>{"", "<Wrong/>","<Xiphos>","<!DOCTYPE Xiphos [<!ENTITY x 'hidden'>]><Xiphos/>",std::string("<Xiphos/>\0tail",14)})rejects([&]{parse_saved_parallel_profile(bad);});
  std::string utf16="\xff\xfe";for(char16_t c:std::u16string(u"<?xml version='1.0' encoding='UTF-16'?><Xiphos><modules><parallel_set_names>café</parallel_set_names><parallel_set_café>Text,文字</parallel_set_café></modules></Xiphos>")){utf16.push_back(static_cast<char>(c&255));utf16.push_back(static_cast<char>(c>>8));}check(compare(utf16).sets[0].modules==std::vector<std::string>({"Text","文字"}),"Declared encoding becomes owned UTF-8");
  const auto file=root/std::filesystem::u8path("parallel-café.xml");const std::string source="<Xiphos><!--original--><modules><parallel_set_names>A</parallel_set_names><parallel_set_A>Text,Missing</parallel_set_A></modules><unknown/></Xiphos>";{std::ofstream out(file,std::ios::binary);out<<source;}const auto permissions=std::filesystem::status(file).permissions();const auto loaded=read_saved_parallel_profile(file.u8string());check(loaded.sets[0].modules==std::vector<std::string>({"Text","Missing"})&&bytes(file)==source&&std::filesystem::status(file).permissions()==permissions,"Explicit parallel profile read preserves source bytes and permissions");
+
+ // Native edits use raw keys and preserve semantic unknown XML data.
+ auto edit=[](const std::string &xml,ParallelProfileAction action,const std::string &key,
+              std::vector<std::string> modules={},const std::string &replacement="",bool current=false){
+   return serialize_parallel_profile_edit(xml,{action,key,replacement,std::move(modules),current});
+ };
+ const std::string editable="<Xiphos custom='yes'><!--keep--><modules><parallel_set_names>Study_Set,A,Study_Set,</parallel_set_names><parallel_set_current>Study_Set</parallel_set_current><parallels>Old</parallels><parallel_set_Study_Set mark='keep'>Text,Notes</parallel_set_Study_Set><parallel_set_Study_Set>Shadow</parallel_set_Study_Set><parallel_set_A/><unknown flag='yes'/></modules><other>retain</other></Xiphos>";
+ const auto renamed_xml=edit(editable,ParallelProfileAction::rename,"Study_Set",{},"Renamed");
+ const auto renamed=parse_saved_parallel_profile(renamed_xml);
+ check(renamed.names_text=="Renamed,A,Renamed,"&&renamed.current_key=="Renamed"&&renamed.sets[0].module_text=="Text,Notes"&&renamed.active_modules_text=="Old","Rename tracks all duplicate raw names/current without activating");
+ for(const auto *kept:{"custom=\"yes\"","<!--keep-->","mark=\"keep\"","<parallel_set_Study_Set>Shadow","<unknown flag=\"yes\"/>","<other>retain</other>"})check(renamed_xml.find(kept)!=std::string::npos,"Rename preserves unrelated data and shadow definitions");
+ check(edit(editable,ParallelProfileAction::rename,"Study_Set",{},"Study_Set")==editable,"Identity rename preserves original bytes");
+ const auto removed=parse_saved_parallel_profile(edit(editable,ParallelProfileAction::remove,"Study_Set"));
+ check(removed.names_text=="A,"&&(!removed.current_key||removed.current_key->empty())&&removed.active_modules_text=="Old","Raw deletion removes duplicate names and clears current without selecting a fallback");
+ check(edit(editable,ParallelProfileAction::remove,"Orphan")==editable,"Unlisted deletion preserves unknown definitions and bytes");
+ const auto saved_xml=edit(editable,ParallelProfileAction::save,"Study_Set",{"Text&<>","文字","","Text&<>"},"",true);
+ const auto saved=parse_saved_parallel_profile(saved_xml);
+ check(saved.names_text=="Study_Set,A,Study_Set,"&&saved.sets[0].modules==std::vector<std::string>({"Text&<>","文字","","Text&<>"})&&saved.active_modules_text=="Text&<>,文字,,Text&<>","Save preserves duplicate labels, literal XML text and module ordering");
+ const auto created=parse_saved_parallel_profile(edit("<Xiphos><other/></Xiphos>",ParallelProfileAction::save,"New",{"Text"},"",true));
+ check(created.names_text=="New"&&created.current_key=="New"&&created.startup_modules_text=="Text","Explicit save creates missing modules section");
+ const auto appended=parse_saved_parallel_profile(edit(editable,ParallelProfileAction::save,"New",{"Notes"}));
+ check(appended.names_text=="Study_Set,A,Study_Set,,New"&&appended.current_key=="Study_Set","Append retains trailing blank name and existing current");
+ const auto activated=parse_saved_parallel_profile(edit(editable,ParallelProfileAction::activate,"Study_Set"));
+ check(activated.current_key=="Study_Set"&&activated.active_modules_text=="Text,Notes","Activation updates configured modules");
+ const auto empty_activation=parse_saved_parallel_profile(edit(editable,ParallelProfileAction::activate,"A"));
+ check(empty_activation.current_key=="A"&&empty_activation.active_modules_text=="Old","Empty definition activation retains old configured modules");
+ const auto missing=parse_saved_parallel_profile(edit("<Xiphos><modules><parallel_set_names>A</parallel_set_names><parallels>Old</parallels></modules></Xiphos>",ParallelProfileAction::rename,"A",{},"B"));
+ check(missing.names_text=="B"&&!missing.sets[0].module_text,"Rename of listed missing definition does not invent modules");
+ const std::string later="<Xiphos><modules><parallel_set_names>A</parallel_set_names></modules><modules><parallel_set_A>Later</parallel_set_A></modules></Xiphos>";
+ check(parse_saved_parallel_profile(edit(later,ParallelProfileAction::save,"A",{"Changed"})).sets[0].module_text=="Changed","Save updates first effective definition across duplicate sections");
+ check(edit(later,ParallelProfileAction::remove,"A").find("<parallel_set_A>Later</parallel_set_A>")!=std::string::npos,"Remove retains later-section definition as legacy does");
+ for(const auto &key:std::vector<std::string>{"","names","current","A,B","A B","A:B",std::string(1,'\1'),std::string(4097,'x')})rejects([&]{edit(editable,ParallelProfileAction::save,key,{"Text"});});
+ for(const auto &token:std::vector<std::string>{"A,B",std::string(1,'\1'),std::string("A\0B",3),std::string(4097,'x')})rejects([&]{edit(editable,ParallelProfileAction::save,"New",{token});});
+ rejects([&]{edit(editable,ParallelProfileAction::rename,"Study_Set",{},"A");});
+ rejects([&]{edit(editable+" ",ParallelProfileAction::activate,"Missing");});
+ rejects([&]{edit("<Xiphos><modules><parallel_set_names>A</parallel_set_names><parallel_set_Orphan/></modules></Xiphos>",ParallelProfileAction::rename,"A",{},"Orphan");});
+ rejects([&]{edit(editable,ParallelProfileAction::rename,"Missing",{},"New");});
+ rejects([&]{edit(editable,static_cast<ParallelProfileAction>(99),"A");});
+ rejects([&]{edit(editable,ParallelProfileAction::remove,"A",{"unexpected"});});
+ rejects([&]{edit(editable,ParallelProfileAction::save,"A",{},"unexpected");});
+ rejects([&]{edit(editable,ParallelProfileAction::save,"A",std::vector<std::string>(maximum_saved_parallel_modules+1,"x"));});
+ // Compare raw-key native deletion with the entire retained callback on its supported identity domain.
+ for(const auto *names:{"A","A,B,A","A,,Missing,"}){
+   const std::string input="<Xiphos><modules><parallel_set_names>"+std::string(names)+"</parallel_set_names><parallel_set_current>A</parallel_set_current><parallel_set_A>Text</parallel_set_A></modules></Xiphos>";
+   const auto old=remove_set(input,names,"A","A",actual::on_parallel_set_delete_clicked);
+   const auto native=parse_saved_parallel_profile(edit(input,ParallelProfileAction::remove,"A"));
+   check(native.names_text.value_or("")==old.names&&native.current_key==parse_saved_parallel_profile(old.xml).current_key,"Native raw deletion matches complete legacy callback");
+ }
+ const auto destination=root/"parallel-edited.xml";std::filesystem::remove(destination);
+ const auto committed=edit_parallel_profile(destination.u8string(),{ParallelProfileAction::save,"Saved","",{"Text","Notes"},true});
+ check(committed.startup_modules_text=="Text,Notes"&&read_saved_parallel_profile(destination.u8string()).names_text==committed.names_text,"Missing file save returns verified committed snapshot");
+ const auto original_bytes=bytes(destination);const auto original_permissions=std::filesystem::status(destination).permissions();
+ rejects([&]{edit_parallel_profile(destination.u8string(),{ParallelProfileAction::rename,"Saved","names",{},false});});
+ check(bytes(destination)==original_bytes&&std::filesystem::status(destination).permissions()==original_permissions,"Rejected edit preserves bytes and permissions");
+ const auto final=edit_parallel_profile(destination.u8string(),{ParallelProfileAction::rename,"Saved","Renamed",{},false});
+ check(final.current_key=="Renamed"&&final.sets[0].modules==std::vector<std::string>({"Text","Notes"})&&std::filesystem::status(destination).permissions()==original_permissions,"Atomic rename retains modules and file permissions");
+ rejects([&]{edit_parallel_profile((root/"missing-edit.xml").u8string(),{ParallelProfileAction::activate,"Saved","",{},false});});
  std::cout<<"Saved parallel profiles: "<<comparisons<<" XML/startup and "<<deletions<<" complete delete comparisons, raw names/duplicates/nulls, legacy migration, bounded owned data and read-only files passed\n";return 0;
 }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}
