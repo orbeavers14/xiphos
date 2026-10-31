@@ -2,6 +2,7 @@
 #pragma once
 #include "session.hpp"
 #include "profile.hpp"
+#include "bookmarks.hpp"
 #include <cstdint>
 #include <future>
 #include <memory>
@@ -122,6 +123,8 @@ public:
   std::future<std::optional<LexiconPreferences>> import_lexicon_profile(StudyTab tab, std::string path);
   // Explicit selected-file read on the FIFO owner; validates the tab but changes no state.
   // Explicit profile storage only: FIFO, copied snapshots, tab checked before IO.
+  std::future<BookmarkSnapshot> read_bookmarks(StudyTab tab, std::string path);
+  std::future<BookmarkSnapshot> edit_bookmarks(StudyTab tab, std::string path, std::optional<std::string> revision, BookmarkEdit edit);
   std::future<SavedTabSession> read_tab_session(StudyTab tab, std::string path);
   std::future<SavedTabSession> save_tab_session(StudyTab tab, std::string path, SavedTabSession session);
   std::future<SavedParallelProfile> read_parallel_profile(StudyTab tab, std::string path);

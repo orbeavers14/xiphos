@@ -815,6 +815,41 @@ const char *xc_module_resolution_requested(const xc_module_resolution *result);
 const char *xc_module_resolution_module(const xc_module_resolution *result);
 int xc_module_resolution_via_abbreviation(const xc_module_resolution *result);
 void xc_module_resolution_release(xc_module_resolution *result);
+/* Explicit revision-checked SwordBookmarks storage; never navigates or renders.
+ * Selected path <=4096 bytes, optional revision64 lowercase SHA-256 hex bytes,
+ * optional text fields <=32768 UTF-8/XML bytes. Indices refer to the exact source
+ * revision, never persistent IDs. NULL revision requires missing file+insert.
+ * Structural C bounds/booleans reject before allocation; semantic, revision, tab
+ * and file errors arrive at poll. Inputs copy before return. Observer/result
+ * allocation precedes acceptance; verified atomic writes drain on shutdown.
+ * Owned take-once snapshots survive request/source/worker teardown. Strings borrow
+ * until snapshot release. Unknown XML is preserved outside removed subtrees. */
+typedef struct xc_bookmarks xc_bookmarks;
+typedef enum xc_bookmark_kind {XC_BOOKMARK_FOLDER=0,XC_BOOKMARK_LEAF=1} xc_bookmark_kind;
+typedef enum xc_bookmark_action {XC_BOOKMARK_INSERT=0,XC_BOOKMARK_UPDATE=1,XC_BOOKMARK_REMOVE=2,XC_BOOKMARK_MOVE=3} xc_bookmark_action;
+typedef enum xc_bookmark_field {
+ XC_BOOKMARK_CAPTION=0,XC_BOOKMARK_COLOR,XC_BOOKMARK_MODULE,XC_BOOKMARK_KEY,
+ XC_BOOKMARK_MODULE_DESCRIPTION,XC_BOOKMARK_DESCRIPTION,XC_BOOKMARK_LABEL
+} xc_bookmark_field;
+#define XC_BOOKMARK_EDIT_FIELD_COUNT 6
+typedef struct {
+ int action,kind,has_target,has_parent;
+ size_t target,parent,position;
+ const char *fields[XC_BOOKMARK_EDIT_FIELD_COUNT]; /* label is derived, not editable */
+} xc_bookmark_edit;
+xc_status xc_worker_read_bookmarks(xc_worker *worker,uint64_t tab,const char *path,xc_request **out);
+xc_status xc_worker_edit_bookmarks(xc_worker *worker,uint64_t tab,const char *path,const char *revision,const xc_bookmark_edit *edit,xc_request **out);
+xc_bookmarks *xc_request_take_bookmarks(xc_request *request);
+size_t xc_bookmarks_count(const xc_bookmarks *snapshot);
+const char *xc_bookmarks_revision(const xc_bookmarks *snapshot);
+const char *xc_bookmarks_syntax_version(const xc_bookmarks *snapshot);
+size_t xc_bookmarks_ignored_subtrees(const xc_bookmarks *snapshot);
+int xc_bookmarks_kind(const xc_bookmarks *snapshot,size_t item); /* invalid -> -1 */
+const char *xc_bookmarks_field(const xc_bookmarks *snapshot,size_t item,int field);
+size_t xc_bookmarks_position(const xc_bookmarks *snapshot,size_t item);
+/* Output clears on error; absent parent is the document root. */
+xc_status xc_bookmarks_parent(const xc_bookmarks *snapshot,size_t item,int *has_parent,size_t *parent);
+void xc_bookmarks_release(xc_bookmarks *snapshot);
 /* Explicit legacy Xiphos_Tabs repository; never applies/restores open tabs.
  * Paths <=4096 bytes, up to256 saved tabs, each optional UTF-8/XML attribute
  * <=32768 bytes,16MiB aggregate owned text. NULL is absent, empty is explicit.

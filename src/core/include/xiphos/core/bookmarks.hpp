@@ -42,6 +42,7 @@ struct BookmarkEdit {
   BookmarkFields fields; // Complete replacement of known fields, insert/update only.
 };
 void validate_bookmark_edit(const BookmarkEdit &edit);
+void validate_bookmark_edit_request(const std::optional<std::string> &revision,const BookmarkEdit &edit);
 // Existing source must match its exact revision. Indices belong to that revision.
 // Unknown attributes/subtrees/comments survive unless their owning node is removed.
 std::string serialize_bookmark_edit(const std::string &xml,const std::string &revision,const BookmarkEdit &edit);

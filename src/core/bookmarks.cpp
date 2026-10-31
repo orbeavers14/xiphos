@@ -152,9 +152,12 @@ std::string serialize_bookmark_edit(const std::string &source,const std::string 
   std::string result(reinterpret_cast<const char *>(buffer),static_cast<std::size_t>(length));
   (void)parse_bookmarks(result);return result;
 }
-BookmarkSnapshot edit_bookmarks(const std::string &path,const std::optional<std::string> &revision,const BookmarkEdit &edit) {
+void validate_bookmark_edit_request(const std::optional<std::string> &revision,const BookmarkEdit &edit) {
   validate_bookmark_edit(edit);if(revision)bookmark_revision(*revision);
   else if(edit.action!=BookmarkAction::insert)throw std::invalid_argument("Missing bookmark files support insert only");
+}
+BookmarkSnapshot edit_bookmarks(const std::string &path,const std::optional<std::string> &revision,const BookmarkEdit &edit) {
+  validate_bookmark_edit_request(revision,edit);
   BookmarkSnapshot prepared;
   detail::replace_preference_file(path,[&](const std::filesystem::path &file,const std::string &original,bool existed){
     if(existed!=revision.has_value())throw std::invalid_argument("Bookmark file existence changed; reread before editing");

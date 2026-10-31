@@ -31,6 +31,7 @@ struct xc_search_batch {
   }
 };
 struct xc_reference_list { xiphos::core::ReferenceList value; };
+struct xc_bookmarks { xiphos::core::BookmarkSnapshot value; };
 struct xc_tab_session { xiphos::core::SavedTabSession value; };
 struct xc_parallel_profile { xiphos::core::SavedParallelProfile value; };
 struct xc_search_lists { xiphos::core::SavedSearchLists value; };
@@ -138,6 +139,7 @@ struct xc_request {
   std::unique_ptr<xc_book_note> book_note;
   std::unique_ptr<xc_lexical_entry> lexical;
   std::unique_ptr<xc_lexicons> lexicons;
+  std::unique_ptr<xc_bookmarks> bookmarks;
   std::unique_ptr<xc_tab_session> tab_session;
   std::unique_ptr<xc_parallel_profile> parallel_profile;
   std::unique_ptr<xc_search_lists> search_lists;
@@ -175,6 +177,10 @@ struct xc_request {
   void store(xiphos::core::ContextualStudyLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::ResolvedStudyLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::ReferenceList v) { references = std::make_unique<xc_reference_list>(xc_reference_list{std::move(v)}); }
+  void store(xiphos::core::BookmarkSnapshot v) {
+    static_assert(std::is_nothrow_move_assignable_v<xiphos::core::BookmarkSnapshot>, "Committed bookmarks publication must not allocate");
+    bookmarks->value=std::move(v);
+  }
   void store(xiphos::core::SavedTabSession v) {
     static_assert(std::is_nothrow_move_assignable_v<xiphos::core::SavedTabSession>, "Committed tab session publication must not allocate");
     tab_session->value=std::move(v);
@@ -312,6 +318,7 @@ template<class T> struct Request final : xc_request {
   // Allocate result envelopes before accepting a state-changing job;
   // polling then only moves owned values into already allocated storage.
   Request() {
+    if constexpr (std::is_same_v<T,xiphos::core::BookmarkSnapshot>) bookmarks = std::make_unique<xc_bookmarks>();
     if constexpr (std::is_same_v<T,xiphos::core::SavedTabSession>) tab_session = std::make_unique<xc_tab_session>();
     if constexpr (std::is_same_v<T,xiphos::core::SavedParallelProfile>) parallel_profile = std::make_unique<xc_parallel_profile>();
     if constexpr (std::is_same_v<T,xiphos::core::ParallelChapter>) parallel = std::make_unique<xc_parallel_chapter>();
@@ -1346,6 +1353,28 @@ xc_status xc_worker_resolve_module_name(xc_worker *w, uint64_t tab, const char *
   if (!bounded_image_c_text(requested, 4096)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.resolve_module_name(tab, requested); });
 }
+static const std::array<std::optional<std::string> xiphos::core::BookmarkFields::*,XC_BOOKMARK_EDIT_FIELD_COUNT> bookmark_edit_fields{{
+ &xiphos::core::BookmarkFields::caption,&xiphos::core::BookmarkFields::color,&xiphos::core::BookmarkFields::module,
+ &xiphos::core::BookmarkFields::key,&xiphos::core::BookmarkFields::module_description,&xiphos::core::BookmarkFields::description
+}};
+xc_status xc_worker_read_bookmarks(xc_worker *w,uint64_t tab,const char *path,xc_request **out){
+ if(!bounded_image_c_text(path,4096)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
+ return queue_request(w,out,[=](auto &worker){return worker.read_bookmarks(tab,path);});
+}
+xc_status xc_worker_edit_bookmarks(xc_worker *w,uint64_t tab,const char *path,const char *revision,const xc_bookmark_edit *edit,xc_request **out){
+ if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;
+ if(!w||!edit||!bounded_image_c_text(path,4096)||(revision&&!bounded_image_c_text(revision,64))||
+    edit->action<XC_BOOKMARK_INSERT||edit->action>XC_BOOKMARK_MOVE||edit->kind<XC_BOOKMARK_FOLDER||edit->kind>XC_BOOKMARK_LEAF||
+    (edit->has_target!=0&&edit->has_target!=1)||(edit->has_parent!=0&&edit->has_parent!=1)||
+    (!edit->has_target&&edit->target)||(!edit->has_parent&&edit->parent))return XC_INVALID_ARGUMENT;
+ for(const char *field:edit->fields)if(field&&*field&&!bounded_image_c_text(field,32768))return XC_INVALID_ARGUMENT;
+ return queue_request(w,out,[=](auto &worker){
+  xiphos::core::BookmarkEdit copy;copy.action=static_cast<xiphos::core::BookmarkAction>(edit->action);copy.kind=static_cast<xiphos::core::BookmarkKind>(edit->kind);
+  if(edit->has_target)copy.target=edit->target;if(edit->has_parent)copy.parent=edit->parent;copy.position=edit->position;
+  for(size_t i=0;i<XC_BOOKMARK_EDIT_FIELD_COUNT;++i)if(edit->fields[i])copy.fields.*bookmark_edit_fields[i]=edit->fields[i];
+  return worker.edit_bookmarks(tab,path,revision?std::make_optional(std::string(revision)):std::nullopt,std::move(copy));
+ });
+}
 static const std::array<std::optional<std::string> xiphos::core::SavedTab::*,XC_TAB_FIELD_COUNT> saved_tab_fields{{
  &xiphos::core::SavedTab::text_module,&xiphos::core::SavedTab::commentary_module,&xiphos::core::SavedTab::dictionary_module,
  &xiphos::core::SavedTab::book_module,&xiphos::core::SavedTab::reference,&xiphos::core::SavedTab::dictionary_key,
@@ -1662,6 +1691,7 @@ void xc_request_release(xc_request *r) { delete r; }
 uint64_t xc_request_tab(const xc_request *r) { return r && r->status == XC_OK ? r->tab : 0; }
 xc_reference_list *xc_request_take_reference_list(xc_request *r) { return r && r->status == XC_OK ? r->references.release() : nullptr; }
 xc_lexical_entry *xc_request_take_lexical_entry(xc_request *r) { return r && r->status == XC_OK ? r->lexical.release() : nullptr; }
+xc_bookmarks *xc_request_take_bookmarks(xc_request *r){return r&&r->status==XC_OK?r->bookmarks.release():nullptr;}
 xc_tab_session *xc_request_take_tab_session(xc_request *r){return r&&r->status==XC_OK?r->tab_session.release():nullptr;}
 xc_parallel_profile *xc_request_take_parallel_profile(xc_request *r) { return r && r->status==XC_OK ? r->parallel_profile.release() : nullptr; }
 xc_search_lists *xc_request_take_search_lists(xc_request *r) { return r && r->status == XC_OK ? r->search_lists.release() : nullptr; }
@@ -1947,6 +1977,26 @@ const char *xc_reference_list_entry_html(const xc_reference_list *r, size_t i) {
 int xc_reference_list_limited(const xc_reference_list *r) { return r && r->value.limited; }
 unsigned xc_reference_list_skipped(const xc_reference_list *r) { return r ? r->value.skipped : 0; }
 void xc_reference_list_release(xc_reference_list *r) { delete r; }
+size_t xc_bookmarks_count(const xc_bookmarks *s){return s?s->value.items.size():0;}
+const char *xc_bookmarks_revision(const xc_bookmarks *s){return s?s->value.revision.c_str():nullptr;}
+const char *xc_bookmarks_syntax_version(const xc_bookmarks *s){return s&&s->value.syntax_version?s->value.syntax_version->c_str():nullptr;}
+size_t xc_bookmarks_ignored_subtrees(const xc_bookmarks *s){return s?s->value.ignored_subtrees:0;}
+int xc_bookmarks_kind(const xc_bookmarks *s,size_t i){return s&&i<s->value.items.size()?static_cast<int>(s->value.items[i].kind):-1;}
+const char *xc_bookmarks_field(const xc_bookmarks *s,size_t i,int field){
+ if(!s||i>=s->value.items.size())return nullptr;
+ const auto &item=s->value.items[i];const std::optional<std::string> *value=nullptr;
+ switch(field){case XC_BOOKMARK_CAPTION:value=&item.caption;break;case XC_BOOKMARK_COLOR:value=&item.color;break;
+ case XC_BOOKMARK_MODULE:value=&item.module;break;case XC_BOOKMARK_KEY:value=&item.key;break;
+ case XC_BOOKMARK_MODULE_DESCRIPTION:value=&item.module_description;break;case XC_BOOKMARK_DESCRIPTION:value=&item.description;break;
+ case XC_BOOKMARK_LABEL:value=&item.label;break;default:return nullptr;}return *value?(*value)->c_str():nullptr;
+}
+size_t xc_bookmarks_position(const xc_bookmarks *s,size_t i){return s&&i<s->value.items.size()?s->value.items[i].position:0;}
+xc_status xc_bookmarks_parent(const xc_bookmarks *s,size_t i,int *has_parent,size_t *parent){
+ if(has_parent)*has_parent=0;if(parent)*parent=0;
+ if(!s||i>=s->value.items.size()||!has_parent||!parent)return XC_INVALID_ARGUMENT;
+ const auto value=s->value.items[i].parent;*has_parent=value.has_value();if(value)*parent=*value;return XC_OK;
+}
+void xc_bookmarks_release(xc_bookmarks *s){delete s;}
 const char *xc_tab_session_version(const xc_tab_session *s){return s&&s->value.version?s->value.version->c_str():nullptr;}
 size_t xc_tab_session_count(const xc_tab_session *s){return s?s->value.tabs.size():0;}
 const char *xc_tab_session_field(const xc_tab_session *s,size_t row,int field){

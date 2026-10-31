@@ -490,6 +490,16 @@ template<class T> std::future<T> selected_profile_rejection() {
   result.set_exception(std::current_exception());return future;
 }
 }
+std::future<BookmarkSnapshot> StudyWorker::read_bookmarks(StudyTab tab,std::string path) {
+  try {selected_profile_path(path);} catch(...) {return selected_profile_rejection<BookmarkSnapshot>();}
+  return impl_->submit([tab,path=std::move(path)](Impl::State &s){(void)s.tab(tab);return xiphos::core::read_bookmarks(path);});
+}
+std::future<BookmarkSnapshot> StudyWorker::edit_bookmarks(StudyTab tab,std::string path,std::optional<std::string> revision,BookmarkEdit edit) {
+  try {selected_profile_path(path);validate_bookmark_edit_request(revision,edit);} catch(...) {return selected_profile_rejection<BookmarkSnapshot>();}
+  return impl_->submit([tab,path=std::move(path),revision=std::move(revision),edit=std::move(edit)](Impl::State &s){
+    (void)s.tab(tab);return xiphos::core::edit_bookmarks(path,revision,edit);
+  });
+}
 std::future<SavedTabSession> StudyWorker::read_tab_session(StudyTab tab, std::string path) {
   try { selected_profile_path(path); } catch (...) { return selected_profile_rejection<SavedTabSession>(); }
   return impl_->submit([tab,path=std::move(path)](Impl::State &s){(void)s.tab(tab);return read_saved_tab_session(path);});
