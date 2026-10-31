@@ -23,6 +23,7 @@
 #endif
 
 #include "xiphos/core/html_cleanup.hpp"
+#include "xiphos/core/verse_color.h"
 #include "xiphos/core/note_markers.hpp"
 #include "xiphos/core/note_rendering.hpp"
 #include "xiphos/core/lexical_style.hpp"
@@ -1596,31 +1597,29 @@ GTKChapDisp::RenderOneChapter(SWModule &imodule,
 		}
 
 		// several verse colorization choices.
-		// default is no colorization.
-		color_choices   = COLOR_NONE;
+		// Shared priority; tag span remains outside annotation/current colors.
+		color_choices = COLOR_NONE;
 		color_chosen_fg = NULL;
 		color_chosen_bg = NULL;
-
-		// but then decide on the special cases for this verse.
-		// (current-verse highlighting is suppressed when a bookmark
-		// tag color is active, so it can't override the contrast
-		// color already applied to the tag background; annotation
-		// highlighting still takes precedence and coexists with it,
-		// per review feedback.)
-		if (settings.annotate_highlight && e) {
-			color_choices   = COLOR_BOTH;
+		switch (xh_choose_verse_color(settings.annotate_highlight, e != NULL,
+					     (curChapter == thisChapter) && (curVerse == k),
+					     tag_color != NULL, settings.versehighlight)) {
+		case XH_VERSE_COLOR_ANNOTATION:
+			color_choices = COLOR_BOTH;
 			color_chosen_fg = settings.highlight_bg;
 			color_chosen_bg = settings.highlight_fg;
-		} else if ((curChapter == thisChapter) && (curVerse == k) && !tag_color) {
-			if (settings.versehighlight) {
-				color_choices   = COLOR_BOTH;
-				color_chosen_fg = settings.highlight_fg;
-				color_chosen_bg = settings.highlight_bg;
-			} else {
-				// regular colorized current verse.
-				color_choices   = COLOR_TEXT;
-				color_chosen_fg = settings.currentverse_color;
-			}
+			break;
+		case XH_VERSE_COLOR_CURRENT_HIGHLIGHT:
+			color_choices = COLOR_BOTH;
+			color_chosen_fg = settings.highlight_fg;
+			color_chosen_bg = settings.highlight_bg;
+			break;
+		case XH_VERSE_COLOR_CURRENT_TEXT:
+			color_choices = COLOR_TEXT;
+			color_chosen_fg = settings.currentverse_color;
+			break;
+		case XH_VERSE_COLOR_NONE:
+			break;
 		}
 
 		// ugly ... ugly ... ugly.
