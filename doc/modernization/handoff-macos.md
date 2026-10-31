@@ -1931,3 +1931,22 @@ unknown-field preservation. Native commands/presentation remain a separate
 consumer; then continue bookmarks/annotations, editing, installation and sync.
 Keep broad compatibility testing alongside each service. Do not resume devotionals
 unless the owner reprioritizes them. F12 now records scoped core progress only.
+
+## 2026-10-31 — saved parallel profile repository
+
+Continued core work on master with devotionals deferred. Implementation commits
+764f5be (bounded explicit read/startup/deletion characterization) and b9d15e5
+(verified atomic save/rename/remove/activate). The profile test compares106
+XML/startup cases and96 complete retained delete callback cases; added native
+edit cases cover raw-key identity, duplicate/shadowed definitions, unknown data,
+UTF-8/XML literals, invalid edits, missing files and permission-preserving saves.
+Legacy displayed-name deletion failure is characterized; native edits require the
+raw key. Read/storage bounds differ from rendering bounds. No automatic profile
+loading, module resolution or tab selection occurs.
+
+Final focused XML+parallel repository checks: normal2/2 (.16s), portable2/2
+(.11s), ASan/UBSan2/2 (.60s; leak detection OFF), TSan2/2 (1.02s). SDK/framework
+instrumentation remains partial. No full host suite run for these two commits yet.
+No whole-parity acceptance claim. Preserved unrelated .DS_Store. Next: FIFO-owned
+repository/C ownership transport and explicit atomic per-tab application, then
+broader session persistence and the owner's other core priorities.

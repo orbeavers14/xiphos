@@ -188,3 +188,39 @@ C11 public-header syntax and whitespace checks pass. Native importer/WebKit
 checks rebuilt/reran in the complete host suite, but no native parallel UI was
 added. No current Fedora/MSVC/corpus/visual acceptance or whole-parity increase;
 SDK/framework sanitizer coverage partial and ASan leak detection OFF.
+
+### Explicit saved parallel profile repository
+
+The core now reads the bounded legacy `modules/parallel_set_*` subset without
+opening an implicit home profile. Startup selection follows the retained order:
+configured `parallels`, otherwise the nonempty `int1`–`int5` values, then a nonempty
+current named definition. Raw names, duplicates, blank tokens, orphan current
+keys and missing/empty definitions remain distinguishable in the owned snapshot.
+Storage admits up to1024 listed sets and4096 module tokens, with4096-byte keys
+and tokens and a16MiB aggregate copied snapshot. These are import/storage limits;
+rendering still has its separate32-column limit. No list is silently truncated.
+
+Explicit save/rename/remove/activate edits use raw stored keys. Display labels
+replace underscores with spaces, a lossy mapping; the retained deletion callback
+incorrectly compares that label with raw keys. Native callers must keep the raw
+identity. New edits reject empty/reserved `names`/`current` keys, invalid XML local
+names, unescaped commas and invalid XML text. Save upserts the first effective
+scalar definition and adds a label only when unlisted; existing duplicate labels
+remain. A missing modules section can be created by an explicit save.
+
+Rename preserves listed order/duplicates and follows the current key, rejecting
+any existing destination definition, including an orphan. Only the effective
+source definition is renamed; shadowed duplicates remain. Delete removes matching
+listed identities using the complete retained callback's empty-token fold, removes
+only the first definition in the first modules section and clears matching current
+metadata. An unlisted removal is a no-op. Activation writes the current key and a
+nonempty definition into `parallels`; missing/empty definitions retain the previous
+active list, as in legacy. These operations do not change a reading tab.
+
+Unrelated XML nodes, attributes, comments and shadowed definitions are preserved
+semantically; serialization may normalize formatting/encoding to UTF-8. Edits use
+the shared verified same-directory replacement helper, prepare the owned result
+before replacing the destination and preserve existing permissions. Missing files
+can be created only by save. Concurrent observed changes reject; this is not an
+interprocess locking protocol. Full session persistence, worker/C transport and
+native named-set presentation remain separate work.
