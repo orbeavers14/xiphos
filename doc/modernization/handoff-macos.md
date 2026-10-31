@@ -1995,3 +1995,26 @@ C++11 all9/9 (6.34s, before transport-only changes). Strict C11 header passes.
 Full Mac and portable model rebuild/test runs are underway at this checkpoint;
 results will be appended when complete. Preserved unrelated .DS_Store. No hosted
 builds, purchases, reset credits, devotional work or frontend expansion.
+
+## 2026-10-31 — full tab checkpoint and bookmark read foundation
+
+Full local Mac through7d5f491:205 passes+one explicit index skip (206 registered,
+168.37s), including Swift6 importers and real offscreen WebKit. Full portable
+core/Linux models on Mac:158 passes+one index skip (159 registered,118.90s,
+GTK runtime OFF). These runs precede shared-parser/bookmark changes below.
+
+b00c37a extracts existing secure root/encoding/DTD/NUL XML policy for reuse;
+53da4de adds bounded owned bookmark hierarchy reads with exact-source revision,
+raw optional fields, derived labels, parents/order and ignored-subtree disclosure.
+Eighteen complete frozen/current recursive loader comparisons plus complete XML
+helper encoding agree on supported fixtures. The native reader avoids retained
+fixed-buffer/NULL-label and unknown-node/uninitialized-iterator paths; these are
+explicit import limitations, not changes to GTK. Unknown nodes remain source XML
+and must be preserved by upcoming mutations. See bookmark-workflows.md.
+
+Final focused shared repositories: normal8/8 (1.74s), portable8/8 (1.74s),
+TSan8/8 (4.01s). ASan/UBSan shared XML/tab/parallel/book/search-list7/7 (1.80s),
+then bookmark-only1/1 (1.03s). Leak detection OFF, SDK/framework coverage partial;
+retained bookmark oracle leaks unchanged. No whole-parity acceptance increase.
+Next: revision-checked verified bookmark edits/moves and FIFO/C transport, then
+annotation/color policy; full native session state/restoration remains tracked.
