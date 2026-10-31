@@ -22,7 +22,8 @@ private struct ShutdownHandle: @unchecked Sendable { let value: OpaquePointer }
 private final class SessionCStrings {
     private var owned: [UnsafeMutablePointer<CChar>] = []
     func copy(_ value: String) throws -> UnsafePointer<CChar> {
-        guard !value.utf8.contains(0), let pointer = strdup(value) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        guard !value.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        guard let pointer = strdup(value) else { throw CoreError(status: XC_ENGINE_ERROR) }
         owned.append(pointer); return UnsafePointer(pointer)
     }
     deinit { for pointer in owned { free(pointer) } }
@@ -668,6 +669,7 @@ actor CoreWorker {
             parent: CoreValues.bookNode(parent)!, nodes: nodes, nextAfter: more ? next : nil)
     }
     func readNativeSession(path: String) async throws -> CoreNativeSessionFile {
+        guard !path.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?
         let handle = try worker()
         let status = path.withCString { xc_worker_read_native_session(handle, $0, &request) }
@@ -692,6 +694,7 @@ actor CoreWorker {
             activeKey: xc_native_session_active_key(result).map { String(cString: $0) })
     }
     func restoreNativeSession(_ saved: CoreNativeSessionFile) async throws -> CoreRestoredSession {
+        guard !saved.xml.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var input: OpaquePointer?
         let parsed = saved.xml.withCString { xc_native_session_parse($0, &input) }
         guard parsed == XC_OK, let input else { throw CoreError(status: parsed) }
@@ -717,6 +720,7 @@ actor CoreWorker {
         return CoreRestoredSession(windows: rows, activeTab: active == 0 ? nil : active)
     }
     func saveNativeSession(path: String, windows: [CoreWindowCapture], activeKey: String?) async throws {
+        guard !path.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         // Admission copies all C strings before this synchronous submission ends.
         let strings = SessionCStrings()
         var rows: [xc_native_tab_capture] = []
@@ -731,8 +735,10 @@ actor CoreWorker {
         let active = try activeKey.map { try strings.copy($0) }
         let handle = try worker()
         var request: OpaquePointer?
-        let status = rows.withUnsafeBufferPointer { buffer in
-            path.withCString { xc_worker_save_native_session(handle, $0, buffer.baseAddress, buffer.count, active, &request) }
+        let status = withExtendedLifetime(strings) {
+            rows.withUnsafeBufferPointer { buffer in
+                path.withCString { xc_worker_save_native_session(handle, $0, buffer.baseAddress, buffer.count, active, &request) }
+            }
         }
         xc_request_release(try await wait(status, request))
     }

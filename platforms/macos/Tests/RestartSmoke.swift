@@ -18,7 +18,7 @@ import AppKit
         guard folder.lastPathComponent == "restart-smoke-fixture" else { fatalError("Only disposable restart output can be removed") }
         let phase = CommandLine.arguments.count == 4 ? CommandLine.arguments[3] : "all"
         if phase == "all" {
-            for step in ["write", "resume"] {
+            for step in ["write", "resume", "windows"] {
                 let process = Process(); process.executableURL = URL(fileURLWithPath: CommandLine.arguments[0])
                 process.arguments = [root, folder.path, step]
                 try process.run(); process.waitUntilExit()
@@ -27,7 +27,41 @@ import AppKit
             print("Native session persisted across two fresh processes")
             return
         }
-        guard ["write","resume"].contains(phase) else { fatalError("Unknown restart test phase") }
+        guard ["write","resume","windows"].contains(phase) else { fatalError("Unknown restart test phase") }
+        if phase == "windows" {
+            _ = NSApplication.shared
+            NSApplication.shared.setActivationPolicy(.prohibited)
+            let windowPath = folder.appendingPathComponent("appkit.xml").path
+            do {
+                let worker = try CoreWorker(root: root)
+                let owner = NativeSessionController(worker: worker, path: windowPath, showsWindows: false, offscreenWindows: true)
+                try await owner.start(); try await idle(owner.records[0].model)
+                guard let window = owner.records[0].window else { fatalError("Offscreen NSWindow missing") }
+                window.setFrame(NSRect(x: 73, y: 85, width: 900, height: 650), display: false)
+                window.performClose(nil)
+                let deadline = Date().addingTimeInterval(10)
+                while !owner.records.isEmpty {
+                    guard Date() < deadline else { fatalError("NSWindow close/save timeout") }
+                    try await Task.sleep(nanoseconds: 1_000_000)
+                }
+                guard FileManager.default.fileExists(atPath: windowPath) else { fatalError("NSWindow delegate did not save before close") }
+                await worker.shutdown()
+            }
+            do {
+                let worker = try CoreWorker(root: root)
+                let owner = NativeSessionController(worker: worker, path: windowPath, showsWindows: false, offscreenWindows: true)
+                try await owner.start()
+                guard owner.records.count == 1, let window = owner.records[0].window,
+                      window.frame.width == 900, window.frame.height == 650 else { fatalError("Native NSWindow frame not restored") }
+                try await owner.prepareToQuit()
+                let saved = try Data(contentsOf: URL(fileURLWithPath: windowPath))
+                window.performClose(nil)
+                guard owner.records.isEmpty, try Data(contentsOf: URL(fileURLWithPath: windowPath)) == saved else { fatalError("Quit close altered the prepared session") }
+                await worker.shutdown()
+            }
+            print("Offscreen AppKit close, frame restore and prepared quit passed")
+            return
+        }
         if phase == "write" {
             try? FileManager.default.removeItem(at: folder)
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -61,7 +95,7 @@ import AppKit
             second.bookKey = "/unsubmitted book draft"
             dictionaryDraft = first.dictionaryKey
             savedKeys = owner.records.map(\.key)
-            try await owner.save()
+            try await owner.prepareToQuit()
             savedXML = try String(contentsOfFile: path, encoding: .utf8)
             guard savedXML.contains("host=") else { fatalError("Host payload not stored with core snapshot") }
             for record in owner.records { record.model.close() }
@@ -103,7 +137,11 @@ import AppKit
             try await owner.closeWindow(key: savedKeys[1])
             guard owner.records.isEmpty else { fatalError("Last window close ownership") }
             let last = try String(contentsOfFile: path, encoding: .utf8)
-            try await owner.save()
+            let emptyPath = folder.appendingPathComponent("empty.xml").path
+            try await owner.save(to: emptyPath)
+            let empty = try await worker.readNativeSession(path: emptyPath)
+            guard empty.windows.isEmpty else { fatalError("Explicit empty Save As did not write a zero-window session") }
+            try await owner.prepareToQuit()
             guard try String(contentsOfFile: path, encoding: .utf8) == last else { fatalError("Quit after last close erased session") }
             await worker.shutdown()
         }

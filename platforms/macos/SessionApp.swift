@@ -17,11 +17,13 @@ import SwiftUI
     private(set) var activeKey: String?
     private(set) var restoreError: String?
     private var operation = false
+    private var quitting = false
     private var approvedClose = Set<String>()
-    var canOpenWindow: Bool { !operation }
+    var canOpenWindow: Bool { !operation && !quitting }
     private let showsWindows: Bool
-    init(worker: CoreWorker, path: String, showsWindows: Bool = true) {
-        self.worker = worker; self.path = path; self.showsWindows = showsWindows
+    private let offscreenWindows: Bool
+    init(worker: CoreWorker, path: String, showsWindows: Bool = true, offscreenWindows: Bool = false) {
+        self.worker = worker; self.path = path; self.showsWindows = showsWindows; self.offscreenWindows = offscreenWindows
     }
     static func defaultPath() throws -> String {
         if let selected = ProcessInfo.processInfo.environment["XIPHOS_SESSION_PATH"], !selected.isEmpty { return selected }
@@ -71,7 +73,7 @@ import SwiftUI
         activeKey = key; showWindow(at: records.count - 1); return model
     }
     private func showWindow(at index: Int) {
-        guard showsWindows else { return }
+        guard showsWindows || offscreenWindows else { return }
         let record = records[index]
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1100, height: 760),
             styleMask: [.titled,.closable,.miniaturizable,.resizable], backing: .buffered, defer: false)
@@ -82,7 +84,8 @@ import SwiftUI
         if let frame = record.frame, frame.valid {
             window.setFrame(window.constrainFrameRect(frame.rect, to: NSScreen.main), display: false)
         } else { window.center() }
-        records[index].window = window; window.makeKeyAndOrderFront(nil)
+        records[index].window = window
+        if showsWindows { window.makeKeyAndOrderFront(nil) } else { window.orderOut(nil) }
     }
     private func ready() async throws {
         let deadline = Date().addingTimeInterval(30)
@@ -100,7 +103,14 @@ import SwiftUI
         operation = true
         defer { operation = false }
         if restoreError != nil && destination == nil { throw SessionHostError(message: restoreError!) }
-        guard !records.isEmpty else { return } // Keep the last window's saved session.
+        if records.isEmpty {
+            // Automatic quit preserves the last window, while explicit Save As
+            // may deliberately write a zero-window session.
+            guard let destination else { return }
+            try FileManager.default.createDirectory(at: URL(fileURLWithPath: destination).deletingLastPathComponent(), withIntermediateDirectories: true)
+            try await worker.saveNativeSession(path: destination, windows: [], activeKey: nil)
+            path = destination; restoreError = nil; return
+        }
         try await ready()
         for record in records { record.model.isBusy = true }
         defer { for record in records { record.model.isBusy = false } }
@@ -120,6 +130,10 @@ import SwiftUI
         try await worker.saveNativeSession(path: target, windows: captures, activeKey: active)
         if destination != nil { path = target; restoreError = nil }
     }
+    func prepareToQuit() async throws {
+        try await save()
+        quitting = true
+    }
     func closeWindow(key: String) async throws {
         guard records.contains(where: { $0.key == key }) else { return }
         try await save(excluding: key)
@@ -134,6 +148,7 @@ import SwiftUI
         if activeKey == key { activeKey = records.first?.key }
     }
     func windowShouldClose(_ sender: NSWindow) -> Bool {
+        if quitting { return true }
         guard let key = sender.identifier?.rawValue else { return true }
         if approvedClose.remove(key) != nil { return true }
         Task {
@@ -198,7 +213,7 @@ import SwiftUI
         guard let controller else { return .terminateNow }
         terminating = true
         Task {
-            do { try await controller.save(); sender.reply(toApplicationShouldTerminate: true) }
+            do { try await controller.prepareToQuit(); sender.reply(toApplicationShouldTerminate: true) }
             catch {
                 let alert = NSAlert(); alert.messageText = "Quit without saving this session?"
                 alert.informativeText = error.localizedDescription
