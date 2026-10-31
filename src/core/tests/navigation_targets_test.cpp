@@ -44,6 +44,9 @@ void fixture(const std::filesystem::path &root){
   else if(bible)writer.reset(new RawText(prefix.string().c_str(),nullptr,nullptr,nullptr,ENC_UTF8,DIRECTION_LTR,FMT_PLAIN,"en",canon.c_str()));
   else if(personal)writer.reset(new RawFiles(prefix.string().c_str()));else writer.reset(new RawCom(prefix.string().c_str()));
   for(const auto *reference:dict?std::vector<const char *>{"alpha","alpha-beta;gamma,delta/part","anchor-key","anchor-key!before","alpha-beta;gamma,delta/part#tag!note?query","café 文字","literal%20key","plus+key"}:std::vector<const char *>{"Genesis1:1","John3:16","John3:17"}){writer->setKey(reference);writer->setEntry((std::string(dict?"<a name=\"dictionary-target\"></a>":"")+"Original "+std::string(id)+" navigation prose."+(dict?" Key "+std::string(reference):"")).c_str());}
+  if(std::string(id)=="Daily")for(const auto *date:{"01.01","02.29","07.09","12.31"}){
+   writer->setKey(date);writer->setEntry((std::string("Original Daily devotional prose for ")+date+".").c_str());
+  }
   const std::string alias=dict?(std::string(id)=="Dictionary"?"D":std::string(id)=="Daily"?"DailyAlias":std::string(id)=="LongDictionaryNameX"?"L19":"L20"):bible?(alt?"TA":"T"):personal?"P":"N";
   std::ofstream config(root/"mods.d"/(std::string(id)+".conf"));
   config<<'['<<id<<"]\nDataPath=./"<<id<<(dict?"/entries":"/")<<"\nModDrv="<<driver<<"\nSourceType="<<(dict?"ThML":"Plain")<<"\nEncoding=UTF-8\nLang=en\nVersification="<<canon<<"\nDescription=Original navigation fixture\nAbbreviation="<<alias<<'\n';if(std::string(id)=="Daily")config<<"Feature=DailyDevotion\n";check(bool(config),"Write fixture catalog");

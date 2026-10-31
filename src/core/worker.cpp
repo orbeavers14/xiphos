@@ -550,6 +550,17 @@ std::future<DictionaryEntry> StudyWorker::navigate_dictionary(StudyTab tab, std:
     return s.tab(tab).navigate_dictionary(module, key, direction);
   });
 }
+std::future<DevotionalEntry> StudyWorker::read_devotional(StudyTab tab, std::string module,
+    std::string entered, int month, int day) {
+  if (!devotional_read_arguments(module, entered, month, day)) {
+    std::promise<DevotionalEntry> rejected;
+    rejected.set_exception(std::make_exception_ptr(std::invalid_argument("Invalid devotional read request")));
+    return rejected.get_future();
+  }
+  return impl_->submit([tab, module = std::move(module), entered = std::move(entered), month, day](Impl::State &s) {
+    return s.tab(tab).read_devotional(module, entered, month, day);
+  });
+}
 std::future<DictionaryEntry> StudyWorker::read_dictionary(StudyTab tab, std::string module, std::string key) {
   return impl_->submit([tab, module = std::move(module), key = std::move(key)](Impl::State &s) {
     return s.tab(tab).read_dictionary(module, key);

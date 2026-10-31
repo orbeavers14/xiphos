@@ -38,6 +38,7 @@ struct xc_lexicons { std::optional<xiphos::core::LexiconPreferences> value; };
 struct xc_lexical_entry { xiphos::core::LexicalEntry value; };
 struct xc_dictionary_choices { xiphos::core::DictionaryChoices value; };
 struct xc_dictionary_history { xiphos::core::DictionaryHistorySnapshot value; };
+struct xc_devotional_entry { xiphos::core::DevotionalEntry value; };
 struct xc_dictionary_entry { xiphos::core::DictionaryEntry value; std::optional<std::string> anchor; };
 struct xc_book_tree { xiphos::core::BookTree value; };
 struct xc_book_uri_target {
@@ -109,6 +110,7 @@ struct xc_request {
   std::unique_ptr<xc_dictionary_choices> dictionary_choices;
   std::unique_ptr<xc_dictionary_history> dictionary_history;
   std::unique_ptr<xc_dictionary_entry> dictionary;
+  std::unique_ptr<xc_devotional_entry> devotional;
   std::unique_ptr<xc_book_tree> book_tree;
   std::unique_ptr<xc_book_uri_target> book_uri_target;
   std::unique_ptr<xc_book_entry> book_entry;
@@ -176,6 +178,7 @@ struct xc_request {
   void store(xiphos::core::LexicalEntry v) { lexical = std::make_unique<xc_lexical_entry>(xc_lexical_entry{std::move(v)}); }
   void store(xiphos::core::DictionaryChoices v) { dictionary_choices = std::make_unique<xc_dictionary_choices>(xc_dictionary_choices{std::move(v)}); }
   void store(xiphos::core::DictionaryHistorySnapshot v) { dictionary_history = std::make_unique<xc_dictionary_history>(xc_dictionary_history{std::move(v)}); }
+  void store(xiphos::core::DevotionalEntry v) { devotional = std::make_unique<xc_devotional_entry>(xc_devotional_entry{std::move(v)}); }
   void store(xiphos::core::DictionaryUriEntry v) { dictionary = std::make_unique<xc_dictionary_entry>(xc_dictionary_entry{std::move(v.entry), std::move(v.anchor)}); }
   void store(xiphos::core::DictionaryEntry v) { dictionary = std::make_unique<xc_dictionary_entry>(xc_dictionary_entry{std::move(v)}); }
   void store(std::optional<xiphos::core::BookDocument> v) {
@@ -1421,6 +1424,25 @@ xc_status xc_worker_navigate_dictionary(xc_worker *w, uint64_t tab, const char *
   }
   return queue_request(w, out, [=](auto &worker) { return worker.navigate_dictionary(tab, id, key, direction); });
 }
+xc_status xc_worker_read_devotional(xc_worker *w, uint64_t tab, const char *id, const char *date,
+    int month, int day, xc_request **out) {
+  if (out) *out = nullptr;
+  if (!out || !w || month < 1 || month > 12 || day < 1 || day > 31 ||
+      !xiphos::core::detail::study_link_c_text(id, XC_DEVOTIONAL_MAX_MODULE_BYTES, true) ||
+      !xiphos::core::detail::study_link_c_text(date, XC_DEVOTIONAL_MAX_DATE_BYTES, false)) return XC_INVALID_ARGUMENT;
+  static_assert(XC_DEVOTIONAL_MAX_MODULE_BYTES == xiphos::core::maximum_devotional_module_bytes, "Devotional module bounds differ");
+  static_assert(XC_DEVOTIONAL_MAX_DATE_BYTES == xiphos::core::maximum_devotional_date_bytes, "Devotional date bounds differ");
+  return queue_request(w, out, [=](auto &worker) { return worker.read_devotional(tab, id, date ? date : "", month, day); });
+}
+xc_devotional_entry *xc_request_take_devotional_entry(xc_request *r) { return r && r->status == XC_OK ? r->devotional.release() : nullptr; }
+const char *xc_devotional_entry_module(const xc_devotional_entry *entry) { return entry ? entry->value.module.c_str() : nullptr; }
+const char *xc_devotional_entry_date(const xc_devotional_entry *entry) { return entry ? entry->value.date.key.c_str() : nullptr; }
+const char *xc_devotional_entry_matched_key(const xc_devotional_entry *entry) { return entry ? entry->value.matched_key.c_str() : nullptr; }
+const char *xc_devotional_entry_html(const xc_devotional_entry *entry) { return entry ? entry->value.html.c_str() : nullptr; }
+int xc_devotional_entry_month(const xc_devotional_entry *entry) { return entry ? entry->value.date.month : 0; }
+int xc_devotional_entry_day(const xc_devotional_entry *entry) { return entry ? entry->value.date.day : 0; }
+int xc_devotional_entry_used_today(const xc_devotional_entry *entry) { return entry && entry->value.date.used_today; }
+void xc_devotional_entry_release(xc_devotional_entry *entry) { delete entry; }
 xc_status xc_worker_read_dictionary(xc_worker *w, uint64_t tab, const char *id, const char *key, xc_request **out) {
   if (!id || !*id || !key || !*key) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.read_dictionary(tab, id, key); });

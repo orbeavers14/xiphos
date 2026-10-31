@@ -203,6 +203,11 @@ DictionaryEntry StudySession::navigate_dictionary(const std::string &module, con
   return options ? reader_.navigate_dictionary(module, key, direction, *options)
                  : reader_.navigate_dictionary(module, key, direction);
 }
+DevotionalEntry StudySession::read_devotional(const std::string &module, const std::string &entered, int month, int day) {
+  const auto options = module_engine_options(module);
+  return options ? reader_.read_devotional(module, entered, month, day, *options)
+                 : reader_.read_devotional(module, entered, month, day);
+}
 DictionaryEntry StudySession::read_dictionary(const std::string &module, const std::string &key) {
   const auto options = module_engine_options(module);
   return options ? reader_.read_dictionary(module, key, *options) : reader_.read_dictionary(module, key);

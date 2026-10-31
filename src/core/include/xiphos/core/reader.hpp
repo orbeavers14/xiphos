@@ -7,6 +7,7 @@
 #include "heading_notes.hpp"
 #include "engine_options.hpp"
 #include "content.hpp"
+#include "devotional.hpp"
 #include "link.hpp"
 #include "navigation.hpp"
 #include "lexical.hpp"
@@ -141,6 +142,12 @@ public:
   // Selection uses a cloned source key; returns an owned selected module name.
   std::string select_lexicon(const LexicalLink &command, const std::string &source_reference,
                             int origin, const LexiconPreferences &preferences);
+  // Exact installed DailyDevotion SWLD only; copied date/matched key/HTML.
+  // Read-only session semantics; no dictionary casing/history or module fallback.
+  DevotionalEntry read_devotional(const std::string &module, const std::string &entered,
+                                  int today_month, int today_day);
+  DevotionalEntry read_devotional(const std::string &module, const std::string &entered,
+                                  int today_month, int today_day, const EngineOptions &options);
   // Explicit dictionary module/key. SWORD owns matching/normalization semantics.
   DictionaryEntry read_dictionary(const std::string &module, const std::string &key);
   DictionaryEntry read_dictionary(const std::string &module, const std::string &key, const EngineOptions &options);
@@ -185,6 +192,8 @@ private:
                           const EngineOptions *options, bool render_body);
   BookDocument book_document_impl(const std::string &module, std::uint64_t offset, const EngineOptions *options, const BookDocumentLimits &limits, const bool *labels = nullptr);
   BookEntry book_impl(const std::string &module, std::uint64_t offset, const EngineOptions *options);
+  DevotionalEntry devotional_impl(const std::string &module, const std::string &entered,
+                                  int today_month, int today_day, const EngineOptions *options);
   DictionaryEntry dictionary_impl(const std::string &module, const std::string &key, const EngineOptions *options, int direction = 0);
   ReferenceList reference_list_impl(const std::string &module, const std::string &expression,
                                     const std::string &context, const EngineOptions *options);

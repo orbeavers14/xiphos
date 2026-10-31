@@ -53,6 +53,17 @@ int main(int argc,char **argv){try {
  }
  xc_worker *worker=nullptr;xc_request *request=nullptr;
  check(xc_worker_open(root.c_str(),&worker)==XC_OK&&xc_worker_create_tab(worker,&request)==XC_OK&&wait(request)==XC_OK,"C owner/tab");const auto tab=xc_request_tab(request);xc_request_release(request);
+ const std::string hugeDate(XC_DEVOTIONAL_MAX_DATE_BYTES+1,'d');
+ for(const auto &input:std::vector<std::pair<const char *,const char *>>{{nullptr,""},{"",""},{hugeContext.c_str(),""},{"AFirst",hugeDate.c_str()}}){
+  request=reinterpret_cast<xc_request *>(1);largest=0;watching=true;
+  const auto status=xc_worker_read_devotional(worker,tab,input.first,input.second,7,9,&request);
+  watching=false;check(status==XC_INVALID_ARGUMENT&&!request&&largest==0,"Devotional invalid bounds reject before C observer/copies");
+ }
+ for(const auto &date:std::vector<std::pair<int,int>>{{0,9},{13,9},{7,0},{7,32}}){
+  request=reinterpret_cast<xc_request *>(1);largest=0;watching=true;
+  const auto status=xc_worker_read_devotional(worker,tab,"AFirst",nullptr,date.first,date.second,&request);
+  watching=false;check(status==XC_INVALID_ARGUMENT&&!request&&largest==0,"Devotional invalid local date rejects before C allocation");
+ }
  using Submit=std::function<xc_status(const char *,const char *,const char *,xc_request **)>;
  struct Route {Submit call;bool context;};
  const std::vector<Route> routes={

@@ -4,6 +4,13 @@
 #include <cstdlib>
 #include <stdexcept>
 namespace xiphos { namespace core {
+bool devotional_read_arguments(const std::string &module, const std::string &entered,
+    int today_month, int today_day) noexcept {
+  return !module.empty() && module.size() <= maximum_devotional_module_bytes &&
+    entered.size() <= maximum_devotional_date_bytes && module.find('\0') == std::string::npos &&
+    entered.find('\0') == std::string::npos && today_month >= 1 && today_month <= 12 &&
+    today_day >= 1 && today_day <= 31;
+}
 DevotionalDate devotional_date(const std::string &entered, int today_month, int today_day) {
   if (today_month < 1 || today_month > 12 || today_day < 1 || today_day > 31)
     throw std::invalid_argument("Invalid local date for devotional selection");

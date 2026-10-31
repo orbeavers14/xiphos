@@ -73,6 +73,8 @@ public:
   const DictionaryHistory &dictionary_history() const { return dictionary_history_; }
   void clear_dictionary_history() { dictionary_history_.clear(); }
   DictionaryEntry navigate_dictionary(const std::string &module, const std::string &key, int direction);
+  DevotionalEntry read_devotional(const std::string &module, const std::string &entered,
+                                  int today_month, int today_day);
   DictionaryEntry read_dictionary(const std::string &module, const std::string &key);
   // Raw book source/HTML with existing effective engine options. No visit or
   // book-specific presentation/history/persistence policy is introduced yet.

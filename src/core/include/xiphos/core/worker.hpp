@@ -135,6 +135,9 @@ public:
   std::future<DictionaryHistorySnapshot> dictionary_history(StudyTab tab);
   std::future<void> clear_dictionary_history(StudyTab tab);
   std::future<DictionaryEntry> navigate_dictionary(StudyTab tab, std::string module, std::string key, int direction);
+  // Bounded admission before FIFO; host supplies local today. No history visit.
+  std::future<DevotionalEntry> read_devotional(StudyTab tab, std::string module,
+      std::string entered, int today_month, int today_day);
   std::future<DictionaryEntry> read_dictionary(StudyTab tab, std::string module, std::string key);
   std::future<ReferenceList> read_reference_list(StudyTab tab, std::string module, std::string expression, std::string context);
   // Study-link inputs use study_link_admission.hpp byte bounds; oversized/NUL

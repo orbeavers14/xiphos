@@ -28,6 +28,7 @@
 #include <versekey.h>
 #include <filesystem>
 #include <mutex>
+#include <cstring>
 #include <stdexcept>
 
 namespace xiphos::core {
@@ -450,6 +451,28 @@ std::string Reader::select_lexicon(const LexicalLink &command, const std::string
     command.type.c_str(), &borrowed, &context);
   if (!selected || !*selected) throw std::invalid_argument("No lexicon selected for this command");
   return selected;
+}
+DevotionalEntry Reader::read_devotional(const std::string &module, const std::string &entered,
+    int month, int day) { return devotional_impl(module, entered, month, day, nullptr); }
+DevotionalEntry Reader::read_devotional(const std::string &module, const std::string &entered,
+    int month, int day, const EngineOptions &options) { return devotional_impl(module, entered, month, day, &options); }
+DevotionalEntry Reader::devotional_impl(const std::string &id, const std::string &entered,
+    int month, int day, const EngineOptions *options) {
+  if (!devotional_read_arguments(id, entered, month, day))
+    throw std::invalid_argument("Invalid devotional read request");
+  auto date = devotional_date(entered, month, day);
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto *module = impl_->manager->getModule(id.c_str());
+  if (!module) throw std::out_of_range("Devotional module is not installed");
+  const auto *feature = module->getConfigEntry("Feature");
+  if (!dynamic_cast<sword::SWLD *>(module) || !feature || std::strcmp(feature, "DailyDevotion") != 0)
+    throw std::invalid_argument("Module is not a daily devotional");
+  std::unique_ptr<ScopedEngineOptions> scope;
+  if (options) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager, *options);
+  const std::string saved = module->getKeyText();
+  struct Restore { sword::SWModule &module; const std::string &key; ~Restore() { module.setKey(key.c_str()); } } restore{*module, saved};
+  auto html = render_entry(*module, date.key.c_str());
+  return {id, std::move(date), module->getKeyText(), std::move(html)};
 }
 DictionaryEntry Reader::read_dictionary(const std::string &module, const std::string &key) {
   return dictionary_impl(module, key, nullptr);

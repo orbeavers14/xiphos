@@ -16,6 +16,7 @@ typedef struct xc_note xc_note;
 typedef struct xc_dictionary_choices xc_dictionary_choices;
 typedef struct xc_dictionary_history xc_dictionary_history;
 typedef struct xc_dictionary_entry xc_dictionary_entry;
+typedef struct xc_devotional_entry xc_devotional_entry;
 typedef struct xc_book_tree xc_book_tree;
 typedef struct xc_book_uri_target xc_book_uri_target;
 typedef struct xc_book_entry xc_book_entry;
@@ -882,6 +883,26 @@ void xc_dictionary_history_release(xc_dictionary_history *history);
 /* One dictionary key step (-1/+1), preserving SDK boundary behavior and tab
  * options. Returns the owned dictionary kind; does not visit Bible history. */
 xc_status xc_worker_navigate_dictionary(xc_worker *worker, uint64_t tab, const char *module, const char *key, int direction, xc_request **out);
+/* Exact installed DailyDevotion module; no alias/first-module fallback or history
+ * visit. Host supplies local today (month1..12, day1..31); date NULL/empty uses
+ * today. Invalid month selection also uses today; other safe legacy date-key
+ * semantics remain. Bounded module/date scan precedes copies/FIFO admission.
+ * Result separates selected date from the SDK matched key. All strings belong
+ * to the result and survive request/worker close until release; take once.
+ * Localized title/date formatting and selection persistence belong to later
+ * consumers; this call does not commit a pane selection. */
+enum { XC_DEVOTIONAL_MAX_MODULE_BYTES = 4096, XC_DEVOTIONAL_MAX_DATE_BYTES = 64 };
+xc_status xc_worker_read_devotional(xc_worker *worker, uint64_t tab, const char *module,
+    const char *date, int today_month, int today_day, xc_request **out);
+xc_devotional_entry *xc_request_take_devotional_entry(xc_request *request);
+const char *xc_devotional_entry_module(const xc_devotional_entry *entry);
+const char *xc_devotional_entry_date(const xc_devotional_entry *entry);
+const char *xc_devotional_entry_matched_key(const xc_devotional_entry *entry);
+const char *xc_devotional_entry_html(const xc_devotional_entry *entry);
+int xc_devotional_entry_month(const xc_devotional_entry *entry);
+int xc_devotional_entry_day(const xc_devotional_entry *entry);
+int xc_devotional_entry_used_today(const xc_devotional_entry *entry);
+void xc_devotional_entry_release(xc_devotional_entry *entry);
 /* Explicit dictionary preview with tab settings; module/key nonempty. No visit. */
 xc_status xc_worker_read_dictionary(xc_worker *worker, uint64_t tab, const char *module, const char *key, xc_request **out);
 /* Expression may be empty; context/module must be nonempty. No history visit. */
