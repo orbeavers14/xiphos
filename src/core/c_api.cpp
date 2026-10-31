@@ -31,6 +31,8 @@ struct xc_search_batch {
   }
 };
 struct xc_reference_list { xiphos::core::ReferenceList value; };
+struct xc_annotations { xiphos::core::AnnotationProfile value; };
+struct xc_annotation_cache { xiphos::core::AnnotationCache value; };
 struct xc_bookmark_tags { xiphos::core::BookmarkTags value; };
 struct xc_bookmarks { xiphos::core::BookmarkSnapshot value; };
 struct xc_tab_session { xiphos::core::SavedTabSession value; };
@@ -140,6 +142,8 @@ struct xc_request {
   std::unique_ptr<xc_book_note> book_note;
   std::unique_ptr<xc_lexical_entry> lexical;
   std::unique_ptr<xc_lexicons> lexicons;
+  std::unique_ptr<xc_annotations> annotations;
+  std::unique_ptr<xc_annotation_cache> annotation_cache;
   std::unique_ptr<xc_bookmark_tags> bookmark_tags;
   std::unique_ptr<xc_bookmarks> bookmarks;
   std::unique_ptr<xc_tab_session> tab_session;
@@ -179,6 +183,12 @@ struct xc_request {
   void store(xiphos::core::ContextualStudyLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::ResolvedStudyLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::ReferenceList v) { references = std::make_unique<xc_reference_list>(xc_reference_list{std::move(v)}); }
+  void store(xiphos::core::AnnotationProfile v) {
+    static_assert(std::is_nothrow_move_assignable_v<xiphos::core::AnnotationProfile>, "Committed annotations must publish without allocation");annotations->value=std::move(v);
+  }
+  void store(xiphos::core::AnnotationCache v) {
+    static_assert(std::is_nothrow_move_assignable_v<xiphos::core::AnnotationCache>, "Owned annotation cache must publish without allocation");annotation_cache->value=std::move(v);
+  }
   void store(xiphos::core::BookmarkTags v) {
     static_assert(std::is_nothrow_move_assignable_v<xiphos::core::BookmarkTags>, "Owned annotation publication must not allocate");
     bookmark_tags->value=std::move(v);
@@ -324,6 +334,8 @@ template<class T> struct Request final : xc_request {
   // Allocate result envelopes before accepting a state-changing job;
   // polling then only moves owned values into already allocated storage.
   Request() {
+    if constexpr (std::is_same_v<T,xiphos::core::AnnotationProfile>) annotations = std::make_unique<xc_annotations>();
+    if constexpr (std::is_same_v<T,xiphos::core::AnnotationCache>) annotation_cache = std::make_unique<xc_annotation_cache>();
     if constexpr (std::is_same_v<T,xiphos::core::BookmarkTags>) bookmark_tags = std::make_unique<xc_bookmark_tags>();
     if constexpr (std::is_same_v<T,xiphos::core::BookmarkSnapshot>) bookmarks = std::make_unique<xc_bookmarks>();
     if constexpr (std::is_same_v<T,xiphos::core::SavedTabSession>) tab_session = std::make_unique<xc_tab_session>();
@@ -1360,6 +1372,22 @@ xc_status xc_worker_resolve_module_name(xc_worker *w, uint64_t tab, const char *
   if (!bounded_image_c_text(requested, 4096)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.resolve_module_name(tab, requested); });
 }
+xc_status xc_worker_read_annotations(xc_worker *w,uint64_t tab,const char *path,xc_request **out){
+ if(!bounded_image_c_text(path,4096)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
+ return queue_request(w,out,[=](auto &worker){return worker.read_annotations(tab,path);});
+}
+xc_status xc_worker_edit_annotations(xc_worker *w,uint64_t tab,const char *path,const xc_annotation_edit *edit,xc_request **out){
+ if(out)*out=nullptr;
+ if(!w||!out||!edit||!bounded_image_c_text(path,4096)||!edit->label||(*edit->label&&!bounded_image_c_text(edit->label,4096))||
+    (edit->action!=XC_ANNOTATION_SAVE&&edit->action!=XC_ANNOTATION_REMOVE))return XC_INVALID_ARGUMENT;
+ static_assert(XC_ANNOTATION_MAX_NOTE_BYTES==xiphos::core::maximum_annotation_note_bytes,"Annotation note bounds differ");
+ if(edit->action==XC_ANNOTATION_SAVE?(!*edit->label||!edit->note||(*edit->note&&!bounded_image_c_text(edit->note,XC_ANNOTATION_MAX_NOTE_BYTES))):edit->note!=nullptr)return XC_INVALID_ARGUMENT;
+ return queue_request(w,out,[=](auto &worker){return worker.edit_annotations(tab,path,{static_cast<xiphos::core::AnnotationAction>(edit->action),edit->label,edit->note?edit->note:""});});
+}
+xc_status xc_worker_read_annotation_cache(xc_worker *w,uint64_t tab,const char *path,const char *module,const char *book,xc_request **out){
+ if(!bounded_image_c_text(path,4096)||!bounded_image_c_text(module,4096)||!bounded_image_c_text(book,4096)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
+ return queue_request(w,out,[=](auto &worker){return worker.read_annotation_cache(tab,path,module,book);});
+}
 void xc_bookmark_tag_limits_default(xc_bookmark_tag_limits *limits){
  if(limits){const xiphos::core::BookmarkTagLimits value;*limits={value.verses,value.occurrences,value.snapshot_bytes};}
 }
@@ -1711,6 +1739,8 @@ void xc_request_release(xc_request *r) { delete r; }
 uint64_t xc_request_tab(const xc_request *r) { return r && r->status == XC_OK ? r->tab : 0; }
 xc_reference_list *xc_request_take_reference_list(xc_request *r) { return r && r->status == XC_OK ? r->references.release() : nullptr; }
 xc_lexical_entry *xc_request_take_lexical_entry(xc_request *r) { return r && r->status == XC_OK ? r->lexical.release() : nullptr; }
+xc_annotations *xc_request_take_annotations(xc_request *r){return r&&r->status==XC_OK?r->annotations.release():nullptr;}
+xc_annotation_cache *xc_request_take_annotation_cache(xc_request *r){return r&&r->status==XC_OK?r->annotation_cache.release():nullptr;}
 xc_bookmark_tags *xc_request_take_bookmark_tags(xc_request *r){return r&&r->status==XC_OK?r->bookmark_tags.release():nullptr;}
 xc_bookmarks *xc_request_take_bookmarks(xc_request *r){return r&&r->status==XC_OK?r->bookmarks.release():nullptr;}
 xc_tab_session *xc_request_take_tab_session(xc_request *r){return r&&r->status==XC_OK?r->tab_session.release():nullptr;}
@@ -1998,6 +2028,44 @@ const char *xc_reference_list_entry_html(const xc_reference_list *r, size_t i) {
 int xc_reference_list_limited(const xc_reference_list *r) { return r && r->value.limited; }
 unsigned xc_reference_list_skipped(const xc_reference_list *r) { return r ? r->value.skipped : 0; }
 void xc_reference_list_release(xc_reference_list *r) { delete r; }
+size_t xc_annotations_count(const xc_annotations *p){return p?p->value.records.size():0;}
+const char *xc_annotations_field(const xc_annotations *p,size_t row,int field){
+ if(!p||row>=p->value.records.size())return nullptr;const auto &r=p->value.records[row];
+ switch(field){case XC_ANNOTATION_ELEMENT:return r.element.c_str();case XC_ANNOTATION_LABEL:return r.label?r.label->c_str():nullptr;
+ case XC_ANNOTATION_NOTE:return r.note?r.note->c_str():nullptr;case XC_ANNOTATION_MODULE:return r.address?r.address->module.c_str():nullptr;
+ case XC_ANNOTATION_BOOK:return r.address?r.address->book.c_str():nullptr;default:return nullptr;}
+}
+int xc_annotations_legacy_visible(const xc_annotations *p,size_t row){return p&&row<p->value.records.size()&&p->value.records[row].legacy_visible;}
+xc_status xc_annotations_address(const xc_annotations *p,size_t row,xc_annotation_address *out){
+ if(!out)return XC_INVALID_ARGUMENT;*out={};if(!p||row>=p->value.records.size()||!p->value.records[row].address)return XC_INVALID_ARGUMENT;
+ const auto &a=*p->value.records[row].address;*out={a.chapter,a.verse,a.packed};return XC_OK;
+}
+xc_status xc_annotations_legacy_stop_child(const xc_annotations *p,int *has_stop,size_t *child){
+ if(has_stop)*has_stop=0;if(child)*child=0;if(!p||!has_stop||!child)return XC_INVALID_ARGUMENT;
+ *has_stop=p->value.legacy_stop_child.has_value();if(p->value.legacy_stop_child)*child=*p->value.legacy_stop_child;return XC_OK;
+}
+size_t xc_annotations_shadowed_sections(const xc_annotations *p){return p?p->value.shadowed_sections:0;}
+size_t xc_annotations_snapshot_bytes(const xc_annotations *p){return p?p->value.snapshot_bytes:0;}
+void xc_annotations_release(xc_annotations *p){delete p;}
+const char *xc_annotation_cache_module(const xc_annotation_cache *c){return c?c->value.module.c_str():nullptr;}
+const char *xc_annotation_cache_book(const xc_annotation_cache *c){return c?c->value.book.c_str():nullptr;}
+size_t xc_annotation_cache_count(const xc_annotation_cache *c){return c?c->value.entries.size():0;}
+const char *xc_annotation_cache_html(const xc_annotation_cache *c,size_t row){return c&&row<c->value.entries.size()?c->value.entries[row].html.c_str():nullptr;}
+xc_status xc_annotation_cache_entry(const xc_annotation_cache *c,size_t row,xc_annotation_entry *out){
+ if(!out)return XC_INVALID_ARGUMENT;*out={};if(!c||row>=c->value.entries.size())return XC_INVALID_ARGUMENT;
+ const auto &e=c->value.entries[row];*out={e.chapter,e.verse,e.packed,e.record};return XC_OK;
+}
+xc_status xc_annotation_cache_find(const xc_annotation_cache *c,int chapter,int verse,int *found,size_t *index){
+ if(found)*found=0;if(index)*index=0;if(!c||!found||!index)return XC_INVALID_ARGUMENT;
+ const auto match=xiphos::core::annotation_cache_index(c->value,chapter,verse);*found=match.has_value();if(match)*index=*match;return XC_OK;
+}
+int xc_annotation_cache_incomplete(const xc_annotation_cache *c){return c&&c->value.incomplete;}
+xc_status xc_annotation_cache_malformed_record(const xc_annotation_cache *c,int *has_record,size_t *record){
+ if(has_record)*has_record=0;if(record)*record=0;if(!c||!has_record||!record)return XC_INVALID_ARGUMENT;
+ *has_record=c->value.malformed_record.has_value();if(c->value.malformed_record)*record=*c->value.malformed_record;return XC_OK;
+}
+size_t xc_annotation_cache_snapshot_bytes(const xc_annotation_cache *c){return c?c->value.snapshot_bytes:0;}
+void xc_annotation_cache_release(xc_annotation_cache *c){delete c;}
 const char *xc_bookmark_tags_module(const xc_bookmark_tags *t){return t?t->value.control_module.c_str():nullptr;}
 const char *xc_bookmark_tags_context(const xc_bookmark_tags *t){return t?t->value.context.c_str():nullptr;}
 const char *xc_bookmark_tags_revision(const xc_bookmark_tags *t){return t?t->value.revision.c_str():nullptr;}

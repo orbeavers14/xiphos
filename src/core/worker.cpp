@@ -490,6 +490,21 @@ template<class T> std::future<T> selected_profile_rejection() {
   result.set_exception(std::current_exception());return future;
 }
 }
+std::future<AnnotationProfile> StudyWorker::read_annotations(StudyTab tab,std::string path) {
+  try {selected_profile_path(path);}catch(...){return selected_profile_rejection<AnnotationProfile>();}
+  return impl_->submit([tab,path=std::move(path)](Impl::State &s){(void)s.tab(tab);return xiphos::core::read_annotations(path);});
+}
+std::future<AnnotationProfile> StudyWorker::edit_annotations(StudyTab tab,std::string path,AnnotationEdit edit) {
+  try {selected_profile_path(path);validate_annotation_edit(edit);}catch(...){return selected_profile_rejection<AnnotationProfile>();}
+  return impl_->submit([tab,path=std::move(path),edit=std::move(edit)](Impl::State &s){(void)s.tab(tab);return xiphos::core::edit_annotations(path,edit);});
+}
+std::future<AnnotationCache> StudyWorker::read_annotation_cache(StudyTab tab,std::string path,std::string module,std::string book) {
+  try {selected_profile_path(path);if(!annotation_cache_arguments(module,book))throw std::invalid_argument("Invalid annotation cache context");}
+  catch(...){return selected_profile_rejection<AnnotationCache>();}
+  return impl_->submit([tab,path=std::move(path),module=std::move(module),book=std::move(book)](Impl::State &s){
+    (void)s.tab(tab);return legacy_annotation_cache(xiphos::core::read_annotations(path),module,book);
+  });
+}
 std::future<BookmarkTags> StudyWorker::read_bookmark_tags(StudyTab tab,std::string path,std::string module,std::string context,BookmarkTagLimits limits) {
   try {selected_profile_path(path);if(!bookmark_tag_arguments(module,context,limits))throw std::invalid_argument("Invalid bookmark tag query");}
   catch(...) {return selected_profile_rejection<BookmarkTags>();}

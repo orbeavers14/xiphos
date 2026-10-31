@@ -3,6 +3,7 @@
 #include "session.hpp"
 #include "profile.hpp"
 #include "bookmarks.hpp"
+#include "annotations.hpp"
 #include <cstdint>
 #include <future>
 #include <memory>
@@ -123,6 +124,9 @@ public:
   std::future<std::optional<LexiconPreferences>> import_lexicon_profile(StudyTab tab, std::string path);
   // Explicit selected-file read on the FIFO owner; validates the tab but changes no state.
   // Explicit profile storage only: FIFO, copied snapshots, tab checked before IO.
+  std::future<AnnotationProfile> read_annotations(StudyTab tab, std::string path);
+  std::future<AnnotationProfile> edit_annotations(StudyTab tab, std::string path, AnnotationEdit edit);
+  std::future<AnnotationCache> read_annotation_cache(StudyTab tab, std::string path, std::string module, std::string book);
   std::future<BookmarkTags> read_bookmark_tags(StudyTab tab, std::string path, std::string module, std::string context, BookmarkTagLimits limits = {});
   std::future<BookmarkSnapshot> read_bookmarks(StudyTab tab, std::string path);
   std::future<BookmarkSnapshot> edit_bookmarks(StudyTab tab, std::string path, std::optional<std::string> revision, BookmarkEdit edit);

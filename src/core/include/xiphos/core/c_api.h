@@ -815,6 +815,53 @@ const char *xc_module_resolution_requested(const xc_module_resolution *result);
 const char *xc_module_resolution_module(const xc_module_resolution *result);
 int xc_module_resolution_via_abbreviation(const xc_module_resolution *result);
 void xc_module_resolution_release(xc_module_resolution *result);
+/* Explicit main-profile verse annotations; no installed module, SDK reference
+ * resolution, automatic profile discovery or open-tab application. Path/label/
+ * module/book strings <=4096 bytes; note <=1MiB;10000 rows/16MiB owned snapshot.
+ * Raw rows preserve first-section unknown elements, missing/empty fields and
+ * duplicate labels. Read/cache expose legacy cursor barriers/malformed prefixes;
+ * cache uses last matching generic/module/book row, in packed-key order.
+ * Save uses the first exact markedverse label, requiring safe canonical positive
+ * coordinates (verse<1000); remove accepts any raw label, including empty, and
+ * removes its first markedverse only. Unknown data/duplicate shadows survive.
+ * Strings/arguments copy before return. Structural bounds precede allocation;
+ * semantic/tab/file errors arrive at poll. Verified same-directory writes have
+ * prepared result storage before acceptance and drain even if observers drop.
+ * Owned take-once values survive request/source/worker teardown; strings borrow
+ * until release. Note HTML is escaped plain text with retained replacements. */
+typedef struct xc_annotations xc_annotations;
+typedef struct xc_annotation_cache xc_annotation_cache;
+#define XC_ANNOTATION_MAX_NOTE_BYTES (1024u*1024u)
+typedef enum xc_annotation_action {XC_ANNOTATION_SAVE=0,XC_ANNOTATION_REMOVE=1} xc_annotation_action;
+typedef struct {int action;const char *label,*note;} xc_annotation_edit; /* note NULL for remove */
+typedef enum xc_annotation_field {XC_ANNOTATION_ELEMENT=0,XC_ANNOTATION_LABEL,XC_ANNOTATION_NOTE,XC_ANNOTATION_MODULE,XC_ANNOTATION_BOOK} xc_annotation_field;
+typedef struct {int chapter,verse,packed;} xc_annotation_address;
+typedef struct {int chapter,verse,packed;size_t record;} xc_annotation_entry;
+xc_status xc_worker_read_annotations(xc_worker *worker,uint64_t tab,const char *path,xc_request **out);
+xc_status xc_worker_edit_annotations(xc_worker *worker,uint64_t tab,const char *path,const xc_annotation_edit *edit,xc_request **out);
+xc_status xc_worker_read_annotation_cache(xc_worker *worker,uint64_t tab,const char *path,const char *module,const char *book,xc_request **out);
+xc_annotations *xc_request_take_annotations(xc_request *request);
+size_t xc_annotations_count(const xc_annotations *profile);
+const char *xc_annotations_field(const xc_annotations *profile,size_t row,int field);
+int xc_annotations_legacy_visible(const xc_annotations *profile,size_t row);
+xc_status xc_annotations_address(const xc_annotations *profile,size_t row,xc_annotation_address *out);
+xc_status xc_annotations_legacy_stop_child(const xc_annotations *profile,int *has_stop,size_t *child);
+size_t xc_annotations_shadowed_sections(const xc_annotations *profile);
+size_t xc_annotations_snapshot_bytes(const xc_annotations *profile);
+void xc_annotations_release(xc_annotations *profile);
+xc_annotation_cache *xc_request_take_annotation_cache(xc_request *request);
+const char *xc_annotation_cache_module(const xc_annotation_cache *cache);
+const char *xc_annotation_cache_book(const xc_annotation_cache *cache);
+size_t xc_annotation_cache_count(const xc_annotation_cache *cache);
+const char *xc_annotation_cache_html(const xc_annotation_cache *cache,size_t row);
+xc_status xc_annotation_cache_entry(const xc_annotation_cache *cache,size_t row,xc_annotation_entry *out);
+/* Lookup owns packed-key arithmetic; absent/unrepresentable coordinates return
+ * found0/index0. Numeric outputs clear on invalid arguments. */
+xc_status xc_annotation_cache_find(const xc_annotation_cache *cache,int chapter,int verse,int *found,size_t *index);
+int xc_annotation_cache_incomplete(const xc_annotation_cache *cache);
+xc_status xc_annotation_cache_malformed_record(const xc_annotation_cache *cache,int *has_record,size_t *record);
+size_t xc_annotation_cache_snapshot_bytes(const xc_annotation_cache *cache);
+void xc_annotation_cache_release(xc_annotation_cache *cache);
 /* Owned annotation metadata read from an explicit selected bookmark file.
  * No profile/reading/options/history mutation, rendering or CSS application.
  * Path/module <=4096 bytes, context <=32768; bounded scans precede copies.

@@ -60,4 +60,6 @@ AnnotationProfile edit_annotations(const std::string &path,const AnnotationEdit 
 // and malformed-label prefix abort. Generic module matches all; ASCII-insensitive
 // module/book comparison. No installed module or active tab required.
 AnnotationCache legacy_annotation_cache(const AnnotationProfile &profile,const std::string &module,const std::string &book);
+bool annotation_cache_arguments(const std::string &module,const std::string &book);
+std::optional<std::size_t> annotation_cache_index(const AnnotationCache &cache,int chapter,int verse);
 }

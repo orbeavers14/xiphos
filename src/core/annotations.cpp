@@ -148,4 +148,14 @@ AnnotationProfile edit_annotations(const std::string &path,const AnnotationEdit 
   return prepared;
 }
 
+bool annotation_cache_arguments(const std::string &module,const std::string &book) {
+  return !module.empty()&&!book.empty()&&module.size()<=maximum_annotation_label_bytes&&book.size()<=maximum_annotation_label_bytes&&module.find('\0')==std::string::npos&&book.find('\0')==std::string::npos;
+}
+std::optional<std::size_t> annotation_cache_index(const AnnotationCache &cache,int chapter,int verse) {
+  const long long scaled=static_cast<long long>(chapter)*1000,packed=scaled+verse;
+  if(scaled<std::numeric_limits<int>::min()||scaled>std::numeric_limits<int>::max()||packed<std::numeric_limits<int>::min()||packed>std::numeric_limits<int>::max())return std::nullopt;
+  const auto found=std::lower_bound(cache.entries.begin(),cache.entries.end(),static_cast<int>(packed),[](const VerseAnnotation &entry,int key){return entry.packed<key;});
+  if(found==cache.entries.end()||found->packed!=packed)return std::nullopt;return static_cast<std::size_t>(found-cache.entries.begin());
+}
+
 }
