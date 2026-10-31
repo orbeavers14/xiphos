@@ -1,6 +1,6 @@
 # Shared project handoff: start here in every chat
 
-Updated 2026-10-22. These files replace missing conversation context with a
+Updated 2026-10-31. These files replace missing conversation context with a
 versioned record. They do not transfer chat messages or synchronize themselves:
 each chat must fetch/pull Git and read them before working.
 
@@ -18,7 +18,11 @@ slots; options/history remain independent; failed visits retain prior selection.
 See the [parallel contract](parallel-reading-workflows.md) for limits, evidence,
 intentional alias-heading correction and native/persistence/compatibility gates.
 Named-set repository/atomic import now exist (`b9d15e5`, `b7b7d23`, `01a75e4`);
-legacy tab reader characterized (`14e1829`). Next: verified tab round trips and
+compatible tab round trips/transport now exist (`4411783`, `7d5f491`).
+Revision-checked bookmarks/owned tag maps and shared highlight priority are checked
+(`238220f`, `7102d57`, `e4c5333`, `73f88b4`, `23aba44`);
+[verse-note repository/cache/transport](personal-annotations.md) now exists
+(`b589779`, `70ffb33`, `f6d9bf4`). Next: SDK-owned note targets and
 [complete session persistence](session-persistence.md), then the other owner priorities.
 Devotionals remain deferred. No whole-parity acceptance increase.
 

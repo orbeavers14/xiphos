@@ -2099,3 +2099,28 @@ coverage remains partial. No native UI additions or whole-parity acceptance.
 Next: characterize/read personal annotation XML/cache semantics safely, then
 verified note edits and transport. Continue other owner core priorities; no
 further devotional work unless reprioritized.
+
+## 2026-10-31 — verse note repository/cache and owned transport
+
+b589779 adds bounded raw first-section verse annotation metadata and safe retained
+cache semantics, with126 complete frozen/current fill/check/XML-cursor comparisons.
+70ffb33 adds verified save/remove with27 complete retained writer comparisons.
+Generic/module/book matching, duplicate last-cache/first-write behavior, malformed
+prefixes, whitespace/unlabeled barriers, exact escaping and overflow safeguards
+are characterized. Raw data is preserved beyond barriers. New writes require safe
+positive canonical packed labels; raw malformed/empty labels can be removed.
+See personal-annotations.md; this is not the RawFiles rich commentary editor.
+
+Read/cache final normal1/1 (.53s), portable1/1 (.53s), ASan/UBSan1/1 (1.20s),
+TSan1/1 (4.09s). Writer final normal1/1 (.47s), portable1/1 (.47s),
+ASan/UBSan1/1 (1.32s), TSan1/1 (3.83s). Cache HTML expansion/duplicate retained
+byte bounds and unsafe intermediate arithmetic are checked without executing
+legacy overflow. Retained oracle leaks unchanged; leak detection OFF.
+
+f6d9bf4 adds FIFO/C raw profiles, escaped cache/provenance, safe lookup and verified
+edits, with copied args, pre-admission observer/envelope failure, zero successful
+poll allocations, closed-tab checks, draining and owned survival. Normal2/2
+(1.03s); portable annotation/bookmark/tab/parallel transports5/5 (1.70s),
+ASan/UBSan5/5 (2.52s), TSan5/5 (5.66s). Strict C11 header passes. No full suite
+since these new C types. Next: SDK-owned annotation target normalization and
+verse-note save/remove commands, then presentation/refresh and other priorities.

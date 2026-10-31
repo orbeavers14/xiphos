@@ -1,12 +1,25 @@
 # Modernization status and acceptance
 
+Core storage checkpoint (2026-10-31): named parallel profile repositories and
+atomic imports (`b9d15e5`, `b7b7d23`, `01a75e4`); compatible tab XML round trips
+and owned transport (`4411783`, `7d5f491`); revision-checked bookmark edits and owned
+annotation maps (`238220f`, `7102d57`, `e4c5333`, `73f88b4`); shared retained
+highlight priority (`23aba44`); [verse-note storage/cache/transport](personal-annotations.md)
+(`b589779`, `70ffb33`, `f6d9bf4`). These are scoped core services, not complete
+native UI/restart/session or whole-parity acceptance. Latest full checkpoint
+through73f88b4: Mac210 passes+one skip; portable163 passes+one skip. Later focused
+checks and limits are in the Mac handoff. Next: SDK-owned note targets, then
+complete session state/restoration, editors, installation and sync; devotionals
+remain deferred.
+
 Parallel checkpoint (2026-10-30): complete real-SDK interpolation oracle
 `e046f6a`, cloned row plans `d5018ac`, owned worker/C chapter matrices `4bc24ae`
 and atomic per-tab selection/chapter navigation `bcb159e`. Missing columns retain
 slots; options/history remain independent; failed visits retain prior selection.
 See the [parallel contract](parallel-reading-workflows.md) for limits, evidence,
 intentional alias-heading correction and native/persistence/compatibility gates.
-Next: compatible named-set/session repositories, then the other owner priorities.
+Named-set repositories and compatible tab storage now exist; complete session
+state/restoration and native workflow remain open.
 Devotionals remain deferred. No whole-parity acceptance increase.
 
 ## Current owner priorities (2026-10-30)
@@ -22,7 +35,8 @@ this priority change does not select a final product name or expand frontend wor
 First parallel foundation: [retained contracts and next slice](parallel-reading-workflows.md).
 Complete detached orchestration and named-set helpers are now characterized;
 shared layout arithmetic is reused by the retained renderer (`ca3a90a`). Native
-aligned snapshots, saved-set repositories and full parallel workflow remain open.
+aligned snapshots and saved-set repositories now exist; complete native parallel
+workflow remains open.
 This direction supersedes earlier next-step notes that resume devotionals.
 
 Core devotional service (2026-10-30, `941a7de`): exact installed DailyDevotion
