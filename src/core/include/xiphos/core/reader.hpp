@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
+#include "bookmark_tags.hpp"
 #include "module_resolution.hpp"
 #include "reference_list.hpp"
 #include "render.hpp"
@@ -47,6 +48,10 @@ public:
   const std::vector<Module> &modules() const;
   // Explicit read-only alias resolution on this Reader owner. Catalog metadata
   // stages lazily; invalid alias metadata does not disable ordinary reading.
+  // Read-only owned annotation map: exact catalog eligibility, retained BFS and
+  // fresh-key OSIS normalization; explicit prefix limits/diagnostics, no rendering.
+  BookmarkTags bookmark_tags(const BookmarkSnapshot &snapshot,const std::string &module,
+      const std::string &context,const BookmarkTagLimits &limits = {});
   ModuleNameResolution resolve_module_name(const std::string &requested);
   // Bible/regular-commentary search resolves target aliases while preserving
   // raw requests and explicit bounds providers. Copied bounded

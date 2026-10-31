@@ -16,6 +16,7 @@
 #include "search_validation.hpp"
 #include "module_alias_catalog.hpp"
 #include "sdk_text.hpp"
+#include "xml_document.hpp"
 #include "sdk_render.hpp"
 #include "search_control.hpp"
 #include "xiphos/core/reference_list.hpp"
@@ -126,6 +127,56 @@ ModuleNameResolution Reader::resolve_module_name(const std::string &requested) {
   return impl_->resolve_name(requested);
 }
 
+BookmarkTags Reader::bookmark_tags(const BookmarkSnapshot &snapshot,const std::string &id,
+    const std::string &context,const BookmarkTagLimits &limits) {
+  if(!bookmark_tag_arguments(id,context,limits))throw std::invalid_argument("Invalid bounded bookmark tag query");
+  detail::validate_xml_text(id,4096);detail::validate_xml_text(context,32768);
+  BookmarkTags result;result.control_module=id;result.context=context;result.revision=snapshot.revision;
+  result.ignored_subtrees=snapshot.ignored_subtrees;result.candidates=bookmark_tag_candidates(snapshot);
+  auto account=[&](const std::string &text){
+    if(text.size()>limits.snapshot_bytes-result.snapshot_bytes)throw std::invalid_argument("Bookmark tag metadata exceeds byte limit");
+    result.snapshot_bytes+=text.size();
+  };
+  account(result.control_module);account(result.context);account(result.revision);
+  for(const auto &candidate:result.candidates){account(candidate.color);account(candidate.foreground);account(candidate.key);if(candidate.module)account(*candidate.module);if(candidate.description)account(*candidate.description);}
+  result.states.reserve(result.candidates.size());
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto *control=impl_->manager->getModule(id.c_str());
+  if(!control)throw std::out_of_range("Bookmark tag control module is not installed");
+  auto *key=dynamic_cast<sword::VerseKey *>(control->getKey());
+  if(!key||(std::string(control->getType())!="Biblical Texts"&&!regular_commentary(control->getType(),control->getConfigEntry("ModDrv"))))
+    throw std::invalid_argument("Bookmark tag control must be Bible or regular verse commentary");
+  for(const auto &candidate:result.candidates){
+    auto state=BookmarkTagState::generic;
+    if(candidate.module&&!candidate.module->empty()){
+      auto *module=impl_->manager->getModule(candidate.module->c_str());
+      if(!module)state=BookmarkTagState::missing;
+      else state=std::string(module->getType())=="Biblical Texts"||regular_commentary(module->getType(),module->getConfigEntry("ModDrv"))?BookmarkTagState::ready:BookmarkTagState::unsupported;
+    }
+    if(state==BookmarkTagState::missing||state==BookmarkTagState::unsupported)++result.skipped_modules;
+    result.states.push_back(state);
+  }
+  std::map<std::string,std::size_t> indices;
+  for(std::size_t index=0;index<result.candidates.size();++index){
+    if(result.states[index]==BookmarkTagState::missing||result.states[index]==BookmarkTagState::unsupported)continue;
+    const auto &candidate=result.candidates[index];
+    const auto references=parse_reference_list(*control,candidate.key,context,limits.occurrences-result.occurrences+1);
+    result.skipped_references+=references.skipped;result.limited=result.limited||references.limited;
+    for(const auto &reference:references.references){
+      if(result.occurrences==limits.occurrences){result.limited=true;return result;}
+      sword::VerseKey normalized;normalized.setLocale(key->getLocale());normalized.setText(reference.c_str());
+      const auto *book=normalized.getOSISBookName();if(!book)throw std::runtime_error("Bookmark tag has no OSIS book");
+      std::string osis=std::string(book)+"."+std::to_string(normalized.getChapter())+"."+std::to_string(normalized.getVerse());
+      auto found=indices.find(osis);std::size_t verse;
+      if(found==indices.end()){
+        if(result.verses.size()==limits.verses||osis.size()>limits.snapshot_bytes-result.snapshot_bytes){result.limited=true;return result;}
+        verse=result.verses.size();account(osis);indices.emplace(osis,verse);result.verses.push_back({std::move(osis),{}});
+      } else verse=found->second;
+      result.verses[verse].tags.push_back(index);++result.occurrences;
+    }
+  }
+  return result;
+}
 BookTree Reader::book_tree(const std::string &id, std::uint64_t offset) {
   if (id.empty() || id.find('\0') != std::string::npos) throw std::invalid_argument("Invalid general-book module ID");
   std::lock_guard<std::mutex> lock(impl_->mutex);

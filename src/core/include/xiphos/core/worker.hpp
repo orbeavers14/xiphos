@@ -123,6 +123,7 @@ public:
   std::future<std::optional<LexiconPreferences>> import_lexicon_profile(StudyTab tab, std::string path);
   // Explicit selected-file read on the FIFO owner; validates the tab but changes no state.
   // Explicit profile storage only: FIFO, copied snapshots, tab checked before IO.
+  std::future<BookmarkTags> read_bookmark_tags(StudyTab tab, std::string path, std::string module, std::string context, BookmarkTagLimits limits = {});
   std::future<BookmarkSnapshot> read_bookmarks(StudyTab tab, std::string path);
   std::future<BookmarkSnapshot> edit_bookmarks(StudyTab tab, std::string path, std::optional<std::string> revision, BookmarkEdit edit);
   std::future<SavedTabSession> read_tab_session(StudyTab tab, std::string path);

@@ -490,6 +490,13 @@ template<class T> std::future<T> selected_profile_rejection() {
   result.set_exception(std::current_exception());return future;
 }
 }
+std::future<BookmarkTags> StudyWorker::read_bookmark_tags(StudyTab tab,std::string path,std::string module,std::string context,BookmarkTagLimits limits) {
+  try {selected_profile_path(path);if(!bookmark_tag_arguments(module,context,limits))throw std::invalid_argument("Invalid bookmark tag query");}
+  catch(...) {return selected_profile_rejection<BookmarkTags>();}
+  return impl_->submit([tab,path=std::move(path),module=std::move(module),context=std::move(context),limits](Impl::State &s){
+    (void)s.tab(tab);return s.reader.bookmark_tags(xiphos::core::read_bookmarks(path),module,context,limits);
+  });
+}
 std::future<BookmarkSnapshot> StudyWorker::read_bookmarks(StudyTab tab,std::string path) {
   try {selected_profile_path(path);} catch(...) {return selected_profile_rejection<BookmarkSnapshot>();}
   return impl_->submit([tab,path=std::move(path)](Impl::State &s){(void)s.tab(tab);return xiphos::core::read_bookmarks(path);});

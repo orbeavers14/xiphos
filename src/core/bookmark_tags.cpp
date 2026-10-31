@@ -6,6 +6,12 @@
 #include <deque>
 #include <stdexcept>
 namespace xiphos::core {
+bool bookmark_tag_arguments(const std::string &module,const std::string &context,const BookmarkTagLimits &limits) {
+  return !module.empty()&&module.size()<=4096&&module.find('\0')==std::string::npos&&
+    !context.empty()&&context.size()<=32768&&context.find('\0')==std::string::npos&&
+    limits.verses&&limits.verses<=maximum_bookmark_tag_verses&&limits.occurrences&&
+    limits.occurrences<=maximum_bookmark_tag_occurrences&&limits.snapshot_bytes&&limits.snapshot_bytes<=maximum_bookmark_snapshot_bytes;
+}
 const char *bookmark_tag_foreground(const char *color) noexcept {
   if(!color||color[0]!='#'||std::strlen(color)<7)return "#000000";
   unsigned r=0,g=0,b=0;
