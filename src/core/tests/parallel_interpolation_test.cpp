@@ -106,5 +106,18 @@ int main(int argc,char **argv){try{
  check(canonical.html.find("Original TextA heading")!=std::string::npos&&alias.html.find("Original TextA heading")==std::string::npos,"Retained raw alias heading rendering loses title even though resolved body still renders");
  const auto missing=run(actual::interpolate_parallel_display,current,{"TextA","Missing","TextA"},"John3:16",true,false,false,"en");
  const auto rows=occurrences(missing.html,"<tr valign=");check(occurrences(missing.html,"<td width=")==rows*2&&occurrences(missing.html,"</td>")==rows*3,"Retained missing non-control emits unmatched closing cell; future typed results must preserve missing slot explicitly");
- std::cout<<"Complete real-SDK parallel interpolation: "<<comparisons<<" frozen/current traces across KJV/KJVA/Synodal, aliases, sparse notes, missing modules, headings and gates agree\n";return 0;
+ std::size_t plans=0,rejected=0;
+ for(const auto *id:{"TextA","TextAlt","RtlText","Notes"})for(const auto *ref:{"John3:16","Psalms3:2","Tob1:1","Genesis1:1","John3:999","not-a-reference"})for(const char *locale:std::vector<const char *>{nullptr,"en"}){
+  const auto expected=run(frozen::interpolate_parallel_display,baseline,{id},ref,true,false,false,locale);
+  auto *module=now.getModule(id);module->setKey("John3:23");const std::string before=module->getKeyText();
+  try{
+   const auto plan=xiphos::core::parallel_references(*module,ref,locale);
+   std::vector<std::string> rows;const std::string prefix=std::string("render:")+id+":";
+   for(const auto &line:expected.calls)if(line.compare(0,prefix.size(),prefix)==0)rows.push_back(line.substr(prefix.size()));
+   check(plan.rows==rows&&plan.selected_verse==static_cast<unsigned>(expected.selected),"Owned cloned row plan differs from complete frozen interpolation references/selection");++plans;
+  }catch(const std::invalid_argument &){++rejected;}
+  check(std::string(module->getKeyText())==before,"Parallel row planning preserves live module position even on invalid input");
+ }
+ check(plans>=24&&rejected>0,"Row-plan comparison includes valid and explicitly rejected SDK input");
+ std::cout<<"Complete real-SDK parallel interpolation: "<<comparisons<<" frozen/current traces; "<<plans<<" owned plans and "<<rejected<<" bounded SDK rejections across KJV/KJVA/Synodal, aliases, sparse notes, missing modules, headings and gates agree\n";return 0;
 }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}
