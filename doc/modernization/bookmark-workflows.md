@@ -82,3 +82,31 @@ Owned C values survive later edits, source deletion and worker teardown, and tak
 only once. These operations leave reading selection, histories and search state
 alone. Native presentation/drag-drop, whole import/export workflows and annotation
 highlight precedence remain separate work.
+
+## Characterized annotation candidate plan
+
+3811bd5 adds a bounded owned candidate plan in the retained breadth-first order.
+The GUI's synthetic Bookmarks root contains all top-level XML items; its children
+seed the traversal. Nonempty folder colors override inherited colors and empty
+colors inherit. Raw bookmark descriptions, source item/color provenance, module
+identities and preprocessed keys remain copied metadata. Foreground selection
+matches the retained hexadecimal-prefix/luminance policy, including malformed
+input behavior; colors are not applied as CSS by this service.
+
+The complete frozen/current tag-map builder, cache clear and lookup are compared
+in54 original-fixture cases with real SDK reference expansion. Tests cover nested
+inheritance, generic/text/regular-commentary/dictionary/personal/missing identity
+classes, ordered duplicate overlaps, key restoration, escaped descriptions,
+note-marker preprocessing and disabled cache behavior. Classification in this
+host is controlled; production installed-catalog eligibility remains the next
+service layer. The candidate plan does not itself filter modules, expand SDK
+references, group overlaps or render annotations.
+
+Marker cleanup deliberately reproduces the retained broad behavior: after `#` or
+`!`, later ASCII `n` and digits are replaced by spaces through the remainder of the
+key, even across later references. Tests characterize this rather than silently
+inventing a new parser rule. A first test expectation missed one replacement
+space and was corrected after the complete map/call-order comparisons passed.
+Native planning validates parent/kind/depth/sibling order and aggregate copied
+text bounds, including caller-constructed snapshots. Physical highlight rendering,
+personal-note precedence and native annotations remain unaccepted.

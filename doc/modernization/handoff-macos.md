@@ -2038,3 +2038,22 @@ F22 records partial core evidence only. No native bookmark UI/drag-drop, full
 import-export or annotation/color precedence acceptance. Next: characterize tag
 traversal/overlap/module eligibility and build an owned annotation plan alongside
 complete session-state restoration work. Devotionals remain deferred.
+
+## 2026-10-31 — complete tag-map characterization and owned candidates
+
+3811bd5 adds54 complete frozen/current tag cache build/clear/lookup comparisons
+using actual SDK reference expansion, plus owned bounded BFS candidate planning,
+color inheritance/provenance, exact foreground and broad note-marker cleanup.
+The host includes the real GUI's synthetic root; module classes are controlled
+rather than claiming installed-catalog coverage. Native module filtering, overlap
+grouping, SDK-owned tag results and rendering remain separate next layers.
+A standalone expected marker string omitted one replaced space and was corrected;
+complete map/SDK-call comparisons already passed. Reusable bookmark oracle host
+retains complete source functions and licenses. No retained production code changed.
+
+Normal tag+bookmark2/2 (.86s), portable2/2 (.87s), TSan2/2 (2.61s). ASan/UBSan
+first run: map comparisons and bookmark pass, one marker expectation failed; after
+correction tag-only1/1 (.83s), no sanitizer errors (leaks OFF). Whitespace passes.
+Next: exact installed module eligibility and owned bounded SDK tag maps, with
+reference/options/key restoration and FIFO/C transport. Then personal annotation
+precedence; keep complete native session restore, editors/install/sync tracked.
