@@ -94,3 +94,28 @@ Preserve the control-module rule and separate shared navigation from frontend
 presentation. Named-set repositories and complete session persistence should
 reuse verified storage transactions and preserve unknown fields; they are not a
 reason to duplicate history or introduce per-frontend storage engines.
+
+## Complete real-SDK interpolation characterization (2026-10-30)
+
+Complete get_heading/interpolate_parallel_display from `c973bc7` are now frozen
+with GPL notices and compared with current extracted complete routines. Actual
+generated original-prose OSIS modules use KJV, KJVA and Synodal plus sparse RawCom
+notes; two private SDK managers provide independent baseline/current state in the
+test process only. 576 full traces compare output, SDK matched keys, callbacks
+and selected verse across control order, aliases, missing/duplicate modules,
+headings, alternation, realized gates, boundary/invalid input and short/full labels.
+Control coordinate readers and frozen complete get_valid_key use real VerseKeys.
+Font/number/URL/UI seams remain deterministic; this is not visual/localized UI
+acceptance or proof of accurate cross-versification equivalence.
+
+The first actual control determines row count for differing canons. A missing
+non-control column emits an unmatched closing cell in retained HTML; raw alias
+heading rendering can lose heading text although the resolved body renders.
+Explicit regression checks record both bugs without blessing them as native
+markup requirements. Future owned snapshots should preserve missing slots and
+source identities instead of copying malformed table assembly.
+
+Checks: normal1/1 (3.50s), Mac-hosted portable1/1 (3.50s), ASan/UBSan1/1
+(8.78s), TSan1/1 (10.00s); native-disabled C++11 all9/9 (7.40s). Initial
+harness const qualifiers were corrected to match retained mutable settings before
+these runs passed. No production service or behavior change in this test slice.
