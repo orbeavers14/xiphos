@@ -31,6 +31,7 @@ struct xc_search_batch {
   }
 };
 struct xc_reference_list { xiphos::core::ReferenceList value; };
+struct xc_bookmark_tags { xiphos::core::BookmarkTags value; };
 struct xc_bookmarks { xiphos::core::BookmarkSnapshot value; };
 struct xc_tab_session { xiphos::core::SavedTabSession value; };
 struct xc_parallel_profile { xiphos::core::SavedParallelProfile value; };
@@ -139,6 +140,7 @@ struct xc_request {
   std::unique_ptr<xc_book_note> book_note;
   std::unique_ptr<xc_lexical_entry> lexical;
   std::unique_ptr<xc_lexicons> lexicons;
+  std::unique_ptr<xc_bookmark_tags> bookmark_tags;
   std::unique_ptr<xc_bookmarks> bookmarks;
   std::unique_ptr<xc_tab_session> tab_session;
   std::unique_ptr<xc_parallel_profile> parallel_profile;
@@ -177,6 +179,10 @@ struct xc_request {
   void store(xiphos::core::ContextualStudyLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::ResolvedStudyLink v) { std::visit([this](auto value) { store(std::move(value)); }, std::move(v)); }
   void store(xiphos::core::ReferenceList v) { references = std::make_unique<xc_reference_list>(xc_reference_list{std::move(v)}); }
+  void store(xiphos::core::BookmarkTags v) {
+    static_assert(std::is_nothrow_move_assignable_v<xiphos::core::BookmarkTags>, "Owned annotation publication must not allocate");
+    bookmark_tags->value=std::move(v);
+  }
   void store(xiphos::core::BookmarkSnapshot v) {
     static_assert(std::is_nothrow_move_assignable_v<xiphos::core::BookmarkSnapshot>, "Committed bookmarks publication must not allocate");
     bookmarks->value=std::move(v);
@@ -318,6 +324,7 @@ template<class T> struct Request final : xc_request {
   // Allocate result envelopes before accepting a state-changing job;
   // polling then only moves owned values into already allocated storage.
   Request() {
+    if constexpr (std::is_same_v<T,xiphos::core::BookmarkTags>) bookmark_tags = std::make_unique<xc_bookmark_tags>();
     if constexpr (std::is_same_v<T,xiphos::core::BookmarkSnapshot>) bookmarks = std::make_unique<xc_bookmarks>();
     if constexpr (std::is_same_v<T,xiphos::core::SavedTabSession>) tab_session = std::make_unique<xc_tab_session>();
     if constexpr (std::is_same_v<T,xiphos::core::SavedParallelProfile>) parallel_profile = std::make_unique<xc_parallel_profile>();
@@ -1353,6 +1360,19 @@ xc_status xc_worker_resolve_module_name(xc_worker *w, uint64_t tab, const char *
   if (!bounded_image_c_text(requested, 4096)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.resolve_module_name(tab, requested); });
 }
+void xc_bookmark_tag_limits_default(xc_bookmark_tag_limits *limits){
+ if(limits){const xiphos::core::BookmarkTagLimits value;*limits={value.verses,value.occurrences,value.snapshot_bytes};}
+}
+xc_status xc_worker_read_bookmark_tags(xc_worker *w,uint64_t tab,const char *path,const char *module,const char *context,const xc_bookmark_tag_limits *limits,xc_request **out){
+ if(out)*out=nullptr;
+ if(!w||!out||!bounded_image_c_text(path,4096)||!bounded_image_c_text(module,4096)||!bounded_image_c_text(context,32768))return XC_INVALID_ARGUMENT;
+ xc_bookmark_tag_limits copy;xc_bookmark_tag_limits_default(&copy);if(limits)copy=*limits;
+ static_assert(XC_BOOKMARK_TAG_MAX_VERSES==xiphos::core::maximum_bookmark_tag_verses,"Annotation verse limits differ");
+ static_assert(XC_BOOKMARK_TAG_MAX_OCCURRENCES==xiphos::core::maximum_bookmark_tag_occurrences,"Annotation occurrence limits differ");
+ static_assert(XC_BOOKMARK_TAG_MAX_SNAPSHOT_BYTES==xiphos::core::maximum_bookmark_snapshot_bytes,"Annotation byte limits differ");
+ if(!copy.max_verses||copy.max_verses>XC_BOOKMARK_TAG_MAX_VERSES||!copy.max_occurrences||copy.max_occurrences>XC_BOOKMARK_TAG_MAX_OCCURRENCES||!copy.max_snapshot_bytes||copy.max_snapshot_bytes>XC_BOOKMARK_TAG_MAX_SNAPSHOT_BYTES)return XC_INVALID_ARGUMENT;
+ return queue_request(w,out,[=](auto &worker){return worker.read_bookmark_tags(tab,path,module,context,{copy.max_verses,copy.max_occurrences,copy.max_snapshot_bytes});});
+}
 static const std::array<std::optional<std::string> xiphos::core::BookmarkFields::*,XC_BOOKMARK_EDIT_FIELD_COUNT> bookmark_edit_fields{{
  &xiphos::core::BookmarkFields::caption,&xiphos::core::BookmarkFields::color,&xiphos::core::BookmarkFields::module,
  &xiphos::core::BookmarkFields::key,&xiphos::core::BookmarkFields::module_description,&xiphos::core::BookmarkFields::description
@@ -1691,6 +1711,7 @@ void xc_request_release(xc_request *r) { delete r; }
 uint64_t xc_request_tab(const xc_request *r) { return r && r->status == XC_OK ? r->tab : 0; }
 xc_reference_list *xc_request_take_reference_list(xc_request *r) { return r && r->status == XC_OK ? r->references.release() : nullptr; }
 xc_lexical_entry *xc_request_take_lexical_entry(xc_request *r) { return r && r->status == XC_OK ? r->lexical.release() : nullptr; }
+xc_bookmark_tags *xc_request_take_bookmark_tags(xc_request *r){return r&&r->status==XC_OK?r->bookmark_tags.release():nullptr;}
 xc_bookmarks *xc_request_take_bookmarks(xc_request *r){return r&&r->status==XC_OK?r->bookmarks.release():nullptr;}
 xc_tab_session *xc_request_take_tab_session(xc_request *r){return r&&r->status==XC_OK?r->tab_session.release():nullptr;}
 xc_parallel_profile *xc_request_take_parallel_profile(xc_request *r) { return r && r->status==XC_OK ? r->parallel_profile.release() : nullptr; }
@@ -1977,6 +1998,33 @@ const char *xc_reference_list_entry_html(const xc_reference_list *r, size_t i) {
 int xc_reference_list_limited(const xc_reference_list *r) { return r && r->value.limited; }
 unsigned xc_reference_list_skipped(const xc_reference_list *r) { return r ? r->value.skipped : 0; }
 void xc_reference_list_release(xc_reference_list *r) { delete r; }
+const char *xc_bookmark_tags_module(const xc_bookmark_tags *t){return t?t->value.control_module.c_str():nullptr;}
+const char *xc_bookmark_tags_context(const xc_bookmark_tags *t){return t?t->value.context.c_str():nullptr;}
+const char *xc_bookmark_tags_revision(const xc_bookmark_tags *t){return t?t->value.revision.c_str():nullptr;}
+size_t xc_bookmark_tags_candidate_count(const xc_bookmark_tags *t){return t?t->value.candidates.size():0;}
+static const xiphos::core::BookmarkTagCandidate *bookmark_tag_candidate(const xc_bookmark_tags *t,size_t i){return t&&i<t->value.candidates.size()?&t->value.candidates[i]:nullptr;}
+int xc_bookmark_tags_candidate_state(const xc_bookmark_tags *t,size_t i){return t&&i<t->value.states.size()?static_cast<int>(t->value.states[i]):-1;}
+size_t xc_bookmark_tags_candidate_source(const xc_bookmark_tags *t,size_t i){auto *c=bookmark_tag_candidate(t,i);return c?c->bookmark:0;}
+size_t xc_bookmark_tags_candidate_color_source(const xc_bookmark_tags *t,size_t i){auto *c=bookmark_tag_candidate(t,i);return c?c->color_source:0;}
+const char *xc_bookmark_tags_candidate_color(const xc_bookmark_tags *t,size_t i){auto *c=bookmark_tag_candidate(t,i);return c?c->color.c_str():nullptr;}
+const char *xc_bookmark_tags_candidate_foreground(const xc_bookmark_tags *t,size_t i){auto *c=bookmark_tag_candidate(t,i);return c?c->foreground.c_str():nullptr;}
+const char *xc_bookmark_tags_candidate_key(const xc_bookmark_tags *t,size_t i){auto *c=bookmark_tag_candidate(t,i);return c?c->key.c_str():nullptr;}
+const char *xc_bookmark_tags_candidate_module(const xc_bookmark_tags *t,size_t i){auto *c=bookmark_tag_candidate(t,i);return c&&c->module?c->module->c_str():nullptr;}
+const char *xc_bookmark_tags_candidate_description(const xc_bookmark_tags *t,size_t i){auto *c=bookmark_tag_candidate(t,i);return c&&c->description?c->description->c_str():nullptr;}
+size_t xc_bookmark_tags_verse_count(const xc_bookmark_tags *t){return t?t->value.verses.size():0;}
+const char *xc_bookmark_tags_verse_reference(const xc_bookmark_tags *t,size_t i){return t&&i<t->value.verses.size()?t->value.verses[i].reference.c_str():nullptr;}
+size_t xc_bookmark_tags_verse_tag_count(const xc_bookmark_tags *t,size_t i){return t&&i<t->value.verses.size()?t->value.verses[i].tags.size():0;}
+xc_status xc_bookmark_tags_verse_tag_index(const xc_bookmark_tags *t,size_t verse,size_t occurrence,size_t *candidate){
+ if(candidate)*candidate=0;if(!candidate||!t||verse>=t->value.verses.size()||occurrence>=t->value.verses[verse].tags.size())return XC_INVALID_ARGUMENT;
+ *candidate=t->value.verses[verse].tags[occurrence];return XC_OK;
+}
+int xc_bookmark_tags_limited(const xc_bookmark_tags *t){return t&&t->value.limited;}
+size_t xc_bookmark_tags_occurrences(const xc_bookmark_tags *t){return t?t->value.occurrences:0;}
+size_t xc_bookmark_tags_skipped_modules(const xc_bookmark_tags *t){return t?t->value.skipped_modules:0;}
+size_t xc_bookmark_tags_skipped_references(const xc_bookmark_tags *t){return t?t->value.skipped_references:0;}
+size_t xc_bookmark_tags_ignored_subtrees(const xc_bookmark_tags *t){return t?t->value.ignored_subtrees:0;}
+size_t xc_bookmark_tags_snapshot_bytes(const xc_bookmark_tags *t){return t?t->value.snapshot_bytes:0;}
+void xc_bookmark_tags_release(xc_bookmark_tags *t){delete t;}
 size_t xc_bookmarks_count(const xc_bookmarks *s){return s?s->value.items.size():0;}
 const char *xc_bookmarks_revision(const xc_bookmarks *s){return s?s->value.revision.c_str():nullptr;}
 const char *xc_bookmarks_syntax_version(const xc_bookmarks *s){return s&&s->value.syntax_version?s->value.syntax_version->c_str():nullptr;}

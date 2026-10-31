@@ -815,6 +815,52 @@ const char *xc_module_resolution_requested(const xc_module_resolution *result);
 const char *xc_module_resolution_module(const xc_module_resolution *result);
 int xc_module_resolution_via_abbreviation(const xc_module_resolution *result);
 void xc_module_resolution_release(xc_module_resolution *result);
+/* Owned annotation metadata read from an explicit selected bookmark file.
+ * No profile/reading/options/history mutation, rendering or CSS application.
+ * Path/module <=4096 bytes, context <=32768; bounded scans precede copies.
+ * Exact installed Bible/regular-commentary identities qualify; absent/empty
+ * source modules are generic, unsupported/missing/abbreviations remain diagnosed.
+ * Ordered duplicate overlaps and candidate/source provenance are retained.
+ * Native per-range SDK guards and aggregate verse/occurrence/owned-string caps
+ * disclose limited prefixes; metadata that cannot fit rejects. SDK allocation
+ * itself is not controlled by these owned-result bounds. Default limits may be
+ * overridden within the maxima. NULL limits selects defaults.
+ * Inputs copy before return. Owned take-once values survive request/file/worker
+ * teardown; strings borrow until release. Candidate state describes eligibility,
+ * including candidates beyond a limited inspected prefix. OSIS identity follows
+ * the retained fresh-key policy, not accurate cross-versification equivalence. */
+typedef struct xc_bookmark_tags xc_bookmark_tags;
+#define XC_BOOKMARK_TAG_MAX_VERSES 65536u
+#define XC_BOOKMARK_TAG_MAX_OCCURRENCES 262144u
+#define XC_BOOKMARK_TAG_MAX_SNAPSHOT_BYTES (16u*1024u*1024u)
+typedef struct {size_t max_verses,max_occurrences,max_snapshot_bytes;} xc_bookmark_tag_limits;
+typedef enum xc_bookmark_tag_state {XC_BOOKMARK_TAG_GENERIC=0,XC_BOOKMARK_TAG_READY=1,XC_BOOKMARK_TAG_MISSING=2,XC_BOOKMARK_TAG_UNSUPPORTED=3} xc_bookmark_tag_state;
+void xc_bookmark_tag_limits_default(xc_bookmark_tag_limits *limits);
+xc_status xc_worker_read_bookmark_tags(xc_worker *worker,uint64_t tab,const char *path,const char *module,const char *context,const xc_bookmark_tag_limits *limits,xc_request **out);
+xc_bookmark_tags *xc_request_take_bookmark_tags(xc_request *request);
+const char *xc_bookmark_tags_module(const xc_bookmark_tags *tags);
+const char *xc_bookmark_tags_context(const xc_bookmark_tags *tags);
+const char *xc_bookmark_tags_revision(const xc_bookmark_tags *tags);
+size_t xc_bookmark_tags_candidate_count(const xc_bookmark_tags *tags);
+int xc_bookmark_tags_candidate_state(const xc_bookmark_tags *tags,size_t candidate); /* invalid -> -1 */
+size_t xc_bookmark_tags_candidate_source(const xc_bookmark_tags *tags,size_t candidate);
+size_t xc_bookmark_tags_candidate_color_source(const xc_bookmark_tags *tags,size_t candidate);
+const char *xc_bookmark_tags_candidate_color(const xc_bookmark_tags *tags,size_t candidate);
+const char *xc_bookmark_tags_candidate_foreground(const xc_bookmark_tags *tags,size_t candidate);
+const char *xc_bookmark_tags_candidate_key(const xc_bookmark_tags *tags,size_t candidate);
+const char *xc_bookmark_tags_candidate_module(const xc_bookmark_tags *tags,size_t candidate);
+const char *xc_bookmark_tags_candidate_description(const xc_bookmark_tags *tags,size_t candidate);
+size_t xc_bookmark_tags_verse_count(const xc_bookmark_tags *tags);
+const char *xc_bookmark_tags_verse_reference(const xc_bookmark_tags *tags,size_t verse);
+size_t xc_bookmark_tags_verse_tag_count(const xc_bookmark_tags *tags,size_t verse);
+xc_status xc_bookmark_tags_verse_tag_index(const xc_bookmark_tags *tags,size_t verse,size_t occurrence,size_t *candidate);
+int xc_bookmark_tags_limited(const xc_bookmark_tags *tags);
+size_t xc_bookmark_tags_occurrences(const xc_bookmark_tags *tags);
+size_t xc_bookmark_tags_skipped_modules(const xc_bookmark_tags *tags);
+size_t xc_bookmark_tags_skipped_references(const xc_bookmark_tags *tags);
+size_t xc_bookmark_tags_ignored_subtrees(const xc_bookmark_tags *tags);
+size_t xc_bookmark_tags_snapshot_bytes(const xc_bookmark_tags *tags);
+void xc_bookmark_tags_release(xc_bookmark_tags *tags);
 /* Explicit revision-checked SwordBookmarks storage; never navigates or renders.
  * Selected path <=4096 bytes, optional revision64 lowercase SHA-256 hex bytes,
  * optional text fields <=32768 UTF-8/XML bytes. Indices refer to the exact source
