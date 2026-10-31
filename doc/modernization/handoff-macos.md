@@ -1769,3 +1769,20 @@ This adds one registered test after the full196-case Mac/149-case portable
 checkpoint above; do not relabel those complete counts as fresh197/150-case runs.
 Next work can now use both complete dictionary dispatch and devotional rendering
 oracles. Still no native dated-pane implementation or whole-parity acceptance.
+
+### Translation-provider and future-name roadmap (2026-10-30)
+
+On master, record the owner's future ESV/NASB and non-SWORD translation-source
+requirement in shared-core-roadmap.md. Separate online access, limited caching
+and authorized full offline packages; preserve one SWORD-owning FIFO worker and
+shared study policies. Include official ESV/API.Bible references checked in this
+conversation; availability/rights remain provider-specific future checks. Record
+Swordreader / Sword Reader as candidate product names, with no current rename.
+Distinguish user-facing branding from stable bundle/package IDs, credentials,
+profiles, updates and URI compatibility. No runtime/source/ABI changes or parity
+acceptance. Inspected macOS preview Info.plist/CMake naming and Linux application
+ID/source URLs; naming currently exists in several packaging/host locations.
+Fetched origin and confirmed master matched before editing; preserve unrelated
+.DS_Store. Documentation-only validation: relative-link targets and git diff
+whitespace checks; no builds or tests needed. Next: implement existing core slices,
+then design provider capabilities before adding an actual licensed provider.

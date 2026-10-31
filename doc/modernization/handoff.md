@@ -4,6 +4,13 @@ Updated 2026-10-22. These files replace missing conversation context with a
 versioned record. They do not transfer chat messages or synchronize themselves:
 each chat must fetch/pull Git and read them before working.
 
+Roadmap direction (2026-10-30): future translation sources should support
+publisher-approved online access and licensed offline downloads beyond SWORD
+modules, including ESV/NASB where authorized. Product-name candidates are
+Swordreader / Sword Reader; no rename selected. See the
+[shared core roadmap](shared-core-roadmap.md#future-translation-sources-beyond-sword-modules)
+for provider capabilities, licensing checkpoints and naming/identity compatibility.
+
 Latest test-only addition: complete devotional rendering now has 1,536
 frozen/current traces across five configurations; strict C++11 all6/6 passes.
 The guarded month lookup exposes retained invalid-month indexing without unsafe

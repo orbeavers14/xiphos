@@ -1,6 +1,6 @@
 # Shared core: remaining scope
 
-Updated 2026-10-22. This is a planning map, not an acceptance score.
+Updated 2026-10-30. This is a planning map, not an acceptance score.
 The full project remains roughly 8% (6–10%), with zero whole parity groups
 accepted. There is no evidence-based core-only completion percentage yet.
 A tested worker/reading foundation does not mean the application core is almost
@@ -14,7 +14,7 @@ finished. Whole workflows and data compatibility remain the acceptance units.
 | General books | Tree/navigation/DisplayLevel documents, scoped restore, note/image clicks, bounded inline resources/module CSS, shared geometry and combined note numbering | Native sizing/global CSS/assets/formats, complete semantic links/corpus acceptance, book windows/tabs and saved workflows |
 | Parallel reading | Pending | Verse alignment, ordered translations, named sets, navigation and persistence |
 | Search | Bible/commentary basic + exact attribute modes, explicit intervals/complete last scope, private annotation context, advanced word dialects, bounded ordered batches, complete per-group result generations, stale-safe C/Swift reads, bounded selected/all text and restricted HTML export with C/Swift adapters, explicit bounded PNG embedding, native Mac text/HTML save/copy, progress/cancel, explicit saved-list import/application/edit/removal with verified snapshots and native Mac prefill | Remaining advanced module/range setup, broader URI/parallel/BibleSync abbreviation consumption, actual indexed execution, mixed families, advanced controls/settings, complete preview/export and full backend/corpus acceptance |
-| Library and installation | Module metadata/discovery subset | Favorites/hiding/grouping, sources/install/uninstall/index/cipher workflows |
+| Library and installation | Module metadata/discovery subset | Favorites/hiding/grouping, sources/install/uninstall/index/cipher workflows; future translation providers and licensed offline downloads beyond SWORD modules (see below) |
 | Bookmarks and annotations | Pending | Hierarchy/order/colors, XML round trips, AndBible import, rendering precedence |
 | Writing and editing | Pending | Personal commentary, study pads, journals/prayer lists, compatible document storage |
 | Settings and sessions | Explicit scoped option import/save and book restore subsets | Complete profile/session/tab restoration, lossless migration/backup and unknown-field preservation |
@@ -26,6 +26,66 @@ implementation of these services. The detailed requirements remain in the
 [parity matrix](parity-matrix.md). Implement shared services in vertical slices
 with a consuming frontend to expose boundary problems early. Existing GTK3 is
 the behavior/design reference; keep it operational and retain retirement gates.
+
+## Future translation sources beyond SWORD modules
+
+Owner requirement, recorded 2026-10-30: eventually support translations such as
+ESV and NASB even when no compatible SWORD module is available. This is planned
+scope, not implemented functionality or a promise that a publisher will grant
+full offline distribution rights.
+
+Extend the shared core with a translation-source boundary supporting existing
+SWORD modules, publisher-approved online providers, authorized offline packages
+and imports of supported, licensed files. Keep the existing single SWORD-owning
+FIFO worker and shared navigation/history/session policies; do not build separate
+study engines in each frontend. Any wider provider execution model needs its own
+ownership/cancellation design before implementation.
+
+A common catalog should identify translation, edition, provider, language,
+versification, attribution and access state. Reading and study tools should use
+shared references and results while exposing actual capabilities: online access,
+offline availability, permitted caching, local/provider search, notes/crossrefs
+and export. Do not promise identical search or annotations when a provider cannot
+supply them. Plan for authentication, secure credential storage, bounded caching,
+network failures, download verification, cancellation, updates and removal.
+
+Distinguish online access from full offline download. As checked 2026-10-30,
+[Crossway's ESV API](https://api.esv.org/) limits local storage to 500 verses or
+half a book, whichever is less; full offline distribution requires additional
+permission. [API.Bible's official catalog documentation](https://docs.api.bible/)
+lists NASB, but application eligibility, edition and offline rights require
+provider-specific verification. Recheck terms before implementation and release;
+keep publisher attribution and licensed text separate from public source code.
+Use original-prose fixtures for automated tests.
+
+Sequence: define provider/capability contracts alongside library installation;
+prove a non-SWORD provider with original-prose fixtures; integrate an authorized
+online source; add full offline packages only where the applicable license permits.
+Acceptance includes shared navigation/history, reference mapping, correct
+attribution, cache/download limits, unavailable-network behavior, cancellation and
+preservation of existing SWORD workflows. This remains future scope and does not
+change current parity acceptance.
+
+## Future product name
+
+Owner direction, recorded 2026-10-30: the finished product may be named
+**Swordreader** or **Sword Reader** rather than Xiphos. These are candidates;
+no final name or immediate rename is selected.
+
+Keep user-facing branding separate from stable technical identifiers. A later
+branding pass can update display names, icons, menus, help, installer labels and
+website text. Centralize new branding metadata as packaging matures rather than
+scattering a final name through services. Internal C++ namespaces, ABI symbols
+and repository names do not need to match the displayed product name.
+
+Choose permanent application/package identifiers and distribution identity before
+public release where possible. Changing bundle/package IDs, credential-store
+identities, settings paths, update channels or file associations after release
+requires an explicit compatibility/migration plan. Preserve existing user data,
+legacy profile readers and supported link formats; changing the product name does
+not require renaming the SWORD engine or breaking sword:// links. Preserve all
+inherited copyright, license and attribution notices. Record the final name and
+its packaging/upgrade decisions when the owner selects it.
 
 Current checkpoint: retained result generations C++ `37d9004`, C `155e0cb`, Swift
 `d1a15df`; selected visible text export C++ `3faadea`, C `6f0e3c1`, Swift `ec26889`.
