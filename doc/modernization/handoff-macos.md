@@ -1808,3 +1808,37 @@ and confirmed master matched before editing; unrelated .DS_Store preserved.
 Whitespace and changed-document links checked. Next: owned devotional entry
 service on the existing owner, preserving separate date selection/history, then
 C transport and native consumption. No whole-parity acceptance increase.
+
+### Owned devotional read service and C ABI (2026-10-30)
+
+Implementation `941a7de` on master adds exact installed DailyDevotion SWLD reads
+through Reader, tab-scoped settings, FIFO worker and a distinct owned C result.
+Date selection uses the prior safe shared policy; selected date/month/day/today
+flag stay separate from SDK matched key and HTML. SDK module key and scoped
+engine settings restore after rendering. No Bible/dictionary history visit or
+search-generation publication. No first-installed/alias fallback, native pane
+selection, persistence or automatic devotional URI route is implied.
+
+The [contract](devotional-workflows.md#owned-explicit-devotional-read-service)
+records4096-byte module/64-byte date bounds, pre-copy C scans/zero rejected
+submission allocations, ready pre-FIFO exceptions and take-once result ownership.
+Original-prose Daily date entries extend the existing navigation fixture. Tests
+compare SDK matching/rendered output, date-versus-match metadata, wrong types/
+features, exact bounds, sibling/history isolation, closed tabs, caller mutation,
+accepted-work draining and lifetime after request/owner close.
+
+Actual checks: focused normal4/4 (3.76s), ASan/UBSan7/7 (12.59s), TSan7/7
+(27.14s), native-disabled strict C++11 libraries/all6/6 (12.40s). Full host Mac
+197 passes+1 explicit index skip (198 registered,160.32s); full portable core/
+Linux models on Mac150 passes+1 skip (151 registered,132.58s; GTK runtime OFF).
+Full Mac includes rebuilt Swift C importers and real offscreen WebKit checks;
+no frontend behavior was added. Strict C11 header, whitespace and changed-doc
+relative links pass. SDK/framework sanitizer coverage partial, leak detection OFF.
+Fetched origin and confirmed a clean base except preserved unrelated .DS_Store.
+F11 now records partial core evidence only; no whole parity acceptance increase.
+
+Next: expose devotional catalog capability and model committed per-tab selection
+separately from dictionary history; characterize installed-default ordering before
+automatic fallback. Then add copied native consumption and connect devotional
+URI clicks through that service. Preserve the retained changed-module route and
+new safe month behavior. Current GTK/MSVC/corpus/index acceptance remains open.

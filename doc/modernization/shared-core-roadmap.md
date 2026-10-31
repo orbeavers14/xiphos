@@ -30,7 +30,8 @@ the behavior/design reference; keep it operational and retain retirement gates.
 Devotional date selection now has a shared C++11 policy consumed by retained
 rendering, with an explicit safe fallback for invalid month indexing (`f0cd37d`).
 See the [contract and next owned-service boundary](devotional-workflows.md).
-Native devotional state/transport/presentation remain pending.
+Explicit devotional reads now have owned worker/C transport; native selection
+state, URI integration and presentation remain pending.
 
 ## Future translation sources beyond SWORD modules
 

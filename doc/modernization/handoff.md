@@ -11,6 +11,15 @@ Swordreader / Sword Reader; no rename selected. See the
 [shared core roadmap](shared-core-roadmap.md#future-translation-sources-beyond-sword-modules)
 for provider capabilities, licensing checkpoints and naming/identity compatibility.
 
+Core devotional service (2026-10-30, `941a7de`): exact installed DailyDevotion
+reads now return owned selected-date metadata, SDK matched key and HTML through
+Reader/session/FIFO worker and a distinct take-once C handle. Bounded C scans
+precede copies/observer allocation; rejected worker inputs do not enter the queue.
+No dictionary/Bible history visit or search generation changes. See the
+[devotional contract](devotional-workflows.md#owned-explicit-devotional-read-service).
+Native selection state, default-module fallback, URI integration and presentation
+remain pending. F11 now records partial core evidence, with no accepted parity.
+
 Core update (2026-10-30, `f0cd37d`): shared C++11 devotional date selection
 now drives retained rendering and replaces unsafe month-name indexing with a
 local-today fallback. All11,536 renderer comparisons and372 bounded date

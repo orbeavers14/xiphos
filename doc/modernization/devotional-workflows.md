@@ -55,9 +55,60 @@ TSan2/2 (4.57s). Native-disabled C++11 libraries build and all6/6 tests pass
 (3.51s). These are scoped checks, not new full native-suite or GTK application
 runs. SDK/framework sanitizer coverage remains partial. No C ABI change.
 
-Next: use the date policy in an owned devotional service on the existing FIFO
-worker, then copy its result through the C ABI. Preserve separate devotional
-selection and dictionary history. Native dated-pane presentation, date-picker
+The owned explicit read service and C transport are described below. Preserve
+separate devotional selection and dictionary history when adding publication.
+Native dated-pane presentation, date-picker
 behavior, localized button formatting, current GTK/MSVC and broad corpus
 acceptance remain open. The existing frozen tests do not exercise GTK widgets or
 publisher content.
+
+## Owned explicit devotional read service
+
+Reader, StudySession and StudyWorker now expose read_devotional for an exact
+installed DailyDevotion SWLD module. It applies the shared date policy using
+host-supplied local today, scopes configured tab/module engine options and
+restores the SDK module key after rendering. It returns a copied DevotionalEntry:
+actual module ID, selected date/month/day/used_today, SDK matched key and HTML.
+The selected date is kept separate from a nearest matching entry (for example,
+requesting an absent 07.10 must not silently relabel the selected date). No
+dictionary uppercase conversion, Bible/dictionary history visit, search generation
+change or committed pane selection occurs.
+
+The first service accepts explicit installed IDs only. Ordinary dictionaries,
+verse modules, aliases and missing modules are rejected; it does not implement
+first-installed fallback, saved devotional selection or automatic URI dispatch.
+Those need separate policy/state integration before native presentation.
+
+Module IDs are bounded to4096 bytes and entered date text to64 bytes. Empty date
+uses today; embedded NUL, oversized arguments and invalid host-local month/day
+reject. Worker validation returns an already completed exceptional future before
+FIFO admission. The C wrapper bounds its scan before copying arguments or
+allocating an observer; invalid C input clears the output request. Limits are byte
+counts, not Unicode character counts. The renderer's selected day still follows
+the existing safe-month atoi behavior, so it is not necessarily a valid calendar
+day even though supplied local today is bounded.
+
+xc_worker_read_devotional returns a distinct take-once xc_devotional_entry. Its
+strings and date metadata survive request/worker close until result release.
+NULL date means empty/today; NULL result getters return NULL/zero. It is a
+read-only snapshot API, not devotional pane publication. Existing C result kinds
+and dictionary/history contracts are unchanged. Native consumers must copy the
+result before releasing it and format localized titles from its date metadata.
+
+Original-prose Daily fixture entries now cover January1, February29, July9 and
+December31. Service checks compare rendered output and matched key with a
+separate SDK baseline, distinguish selected date from match, check strict module
+type/feature selection, exact input boundaries, queued copies, closed tabs,
+accepted-work draining, take-once/null getters and result lifetime. Allocation
+interposition in the shared admission test checks that invalid C arguments
+allocate neither observer nor owned string on the submitting thread.
+
+Implementation `941a7de`. Verification after the API addition: full Mac197 passes
+plus one explicit index skip (198 registered,160.32s); full Mac-hosted portable
+core/Linux models150 passes plus one index skip (151 registered,132.58s; GTK
+runtime OFF). Focused service/admission and fixtures4/4 (3.76s); ASan/UBSan7/7
+(12.59s), TSan7/7 (27.14s); native-disabled C++11 all6/6 (12.40s). Strict C11
+public-header syntax and whitespace checks pass. Native Swift importers and real
+WebKit regressions rebuild/run in the full host suite. SDK/framework sanitizer
+coverage remains partial and ASan leak detection is OFF. No Windows/MSVC or
+current GTK application acceptance follows.
