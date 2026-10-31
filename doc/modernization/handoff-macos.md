@@ -1875,3 +1875,59 @@ fixtures and mixed canon/sparse/alias cases, then bounded owned parallel rows/
 columns on the single worker. Characterize named-set startup/rename/delete and
 profile round trips before replacing stored parallel/session data. Other owner
 priorities remain queued; devotional services stay checked but deferred.
+
+### Parallel SDK oracle, owned matrices and committed selection (2026-10-30)
+
+Work continued until near the usage limit on master, with devotionals deferred.
+`e046f6a` freezes complete get_heading/interpolate_parallel_display and control
+coordinate readers with GPL notices. Real original-prose OSIS KJV/KJVA/Synodal
+modules and sparse RawCom notes compare576 complete traces. `d5018ac` adds cloned
+owned row plans matching36 valid cases with12 SDK rejections, preserving live keys.
+The [parallel contract](parallel-reading-workflows.md) records the exact scope.
+
+`4bc24ae` adds bounded owned chapter matrices through Reader/session/FIFO worker
+and C ABI, retaining raw/resolved column identity, duplicates/missing/unsupported
+slots, matched cell references, headings and RTL/Bible metadata. Missing slots
+avoid the retained malformed closing-cell markup. Headings use the actual module,
+explicitly correcting retained raw-alias title loss. Bounds:32 columns,4096-byte
+module tokens,32768-byte reference, up to16MiB returned string bytes and1024
+planned rows. No silent truncation; SDK internal allocations are outside the
+returned-string cap. Explicit scoped parallel options and unique module keys
+restore; read-only requests do not publish history/search/selection.
+
+`bcb159e` adds atomic per-tab parallel visit/selection/clear and existing-policy
+adjacent chapter navigation, with independent options, failure/boundary rollback
+and copied state intent suitable for future persistence. C result envelopes are
+allocated before state-changing acceptance, and polling uses no-throw moves.
+Submitting-thread allocation tests prove zero allocations on invalid admission
+and on successful result publication after a committed visit. C state/result
+handles survive request/worker shutdown; queued copies and sibling isolation pass.
+
+A reusable oracle host compares18 native matrices with complete frozen body/SDK
+matching output. The disposable fixture's stale modules-conf.cache initially hid
+new aliases; it now removes only that generated cache when regenerating fixture
+metadata. An initial assertion interpreted bare24 as John3:24; the real SDK uses
+shorthand (observed Revelation2:4). The assumption was corrected, preserving SDK
+interpretation. Planning now counts the normalized control reference, and new
+checks confirm consistency with existing SDK navigation, rather than inventing
+contextual verse-list semantics. These test setup corrections are not claimed as
+production cache or parser fixes.
+
+Full host Mac201 passes+1 explicit index skip (202 registered,170.72s); full
+portable core/Linux models on Mac154 passes+1 skip (155 registered,140.47s;
+GTK runtime OFF). Those complete runs precede final normalized-control planning/
+bare-number assertions. Final-source focused rechecks: normal6/6 (4.89s),
+portable6/6 (4.88s), ASan/UBSan6/6 (13.73s), TSan6/6 (15.99s); native-disabled
+C++11 all9/9 (7.37s). Strict C11 header, whitespace and changed-doc relative
+links pass. Full host suite rebuilt Swift importers and real offscreen WebKit.
+No native parallel UI, source CSS/global styling, current Fedora/MSVC, accurate
+cross-canon equivalence, corpus/visual acceptance or whole-parity increase.
+SDK/framework sanitizer coverage partial and leak detection OFF. Preserved
+unrelated .DS_Store; no hosted builds, purchases or reset credits used.
+
+Next: compatible named-set/session repositories and round-trip persistence on the
+characterized comma/name schema, including complete startup/rename/delete and
+unknown-field preservation. Native commands/presentation remain a separate
+consumer; then continue bookmarks/annotations, editing, installation and sync.
+Keep broad compatibility testing alongside each service. Do not resume devotionals
+unless the owner reprioritizes them. F12 now records scoped core progress only.

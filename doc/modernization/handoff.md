@@ -11,6 +11,15 @@ Swordreader / Sword Reader; no rename selected. See the
 [shared core roadmap](shared-core-roadmap.md#future-translation-sources-beyond-sword-modules)
 for provider capabilities, licensing checkpoints and naming/identity compatibility.
 
+Parallel checkpoint (2026-10-30): complete real-SDK interpolation oracle
+`e046f6a`, cloned row plans `d5018ac`, owned worker/C chapter matrices `4bc24ae`
+and atomic per-tab selection/chapter navigation `bcb159e`. Missing columns retain
+slots; options/history remain independent; failed visits retain prior selection.
+See the [parallel contract](parallel-reading-workflows.md) for limits, evidence,
+intentional alias-heading correction and native/persistence/compatibility gates.
+Next: compatible named-set/session repositories, then the other owner priorities.
+Devotionals remain deferred. No whole-parity acceptance increase.
+
 ## Current owner priorities (2026-10-30)
 
 Defer further devotional work and retain its checked date/read services. Focus

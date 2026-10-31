@@ -83,17 +83,15 @@ whole-feature acceptance is claimed. Existing full198-case Mac/151-case portable
 checkpoints predate these two additional tests. SDK/framework sanitizer coverage
 remains partial and ASan leak detection OFF.
 
-## Next slice
+## Current next slice
 
-Characterize complete interpolate_parallel_display with actual SDK-generated
-original-prose modules, including alternate canons, sparse/missing entries,
-headings, aliases, duplicate columns, missing non-control modules and navigation
-boundaries. Then add owned row/column snapshots on the existing FIFO worker with
-explicit raw/resolved identities, scoped parallel options and bounded admission.
-Preserve the control-module rule and separate shared navigation from frontend
-presentation. Named-set repositories and complete session persistence should
-reuse verified storage transactions and preserve unknown fields; they are not a
-reason to duplicate history or introduce per-frontend storage engines.
+Build the compatible named-set repository and complete-session persistence
+boundary on the checked raw storage contracts. Preserve ordered tokens, unknown
+fields and existing name keys; add verified round trips before any profile writes.
+Parallel rows and per-tab selection now exist as described below; native command/
+presentation consumption and full multi-canon/corpus acceptance remain open.
+Bookmark/annotation repositories, editing, installation and sync remain the next
+owner priorities. Devotionals stay deferred.
 
 ## Complete real-SDK interpolation characterization (2026-10-30)
 
@@ -119,3 +117,74 @@ Checks: normal1/1 (3.50s), Mac-hosted portable1/1 (3.50s), ASan/UBSan1/1
 (8.78s), TSan1/1 (10.00s); native-disabled C++11 all9/9 (7.40s). Initial
 harness const qualifiers were corrected to match retained mutable settings before
 these runs passed. No production service or behavior change in this test slice.
+
+## Owned row planning and chapter service
+
+`d5018ac` adds cloned C++11 row planning: 36 valid owned plans match full frozen
+interpolation references/selection, with12 invalid SDK inputs rejected. Plans own
+canonical references/title/selected verse and preserve live module keys. Count
+the normalized control chapter before enumerating up to1024 rows. Bare numeric
+inputs follow SDK shorthand, not contextual verse-list parsing: a test assumption
+that 24 meant John3:24 was disproved and corrected, not shipped as a new rule.
+Callers wanting contextual partial references must resolve them with the existing
+reference services before requesting a chapter.
+
+`4bc24ae` adds owned ParallelChapter matrices through Reader/session/FIFO worker
+and C ABI. At most32 raw columns retain order/duplicates/empty/missing slots.
+The first resolved Bible/regular verse commentary controls the plan; absent or
+unsupported control fails without selecting another module. Later missing or
+unsupported columns have explicit status and empty cells (NULL C cell data).
+Raw tokens, actual installed IDs, alias use, Bible/RTL capability, control row
+reference and each SDK matched cell reference remain distinct. Body/headings
+use the actual column module, intentionally correcting the characterized alias
+heading loss. No malformed retained table markup is copied into native results.
+
+Requests bound module tokens to4096 bytes and reference text to32768 bytes, with
+1..16MiB aggregate returned string bytes (caller may request a smaller budget).
+The aggregate includes metadata, rows, matched references, headings and bodies;
+overflow fails the complete request. SDK internal rendering allocations and
+container overhead are not covered by that string bound. More than32 columns
+reject explicitly; saved sets must never be silently truncated. Options/headings
+are explicit parallel context and restore after rendering; unique module keys
+and flags restore on success or failure. Read-only requests do not establish
+selection or visit main/dictionary history or change search generation.
+
+## Atomic per-tab selection and navigation
+
+`bcb159e` adds visit/selection/clear and next/previous chapter commands. Each tab
+commits a lightweight owned intent only after a complete render succeeds: ordered
+raw modules, actual control/reference, explicit parallel options/headings and
+byte budget. Read-only previews and failed visits preserve the prior selection.
+Chapter navigation reuses the existing control-aware adjacent-chapter policy,
+resetting to the destination chapter's first verse. Boundary failures preserve
+state. Clearing is independent of main/dictionary/search and sibling tabs.
+No parallel history stack or file persistence is claimed.
+
+C chapter/selection results are take-once owned handles surviving request/worker
+close. Selection is an envelope with explicit presence. Parallel result storage
+is allocated before accepting a state-changing job; no-throw moves publish into
+that envelope when polling, avoiding allocation after committed visits. Tests
+interpose submitting-thread allocation to prove invalid input allocates no
+observer/argument copies and successful committed-result polling allocates none.
+
+The reusable real-SDK oracle host also compares18 native matrices against the
+complete frozen renderer's body and matched-reference output. Tests cover32
+columns exactly, aliases and heading correction, missing/unsupported/duplicate/
+empty columns, aggregate exact/overflow limits, SDK key preservation, history/
+options/sibling isolation, queued copies, selection rollback/clear/navigation,
+chapter boundary failures, accepted-work draining and C ownership/bounds/nulls.
+The disposable fixture explicitly removes only its own modules-conf.cache when
+regenerating metadata; stale cache initially hid newly configured abbreviations.
+Production module-cache refresh remains part of installation/compatibility work.
+
+Full host regression checkpoint: Mac201 passes+1 explicit index skip (202
+registered,170.72s); Mac-hosted portable core/Linux models154 passes+1 skip
+(155 registered,140.47s; GTK runtime OFF). Those complete runs preceded the final
+normalized-control planning clarification and bare-number assertions; focused
+rechecks after those edits cover the final source: normal6/6 (4.89s),
+ASan/UBSan6/6 (13.73s),
+TSan6/6 (15.99s), portable6/6 (4.88s), strict C++11 all9/9 (7.37s). Strict
+C11 public-header syntax and whitespace checks pass. Native importer/WebKit
+checks rebuilt/reran in the complete host suite, but no native parallel UI was
+added. No current Fedora/MSVC/corpus/visual acceptance or whole-parity increase;
+SDK/framework sanitizer coverage partial and ASan leak detection OFF.
