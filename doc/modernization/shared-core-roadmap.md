@@ -6,13 +6,29 @@ accepted. There is no evidence-based core-only completion percentage yet.
 A tested worker/reading foundation does not mean the application core is almost
 finished. Whole workflows and data compatibility remain the acceptance units.
 
+## Current owner priorities (2026-10-30)
+
+Defer further devotional work and retain its checked date/read services. Focus
+core work on parallel reading, bookmarks/annotations, editing, module installation,
+sync, complete session persistence and broader compatibility testing. Start with
+parallel reading; develop persistence foundations alongside stateful services,
+and run compatibility checks throughout rather than treating them as a final step.
+Publisher-approved translation providers remain future installation/library scope;
+this priority change does not select a final product name or expand frontend work.
+
+First parallel foundation: [retained contracts and next slice](parallel-reading-workflows.md).
+Complete detached orchestration and named-set helpers are now characterized;
+shared layout arithmetic is reused by the retained renderer (`ca3a90a`). Native
+aligned snapshots, saved-set repositories and full parallel workflow remain open.
+This direction supersedes earlier next-step notes that resume devotionals.
+
 | Core area | Current evidence | Remaining shared work |
 |---|---|---|
 | Engine ownership and transport | FIFO worker, copied C/C++/Swift results, shutdown draining | Cancellation for other active operations, native Windows compiler/SDK validation, stable dynamic packaging |
 | Scripture and commentary | Reference choices, chapter/navigation/history, sparse/linked sources and options | Complete display decorations, corpus/locale/versification workflows and restoration |
 | Dictionary and lexical content | Lookup/key steps/history, shared casing, lexical HTML/CSS and notes | Complete lookup/hover/search families and full corpus/locale acceptance |
 | General books | Tree/navigation/DisplayLevel documents, scoped restore, note/image clicks, bounded inline resources/module CSS, shared geometry and combined note numbering | Native sizing/global CSS/assets/formats, complete semantic links/corpus acceptance, book windows/tabs and saved workflows |
-| Parallel reading | Pending | Verse alignment, ordered translations, named sets, navigation and persistence |
+| Parallel reading | Complete detached orchestration and named-set helper characterization; shared retained layout arithmetic | Actual SDK alignment oracle, owned ordered snapshots, parallel navigation/options, named sets and persistence |
 | Search | Bible/commentary basic + exact attribute modes, explicit intervals/complete last scope, private annotation context, advanced word dialects, bounded ordered batches, complete per-group result generations, stale-safe C/Swift reads, bounded selected/all text and restricted HTML export with C/Swift adapters, explicit bounded PNG embedding, native Mac text/HTML save/copy, progress/cancel, explicit saved-list import/application/edit/removal with verified snapshots and native Mac prefill | Remaining advanced module/range setup, broader URI/parallel/BibleSync abbreviation consumption, actual indexed execution, mixed families, advanced controls/settings, complete preview/export and full backend/corpus acceptance |
 | Library and installation | Module metadata/discovery subset | Favorites/hiding/grouping, sources/install/uninstall/index/cipher workflows; future translation providers and licensed offline downloads beyond SWORD modules (see below) |
 | Bookmarks and annotations | Pending | Hierarchy/order/colors, XML round trips, AndBible import, rendering precedence |

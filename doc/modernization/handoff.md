@@ -11,6 +11,22 @@ Swordreader / Sword Reader; no rename selected. See the
 [shared core roadmap](shared-core-roadmap.md#future-translation-sources-beyond-sword-modules)
 for provider capabilities, licensing checkpoints and naming/identity compatibility.
 
+## Current owner priorities (2026-10-30)
+
+Defer further devotional work and retain its checked date/read services. Focus
+core work on parallel reading, bookmarks/annotations, editing, module installation,
+sync, complete session persistence and broader compatibility testing. Start with
+parallel reading; develop persistence foundations alongside stateful services,
+and run compatibility checks throughout rather than treating them as a final step.
+Publisher-approved translation providers remain future installation/library scope;
+this priority change does not select a final product name or expand frontend work.
+
+First parallel foundation: [retained contracts and next slice](parallel-reading-workflows.md).
+Complete detached orchestration and named-set helpers are now characterized;
+shared layout arithmetic is reused by the retained renderer (`ca3a90a`). Native
+aligned snapshots, saved-set repositories and full parallel workflow remain open.
+This direction supersedes earlier next-step notes that resume devotionals.
+
 Core devotional service (2026-10-30, `941a7de`): exact installed DailyDevotion
 reads now return owned selected-date metadata, SDK matched key and HTML through
 Reader/session/FIFO worker and a distinct take-once C handle. Bounded C scans

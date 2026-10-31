@@ -1,5 +1,21 @@
 # Modernization status and acceptance
 
+## Current owner priorities (2026-10-30)
+
+Defer further devotional work and retain its checked date/read services. Focus
+core work on parallel reading, bookmarks/annotations, editing, module installation,
+sync, complete session persistence and broader compatibility testing. Start with
+parallel reading; develop persistence foundations alongside stateful services,
+and run compatibility checks throughout rather than treating them as a final step.
+Publisher-approved translation providers remain future installation/library scope;
+this priority change does not select a final product name or expand frontend work.
+
+First parallel foundation: [retained contracts and next slice](parallel-reading-workflows.md).
+Complete detached orchestration and named-set helpers are now characterized;
+shared layout arithmetic is reused by the retained renderer (`ca3a90a`). Native
+aligned snapshots, saved-set repositories and full parallel workflow remain open.
+This direction supersedes earlier next-step notes that resume devotionals.
+
 Core devotional service (2026-10-30, `941a7de`): exact installed DailyDevotion
 reads now return owned selected-date metadata, SDK matched key and HTML through
 Reader/session/FIFO worker and a distinct take-once C handle. Bounded C scans
@@ -278,18 +294,22 @@ and regression sources remain the behavior/design reference.
 
 ## Next steps in order
 
-1. Characterize source-module image context and semantic links under the shared
-   [resource/export plan](resource-export-design.md). Preserve complete-or-failure
-   output; no implicit external fetching or loss of required styles/context.
-2. Consume checked shared HTML values through native destinations once the
-   intended format contract is ready; finish advanced search headers/controls,
-   mixed families, saved choices and representative workflow comparisons.
-3. Recheck current shared APIs/GTK consumers on Fedora and establish the small
-   native MSVC/WinUI reading slice before hardening the ABI. WSL is Linux evidence.
-4. Continue bounded shared services for parallel reading, compatible persistence,
-   bookmarks/annotations, editors, installation and sync with consuming frontends.
-5. Audit focused related-project components only when useful; finish corpus,
-   visual/input/accessibility/translation and release acceptance on all targets.
+Owner steering on2026-10-30 supersedes the earlier devotional/resource-export
+sequence. Keep existing implementations and evidence while shifting new work.
+
+1. Parallel reading: characterize actual SDK interpolation, then owned aligned
+   snapshots, navigation/options and named sets on the existing FIFO owner.
+2. Establish lossless session/persistence foundations alongside new state,
+   including restart, unknown-field preservation, backups and round trips.
+3. Bookmarks/annotations, then editing, using compatible shared repositories.
+4. Module sources/installation/maintenance with staged writes, cancellation and
+   safe failure handling; future licensed translation providers remain in scope.
+5. Sync, with shared state and explicit sender/privacy/credential boundaries.
+6. Broader corpus/locale/versification/data compatibility and current Fedora/MSVC
+   checks throughout these slices. Native UI/release acceptance remains separate.
+
+Devotionals are deferred. Existing search/export/resource follow-ups remain in
+their contracts as backlog; this is a priority change, not acceptance or removal.
 
 ## Validation evidence and limitations
 

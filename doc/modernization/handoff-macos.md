@@ -1842,3 +1842,36 @@ separately from dictionary history; characterize installed-default ordering befo
 automatic fallback. Then add copied native consumption and connect devotional
 URI clicks through that service. Preserve the retained changed-module route and
 new safe month behavior. Current GTK/MSVC/corpus/index acceptance remains open.
+
+### Priority shift and parallel-reading foundation (2026-10-30)
+
+Owner explicitly deferred devotionals in favor of parallel reading, bookmarks/
+annotations, editing, module installation, sync, complete session persistence
+and broader compatibility testing. Roadmap/shared handoff/status now reflect
+that direction. Keep persistence and compatibility work alongside new services.
+Do not auto-resume the older devotional next-step sequence.
+
+On master, `ca3a90a` freezes complete retained detached parallel orchestration
+and named-set storage/name helpers with GPL notices; current complete functions
+are extracted at configure time. 640 orchestration traces and793 helper traces/
+comparisons pass. Shared strict C++11 parallel_layout now supplies unchanged
+width/image-scale arithmetic to the retained renderer, with overflow-safe scale
+calculation. The [parallel contract](parallel-reading-workflows.md) records
+first-module control, raw order/duplicates/missing slots, aliases/labels, anchor
+publication, no observed eight-module cap and lossy comma/name persistence.
+
+Actual checks: normal2/2 (0.08s), portable-on-Mac2/2 (0.10s), ASan/UBSan2/2
+(0.16s), TSan2/2 (0.26s); native-disabled C++11 full libraries and8/8 tests
+(3.35s). Whitespace/changed-document relative links pass. No C ABI change, full
+app/GTK build, SDK interpolation/content alignment, native parallel presentation
+or whole-parity acceptance. Interpolation is an explicit stub in the complete
+orchestration oracle; XML helpers use owned read/write seams, not a full parser.
+Existing full198/151-case checkpoints precede these two additional tests.
+Fetched origin before work; unrelated .DS_Store preserved. SDK/framework sanitizer
+coverage partial and leak detection OFF as before.
+
+Next: complete interpolation characterization with original-prose real SDK
+fixtures and mixed canon/sparse/alias cases, then bounded owned parallel rows/
+columns on the single worker. Characterize named-set startup/rename/delete and
+profile round trips before replacing stored parallel/session data. Other owner
+priorities remain queued; devotional services stay checked but deferred.
