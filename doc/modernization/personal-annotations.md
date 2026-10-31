@@ -74,3 +74,31 @@ Next: core-owned SWORD reference/OSIS target normalization and verse-note save/r
 commands, so native consumers need no label/canon parser. Then explicit presentation,
 cache refresh, import/repair decisions and full platform/corpus acceptance, alongside
 the owner's other core priorities.
+
+## Core-owned verse targets and note commands
+
+ad97fba adds an owned SWORD target and FIFO/C save/remove/cache commands accepting
+an exact installed control module plus reading reference. A cloned VerseKey keeps
+the live reading position/flags and control canon/locale. Forty safe exact-module
+cases compare with the complete frozen/current OSIS helper across Bible,
+KJVA Bible, regular commentary and personal verse-key modules. Generic KJVA Tobit
+is checked separately. Missing modules/abbreviations and non-verse modules reject;
+the native command does not use the retained helper's KJV/first-module guessing or
+unsafe non-verse cast. Reference interpretation otherwise follows SWORD's reported
+resolution; this is not a new parser or accurate cross-canon equivalence service.
+
+Targets return actual control identity, normalized display reference, stored
+label/module/book and checked coordinates. Generic labels have an empty stored
+module but always use the explicit control canon. A specific module ID containing
+spaces cannot round trip through the legacy first-space encoding and rejects.
+Labels are never silently truncated to the old dialog's100-byte buffer. The raw
+inspection/removal API remains available for repairing imported identities.
+
+Verse-note save/remove build the label in core before the existing verified
+transaction. Reference-based cache reads derive its book in core, then return the
+complete retained book cache; frontends need no OSIS/label/packed-key parser.
+Missing-file/remove policy, duplicate/cursor diagnostics and source preservation
+remain unchanged. Commands do not select/visit a passage or apply highlights.
+Tests cover FIFO ordering, copied inputs, exact generic/specific metadata,
+options/history/sibling preservation, pre-acceptance observer failure, no-allocation
+successful polling, take-once survival and draining accepted writes/cache reads.

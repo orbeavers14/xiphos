@@ -2124,3 +2124,22 @@ poll allocations, closed-tab checks, draining and owned survival. Normal2/2
 ASan/UBSan5/5 (2.52s), TSan5/5 (5.66s). Strict C11 header passes. No full suite
 since these new C types. Next: SDK-owned annotation target normalization and
 verse-note save/remove commands, then presentation/refresh and other priorities.
+
+## 2026-10-31 — SDK-owned verse-note targets and commands
+
+ad97fba adds exact installed verse-key annotation targets using clones, canonical
+core-built labels and reference-based save/remove/book-cache commands through
+Reader/FIFO/C. Forty complete frozen/current safe OSIS-helper comparisons cover
+Text/TextAlt KJVA/Notes/Personal; generic Tobit uses explicit KJVA control. No
+KJV/first-module guessing, unsafe dictionary cast,100-byte truncation or live-key
+mutation. Tests use a context-sensitive3:16 probe for key preservation, plus
+copied args, SDK-derived cache scope, no-allocation committed polling, observer/
+envelope failure, take-once lifetimes, closed tabs and drain-on-shutdown.
+Normal final target+fixture2/2 (1.34s); final portable target/annotation4/4 (3.66s),
+ASan/UBSan4/4 (4.10s), TSan4/4 (7.99s); strict C11 header and whitespace pass.
+Oracle delimiter checks now fail clearly if retained helpers disappear. Full Mac
+and portable suites are currently running for this checkpoint; append results.
+No native note UI/rich commentary editor, automatic cache application, complete
+session restore, installation or sync acceptance. Next: keep reading/dictionary
+selection independent of history clearing for reliable tab capture, then compatible
+session capture/remaining owner core priorities. Devotionals remain deferred.
