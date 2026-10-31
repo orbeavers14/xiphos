@@ -31,6 +31,7 @@ struct NativeTabCapture {
   std::string key;
   TabVisibility visibility;
   bool commentary_showing=false,parallel_showing=false;
+  std::string host_state;
 };
 struct RestoredSessionTab {
   std::string key;

@@ -45,6 +45,7 @@ struct NativeSessionTab {
   StudySessionState state;
   TabVisibility visibility;
   bool commentary_showing=false,parallel_showing=false;
+  std::string host_state; // Opaque bounded host metadata; core never interprets it.
 };
 struct NativeSessionSnapshot {
   unsigned version=1;

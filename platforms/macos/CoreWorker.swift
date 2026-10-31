@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 import Foundation
 import XiphosCore
+import Darwin
 
 struct DictionaryLocation: Sendable, Equatable { let module: String; let key: String }
 struct CoreDictionaryHistoryState: Sendable, Equatable {
@@ -18,6 +19,42 @@ struct CoreHistoryState: Sendable {
 // Only transfers a uniquely owned handle into background shutdown. All API
 // submissions/polls otherwise stay actor-isolated; the C++ core owns scheduling.
 private struct ShutdownHandle: @unchecked Sendable { let value: OpaquePointer }
+private final class SessionCStrings {
+    private var owned: [UnsafeMutablePointer<CChar>] = []
+    func copy(_ value: String) throws -> UnsafePointer<CChar> {
+        guard !value.utf8.contains(0), let pointer = strdup(value) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        owned.append(pointer); return UnsafePointer(pointer)
+    }
+    deinit { for pointer in owned { free(pointer) } }
+}
+struct CoreWindowCapture: Sendable {
+    var tab: UInt64
+    var key: String
+    var hostState: String = ""
+    var texts = true, preview = true, commentaries = true, dictionaries = true
+    var commentaryShowing = false, parallelShowing = false
+}
+struct CoreSavedWindow: Sendable {
+    let key: String
+    let module: String?, reference: String?, commentary: String?
+    let dictionaryModule: String?, dictionaryKey: String?
+    let bookDocument: Bool
+    let hostState: String
+}
+struct CoreNativeSessionFile: Sendable {
+    let xml: String
+    let windows: [CoreSavedWindow]
+    let activeKey: String?
+}
+struct CoreRestoredWindow: Sendable {
+    let key: String
+    let tab: UInt64
+    var capture: CoreWindowCapture
+}
+struct CoreRestoredSession: Sendable {
+    let windows: [CoreRestoredWindow]
+    let activeTab: UInt64?
+}
 actor CoreWorker {
     private var handle: ShutdownHandle?
     init(root: String? = nil) throws {
@@ -629,6 +666,75 @@ actor CoreWorker {
         let more = xc_book_children_next_after(result, &next) != 0
         return BookChildren(module: String(cString: xc_book_children_module(result)!),
             parent: CoreValues.bookNode(parent)!, nodes: nodes, nextAfter: more ? next : nil)
+    }
+    func readNativeSession(path: String) async throws -> CoreNativeSessionFile {
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = path.withCString { xc_worker_read_native_session(handle, $0, &request) }
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_native_session(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_native_session_release(result) }
+        var text: OpaquePointer?
+        guard xc_native_session_serialize(result, &text) == XC_OK, let text else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_native_session_text_release(text) }
+        let windows = (0..<xc_native_session_tab_count(result)).map { row in
+            func field(_ kind: xc_native_session_field_kind) -> String? {
+                xc_native_session_field(result, row, Int32(kind.rawValue)).map { String(cString: $0) }
+            }
+            return CoreSavedWindow(key: String(cString: xc_native_session_tab_key(result, row)!),
+                module: field(XC_SESSION_READING_MODULE), reference: field(XC_SESSION_READING_REFERENCE),
+                commentary: field(XC_SESSION_READING_COMMENTARY), dictionaryModule: field(XC_SESSION_DICTIONARY_MODULE),
+                dictionaryKey: field(XC_SESSION_DICTIONARY_KEY), bookDocument: xc_native_session_book_document(result, row) != 0,
+                hostState: field(XC_SESSION_HOST_STATE) ?? "")
+        }
+        return CoreNativeSessionFile(xml: String(cString: xc_native_session_text_data(text)!), windows: windows,
+            activeKey: xc_native_session_active_key(result).map { String(cString: $0) })
+    }
+    func restoreNativeSession(_ saved: CoreNativeSessionFile) async throws -> CoreRestoredSession {
+        var input: OpaquePointer?
+        let parsed = saved.xml.withCString { xc_native_session_parse($0, &input) }
+        guard parsed == XC_OK, let input else { throw CoreError(status: parsed) }
+        defer { xc_native_session_release(input) }
+        var capabilities = xc_session_capabilities(lexical_layout: 1, note_numbering: 1, heading_note_links: 1)
+        var request: OpaquePointer?
+        let status = xc_worker_restore_native_session(try worker(), input, &capabilities, &request)
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_restored_session(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_restored_session_release(result) }
+        let rows = try (0..<xc_restored_session_tab_count(result)).map { row in
+            let key = String(cString: xc_restored_session_tab_key(result, row)!)
+            let tab = xc_restored_session_tab_id(result, row)
+            var visibility = xc_tab_visibility(), commentary: Int32 = 0, parallel: Int32 = 0
+            guard xc_restored_session_visibility(result, row, &visibility, &commentary, &parallel) == XC_OK else { throw CoreError(status: XC_ENGINE_ERROR) }
+            let capture = CoreWindowCapture(tab: tab, key: key, texts: visibility.texts != 0, preview: visibility.preview != 0,
+                commentaries: visibility.commentaries != 0, dictionaries: visibility.dictionaries != 0,
+                commentaryShowing: commentary != 0, parallelShowing: parallel != 0)
+            return CoreRestoredWindow(key: key, tab: tab, capture: capture)
+        }
+        let active = xc_restored_session_active_tab(result)
+        return CoreRestoredSession(windows: rows, activeTab: active == 0 ? nil : active)
+    }
+    func saveNativeSession(path: String, windows: [CoreWindowCapture], activeKey: String?) async throws {
+        // Admission copies all C strings before this synchronous submission ends.
+        let strings = SessionCStrings()
+        var rows: [xc_native_tab_capture] = []
+        for window in windows {
+            var row = xc_native_tab_capture(); xc_native_tab_capture_default(&row)
+            row.tab = window.tab; row.key = try strings.copy(window.key); row.host_state = try strings.copy(window.hostState)
+            row.visibility = xc_tab_visibility(texts: window.texts ? 1 : 0, preview: window.preview ? 1 : 0,
+                commentaries: window.commentaries ? 1 : 0, dictionaries: window.dictionaries ? 1 : 0)
+            row.commentary_showing = window.commentaryShowing ? 1 : 0; row.parallel_showing = window.parallelShowing ? 1 : 0
+            rows.append(row)
+        }
+        let active = try activeKey.map { try strings.copy($0) }
+        let handle = try worker()
+        var request: OpaquePointer?
+        let status = rows.withUnsafeBufferPointer { buffer in
+            path.withCString { xc_worker_save_native_session(handle, $0, buffer.baseAddress, buffer.count, active, &request) }
+        }
+        xc_request_release(try await wait(status, request))
     }
     func createTab() async throws -> UInt64 {
         var request: OpaquePointer?

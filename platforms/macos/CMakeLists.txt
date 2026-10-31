@@ -58,6 +58,7 @@ foreach(library IN LISTS sword_link_flags)
 endforeach()
 set(adapter "${CMAKE_CURRENT_SOURCE_DIR}/CoreReader.swift" "${CMAKE_CURRENT_SOURCE_DIR}/CoreWorker.swift")
 set(preview_sources
+  "${CMAKE_CURRENT_SOURCE_DIR}/SessionHostState.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SessionApp.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/ReaderApp.swift" "${CMAKE_CURRENT_SOURCE_DIR}/BookPane.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/ImagePreview.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SearchModel.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/SearchPane.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SearchExportDestination.swift")
@@ -125,6 +126,18 @@ if(BUILD_TESTING)
   add_custom_target(macos_async_adapter_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/async_adapter_smoke")
   add_test(NAME swift_async_adapter COMMAND "${CMAKE_CURRENT_BINARY_DIR}/async_adapter_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/fixture")
   set_tests_properties(swift_async_adapter PROPERTIES FIXTURES_REQUIRED sword_fixture)
+  add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/restart_smoke"
+    COMMAND ${SWIFTC} -swift-version 6 -D XIPHOS_PREVIEW_TEST -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
+      -I "${bridge}" ${adapter} ${preview_sources} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/RestartSmoke.swift"
+      "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
+      ${sword_link_flags} -lc++ -framework SwiftUI -framework AppKit -framework WebKit
+      -o "${CMAKE_CURRENT_BINARY_DIR}/restart_smoke"
+    DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift ${preview_sources} Tests/RestartSmoke.swift
+      Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h
+    VERBATIM)
+  add_custom_target(macos_restart_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/restart_smoke")
+  add_test(NAME macos_native_restart COMMAND "${CMAKE_CURRENT_BINARY_DIR}/restart_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/native-session-fixture" "${CMAKE_CURRENT_BINARY_DIR}/restart-smoke-fixture")
+  set_tests_properties(macos_native_restart PROPERTIES FIXTURES_REQUIRED native_session_fixture TIMEOUT 120)
   add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke"
     COMMAND ${SWIFTC} -swift-version 6 -D XIPHOS_PREVIEW_TEST -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
       -I "${bridge}" ${adapter} ${preview_sources} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/ReaderModelSmoke.swift"

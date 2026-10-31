@@ -41,7 +41,7 @@ static void fixture(const std::filesystem::path &root){
 static void rejects(const std::function<void()> &f){try{f();}catch(const std::exception &){return;}throw std::runtime_error("Expected native session rejection");}
 static void replace_once(std::string &s,const std::string &from,const std::string &to){auto at=s.find(from);check(at!=std::string::npos,"Schema mutation target exists");s.replace(at,from.size(),to);}
 static NativeSessionSnapshot example(){
- NativeSessionSnapshot s;s.active_key="study";NativeSessionTab tab;tab.key="study";auto &v=tab.state;
+ NativeSessionSnapshot s;s.active_key="study";NativeSessionTab tab;tab.key="study";tab.host_state="{\"original\":\"opaque host metadata\"}";auto &v=tab.state;
  v.reading=Location{"John 3:16","TextAlt","Notes"};v.history={{"John 3:16","Text","Notes"},{"John 3:17","TextAlt",""}};v.history_cursor=0;
  v.dictionary=DictionaryLocation{"Dictionary","beta"};v.dictionary_history={{"Dictionary","alpha"},{"Dictionary","beta"}};v.dictionary_cursor=1;
  v.engine=EngineOptions{};v.engine->strongs=true;v.engine->variants_primary=true;v.engine->variants_all=true;v.engine->morphseg=true;
@@ -61,6 +61,7 @@ static void codec(){
  auto bad=s;bad.tabs.push_back(bad.tabs[0]);rejects([&]{validate_native_session(bad);});bad=s;bad.active_key="absent";rejects([&]{validate_native_session(bad);});bad=s;bad.tabs[0].state.history.push_back(bad.tabs[0].state.history[0]);rejects([&]{validate_native_session(bad);});
  bad=s;bad.tabs[0].state.dictionary_history.resize(51);rejects([&]{validate_native_session(bad);});bad=s;bad.tabs[0].state.presentation["Text"].image_content=static_cast<ContentPreference>(2);rejects([&]{validate_native_session(bad);});
  bad=s;bad.tabs[0].state.reading->reference=std::string(32769,'a');rejects([&]{validate_native_session(bad);});bad=s;bad.tabs.resize(257);rejects([&]{validate_native_session(bad);});
+ auto host=s;host.tabs[0].host_state=std::string(32769,'a');rejects([&]{validate_native_session(host);});
  check(parse_native_session(serialize_native_session({})).tabs.empty(),"Zero tabs remains zero tabs");
 }
 int main(int argc,char **argv){try{
@@ -90,7 +91,7 @@ int main(int argc,char **argv){try{
  }
  // A new process owner can restore the same saved intent, including missing
  // preference-only modules, but never a missing required selection.
- {StudyWorker worker(root.u8string());auto s=example();auto result=worker.restore_native_session(s).get();check(result.tabs.size()==2,"New owner restores canonical saved state");auto captured=worker.capture_native_session({{result.tabs[0].tab,"study",s.tabs[0].visibility,true,false},{result.tabs[1].tab,"empty"}},"study").get();check(serialize_native_session(captured)==serialize_native_session(s),"Dormant preferences and unknown/empty lexicon IDs retained");}
+ {StudyWorker worker(root.u8string());auto s=example();auto result=worker.restore_native_session(s).get();check(result.tabs.size()==2,"New owner restores canonical saved state");auto captured=worker.capture_native_session({{result.tabs[0].tab,"study",s.tabs[0].visibility,true,false,s.tabs[0].host_state},{result.tabs[1].tab,"empty"}},"study").get();check(serialize_native_session(captured)==serialize_native_session(s),"Dormant preferences and unknown/empty lexicon IDs retained");}
  // C admission, owned lifetimes and no-allocation commit-result polling.
  xc_worker *worker=nullptr;check(xc_worker_open(root.u8string().c_str(),&worker)==XC_OK,"C worker");xc_request *r=nullptr;check(xc_worker_create_tab(worker,&r)==XC_OK&&wait(r)==XC_OK,"C first tab");const uint64_t old=xc_request_tab(r);check(old!=0,"C old ID");xc_request_release(r);
  const auto xml=serialize_native_session(saved);xc_native_session *input=nullptr;check(xc_native_session_parse(xml.c_str(),&input)==XC_OK,"C offline parse");

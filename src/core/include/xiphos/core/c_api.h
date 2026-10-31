@@ -1004,7 +1004,7 @@ typedef struct {int texts,preview,commentaries,dictionaries;} xc_tab_visibility;
 typedef struct xc_native_session xc_native_session;
 typedef struct xc_native_session_text xc_native_session_text;
 typedef struct xc_restored_session xc_restored_session;
-typedef struct {uint64_t tab;const char *key;xc_tab_visibility visibility;int commentary_showing,parallel_showing;} xc_native_tab_capture;
+typedef struct {uint64_t tab;const char *key;xc_tab_visibility visibility;int commentary_showing,parallel_showing;const char *host_state;} xc_native_tab_capture;
 typedef struct {int lexical_layout,note_numbering,heading_note_links;} xc_session_capabilities;
 void xc_native_tab_capture_default(xc_native_tab_capture *capture);
 void xc_session_capabilities_default(xc_session_capabilities *capabilities);
@@ -1015,6 +1015,11 @@ void xc_native_session_text_release(xc_native_session_text *text);
 size_t xc_native_session_tab_count(const xc_native_session *session);
 const char *xc_native_session_tab_key(const xc_native_session *session,size_t index);
 const char *xc_native_session_active_key(const xc_native_session *session);
+/* Borrowed saved intent, not SDK resolution. NULL means absent/out of range.
+ * Host state is opaque XML-safe UTF-8, <=32768 bytes, empty if absent. */
+typedef enum {XC_SESSION_READING_MODULE=0,XC_SESSION_READING_REFERENCE=1,XC_SESSION_READING_COMMENTARY=2,XC_SESSION_DICTIONARY_MODULE=3,XC_SESSION_DICTIONARY_KEY=4,XC_SESSION_HOST_STATE=5} xc_native_session_field_kind;
+const char *xc_native_session_field(const xc_native_session *session,size_t index,int field);
+int xc_native_session_book_document(const xc_native_session *session,size_t index);
 void xc_native_session_release(xc_native_session *session);
 xc_status xc_worker_read_native_session(xc_worker *worker,const char *path,xc_request **out);
 xc_status xc_worker_capture_native_session(xc_worker *worker,const xc_native_tab_capture *tabs,size_t count,const char *active_key,xc_request **out);

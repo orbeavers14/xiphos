@@ -44,7 +44,7 @@ struct StudyWorker::Impl {
       snapshot.tabs.reserve(captures.size());seen.reserve(captures.size());
       for(const auto &capture:captures){
         if(std::find(seen.begin(),seen.end(),capture.tab)!=seen.end())throw std::invalid_argument("Duplicate live tab in native capture");
-        seen.push_back(capture.tab);snapshot.tabs.push_back({capture.key,tab(capture.tab).capture_state(),capture.visibility,capture.commentary_showing,capture.parallel_showing});
+        seen.push_back(capture.tab);snapshot.tabs.push_back({capture.key,tab(capture.tab).capture_state(),capture.visibility,capture.commentary_showing,capture.parallel_showing,capture.host_state});
       }
       validate_native_session(snapshot);return snapshot;
     }
@@ -598,7 +598,7 @@ namespace {
 void validate_native_capture(const std::vector<NativeTabCapture> &tabs,const std::optional<std::string> &active) {
   NativeSessionSnapshot skeleton;skeleton.active_key=active;
   if(tabs.size()>maximum_saved_tabs)throw std::invalid_argument("Too many native tabs");
-  skeleton.tabs.reserve(tabs.size());for(const auto &tab:tabs)skeleton.tabs.push_back({tab.key,{},{},false,false});validate_native_session(skeleton);
+  skeleton.tabs.reserve(tabs.size());for(const auto &tab:tabs)skeleton.tabs.push_back({tab.key,{},{},false,false,tab.host_state});validate_native_session(skeleton);
 }
 }
 std::future<NativeSessionSnapshot> StudyWorker::read_native_session(std::string path) {

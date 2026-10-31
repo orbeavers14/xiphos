@@ -103,14 +103,14 @@ final class ReaderModel: ObservableObject {
     private var displayedModule: String?
     private var revision: UInt64 = 0
     private var closed = false
-    init(worker: CoreWorker?, startupError: String?) {
+    init(worker: CoreWorker?, startupError: String?, autostart: Bool = true) {
         self.worker = worker
         guard worker != nil else {
             message = startupError ?? "Unable to start the reading engine."
             isBusy = false
             return
         }
-        Task { [weak self] in await self?.start() }
+        if autostart { Task { [weak self] in await self?.start() } }
     }
     deinit {
         if let worker, let tab { Task { try? await worker.closeTab(tab) } }
@@ -159,6 +159,48 @@ final class ReaderModel: ObservableObject {
                 try await visitAndPresent(module: selection, reference: reference, token: revision)
             } else { message = "Select a Bible or commentary module to read a verse." }
         } catch { if !closed { message = error.localizedDescription } }
+    }
+    var sessionTab: UInt64? { tab }
+    func restoreWindow(_ saved: CoreSavedWindow, tab restoredTab: UInt64, host: SessionHostState?) async throws {
+        guard let worker, !closed, tab == nil else { throw SessionHostError(message: "This reading window cannot be restored.") }
+        tab = restoredTab
+        defer { isBusy = false }
+        modules = try await worker.modules()
+        lexiconPreferences = try await worker.lexiconPreferences(tab: restoredTab)
+        crossReferencesInVerseList = try await worker.crossReferencePreviewList(tab: restoredTab)
+        if let host {
+            showChapter = host.showChapter; verseNumbers = host.verseNumbers; highlightSelected = host.highlightSelected
+        }
+        selection = saved.module
+        commentarySelection = saved.commentary ?? ""
+        search.configure(worker: worker, tab: restoredTab, modules: modules, preferred: saved.module)
+        if let module = saved.module, let reference = saved.reference {
+            let entry = try await worker.readTabEntry(tab: restoredTab, module: module, reference: reference)
+            try await present(entry, module: module, token: revision)
+        } else { message = "Select a module to read." }
+        if host == nil, let module = saved.dictionaryModule, let key = saved.dictionaryKey {
+            let entry = try await worker.readDictionary(tab: restoredTab, module: module, key: key)
+            let history = try await worker.dictionaryHistory(tab: restoredTab)
+            try await presentDictionary(entry, source: nil, history: history, token: revision)
+        }
+        if let module = host?.dictionaryDisplayModule, let key = host?.dictionaryDisplayKey {
+            let entry = try await worker.readDictionary(tab: restoredTab, module: module, key: key)
+            let history = try await worker.dictionaryHistory(tab: restoredTab)
+            let source = host?.dictionarySourceModule.flatMap { module in
+                host?.dictionarySourceReference.map { PassageTarget(module: module, reference: $0) }
+            }
+            try await presentDictionary(entry, source: source, history: history, token: revision)
+        }
+        if saved.bookDocument, let document = try await worker.bookDocumentSelection(tab: restoredTab) {
+            presentBook(document)
+            bookBrowser = document.tree
+            bookChildren = try await worker.bookChildren(module: document.tree.module, parent: document.tree.node.offset)
+        }
+        if let host {
+            showingBook = host.showingBook && bookDocument != nil
+            reference = host.referenceDraft; dictionaryKey = host.dictionaryDraft; bookKey = host.bookDraft
+            host.search.apply(to: search)
+        } else { showingBook = saved.module == nil && bookDocument != nil }
     }
     private func run(_ action: @escaping @MainActor (UInt64) async throws -> Void) {
         guard !closed, !isBusy, tab != nil else { return }
@@ -983,6 +1025,10 @@ private struct LexiconPreferencesView: View {
 
 struct ReaderWindow: View {
     @StateObject private var model: ReaderModel
+    private var closeOnDisappear = true
+    init(model: ReaderModel) {
+        _model = StateObject(wrappedValue: model); closeOnDisappear = false
+    }
     init(worker: CoreWorker?, startupError: String?) {
         _model = StateObject(wrappedValue: ReaderModel(worker: worker, startupError: startupError))
     }
@@ -1373,25 +1419,23 @@ struct ReaderWindow: View {
             .sheet(isPresented: $model.showLexiconPreferences) {
                 if let preferences = model.lexiconPreferences { LexiconPreferencesView(model: model, preferences: preferences) }
             }
-            .onDisappear { model.close() }
+            .onDisappear { if closeOnDisappear { model.close() } }
     }
 }
 
 #if !XIPHOS_PREVIEW_TEST
 @main
 struct XiphosNativePreview: App {
-    private let worker: CoreWorker?
-    private let startupError: String?
-    init() {
-        _ = initializePreviewLocale()
-        do {
-            worker = try CoreWorker(root: ProcessInfo.processInfo.environment["XIPHOS_MODULE_ROOT"])
-            startupError = nil
-        } catch { worker = nil; startupError = error.localizedDescription }
-    }
+    @NSApplicationDelegateAdaptor(SessionAppDelegate.self) private var delegate
     var body: some Scene {
-        WindowGroup("Xiphos Native Preview") { ReaderWindow(worker: worker, startupError: startupError) }
+        Settings { EmptyView() }
+        .commands {
+            CommandGroup(replacing: .newItem) {
+                Button("New Reading Window") { delegate.openNewWindow() }.keyboardShortcut("n")
+                Button("Save Session") { delegate.saveSession() }.keyboardShortcut("s")
+                Button("Save Session As…") { delegate.saveSessionAs() }
+            }
+        }
     }
 }
-
 #endif

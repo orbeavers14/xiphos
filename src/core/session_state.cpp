@@ -40,7 +40,7 @@ void validate_session_state(const StudySessionState &state){Bounds{}.state(state
 void validate_native_session(const NativeSessionSnapshot &s){
   if(s.version!=1||s.tabs.size()>maximum_saved_tabs)throw std::invalid_argument("Unsupported session version or tab count");
   Bounds bounds;std::set<std::string> keys;
-  for(const auto &tab:s.tabs){bounds.text(tab.key,4096,true);if(!keys.insert(tab.key).second)throw std::invalid_argument("Duplicate session tab key");bounds.state(tab.state);}
+  for(const auto &tab:s.tabs){bounds.text(tab.key,4096,true);if(!keys.insert(tab.key).second)throw std::invalid_argument("Duplicate session tab key");bounds.state(tab.state);bounds.text(tab.host_state);}
   if(s.active_key){bounds.text(*s.active_key,4096,true);if(!keys.count(*s.active_key))throw std::invalid_argument("Active session tab is absent");}
 }
 StudySessionState StudySession::capture_state() const {
