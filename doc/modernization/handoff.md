@@ -17,7 +17,9 @@ and atomic per-tab selection/chapter navigation `bcb159e`. Missing columns retai
 slots; options/history remain independent; failed visits retain prior selection.
 See the [parallel contract](parallel-reading-workflows.md) for limits, evidence,
 intentional alias-heading correction and native/persistence/compatibility gates.
-Next: compatible named-set/session repositories, then the other owner priorities.
+Named-set repository/atomic import now exist (`b9d15e5`, `b7b7d23`, `01a75e4`);
+legacy tab reader characterized (`14e1829`). Next: verified tab round trips and
+[complete session persistence](session-persistence.md), then the other owner priorities.
 Devotionals remain deferred. No whole-parity acceptance increase.
 
 ## Current owner priorities (2026-10-30)

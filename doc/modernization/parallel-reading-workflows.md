@@ -224,3 +224,18 @@ before replacing the destination and preserve existing permissions. Missing file
 can be created only by save. Concurrent observed changes reject; this is not an
 interprocess locking protocol. Full session persistence, worker/C transport and
 native named-set presentation remain separate work.
+
+The repository now has FIFO worker commands and owned C snapshots. Input paths
+are explicit and bounded4096 bytes; tab validity is checked before file access.
+C input arrays/flags are bounded before copying, and committed snapshot publication
+uses a preallocated result envelope and no-throw move. Accepted writes drain on
+worker shutdown even if the observer is dropped. A repository edit leaves tab
+selection, histories, search generations and sibling state untouched.
+
+`visit_parallel_profile` explicitly imports either the effective startup list
+(NULL key in C) or a first listed raw key. It renders the complete bounded matrix
+before replacing one tab's parallel selection. Missing/empty/over32-column lists,
+missing control modules and render limits fail without replacing the old selection.
+It uses the existing alias, options and missing-column policies, never silently
+truncates, and does not edit the selected profile. Storage activation and tab
+application are intentionally separate commands; neither implies the other.

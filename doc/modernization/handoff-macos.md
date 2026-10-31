@@ -1950,3 +1950,30 @@ instrumentation remains partial. No full host suite run for these two commits ye
 No whole-parity acceptance claim. Preserved unrelated .DS_Store. Next: FIFO-owned
 repository/C ownership transport and explicit atomic per-tab application, then
 broader session persistence and the owner's other core priorities.
+
+## 2026-10-31 — parallel profile transport/import and legacy tab reader
+
+b7b7d23 adds FIFO-owned explicit parallel profile read/edit and take-once C
+snapshots. 01a75e4 adds named/startup profile application through existing atomic
+per-tab parallel visit. Structural C admission precedes allocation/copies; worker
+path/edit rejection precedes FIFO; tab validity precedes IO. Tests prove copied
+nested inputs, draining dropped edits, owned survival and zero successful-poll
+allocations after persistent commit. Focused normal4/4 (3.19s), portable4/4
+(4.54s), ASan/UBSan4/4 (14.12s), TSan4/4 (16.23s), including interpolation fixture.
+
+Full local Mac build and204 registered tests:203 passes+one explicit index skip
+(163.44s), including Swift6 importers and real offscreen WebKit. This run covers
+through01a75e4, before the new tab-reader library build below. Native panes/restart,
+whole-parity and current physical Windows/Fedora remain open.
+
+14e1829 adds a read-only legacy Xiphos_Tabs repository and20 full frozen/current
+gui_load_tabs comparisons, including raw modules/keys/offsets, all-tab ordering,
+exact yes tokens and all-four showtexts-sentinel fallback. Unknown/missing modules
+and raw invalid offsets remain metadata; no implicit homes, widget creation,
+rewrites or default tabs. Limits256 tabs/32768 bytes per attribute/16MiB snapshot.
+Normal XML/parallel/tab4/4 (.58s), portable XML/parallel/tab3/3 (.20s), TSan3/3
+(1.12s); ASan tab-only1/1 (.21s; leaks OFF). Shared secure XML parser root argument
+is generalized without changing existing default Xiphos checks. Strict C11 header,
+changed-doc relative links and whitespace pass. Full native persistence still
+requires broader core state; see session-persistence.md. Next: verified legacy tab
+round-trip storage, then full native session intent and other owner priorities.
