@@ -30,4 +30,22 @@ struct BookmarkSnapshot {
 // No module resolution, URI navigation, home discovery, mutation or rendering.
 BookmarkSnapshot parse_bookmarks(const std::string &xml);
 BookmarkSnapshot read_bookmarks(const std::string &path);
+struct BookmarkFields {
+  std::optional<std::string> caption,color,module,key,module_description,description;
+};
+enum class BookmarkAction { insert,update,remove,move };
+struct BookmarkEdit {
+  BookmarkAction action=BookmarkAction::insert;
+  BookmarkKind kind=BookmarkKind::bookmark; // insert/update only.
+  std::optional<std::size_t> target,parent;
+  std::size_t position=0; // Destination recognized siblings, after removing moved target.
+  BookmarkFields fields; // Complete replacement of known fields, insert/update only.
+};
+void validate_bookmark_edit(const BookmarkEdit &edit);
+// Existing source must match its exact revision. Indices belong to that revision.
+// Unknown attributes/subtrees/comments survive unless their owning node is removed.
+std::string serialize_bookmark_edit(const std::string &xml,const std::string &revision,const BookmarkEdit &edit);
+// Null revision requires a missing file and insert. Otherwise requires an existing
+// matching file. Verified same-directory replacement returns the prepared snapshot.
+BookmarkSnapshot edit_bookmarks(const std::string &path,const std::optional<std::string> &revision,const BookmarkEdit &edit);
 }
