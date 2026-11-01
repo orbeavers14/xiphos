@@ -5,6 +5,29 @@ Updated 2026-11-01. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Exact keyed-preview checkpoint, 2026-11-01
+
+Implementation `4faa556`, master. Owner requested a bounded next step with the
+remaining budget. Shared Reader/FIFO/C previews now dispatch explicit dictionary
+keys and indexed-tree book paths, require exact installed source/type and key
+resolution, restore the SDK key on success/failure and cap copied HTML at8MiB.
+Missing keys/paths reject instead of falling through to nearby entries. C results
+reuse owned dictionary-entry module/key/HTML fields for both source kinds.
+[Contract and remaining work](keyed-search.md#exact-keyed-previews).
+
+Actual checks on the same macOS27.2/AppleClang21 host:
+normal keyed/fixture2/2,2.05s; ASan/UBSan2/2,3.28s (detect_leaks=0, third-party
+SDK coverage incomplete); alternate released SWORD1.9.0/CLucene2/2,1.84s.
+C11 header syntax and diff checks passed. No new native UI/full-suite or physical
+Windows/Linux acceptance claim. Tests cover both preview kinds, wrong types,
+missing dictionary/book targets, output limits and C ownership after teardown.
+
+Local-only Graphify refreshed:679 files,12718 nodes,34525 edges,415 communities;
+no paid analysis and no source changes during extraction. Generated graph and
+unrelated .DS_Store remain untracked. Next: typed mixed-family batch generations,
+source-specific text/HTML exports and native preview/activation consumption.
+Preview reads current installed content, not an immutable search-time revision.
+
 ## Typed keyed-search checkpoint, 2026-11-01
 
 Implementation `7c75628`, master, responds to the owner's request to use the
