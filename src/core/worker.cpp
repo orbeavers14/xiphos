@@ -601,6 +601,19 @@ void validate_native_capture(const std::vector<NativeTabCapture> &tabs,const std
   skeleton.tabs.reserve(tabs.size());for(const auto &tab:tabs)skeleton.tabs.push_back({tab.key,{},{},false,false,tab.host_state});validate_native_session(skeleton);
 }
 }
+std::future<ModuleEditEntry> StudyWorker::read_module_edit(StudyTab tab,ModuleEditTarget target){return impl_->submit([tab,target=std::move(target)](Impl::State &s){(void)s.tab(tab);return s.reader.read_module_edit(target);});}
+std::future<ModuleEditEntry> StudyWorker::save_module_edit(StudyTab tab,ModuleEditTarget target,std::string expected,std::string text,bool erase){
+ if(!module_edit_arguments(target)||!editable_document_revision(expected)||!editable_document_text(text)||(erase&&!text.empty()))return selected_profile_rejection<ModuleEditEntry>();
+ return impl_->submit([tab,target=std::move(target),expected=std::move(expected),text=std::move(text),erase](Impl::State &s){
+  (void)s.tab(tab);std::map<StudyTab,std::pair<StudySessionState,SessionCapabilities>> states;
+  for(const auto &t:s.tabs)states.emplace(t.first,std::make_pair(t.second->capture_state(),t.second->capabilities()));
+  return s.reader.save_module_edit(target,expected,text,erase,[&]{
+   std::map<StudyTab,std::unique_ptr<StudySession>> replacement;
+   for(const auto &t:states){auto session=StudySession::from_state(s.reader,t.second.first,t.second.second);session->continue_search_serial(*s.tabs.at(t.first));replacement.emplace(t.first,std::move(session));}
+   s.tabs.swap(replacement);
+  });
+ });
+}
 std::future<EditableDocument> StudyWorker::read_editable_document(StudyTab tab,std::string path) {
   try{selected_profile_path(path);}catch(...){return selected_profile_rejection<EditableDocument>();}
   return impl_->submit([tab,path=std::move(path)](Impl::State &s){(void)s.tab(tab);return xiphos::core::read_editable_document(path);});

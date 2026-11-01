@@ -161,6 +161,8 @@ public:
   std::future<std::optional<DictionaryLocation>> dictionary_selection(StudyTab tab);
   std::future<void> clear_reading_selection(StudyTab tab);
   std::future<void> clear_dictionary_selection(StudyTab tab);
+  std::future<ModuleEditEntry> read_module_edit(StudyTab tab,ModuleEditTarget target);
+  std::future<ModuleEditEntry> save_module_edit(StudyTab tab,ModuleEditTarget target,std::string expected,std::string text,bool erase=false);
   std::future<EditableDocument> read_editable_document(StudyTab tab,std::string path);
   std::future<EditableDocument> save_editable_document(StudyTab tab,std::string path,std::optional<std::string> expected_revision,std::string text);
   std::future<NativeSessionSnapshot> read_native_session(std::string path);

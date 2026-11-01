@@ -17,3 +17,21 @@ EditableDocument read_editable_document(const std::string &path);
 // result prepared before commit. Observed change checks are not a file lock.
 EditableDocument save_editable_document(const std::string &path,const std::optional<std::string> &expected_revision,const std::string &text);
 }
+
+#include <vector>
+namespace xiphos::core {
+// Shared bounded source undo/redo; native views own caret/layout only.
+class EditorBuffer {
+  std::string text_,saved_;
+  std::vector<std::string> undo_,redo_;
+  static void push(std::vector<std::string> &stack,const std::string &text);
+public:
+  explicit EditorBuffer(std::string text);
+  const std::string &text() const {return text_;}
+  bool dirty() const {return text_!=saved_;}
+  bool can_undo() const {return !undo_.empty();}
+  bool can_redo() const {return !redo_.empty();}
+  void replace(std::string text);
+  void undo();void redo();void mark_saved();
+};
+}

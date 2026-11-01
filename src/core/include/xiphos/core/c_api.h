@@ -983,13 +983,58 @@ typedef enum xc_tab_field {
 typedef struct {const char *fields[XC_TAB_FIELD_COUNT];} xc_saved_tab;
 typedef struct {const char *version;const xc_saved_tab *tabs;size_t tab_count;} xc_saved_tab_session;
 typedef struct {int texts,preview,commentaries,dictionaries;} xc_tab_visibility;
-/* Capture ordered live core locations at FIFO execution time, independently of
- * history dedup/clearing. Host supplies only pane visibility; it is not inferred
- * from selection. Unknown/duplicate tab IDs reject. No implicit SDK/global-key
- * fallback for empty tabs. Count<=256; optional version<=32768 UTF-8/XML bytes.
- * Save captures all rows before verified replacement and returns the prepared
- * owned legacy session. This subset does not persist per-tab options/history,
- * parallel column intent or native window geometry/active-tab ownership. */
+/* SDK-free source undo/redo. Caller serializes access. Text is borrowed until
+ * the next successful mutation/release. Saved baseline survives undo/redo. */
+typedef struct xc_editor_buffer xc_editor_buffer;
+xc_status xc_editor_buffer_create(const char *text,xc_editor_buffer **out);
+xc_status xc_editor_buffer_replace(xc_editor_buffer *buffer,const char *text);
+xc_status xc_editor_buffer_undo(xc_editor_buffer *buffer);
+xc_status xc_editor_buffer_redo(xc_editor_buffer *buffer);
+xc_status xc_editor_buffer_mark_saved(xc_editor_buffer *buffer);
+const char *xc_editor_buffer_text(const xc_editor_buffer *buffer);
+int xc_editor_buffer_dirty(const xc_editor_buffer *buffer);
+int xc_editor_buffer_can_undo(const xc_editor_buffer *buffer);
+int xc_editor_buffer_can_redo(const xc_editor_buffer *buffer);
+void xc_editor_buffer_release(xc_editor_buffer *buffer);
+/* Shared rich text: UTF-8 byte coordinates; supported fragments are normalized
+ * into balanced markup. Unsupported markup rejects without altering source.
+ * Pure data operations, no SDK/worker access. Inputs copy; returned documents
+ * own their runs/strings, borrowed until document release. Create normalizes
+ * paragraph blocks to the first run on each line. Toggle value=-1, off=0,on=1;
+ * block uses xc_rich_block; colors/link use text (empty clears). */
+typedef enum {XC_RICH_STYLE_BOLD=1,XC_RICH_STYLE_ITALIC=2,XC_RICH_STYLE_UNDERLINE=4,XC_RICH_STYLE_STRIKE=8} xc_rich_flags;
+typedef enum {XC_RICH_NORMAL=0,XC_RICH_H1,XC_RICH_H2,XC_RICH_H3,XC_RICH_H4,XC_RICH_H5,XC_RICH_H6,XC_RICH_ADDRESS,XC_RICH_PREFORMATTED,XC_RICH_BULLET,XC_RICH_NUMBER,XC_RICH_ROMAN,XC_RICH_ALPHA} xc_rich_block;
+typedef enum {XC_RICH_BOLD=0,XC_RICH_ITALIC,XC_RICH_UNDERLINE,XC_RICH_STRIKE,XC_RICH_BLOCK,XC_RICH_FOREGROUND,XC_RICH_BACKGROUND,XC_RICH_LINK,XC_RICH_CLEAR} xc_rich_action;
+typedef struct xc_rich_document xc_rich_document;
+typedef struct {const char *text;unsigned flags;int block;const char *foreground,*background,*link;} xc_rich_run;
+xc_status xc_rich_document_parse(const char *html,xc_rich_document **out);
+xc_status xc_rich_document_create(const xc_rich_run *runs,size_t count,xc_rich_document **out);
+xc_status xc_rich_document_format(const xc_rich_document *document,size_t start,size_t length,int action,int value,const char *text,xc_rich_document **out);
+size_t xc_rich_document_run_count(const xc_rich_document *document);
+xc_status xc_rich_document_run(const xc_rich_document *document,size_t index,xc_rich_run *out);
+const char *xc_rich_document_html(const xc_rich_document *document);
+const char *xc_rich_document_text(const xc_rich_document *document);
+void xc_rich_document_release(xc_rich_document *document);
+/* Unencrypted UTF-8 RawFiles (KJV) / RawGenBook (indexed TreeKey) only.
+ * Reference is one full verse or exact existing absolute book path. Copied
+ * inputs; take-once owned results survive request/worker release, strings borrow
+ * until entry release. Whole isolated module data is staged,
+ * revision-checked, verified, replaced and SDK/tab caches reloaded on the owner.
+ * Failure attempts rollback before publishing new tab caches; a backup is
+ * retained if filesystem rollback itself fails. No crash-durability or
+ * interprocess locking promise. Erase clears entry content, not book structure. */
+typedef struct xc_module_edit xc_module_edit;
+xc_status xc_worker_read_module_edit(xc_worker *worker,uint64_t tab,const char *module,const char *reference,xc_request **out);
+xc_status xc_worker_save_module_edit(xc_worker *worker,uint64_t tab,const char *module,const char *reference,const char *revision,const char *text,int erase,xc_request **out);
+xc_module_edit *xc_request_take_module_edit(xc_request *request);
+const char *xc_module_edit_module(const xc_module_edit *entry);
+const char *xc_module_edit_reference(const xc_module_edit *entry);
+const char *xc_module_edit_driver(const xc_module_edit *entry);
+const char *xc_module_edit_source_type(const xc_module_edit *entry);
+const char *xc_module_edit_text(const xc_module_edit *entry);
+const char *xc_module_edit_revision(const xc_module_edit *entry);
+uint64_t xc_module_edit_offset(const xc_module_edit *entry);
+void xc_module_edit_release(xc_module_edit *entry);
 /* File-editor source storage, separate from SWORD module entries. UTF-8/NUL-free
  * text <=4MiB, exact byte preservation. NULL revision creates only a missing
  * file; replacement requires the last owned SHA256 revision. Closed tabs and
@@ -1047,6 +1092,13 @@ const char *xc_restored_session_tab_key(const xc_restored_session *session,size_
 uint64_t xc_restored_session_active_tab(const xc_restored_session *session); /* 0 = absent */
 xc_status xc_restored_session_visibility(const xc_restored_session *session,size_t index,xc_tab_visibility *visibility,int *commentary_showing,int *parallel_showing);
 void xc_restored_session_release(xc_restored_session *session);
+/* Capture ordered live core locations at FIFO execution time, independently of
+ * history dedup/clearing. Host supplies only pane visibility; it is not inferred
+ * from selection. Unknown/duplicate tab IDs reject. No implicit SDK/global-key
+ * fallback for empty tabs. Count<=256; optional version<=32768 UTF-8/XML bytes.
+ * Save captures all rows before verified replacement and returns the prepared
+ * owned legacy session. This subset does not persist per-tab options/history,
+ * parallel column intent or native window geometry/active-tab ownership. */
 typedef struct {uint64_t tab;xc_tab_visibility visibility;int commentary_showing,parallel_showing;} xc_tab_capture;
 void xc_tab_capture_default(xc_tab_capture *capture);
 xc_status xc_worker_capture_tabs(xc_worker *worker,const xc_tab_capture *tabs,size_t count,const char *version,xc_request **out);

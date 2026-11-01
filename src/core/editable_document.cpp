@@ -39,3 +39,11 @@ EditableDocument save_editable_document(const std::string &path,const std::optio
   return prepared;
 }
 }
+namespace xiphos::core {
+EditorBuffer::EditorBuffer(std::string text):text_(std::move(text)),saved_(text_){if(!editable_document_text(text_))throw std::invalid_argument("Invalid editor source");}
+void EditorBuffer::push(std::vector<std::string> &stack,const std::string &text){stack.push_back(text);std::size_t bytes=0;for(const auto &s:stack)bytes+=s.size();while(stack.size()>100||bytes>16*1024*1024){bytes-=stack.front().size();stack.erase(stack.begin());}}
+void EditorBuffer::replace(std::string text){if(!editable_document_text(text))throw std::invalid_argument("Invalid editor source");if(text==text_)return;push(undo_,text_);text_=std::move(text);redo_.clear();}
+void EditorBuffer::undo(){if(undo_.empty())return;push(redo_,text_);text_=std::move(undo_.back());undo_.pop_back();}
+void EditorBuffer::redo(){if(redo_.empty())return;push(undo_,text_);text_=std::move(redo_.back());redo_.pop_back();}
+void EditorBuffer::mark_saved(){saved_=text_;}
+}

@@ -16,6 +16,7 @@
 #include "search_validation.hpp"
 #include "module_alias_catalog.hpp"
 #include "sdk_text.hpp"
+#include "module_edit_internal.hpp"
 #include "xml_document.hpp"
 #include "sdk_render.hpp"
 #include "search_control.hpp"
@@ -71,6 +72,7 @@ public:
 
 struct Reader::Impl {
   std::unique_ptr<EngineManager> manager;
+  std::string root;
   NoteRenderingState note_rendering;
   std::vector<Module> modules;
   std::unique_ptr<detail::ModuleAliasCatalog> aliases;
@@ -96,6 +98,7 @@ struct Reader::Impl {
 Reader::Reader(const std::string &root) : impl_(std::make_unique<Impl>()) {
   if (!root.empty() && !std::filesystem::is_directory(root))
     throw std::invalid_argument("Module root must be an existing directory");
+  impl_->root=root;
   // SWMgr takes ownership of the filter manager, matching the legacy backend.
   impl_->manager = std::make_unique<EngineManager>(
     root.empty() ? nullptr : root.c_str(), true,
@@ -816,5 +819,20 @@ std::string Reader::adjacent_chapter(const std::string &id, const std::string &r
   if (key.getError() || before == key.getText())
     throw std::invalid_argument("Chapter destination is unavailable");
   return key.getText();
+}
+}
+
+namespace xiphos::core {
+ModuleEditEntry Reader::read_module_edit(const ModuleEditTarget &target){std::lock_guard<std::mutex> lock(impl_->mutex);return detail::ModuleEditStorage(*impl_->manager,target).read();}
+ModuleEditEntry Reader::save_module_edit(const ModuleEditTarget &target,const std::string &expected,const std::string &text,bool erase,const std::function<void()> &refresh){
+ detail::ModuleEditStorage transaction(*impl_->manager,target);auto prepared=transaction.stage(expected,text,erase);const auto root=impl_->root;
+ transaction.install();std::unique_ptr<Reader> replacement;
+ try{
+  replacement=std::make_unique<Reader>(root);auto verified=replacement->read_module_edit(target);
+  if(verified.revision!=prepared.revision||verified.text!=prepared.text)throw std::runtime_error("Reloaded module edit did not verify");
+  impl_.swap(replacement->impl_);
+  try{refresh();}catch(...){impl_.swap(replacement->impl_);throw;}
+ }catch(...){replacement.reset();transaction.rollback();throw;}
+ transaction.finish();return prepared;
 }
 }

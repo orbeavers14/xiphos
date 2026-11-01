@@ -31,6 +31,8 @@ class StudySession {
 public:
   explicit StudySession(Reader &reader) : reader_(reader) {}
   StudySessionState capture_state() const;
+  void continue_search_serial(const StudySession &old) {search_generation_serial_=old.search_generation_serial_;}
+  SessionCapabilities capabilities() const {return {lexical_layout_enabled_,note_numbering_enabled_,heading_note_links_enabled_};}
   // Stage a new session; strict required-module/book provenance validation.
   // Callers publish only after all tabs are successfully staged.
   static std::unique_ptr<StudySession> from_state(Reader &reader,const StudySessionState &state,SessionCapabilities capabilities = {});

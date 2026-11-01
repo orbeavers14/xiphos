@@ -8,6 +8,7 @@
 #include "xiphos/core/session.hpp"
 #include "xiphos/core/study_link_admission.hpp"
 #include "search_control.hpp"
+#include "xiphos/core/rich_document.hpp"
 struct xc_reader { std::shared_ptr<xiphos::core::Reader> value; explicit xc_reader(const char *p) : value(std::make_shared<xiphos::core::Reader>(p ? p : "")) {} };
 struct xc_session {
   std::shared_ptr<xiphos::core::Reader> owner;
@@ -36,6 +37,9 @@ struct xc_annotations { xiphos::core::AnnotationProfile value; };
 struct xc_annotation_cache { xiphos::core::AnnotationCache value; };
 struct xc_bookmark_tags { xiphos::core::BookmarkTags value; };
 struct xc_bookmarks { xiphos::core::BookmarkSnapshot value; };
+struct xc_editor_buffer {xiphos::core::EditorBuffer value;explicit xc_editor_buffer(std::string text):value(std::move(text)) {}};
+struct xc_rich_document {xiphos::core::RichDocument value;std::string html,text;};
+struct xc_module_edit {xiphos::core::ModuleEditEntry value;};
 struct xc_editable_document {xiphos::core::EditableDocument value;};
 struct xc_native_session {xiphos::core::NativeSessionSnapshot value;};
 struct xc_native_session_text {std::string value;};
@@ -124,6 +128,7 @@ struct xc_request {
   std::unique_ptr<xc_passage> prepared_passage;
   std::unique_ptr<xc_dictionary_entry> prepared_dictionary;
   std::unique_ptr<xc_lexical_entry> prepared_lexical;
+  std::unique_ptr<xc_module_edit> module_edit;
   std::unique_ptr<xc_editable_document> editable_document;
   std::unique_ptr<xc_native_session> native_session;
   std::unique_ptr<xc_restored_session> restored_session;
@@ -217,6 +222,7 @@ struct xc_request {
     static_assert(std::is_nothrow_move_assignable_v<xiphos::core::BookmarkSnapshot>, "Committed bookmarks publication must not allocate");
     bookmarks->value=std::move(v);
   }
+  void store(xiphos::core::ModuleEditEntry v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>,"Module edit publication must not allocate");module_edit->value=std::move(v);}
   void store(xiphos::core::EditableDocument v) {static_assert(std::is_nothrow_move_assignable_v<decltype(v)>,"Editor publication must not allocate");editable_document->value=std::move(v);}
   void store(xiphos::core::NativeSessionSnapshot v) {
     static_assert(std::is_nothrow_move_assignable_v<decltype(v)>,"Snapshot publication must not allocate");native_session->value=std::move(v);
@@ -372,6 +378,7 @@ template<class T> struct Request final : xc_request {
   // Allocate result envelopes before accepting a state-changing job;
   // polling then only moves owned values into already allocated storage.
   Request() {
+    if constexpr (std::is_same_v<T,xiphos::core::ModuleEditEntry>) module_edit=std::make_unique<xc_module_edit>();
     if constexpr (std::is_same_v<T,xiphos::core::EditableDocument>) editable_document=std::make_unique<xc_editable_document>();
     if constexpr (std::is_same_v<T,xiphos::core::NativeSessionSnapshot>) native_session=std::make_unique<xc_native_session>();
     if constexpr (std::is_same_v<T,xiphos::core::RestoredSession>) restored_session=std::make_unique<xc_restored_session>();
@@ -1491,6 +1498,26 @@ static const std::array<std::optional<std::string> xiphos::core::SavedTab::*,XC_
  &xiphos::core::SavedTab::show_preview,&xiphos::core::SavedTab::show_commentaries,&xiphos::core::SavedTab::show_dictionaries,
  &xiphos::core::SavedTab::show_parallel
 }};
+xc_status xc_editor_buffer_create(const char *text,xc_editor_buffer **out){if(out)*out=nullptr;if(!out||!text||(*text&&!bounded_image_c_text(text,xiphos::core::maximum_editable_document_bytes)))return XC_INVALID_ARGUMENT;try{*out=new xc_editor_buffer(text);return XC_OK;}catch(...){return failure();}}
+xc_status xc_editor_buffer_replace(xc_editor_buffer *b,const char *text){if(!b||!text||(*text&&!bounded_image_c_text(text,xiphos::core::maximum_editable_document_bytes)))return XC_INVALID_ARGUMENT;try{b->value.replace(text);return XC_OK;}catch(...){return failure();}}
+xc_status xc_editor_buffer_undo(xc_editor_buffer *b){if(!b)return XC_INVALID_ARGUMENT;try{b->value.undo();return XC_OK;}catch(...){return failure();}}
+xc_status xc_editor_buffer_redo(xc_editor_buffer *b){if(!b)return XC_INVALID_ARGUMENT;try{b->value.redo();return XC_OK;}catch(...){return failure();}}
+xc_status xc_editor_buffer_mark_saved(xc_editor_buffer *b){if(!b)return XC_INVALID_ARGUMENT;try{b->value.mark_saved();return XC_OK;}catch(...){return failure();}}
+const char *xc_editor_buffer_text(const xc_editor_buffer *b){return b?b->value.text().c_str():nullptr;}int xc_editor_buffer_dirty(const xc_editor_buffer *b){return b&&b->value.dirty();}int xc_editor_buffer_can_undo(const xc_editor_buffer *b){return b&&b->value.can_undo();}int xc_editor_buffer_can_redo(const xc_editor_buffer *b){return b&&b->value.can_redo();}void xc_editor_buffer_release(xc_editor_buffer *b){delete b;}
+static xc_rich_document *rich_value(xiphos::core::RichDocument value){auto result=std::make_unique<xc_rich_document>();result->html=xiphos::core::serialize_rich_document(value);result->text=xiphos::core::rich_document_text(value);result->value=std::move(value);return result.release();}
+xc_status xc_rich_document_parse(const char *html,xc_rich_document **out){if(out)*out=nullptr;if(!out||!html||(*html&&!bounded_image_c_text(html,xiphos::core::maximum_editable_document_bytes)))return XC_INVALID_ARGUMENT;try{*out=rich_value(xiphos::core::parse_rich_document(html));return XC_OK;}catch(...){return failure();}}
+xc_status xc_rich_document_create(const xc_rich_run *runs,size_t count,xc_rich_document **out){
+ if(out)*out=nullptr;if(!out||count>16384||(count&&!runs))return XC_INVALID_ARGUMENT;
+ try{xiphos::core::RichDocument value;std::size_t bytes=0;for(size_t i=0;i<count;++i){const auto &r=runs[i];if(!bounded_image_c_text(r.text,xiphos::core::maximum_editable_document_bytes)||r.flags>15||r.block<0||r.block>12||(r.foreground&&*r.foreground&&!bounded_image_c_text(r.foreground,7))||(r.background&&*r.background&&!bounded_image_c_text(r.background,7))||(r.link&&*r.link&&!bounded_image_c_text(r.link,4096)))return XC_INVALID_ARGUMENT;const auto size=std::strlen(r.text)+(r.foreground?std::strlen(r.foreground):0)+(r.background?std::strlen(r.background):0)+(r.link?std::strlen(r.link):0);if(size>xiphos::core::maximum_editable_document_bytes-bytes)return XC_INVALID_ARGUMENT;bytes+=size;value.runs.push_back({r.text,{r.flags,static_cast<xiphos::core::RichBlock>(r.block),r.foreground?r.foreground:"",r.background?r.background:"",r.link?r.link:""}});}*out=rich_value(xiphos::core::normalize_rich_document(value));return XC_OK;}catch(...){return failure();}
+}
+xc_status xc_rich_document_format(const xc_rich_document *d,size_t start,size_t length,int action,int value,const char *text,xc_rich_document **out){if(out)*out=nullptr;if(!d||!out||action<0||action>8||(text&&*text&&!bounded_image_c_text(text,4096)))return XC_INVALID_ARGUMENT;try{*out=rich_value(xiphos::core::format_rich_document(d->value,start,length,{static_cast<xiphos::core::RichAction>(action),value,text?text:""}));return XC_OK;}catch(...){return failure();}}
+size_t xc_rich_document_run_count(const xc_rich_document *d){return d?d->value.runs.size():0;}
+xc_status xc_rich_document_run(const xc_rich_document *d,size_t at,xc_rich_run *out){if(!d||at>=d->value.runs.size()||!out)return XC_INVALID_ARGUMENT;const auto &r=d->value.runs[at];*out={r.text.c_str(),r.style.flags,static_cast<int>(r.style.block),r.style.foreground.c_str(),r.style.background.c_str(),r.style.link.c_str()};return XC_OK;}
+const char *xc_rich_document_html(const xc_rich_document *d){return d?d->html.c_str():nullptr;}const char *xc_rich_document_text(const xc_rich_document *d){return d?d->text.c_str():nullptr;}void xc_rich_document_release(xc_rich_document *d){delete d;}
+xc_status xc_worker_read_module_edit(xc_worker *w,uint64_t tab,const char *module,const char *reference,xc_request **out){if(!bounded_image_c_text(module,4096)||!bounded_image_c_text(reference,32768)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}return queue_request(w,out,[=](auto &worker){return worker.read_module_edit(tab,{module,reference});});}
+xc_status xc_worker_save_module_edit(xc_worker *w,uint64_t tab,const char *module,const char *reference,const char *revision,const char *text,int erase,xc_request **out){if(out)*out=nullptr;if(!w||!out||!bounded_image_c_text(module,4096)||!bounded_image_c_text(reference,32768)||!bounded_image_c_text(revision,64)||!xiphos::core::editable_document_revision(revision)||!text||(*text&&!bounded_image_c_text(text,xiphos::core::maximum_editable_document_bytes))||!xiphos::core::editable_document_text(text)||(erase!=0&&erase!=1)||(erase&&*text))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.save_module_edit(tab,{module,reference},revision,text,erase!=0);});}
+xc_module_edit *xc_request_take_module_edit(xc_request *r){return r&&r->status==XC_OK?r->module_edit.release():nullptr;}
+const char *xc_module_edit_module(const xc_module_edit *e){return e?e->value.module.c_str():nullptr;}const char *xc_module_edit_reference(const xc_module_edit *e){return e?e->value.reference.c_str():nullptr;}const char *xc_module_edit_source_type(const xc_module_edit *e){return e?e->value.source_type.c_str():nullptr;}const char *xc_module_edit_driver(const xc_module_edit *e){return e?e->value.driver.c_str():nullptr;}const char *xc_module_edit_text(const xc_module_edit *e){return e?e->value.text.c_str():nullptr;}const char *xc_module_edit_revision(const xc_module_edit *e){return e?e->value.revision.c_str():nullptr;}uint64_t xc_module_edit_offset(const xc_module_edit *e){return e?e->value.offset:0;}void xc_module_edit_release(xc_module_edit *e){delete e;}
 xc_status xc_worker_read_editable_document(xc_worker *w,uint64_t tab,const char *path,xc_request **out){if(!bounded_image_c_text(path,4096)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}return queue_request(w,out,[=](auto &worker){return worker.read_editable_document(tab,path);});}
 xc_status xc_worker_save_editable_document(xc_worker *w,uint64_t tab,const char *path,const char *expected,const char *text,xc_request **out){
  if(out)*out=nullptr;if(!w||!out||!bounded_image_c_text(path,4096)||!text||(*text&&!bounded_image_c_text(text,xiphos::core::maximum_editable_document_bytes))||

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 #include "bookmark_tags.hpp"
+#include "module_edit.hpp"
+#include <functional>
 #include "annotations.hpp"
 #include "module_resolution.hpp"
 #include "reference_list.hpp"
@@ -47,6 +49,11 @@ public:
   Reader(const Reader &) = delete;
   Reader &operator=(const Reader &) = delete;
   const std::vector<Module> &modules() const;
+  ModuleEditEntry read_module_edit(const ModuleEditTarget &target);
+  // Serialized owner only. Callback stages/publishes refreshed tab caches after
+  // SDK reload; exceptions roll back both engine and module data.
+  ModuleEditEntry save_module_edit(const ModuleEditTarget &target,const std::string &expected,const std::string &text,bool erase,const std::function<void()> &refresh);
+
   // Explicit read-only alias resolution on this Reader owner. Catalog metadata
   // stages lazily; invalid alias metadata does not disable ordinary reading.
   // Read-only owned annotation map: exact catalog eligibility, retained BFS and
