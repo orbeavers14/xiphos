@@ -89,6 +89,43 @@ an explicitly selected session. Native autosave scheduling, recovery presentatio
 draft/editor reconstruction, interrupted installation reconciliation and physical
 host crash testing remain pending. This checkpoint is shared storage and transport.
 
+## Optional safe sync networking (2026-11-01)
+
+Implementation `04914ca` adds `sync_transport.hpp` / `sync_transport.cpp`, shared
+worker commands and owned C event handles. Configuration, transmit and receive run
+on the existing FIFO thread; no GTK callback or second SWORD engine is introduced.
+Startup creates no sockets. Explicit identity/session metadata and network
+acknowledgement are required. A failed network reconfiguration disables the prior
+connection. One adapter-managed conduit may be active per process; policy-only
+configuration stops any active conduit. SDK callbacks are contained on the owner
+thread and exceptions do not cross the SDK callback boundary.
+
+The optional SDK must include the [reviewed safety patch](../../dependencies/biblesync/README.md).
+This applies personal TTL before initial beacon/presence, processes at most64
+packets per effective receive, bounds SDK peers to256 and rejects oversized
+outbound payloads instead of truncating references. Host calls are throttled to
+one effective receive per second, matching beacon/expiry cadence. Event snapshots
+contain at most32 copied entries, overflow/skipped-event state and active-at-poll
+state. No passphrase/raw packet dump is returned. Navigation is a wire event,
+not automatic navigation: feed it to shared `plan_incoming_sync`, then consume its
+direct/reference-list intent through existing application actions.
+
+The protocol session phrase is a plaintext matching filter, not cryptographic
+authentication or encryption. The SDK also sends its normal identity/device
+metadata. SDK/network configuration errors are returned without raw dumps.
+Networking is OFF by default; a configure-time API/link probe rejects the
+unpatched library. Enabling requires an explicit safe SDK path/setup; no global
+SDK installation or dependency download happens during app configuration.
+
+Real UDP tests use the actual SDK and a synthetic protocol peer. Test-executable
+interposition redirects every SDK send to an ephemeral loopback sink and observes
+TTL on the first messages. Incoming beacon/navigation, session mismatch, echo
+suppression, single-conduit ownership, disable/failure and C ownership are checked.
+These are not physical two-device or LAN/multicast-routing acceptance. Native
+sync settings/timer/navigation consumption, chat/friendly presence presentation,
+network sleep/interface changes, package audit and native Windows/Fedora remain
+open. The earlier policy checkpoint below is retained as its behavioral contract.
+
 ## Sync foundation and remaining network work
 
 `sync.hpp` / `sync.cpp` extract application policy from the retained BibleSync

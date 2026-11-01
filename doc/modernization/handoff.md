@@ -52,6 +52,18 @@ and physical Windows/Fedora acceptance remain open. See
 [the contracts and limits](repository-management.md). No whole-parity acceptance.
 
 
+Safe sync networking checkpoint (2026-11-01, `04914ca`): an optional shared
+BibleSync adapter now owns network configuration, bounded polling, transmit/echo
+controls and copied C/FIFO event batches. A pinned downstream SDK patch applies
+privacy before initial messages, bounds receive/peer state and rejects truncated
+outbound payloads. Full native230 passes+one index skip (231 registered); scoped
+instrumented SDK+adapter ASan/UBSan5/5 and TSan5/5. Actual UDP fixtures redirect all
+SDK sends to loopback; physical two-device/LAN interoperability and native sync
+controls remain open. Networking is OFF by default and rejects an unpatched SDK.
+See [the SDK contract](../../dependencies/biblesync/README.md). Recovery/autosave
+integration and native management presentation remain next; no whole-parity claim.
+
+
 ## Current owner priorities (2026-10-30)
 
 Defer further devotional work and retain its checked date/read services. Focus

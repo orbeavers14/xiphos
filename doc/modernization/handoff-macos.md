@@ -7,17 +7,16 @@ and pushes are authorized; preserve unrelated changes, never force-push.
 
 ## Current checked source and active work
 
-Latest implementation: `c9258de` adds shared ordered repository profiles/offline
-catalog caching and value edits; staged remove/cipher configuration/index
-maintenance; checksummed session/draft recovery with previous-valid fallback;
-and transport-neutral sync policy. See [contracts and remaining work](repository-management.md).
-Full Mac229 passes+one index skip (230 registered,190.51s); Mac-hosted portable180
-passes+one skip (181 registered,137.94s). Final recovery Save As refinement rebuilt
-the native app and passed2/2 on Mac, portable and ASan/UBSan. Scoped ASan/UBSan8/8
-and TSan8/8; strict C++11 native-off10/10. Detailed evidence is below. Native
-management/autosave/recovery UI, real BibleSync transport, positive indexing on a
-capable SDK, encrypted-module correctness and physical host acceptance remain open.
-Devotionals remain deferred. No full-parity acceptance increase.
+Latest implementation: `04914ca` adds optional safe BibleSync networking and owned
+C/FIFO event/control APIs. `c9258de` repository/maintenance/recovery/policy services
+remain the prior checkpoint. See [service contracts](repository-management.md) and
+[SDK setup/provenance](../../dependencies/biblesync/README.md). Full Mac230 passes+
+one index skip (231 registered,193.18s); final active-state/native relink5/5,4.76s.
+Instrumented adapter+SDK ASan/UBSan5/5,5.11s and TSan5/5,5.20s; portable networking-OFF
+scoped8/8,6.74s. No native sync controls or physical two-device acceptance. Next:
+native recovery/autosave/editor reconstruction and management presentation; positive
+index/encrypted correctness and physical host gates remain. Devotionals deferred.
+No full-parity acceptance increase.
 
 ## Earlier checkpoints (historical)
 
@@ -2614,3 +2613,65 @@ encrypted correctness, interprocess/crash-install reconciliation and physical
 Windows/Fedora/release gates remain open. No current target-runtime, whole-parity
 or GTK3-retirement claim. Existing deployment26 versus selected dylib27 warnings
 remain; these tests ran on the current Mac, not older macOS.
+
+## Safe BibleSync network adapter — 2026-11-01
+
+Implementation `04914ca` on authorized fork `master`. Reviewed official BibleSync
+source `e1d35362351e4eef9da71fe49caf709efd05c179` (version2.2.0) and built a private
+SDK under ignored build directories. No upstream message/PR or global install.
+The downstream public-domain patch adds privacy-before-initial-send and bounded
+receive entry points, peer cap256 and overflow payload refusal. The build refuses
+unpatched headers/library APIs; a negative configure control verified that
+rejection. Patch reverse-application validates exact applicability. A file-specific
+.gitattributes whitespace rule preserves literal upstream unified-patch context.
+
+Core networking uses one lazy active conduit per process on the existing FIFO
+owner, copied values, explicit network acknowledgement and bounded identity/session
+fields. No SDK socket at startup, no raw packet dumps/phrases in results. Events
+include active-at-poll and overflow state. Host scheduling/native controls and
+actual navigation consumption remain open. Incoming N events must use shared
+planning before applying existing navigation/reference-list actions. Session
+phrase matching is not encryption or cryptographic authentication.
+
+Actual checks:
+
+- Native app/full Mac:230 passes+one explicit index skip,231 registered,193.18s;
+  `build/sync-network-full-{configure,build,tests}.log`.
+- Final active-state snapshot refinements/native relink:5/5,4.76s;
+  `build/sync-network-final-native-{build,tests}.log`.
+- ASan/UBSan5/5,5.11s; TSan5/5,5.20s. **Both the application adapter and the
+  selected BibleSync SDK are instrumented**; other existing SWORD/parser/transfer
+  dependencies are not all instrumented. ASan leak checks remain off for prior
+  legacy/SDK reasons. `build/sync-network-{asan,tsan}-*.log` and separate
+  `build/biblesync-{asan,tsan}-*.log`.
+- Portable core/Linux models build on Mac with GTK runtime OFF and networking OFF;
+  focused sync/ownership/recovery/native-session/local-maintenance8/8,6.74s.
+  `build/sync-network-off-*.log`; this checks the unavailable-transport path, not
+  positive Linux networking. It is not a new full portable suite checkpoint.
+- Actual UDP fixture3/3 with policy/C checks,4.58s, before final active-state
+  refinement; included in the full and final scoped checks above. Every SDK send
+  is redirected by test-executable interposition to an ephemeral loopback sink.
+  First private beacon/presence TTL0 is asserted. Original synthetic peer packets
+  exercise SDK receive and the C/FIFO copy/teardown path. No fixture LAN broadcast,
+  public Bible download or licensed text. Occupied protocol port explicitly skips.
+- Unpatched-SDK negative configure control passes (`build/sync-unsafe-rejection.log`).
+  Initial attempt lacked LibArchive headers; adding the already selected SDK paths
+  reached and verified the intended safe-API rejection. Do not count the earlier
+  unrelated configure failure as that evidence.
+- Pedantic C11 header, source/doc diff whitespace and dependency links/two-table
+  shape checks pass. Existing native-off C++11 helpers are unchanged; their latest
+  executed10/10 evidence remains the preceding checkpoint, not a new run here.
+
+Selected SDK now has an explicit26.0 deployment floor; existing MacPorts/Homebrew
+27.0 dylib warnings remain. No older macOS, native MSVC, physical Fedora/network,
+public LAN, two independent application processes, sleep/reconnect, full parity,
+release packaging or legacy retirement acceptance. Native recovery/autosave and
+management screens remain next. The optional networking dependency is documented
+in the existing core dependency table, retaining exactly two inventory tables.
+
+Local structural map refreshed after this implementation:655 code/configuration
+files,12,188 nodes,32,788 edges,389 communities. Source hashes unchanged by mapping;
+zero AI provider calls/tokens/cost. HTML aggregates the large graph. Extractor
+limits remain58 partial-AST and73 no-symbol files; consult current local graph
+health diagnostics rather than treating heuristic edges as compiler evidence.
+Generated graph artifacts stay untracked. No hosted builds or reset credit used.
