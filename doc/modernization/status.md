@@ -6,14 +6,16 @@ and owned transport (`4411783`, `7d5f491`); revision-checked bookmark edits and 
 annotation maps (`238220f`, `7102d57`, `e4c5333`, `73f88b4`); shared retained
 highlight priority (`23aba44`); [verse-note storage/cache/transport](personal-annotations.md)
 (`b589779`, `70ffb33`, `f6d9bf4`). These scoped services and native restart checks
-do not establish whole-parity acceptance. Latest full checkpoint through7399d81:
-Mac218 passes+one skip; portable170 passes+one skip. Later focused
+do not establish whole-parity acceptance. Latest full rich-editor checkpoint (`64ab889`, `f25114b`):
+Mac220 passes+one skip; portable171 passes+one skip. Later focused
 checks and limits are in the Mac handoff. SDK-owned note targets now exist (`ad97fba`), and live tab capture exports committed
 reading/dictionary/book selections independently of history. Versioned native core snapshots
 and strict all-tab restoration now exist. Native Mac launch/close/quit integration
 and fresh-process/offscreen window checks now exist; other-host restart/detach and
 visual acceptance remain open. Shared [document editing](editing-workflows.md) has
-revision-checked exact-source storage; rich editing/module writes, installation and sync remain. Devotionals
+revision-checked exact-source storage, shared rich formatting/undo, staged
+RawFiles/RawGenBook source writes and native Mac editing. Full editor organization,
+draft restart and other-host acceptance remain open; installation and sync are next. Devotionals
 remain deferred.
 
 Parallel checkpoint (2026-10-30): complete real-SDK interpolation oracle

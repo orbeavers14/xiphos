@@ -1,11 +1,19 @@
 # macOS chat handoff
 
-Updated 2026-10-22. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.md),
+Updated 2026-10-31. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.md),
 [status](status.md), [core scope](shared-core-roadmap.md) and relevant parity rows.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
 ## Current checked source and active work
+
+Latest implementation: shared rich documents and supported revision-checked SWORD
+writes `64ab889`, native Mac editor `f25114b`. Full checkpoint: Mac220 passes+one
+skip; portable171 passes+one skip. Final editor/restart integration4/4 (6.66s).
+See the final dated section for exact logs, supported formats and remaining gates.
+Next core priorities are installation and sync; devotionals remain deferred.
+
+## Earlier checkpoints (historical)
 
 Latest checked/pushed implementation is `2b2f518`, following `d0b068c`, `f0778e0`
 and `0dbfff9`: explicit native saved-list editing, shared verified first-label
@@ -2274,3 +2282,59 @@ Final local Graphify refresh through7399d81:613 code/configuration files,10998
 nodes,29772 edges,352 communities; source hashes unchanged by mapping. Extractor
 coverage warnings remain57 partially parsed files and72 with no modeled symbols.
 Raw extraction/coverage and graph health diagnostics are retained locally.
+
+
+### 2026-10-31 shared rich editing and supported SWORD module writes
+
+Core implementation `64ab889` and native adapter `f25114b` add SDK-free typed rich runs, fragment parsing,
+canonical balanced markup, formatting/links/colors/headings/flat lists and bounded
+shared source undo/redo. Unsupported markup remains exact Source content in the
+native editor. Formatting coordinates are checked UTF-8 byte boundaries; Swift
+converts native UTF-16 selections. See [editing contracts](editing-workflows.md)
+for aggregate limits and intentionally unsupported markup/driver cases.
+
+The one FIFO owner now stages revision-checked unencrypted UTF-8 RawFiles/KJV
+personal notes and indexed RawGenBook source writes. Whole isolated module data is
+copied, written through fresh SDK drivers, flushed and verified before two directory
+renames. A fresh manager and replacement sessions commit together; histories,
+selection intent, tab IDs and capabilities remain. Cached book documents refresh;
+search generations/scopes invalidate, while generation IDs remain monotonic.
+Post-install refresh failure rolls back data and the old manager; rollback failure
+retains the original backup. This is not crash-atomic, interprocess-locked or an
+fsync durability guarantee. Linked entries retain SDK semantics, with full linked
+workflow acceptance still open. Ambiguous/context-relative verse targets reject.
+
+Native Mac editing presents Rich/Source, shared Undo/Redo, Save/Save As, personal
+note/general-book Clear Entry, and Save/Discard/Cancel on close and quit. Module
+Save As exports independently to a file. Reading views refresh without extra history
+visits, and visible search results clear. Real input-method marked text survives
+presentation updates. Native draft/editor-window restart and crash recovery,
+journal/prayer organization, general-book tree/module creation and other-host editor
+adapters remain open. No full F25/F26 or whole visual acceptance claim.
+
+Full local Mac220 passes+one index skip (221 registered,184.92s); portable171 passes
++one index skip (172 registered,164.90s), GTK runtime OFF on Mac. Focused ASan/UBSan
+15/15 (25.21s, retained legacy oracle leak detection disabled), TSan15/15 (50.05s);
+native-off strict C++11 all10/10 (20.78s). Logs:
+`build/rich-editor-final-{macos,linux-models,sanitized,thread-sanitized,legacy-search-policy}-{configure,build,tests}.log`.
+Final implementation refinements: Mac core+native2/2 (3.75s), portable1/1 (5.34s),
+ASan1/1 (2.54s), TSan1/1 (9.68s), under `build/rich-editor-edge-*` logs. These cover
+the final explicit verse-target check, composition guard and backup preservation.
+Final C API enum/ownership declarations pass strict C11 syntax; the native app and
+editor are rebuilt separately in `build/rich-editor-header-final-*` and
+`build/rich-editor-native-final-*`. Final Save/Save As menu routing targets the
+active editor; otherwise it saves the reading session. Final app/editor/restart
+build and all4/4 checks pass (6.66s), `build/rich-editor-menu-final-{build,tests}.log`. Whitespace and changed-document relative links
+pass. Original prose only; native tests create and inspect a disposable offscreen
+heading/list rendering. Existing SDK dylib deployment-target and retained
+Swift/deprecated-function warnings remain. No physical Fedora/MSVC validation.
+
+The local Graphify map uses code-only deterministic extraction, no external AI
+calls or paid services. Latest refresh:622 code/configuration files,11341 graph
+nodes,30657 edges,356 communities; HTML aggregates communities above5000 nodes.
+Extractor limitations remain57 partially parsed files and72 without modeled
+symbols. Raw graph diagnostics report1782 dangling-endpoint edges,2 self-loops and
+358 undirected endpoint collapses; the map is a discovery aid, with important
+relationships verified against source and real SDK tests. Generated graph/build
+outputs remain untracked. Next core priorities: installation, then sync, while
+continuing compatibility checks. Devotionals remain deferred.

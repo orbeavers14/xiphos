@@ -1,4 +1,4 @@
-# Shared document editing foundation
+# Shared rich documents and SWORD module editing
 
 The next owner priority after session restoration is editing. The retained
 GtkTextView file path serializes its buffer and calls `g_file_replace_contents`
@@ -35,12 +35,87 @@ external/stale changes, create-versus-replace, invalid text/size/directory input
 the exact byte limit, permissions/symlinks where supported, closed tabs, C admission
 allocation failures, copied inputs, no-allocation committed polling and ownership.
 
-## Remaining editing work
+## Shared rich formatting and undo (2026-10-31)
 
-Next: characterize the retained rich-text serialization/formatting/link contracts,
-then provide native editor presentation over the shared document service. Shared
-RawFiles personal-commentary and RawGenBook writes still need explicit revision,
-transaction/error and SDK cache-refresh contracts; the legacy direct `setEntry`
-helpers are not an atomic module-editing service. Dirty-buffer close/quit handling,
-unsaved-document recovery, journal/prayer-list organization and native editor
-restart remain open. This groundwork does not accept F25/F26 editor parity.
+`rich_document.hpp` owns typed UTF-8 text/style runs, parsing, canonical serialization
+and formatting. C handles expose copied documents; native code adapts runs to
+AppKit attributes without a second formatting engine. Supported fragment markup:
+bold, italic, underline, strike, foreground/background colors, links, six heading
+levels, address/preformatted blocks and flat bullet/decimal/roman/alphabetic lists.
+Links accept sword/bible/http/https/mailto schemes; attributes and text are escaped.
+Formatting selects UTF-8 byte boundaries; the Swift adapter converts UTF-16 ranges.
+Serialization emits balanced final tags, correcting the retained GTK serializer's
+end-iterator omission. It does not promise byte-identical canonical markup after
+an explicit rich edit. Opening and saving unchanged source retains exact bytes.
+
+Unsupported elements/attributes (including images, tables, nested lists, arbitrary
+CSS and full-document metadata) reject rich conversion. The native editor keeps
+such content in Source mode instead of silently flattening it. Plain-text modules
+use Source mode. Rich documents bound aggregate text/style metadata and serialized
+output to4MiB, runs to16384, traversal depth to64 and link length to4096 bytes.
+`EditorBuffer` tracks exact source, saved baseline and bounded shared undo/redo
+(100 revisions and16MiB per stack); undo after Save correctly becomes dirty.
+
+## Revision-checked SWORD source editing
+
+The FIFO worker reads/saves installed, unencrypted UTF-8 `RawFiles` personal
+commentaries (supported KJV canon) and indexed `RawGenBook` general books.
+RawFiles targets require one explicit book/chapter/verse; general-book targets
+must be exact existing absolute tree paths. Unsupported drivers, encodings,
+encryption, canons and book key types reject. General-book Clear Entry removes
+content while retaining the tree node/offset; personal-note deletion uses the SDK
+`deleteEntry` contract. General-book entry creation/tree organization and module creation are
+outside this slice. Linked entries follow the installed SDK's write/delete
+semantics; this service does not detach links into independent entries.
+
+Each module must own an isolated data directory below its configured module root.
+The service resolves `DataPath` against `PrefixPath`; `AbsoluteDataPath` can be an
+asset directory and is not a RawGenBook filename prefix. Overlapping catalog data,
+symlinks/hardlinks/special files within the data tree, more than4096 entries or
+more than64MiB of data reject. Revisions include target/config identity and a
+SHA256 manifest of the whole data tree, including file/directory permissions.
+A stale revision rejects before replacing installed data.
+
+A same-parent private staging directory receives the complete data tree. A fresh
+SDK driver writes/flushes it, then a fresh driver verifies exact raw source and
+key identity. Two directory renames install the verified tree after a second
+revision check. A new manager and replacement sessions are staged before commit;
+errors restore the original data and SDK state. If filesystem rollback itself
+fails, the original backup is retained for recovery. This is a serialized local
+transaction, **not crash-atomic, an interprocess lock or an fsync durability
+protocol**. External writers must not edit the module concurrently.
+
+Live tab IDs, histories, selections and capabilities survive replacement; cached
+book documents refresh. Search generations/scopes are deliberately invalidated
+because they may own SDK keys into the previous manager. Generation serials remain
+monotonic, so a stale handle cannot address a later result. The Mac adapter clears
+visible results and asks the reader to choose a scope and search again.
+
+## Native macOS workflow and evidence
+
+The application menu opens new/existing study documents and the selected personal
+commentary/general-book entry. One native text editor presents Rich/Source modes,
+formatting/link controls, shared undo/redo, Save and Save As. Module Save As exports
+the draft to a file without modifying the module. File and module saves use the
+shared revision checks. Native typing uses typed runs; input-method marked text is
+preserved during composition. Save/Discard/Cancel close handling waits for a
+successful save; quit checks dirty editors before saving the reading session.
+Normal saves refresh the reading/book presentation without adding history visits.
+
+`core_rich_module` uses original-prose RawFiles/RawGenBook fixtures to check rich
+round trips, Unicode selections, unsupported markup, saved undo baselines, stale
+rejection, SDK reload, sibling-tab book refresh, node preservation, injected
+post-install rollback and C ownership/admission/no-allocation publication.
+`macos_rich_editor` exercises real offscreen AppKit text/windows, native typing,
+formatting, source fallback, file/module save/reopen, stale saves, module export
+and dirty-close decisions. The fixture also renders a heading/list preview for
+local visual inspection. See the Mac handoff for actual build/test results.
+
+## Remaining editing and compatibility work
+
+Journal/prayer-list organization, general-book tree/module creation, linked-entry
+workflow acceptance, editor-window/draft restart and crash recovery remain open.
+Windows/GTK4 editor adapters and physical Windows/Fedora validation remain open.
+These supported services and offscreen checks do not establish whole F25/F26
+workflow or visual parity. Installation and sync are the next core priorities;
+devotionals remain deferred.

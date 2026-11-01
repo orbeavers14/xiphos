@@ -32,7 +32,9 @@ shared C++ worker/C API (`56a8ed0`); see [session persistence](session-persisten
 macOS startup/close/quit now integrates that storage (`0434152`, `f3cfb3a`) and has
 fresh-process/offscreen window checks. Other-host restart/detach and visual acceptance remain open.
 [Shared editing](editing-workflows.md) now has revision-checked source-document
-storage (`7399d81`); next are rich editing/module writes, installation and sync. Devotionals remain deferred. No whole-parity acceptance increase.
+storage (`7399d81`), shared rich formatting/undo, staged RawFiles/RawGenBook source
+writes (`64ab889`) and a native Mac editor (`f25114b`). See the editing contract and latest Mac handoff
+for supported formats, transaction limits and checks. Next are installation and sync. Devotionals remain deferred. No whole-parity acceptance increase.
 
 ## Current owner priorities (2026-10-30)
 
