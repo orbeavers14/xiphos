@@ -7,6 +7,7 @@
 #include "editable_document.hpp"
 #include "remote_install.hpp"
 #include "repository_store.hpp"
+#include "legacy_repositories.hpp"
 #include "recovery.hpp"
 #include "sync.hpp"
 #include "sync_transport.hpp"
@@ -189,6 +190,7 @@ public:
   std::future<bool> can_transmit_sync(bool received_navigation);
   std::future<RecoverySnapshot> read_recovery(std::string path);
   std::future<RecoverySnapshot> save_recovery(std::string path,std::optional<std::string> expected,RecoverySnapshot snapshot);
+  std::future<LegacyRepositoryPreview> preview_legacy_repositories(std::string path);
   std::future<RepositorySnapshot> read_repositories(std::string path);
   std::future<RepositorySnapshot> save_repositories(std::string path,std::optional<std::string> expected,RepositorySnapshot snapshot);
   std::future<NativeSessionSnapshot> read_native_session(std::string path);

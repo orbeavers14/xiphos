@@ -404,6 +404,19 @@ void xc_remote_install_result_release(xc_remote_install_result *result);
  * Save requires the last revision, NULL means create only. */
 typedef struct xc_repository_snapshot xc_repository_snapshot;
 typedef struct {const char *id,*host,*catalog_directory,*package_directory,*name;unsigned port;int enabled,cached;uint64_t fetched_at;} xc_saved_repository;
+/* Read-only legacy InstallMgr.conf preview: <=1MiB, <=256 source rows.
+ * Disposition: 0 HTTPS needs review, 1 insecure transport, 2 local directory,
+ * 3 credentials, 4 unsupported type, 5 malformed. Rejected fields are empty.
+ * Owned take-once result; row strings borrow its lifetime. Accept changes only
+ * a snapshot value, disabled/uncached; explicit new ID/package path required. */
+typedef struct xc_legacy_repository_preview xc_legacy_repository_preview;
+typedef struct {size_t line;int disposition;const char *name,*host,*catalog_directory;} xc_legacy_repository_candidate;
+xc_status xc_worker_preview_legacy_repositories(xc_worker *worker,const char *path,xc_request **out);
+xc_legacy_repository_preview *xc_request_take_legacy_repository_preview(xc_request *request);
+size_t xc_legacy_repository_preview_count(const xc_legacy_repository_preview *preview);
+xc_status xc_legacy_repository_preview_get(const xc_legacy_repository_preview *preview,size_t index,xc_legacy_repository_candidate *out);
+xc_status xc_repository_snapshot_accept_legacy(xc_repository_snapshot *snapshot,const xc_legacy_repository_preview *preview,size_t index,const char *new_id,const char *package_directory);
+void xc_legacy_repository_preview_release(xc_legacy_repository_preview *preview);
 xc_status xc_repository_snapshot_create(xc_repository_snapshot **out);
 xc_status xc_repository_snapshot_put(xc_repository_snapshot *snapshot,const xc_https_repository *endpoint,const char *name,int enabled);
 xc_status xc_repository_snapshot_remove(xc_repository_snapshot *snapshot,const char *id);

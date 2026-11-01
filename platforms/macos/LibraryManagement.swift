@@ -18,6 +18,10 @@ import XiphosCore
     @Published private(set) var isBusy = false
     @Published private(set) var transferring = false
     @Published private(set) var progress: CoreTransferProgress?
+    @Published var pane = 0
+    @Published private(set) var legacy: [CoreLegacyRepositoryCandidate] = []
+    @Published var legacyID: Int?
+    @Published private(set) var legacyPath = ""
     @Published var message = ""
     @Published var sourceID: String?
     @Published var remoteID: String?
@@ -75,6 +79,14 @@ import XiphosCore
         let endpoint = CoreRepositoryEndpoint(id:id,host:host,catalog:catalog,packages:packages,port:number)
         run { self.profile = try await self.worker.editRepository(path:self.path,profile:profile,endpoint:endpoint,name:self.name,enabled:self.enabled);self.editingID = id;self.sourceID = id;self.remoteID = nil;self.remote = try await self.worker.repositoryChoices(profile:self.profile!,index:self.sourceIndex!);self.message = "Source saved." }
     }
+    func previewLegacy(_ path: String) {
+        run { self.legacy = try await self.worker.previewLegacyRepositories(path:path);self.legacyPath = path;self.legacyID = nil;self.message = "Read-only preview. Select a supported HTTPS source to review its fields." }
+    }
+    func reviewLegacy() {
+        guard !isBusy,let row = legacy.first(where: { $0.id == legacyID }),row.disposition == 0 else { return }
+        newSource();name = row.name;host = row.host;catalog = row.catalog;packages = "";port = "443";enabled = false;pane = 0
+        message = "Enter the verified HTTPS package folder, then Save Source. The source starts disabled; the legacy file is unchanged."
+    }
     func addCrossWire() {
         guard let profile, !profile.rows.contains(where: { $0.id == "crosswire" }) else { return }
         run { self.profile = try await self.worker.editRepository(path:self.path,profile:profile,endpoint:CoreRepositoryEndpoint(id:"crosswire",host:"www.crosswire.org",catalog:"/ftpmirror/pub/sword/raw",packages:"/ftpmirror/pub/sword/packages/rawzip"),name:"CrossWire");self.message = "CrossWire source added. Refresh to connect and browse." }
@@ -119,10 +131,11 @@ struct LibraryManagementPane: View {
         VStack(alignment:.leading,spacing:12) {
             HStack { Text("Module Library").font(.title2);Spacer();Button("Reload") { model.reload() }.disabled(model.isBusy) }
             if !model.allowsChanges { Text("To install or maintain modules, choose a module library folder from File and restart.").font(.callout) }
-            TabView {
-                sources.tabItem { Text("Sources & Downloads") }
-                local.tabItem { Text("Install from Folder") }
-                installed.tabItem { Text("Installed Modules") }
+            TabView(selection:$model.pane) {
+                sources.tabItem { Text("Sources & Downloads") }.tag(0)
+                local.tabItem { Text("Install from Folder") }.tag(1)
+                installed.tabItem { Text("Installed Modules") }.tag(2)
+                legacy.tabItem { Text("Import Legacy Sources") }.tag(3)
             }.disabled(model.isBusy)
             HStack {
                 if model.isBusy { ProgressView().controlSize(.small);Text(model.phaseLabel) }
@@ -150,7 +163,7 @@ struct LibraryManagementPane: View {
                     GridRow { Text("Catalog folder");TextField("/path/to/raw",text:$model.catalog) }
                     GridRow { Text("Package folder");TextField("/path/to/rawzip",text:$model.packages) }
                 }
-                HStack { Toggle("Enabled",isOn:$model.enabled);Spacer();Button("Save Source") { model.saveSource() }.disabled(model.profile == nil || model.name.isEmpty || model.host.isEmpty);Button("Refresh Catalog…") { model.refreshSource() }.disabled(!model.allowsChanges || model.sourceIndex == nil || model.profile?.rows[model.sourceIndex ?? 0].enabled != true || model.hasUnsavedSourceChanges) }
+                HStack { Toggle("Enabled",isOn:$model.enabled);Spacer();Button("Save Source") { model.saveSource() }.disabled(model.profile == nil || model.name.isEmpty || model.host.isEmpty || model.packages.isEmpty);Button("Refresh Catalog…") { model.refreshSource() }.disabled(!model.allowsChanges || model.sourceIndex == nil || model.profile?.rows[model.sourceIndex ?? 0].enabled != true || model.hasUnsavedSourceChanges) }
                 Text("Refresh connects to the selected server. Saved catalogs are available offline.").font(.caption)
                 List(selection:Binding(get:{ model.remoteID },set:{ model.selectRemote($0) })) { ForEach(model.remote) { item in HStack { VStack(alignment:.leading) { Text(item.title.isEmpty ? item.module : item.title);Text([item.module,item.version,item.language].filter { !$0.isEmpty }.joined(separator:" · ")).font(.caption).foregroundStyle(.secondary) };Spacer();Text(item.decision == 2 ? "Installed" : item.decision == 1 ? "Replacement" : "") }.tag(item.id) } }
                 if let selected = model.selectedRemote, !selected.license.isEmpty || !selected.attribution.isEmpty {
@@ -161,6 +174,15 @@ struct LibraryManagementPane: View {
                     if confirm("Install \(item.module)?","Version: \(item.version.isEmpty ? "unspecified" : item.version). This downloads the package and changes the installed module library.") { model.installRemote(replace:item.decision != 0) }
                 }.disabled(!model.allowsChanges || model.hasUnsavedSourceChanges || model.sourceIndex.flatMap { model.profile?.rows[$0].enabled } != true || (model.selectedRemote.map { ![0,1,2].contains($0.decision) } ?? true))
             }
+        }.padding(.top,10)
+    }
+    private var legacy: some View {
+        VStack(alignment:.leading,spacing:10) {
+            HStack { Text(model.legacyPath.isEmpty ? "Choose the old InstallMgr.conf file." : model.legacyPath).lineLimit(2);Spacer();Button("Choose File…") { let panel = NSOpenPanel();panel.canChooseDirectories = false;panel.allowsMultipleSelection = false;panel.showsHiddenFiles = true;panel.title = "Preview Legacy Module Sources";if panel.runModal() == .OK,let url = panel.url { model.previewLegacy(url.path) } } }
+            Text("This preview does not change the old file or contact servers. Credentials are excluded. HTTP/FTP sources are not automatically converted to HTTPS.").font(.callout)
+            List(selection:$model.legacyID) { ForEach(model.legacy) { row in Text("Line \(row.line): \(row.summary)").tag(row.id) } }
+            Button("Review Selected HTTPS Source") { model.reviewLegacy() }.disabled(model.legacy.first(where: { $0.id == model.legacyID })?.disposition != 0)
+            Text("Review copies fields into a new disabled source. You must provide the verified package folder and save explicitly.").font(.caption)
         }.padding(.top,10)
     }
     private var local: some View {

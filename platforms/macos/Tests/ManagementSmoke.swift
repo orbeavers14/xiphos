@@ -8,7 +8,20 @@ import XiphosCore
         guard CommandLine.arguments.count == 3, let port = UInt32(CommandLine.arguments[2]) else { fatalError("Loopback fixture and port required") }
         _ = NSApplication.shared;NSApplication.shared.setActivationPolicy(.prohibited)
         let root = URL(fileURLWithPath:CommandLine.arguments[1]);check(root.lastPathComponent == "remote-install-fixture","Named fixture only")
+        let legacyPath = root.appendingPathComponent("InstallMgr.conf").path
+        let legacyText = "[Sources]\nHTTPSSource=Original import|example.invalid|/raw|||original-id\nFTPSource=Old fixture|ftp.invalid|/raw\nHTTPSSource=Private fixture|private.invalid|/raw|Original-user|Original-secret\n"
+        try legacyText.write(toFile:legacyPath,atomically:true,encoding:.utf8)
         let worker = try CoreWorker(root:root.appendingPathComponent("installed").path)
+        let preview = try await worker.previewLegacyRepositories(path:legacyPath)
+        check(preview.count == 3 && preview[0].name == "Original import" && preview[1].disposition == 1 && preview[2].name.isEmpty,"Native legacy preview copies safe values and omits credential fields")
+        let importer = LibraryManagementModel(worker:worker,path:root.appendingPathComponent("imported.profile").path,workspace:root.path)
+        importer.reload();await importer.waitUntilIdle();importer.previewLegacy(legacyPath);await importer.waitUntilIdle()
+        importer.legacyID = importer.legacy.first?.id;importer.reviewLegacy()
+        check(importer.pane == 0 && importer.host == "example.invalid" && importer.packages.isEmpty && !importer.enabled,"Native review requires explicit package path and defaults disabled")
+        importer.packages = "/verified-packages";importer.saveSource();await importer.waitUntilIdle()
+        let imported = try await worker.readRepositories(path:importer.path)
+        check(imported.rows.count == 1 && !imported.rows[0].enabled && !imported.rows[0].cached,"Reviewed source saves through shared store without connection")
+        check(try String(contentsOfFile:legacyPath,encoding:.utf8) == legacyText,"Native import leaves legacy file untouched")
         let file = root.appendingPathComponent("sources.profile").path, ca = root.appendingPathComponent("certificate.pem").path
         var profile = try await worker.readRepositories(path:file)
         profile = try await worker.editRepository(path:file,profile:profile,endpoint:CoreRepositoryEndpoint(id:"original",host:"127.0.0.1",catalog:"/catalog",packages:"/packages",port:port),name:"Original fixture")

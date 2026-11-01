@@ -717,6 +717,10 @@ std::future<SyncDecision> StudyWorker::plan_incoming_sync(SyncNavigation navigat
 std::future<bool> StudyWorker::can_transmit_sync(bool received){return impl_->submit([received](Impl::State &s){return sync_transmit_allowed(s.sync,received);});}
 std::future<RecoverySnapshot> StudyWorker::read_recovery(std::string path){try{selected_profile_path(path);}catch(...){return selected_profile_rejection<RecoverySnapshot>();}return impl_->submit([path=std::move(path)](Impl::State &){return read_recovery_snapshot(path);});}
 std::future<RecoverySnapshot> StudyWorker::save_recovery(std::string path,std::optional<std::string> expected,RecoverySnapshot snapshot){try{selected_profile_path(path);if(expected&&!editable_document_revision(*expected))throw std::invalid_argument("Invalid recovery revision");(void)serialize_recovery_snapshot(snapshot);}catch(...){return selected_profile_rejection<RecoverySnapshot>();}return impl_->submit([path=std::move(path),expected=std::move(expected),snapshot=std::move(snapshot)](Impl::State &){return save_recovery_snapshot(path,expected,snapshot);});}
+std::future<LegacyRepositoryPreview> StudyWorker::preview_legacy_repositories(std::string path) {
+ try{selected_profile_path(path);}catch(...){return selected_profile_rejection<LegacyRepositoryPreview>();}
+ return impl_->submit([path=std::move(path)](Impl::State &){return read_legacy_repositories(path);});
+}
 std::future<RepositorySnapshot> StudyWorker::read_repositories(std::string path) {
  try{selected_profile_path(path);}catch(...){return selected_profile_rejection<RepositorySnapshot>();}
  return impl_->submit([path=std::move(path)](Impl::State &){return read_repository_snapshot(path);});

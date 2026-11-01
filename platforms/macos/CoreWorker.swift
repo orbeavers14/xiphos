@@ -1754,6 +1754,38 @@ extension CoreWorker {
     }
 }
 
+struct CoreLegacyRepositoryCandidate: Identifiable, Sendable {
+    let line: Int, disposition: Int32
+    let name: String, host: String, catalog: String
+    var id: Int { line }
+    var summary: String {
+        switch disposition {
+        case 0: return name + " — " + host
+        case 1: return "HTTP/FTP source: HTTPS endpoint must be configured separately"
+        case 2: return "Local folder: use Install from Folder"
+        case 3: return "Credential-bearing source: configure access separately"
+        case 4: return "Unsupported source type"
+        default: return "Malformed source entry"
+        }
+    }
+}
+extension CoreWorker {
+    func previewLegacyRepositories(path: String) async throws -> [CoreLegacyRepositoryCandidate] {
+        let handle = try worker(), strings = SessionCStrings();let file = try strings.copy(path);var request: OpaquePointer?
+        let status = xc_worker_preview_legacy_repositories(handle,file,&request)
+        let completed = try await wait(status,request);defer { xc_request_release(completed) }
+        guard let preview = xc_request_take_legacy_repository_preview(completed) else { throw CoreError(status:XC_ENGINE_ERROR) }
+        defer { xc_legacy_repository_preview_release(preview) }
+        var rows: [CoreLegacyRepositoryCandidate] = []
+        for index in 0..<xc_legacy_repository_preview_count(preview) {
+            var row = xc_legacy_repository_candidate()
+            guard xc_legacy_repository_preview_get(preview,index,&row) == XC_OK else { throw CoreError(status:XC_ENGINE_ERROR) }
+            rows.append(CoreLegacyRepositoryCandidate(line:row.line,disposition:row.disposition,name:row.name.map { String(cString:$0) } ?? "",host:row.host.map { String(cString:$0) } ?? "",catalog:row.catalog_directory.map { String(cString:$0) } ?? ""))
+        }
+        return rows
+    }
+}
+
 struct CoreSyncSettings: Sendable, Equatable {
     var mode: Int32 = 0, listen: Int32 = 0
     var privatePersonal = true, direct = true
