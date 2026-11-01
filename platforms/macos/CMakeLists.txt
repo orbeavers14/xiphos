@@ -79,7 +79,7 @@ endforeach()
 set(adapter "${CMAKE_CURRENT_SOURCE_DIR}/EditorCore.swift" "${CMAKE_CURRENT_SOURCE_DIR}/CoreReader.swift" "${CMAKE_CURRENT_SOURCE_DIR}/CoreWorker.swift")
 set(preview_sources
   "${CMAKE_CURRENT_SOURCE_DIR}/EditorWindow.swift"
-  "${CMAKE_CURRENT_SOURCE_DIR}/SessionHostState.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SessionApp.swift"
+  "${CMAKE_CURRENT_SOURCE_DIR}/LibrarySetup.swift" "${CMAKE_CURRENT_SOURCE_DIR}/LibraryManagement.swift" "${CMAKE_CURRENT_SOURCE_DIR}/RecoveryUI.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SessionHostState.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SessionApp.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/ReaderApp.swift" "${CMAKE_CURRENT_SOURCE_DIR}/BookPane.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/ImagePreview.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SearchModel.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/SearchPane.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SearchExportDestination.swift")
@@ -159,6 +159,37 @@ if(BUILD_TESTING)
   add_custom_target(macos_editor_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/editor_smoke")
   add_test(NAME macos_rich_editor COMMAND "${CMAKE_CURRENT_BINARY_DIR}/editor_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/rich-module-fixture" "${CMAKE_CURRENT_BINARY_DIR}/native-editor-fixture")
   set_tests_properties(macos_rich_editor PROPERTIES FIXTURES_REQUIRED rich_module_fixture TIMEOUT 120)
+  add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/recovery_smoke"
+    COMMAND ${SWIFTC} -swift-version 6 -D XIPHOS_PREVIEW_TEST -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
+      -I "${bridge}" ${adapter} ${preview_sources} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/RecoverySmoke.swift"
+      "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
+      ${sword_link_flags} -lc++ -framework SwiftUI -framework AppKit -framework WebKit
+      -o "${CMAKE_CURRENT_BINARY_DIR}/recovery_smoke"
+    DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift EditorCore.swift ${preview_sources} Tests/RecoverySmoke.swift
+      Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h
+    VERBATIM)
+  add_custom_target(macos_recovery_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/recovery_smoke")
+  add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/management_smoke"
+    COMMAND ${SWIFTC} -swift-version 6 -D XIPHOS_PREVIEW_TEST -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
+      -I "${bridge}" ${adapter} ${preview_sources} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/ManagementSmoke.swift"
+      "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
+      ${sword_link_flags} -lc++ -framework SwiftUI -framework AppKit -framework WebKit
+      -o "${CMAKE_CURRENT_BINARY_DIR}/management_smoke"
+    DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift EditorCore.swift ${preview_sources} Tests/ManagementSmoke.swift
+      Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h
+    VERBATIM)
+  add_custom_target(macos_management_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/management_smoke")
+  add_test(NAME macos_native_recovery COMMAND "${CMAKE_CURRENT_BINARY_DIR}/recovery_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/rich-module-fixture" "${CMAKE_CURRENT_BINARY_DIR}/native-recovery-fixture")
+  set_tests_properties(macos_native_recovery PROPERTIES FIXTURES_REQUIRED rich_module_fixture FIXTURES_SETUP native_recovery_fixture RUN_SERIAL TRUE TIMEOUT 120)
+  add_test(NAME macos_native_recovery_fresh_process COMMAND "${CMAKE_CURRENT_BINARY_DIR}/recovery_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/rich-module-fixture" "${CMAKE_CURRENT_BINARY_DIR}/native-recovery-fixture" --verify)
+  set_tests_properties(macos_native_recovery_fresh_process PROPERTIES FIXTURES_REQUIRED native_recovery_fixture RUN_SERIAL TRUE TIMEOUT 120)
+  find_package(Python3 COMPONENTS Interpreter REQUIRED)
+  find_program(XIPHOS_NATIVE_TEST_OPENSSL openssl)
+  if(NOT XIPHOS_NATIVE_TEST_OPENSSL)
+    message(FATAL_ERROR "OpenSSL CLI required for the isolated native management TLS fixture")
+  endif()
+  add_test(NAME macos_module_management COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/../../src/core/tests/remote_install_fixture.py" $<TARGET_FILE:core_remote_install_test> "${CMAKE_CURRENT_BINARY_DIR}/management-tls/remote-install-fixture" "${XIPHOS_NATIVE_TEST_OPENSSL}" "${CMAKE_CURRENT_BINARY_DIR}/management_smoke")
+  set_tests_properties(macos_module_management PROPERTIES RUN_SERIAL TRUE TIMEOUT 120)
   add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/restart_smoke"
     COMMAND ${SWIFTC} -swift-version 6 -D XIPHOS_PREVIEW_TEST -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
       -I "${bridge}" ${adapter} ${preview_sources} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/RestartSmoke.swift"

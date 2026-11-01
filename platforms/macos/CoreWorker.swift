@@ -56,6 +56,20 @@ struct CoreRestoredSession: Sendable {
     let windows: [CoreRestoredWindow]
     let activeTab: UInt64?
 }
+struct CoreRecoveryDraft: Sendable, Equatable {
+    var id: String, title: String
+    var target: Int32 = 0
+    var path = "", module = "", reference = ""
+    var originRevision: String?
+    var savedText: String, text: String
+    var selectionStart = 0, selectionEnd = 0
+}
+struct CoreRecoveryFile: Sendable {
+    let session: CoreNativeSessionFile
+    let drafts: [CoreRecoveryDraft]
+    let revision: String
+    let previous: Bool
+}
 actor CoreWorker {
     private var handle: ShutdownHandle?
     init(root: String? = nil) throws {
@@ -677,6 +691,9 @@ actor CoreWorker {
         defer { xc_request_release(completed) }
         guard let result = xc_request_take_native_session(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
         defer { xc_native_session_release(result) }
+        return try nativeSessionValue(result)
+    }
+    private func nativeSessionValue(_ result: OpaquePointer) throws -> CoreNativeSessionFile {
         var text: OpaquePointer?
         guard xc_native_session_serialize(result, &text) == XC_OK, let text else { throw CoreError(status: XC_ENGINE_ERROR) }
         defer { xc_native_session_text_release(text) }
@@ -1483,5 +1500,256 @@ extension CoreWorker {
         guard let result = xc_request_take_module_edit(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
         defer { xc_module_edit_release(result) }
         return EditorModuleSource(module: String(cString: xc_module_edit_module(result)!), reference: String(cString: xc_module_edit_reference(result)!), driver: String(cString: xc_module_edit_driver(result)!), sourceType: String(cString: xc_module_edit_source_type(result)!), text: String(cString: xc_module_edit_text(result)!), revision: String(cString: xc_module_edit_revision(result)!))
+    }
+}
+
+extension CoreWorker {
+    func captureNativeSession(windows: [CoreWindowCapture], activeKey: String?) async throws -> CoreNativeSessionFile {
+        let strings = SessionCStrings()
+        var rows: [xc_native_tab_capture] = []
+        for window in windows {
+            var row = xc_native_tab_capture(); xc_native_tab_capture_default(&row)
+            row.tab = window.tab; row.key = try strings.copy(window.key); row.host_state = try strings.copy(window.hostState)
+            row.visibility = xc_tab_visibility(texts: window.texts ? 1 : 0, preview: window.preview ? 1 : 0, commentaries: window.commentaries ? 1 : 0, dictionaries: window.dictionaries ? 1 : 0)
+            row.commentary_showing = window.commentaryShowing ? 1 : 0; row.parallel_showing = window.parallelShowing ? 1 : 0; rows.append(row)
+        }
+        let active = try activeKey.map { try strings.copy($0) }; var request: OpaquePointer?
+        let handle = try worker()
+        let status = withExtendedLifetime(strings) { rows.withUnsafeBufferPointer { xc_worker_capture_native_session(handle,$0.baseAddress,$0.count,active,&request) } }
+        let completed = try await wait(status,request); defer { xc_request_release(completed) }
+        guard let owned = xc_request_take_native_session(completed) else { throw CoreError(status:XC_ENGINE_ERROR) }
+        defer { xc_native_session_release(owned) }; return try nativeSessionValue(owned)
+    }
+    private func recoveryValue(_ owned: OpaquePointer) throws -> CoreRecoveryFile {
+        var session: OpaquePointer?
+        let status = xc_recovery_snapshot_copy_session(owned,&session)
+        guard status == XC_OK, let session else { throw CoreError(status:status) }
+        defer { xc_native_session_release(session) }
+        let drafts = try (0..<xc_recovery_snapshot_count(owned)).map { index in
+            var d = xc_recovery_draft()
+            guard xc_recovery_snapshot_draft(owned,index,&d) == XC_OK else { throw CoreError(status:XC_ENGINE_ERROR) }
+            return CoreRecoveryDraft(id:String(cString:d.id!),title:String(cString:d.title!),target:d.target,
+                path:String(cString:d.path!),module:String(cString:d.module!),reference:String(cString:d.reference!),
+                originRevision:d.origin_revision.map { String(cString:$0) },savedText:String(cString:d.saved_text!),text:String(cString:d.text!),selectionStart:d.selection_start,selectionEnd:d.selection_end)
+        }
+        return CoreRecoveryFile(session:try nativeSessionValue(session),drafts:drafts,revision:String(cString:xc_recovery_snapshot_revision(owned)!),previous:xc_recovery_snapshot_from_previous(owned) != 0)
+    }
+    func readRecovery(path: String) async throws -> CoreRecoveryFile {
+        guard !path.utf8.contains(0) else { throw CoreError(status:XC_INVALID_ARGUMENT) }
+        let handle = try worker();var request: OpaquePointer?
+        let status = path.withCString { xc_worker_read_recovery(handle,$0,&request) }
+        let completed = try await wait(status,request);defer { xc_request_release(completed) }
+        guard let owned = xc_request_take_recovery_snapshot(completed) else { throw CoreError(status:XC_ENGINE_ERROR) }
+        defer { xc_recovery_snapshot_release(owned) };return try recoveryValue(owned)
+    }
+    func saveRecovery(path: String, revision: String?, session: CoreNativeSessionFile, drafts: [CoreRecoveryDraft]) async throws -> CoreRecoveryFile {
+        guard !path.utf8.contains(0), !session.xml.utf8.contains(0) else { throw CoreError(status:XC_INVALID_ARGUMENT) }
+        var native: OpaquePointer?;let parsed = session.xml.withCString { xc_native_session_parse($0,&native) }
+        guard parsed == XC_OK, let native else { throw CoreError(status:parsed) };defer { xc_native_session_release(native) }
+        let strings = SessionCStrings();var rows: [xc_recovery_draft] = []
+        for d in drafts {
+            rows.append(xc_recovery_draft(id:try strings.copy(d.id),title:try strings.copy(d.title),target:d.target,
+                path:try strings.copy(d.path),module:try strings.copy(d.module),reference:try strings.copy(d.reference),origin_revision:try d.originRevision.map { try strings.copy($0) },
+                saved_text:try strings.copy(d.savedText),text:try strings.copy(d.text),selection_start:d.selectionStart,selection_end:d.selectionEnd))
+        }
+        var snapshot: OpaquePointer?
+        let created = withExtendedLifetime(strings) { rows.withUnsafeBufferPointer { xc_recovery_snapshot_create(native,$0.baseAddress,$0.count,&snapshot) } }
+        guard created == XC_OK, let snapshot else { throw CoreError(status:created) };defer { xc_recovery_snapshot_release(snapshot) }
+        let expected = try revision.map { try strings.copy($0) };let handle = try worker();var request: OpaquePointer?
+        let status = withExtendedLifetime(strings) { path.withCString { xc_worker_save_recovery(handle,$0,expected,snapshot,&request) } }
+        let completed = try await wait(status,request);defer { xc_request_release(completed) }
+        guard let owned = xc_request_take_recovery_snapshot(completed) else { throw CoreError(status:XC_ENGINE_ERROR) }
+        defer { xc_recovery_snapshot_release(owned) };return try recoveryValue(owned)
+    }
+}
+
+struct CoreLibraryChoice: Identifiable, Sendable {
+    let provider: String, module: String, title: String, version: String, language: String, type: String
+    var decision: Int32 = -1
+    var license = "", attribution = ""
+    var id: String { provider + "|" + module }
+}
+struct CoreRepositoryEndpoint: Sendable, Equatable {
+    var id: String, host: String, catalog: String, packages: String
+    var port: UInt32 = 443
+}
+struct CoreRepositoryRow: Identifiable, Sendable {
+    let endpoint: CoreRepositoryEndpoint
+    let name: String, enabled: Bool, cached: Bool, fetchedAt: UInt64
+    var id: String { endpoint.id }
+}
+struct CoreRepositoryProfile: Sendable {
+    let bytes: Data
+    let revision: String?
+    let rows: [CoreRepositoryRow]
+}
+struct CoreLocalInstallOffer: Sendable {
+    let source: String, module: String, sourceRevision: String, destinationRevision: String, version: String, installedVersion: String
+    let decision: Int32
+}
+struct CoreMaintenanceOffer: Sendable {
+    let module: String, revision: String
+    let cipher: Bool, indexed: Bool
+}
+struct CoreTransferProgress: Sendable {
+    let phase: Int32
+    let downloaded: UInt64, total: UInt64, expanded: UInt64
+}
+struct CoreRemoteInstallOutcome: Sendable {
+    let profile: CoreRepositoryProfile?
+    let message: String
+}
+extension CoreWorker {
+    private func libraryChoice(_ item: xc_library_item) -> CoreLibraryChoice {
+        CoreLibraryChoice(provider:String(cString:item.provider!),module:String(cString:item.item!),title:String(cString:item.title!),version:String(cString:item.version!),language:String(cString:item.language!),type:String(cString:item.type!),license:String(cString:item.license!),attribution:String(cString:item.attribution!))
+    }
+    private func libraryValues(_ catalog: OpaquePointer) throws -> [CoreLibraryChoice] {
+        try (0..<xc_library_catalog_count(catalog)).map { index in
+            var item = xc_library_item();guard xc_library_catalog_item(catalog,index,&item) == XC_OK else { throw CoreError(status:XC_ENGINE_ERROR) };return libraryChoice(item)
+        }
+    }
+    func libraryInventory(source: String? = nil) async throws -> [CoreLibraryChoice] {
+        var request: OpaquePointer?;let handle = try worker()
+        let status: xc_status
+        if let source { guard !source.utf8.contains(0) else { throw CoreError(status:XC_INVALID_ARGUMENT) };status = source.withCString { xc_worker_local_library_catalog(handle,$0,&request) } }
+        else { status = xc_worker_library_catalog(handle,&request) }
+        let completed = try await wait(status,request);defer { xc_request_release(completed) }
+        guard let catalog = xc_request_take_library_catalog(completed) else { throw CoreError(status:XC_ENGINE_ERROR) };defer { xc_library_catalog_release(catalog) }
+        return try libraryValues(catalog)
+    }
+    private func repositoryHandle(_ profile: CoreRepositoryProfile?) throws -> OpaquePointer {
+        var result: OpaquePointer?;let status: xc_status
+        if let profile { status = profile.bytes.withUnsafeBytes { bytes in xc_repository_snapshot_parse(bytes.bindMemory(to:CChar.self).baseAddress,bytes.count,&result) } }
+        else { status = xc_repository_snapshot_create(&result) }
+        guard status == XC_OK, let result else { throw CoreError(status:status) };return result
+    }
+    private func repositoryValue(_ result: OpaquePointer) throws -> CoreRepositoryProfile {
+        var count = 0;guard xc_repository_snapshot_serialize(result,nil,0,&count) == XC_OK else { throw CoreError(status:XC_ENGINE_ERROR) }
+        var bytes = Data(count:count);let status = bytes.withUnsafeMutableBytes { xc_repository_snapshot_serialize(result,$0.bindMemory(to:CChar.self).baseAddress,$0.count,&count) }
+        guard status == XC_OK else { throw CoreError(status:status) }
+        let rows = try (0..<xc_repository_snapshot_count(result)).map { index in
+            var row = xc_saved_repository();guard xc_repository_snapshot_get(result,index,&row) == XC_OK else { throw CoreError(status:XC_ENGINE_ERROR) }
+            return CoreRepositoryRow(endpoint:CoreRepositoryEndpoint(id:String(cString:row.id!),host:String(cString:row.host!),catalog:String(cString:row.catalog_directory!),packages:String(cString:row.package_directory!),port:row.port),name:String(cString:row.name!),enabled:row.enabled != 0,cached:row.cached != 0,fetchedAt:row.fetched_at)
+        }
+        let revision = String(cString:xc_repository_snapshot_revision(result)!)
+        return CoreRepositoryProfile(bytes:bytes,revision:revision.isEmpty ? nil : revision,rows:rows)
+    }
+    func readRepositories(path: String) async throws -> CoreRepositoryProfile {
+        guard !path.utf8.contains(0) else { throw CoreError(status:XC_INVALID_ARGUMENT) }
+        if !FileManager.default.fileExists(atPath:path) { let input = try repositoryHandle(nil);defer { xc_repository_snapshot_release(input) };return try repositoryValue(input) }
+        let handle = try worker();var request: OpaquePointer?;let status = path.withCString { xc_worker_read_repositories(handle,$0,&request) }
+        let completed = try await wait(status,request);defer { xc_request_release(completed) }
+        guard let result = xc_request_take_repository_snapshot(completed) else { throw CoreError(status:XC_ENGINE_ERROR) };defer { xc_repository_snapshot_release(result) };return try repositoryValue(result)
+    }
+    private func saveRepositoryHandle(path: String, expected: String?, input: OpaquePointer) async throws -> CoreRepositoryProfile {
+        let strings = SessionCStrings();let file = try strings.copy(path), revision = try expected.map { try strings.copy($0) };var request: OpaquePointer?
+        try FileManager.default.createDirectory(at:URL(fileURLWithPath:path).deletingLastPathComponent(),withIntermediateDirectories:true)
+        let handle = try worker()
+        let status = withExtendedLifetime(strings) { xc_worker_save_repositories(handle,file,revision,input,&request) }
+        let completed = try await wait(status,request);defer { xc_request_release(completed) }
+        guard let result = xc_request_take_repository_snapshot(completed) else { throw CoreError(status:XC_ENGINE_ERROR) };defer { xc_repository_snapshot_release(result) };return try repositoryValue(result)
+    }
+    // All edits execute in the shared repository service; Swift only transports fields.
+    func editRepository(path: String, profile: CoreRepositoryProfile, endpoint: CoreRepositoryEndpoint? = nil, name: String = "", enabled: Bool = true, remove: String? = nil, move: (String,Int)? = nil) async throws -> CoreRepositoryProfile {
+        let input = try repositoryHandle(profile);defer { xc_repository_snapshot_release(input) }
+        let strings = SessionCStrings();let status: xc_status
+        if let endpoint {
+            var r = xc_https_repository(id:try strings.copy(endpoint.id),host:try strings.copy(endpoint.host),catalog_directory:try strings.copy(endpoint.catalog),package_directory:try strings.copy(endpoint.packages),port:endpoint.port)
+            status = withExtendedLifetime(strings) { name.withCString { xc_repository_snapshot_put(input,&r,$0,enabled ? 1 : 0) } }
+        } else if let remove { status = remove.withCString { xc_repository_snapshot_remove(input,$0) } }
+        else if let move { guard move.1 >= 0 else { throw CoreError(status:XC_INVALID_ARGUMENT) };status = move.0.withCString { xc_repository_snapshot_move(input,$0,move.1) } }
+        else { throw CoreError(status:XC_INVALID_ARGUMENT) }
+        guard status == XC_OK else { throw CoreError(status:status) }
+        return try await saveRepositoryHandle(path:path,expected:profile.revision,input:input)
+    }
+    func repositoryChoices(profile: CoreRepositoryProfile,index: Int,planning selectedID: String? = nil) async throws -> [CoreLibraryChoice] {
+        guard index >= 0 else { throw CoreError(status:XC_INVALID_ARGUMENT) }
+        let input = try repositoryHandle(profile);defer { xc_repository_snapshot_release(input) };var offer: OpaquePointer?
+        guard xc_repository_snapshot_copy_catalog(input,index,&offer) == XC_OK, let offer else { return [] };defer { xc_remote_catalog_release(offer) }
+        guard let catalog = xc_remote_catalog_library(offer) else { throw CoreError(status:XC_ENGINE_ERROR) }
+        var values = try libraryValues(catalog)
+        guard let selectedID, let i = values.firstIndex(where: { $0.id == selectedID }) else { return values }
+        var request: OpaquePointer?;let status = xc_worker_library_catalog(try worker(),&request)
+        let completed = try await wait(status,request);defer { xc_request_release(completed) }
+        guard let inventory = xc_request_take_library_catalog(completed) else { throw CoreError(status:XC_ENGINE_ERROR) };defer { xc_library_catalog_release(inventory) }
+        do {
+            var plan: OpaquePointer?;let status = values[i].provider.withCString { p in values[i].module.withCString { xc_library_plan_install(catalog,inventory,p,$0,&plan) } }
+            guard status == XC_OK, let plan else { throw CoreError(status:status) };defer { xc_library_install_plan_release(plan) }
+            var value = xc_library_plan();guard xc_library_install_plan_get(plan,&value) == XC_OK else { throw CoreError(status:XC_ENGINE_ERROR) };values[i].decision = value.decision
+        }
+        return values
+    }
+    private func waitTransfer(_ status: xc_status,_ request: OpaquePointer?,progress: (@Sendable (CoreTransferProgress) async -> Void)?) async throws -> OpaquePointer {
+        guard status == XC_OK, let request else { throw CoreError(status:status) }
+        guard let control = xc_request_take_transfer_control(request) else { xc_request_release(request);throw CoreError(status:XC_ENGINE_ERROR) };defer { xc_transfer_control_release(control) }
+        while true {
+            if Task.isCancelled { _ = xc_transfer_control_cancel(control) }
+            let status = xc_request_poll(request)
+            var value = xc_transfer_progress()
+            if xc_transfer_control_progress(control,&value) == XC_OK { await progress?(CoreTransferProgress(phase:value.phase,downloaded:value.downloaded,total:value.download_total,expanded:value.expanded)) }
+            if status != XC_PENDING { guard status == XC_OK else { xc_request_release(request);throw CoreError(status:status) };return request }
+            await withCheckedContinuation { continuation in DispatchQueue.global(qos:.utility).asyncAfter(deadline:.now() + .milliseconds(50)) { continuation.resume() } }
+        }
+    }
+    func refreshRepository(path: String,profile: CoreRepositoryProfile,index: Int,workspace: String,caBundle: String? = nil,progress: (@Sendable (CoreTransferProgress) async -> Void)? = nil) async throws -> CoreRepositoryProfile {
+        guard profile.rows.indices.contains(index) else { throw CoreError(status:XC_INVALID_ARGUMENT) };let row = profile.rows[index];guard row.enabled else { throw CoreError(status:XC_INVALID_ARGUMENT) }
+        guard try await readRepositories(path:path).revision == profile.revision else { throw CoreError(status:XC_INVALID_ARGUMENT) }
+        let strings = SessionCStrings();var repository = xc_https_repository(id:try strings.copy(row.id),host:try strings.copy(row.endpoint.host),catalog_directory:try strings.copy(row.endpoint.catalog),package_directory:try strings.copy(row.endpoint.packages),port:row.endpoint.port)
+        var options = xc_transfer_options();xc_transfer_options_default(&options);options.workspace = try strings.copy(workspace);options.ca_bundle = try caBundle.map { try strings.copy($0) };options.remote_access_acknowledged = 1
+        var request: OpaquePointer?;let handle = try worker()
+        let status = withExtendedLifetime(strings) { xc_worker_fetch_remote_catalog(handle,&repository,&options,&request) }
+        let completed = try await waitTransfer(status,request,progress:progress);defer { xc_request_release(completed) }
+        guard let offer = xc_request_take_remote_catalog(completed) else { throw CoreError(status:XC_ENGINE_ERROR) };defer { xc_remote_catalog_release(offer) }
+        let input = try repositoryHandle(profile);defer { xc_repository_snapshot_release(input) }
+        guard xc_repository_snapshot_cache(input,offer,UInt64(Date().timeIntervalSince1970)) == XC_OK else { throw CoreError(status:XC_ENGINE_ERROR) }
+        return try await saveRepositoryHandle(path:path,expected:profile.revision,input:input)
+    }
+    func installRemote(path: String,profile: CoreRepositoryProfile,index: Int,module: String,replace: Bool,workspace: String,caBundle: String? = nil,progress: (@Sendable (CoreTransferProgress) async -> Void)? = nil) async throws -> CoreRemoteInstallOutcome {
+        guard profile.rows.indices.contains(index), profile.rows[index].enabled else { throw CoreError(status:XC_INVALID_ARGUMENT) }
+        guard try await readRepositories(path:path).revision == profile.revision else { throw CoreError(status:XC_INVALID_ARGUMENT) }
+        let input = try repositoryHandle(profile);defer { xc_repository_snapshot_release(input) };var offer: OpaquePointer?
+        guard xc_repository_snapshot_copy_catalog(input,index,&offer) == XC_OK, let offer else { throw CoreError(status:XC_INVALID_ARGUMENT) };defer { xc_remote_catalog_release(offer) }
+        let strings = SessionCStrings();let name = try strings.copy(module);var options = xc_transfer_options();xc_transfer_options_default(&options);options.workspace = try strings.copy(workspace);options.ca_bundle = try caBundle.map { try strings.copy($0) };options.remote_access_acknowledged = 1
+        var request: OpaquePointer?;let handle = try worker()
+        let status = withExtendedLifetime(strings) { xc_worker_install_remote_module(handle,offer,name,replace ? 1 : 0,&options,&request) }
+        let completed = try await waitTransfer(status,request,progress:progress);defer { xc_request_release(completed) }
+        guard let result = xc_request_take_remote_install_result(completed) else { throw CoreError(status:XC_ENGINE_ERROR) };defer { xc_remote_install_result_release(result) }
+        do {
+            guard let next = xc_remote_install_result_next_catalog(result), xc_repository_snapshot_cache(input,next,UInt64(Date().timeIntervalSince1970)) == XC_OK else { throw CoreError(status:XC_ENGINE_ERROR) }
+            return CoreRemoteInstallOutcome(profile:try await saveRepositoryHandle(path:path,expected:profile.revision,input:input),message:"Module installed.")
+        } catch { return CoreRemoteInstallOutcome(profile:nil,message:"Module installed. Source cache could not be saved; reload sources before another installation.") }
+    }
+    func prepareLocalInstall(source: String,module: String) async throws -> CoreLocalInstallOffer {
+        let strings = SessionCStrings();let folder = try strings.copy(source), name = try strings.copy(module);var request: OpaquePointer?
+        let handle = try worker()
+        let status = withExtendedLifetime(strings) { xc_worker_prepare_local_install(handle,folder,name,&request) }
+        let completed = try await wait(status,request);defer { xc_request_release(completed) }
+        guard let result = xc_request_take_local_install_preview(completed) else { throw CoreError(status:XC_ENGINE_ERROR) };defer { xc_local_install_preview_release(result) }
+        var info = xc_local_install_info();guard xc_local_install_preview_get(result,&info) == XC_OK else { throw CoreError(status:XC_ENGINE_ERROR) }
+        return CoreLocalInstallOffer(source:source,module:String(cString:info.module!),sourceRevision:String(cString:info.source_revision!),destinationRevision:String(cString:info.destination_revision!),version:String(cString:info.source_version!),installedVersion:String(cString:info.installed_version!),decision:info.decision)
+    }
+    func installLocal(_ offer: CoreLocalInstallOffer,replace: Bool) async throws {
+        let strings = SessionCStrings();let source = try strings.copy(offer.source), module = try strings.copy(offer.module), from = try strings.copy(offer.sourceRevision), to = try strings.copy(offer.destinationRevision);var request: OpaquePointer?
+        let handle = try worker()
+        let status = withExtendedLifetime(strings) { xc_worker_install_local_module(handle,source,module,from,to,replace ? 1 : 0,&request) };xc_request_release(try await wait(status,request))
+    }
+    func maintenanceOffer(module: String) async throws -> CoreMaintenanceOffer {
+        guard !module.utf8.contains(0) else { throw CoreError(status:XC_INVALID_ARGUMENT) };var request: OpaquePointer?;let handle = try worker()
+        let status = module.withCString { xc_worker_preview_module_maintenance(handle,$0,&request) };let completed = try await wait(status,request);defer { xc_request_release(completed) }
+        guard let result = xc_request_take_module_maintenance_preview(completed) else { throw CoreError(status:XC_ENGINE_ERROR) };defer { xc_module_maintenance_preview_release(result) }
+        var info = xc_module_maintenance_info();guard xc_module_maintenance_preview_get(result,&info) == XC_OK else { throw CoreError(status:XC_ENGINE_ERROR) }
+        return CoreMaintenanceOffer(module:String(cString:info.module!),revision:String(cString:info.revision!),cipher:info.cipher_declared != 0,indexed:info.indexed != 0)
+    }
+    func maintainModule(_ offer: CoreMaintenanceOffer,action: Int32,key: String = "") async throws {
+        let strings = SessionCStrings();let name = try strings.copy(offer.module), revision = try strings.copy(offer.revision), cipher = try strings.copy(key);var request: OpaquePointer?
+        let handle = try worker()
+        let status = withExtendedLifetime(strings) { xc_worker_maintain_module(handle,name,revision,action,cipher,&request) };xc_request_release(try await wait(status,request))
+    }
+}
+
+extension CoreWorker {
+    func releaseModuleEditor(tab: UInt64) async throws {
+        var request: OpaquePointer?;let status = xc_worker_release_module_editor(try worker(),tab,&request)
+        xc_request_release(try await wait(status,request))
     }
 }

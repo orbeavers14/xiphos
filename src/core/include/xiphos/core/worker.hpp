@@ -174,6 +174,7 @@ public:
   std::future<std::optional<DictionaryLocation>> dictionary_selection(StudyTab tab);
   std::future<void> clear_reading_selection(StudyTab tab);
   std::future<void> clear_dictionary_selection(StudyTab tab);
+  std::future<void> release_module_editor(StudyTab tab);
   std::future<ModuleEditEntry> read_module_edit(StudyTab tab,ModuleEditTarget target);
   std::future<ModuleEditEntry> save_module_edit(StudyTab tab,ModuleEditTarget target,std::string expected,std::string text,bool erase=false);
   std::future<EditableDocument> read_editable_document(StudyTab tab,std::string path);

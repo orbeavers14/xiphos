@@ -383,10 +383,10 @@ struct CoreError: LocalizedError, Sendable {
     let status: xc_status
     var errorDescription: String? {
         switch status {
-        case XC_INVALID_ARGUMENT: return "Check the module folder and reference. This preview supports verse-key modules."
+        case XC_INVALID_ARGUMENT: return "The request was refused. Check its inputs and whether the source or library has changed."
         case XC_MODULE_NOT_FOUND: return "The selected module is not installed."
         case XC_CANCELLED: return "The transfer was cancelled."
-        default: return "The SWORD engine could not complete the request."
+        default: return "The operation could not be completed."
         }
     }
 }

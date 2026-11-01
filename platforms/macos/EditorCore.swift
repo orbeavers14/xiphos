@@ -62,6 +62,7 @@ final class EditorSourceBuffer {
     }
     deinit { xc_editor_buffer_release(handle) }
     var text: String { String(cString: xc_editor_buffer_text(handle)!) }
+    var savedText: String { String(cString: xc_editor_buffer_saved_text(handle)!) }
     var dirty: Bool { xc_editor_buffer_dirty(handle) != 0 }
     var canUndo: Bool { xc_editor_buffer_can_undo(handle) != 0 }
     var canRedo: Bool { xc_editor_buffer_can_redo(handle) != 0 }

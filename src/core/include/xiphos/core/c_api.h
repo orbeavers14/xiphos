@@ -1119,6 +1119,7 @@ xc_status xc_editor_buffer_replace(xc_editor_buffer *buffer,const char *text);
 xc_status xc_editor_buffer_undo(xc_editor_buffer *buffer);
 xc_status xc_editor_buffer_redo(xc_editor_buffer *buffer);
 xc_status xc_editor_buffer_mark_saved(xc_editor_buffer *buffer);
+const char *xc_editor_buffer_saved_text(const xc_editor_buffer *buffer);
 const char *xc_editor_buffer_text(const xc_editor_buffer *buffer);
 int xc_editor_buffer_dirty(const xc_editor_buffer *buffer);
 int xc_editor_buffer_can_undo(const xc_editor_buffer *buffer);
@@ -1152,6 +1153,9 @@ void xc_rich_document_release(xc_rich_document *document);
  * retained if filesystem rollback itself fails. No crash-durability or
  * interprocess locking promise. Erase clears entry content, not book structure. */
 typedef struct xc_module_edit xc_module_edit;
+/* Successful edit reads and edit requests keep the module in use by this tab.
+ * Release after exporting to an independent file, or close the tab. */
+xc_status xc_worker_release_module_editor(xc_worker *worker,uint64_t tab,xc_request **out);
 xc_status xc_worker_read_module_edit(xc_worker *worker,uint64_t tab,const char *module,const char *reference,xc_request **out);
 xc_status xc_worker_save_module_edit(xc_worker *worker,uint64_t tab,const char *module,const char *reference,const char *revision,const char *text,int erase,xc_request **out);
 xc_module_edit *xc_request_take_module_edit(xc_request *request);

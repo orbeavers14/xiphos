@@ -26,8 +26,11 @@ enum NativeEditorLocation { case newDocument, file(String), module(String,String
     private let worker: CoreWorker
     private var tab: UInt64?
     private var closed = false
+    let recoveryID: String
+    private let recovered: CoreRecoveryDraft?
+    var onRecoveryChanged: (() -> Void)?
     var onModuleSaved: ((String) -> Void)?
-    init(worker: CoreWorker, location: NativeEditorLocation) { self.worker = worker; self.location = location }
+    init(worker: CoreWorker, location: NativeEditorLocation, recovered: CoreRecoveryDraft? = nil) { self.worker = worker; self.location = location; self.recovered = recovered; recoveryID = recovered?.id ?? UUID().uuidString }
     deinit { if let tab { let worker = worker; Task { try? await worker.closeTab(tab) } } }
     var permitsRich: Bool { moduleSource.map { ["thml","html","xhtml"].contains($0.sourceType.lowercased()) } ?? true }
     var title: String { switch location { case .newDocument: "Untitled Study Document"; case .file(let path): URL(fileURLWithPath: path).lastPathComponent; case .module(let module,let ref): "\(module) — \(ref)" } }
@@ -36,6 +39,22 @@ enum NativeEditorLocation { case newDocument, file(String), module(String,String
         defer { isBusy = false }
         do {
             tab = try await worker.createTab()
+            if let recovered {
+                revision = recovered.originRevision
+                buffer = try EditorSourceBuffer(recovered.savedText); try buffer?.replace(recovered.text)
+                if case .module(let module,let reference) = location {
+                    moduleSource = try? await worker.openModuleEditor(tab:tab!,module:module,reference:reference)
+                    if moduleSource == nil { moduleSource = EditorModuleSource(module:module,reference:reference,driver:"",sourceType:"Plain",text:"",revision:revision ?? "") }
+                }
+                guard !closed else { return }
+                ready = true; publish(preferRich:false)
+                let utf8 = source.utf8
+                if recovered.selectionStart <= utf8.count, recovered.selectionEnd <= utf8.count,
+                   let lower = String.Index(utf8.index(utf8.startIndex,offsetBy:recovered.selectionStart),within:source),
+                   let upper = String.Index(utf8.index(utf8.startIndex,offsetBy:recovered.selectionEnd),within:source) { selection = NSRange(lower..<upper,in:source) }
+                message = "Recovered unsaved source. Save checks the original revision; use Save As if the source changed or is unavailable."
+                return
+            }
             let text: String
             switch location {
             case .newDocument: text = ""
@@ -52,19 +71,19 @@ enum NativeEditorLocation { case newDocument, file(String), module(String,String
         source = buffer?.text ?? ""; dirty = buffer?.dirty ?? false; canUndo = buffer?.canUndo ?? false; canRedo = buffer?.canRedo ?? false
         if preferRich, permitsRich, let parsed = try? EditorRichCodec.parse(source) { rich = parsed; richMode = true; message = "" }
         else { rich = nil; richMode = false; message = permitsRich ? "This markup is preserved in Source. Rich mode supports text, links, colors, headings and lists." : "This module stores plain text." }
-        presentation &+= 1
+        presentation &+= 1; onRecoveryChanged?()
     }
     func setMode(_ richMode: Bool) { guard ready, !isBusy, !frozen else { return }; publish(preferRich: richMode) }
     func accept(text: String) {
         guard ready, !isBusy, !frozen else { return }
-        do { try buffer?.replace(text); source = text; dirty = buffer?.dirty ?? false; canUndo = buffer?.canUndo ?? false; canRedo = buffer?.canRedo ?? false; message = "" }
+        do { try buffer?.replace(text); source = text; dirty = buffer?.dirty ?? false; canUndo = buffer?.canUndo ?? false; canRedo = buffer?.canRedo ?? false; message = ""; onRecoveryChanged?() }
         catch { message = "The edit exceeds the supported text limits."; presentation &+= 1 }
     }
     func accept(runs: [EditorRun]) {
         guard richMode, ready, !isBusy, !frozen else { return }
         do {
             let value = try EditorRichCodec.make(runs); try buffer?.replace(value.html)
-            presentation &+= 1; source = value.html; rich = value; dirty = buffer?.dirty ?? false; canUndo = buffer?.canUndo ?? false; canRedo = buffer?.canRedo ?? false; message = ""
+            presentation &+= 1; source = value.html; rich = value; dirty = buffer?.dirty ?? false; canUndo = buffer?.canUndo ?? false; canRedo = buffer?.canRedo ?? false; message = ""; onRecoveryChanged?()
         } catch { message = "That rich-text edit could not be applied. The previous content is retained."; presentation &+= 1 }
     }
     func format(_ action: Int32, value: Int32 = -1, text: String = "") {
@@ -89,8 +108,19 @@ enum NativeEditorLocation { case newDocument, file(String), module(String,String
             var expected = path == original ? revision : nil
             if path != original && FileManager.default.fileExists(atPath: path) { expected = try await worker.openEditorFile(tab: tab, path: path).revision }
             let value = try await worker.saveEditorFile(tab: tab, path: path, revision: expected, text: source)
-            revision = value.revision; location = .file(path); moduleSource = nil; buffer?.saved(); dirty = buffer?.dirty ?? false; message = "Saved."
+            revision = value.revision; location = .file(path); moduleSource = nil; try? await worker.releaseModuleEditor(tab:tab); buffer?.saved(); dirty = buffer?.dirty ?? false; message = "Saved."; onRecoveryChanged?()
         }
+    }
+    func recoveryDraft() -> CoreRecoveryDraft? {
+        guard ready, let buffer else { return recovered }
+        var d = CoreRecoveryDraft(id:recoveryID,title:title,originRevision:revision,savedText:buffer.savedText,text:buffer.text)
+        switch location {
+        case .newDocument: d.target = 0; d.originRevision = nil
+        case .file(let path): d.target = 1; d.path = path
+        case .module(let module,let reference): d.target = 2; d.module = module; d.reference = reference
+        }
+        if !richMode, let range = Range(selection,in:source) { d.selectionStart = source[..<range.lowerBound].utf8.count; d.selectionEnd = source[..<range.upperBound].utf8.count }
+        return d
     }
     func close() { guard !closed else { return }; closed = true; if let tab { self.tab = nil; let worker = worker; Task { try? await worker.closeTab(tab) } } }
 }
@@ -240,8 +270,8 @@ enum EditorCloseChoice { case save,discard,cancel }
     var saveDestination: (() -> String?)?
     private var approved = false
     private var observation: AnyCancellable?
-    init(worker: CoreWorker, location: NativeEditorLocation, show: Bool = true, moduleSaved: @escaping (String) -> Void) {
-        model = NativeEditorModel(worker:worker,location:location)
+    init(worker: CoreWorker, location: NativeEditorLocation, recovered: CoreRecoveryDraft? = nil, show: Bool = true, moduleSaved: @escaping (String) -> Void) {
+        model = NativeEditorModel(worker:worker,location:location,recovered:recovered)
         window = NSWindow(contentRect:NSRect(x:0,y:0,width:900,height:680),styleMask:[.titled,.closable,.miniaturizable,.resizable],backing:.buffered,defer:false)
         super.init(); window.minSize = NSSize(width:800,height:650); model.onModuleSaved = moduleSaved; window.delegate = self; window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView:NativeEditorPane(model:model,save:{ [weak self] in self?.save() },saveAs:{ [weak self] in self?.save(asNew:true) },clear:{ [weak self] in self?.clearEntry() }))

@@ -28,6 +28,7 @@ class EditorBuffer {
 public:
   explicit EditorBuffer(std::string text);
   const std::string &text() const {return text_;}
+  const std::string &saved_text() const {return saved_;}
   bool dirty() const {return text_!=saved_;}
   bool can_undo() const {return !undo_.empty();}
   bool can_redo() const {return !redo_.empty();}

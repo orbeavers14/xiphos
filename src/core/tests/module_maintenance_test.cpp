@@ -4,6 +4,7 @@
 #include <thread>
 #include <chrono>
 #include <rawtext.h>
+#include <rawfiles.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -22,7 +23,10 @@ static void fixture(const fs::path &root,const std::string &id,const std::string
 
 int main(int argc,char **argv){try{
  check(argc==2,"Fixture path required");auto root=fs::u8path(argv[1]);check(root.filename()=="maintenance-fixture","Named fixture only");fs::remove_all(root);auto library=root/"library";fixture(library,"Base","1");fixture(library,"Unused","1");fixture(library,"Locked","1");{std::ofstream out(library/"mods.d/Locked.conf",std::ios::app);out<<"CipherKey=\n";}{std::ofstream out(library/"unrelated.txt");out<<"Original unrelated data";}
+ for(const auto *id:{"EditorA","EditorB"}){auto data=library/"data"/id;fs::create_directories(data);check(sword::RawFiles::createModule(data.u8string().c_str())==0,"Create editor-use fixture");{sword::RawFiles writer(data.u8string().c_str());writer.setKey("John3:16");writer.setEntry("Original editor-use prose");}std::ofstream out(library/"mods.d"/(std::string(id)+".conf"));out<<'['<<id<<"]\nDataPath=./data/"<<id<<"/\nModDrv=RawFiles\nEncoding=UTF-8\nSourceType=Plain\n";}
  StudyWorker worker(library.u8string());auto tab=worker.create_tab().get();worker.visit(tab,"Base","John3:16").get();auto p=worker.preview_module_maintenance("Base").get();rejects([&]{worker.maintain_module({"Base",p.revision,ModuleMaintenanceAction::remove,{}}).get();});check(fs::exists(library/"mods.d/Base.conf"),"In-use module retained");
+ auto editor=worker.create_tab().get();(void)worker.read_module_edit(editor,{"EditorA","John3:16"}).get();auto editing=worker.preview_module_maintenance("EditorA").get();rejects([&]{worker.maintain_module({"EditorA",editing.revision,ModuleMaintenanceAction::remove,{}}).get();});worker.release_module_editor(editor).get();worker.maintain_module({"EditorA",editing.revision,ModuleMaintenanceAction::remove,{}}).get();
+ (void)worker.read_module_edit(editor,{"EditorB","John3:16"}).get();editing=worker.preview_module_maintenance("EditorB").get();rejects([&]{worker.maintain_module({"EditorB",editing.revision,ModuleMaintenanceAction::remove,{}}).get();});worker.close_tab(editor).get();worker.maintain_module({"EditorB",editing.revision,ModuleMaintenanceAction::remove,{}}).get();
  auto unused=worker.preview_module_maintenance("Unused").get();{std::ofstream out(library/"external.txt");out<<"External change";}rejects([&]{worker.maintain_module({"Unused",unused.revision,ModuleMaintenanceAction::remove,{}}).get();});fs::remove(library/"external.txt");
  p=worker.preview_module_maintenance("Locked").get();check(p.cipher_declared,"Cipher declaration detected");auto result=worker.maintain_module({"Locked",p.revision,ModuleMaintenanceAction::set_cipher_key,"Original fixture key"}).get();check(result.action==ModuleMaintenanceAction::set_cipher_key&&result.revision!=p.revision,"Cipher configuration persisted");{std::ifstream in(library/"mods.d/Locked.conf");std::string bytes{std::istreambuf_iterator<char>(in),{}};check(bytes.find("CipherKey=Original fixture key")!=bytes.npos&&bytes.find("CustomNotice=Preserve this unknown field")!=bytes.npos,"Unknown configuration retained");}
  p=worker.preview_module_maintenance("Base").get();rejects([&]{worker.maintain_module({"Base",p.revision,ModuleMaintenanceAction::set_cipher_key,"key"}).get();});rejects([&]{worker.maintain_module({"Locked",p.revision,ModuleMaintenanceAction::set_cipher_key,"key\nInjected=1"}).get();});

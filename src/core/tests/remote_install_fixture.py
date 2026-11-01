@@ -14,7 +14,8 @@ import zipfile
 import warnings
 warnings.filterwarnings("ignore", message="Duplicate name:")
 
-binary, folder, openssl = sys.argv[1:]
+binary, folder, openssl, *client = sys.argv[1:]
+assert len(client) <= 1
 root = Path(folder)
 assert root.name == "remote-install-fixture"
 subprocess.run([binary, str(root), "--fixture"], check=True)
@@ -125,7 +126,7 @@ thread.start()
 try:
     env = os.environ.copy()
     env["NO_PROXY"] = "127.0.0.1,localhost"
-    result = subprocess.run([binary, str(root), str(server.server_port)], env=env)
+    result = subprocess.run([client[0] if client else binary, str(root), str(server.server_port)], env=env)
     raise SystemExit(result.returncode)
 finally:
     plain.shutdown()

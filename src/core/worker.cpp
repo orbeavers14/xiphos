@@ -33,6 +33,7 @@ struct StudyWorker::Impl {
     Reader reader;
     SyncSettings sync;
     SyncTransport sync_network;
+    std::map<StudyTab,std::string> editor_modules;
     std::map<StudyTab, std::unique_ptr<StudySession>> tabs;
     StudyTab next_tab = 1;
     explicit State(const std::string &root) : reader(root) {}
@@ -63,7 +64,7 @@ struct StudyWorker::Impl {
       }
       // No allocation, rendering or further validation after this commit point.
       static_assert(std::is_nothrow_move_constructible_v<RestoredSession>,"Restored mapping publication must not allocate");
-      tabs.swap(replacement);next_tab=next;return result;
+      tabs.swap(replacement);editor_modules.clear();next_tab=next;return result;
     }
     SavedTabSession capture_tabs(const std::vector<StudyTabCapture> &captures,const std::optional<std::string> &version) {
       if(captures.size()>maximum_saved_tabs)throw std::invalid_argument("Too many captured tabs");
@@ -448,7 +449,7 @@ std::future<StudyTab> StudyWorker::create_tab() {
   });
 }
 std::future<void> StudyWorker::close_tab(StudyTab tab) {
-  return impl_->submit([tab](Impl::State &s) { s.tab(tab); s.tabs.erase(tab); });
+  return impl_->submit([tab](Impl::State &s) { s.tab(tab); s.editor_modules.erase(tab); s.tabs.erase(tab); });
 }
 std::future<void> StudyWorker::set_lexicon_preferences(StudyTab tab, LexiconPreferences preferences) {
   return impl_->submit([tab, preferences = std::move(preferences)](Impl::State &s) {
@@ -665,11 +666,12 @@ std::future<LocalInstallResult> StudyWorker::install_local_module(LocalInstallRe
   });
  });
 }
-std::future<ModuleEditEntry> StudyWorker::read_module_edit(StudyTab tab,ModuleEditTarget target){return impl_->submit([tab,target=std::move(target)](Impl::State &s){(void)s.tab(tab);return s.reader.read_module_edit(target);});}
+std::future<void> StudyWorker::release_module_editor(StudyTab tab){return impl_->submit([tab](Impl::State &s){(void)s.tab(tab);s.editor_modules.erase(tab);});}
+std::future<ModuleEditEntry> StudyWorker::read_module_edit(StudyTab tab,ModuleEditTarget target){return impl_->submit([tab,target=std::move(target)](Impl::State &s){(void)s.tab(tab);auto result=s.reader.read_module_edit(target);s.editor_modules[tab]=result.module;return result;});}
 std::future<ModuleEditEntry> StudyWorker::save_module_edit(StudyTab tab,ModuleEditTarget target,std::string expected,std::string text,bool erase){
  if(!module_edit_arguments(target)||!editable_document_revision(expected)||!editable_document_text(text)||(erase&&!text.empty()))return selected_profile_rejection<ModuleEditEntry>();
  return impl_->submit([tab,target=std::move(target),expected=std::move(expected),text=std::move(text),erase](Impl::State &s){
-  (void)s.tab(tab);std::map<StudyTab,std::pair<StudySessionState,SessionCapabilities>> states;
+  (void)s.tab(tab);s.editor_modules[tab]=target.module;std::map<StudyTab,std::pair<StudySessionState,SessionCapabilities>> states;
   for(const auto &t:s.tabs)states.emplace(t.first,std::make_pair(t.second->capture_state(),t.second->capabilities()));
   return s.reader.save_module_edit(target,expected,text,erase,[&]{
    std::map<StudyTab,std::unique_ptr<StudySession>> replacement;
@@ -693,6 +695,7 @@ std::future<ModuleMaintenancePreview> StudyWorker::preview_module_maintenance(st
 std::future<ModuleMaintenanceResult> StudyWorker::maintain_module(ModuleMaintenanceRequest request){
  if(!module_maintenance_arguments(request))return selected_profile_rejection<ModuleMaintenanceResult>();
  return impl_->submit([request=std::move(request)](Impl::State &s){
+  if(request.action==ModuleMaintenanceAction::remove)for(const auto &entry:s.editor_modules)if(s.tabs.count(entry.first)&&entry.second==request.module)throw std::invalid_argument("Module is open in an editor; close it before removal");
   std::map<StudyTab,std::pair<StudySessionState,SessionCapabilities>> states;
   for(const auto &t:s.tabs){auto state=t.second->capture_state();if(request.action==ModuleMaintenanceAction::remove){
    const auto &m=request.module;bool used=state.reading&&(state.reading->module==m||state.reading->commentary==m);used=used||(state.dictionary&&state.dictionary->module==m)||(state.book&&state.book->requested.module==m);
