@@ -1,5 +1,18 @@
 # Shared project handoff: start here in every chat
 
+Native recovery/management checkpoint (2026-11-01, `78d367a`): macOS now
+schedules shared recovery snapshots, offers startup Recover/Discard, reconstructs
+reading windows and unsaved source drafts, and preserves original-file conflict
+checks. Native Module Library screens expose ordered HTTPS sources/cached catalogs,
+explicit transfers, local installation and staged maintenance. First launch creates
+an explicit private module library when discovery is empty; existing discovered
+libraries retain reading access until an explicit managed folder is selected.
+See [native integration and limits](native-recovery-management.md). Native sync
+controls, legacy source import, capable-SDK positive indexing, encrypted-module
+correctness and physical Windows/Fedora acceptance remain open. No whole-parity
+acceptance increase. This supersedes older statements that Mac presentation is next.
+
+
 Updated 2026-11-01. These files replace missing conversation context with a
 versioned record. They do not transfer chat messages or synchronize themselves:
 each chat must fetch/pull Git and read them before working.

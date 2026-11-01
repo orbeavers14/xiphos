@@ -7,16 +7,34 @@ and pushes are authorized; preserve unrelated changes, never force-push.
 
 ## Current checked source and active work
 
-Latest implementation: `04914ca` adds optional safe BibleSync networking and owned
-C/FIFO event/control APIs. `c9258de` repository/maintenance/recovery/policy services
-remain the prior checkpoint. See [service contracts](repository-management.md) and
-[SDK setup/provenance](../../dependencies/biblesync/README.md). Full Mac230 passes+
-one index skip (231 registered,193.18s); final active-state/native relink5/5,4.76s.
-Instrumented adapter+SDK ASan/UBSan5/5,5.11s and TSan5/5,5.20s; portable networking-OFF
-scoped8/8,6.74s. No native sync controls or physical two-device acceptance. Next:
-native recovery/autosave/editor reconstruction and management presentation; positive
-index/encrypted correctness and physical host gates remain. Devotionals deferred.
-No full-parity acceptance increase.
+Latest implementation: `78d367a`, native recovery/autosave and module management.
+See [the integration contract](native-recovery-management.md). One shared FIFO
+worker and C++ storage/installation services remain authoritative. No GTK3 changes.
+
+Actual checks on macOS27.2, Swift6.4.2/AppleClang21, selected SWORD1.9.0.3916:
+
+- Full integration baseline: 233 passes + one index skip, 234 registered, 212.82s.
+- Portable Linux models/core on Mac, GTK runtime/networking OFF: 181 passes + one
+  index skip, 182 registered, 132.46s; this is not physical Fedora acceptance.
+- Scoped core ASan/UBSan 9/9,19.28s; TSan 9/9,23.38s. Third-party dependencies
+  are not all instrumented. Native-off C++11 scoped checks10/10,9.44s.
+- After final native-only profile/setup refinements: rebuild app/recovery/management,
+  scoped4/4,8.89s, including fresh-process recovery and first local installation.
+  The full baseline was not repeated after these native-only refinements.
+- Live isolated original-prose UI: Recover restored dirty Unicode source; an
+  externally modified file refused overwrite; quit Cancel retained work and
+  Discard cleared both recovery generations. Save Reading Session As/restart
+  preserved sources and restored reading. Fresh first launch without module-root
+  override installed an original local fixture and displayed it in inventory.
+- Local-only Graphify refresh: 660 code files,12,321 nodes,33,330 edges,388
+  communities; deterministic extraction, no paid AI, source hashes unchanged.
+- C11 header and diff checks passed. Build logs use `build/native-ui-*`; test apps
+  exited normally. No public Bible downloads, hosted builds or paid AI calls.
+
+Limits: selected SDK cannot create a usable index (explicit existing skip);
+encrypted correctness, full visual/workflow parity, Windows/Fedora and native sync
+controls remain open. Devotionals deferred. Next: native sync controls and remaining
+cross-host recovery/management acceptance, without a whole-parity claim.
 
 ## Earlier checkpoints (historical)
 

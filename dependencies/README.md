@@ -4,7 +4,7 @@
 The retained GTK3 reference application and its exclusive dependencies are excluded.
 All three frontends consume the shared-core dependencies in the first table.
 
-**Last inspected: 2026-10-31.** Installed versions describe the current macOS
+**Last inspected: 2026-11-01.** Installed versions describe the current macOS
 27.2 development host, not verified Windows/Linux installations. Minimums are
 those declared by the new application's build/setup files. **Not specified**
 means no numeric minimum is declared, not compatibility with every old version.
@@ -64,9 +64,9 @@ Windows interface dependencies remain planned until its native frontend exists.
 |---|---|---|---|---|---|
 | **macOS** | Swift compiler | Swift 6 language mode | 6.4.2 | Compile native Apple adapters and UI | `platforms/macos/CMakeLists.txt` |
 | **macOS** | Xcode / Apple SDK | Swift 6-compatible toolchain; no independent Xcode release floor declared | Xcode 27.2; active SDK 27.2 | Apple compiler, framework and platform SDKs | Native Mac build; libxml2 retains cached CLT 26 SDK headers |
-| **macOS** | SwiftUI | macOS 13 project baseline; runtime compatibility still needs target validation | Bundled framework; developer SDK 27.2 | Reader/editor presentation | `platforms/macos/ReaderApp.swift`, editor/search panes |
-| **macOS** | AppKit | macOS 13 project baseline | Bundled framework; developer SDK 27.2 | Windows, text editing, panels, clipboard and lifecycle | `SessionApp.swift`, `EditorWindow.swift`, native adapters |
-| **macOS** | Foundation / Combine / Darwin runtime | Target Apple SDK; no independent library floor declared | Bundled SDK/runtime; developer SDK/host 27.2 | Files/URLs, observation and system facilities | `platforms/macos/*.swift` |
+| **macOS** | SwiftUI | macOS 13 project baseline; runtime compatibility still needs target validation | Bundled framework; developer SDK 27.2 | Reader/editor and Module Library presentation | `platforms/macos/ReaderApp.swift`, editor/search panes, `LibraryManagement.swift` |
+| **macOS** | AppKit | macOS 13 project baseline | Bundled framework; developer SDK 27.2 | Windows, text editing, panels, clipboard and lifecycle | `SessionApp.swift`, `EditorWindow.swift`, `LibrarySetup.swift`, native adapters |
+| **macOS** | Foundation / Combine / Darwin runtime | Target Apple SDK; no independent library floor declared | Bundled SDK/runtime; developer SDK/host 27.2 | Files/URLs, observation, Task-based autosave scheduling and system facilities | `platforms/macos/*.swift` |
 | **macOS** | WebKit | Target Apple SDK; macOS 13 project baseline | Bundled framework; developer SDK 27.2 | Native HTML reading view | macOS reading/study presentation |
 | **macOS** | ImageIO / CoreGraphics | Target Apple SDK; no independent floor declared | Bundled SDK/runtime; developer SDK 27.2 | Images and native graphics | Image/clipboard adapters; CoreGraphics supplied through Apple UI frameworks |
 | **macOS** | UniformTypeIdentifiers | Target Apple SDK; no independent floor declared | Bundled framework; developer SDK 27.2 | File/export type descriptions | Native export/save adapters |
