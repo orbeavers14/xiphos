@@ -49,6 +49,7 @@ Live isolated Mac UI also checked file selection, safe disposition rows, disable
 review prefill, required package folder and explicit disabled save without network
 access. See [the Mac handoff](handoff-macos.md) for final checked results.
 
-Next: broader real-profile fixtures and old global preferences/session migration,
-lossless backup/restore and supported local-source workflows. Do not interpret
+The broader [settings/session conversion and exact backup/restore workflow](legacy-settings-session-migration.md)
+now exists. Next: representative real-profile/cross-host acceptance and supported
+local-source workflows. Do not interpret
 this source review as complete profile migration or F27/F37 parity acceptance.

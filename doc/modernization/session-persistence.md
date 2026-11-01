@@ -1,5 +1,14 @@
 # Session persistence contracts and remaining work
 
+Legacy settings/session checkpoint (2026-11-01, `4bfb38c`): shared read-only snapshots,
+strict all-tab conversion, explicit module mapping, exact-original migration
+packages/restore and Mac preview/export/next-launch integration now exist. See
+[the migration contract](legacy-settings-session-migration.md). Unknown settings,
+comments and encodings remain recoverable; unsupported appearance/locale values
+are disclosed as preserved, not applied. Representative real-user/cross-host and
+whole-parity acceptance remain open. This supersedes the earlier migration TODO.
+
+
 The owner prioritized complete core session persistence while deferring further
 devotional work. The retained `gui_save_tabs`/`gui_load_tabs` format is
 `Xiphos_Tabs` XML, separate from the main `Xiphos` preferences file. This is a

@@ -20,7 +20,7 @@ them. Transitive libraries vary with the selected SDK and TLS backend.
 | Dependency | Minimum version | Installed / selected version | Purpose | Areas of use / location |
 |---|---|---|---|---|
 | CrossWire SWORD | 1.8.1 | 1.9.0.3916; runtime verified | Module discovery, versification, rendering, search and editable module drivers | `src/core/reader.cpp`, session/search/book services; selected static SDK under `/usr/local` |
-| GLib | 2.32 | 2.90.1; runtime verified | Unicode casing, UTF-8 validation, SHA256 and shared utilities | Core rendering/persistence/installation helpers, repository/recovery checksums and sync text validation; selected Homebrew SDK |
+| GLib | 2.32 | 2.90.1; runtime verified | Unicode casing, UTF-8 validation, SHA256 and shared utilities | Core rendering/persistence/installation helpers, repository/recovery/migration checksums and sync text validation; selected Homebrew SDK |
 | libxml2 | Not specified by native finder | 2.9.13; selected headers and runtime verified | XML persistence and HTML/rich-document parsing | `xml_document.cpp`, `session_snapshot.cpp`, `rich_document.cpp`, HTML preparation; Apple SDK/system library |
 | libpng | 1.6; simplified read API enabled | 1.6.59; selected headers and static runtime verified | Bounded PNG validation, decoding and export | `src/core/export_png.cpp`, image preparation; `build/libpng-sdk` |
 | zlib | Not specified | Direct runtime 1.2.12; effective core headers 1.3.2; see notes below | Catalog gzip expansion, PNG/ZIP support and SWORD linkage | `repository_archive.cpp`, libpng/libarchive/SWORD; direct link uses Apple SDK/system zlib |
@@ -64,7 +64,7 @@ Windows interface dependencies remain planned until its native frontend exists.
 |---|---|---|---|---|---|
 | **macOS** | Swift compiler | Swift 6 language mode | 6.4.2 | Compile native Apple adapters and UI | `platforms/macos/CMakeLists.txt` |
 | **macOS** | Xcode / Apple SDK | Swift 6-compatible toolchain; no independent Xcode release floor declared | Xcode 27.2; active SDK 27.2 | Apple compiler, framework and platform SDKs | Native Mac build; libxml2 retains cached CLT 26 SDK headers |
-| **macOS** | SwiftUI | macOS 13 project baseline; runtime compatibility still needs target validation | Bundled framework; developer SDK 27.2 | Reader/editor and Module Library presentation | `platforms/macos/ReaderApp.swift`, editor/search panes, `LibraryManagement.swift`, `SyncUI.swift` |
+| **macOS** | SwiftUI | macOS 13 project baseline; runtime compatibility still needs target validation | Bundled framework; developer SDK 27.2 | Reader/editor and Module Library presentation | `platforms/macos/ReaderApp.swift`, editor/search panes, `LibraryManagement.swift`, `SyncUI.swift`, `MigrationUI.swift` |
 | **macOS** | AppKit | macOS 13 project baseline | Bundled framework; developer SDK 27.2 | Windows, text editing, panels, clipboard and lifecycle | `SessionApp.swift`, `EditorWindow.swift`, `LibrarySetup.swift`, native adapters |
 | **macOS** | Foundation / Combine / Darwin runtime | Target Apple SDK; no independent library floor declared | Bundled SDK/runtime; developer SDK/host 27.2 | Files/URLs, observation, Task-based autosave/sync scheduling and system facilities | `platforms/macos/*.swift` |
 | **macOS** | WebKit | Target Apple SDK; macOS 13 project baseline | Bundled framework; developer SDK 27.2 | Native HTML reading view | macOS reading/study presentation |

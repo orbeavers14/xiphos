@@ -1,5 +1,14 @@
 # Shared core: remaining scope
 
+Legacy settings/session checkpoint (2026-11-01, `4bfb38c`): shared read-only snapshots,
+strict all-tab conversion, explicit module mapping, exact-original migration
+packages/restore and Mac preview/export/next-launch integration now exist. See
+[the migration contract](legacy-settings-session-migration.md). Unknown settings,
+comments and encodings remain recoverable; unsupported appearance/locale values
+are disclosed as preserved, not applied. Representative real-user/cross-host and
+whole-parity acceptance remain open. This supersedes the earlier migration TODO.
+
+
 Priority checkpoint (2026-11-01): [native BibleSync controls and two independent
 local clients](native-sync.md) are checked at `526cd1c`; physical LAN/sleep/interface
 acceptance remains open. [Legacy repository review](legacy-repository-import.md)
@@ -78,7 +87,7 @@ This direction supersedes earlier next-step notes that resume devotionals.
 | Library and installation | Shared catalogs/planning, staged local/HTTPS installs, ordered source/cache storage, maintenance and credential-free legacy HTTPS review | Favorites/hiding/grouping, broader legacy source compatibility, capable-SDK positive indexing/encrypted correctness and cross-host acceptance; future licensed providers |
 | Bookmarks and annotations | Owned XML hierarchy/order/colors, revision-checked edits, tag maps, shared highlight priority and verse-note storage | AndBible import, remaining annotation composition and complete compatibility/workflow acceptance |
 | Writing and editing | Revision-checked documents, shared rich formatting/undo, supported SWORD module edits and recovery drafts | Journal/prayer organization, remaining document links/format round trips and full workflow acceptance |
-| Settings and sessions | Scoped option/profile storage, versioned native all-tab capture/restore and checksummed recovery | Broader legacy profile/session migration, lossless backup/restore, unknown-field behavior and cross-host acceptance |
+| Settings and sessions | Scoped profile storage, native all-tab capture/restore/recovery, explicit legacy settings/tabs/modops conversion with exact source packages/restore and module mapping | Representative real profiles, complete user-directory/assets migration, unsupported appearance controls and cross-host acceptance |
 | Sync and external actions | Shared BibleSync policy/safe networking, native Mac routing and two independent loopback clients; internal URI routing subset | Physical LAN/sleep/interface interoperability, group routing/presence/chat, IPC and remaining semantic actions; personal data sync is future scope |
 
 Native controls, accessibility, clipboard/print dialogs, window layout and platform

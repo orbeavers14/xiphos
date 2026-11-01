@@ -7,6 +7,51 @@ and pushes are authorized; preserve unrelated changes, never force-push.
 
 ## Current checked source and active work
 
+Latest implementation: `4bfb38c`, reversible selected-file legacy settings/session
+migration. See [the workflow and limits](legacy-settings-session-migration.md).
+Sources are copied byte-for-byte into checksummed packages; known core settings
+and all saved tabs convert through temporary sessions on the single FIFO owner.
+The Mac review/export/backup/restore and optional next-launch selection are wired.
+Unsupported appearance/locale/collections remain original data, not claimed as
+implemented native preferences. Original GTK3 and user source files are unchanged.
+
+Actual checks (same macOS27.2, AppleClang21/Swift6.4.2, SWORD1.9.0.3916 host):
+
+- Full native baseline:240 passes plus one existing index skip,241 registered,
+  284.52s. Full source build completed. Final unknown-value bound/UI wording and
+  test-owner sequencing refinements then rebuilt app/migration/core tests;
+  focused5/5,3.71s. No full rerun after these final refinements.
+- Portable Linux models/core on Mac:186 registered,183 passes and two expected
+  skips (index and networking-OFF pair); one local HTTPS fixture could not bind
+  under restricted execution. That fixture was rerun with loopback permission:
+  1/1,1.72s. Initial full run142.90s; no clean full rerun claimed. Final migration
+  scoped3/3,2.80s. This is not physical Fedora/GTK desktop or MSVC validation.
+- Final scoped migration ASan/UBSan3/3,4.04s (detect_leaks=0), TSan3/3,5.89s.
+  Includes fixture setup and fresh-process restoration; third-party SDK coverage
+  is not complete. Test workers are sequential: the C++ owner is destroyed before
+  the C ABI owner opens. No new SDK owner is introduced into the application.
+- Live disposable original-prose UI: selected settings/tabs/modops, reviewed two
+  converted windows and preserved settings, saved package, explicitly exported a
+  native session for next launch, restored originals to a new private folder.
+  All three restored files matched original bytes. Clean quit/restart actually
+  opened legacy-1 (Text/John3:16 with Notes/Dictionary) and legacy-2
+  (TextAlt/John3:17), then quit normally. Final cosmetic summary/top alignment is
+  covered by the subsequent native build/model checks, not a repeated live capture.
+- C11 pedantic header, diff and documentation-link/two dependency-table checks
+  passed. Graphify local-only refresh:672 code files,12,592 nodes,34,131 edges,
+  380 communities; source hashes unchanged, no paid AI. Logs use
+  `build/legacy-migration-*`. No hosted builds or public Bible downloads.
+
+Remaining acceptance: representative real-user profiles, physical Windows/Fedora,
+full user-directory/document/assets migration and unsupported native appearance/
+collection workflows. Existing pane/layout rendering gaps remain separate from
+converted core state. No whole F05/F29/F37 parity acceptance increase. Next core
+priority: capable-SDK positive index creation and encrypted-module correctness,
+then remaining annotations/import compatibility; physical sync LAN/sleep gates
+also remain open. Data sync/Handoff/mobile/visionOS are future roadmap scope.
+
+## Earlier sync and source-review checkpoint
+
 Latest priority checkpoints: `526cd1c` native sync controls/reader routing and
 real-SDK isolated two-client validation; `9a78747` read-only legacy source preview,
 owned C/FIFO transport and native review-to-disabled-source setup. See

@@ -1,5 +1,14 @@
 # Modernization status and acceptance
 
+Legacy settings/session checkpoint (2026-11-01, `4bfb38c`): shared read-only snapshots,
+strict all-tab conversion, explicit module mapping, exact-original migration
+packages/restore and Mac preview/export/next-launch integration now exist. See
+[the migration contract](legacy-settings-session-migration.md). Unknown settings,
+comments and encodings remain recoverable; unsupported appearance/locale values
+are disclosed as preserved, not applied. Representative real-user/cross-host and
+whole-parity acceptance remain open. This supersedes the earlier migration TODO.
+
+
 Priority checkpoint (2026-11-01): [native BibleSync controls and two independent
 local clients](native-sync.md) are checked at `526cd1c`; physical LAN/sleep/interface
 acceptance remains open. [Legacy repository review](legacy-repository-import.md)
