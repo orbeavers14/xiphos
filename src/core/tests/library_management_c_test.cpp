@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+#include "xiphos/core/c_api.h"
+#include "xiphos/core/repository_store.hpp"
+#include <chrono>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <new>
+#include <stdexcept>
+#include <thread>
+using namespace xiphos::core;
+namespace fs=std::filesystem;
+static thread_local bool watching=false;static thread_local int fail_after=-1;static thread_local std::size_t allocations=0;
+void *operator new(std::size_t n){if(watching){++allocations;if(fail_after==0)throw std::bad_alloc();if(fail_after>0)--fail_after;}if(auto p=std::malloc(n?n:1))return p;throw std::bad_alloc();}
+void *operator new[](std::size_t n){return ::operator new(n);}void operator delete(void *p)noexcept{std::free(p);}void operator delete[](void *p)noexcept{std::free(p);}void operator delete(void *p,std::size_t)noexcept{std::free(p);}void operator delete[](void *p,std::size_t)noexcept{std::free(p);}
+static void check(bool ok,const char *why){if(!ok)throw std::runtime_error(why);}
+template<class F>static void rejects(F f){try{f();}catch(const std::exception &){return;}throw std::runtime_error("Expected rejection");}
+static xc_status wait(xc_request *r){auto until=std::chrono::steady_clock::now()+std::chrono::seconds(30);xc_status s;while((s=xc_request_poll(r))==XC_PENDING){check(std::chrono::steady_clock::now()<until,"Install deadline");std::this_thread::sleep_for(std::chrono::milliseconds(1));}return s;}
+static std::string bytes(const fs::path &p){std::ifstream in(p,std::ios::binary);return {std::istreambuf_iterator<char>(in),{}};}
+
+int main(int argc,char **argv){try{
+ check(argc==2,"Fixture path required");auto root=fs::u8path(argv[1]);check(root.filename()=="library-management-c-fixture","Named fixture only");fs::remove_all(root);fs::create_directories(root/"library/mods.d");const auto file=(root/"repositories").u8string();
+ RepositorySnapshot s;s.repositories.push_back({{"original","example.invalid","/raw","/packages"},"Original",true,std::nullopt,0});auto encoded=serialize_repository_snapshot(s);xc_repository_snapshot *input=nullptr;check(xc_repository_snapshot_parse(encoded.data(),encoded.size(),&input)==XC_OK,"Parse C snapshot");xc_saved_repository repo{};check(xc_repository_snapshot_get(input,0,&repo)==XC_OK&&std::string(repo.host)=="example.invalid","Owned endpoint view");size_t required=0;check(xc_repository_snapshot_serialize(input,nullptr,0,&required)==XC_OK&&required==encoded.size(),"Size export");std::string exported(required,' ');check(xc_repository_snapshot_serialize(input,exported.data(),exported.size(),&required)==XC_OK&&exported==encoded,"Exact export");
+ xc_worker *worker=nullptr;check(xc_worker_open((root/"library").u8string().c_str(),&worker)==XC_OK,"C worker");xc_request *request=nullptr;
+ for(int i=0;i<2;++i){fail_after=i;watching=true;auto status=xc_worker_save_repositories(worker,file.c_str(),nullptr,input,&request);watching=false;fail_after=-1;check(status!=XC_OK&&!request&&!fs::exists(file),"Observer allocation failure admits no write");}
+ check(xc_worker_save_repositories(worker,file.c_str(),nullptr,input,&request)==XC_OK,"C save admitted");xc_repository_snapshot_release(input);input=nullptr;
+ auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(30);while(!fs::exists(file)){check(std::chrono::steady_clock::now()<deadline,"Save deadline");std::this_thread::sleep_for(std::chrono::milliseconds(1));}std::this_thread::sleep_for(std::chrono::milliseconds(50));watching=true;allocations=0;auto status=xc_request_poll(request);watching=false;check(status==XC_OK&&allocations==0,"Committed repository polling allocates nothing");auto saved=xc_request_take_repository_snapshot(request);check(saved&&!xc_request_take_repository_snapshot(request),"Take once");xc_request_release(request);auto revision=std::string(xc_repository_snapshot_revision(saved));check(revision.size()==64,"Saved revision");
+ check(xc_worker_read_repositories(worker,file.c_str(),&request)==XC_OK&&wait(request)==XC_OK,"Read C profile");auto read=xc_request_take_repository_snapshot(request);xc_request_release(request);xc_repository_snapshot_release(saved);check(xc_repository_snapshot_count(read)==1&&std::string(xc_repository_snapshot_revision(read))==revision,"Result survives worker/request/input teardown");xc_repository_snapshot_release(read);
+ const auto recovery=(root/"recovery").u8string();xc_recovery_draft draft{"draft","Original",0,nullptr,nullptr,nullptr,nullptr,"","Original dirty Ω source",0,0};xc_recovery_snapshot *input_recovery=nullptr;check(xc_recovery_snapshot_create(nullptr,&draft,1,&input_recovery)==XC_OK,"Create C recovery");
+ for(int i=0;i<2;++i){fail_after=i;watching=true;auto status=xc_worker_save_recovery(worker,recovery.c_str(),nullptr,input_recovery,&request);watching=false;fail_after=-1;check(status!=XC_OK&&!request&&!fs::exists(recovery),"Recovery observer allocation precedes writes");}
+ check(xc_worker_save_recovery(worker,recovery.c_str(),nullptr,input_recovery,&request)==XC_OK,"Recovery admission");xc_recovery_snapshot_release(input_recovery);watching=true;allocations=0;fail_after=0;auto recovery_status=wait(request);watching=false;fail_after=-1;check(recovery_status==XC_OK&&allocations==0,"Committed recovery polling does not allocate");auto recovered=xc_request_take_recovery_snapshot(request);xc_request_release(request);
+ const char *speakers[]={"original-speaker"};xc_sync_settings settings{1,1,1,1,1,nullptr,nullptr,speakers,1};check(xc_worker_configure_sync(worker,&settings,&request)==XC_OK&&wait(request)==XC_OK,"C configure sync");xc_request_release(request);std::string reference="John 3:16";xc_sync_navigation navigation{"original-speaker","Original",reference.c_str(),"2",nullptr};check(xc_worker_plan_incoming_sync(worker,&navigation,&request)==XC_OK,"Sync plan admitted");reference="Changed after admission";watching=true;allocations=0;fail_after=0;auto sync_status=wait(request);watching=false;fail_after=-1;check(sync_status==XC_OK&&allocations==0,"Sync polling does not allocate");auto decision=xc_request_take_sync_decision(request);xc_request_release(request);xc_worker_close(worker);
+ xc_sync_result sync_result{};check(xc_sync_decision_get(decision,&sync_result)==XC_OK&&sync_result.route==2&&std::string(sync_result.navigation.reference)=="John 3:16","Copied sync result survives input mutation and worker teardown");xc_sync_decision_release(decision);xc_recovery_draft recovered_draft{};check(xc_recovery_snapshot_draft(recovered,0,&recovered_draft)==XC_OK&&std::string(recovered_draft.text)=="Original dirty Ω source"&&!xc_recovery_snapshot_from_previous(recovered),"Owned recovery source survives worker teardown");xc_native_session *session=nullptr;check(xc_recovery_snapshot_copy_session(recovered,&session)==XC_OK&&xc_native_session_tab_count(session)==0,"Explicit recovery session copy");xc_native_session_release(session);xc_recovery_snapshot_release(recovered);
+ fs::remove_all(root);std::cout<<"Library management C checks passed\n";return 0;
+ }catch(const std::exception &e){watching=false;std::cerr<<e.what()<<'\n';return 1;}}

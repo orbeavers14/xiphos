@@ -6,6 +6,9 @@
 #include "annotations.hpp"
 #include "editable_document.hpp"
 #include "remote_install.hpp"
+#include "repository_store.hpp"
+#include "recovery.hpp"
+#include "sync.hpp"
 #include <cstdint>
 #include <future>
 #include <memory>
@@ -174,6 +177,15 @@ public:
   std::future<ModuleEditEntry> save_module_edit(StudyTab tab,ModuleEditTarget target,std::string expected,std::string text,bool erase=false);
   std::future<EditableDocument> read_editable_document(StudyTab tab,std::string path);
   std::future<EditableDocument> save_editable_document(StudyTab tab,std::string path,std::optional<std::string> expected_revision,std::string text);
+  std::future<ModuleMaintenancePreview> preview_module_maintenance(std::string module);
+  std::future<ModuleMaintenanceResult> maintain_module(ModuleMaintenanceRequest request);
+  std::future<void> configure_sync(SyncSettings settings);
+  std::future<SyncDecision> plan_incoming_sync(SyncNavigation navigation);
+  std::future<bool> can_transmit_sync(bool received_navigation);
+  std::future<RecoverySnapshot> read_recovery(std::string path);
+  std::future<RecoverySnapshot> save_recovery(std::string path,std::optional<std::string> expected,RecoverySnapshot snapshot);
+  std::future<RepositorySnapshot> read_repositories(std::string path);
+  std::future<RepositorySnapshot> save_repositories(std::string path,std::optional<std::string> expected,RepositorySnapshot snapshot);
   std::future<NativeSessionSnapshot> read_native_session(std::string path);
   std::future<NativeSessionSnapshot> capture_native_session(std::vector<NativeTabCapture> tabs,std::optional<std::string> active_key = {});
   std::future<NativeSessionSnapshot> save_native_session(std::string path,std::vector<NativeTabCapture> tabs,std::optional<std::string> active_key = {});

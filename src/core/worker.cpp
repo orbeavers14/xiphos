@@ -31,6 +31,7 @@ template<class T> std::future<T> rejected_study_link() {
 struct StudyWorker::Impl {
   struct State {
     Reader reader;
+    SyncSettings sync;
     std::map<StudyTab, std::unique_ptr<StudySession>> tabs;
     StudyTab next_tab = 1;
     explicit State(const std::string &root) : reader(root) {}
@@ -683,6 +684,36 @@ std::future<EditableDocument> StudyWorker::read_editable_document(StudyTab tab,s
 std::future<EditableDocument> StudyWorker::save_editable_document(StudyTab tab,std::string path,std::optional<std::string> expected,std::string text) {
   try{selected_profile_path(path);if(!editable_document_text(text)||(expected&&!editable_document_revision(*expected)))throw std::invalid_argument("Invalid editor document arguments");}catch(...){return selected_profile_rejection<EditableDocument>();}
   return impl_->submit([tab,path=std::move(path),expected=std::move(expected),text=std::move(text)](Impl::State &s){(void)s.tab(tab);return xiphos::core::save_editable_document(path,expected,text);});
+}
+std::future<ModuleMaintenancePreview> StudyWorker::preview_module_maintenance(std::string module){
+ if(module.empty()||module.size()>4096||!editable_document_text(module))return selected_profile_rejection<ModuleMaintenancePreview>();
+ return impl_->submit([module=std::move(module)](Impl::State &s){return s.reader.preview_module_maintenance(module);});
+}
+std::future<ModuleMaintenanceResult> StudyWorker::maintain_module(ModuleMaintenanceRequest request){
+ if(!module_maintenance_arguments(request))return selected_profile_rejection<ModuleMaintenanceResult>();
+ return impl_->submit([request=std::move(request)](Impl::State &s){
+  std::map<StudyTab,std::pair<StudySessionState,SessionCapabilities>> states;
+  for(const auto &t:s.tabs){auto state=t.second->capture_state();if(request.action==ModuleMaintenanceAction::remove){
+   const auto &m=request.module;bool used=state.reading&&(state.reading->module==m||state.reading->commentary==m);used=used||(state.dictionary&&state.dictionary->module==m)||(state.book&&state.book->requested.module==m);
+   for(const auto &h:state.history)used=used||h.module==m||h.commentary==m;for(const auto &h:state.dictionary_history)used=used||h.module==m;
+   if(state.parallel)used=used||state.parallel->control_module==m||std::find(state.parallel->modules.begin(),state.parallel->modules.end(),m)!=state.parallel->modules.end();
+   if(used)throw std::invalid_argument("Module is in use by a tab or its history; close that tab before removal");
+  }states.emplace(t.first,std::make_pair(std::move(state),t.second->capabilities()));}
+  return s.reader.maintain_module(request,[&]{std::map<StudyTab,std::unique_ptr<StudySession>> replacement;for(const auto &t:states){auto session=StudySession::from_state(s.reader,t.second.first,t.second.second);session->continue_search_serial(*s.tabs.at(t.first));replacement.emplace(t.first,std::move(session));}s.tabs.swap(replacement);});
+ });
+}
+std::future<void> StudyWorker::configure_sync(SyncSettings settings){try{validate_sync_settings(settings);}catch(...){return selected_profile_rejection<void>();}return impl_->submit([settings=std::move(settings)](Impl::State &s)mutable{s.sync=std::move(settings);});}
+std::future<SyncDecision> StudyWorker::plan_incoming_sync(SyncNavigation navigation){try{validate_sync_navigation(navigation);}catch(...){return selected_profile_rejection<SyncDecision>();}return impl_->submit([navigation=std::move(navigation)](Impl::State &s){auto resolved=s.reader.resolve_module_name(navigation.module);return plan_sync_navigation(s.sync,navigation,resolved.module);});}
+std::future<bool> StudyWorker::can_transmit_sync(bool received){return impl_->submit([received](Impl::State &s){return sync_transmit_allowed(s.sync,received);});}
+std::future<RecoverySnapshot> StudyWorker::read_recovery(std::string path){try{selected_profile_path(path);}catch(...){return selected_profile_rejection<RecoverySnapshot>();}return impl_->submit([path=std::move(path)](Impl::State &){return read_recovery_snapshot(path);});}
+std::future<RecoverySnapshot> StudyWorker::save_recovery(std::string path,std::optional<std::string> expected,RecoverySnapshot snapshot){try{selected_profile_path(path);if(expected&&!editable_document_revision(*expected))throw std::invalid_argument("Invalid recovery revision");(void)serialize_recovery_snapshot(snapshot);}catch(...){return selected_profile_rejection<RecoverySnapshot>();}return impl_->submit([path=std::move(path),expected=std::move(expected),snapshot=std::move(snapshot)](Impl::State &){return save_recovery_snapshot(path,expected,snapshot);});}
+std::future<RepositorySnapshot> StudyWorker::read_repositories(std::string path) {
+ try{selected_profile_path(path);}catch(...){return selected_profile_rejection<RepositorySnapshot>();}
+ return impl_->submit([path=std::move(path)](Impl::State &){return read_repository_snapshot(path);});
+}
+std::future<RepositorySnapshot> StudyWorker::save_repositories(std::string path,std::optional<std::string> expected,RepositorySnapshot snapshot) {
+ try{selected_profile_path(path);if(expected&&!editable_document_revision(*expected))throw std::invalid_argument("Invalid repository revision");(void)serialize_repository_snapshot(snapshot);}catch(...){return selected_profile_rejection<RepositorySnapshot>();}
+ return impl_->submit([path=std::move(path),expected=std::move(expected),snapshot=std::move(snapshot)](Impl::State &){return save_repository_snapshot(path,expected,snapshot);});
 }
 std::future<NativeSessionSnapshot> StudyWorker::read_native_session(std::string path) {
   try{selected_profile_path(path);}catch(...){return selected_profile_rejection<NativeSessionSnapshot>();}

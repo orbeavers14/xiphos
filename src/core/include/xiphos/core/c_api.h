@@ -398,6 +398,44 @@ void xc_remote_install_result_release(xc_remote_install_result *result);
  * All strings copy before admission; preallocated results take once after OK,
  * survive worker/request teardown, and lend strings until result release.
  * No network, archive extraction or native installer UI is added by these APIs. */
+/* Repository profile snapshots own endpoint/catalog metadata only. No network
+ * access or acknowledgement is implied. Parse/serialize are explicit caller
+ * operations. Getters borrow until release; async inputs copy before return.
+ * Save requires the last revision, NULL means create only. */
+typedef struct xc_repository_snapshot xc_repository_snapshot;
+typedef struct {const char *id,*host,*catalog_directory,*package_directory,*name;unsigned port;int enabled,cached;uint64_t fetched_at;} xc_saved_repository;
+xc_status xc_repository_snapshot_create(xc_repository_snapshot **out);
+xc_status xc_repository_snapshot_put(xc_repository_snapshot *snapshot,const xc_https_repository *endpoint,const char *name,int enabled);
+xc_status xc_repository_snapshot_remove(xc_repository_snapshot *snapshot,const char *id);
+xc_status xc_repository_snapshot_move(xc_repository_snapshot *snapshot,const char *id,size_t position);
+xc_status xc_repository_snapshot_cache(xc_repository_snapshot *snapshot,const xc_remote_catalog *catalog,uint64_t fetched_at);
+xc_status xc_repository_snapshot_copy_catalog(const xc_repository_snapshot *snapshot,size_t index,xc_remote_catalog **out);
+xc_status xc_repository_snapshot_parse(const char *bytes,size_t size,xc_repository_snapshot **out);
+xc_status xc_repository_snapshot_serialize(const xc_repository_snapshot *snapshot,char *buffer,size_t capacity,size_t *required);
+size_t xc_repository_snapshot_count(const xc_repository_snapshot *snapshot);
+const char *xc_repository_snapshot_revision(const xc_repository_snapshot *snapshot);
+xc_status xc_repository_snapshot_get(const xc_repository_snapshot *snapshot,size_t index,xc_saved_repository *out);
+size_t xc_repository_snapshot_item_count(const xc_repository_snapshot *snapshot,size_t repository);
+xc_status xc_repository_snapshot_item(const xc_repository_snapshot *snapshot,size_t repository,size_t index,xc_library_item *out);
+xc_status xc_worker_read_repositories(xc_worker *worker,const char *path,xc_request **out);
+xc_status xc_worker_save_repositories(xc_worker *worker,const char *path,const char *expected_revision,const xc_repository_snapshot *snapshot,xc_request **out);
+xc_repository_snapshot *xc_request_take_repository_snapshot(xc_request *request);
+void xc_repository_snapshot_release(xc_repository_snapshot *snapshot);
+/* Maintenance action 0 remove,1 set cipher configuration,2 build index,3 delete
+ * index. Keys are explicit SWORD configuration, not verified license grants.
+ * Remove rejects tabs/history that still use the selected module. */
+typedef struct xc_module_maintenance_preview xc_module_maintenance_preview;
+typedef struct xc_module_maintenance_result xc_module_maintenance_result;
+typedef struct {const char *module,*revision;int cipher_declared,indexed;} xc_module_maintenance_info;
+typedef struct {const char *module,*revision;int action,indexed;} xc_module_maintenance_done;
+xc_status xc_worker_preview_module_maintenance(xc_worker *worker,const char *module,xc_request **out);
+xc_status xc_worker_maintain_module(xc_worker *worker,const char *module,const char *revision,int action,const char *cipher_key,xc_request **out);
+xc_module_maintenance_preview *xc_request_take_module_maintenance_preview(xc_request *request);
+xc_module_maintenance_result *xc_request_take_module_maintenance_result(xc_request *request);
+xc_status xc_module_maintenance_preview_get(const xc_module_maintenance_preview *preview,xc_module_maintenance_info *out);
+xc_status xc_module_maintenance_result_get(const xc_module_maintenance_result *result,xc_module_maintenance_done *out);
+void xc_module_maintenance_preview_release(xc_module_maintenance_preview *preview);
+void xc_module_maintenance_result_release(xc_module_maintenance_result *result);
 typedef struct xc_local_install_preview xc_local_install_preview;
 typedef struct {const char *module,*source_revision,*destination_revision,*source_version,*installed_version;int decision;} xc_local_install_info;
 typedef struct {const char *module,*version,*source_revision,*destination_revision;int replaced;} xc_local_install_done;
@@ -1150,6 +1188,34 @@ void xc_editable_document_release(xc_editable_document *document);
  * Envelopes allocate before admission; committed result polling does not allocate.
  * Returned strings remain owned by their handle; release after use. */
 typedef struct xc_native_session xc_native_session;
+/* Recovery is explicit profile storage, not source Save or tab restoration.
+ * Snapshots own all source text. Draft/session getters borrow or explicitly copy.
+ * A recovered .previous snapshot cannot silently replace a damaged primary. */
+typedef struct xc_recovery_snapshot xc_recovery_snapshot;
+typedef struct {const char *id,*title;int target;const char *path,*module,*reference,*origin_revision,*saved_text,*text;size_t selection_start,selection_end;} xc_recovery_draft;
+xc_status xc_recovery_snapshot_create(const xc_native_session *session,const xc_recovery_draft *drafts,size_t count,xc_recovery_snapshot **out);
+xc_status xc_recovery_snapshot_parse(const char *bytes,size_t size,xc_recovery_snapshot **out);
+size_t xc_recovery_snapshot_count(const xc_recovery_snapshot *snapshot);
+const char *xc_recovery_snapshot_revision(const xc_recovery_snapshot *snapshot);
+int xc_recovery_snapshot_from_previous(const xc_recovery_snapshot *snapshot);
+xc_status xc_recovery_snapshot_draft(const xc_recovery_snapshot *snapshot,size_t index,xc_recovery_draft *out);
+xc_status xc_recovery_snapshot_copy_session(const xc_recovery_snapshot *snapshot,xc_native_session **out);
+xc_status xc_worker_read_recovery(xc_worker *worker,const char *path,xc_request **out);
+xc_status xc_worker_save_recovery(xc_worker *worker,const char *path,const char *expected_revision,const xc_recovery_snapshot *snapshot,xc_request **out);
+xc_recovery_snapshot *xc_request_take_recovery_snapshot(xc_request *request);
+void xc_recovery_snapshot_release(xc_recovery_snapshot *snapshot);
+/* Shared application sync policy. No sockets or wire authentication are added.
+ * Only authenticated/validated BibleSync adapter events may enter this boundary.
+ * Startup remains disabled. Settings and all strings copy before queueing. */
+typedef struct {int mode,listen,private_personal,direct_navigation,group_tabs;const char *group,*domain;const char *const *allowed_speakers;size_t speaker_count;} xc_sync_settings;
+typedef struct {const char *speaker,*module,*reference,*group,*domain;} xc_sync_navigation;
+typedef struct xc_sync_decision xc_sync_decision;
+typedef struct {int route,tab_index;xc_sync_navigation navigation;} xc_sync_result;
+xc_status xc_worker_configure_sync(xc_worker *worker,const xc_sync_settings *settings,xc_request **out);
+xc_status xc_worker_plan_incoming_sync(xc_worker *worker,const xc_sync_navigation *navigation,xc_request **out);
+xc_sync_decision *xc_request_take_sync_decision(xc_request *request);
+xc_status xc_sync_decision_get(const xc_sync_decision *decision,xc_sync_result *out);
+void xc_sync_decision_release(xc_sync_decision *decision);
 typedef struct xc_native_session_text xc_native_session_text;
 typedef struct xc_restored_session xc_restored_session;
 typedef struct {uint64_t tab;const char *key;xc_tab_visibility visibility;int commentary_showing,parallel_showing;const char *host_state;} xc_native_tab_capture;

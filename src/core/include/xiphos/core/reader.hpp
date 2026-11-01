@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
+#include "module_maintenance.hpp"
 #include "bookmark_tags.hpp"
 #include "module_edit.hpp"
 #include "library.hpp"
@@ -52,6 +53,8 @@ public:
   Reader &operator=(const Reader &) = delete;
   const std::vector<Module> &modules() const;
   std::string transfer_destination_revision(const std::string &workspace_parent);
+  ModuleMaintenancePreview preview_module_maintenance(const std::string &module);
+  ModuleMaintenanceResult maintain_module(const ModuleMaintenanceRequest &request,const std::function<void()> &refresh);
   LocalInstallPreview prepare_local_install(const std::string &source,const std::string &module);
   // Serialized SDK owner; refresh must stage/publish all tab caches or throw.
   LocalInstallResult install_local_module(const LocalInstallRequest &request,const std::function<void()> &refresh,const std::function<void()> &before_commit = {});

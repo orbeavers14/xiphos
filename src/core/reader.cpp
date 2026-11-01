@@ -856,3 +856,13 @@ LocalInstallResult Reader::install_local_module(const LocalInstallRequest &reque
  transaction.finish();return prepared;
 }
 }
+
+namespace xiphos::core {
+ModuleMaintenancePreview Reader::preview_module_maintenance(const std::string &module){std::lock_guard<std::mutex> lock(impl_->mutex);return detail::LocalInstallStorage(impl_->root,module).maintenance_preview();}
+ModuleMaintenanceResult Reader::maintain_module(const ModuleMaintenanceRequest &request,const std::function<void()> &refresh){
+ detail::LocalInstallStorage transaction(impl_->root,request.module);auto prepared=transaction.stage_maintenance(request);const auto root=impl_->root;
+ transaction.install();std::unique_ptr<Reader> replacement;
+ try{replacement=std::make_unique<Reader>(root);if(detail::local_library_revision(root,std::filesystem::u8path(root).parent_path().u8string())!=prepared.revision)throw std::runtime_error("Reloaded maintenance differs");impl_.swap(replacement->impl_);try{refresh();}catch(...){impl_.swap(replacement->impl_);throw;}}
+ catch(...){replacement.reset();transaction.rollback();throw;}transaction.finish();return prepared;
+}
+}

@@ -41,6 +41,8 @@ struct xc_editor_buffer {xiphos::core::EditorBuffer value;explicit xc_editor_buf
 struct xc_rich_document {xiphos::core::RichDocument value;std::string html,text;};
 struct xc_module_edit {xiphos::core::ModuleEditEntry value;};
 struct xc_editable_document {xiphos::core::EditableDocument value;};
+struct xc_recovery_snapshot {xiphos::core::RecoverySnapshot value;};
+struct xc_sync_decision {xiphos::core::SyncDecision value;};
 struct xc_native_session {xiphos::core::NativeSessionSnapshot value;};
 struct xc_native_session_text {std::string value;};
 struct xc_restored_session {xiphos::core::RestoredSession value;};
@@ -113,6 +115,9 @@ struct xc_entry { xiphos::core::Entry value; };
 struct xc_search_html_export {xiphos::core::SearchHtmlExport value;};
 struct xc_search_text_export {xiphos::core::SearchTextExport value;};
 struct xc_worker { xiphos::core::StudyWorker value; explicit xc_worker(const char *root) : value(root ? root : "") {} };
+struct xc_repository_snapshot {xiphos::core::RepositorySnapshot value;};
+struct xc_module_maintenance_preview {xiphos::core::ModuleMaintenancePreview value;};
+struct xc_module_maintenance_result {xiphos::core::ModuleMaintenanceResult value;};
 struct xc_local_install_preview {xiphos::core::LocalInstallPreview value;};
 struct xc_local_install_result {xiphos::core::LocalInstallResult value;};
 struct xc_library_catalog {xiphos::core::LibraryCatalog value;};
@@ -140,11 +145,16 @@ struct xc_request {
   std::unique_ptr<xc_remote_catalog> remote_catalog;
   std::unique_ptr<xc_remote_install_result> remote_install_result;
   std::unique_ptr<xc_transfer_control> transfer_control;
+  std::unique_ptr<xc_repository_snapshot> repository_snapshot;
+  std::unique_ptr<xc_module_maintenance_preview> module_maintenance_preview;
+  std::unique_ptr<xc_module_maintenance_result> module_maintenance_result;
   std::unique_ptr<xc_local_install_preview> local_install_preview;
   std::unique_ptr<xc_local_install_result> local_install_result;
   std::unique_ptr<xc_library_catalog> library_catalog;
   std::unique_ptr<xc_module_edit> module_edit;
   std::unique_ptr<xc_editable_document> editable_document;
+  std::unique_ptr<xc_recovery_snapshot> recovery_snapshot;
+  std::unique_ptr<xc_sync_decision> sync_decision;
   std::unique_ptr<xc_native_session> native_session;
   std::unique_ptr<xc_restored_session> restored_session;
   std::unique_ptr<xc_reference_list> references;
@@ -239,6 +249,11 @@ struct xc_request {
   }
   void store(xiphos::core::RemoteCatalog v){adopt_remote_catalog(*remote_catalog,std::move(v));}
   void store(xiphos::core::RemoteInstallResult v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>,"Committed remote result publication must not allocate");adopt_remote_catalog(remote_install_result->catalog,std::move(v.catalog));remote_install_result->installed.value=std::move(v.installed);remote_install_result->archive_sha256=std::move(v.archive_sha256);remote_install_result->downloaded=v.downloaded;}
+  void store(xiphos::core::RecoverySnapshot v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);recovery_snapshot->value=std::move(v);}
+  void store(xiphos::core::SyncDecision v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);sync_decision->value=std::move(v);}
+  void store(xiphos::core::RepositorySnapshot v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);repository_snapshot->value=std::move(v);}
+  void store(xiphos::core::ModuleMaintenancePreview v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);module_maintenance_preview->value=std::move(v);}
+  void store(xiphos::core::ModuleMaintenanceResult v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);module_maintenance_result->value=std::move(v);}
   void store(xiphos::core::LocalInstallPreview v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>,"Preview publication must not allocate");local_install_preview->value=std::move(v);}
   void store(xiphos::core::LocalInstallResult v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>,"Installed result publication must not allocate");local_install_result->value=std::move(v);}
   void store(xiphos::core::LibraryCatalog v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>,"Catalog publication must not allocate");library_catalog->value=std::move(v);}
@@ -401,6 +416,11 @@ template<class T> struct Request final : xc_request {
   Request() {
     if constexpr (std::is_same_v<T,xiphos::core::RemoteCatalog>){remote_catalog=std::make_unique<xc_remote_catalog>();transfer_control=std::make_unique<xc_transfer_control>();}
     if constexpr (std::is_same_v<T,xiphos::core::RemoteInstallResult>){remote_install_result=std::make_unique<xc_remote_install_result>();transfer_control=std::make_unique<xc_transfer_control>();}
+    if constexpr (std::is_same_v<T,xiphos::core::RecoverySnapshot>) recovery_snapshot=std::make_unique<xc_recovery_snapshot>();
+    if constexpr (std::is_same_v<T,xiphos::core::SyncDecision>) sync_decision=std::make_unique<xc_sync_decision>();
+    if constexpr (std::is_same_v<T,xiphos::core::RepositorySnapshot>) repository_snapshot=std::make_unique<xc_repository_snapshot>();
+    if constexpr (std::is_same_v<T,xiphos::core::ModuleMaintenancePreview>) module_maintenance_preview=std::make_unique<xc_module_maintenance_preview>();
+    if constexpr (std::is_same_v<T,xiphos::core::ModuleMaintenanceResult>) module_maintenance_result=std::make_unique<xc_module_maintenance_result>();
     if constexpr (std::is_same_v<T,xiphos::core::LocalInstallPreview>) local_install_preview=std::make_unique<xc_local_install_preview>();
     if constexpr (std::is_same_v<T,xiphos::core::LocalInstallResult>) local_install_result=std::make_unique<xc_local_install_result>();
     if constexpr (std::is_same_v<T,xiphos::core::LibraryCatalog>) library_catalog=std::make_unique<xc_library_catalog>();
@@ -889,6 +909,31 @@ const xc_remote_catalog *xc_remote_install_result_next_catalog(const xc_remote_i
 const char *xc_remote_install_result_archive_sha256(const xc_remote_install_result *r){return r?r->archive_sha256.c_str():nullptr;}
 uint64_t xc_remote_install_result_downloaded(const xc_remote_install_result *r){return r?r->downloaded:0;}
 void xc_remote_install_result_release(xc_remote_install_result *r){delete r;}
+xc_status xc_repository_snapshot_create(xc_repository_snapshot **out){if(out)*out=nullptr;if(!out)return XC_INVALID_ARGUMENT;try{*out=new xc_repository_snapshot;return XC_OK;}catch(...){return failure();}}
+xc_status xc_repository_snapshot_put(xc_repository_snapshot *p,const xc_https_repository *r,const char *name,int enabled){if(!p||!r||!bounded_image_c_text(r->id,128)||!bounded_image_c_text(r->host,253)||!bounded_image_c_text(r->catalog_directory,4096)||!bounded_image_c_text(r->package_directory,4096)||!bounded_image_c_text(name,4096)||r->port>65535||(enabled!=0&&enabled!=1))return XC_INVALID_ARGUMENT;try{p->value=xiphos::core::put_repository(p->value,{r->id,r->host,r->catalog_directory,r->package_directory,static_cast<std::uint16_t>(r->port)},name,enabled!=0);return XC_OK;}catch(...){return failure();}}
+xc_status xc_repository_snapshot_remove(xc_repository_snapshot *p,const char *id){if(!p||!bounded_image_c_text(id,128))return XC_INVALID_ARGUMENT;try{p->value=xiphos::core::remove_repository(p->value,id);return XC_OK;}catch(...){return failure();}}
+xc_status xc_repository_snapshot_move(xc_repository_snapshot *p,const char *id,size_t position){if(!p||!bounded_image_c_text(id,128))return XC_INVALID_ARGUMENT;try{p->value=xiphos::core::move_repository(p->value,id,position);return XC_OK;}catch(...){return failure();}}
+xc_status xc_repository_snapshot_cache(xc_repository_snapshot *p,const xc_remote_catalog *catalog,uint64_t fetched_at){if(!p||!catalog)return XC_INVALID_ARGUMENT;try{p->value=xiphos::core::cache_repository(p->value,copy_remote_catalog(*catalog),fetched_at);return XC_OK;}catch(...){return failure();}}
+xc_status xc_repository_snapshot_copy_catalog(const xc_repository_snapshot *p,size_t index,xc_remote_catalog **out){if(out)*out=nullptr;if(!out||!p||index>=p->value.repositories.size()||!p->value.repositories[index].cached)return XC_INVALID_ARGUMENT;try{auto result=std::make_unique<xc_remote_catalog>();adopt_remote_catalog(*result,*p->value.repositories[index].cached);*out=result.release();return XC_OK;}catch(...){return failure();}}
+xc_status xc_repository_snapshot_parse(const char *bytes,size_t size,xc_repository_snapshot **out){if(out)*out=nullptr;if(!out||!bytes||size>xiphos::core::maximum_repository_store_bytes)return XC_INVALID_ARGUMENT;try{auto r=std::make_unique<xc_repository_snapshot>();r->value=xiphos::core::parse_repository_snapshot(std::string(bytes,size));*out=r.release();return XC_OK;}catch(...){return failure();}}
+xc_status xc_repository_snapshot_serialize(const xc_repository_snapshot *p,char *buffer,size_t capacity,size_t *required){if(required)*required=0;if(!p||!required||(!buffer&&capacity))return XC_INVALID_ARGUMENT;try{auto bytes=xiphos::core::serialize_repository_snapshot(p->value);*required=bytes.size();if(!buffer)return XC_OK;if(capacity<bytes.size())return XC_INVALID_ARGUMENT;std::memcpy(buffer,bytes.data(),bytes.size());return XC_OK;}catch(...){return failure();}}
+size_t xc_repository_snapshot_count(const xc_repository_snapshot *p){return p?p->value.repositories.size():0;}
+const char *xc_repository_snapshot_revision(const xc_repository_snapshot *p){return p?p->value.revision.c_str():nullptr;}
+xc_status xc_repository_snapshot_get(const xc_repository_snapshot *p,size_t index,xc_saved_repository *out){if(out)*out={};if(!p||!out||index>=p->value.repositories.size())return XC_INVALID_ARGUMENT;const auto &r=p->value.repositories[index];*out={r.endpoint.id.c_str(),r.endpoint.host.c_str(),r.endpoint.catalog_directory.c_str(),r.endpoint.package_directory.c_str(),r.name.c_str(),r.endpoint.port,r.enabled?1:0,r.cached?1:0,r.fetched_at};return XC_OK;}
+size_t xc_repository_snapshot_item_count(const xc_repository_snapshot *p,size_t index){return p&&index<p->value.repositories.size()&&p->value.repositories[index].cached?p->value.repositories[index].cached->catalog.items.size():0;}
+xc_status xc_repository_snapshot_item(const xc_repository_snapshot *p,size_t repository,size_t index,xc_library_item *out){if(out)*out={};if(!out||index>=xc_repository_snapshot_item_count(p,repository))return XC_INVALID_ARGUMENT;const auto &i=p->value.repositories[repository].cached->catalog.items[index];*out={i.identity.provider.c_str(),i.identity.item.c_str(),i.title.c_str(),i.language.c_str(),i.type.c_str(),i.translation.c_str(),i.edition.c_str(),i.version.c_str(),i.versification.c_str(),i.attribution.c_str(),i.license.c_str(),i.capabilities,static_cast<int>(i.access),static_cast<int>(i.delivery),i.installed?1:0,static_cast<int>(i.download),static_cast<int>(i.offline_storage),static_cast<int>(i.text_export)};return XC_OK;}
+xc_status xc_worker_read_repositories(xc_worker *w,const char *path,xc_request **out){if(!bounded_image_c_text(path,4096)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}return queue_request(w,out,[=](auto &worker){return worker.read_repositories(path);});}
+xc_status xc_worker_save_repositories(xc_worker *w,const char *path,const char *expected,const xc_repository_snapshot *snapshot,xc_request **out){if(out)*out=nullptr;if(!snapshot||!bounded_image_c_text(path,4096)||(expected&&(!bounded_image_c_text(expected,64)||!xiphos::core::editable_document_revision(expected))))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.save_repositories(path,expected?std::make_optional(std::string(expected)):std::nullopt,snapshot->value);});}
+xc_repository_snapshot *xc_request_take_repository_snapshot(xc_request *r){return r&&r->status==XC_OK?r->repository_snapshot.release():nullptr;}
+void xc_repository_snapshot_release(xc_repository_snapshot *p){delete p;}
+xc_status xc_worker_preview_module_maintenance(xc_worker *w,const char *module,xc_request **out){if(!bounded_image_c_text(module,4096)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}return queue_request(w,out,[=](auto &worker){return worker.preview_module_maintenance(module);});}
+xc_status xc_worker_maintain_module(xc_worker *w,const char *module,const char *revision,int action,const char *key,xc_request **out){if(out)*out=nullptr;if(!bounded_image_c_text(module,4096)||!bounded_image_c_text(revision,64)||!xiphos::core::editable_document_revision(revision)||action<0||action>3||(key&&*key&&!bounded_image_c_text(key,4096)))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.maintain_module({module,revision,static_cast<xiphos::core::ModuleMaintenanceAction>(action),key?key:""});});}
+xc_module_maintenance_preview *xc_request_take_module_maintenance_preview(xc_request *r){return r&&r->status==XC_OK?r->module_maintenance_preview.release():nullptr;}
+xc_module_maintenance_result *xc_request_take_module_maintenance_result(xc_request *r){return r&&r->status==XC_OK?r->module_maintenance_result.release():nullptr;}
+xc_status xc_module_maintenance_preview_get(const xc_module_maintenance_preview *p,xc_module_maintenance_info *out){if(out)*out={};if(!p||!out)return XC_INVALID_ARGUMENT;const auto &v=p->value;*out={v.module.c_str(),v.revision.c_str(),v.cipher_declared?1:0,v.indexed?1:0};return XC_OK;}
+xc_status xc_module_maintenance_result_get(const xc_module_maintenance_result *p,xc_module_maintenance_done *out){if(out)*out={};if(!p||!out)return XC_INVALID_ARGUMENT;const auto &v=p->value;*out={v.module.c_str(),v.revision.c_str(),static_cast<int>(v.action),v.indexed?1:0};return XC_OK;}
+void xc_module_maintenance_preview_release(xc_module_maintenance_preview *p){delete p;}
+void xc_module_maintenance_result_release(xc_module_maintenance_result *p){delete p;}
 xc_status xc_worker_prepare_local_install(xc_worker *w,const char *source,const char *module,xc_request **out){if(!bounded_image_c_text(source,4096)||!bounded_image_c_text(module,4096)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}return queue_request(w,out,[=](auto &worker){return worker.prepare_local_install(source,module);});}
 xc_status xc_worker_install_local_module(xc_worker *w,const char *source,const char *module,const char *from,const char *to,int replace,xc_request **out){
  if(out)*out=nullptr;if(!w||!out||!bounded_image_c_text(source,4096)||!bounded_image_c_text(module,4096)||!bounded_image_c_text(from,64)||!bounded_image_c_text(to,64)||!xiphos::core::editable_document_revision(from)||!xiphos::core::editable_document_revision(to)||(replace!=0&&replace!=1))return XC_INVALID_ARGUMENT;
@@ -1607,6 +1652,26 @@ void xc_native_tab_capture_default(xc_native_tab_capture *capture){if(capture)*c
 void xc_session_capabilities_default(xc_session_capabilities *capabilities){if(capabilities)*capabilities={0,0,0};}
 static bool native_capabilities(const xc_session_capabilities *c){return !c||((c->lexical_layout==0||c->lexical_layout==1)&&(c->note_numbering==0||c->note_numbering==1)&&(c->heading_note_links==0||c->heading_note_links==1));}
 static xiphos::core::SessionCapabilities copied_capabilities(const xc_session_capabilities *c){return c?xiphos::core::SessionCapabilities{c->lexical_layout!=0,c->note_numbering!=0,c->heading_note_links!=0}:xiphos::core::SessionCapabilities{};}
+xc_status xc_recovery_snapshot_create(const xc_native_session *session,const xc_recovery_draft *drafts,size_t count,xc_recovery_snapshot **out){
+ if(out)*out=nullptr;if(!out||count>64||(!drafts&&count))return XC_INVALID_ARGUMENT;std::size_t bytes=0;
+ for(size_t k=0;k<count;++k){const auto &d=drafts[k];if(!bounded_image_c_text(d.id,128)||(d.title&&*d.title&&!bounded_image_c_text(d.title,4096))||d.target<0||d.target>2||(d.path&&*d.path&&!bounded_image_c_text(d.path,4096))||(d.module&&*d.module&&!bounded_image_c_text(d.module,4096))||(d.reference&&*d.reference&&!bounded_image_c_text(d.reference,4096))||(d.origin_revision&&(!bounded_image_c_text(d.origin_revision,64)||!xiphos::core::editable_document_revision(d.origin_revision)))||!d.text||!d.saved_text||(*d.text&&!bounded_image_c_text(d.text,xiphos::core::maximum_editable_document_bytes))||(*d.saved_text&&!bounded_image_c_text(d.saved_text,xiphos::core::maximum_editable_document_bytes)))return XC_INVALID_ARGUMENT;bytes+=std::strlen(d.text)+std::strlen(d.saved_text);if(bytes>16*1024*1024)return XC_INVALID_ARGUMENT;}
+ try{auto result=std::make_unique<xc_recovery_snapshot>();if(session)result->value.session=session->value;for(size_t k=0;k<count;++k){const auto &d=drafts[k];result->value.drafts.push_back({d.id,d.title?d.title:"",static_cast<xiphos::core::RecoveryTarget>(d.target),d.path?d.path:"",{d.module?d.module:"",d.reference?d.reference:""},d.origin_revision?std::make_optional(std::string(d.origin_revision)):std::nullopt,d.saved_text,d.text,d.selection_start,d.selection_end});}xiphos::core::validate_recovery_snapshot(result->value);*out=result.release();return XC_OK;}catch(...){return failure();}}
+xc_status xc_recovery_snapshot_parse(const char *bytes,size_t size,xc_recovery_snapshot **out){if(out)*out=nullptr;if(!out||!bytes||size>xiphos::core::maximum_recovery_bytes)return XC_INVALID_ARGUMENT;try{auto result=std::make_unique<xc_recovery_snapshot>();result->value=xiphos::core::parse_recovery_snapshot(std::string(bytes,size));*out=result.release();return XC_OK;}catch(...){return failure();}}
+size_t xc_recovery_snapshot_count(const xc_recovery_snapshot *s){return s?s->value.drafts.size():0;}
+const char *xc_recovery_snapshot_revision(const xc_recovery_snapshot *s){return s?s->value.revision.c_str():nullptr;}
+int xc_recovery_snapshot_from_previous(const xc_recovery_snapshot *s){return s&&s->value.recovered_from_previous?1:0;}
+xc_status xc_recovery_snapshot_draft(const xc_recovery_snapshot *s,size_t at,xc_recovery_draft *out){if(out)*out={};if(!s||!out||at>=s->value.drafts.size())return XC_INVALID_ARGUMENT;const auto &d=s->value.drafts[at];*out={d.id.c_str(),d.title.c_str(),static_cast<int>(d.target),d.path.c_str(),d.module.module.c_str(),d.module.reference.c_str(),d.origin_revision?d.origin_revision->c_str():nullptr,d.saved_text.c_str(),d.text.c_str(),d.selection_start,d.selection_end};return XC_OK;}
+xc_status xc_recovery_snapshot_copy_session(const xc_recovery_snapshot *s,xc_native_session **out){if(out)*out=nullptr;if(!s||!out)return XC_INVALID_ARGUMENT;try{auto result=std::make_unique<xc_native_session>();result->value=s->value.session;*out=result.release();return XC_OK;}catch(...){return failure();}}
+xc_status xc_worker_read_recovery(xc_worker *w,const char *path,xc_request **out){if(!bounded_image_c_text(path,4096)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}return queue_request(w,out,[=](auto &worker){return worker.read_recovery(path);});}
+xc_status xc_worker_save_recovery(xc_worker *w,const char *path,const char *expected,const xc_recovery_snapshot *s,xc_request **out){if(out)*out=nullptr;if(!s||!bounded_image_c_text(path,4096)||(expected&&(!bounded_image_c_text(expected,64)||!xiphos::core::editable_document_revision(expected))))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.save_recovery(path,expected?std::make_optional(std::string(expected)):std::nullopt,s->value);});}
+xc_recovery_snapshot *xc_request_take_recovery_snapshot(xc_request *r){return r&&r->status==XC_OK?r->recovery_snapshot.release():nullptr;}
+void xc_recovery_snapshot_release(xc_recovery_snapshot *s){delete s;}
+xc_status xc_worker_configure_sync(xc_worker *w,const xc_sync_settings *settings,xc_request **out){if(out)*out=nullptr;if(!settings||settings->mode<0||settings->mode>3||settings->listen<0||settings->listen>2||settings->speaker_count>256||(!settings->allowed_speakers&&settings->speaker_count))return XC_INVALID_ARGUMENT;for(int v:{settings->private_personal,settings->direct_navigation,settings->group_tabs})if(v!=0&&v!=1)return XC_INVALID_ARGUMENT;if((settings->group&&*settings->group&&!bounded_image_c_text(settings->group,128))||(settings->domain&&*settings->domain&&!bounded_image_c_text(settings->domain,128)))return XC_INVALID_ARGUMENT;for(size_t i=0;i<settings->speaker_count;++i)if(!bounded_image_c_text(settings->allowed_speakers[i],128))return XC_INVALID_ARGUMENT;
+ return queue_request(w,out,[=](auto &worker){xiphos::core::SyncSettings s;s.mode=static_cast<xiphos::core::SyncMode>(settings->mode);s.listen=static_cast<xiphos::core::SyncListen>(settings->listen);s.private_personal=settings->private_personal!=0;s.direct_navigation=settings->direct_navigation!=0;s.group_tabs=settings->group_tabs!=0;s.group=settings->group?settings->group:"";s.domain=settings->domain?settings->domain:"";for(size_t i=0;i<settings->speaker_count;++i)s.allowed_speakers.emplace_back(settings->allowed_speakers[i]);return worker.configure_sync(std::move(s));});}
+xc_status xc_worker_plan_incoming_sync(xc_worker *w,const xc_sync_navigation *n,xc_request **out){if(out)*out=nullptr;if(!n||!bounded_image_c_text(n->speaker,128)||!bounded_image_c_text(n->module,4096)||!bounded_image_c_text(n->reference,4096)||(n->group&&*n->group&&!bounded_image_c_text(n->group,128))||(n->domain&&*n->domain&&!bounded_image_c_text(n->domain,128)))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.plan_incoming_sync({n->speaker,n->module,n->reference,n->group?n->group:"",n->domain?n->domain:""});});}
+xc_sync_decision *xc_request_take_sync_decision(xc_request *r){return r&&r->status==XC_OK?r->sync_decision.release():nullptr;}
+xc_status xc_sync_decision_get(const xc_sync_decision *s,xc_sync_result *out){if(out)*out={};if(!s||!out)return XC_INVALID_ARGUMENT;const auto &v=s->value;*out={static_cast<int>(v.route),v.tab_index?static_cast<int>(*v.tab_index):-1,{v.navigation.speaker.c_str(),v.navigation.module.c_str(),v.navigation.reference.c_str(),v.navigation.group.c_str(),v.navigation.domain.c_str()}};return XC_OK;}
+void xc_sync_decision_release(xc_sync_decision *s){delete s;}
 xc_status xc_native_session_parse(const char *xml,xc_native_session **out){
  if(out)*out=nullptr;if(!out||!bounded_image_c_text(xml,xiphos::core::maximum_session_bytes))return XC_INVALID_ARGUMENT;
  try{auto result=std::make_unique<xc_native_session>();result->value=xiphos::core::parse_native_session(xml);*out=result.release();return XC_OK;}catch(...){return failure();}

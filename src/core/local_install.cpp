@@ -20,6 +20,9 @@ namespace xiphos::core {
 bool local_install_arguments(const LocalInstallRequest &r) noexcept {
  return !r.source.empty()&&r.source.size()<=4096&&editable_document_text(r.source)&&!r.module.empty()&&r.module.size()<=4096&&editable_document_text(r.module)&&editable_document_revision(r.source_revision)&&editable_document_revision(r.destination_revision);
 }
+bool module_maintenance_arguments(const ModuleMaintenanceRequest &r) noexcept {
+ const auto action=static_cast<int>(r.action);return !r.module.empty()&&r.module.size()<=4096&&editable_document_text(r.module)&&editable_document_revision(r.expected_revision)&&action>=0&&action<=3&&r.cipher_key.size()<=4096&&editable_document_text(r.cipher_key)&&r.cipher_key.find_first_of("\r\n")==std::string::npos&&(r.action==ModuleMaintenanceAction::set_cipher_key||r.cipher_key.empty());
+}
 namespace detail {
 namespace {
 namespace fs=std::filesystem;
@@ -80,11 +83,43 @@ std::string local_library_revision(const std::string &root,const std::string &wo
 }
 struct LocalInstallStorage::Impl {
  fs::path source,destination,temp,staged,backup;std::string module,source_revision,destination_revision;bool installed=false,finished=false;
+ Impl(const std::string &d,const std::string &m):source(root_path(d)),destination(source),module(m){if(m.empty()||m.size()>4096||!editable_document_text(m))throw std::invalid_argument("Invalid maintenance module");}
  Impl(const std::string &s,const std::string &d,const std::string &m):source(root_path(s)),destination(root_path(d)),module(m){
   if(m.empty()||m.size()>4096||!editable_document_text(m)||inside(source,destination)||inside(destination,source))throw std::invalid_argument("Installation source and destination must be separate roots");
  }
 };
 LocalInstallStorage::LocalInstallStorage(const std::string &s,const std::string &d,const std::string &m):impl_(std::make_unique<Impl>(s,d,m)){}
+LocalInstallStorage::LocalInstallStorage(const std::string &d,const std::string &m):impl_(std::make_unique<Impl>(d,m)){}
+ModuleMaintenancePreview LocalInstallStorage::maintenance_preview(){
+ auto files=scan(impl_->destination);UncachedEngineManager manager(impl_->destination.u8string().c_str(),true,nullptr,false,false,true);(void)layout(manager,impl_->destination,impl_->module);auto *m=manager.getModule(impl_->module.c_str());return {impl_->module,revision(impl_->destination,files),m->getConfigEntry("CipherKey")!=nullptr,m->hasSearchFramework()};
+}
+ModuleMaintenanceResult LocalInstallStorage::stage_maintenance(const ModuleMaintenanceRequest &request){
+ if(!module_maintenance_arguments(request)||request.module!=impl_->module)throw std::invalid_argument("Invalid maintenance request");
+ auto current=maintenance_preview();if(current.revision!=request.expected_revision)throw std::invalid_argument("Library changed; preview maintenance again");
+ impl_->source_revision=impl_->destination_revision=current.revision;
+ static std::atomic<unsigned long> serial{0};for(unsigned attempt=0;attempt<64;++attempt){impl_->temp=impl_->destination.parent_path()/(".xiphos-maintenance-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())+"-"+std::to_string(serial++));if(fs::create_directory(impl_->temp))break;impl_->temp.clear();}if(impl_->temp.empty())throw std::runtime_error("Cannot stage module maintenance");
+ fs::permissions(impl_->temp,fs::perms::owner_all);impl_->staged=impl_->temp/"new";impl_->backup=impl_->temp/"old";fs::copy(impl_->destination,impl_->staged,fs::copy_options::recursive);if(scan(impl_->staged)!=scan(impl_->destination))throw std::runtime_error("Maintenance clone differs");
+ bool indexed=false;
+ {
+  UncachedEngineManager manager(impl_->staged.u8string().c_str(),true,nullptr,false,false,true);auto selected=layout(manager,impl_->staged,impl_->module);auto *m=manager.getModule(impl_->module.c_str());
+  if(request.action==ModuleMaintenanceAction::remove){fs::remove_all(impl_->staged/selected.data);fs::remove(impl_->staged/"mods.d"/selected.config);}
+  else if(request.action==ModuleMaintenanceAction::set_cipher_key){
+   if(!current.cipher_declared)throw std::invalid_argument("Module does not declare a cipher key");
+   m->deleteSearchFramework();if(m->hasSearchFramework())throw std::runtime_error("Cannot invalidate index before cipher change");
+   std::string updated;std::istringstream lines(selected.config_bytes);std::string line;unsigned keys=0;
+   while(std::getline(lines,line)){auto stripped=trim(line);auto equal=stripped.find('=');if(equal!=stripped.npos&&trim(stripped.substr(0,equal))=="CipherKey"){++keys;updated+="CipherKey="+request.cipher_key+(line.size()&&line.back()=='\r'?"\r":"");}else updated+=line;updated+='\n';}
+   if(keys!=1)throw std::invalid_argument("Ambiguous cipher-key configuration");
+   std::ofstream out(impl_->staged/"mods.d"/selected.config,std::ios::binary|std::ios::trunc);out.exceptions(std::ios::badbit|std::ios::failbit);out.write(updated.data(),static_cast<std::streamsize>(updated.size()));out.close();
+  }else if(request.action==ModuleMaintenanceAction::build_index){
+   if(m->getConfigEntry("CipherKey")&&!*m->getConfigEntry("CipherKey"))throw std::invalid_argument("Locked module cannot be indexed");
+   if(m->createSearchFramework()!=0||!m->hasSearchFramework())throw std::runtime_error("SWORD SDK could not create a usable search index");indexed=true;
+  }else{m->deleteSearchFramework();if(m->hasSearchFramework())throw std::runtime_error("SWORD SDK did not delete search index");}
+ }
+ fs::remove(impl_->staged/"mods.d/modules-conf.cache");auto files=scan(impl_->staged);
+ {UncachedEngineManager verify(impl_->staged.u8string().c_str(),true,nullptr,false,false,true);auto *m=verify.getModule(impl_->module.c_str());if((request.action==ModuleMaintenanceAction::remove)==(m!=nullptr))throw std::runtime_error("Maintenance discovery did not verify");if(m){indexed=m->hasSearchFramework();if(request.action==ModuleMaintenanceAction::set_cipher_key&&(!m->getConfigEntry("CipherKey")||request.cipher_key!=m->getConfigEntry("CipherKey")))throw std::runtime_error("Cipher configuration did not verify");}}
+ if(revision(impl_->destination,scan(impl_->destination))!=current.revision)throw std::invalid_argument("Library changed during maintenance");
+ return {impl_->module,revision(impl_->destination,files),request.action,indexed};
+}
 LocalInstallStorage::~LocalInstallStorage(){if(impl_->installed&&!impl_->finished){try{rollback();}catch(...){return;}}if(!impl_->temp.empty()){std::error_code ec;if(!impl_->finished&&fs::exists(impl_->backup,ec))return;if(ec)return;fs::remove_all(impl_->temp,ec);}}
 LocalInstallPreview LocalInstallStorage::preview(){
  auto source_files=scan(impl_->source),destination_files=scan(impl_->destination);UncachedEngineManager source(impl_->source.u8string().c_str(),true,nullptr,false,false,true),destination(impl_->destination.u8string().c_str(),true,nullptr,false,false,true);
