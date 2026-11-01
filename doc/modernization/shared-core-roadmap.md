@@ -170,7 +170,8 @@ Owner-requested future platform enhancement, 2026-11-01: continue a reading or
 study activity between supported Apple devices. Plan native Apple Handoff as a
 small activity-continuation adapter over shared reference/session contracts.
 It is distinct from continuous BibleSync passage following and from personal data
-sync. No Handoff implementation or iPhone/iPad frontend is currently delivered.
+sync. No Handoff implementation or iPhone/iPad frontend is currently delivered; these
+frontends are now planned under [phones, tablets and visionOS](#phones-tablets-and-visionos).
 
 Start with current module/provider identity, passage/reference and a bounded
 portable activity description. Resume using shared navigation and capability
@@ -192,6 +193,45 @@ Sequence: define shared portable continuation records; implement and test Mac
 activity publication/receipt; add receiving Apple frontend support if selected;
 then validate physical-device continuation, missing-content handling, privacy,
 startup and compatibility with future product naming/app-identity decisions.
+
+## Phones, tablets and visionOS
+
+Owner-requested future platform scope, 2026-11-01: extend the application beyond
+its three desktop frontends to phones, tablets and visionOS. Plan iPhone/iOS,
+iPad/iPadOS, Android phones/tablets and Apple visionOS as future targets. Android
+is the planning assumption for non-Apple mobile devices; toolkit, minimum OS
+versions, delivery order and release dates remain unselected. No mobile or
+visionOS frontend is implemented or accepted by this roadmap addition.
+
+Reuse shared C++ reading, search, bookmarks/annotations, editing, library,
+session/recovery and future data-sync services through owned platform adapters.
+Retain one SWORD-owning FIFO worker per process. Audit SDK availability/builds,
+sandbox storage, app lifecycle, memory limits, cancellation, background scheduling,
+module acquisition and provider licensing on each target before porting. Desktop
+filesystem access and indefinitely running background work are not assumptions.
+
+Phone layouts should prioritize reading and navigation with accessible touch
+controls and focused study/editing flows. Tablet layouts should adapt parallel
+reading, notes and multiple study panes to available space and input methods.
+visionOS needs a native spatial presentation and explicit interaction/accessibility
+design rather than assuming the desktop window composition is sufficient. Share
+application behavior while defining a target-specific feature/acceptance matrix;
+a small screen does not justify silently dropping a supported data workflow.
+
+Connect these targets to [personal data sync](#personal-data-sync-across-devices)
+for portable user data and [Apple Handoff](#apple-native-handoff) where the target
+actually supports it. Verify Handoff availability separately for each Apple target;
+visionOS support must not be assumed. Keep cross-platform data compatibility
+independent of Apple-only features. Final app identity, distribution/signing and
+upgrade/migration behavior need target-specific decisions.
+
+Sequence: prove shared-core/SDK builds on target toolchains; deliver a minimal
+reading/navigation/library vertical slice; add notes, editing and recovery;
+integrate data sync and supported Apple activity continuation; validate remaining
+workflows. Acceptance needs device/simulator coverage as appropriate, physical
+input/accessibility checks, rotation/resizing, suspend/resume/interruption,
+offline/reconnect, safe upgrades and content/license handling. These targets expand
+future project scope without changing current desktop parity or core completion.
 
 ## Future product name
 

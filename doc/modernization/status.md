@@ -1,5 +1,12 @@
 # Modernization status and acceptance
 
+Platform roadmap expansion (2026-11-01): owner requested
+[phones, tablets and visionOS](shared-core-roadmap.md#phones-tablets-and-visionos).
+iPhone/iPad, Android phones/tablets (planning assumption) and visionOS are future
+shared-core consumers; delivery order/toolkits/minimum OS versions remain open.
+No implementation or acceptance increase is claimed.
+
+
 Roadmap addition (2026-11-01): owner requested future
 [personal data sync](shared-core-roadmap.md#personal-data-sync-across-devices)
 and [Apple native Handoff](shared-core-roadmap.md#apple-native-handoff).

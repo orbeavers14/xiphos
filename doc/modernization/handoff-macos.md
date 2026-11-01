@@ -44,6 +44,12 @@ native adapter over portable activity records. No backend or mobile frontend is
 selected. This documentation-only checkpoint adds scope, not implementation or
 acceptance. Relative links and diff checks passed; no build required.
 
+Future platform scope also includes [phones, tablets and visionOS](shared-core-roadmap.md#phones-tablets-and-visionos),
+recorded 2026-11-01. Apple mobile/spatial adapters reuse the shared core; Handoff
+support must be verified per target. Android phones/tablets are a planning
+assumption. This docs-only update passed link/anchor and diff checks; no app build
+or device acceptance was performed.
+
 ## Earlier checkpoints (historical)
 
 Latest checked/pushed implementation is `2b2f518`, following `d0b068c`, `f0778e0`
