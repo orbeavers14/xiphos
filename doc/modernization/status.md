@@ -1,11 +1,20 @@
 # Modernization status and acceptance
 
+HTTPS checkpoint (2026-10-31, `af9a859`): shared catalog/package download, bounded
+UTF-8 ZIP/tar extraction, atomic cancellation/commit arbitration, metadata/version
+verification and staged remote SWORD installation now exist. Full local Mac223
+passes+one index skip; portable174 passes+one skip. Final Unicode/C cancellation
+checks and dependencies are in the [transfer contract](https-transfer.md) and Mac
+handoff. Native installer UI, persistent source/catalog settings, maintenance,
+physical Windows/Fedora validation and full F27/F28 remain open.
+
 Local installation checkpoint (2026-10-31, `f660f96`): verified staged local SWORD
 installation/replacement, read-only uncached SDK discovery, preserved session/tab
 state and shared HTTPS endpoint policy. Full Mac222 passes+one index skip;
 portable173 passes+one skip. Final SDK signature/general-book/fingerprint checks
-are in the Mac handoff. Remote transfer/extraction, native installer UI, physical
-Windows/Fedora checks and full F27/F28 remain open.
+are in the Mac handoff. Its remote-transfer TODO is superseded by the HTTPS
+checkpoint above; native installer UI, physical Windows/Fedora checks and full
+F27/F28 remain open.
 
 Library checkpoint (2026-10-31, `48467f3`): provider-scoped catalog identities,
 explicit capability/access/permission contracts, installed/local SWORD adapters,

@@ -476,3 +476,13 @@ implicit AutoInstall, supporting both observed SDK loader signatures. The shared
 HTTPS endpoint policy keeps transport separate: downloaded/validated packages will
 use this same local transaction. See the [SwordKit transport audit and execution
 limits](library-installation.md#swordkit-https-audit-and-transport-direction).
+
+
+Shared HTTPS transfer/extraction (`af9a859`) now uses libcurl and libarchive/zlib
+outside GTK and outside SDK transport assumptions. It feeds the existing local
+transaction on the single SDK owner, with owned C results and atomic progress/
+cancellation handles. Native builds require curl>=7.62 and libarchive>=3.6; local
+checks used curl8.23.0 and libarchive3.8.11. Native-off C++11 helpers retain their
+existing dependencies. See [transfer contracts, provenance, checks and GTK
+coupling analysis](https-transfer.md). No native installer UI or persistent source
+repository is accepted yet.

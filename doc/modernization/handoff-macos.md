@@ -7,13 +7,14 @@ and pushes are authorized; preserve unrelated changes, never force-push.
 
 ## Current checked source and active work
 
-Latest implementation: staged local SWORD installation, fresh read-only SDK reload
-and HTTPS endpoint policy `f660f96`, following provider catalogs/planning `48467f3`.
-Full checkpoint: Mac222 passes+one index skip (223 registered,190.95s); portable173
-passes+one skip (174 registered,152.71s), GTK runtime OFF. Final focused refinements
-and SDK signature checks are recorded below. Next: bounded HTTPS transfer and safe
-archive extraction feeding this transaction, remote source management, maintenance
-and sync. Devotionals remain deferred. No full-parity acceptance increase.
+Latest implementation: shared HTTPS catalog/package transfer and bounded extraction
+`af9a859`, feeding staged local installation `f660f96`. Full checkpoint: Mac223
+passes+one index skip (224 registered,226.42s); portable174 passes+one skip (175
+registered,191.18s), GTK runtime OFF. Final Unicode/C cancellation4/4 refinements
+and sanitizer/dependency evidence are below. Next: native installer presentation,
+persistent repository/catalog settings, maintenance and sync; physical host and
+release packaging checks remain open. Devotionals remain deferred. No full-parity
+acceptance increase.
 
 ## Earlier checkpoints (historical)
 
@@ -2462,3 +2463,74 @@ and73 without modeled symbols; raw diagnostics1823 dangling endpoints,2 self-loo
 368 undirected endpoint collapses. These are mapping limitations, not compiler
 failures; source, two header syntax checks and SDK tests verify this boundary.
 Generated outputs remain local/untracked.
+
+
+### 2026-10-31 shared HTTPS downloading and archive extraction
+
+Implementation `af9a859` adds libcurl HTTPS (mandatory certificate/host checks,
+TLS1.2+, HTTPS-only redirects, bounded actual/declared body/header bytes/time) and
+libarchive/zlib ZIP/tar extraction, with no SDK transport or GTK dependency. Private
+workspaces clean on every outcome. Archive paths/types/aliases, expansion/counts,
+ZIP central-directory size/encryption/split/ZIP64 limits and CRC/truncation checks
+precede live installation. A thread-local UTF-8 locale fixes valid Unicode ZIP
+names when the process starts in C locale, without changing global app language.
+The Windows locale branch remains subject to physical host validation.
+
+Catalog results own metadata/archive digest/observed destination fingerprints.
+Selected packages must match advertised shared metadata/version, then use the
+existing staged data/config transaction and fresh session/SDK cache publication.
+One atomic gate makes cancel-versus-commit linearizable; once commit starts,
+cancellation loses. C cancellation has distinct appended status XC_CANCELLED;
+preallocated controls/results permit allocation-free committed polling and survive
+worker/request teardown. The returned next-catalog snapshot carries the committed
+destination fingerprint and can be copied into the next request before its parent
+result releases. Accepted requests drain at shutdown. See [the complete transfer
+contract](https-transfer.md) for limits, ownership and remaining gates.
+
+New native dependencies: curl>=7.62, libarchive>=3.6 and existing zlib. Actual local
+SDKs: curl8.23.0 (dynamic), libarchive3.8.11 (local static build, zlib only). Official
+source tar.xz SHA256 a3dc0872b1b39da34dc18ef1b944f0f11ffd37425d70ae04be679279f1cf43d2
+was verified before building under ignored build storage. Notice files are retained
+under doc/modernization/licenses; no third-party implementation was vendored.
+CMake3.16 gets an imported-target fallback; static dependencies can be supplied via
+XIPHOS_TRANSFER_EXTRA_LIBRARIES, including native Swift custom links. The native app
+rebuilt successfully. Existing dylib minimum-target warnings now also include curl,
+so this is not evidence of deployment-target or self-contained packaging parity.
+
+Full local Mac223 passes+one index skip (224 registered,226.42s); portable174
+passes+one skip (175 registered,191.18s), GTK runtime OFF on Mac. Focused ASan/UBSan
+7/7 (49.52s, retained oracle leak checking off), TSan7/7 (59.53s), under
+`build/https-full-{macos,linux-models,sanitized,thread-sanitized}-{configure,build,tests}.log`.
+Final valid-Unicode/C-cancel refinements: Mac4/4 (40.91s), portable4/4 (41.20s),
+ASan4/4 (44.91s), TSan4/4 (48.36s), `build/https-locale-*`. These include actual
+certificate validation, a downgrade target that works over plain HTTP, unknown-
+length limits, malformed archives, C cancelled status, same-version replacement,
+borrowed next-catalog release after acceptance, and fresh SDK reopen. Final core
+rebuild checks a Windows-only locale cleanup ordering refinement; runtime tests
+remain Mac/POSIX only. Native-off strict C++11 all10/10 (6.68s), build/https-legacy-*.
+Strict C11 header/whitespace/changed-document links pass. Third-party parser/SDK
+binaries themselves are not sanitizer-instrumented by these application builds.
+
+Automated integration uses generated original-text modules, hostile archives and
+self-signed certificates with loopback-only TLS/HTTP servers. No licensed text,
+public repository data or system trust-store modification is involved. Python3 and
+the openssl CLI are fixture tools; local port binding needs desktop access. No
+hosted CI, paid AI call, account/provider integration or real library mutation ran.
+
+The original wrapper was coupled, not intrinsically unupgradable: GSStatusReporter
+called GTK progress functions directly; global mgr/list_mgr/installMgr and app
+settings controlled destinations and reload. SWORD and module versions could still
+be upgraded. Toolkit/platform replacement required separating that application
+logic, which these shared services now do. The retained GTK3 app stays unchanged.
+Native installer UI, persistent sources/catalogs, removal/index/cipher maintenance,
+physical Windows/Fedora checks, release packaging and sync remain next. No complete
+F27/F28 acceptance; devotionals remain deferred.
+
+
+Final Graphify structural refresh through af9a859:640 code/configuration files,
+11771 nodes,31733 edges,371 communities, with community-aggregated HTML above5000
+nodes. Source hashes unchanged by mapping; no external AI calls/tokens/cost.
+Coverage remains58 partially parsed files and73 with no modeled symbols; raw
+health diagnostics1856 dangling endpoints,2 self-loops,372 undirected endpoint
+collapses. Use the graph for discovery and verify source/tests, as done here.
+Generated outputs stay local/untracked.

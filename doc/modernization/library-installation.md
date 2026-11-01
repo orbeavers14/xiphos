@@ -177,10 +177,10 @@ SwordKit's tested CrossWire paths use `raw/mods.d.tar.gz` for the catalog and
 only layout. On this host, HTTPS-only HEAD requests to the catalog and ASV ZIP
 endpoints both returned200; no Bible text was downloaded and no live install ran.
 
-Actual network execution is still the next remote slice. Its transport adapter
-must enforce certificate verification, HTTPS-only redirects/no downgrade or silent
-FTP fallback, bounded transfer/extraction, progress/cancellation, and verified
-package handoff to this shared local transaction. Apple may use URLSession byte IO;
-Windows/Linux need equivalent transport adapters. Installation, validation and
-cache/state policy remain shared C++, with one SDK owner. No SwordKit bridge,
+Shared [HTTPS transfer and extraction](https-transfer.md) now exist (`af9a859`),
+feeding this same staged local transaction. The implementation enforces certificate verification, HTTPS-only redirects/no downgrade or silent
+FTP fallback, bounded transfer/extraction, progress/cancellation and checked package handoff.
+libcurl/libarchive provide one shared implementation; native UI, persistent source
+configuration and physical host/packaging validation remain open. Installation,
+validation and cache/state policy remain shared C++, with one SDK owner. No SwordKit bridge,
 second SWORD engine, native installer code or third-party source was imported.
