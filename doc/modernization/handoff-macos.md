@@ -2534,3 +2534,19 @@ Coverage remains58 partially parsed files and73 with no modeled symbols; raw
 health diagnostics1856 dangling endpoints,2 self-loops,372 undirected endpoint
 collapses. Use the graph for discovery and verify source/tests, as done here.
 Generated outputs stay local/untracked.
+
+
+### 2026-10-31 new-application dependency inventory
+
+Inventory `10e30e8` updates dependencies/README.md to exactly two tables: shared
+core (including labeled SDK-transitive/build/test dependencies), and native
+frontends grouped by macOS, Windows and Linux. Legacy GTK3-only requirements are
+excluded. Rows record declared minimum, installed/selected or planned version,
+purpose and usage/location. Installed versions were checked against selected
+CMake inputs, compiler preprocessing, package/tool metadata and a temporary
+runtime-version probe. It records the actual zlib header/runtime and pkg-config
+selection differences instead of equating a fallback cache entry with selection.
+Windows/Linux-only versions remain unverified on this Mac; planned WinUI/WebView2
+versions are not invented. Documentation-only: two-table shape/column consistency,
+relative links and whitespace pass; application tests were not rerun. No application
+source, installed SDK, dependency version or generated map was changed.
