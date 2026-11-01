@@ -164,6 +164,9 @@ import SwiftUI
     func windowDidBecomeMain(_ notification: Notification) {
         activeKey = (notification.object as? NSWindow)?.identifier?.rawValue ?? activeKey
     }
+    func refreshAfterModuleEdit() {
+        Task { do { try await ready(); for record in records { record.model.refreshAfterModuleEdit() } } catch { showError(error.localizedDescription) } }
+    }
     func showError(_ message: String) {
         let alert = NSAlert(); alert.messageText = "Session could not be saved"; alert.informativeText = message
         alert.addButton(withTitle: "OK"); alert.runModal()
@@ -173,6 +176,7 @@ import SwiftUI
 @MainActor final class SessionAppDelegate: NSObject, NSApplicationDelegate {
     private var controller: NativeSessionController?
     private var terminating = false
+    private var editors: [NativeEditorWindow] = []
     func applicationDidFinishLaunching(_ notification: Notification) {
         _ = initializePreviewLocale()
         Task {
@@ -194,13 +198,33 @@ import SwiftUI
             }
         }
     }
+    private func openEditor(_ location: NativeEditorLocation) {
+        guard !terminating, let controller, controller.canOpenWindow else { return }
+        let editor = NativeEditorWindow(worker:controller.worker,location:location) { [weak controller] _ in controller?.refreshAfterModuleEdit() }
+        editor.onClosed = { [weak self, weak editor] in self?.editors.removeAll { $0 === editor } }
+        editors.append(editor)
+    }
+    func newEditorDocument() { openEditor(.newDocument) }
+    func openEditorDocument() {
+        guard !terminating else { return }; let panel = NSOpenPanel(); panel.canChooseDirectories = false; panel.allowsMultipleSelection = false; panel.title = "Open Study Document"
+        if panel.runModal() == .OK, let url = panel.url { openEditor(.file(url.path)) }
+    }
+    func editCurrentModule() {
+        guard let controller, let model = controller.records.first(where: { $0.key == controller.activeKey })?.model,
+              let target = model.moduleEditingTarget else {
+            let alert = NSAlert(); alert.messageText = "Select personal commentary or a general book first"; alert.informativeText = "Open the entry you want to edit in a reading window."; alert.runModal(); return
+        }
+        openEditor(.module(target.0,target.1))
+    }
     func openNewWindow() { guard !terminating, let controller, controller.canOpenWindow else { return }; controller.addWindow() }
     func saveSession() {
         guard !terminating, let controller else { return }
+        if let editor = editors.first(where: { $0.window.isKeyWindow }) { editor.save(); return }
         Task { do { try await controller.save() } catch { controller.showError(error.localizedDescription) } }
     }
     func saveSessionAs() {
         guard !terminating, let controller else { return }
+        if let editor = editors.first(where: { $0.window.isKeyWindow }) { editor.save(asNew:true); return }
         let panel = NSSavePanel(); panel.title = "Save Reading Session"; panel.nameFieldStringValue = "session.xml"
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }
@@ -213,13 +237,18 @@ import SwiftUI
         guard let controller else { return .terminateNow }
         terminating = true
         Task {
-            do { try await controller.prepareToQuit(); sender.reply(toApplicationShouldTerminate: true) }
+            do {
+                for editor in editors {
+                    guard await editor.confirmClose() else { for item in editors { item.model.frozen = false }; terminating = false; sender.reply(toApplicationShouldTerminate:false); return }
+                    editor.model.frozen = true
+                }
+                try await controller.prepareToQuit(); sender.reply(toApplicationShouldTerminate: true) }
             catch {
                 let alert = NSAlert(); alert.messageText = "Quit without saving this session?"
                 alert.informativeText = error.localizedDescription
                 alert.addButton(withTitle: "Cancel"); alert.addButton(withTitle: "Quit Without Saving")
                 let quit = alert.runModal() == .alertSecondButtonReturn
-                terminating = quit; sender.reply(toApplicationShouldTerminate: quit)
+                terminating = quit; if !quit { for item in editors { item.model.frozen = false } }; sender.reply(toApplicationShouldTerminate: quit)
             }
         }
         return .terminateLater

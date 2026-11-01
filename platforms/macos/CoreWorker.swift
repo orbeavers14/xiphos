@@ -1446,3 +1446,42 @@ actor CoreWorker {
         return CoreValues.link(result)
     }
 }
+extension CoreWorker {
+    func openEditorFile(tab: UInt64, path: String) async throws -> EditorSource {
+        guard !path.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?; let handle = try worker()
+        let status = path.withCString { xc_worker_read_editable_document(handle, tab, $0, &request) }
+        let completed = try await wait(status, request); defer { xc_request_release(completed) }
+        guard let result = xc_request_take_editable_document(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_editable_document_release(result) }
+        return EditorSource(text: String(cString: xc_editable_document_text(result)!), revision: String(cString: xc_editable_document_revision(result)!))
+    }
+    func saveEditorFile(tab: UInt64, path: String, revision: String?, text: String) async throws -> EditorSource {
+        guard !path.utf8.contains(0), !text.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        let strings = SessionCStrings(); let expected = try revision.map { try strings.copy($0) }
+        var request: OpaquePointer?; let handle = try worker()
+        let status = withExtendedLifetime(strings) { path.withCString { path in text.withCString { xc_worker_save_editable_document(handle, tab, path, expected, $0, &request) } } }
+        let completed = try await wait(status, request); defer { xc_request_release(completed) }
+        guard let result = xc_request_take_editable_document(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_editable_document_release(result) }
+        return EditorSource(text: String(cString: xc_editable_document_text(result)!), revision: String(cString: xc_editable_document_revision(result)!))
+    }
+    func openModuleEditor(tab: UInt64, module: String, reference: String) async throws -> EditorModuleSource {
+        var request: OpaquePointer?; let handle = try worker()
+        guard !module.utf8.contains(0), !reference.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        let status = module.withCString { module in reference.withCString { xc_worker_read_module_edit(handle, tab, module, $0, &request) } }
+        return try await moduleEditorValue(status, request)
+    }
+    func saveModuleEditor(tab: UInt64, module: String, reference: String, revision: String, text: String, erase: Bool = false) async throws -> EditorModuleSource {
+        guard [module,reference,revision,text].allSatisfy({ !$0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?; let handle = try worker()
+        let status = module.withCString { module in reference.withCString { reference in revision.withCString { revision in text.withCString { xc_worker_save_module_edit(handle, tab, module, reference, revision, $0, erase ? 1 : 0, &request) } } } }
+        return try await moduleEditorValue(status, request)
+    }
+    private func moduleEditorValue(_ status: xc_status, _ request: OpaquePointer?) async throws -> EditorModuleSource {
+        let completed = try await wait(status, request); defer { xc_request_release(completed) }
+        guard let result = xc_request_take_module_edit(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_module_edit_release(result) }
+        return EditorModuleSource(module: String(cString: xc_module_edit_module(result)!), reference: String(cString: xc_module_edit_reference(result)!), driver: String(cString: xc_module_edit_driver(result)!), sourceType: String(cString: xc_module_edit_source_type(result)!), text: String(cString: xc_module_edit_text(result)!), revision: String(cString: xc_module_edit_revision(result)!))
+    }
+}

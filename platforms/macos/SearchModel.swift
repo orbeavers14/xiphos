@@ -387,6 +387,14 @@ struct SearchHit: Identifiable, Sendable, Equatable {
             } catch { if !self.closed && self.revision == token { self.message = error.localizedDescription } }
         }
     }
+    func moduleContentChanged() {
+        guard !closed, !isBusy else { return }
+        revision &+= 1; result = nil; batchResult = nil; batchExpression = ""
+        hits = []; selection = nil; preview = nil; previewSource = nil; progress = nil
+        scope = CoreSearchScope(present:false,elementCount:0)
+        if scopeChoice == .last { scopeChoice = .all }
+        message = "Module content changed. Previous results were cleared; choose a scope and search again."
+    }
     func clearScope() {
         guard !closed, !isBusy, let worker, let tab else { return }
         revision &+= 1; let token = revision; isClearing = true

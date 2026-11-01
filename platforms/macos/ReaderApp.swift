@@ -160,6 +160,27 @@ final class ReaderModel: ObservableObject {
             } else { message = "Select a Bible or commentary module to read a verse." }
         } catch { if !closed { message = error.localizedDescription } }
     }
+    var moduleEditingTarget: (String,String)? {
+        if showingBook, let book = bookDocument { return (book.tree.module,book.tree.node.path) }
+        if let reference = displayedEntry?.reference {
+            if modules.contains(where: { $0.id == commentarySelection && $0.type == "Commentaries" && !$0.isRegularCommentary }) { return (commentarySelection,reference) }
+            if let module = displayedModule, modules.contains(where: { $0.id == module && $0.type == "Commentaries" && !$0.isRegularCommentary }) { return (module,reference) }
+        }
+        return nil
+    }
+    func refreshAfterModuleEdit() {
+        guard let worker, let tab else { return }
+        search.moduleContentChanged()
+        run { token in
+            let wasBook = self.showingBook
+            if let module = self.displayedModule, let entry = self.displayedEntry {
+                let fresh = try await worker.readTabEntry(tab:tab,module:module,reference:entry.reference)
+                try await self.present(fresh,module:module,token:token,updateInput:false)
+            }
+            if let document = try await worker.bookDocumentSelection(tab:tab) { self.presentBook(document,updateInput:false) }
+            self.showingBook = wasBook && self.bookDocument != nil
+        }
+    }
     var sessionTab: UInt64? { tab }
     func restoreWindow(_ saved: CoreSavedWindow, tab restoredTab: UInt64, host: SessionHostState?) async throws {
         guard let worker, !closed, tab == nil else { throw SessionHostError(message: "This reading window cannot be restored.") }
@@ -1432,8 +1453,12 @@ struct XiphosNativePreview: App {
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("New Reading Window") { delegate.openNewWindow() }.keyboardShortcut("n")
-                Button("Save Session") { delegate.saveSession() }.keyboardShortcut("s")
-                Button("Save Session As…") { delegate.saveSessionAs() }
+                Button("Save") { delegate.saveSession() }.keyboardShortcut("s")
+                Button("Save As…") { delegate.saveSessionAs() }.keyboardShortcut("s",modifiers:[.command,.shift])
+                Divider()
+                Button("New Study Document") { delegate.newEditorDocument() }
+                Button("Open Study Document…") { delegate.openEditorDocument() }.keyboardShortcut("o")
+                Button("Edit Personal Commentary or Book…") { delegate.editCurrentModule() }
             }
         }
     }

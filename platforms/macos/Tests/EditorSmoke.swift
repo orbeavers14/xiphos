@@ -1,0 +1,104 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+import Foundation
+import AppKit
+import SwiftUI
+@main struct EditorSmoke {
+    @MainActor static func idle(_ model: NativeEditorModel) async throws {
+        let deadline = Date().addingTimeInterval(20)
+        while model.isBusy { guard Date() < deadline else { fatalError("Editor timeout") }; try await Task.sleep(nanoseconds:1_000_000) }
+    }
+    @MainActor static func main() async throws {
+        guard CommandLine.arguments.count == 3 else { fatalError("Module and disposable editor paths required") }
+        _ = NSApplication.shared; NSApplication.shared.setActivationPolicy(.prohibited)
+        let root = CommandLine.arguments[1], folder = URL(fileURLWithPath:CommandLine.arguments[2])
+        guard folder.lastPathComponent == "native-editor-fixture" else { fatalError("Disposable editor folder only") }
+        try? FileManager.default.removeItem(at:folder); try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
+        let worker = try CoreWorker(root:root)
+        let model = NativeEditorModel(worker:worker,location:.newDocument); await model.start()
+        guard model.ready && model.richMode else { fatalError("New rich editor not ready") }
+        model.accept(runs:[EditorRun(text:"Original Ω editor\nSecond line")]); model.selection = NSRange(location:0,length:8)
+        model.format(0); model.format(1); model.format(5,text:"#ff0000"); model.format(7,text:"sword://Text/John3:16")
+        guard model.dirty, model.source.contains("<b><i>Original</i></b>"), model.source.contains("sword://Text/John3:16") else { fatalError("Shared rich toolbar semantics") }
+        let formatted = model.source; model.undo(); guard model.source != formatted else { fatalError("Rich undo") }; model.redo(); guard model.source == formatted else { fatalError("Rich redo") }
+        let path = folder.appendingPathComponent("original.spt").path; try await model.save(to:path)
+        guard !model.dirty, try String(contentsOfFile:path,encoding:.utf8) == formatted else { fatalError("Rich file save") }
+        model.undo(); guard model.dirty else { fatalError("Undo after save must be dirty") }; model.redo(); guard !model.dirty else { fatalError("Saved baseline restored by redo") }
+        let reopened = NativeEditorModel(worker:worker,location:.file(path)); await reopened.start()
+        guard reopened.richMode, reopened.rich?.text == "Original Ω editor\nSecond line", reopened.source == formatted else { fatalError("Rich reopen lost source/styles") }
+        reopened.accept(text:"A pending source edit")
+        try "External original prose".write(toFile:path,atomically:true,encoding:.utf8)
+        do { try await reopened.save(); fatalError("Native stale save accepted") } catch {}
+        guard reopened.dirty, try String(contentsOfFile:path,encoding:.utf8) == "External original prose" else { fatalError("Native stale save overwrote file") }
+        let unknown = folder.appendingPathComponent("unknown.spt").path
+        let preserved = "<table><tr><td>Original unsupported prose %20.</td></tr></table>"
+        try preserved.write(toFile:unknown,atomically:true,encoding:.utf8)
+        let source = NativeEditorModel(worker:worker,location:.file(unknown)); await source.start(); source.setMode(true)
+        guard source.ready, !source.richMode, source.source == preserved, !source.dirty else { fatalError("Unsupported markup was silently converted") }
+        try await source.save(); guard try String(contentsOfFile:unknown,encoding:.utf8) == preserved else { fatalError("Source fallback lost markup") }
+        let personal = NativeEditorModel(worker:worker,location:.module("Personal","John3:16")); await personal.start()
+        guard personal.ready, personal.permitsRich else { fatalError("Personal module editor not ready: \(personal.message)") }
+        personal.accept(runs:[EditorRun(text:"Original native personal note.")]); personal.selection = NSRange(location:0,length:8); personal.format(0)
+        var saved = 0; personal.onModuleSaved = { _ in saved += 1 }; try await personal.save()
+        let second = NativeEditorModel(worker:worker,location:.module("Personal","John3:16")); await second.start()
+        guard saved == 1, second.source == personal.source, second.source.contains("<b>Original</b>") else { fatalError("Native rich SWORD save/reopen") }
+        personal.accept(runs:[EditorRun(text:"Newer original personal content")]); try await personal.save()
+        second.accept(text:"Stale module source")
+        do { try await second.save(); fatalError("Native stale module overwrite") } catch {}
+        try await personal.save(erase:true)
+        let cleared = try await worker.openModuleEditor(tab:try await worker.createTab(),module:"Personal",reference:"John3:16")
+        guard cleared.text.isEmpty else { fatalError("Personal clear") }
+        let book = NativeEditorModel(worker:worker,location:.module("CaptureBook","/Original")); await book.start()
+        guard book.ready && book.permitsRich else { fatalError("Book rich editor readiness: \(book.message)") }
+        book.accept(runs:[EditorRun(text:"Original rich book contents")]); book.selection = NSRange(location:0,length:27); book.format(4,value:2); try await book.save()
+        guard book.source.contains("<h2>"), !book.dirty else { fatalError("Book heading save") }
+        // Save As exports a module draft to a file without changing the module.
+        let exportPath = folder.appendingPathComponent("export.spt").path
+        book.accept(text:"Unsaved exported source"); try await book.save(to:exportPath)
+        guard book.moduleSource == nil, try String(contentsOfFile:exportPath,encoding:.utf8) == "Unsaved exported source" else { fatalError("Module Save As did not export independently") }
+        // Real offscreen window close: Cancel retains dirty text, Save finishes
+        // the shared IO before the close delegate removes the editor.
+        let window = NativeEditorWindow(worker:worker,location:.newDocument,show:false,moduleSaved:{ _ in })
+        try await idle(window.model); window.model.accept(runs:[EditorRun(text:"Original close-save document")])
+        window.model.selection = NSRange(location:0,length:8); window.model.format(0)
+        window.window.contentView?.layoutSubtreeIfNeeded()
+        try await Task.sleep(nanoseconds:50_000_000)
+        func textView(_ view: NSView) -> NSTextView? {
+            if let text = view as? NSTextView { return text }
+            for child in view.subviews { if let found = textView(child) { return found } }
+            return nil
+        }
+        guard let native = window.window.contentView.flatMap(textView),
+              let font = native.textStorage?.attribute(.font,at:0,effectiveRange:nil) as? NSFont,
+              NSFontManager.shared.traits(of:font).contains(.boldFontMask) else { fatalError("Native bold presentation missing") }
+        native.setSelectedRange(NSRange(location:0,length:8))
+        native.insertText("Changed",replacementRange:native.selectedRange())
+        guard window.model.rich?.text.hasPrefix("Changed close-save document") == true else { fatalError("Native typing did not update the shared source model") }
+        window.model.undo()
+        try await Task.sleep(nanoseconds:20_000_000)
+        native.setSelectedRange(NSRange(location:0,length:8))
+        native.setMarkedText("原",selectedRange:NSRange(location:1,length:0),replacementRange:native.selectedRange())
+        try await Task.sleep(nanoseconds:20_000_000)
+        guard native.hasMarkedText() else { fatalError("Rich presentation interrupted input-method composition") }
+        native.insertText("原创",replacementRange:native.markedRange())
+        try await Task.sleep(nanoseconds:20_000_000)
+        guard !native.hasMarkedText(), window.model.rich?.text.hasPrefix("原创 close-save document") == true else { fatalError("Input-method commit lost text") }
+        window.model.accept(runs:[EditorRun(text:"Original Heading\n",flags:1,block:2),EditorRun(text:"First original item\nSecond original item",block:9)])
+        window.window.contentView?.layoutSubtreeIfNeeded()
+        try await Task.sleep(nanoseconds:20_000_000)
+        if let view = window.window.contentView, let bitmap = view.bitmapImageRepForCachingDisplay(in:view.bounds) {
+            view.cacheDisplay(in:view.bounds,to:bitmap)
+            if let png = bitmap.representation(using:.png,properties:[:]) { try png.write(to:folder.appendingPathComponent("editor-preview.png")) }
+        }
+        var closed = false; window.onClosed = { closed = true }; window.closeDecision = { .cancel }
+        window.window.performClose(nil); try await Task.sleep(nanoseconds:30_000_000)
+        guard !closed && window.model.dirty else { fatalError("Cancel close lost dirty editor") }
+        let closePath = folder.appendingPathComponent("closed.spt").path
+        window.closeDecision = { .save }; window.saveDestination = { closePath }; window.window.performClose(nil)
+        let deadline = Date().addingTimeInterval(10)
+        while !closed { guard Date() < deadline else { fatalError("Editor close save timeout") }; try await Task.sleep(nanoseconds:1_000_000) }
+        guard try String(contentsOfFile:closePath,encoding:.utf8) == window.model.source else { fatalError("Editor closed before save") }
+        for item in [model,reopened,source,personal,second,book] { item.close() }
+        await worker.shutdown()
+        print("Native rich formatting, undo, source fallback, file/SWORD saves, stale rejection and dirty close passed")
+    }
+}
