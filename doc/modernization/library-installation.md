@@ -88,12 +88,12 @@ catalogs, empty cipher declarations, unchanged reading/history and C copied-inpu
 preallocation, allocation-free polling and owned-handle lifetimes. This proves the
 catalog/planning boundary, **not non-SWORD passage reading or downloads**.
 
-## Next execution slice and remaining gates
+## Remaining execution gates (catalog checkpoint)
 
-Next: characterize retained local SWORD installation and introduce verified staged
-local-package execution, including data/config consistency, source/destination
-revalidation, failure rollback and SDK/tab/search cache refresh. Do not call the
-legacy direct installer against live data and label that operation atomic.
+The staged local-package execution described below now covers data/config
+consistency, fingerprint revalidation, rollback and SDK/tab/search cache refresh.
+This supersedes the earlier local-execution TODO; it does not accept the complete
+retained install workflow or label the legacy direct installer atomic.
 
 Then add source configuration/remote catalog refresh, bounded download execution,
 progress/cancellation, update/removal and index/cipher maintenance. These require
@@ -106,3 +106,81 @@ mapping and passage dispatch, availability/errors, versioned session identities,
 and attribution/export enforcement. Old sessions retain SWORD module identities;
 no new provider identity is silently routed to a SWORD module or fallback text.
 No ESV/NASB account, license agreement or integration is introduced by this slice.
+
+## Staged local execution (2026-10-31, f660f96)
+
+The shared Reader/FIFO/C service now prepares and executes local SWORD installation
+from an expanded repository root. Preparation returns SHA256 fingerprints of both
+complete roots (canonical identity, relative paths, bytes and file/directory
+permissions), plus versions and the shared installation decision. Execution needs
+both observed fingerprints and explicit replacement permission for an existing
+module, including an intentional same-version reinstall.
+
+This first execution slice requires disjoint, explicit existing roots with
+`mods.d`. The chosen module must have one unambiguous single-module `.conf` and
+an isolated relative data directory. Directory-based RawText/RawCom/RawFiles/zText/
+zCom variants and prefix-based RawLD/RawLD4/zLD/RawGenBook layouts are supported;
+unsupported layouts, `File=` lists, shared data, path traversal, absolute/nonportable
+data paths and configuration/file collisions reject. Root scans reject symlinks,
+hardlinks and special files; each root is bounded to512MiB and16384 entries, paths
+to4096 bytes and aggregate path metadata to16MiB. Hashing streams file contents.
+This is not an unrestricted archive extractor or a general package manager.
+
+The destination root is cloned into a private same-parent workspace and verified.
+Only the selected module's old data/configuration are removed from the clone;
+verified source data/assets and exact configuration bytes replace them, retaining
+unknown fields and notices. Unrelated files stay intact. Source and destination
+fingerprints are checked again after staging and immediately before commit.
+
+Two renames swap the complete staged library root. A fresh Reader and replacement
+sessions are prepared before publishing; failures roll back the filesystem and
+old SDK state. Tab IDs, selections, histories and capabilities remain; cached
+book documents reload, search generations/scopes invalidate, and generation serials
+stay monotonic. C observer/result allocation precedes accepted writes; committed
+polling only moves owned results. The transaction is **not crash-atomic,
+interprocess-locked or fsync-durable**. If rollback itself fails, the original
+backup is retained. Native install UI, cancellation/progress, very large-library
+scaling and physical Windows/Fedora validation remain open.
+
+### Fresh, read-only SDK discovery
+
+Tests exposed `SWMgr::loadConfigDir` writing `mods.d/modules-conf.cache` during
+source inspection. That also allowed stale caches to hide newly installed modules.
+The native loader now uses SWORD's SWConfig parsing/augmentation directly, reads
+current `.conf` files and performs no directory-cache writes. Installation removes
+the old derived cache only in the staged destination. Existing configuration is
+not rewritten; implicit `Globals/AutoInstall` directives reject instead of writing
+during discovery. A build-time signature probe selects the older one-argument
+or newer cache-argument virtual loader; both header variants pass syntax checks.
+Installation inspection validates relative data paths before
+constructing module drivers. The legacy GTK3 application stays unchanged.
+
+### SwordKit HTTPS audit and transport direction
+
+Inspected SwordReader/SwordKit main at `d928c48b37d45502df4466194ab33bdcb1dbd1dd`.
+[Commit b86e795](https://github.com/SwordReader/SwordKit/commit/b86e7951fadcb3ff67f9b23db6f1666882eb237f)
+introduced Apple-native HTTPS catalog/ZIP downloads.
+Its [HTTPS transport](https://github.com/SwordReader/SwordKit/blob/d928c48b37d45502df4466194ab33bdcb1dbd1dd/Sources/SwordKit/SwordHTTPSRepositoryTransport.swift)
+uses URLSession, stages/extracts archives and then calls local installation.
+Its vendored [SDK transport factory](https://github.com/SwordReader/SwordKit/blob/d928c48b37d45502df4466194ab33bdcb1dbd1dd/Vendor/libsword/src/mgr/installmgr.cpp)
+returns no HTTP transport when curl is unavailable. The current Xiphos local SDK
+contains curl HTTP/FTP symbols, but its pkg-config file does not describe the
+complete static dependency chain. Neither SDK symbols nor a source setting alone
+prove a usable HTTPS transfer on every target.
+
+The retained GTK3 source already defaults CrossWire to HTTPS; changing that default
+to FTP is unnecessary. New shared `HttpsRepository` endpoint code represents HTTPS
+only, keeps catalog and package paths separate, encodes filename bytes once and
+rejects credentials/schemes in hosts, traversal and missing package locations.
+SwordKit's tested CrossWire paths use `raw/mods.d.tar.gz` for the catalog and
+`packages/rawzip/{module}.zip` for packages; do not assume `raw/packages/` is the
+only layout. On this host, HTTPS-only HEAD requests to the catalog and ASV ZIP
+endpoints both returned200; no Bible text was downloaded and no live install ran.
+
+Actual network execution is still the next remote slice. Its transport adapter
+must enforce certificate verification, HTTPS-only redirects/no downgrade or silent
+FTP fallback, bounded transfer/extraction, progress/cancellation, and verified
+package handoff to this shared local transaction. Apple may use URLSession byte IO;
+Windows/Linux need equivalent transport adapters. Installation, validation and
+cache/state policy remain shared C++, with one SDK owner. No SwordKit bridge,
+second SWORD engine, native installer code or third-party source was imported.

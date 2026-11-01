@@ -1,10 +1,19 @@
 # Modernization status and acceptance
 
+Local installation checkpoint (2026-10-31, `f660f96`): verified staged local SWORD
+installation/replacement, read-only uncached SDK discovery, preserved session/tab
+state and shared HTTPS endpoint policy. Full Mac222 passes+one index skip;
+portable173 passes+one skip. Final SDK signature/general-book/fingerprint checks
+are in the Mac handoff. Remote transfer/extraction, native installer UI, physical
+Windows/Fedora checks and full F27/F28 remain open.
+
 Library checkpoint (2026-10-31, `48467f3`): provider-scoped catalog identities,
 explicit capability/access/permission contracts, installed/local SWORD adapters,
 pure installation decisions and a non-SWORD catalog fixture. Full local Mac221
 passes+one index skip; portable172 passes+one skip. This remains catalog/planning
-scope: package execution, licensed-provider reading and full F27/F28 are pending.
+scope at that checkpoint. Staged local SWORD execution/read-only reload and HTTPS
+endpoint policy now exist (`f660f96`); remote transfer, licensed-provider reading
+and full F27/F28 remain pending.
 See the [installation contract](library-installation.md) and Mac handoff.
 
 Core storage checkpoint (2026-10-31): named parallel profile repositories and
@@ -24,7 +33,8 @@ revision-checked exact-source storage, shared rich formatting/undo, staged
 RawFiles/RawGenBook source writes and native Mac editing. Full editor organization,
 draft restart and other-host acceptance remain open. The [provider-neutral library
 boundary](library-installation.md) now supplies installed/local SWORD catalogs and
-pure permission-aware installation decisions; package execution and then sync are next. Devotionals
+pure permission-aware decisions and staged local execution; remote transfer and
+then sync are next. Devotionals
 remain deferred.
 
 Parallel checkpoint (2026-10-30): complete real-SDK interpolation oracle

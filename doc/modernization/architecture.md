@@ -467,3 +467,12 @@ compatible. A non-SWORD fixture proves catalog/planning independence; provider
 passage dispatch, authentication, package execution and session identity migration
 remain explicit future work. GTK3 remains the retained reference and GTK4 remains
 the Linux presentation plan; no shared installation logic belongs in either UI.
+
+
+Local SWORD installation (`f660f96`) now stages the complete explicit library root,
+verifies data/config fingerprints and reloads SDK/session caches before publication.
+Native configuration loading reads current .conf files without SDK cache writes or
+implicit AutoInstall, supporting both observed SDK loader signatures. The shared
+HTTPS endpoint policy keeps transport separate: downloaded/validated packages will
+use this same local transaction. See the [SwordKit transport audit and execution
+limits](library-installation.md#swordkit-https-audit-and-transport-direction).

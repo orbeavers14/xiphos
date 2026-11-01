@@ -7,14 +7,13 @@ and pushes are authorized; preserve unrelated changes, never force-push.
 
 ## Current checked source and active work
 
-Latest implementation: provider-neutral library catalogs and pure installation
-planning `48467f3`, following shared rich editing `64ab889` and native editor
-`f25114b`. Full local checkpoint: Mac221 passes+one index skip (222 registered,
-181.37s); portable172 passes+one skip (173 registered,152.66s), GTK runtime OFF.
-Focused ASan/UBSan5/5, TSan5/5; strict native-off C++11 all10/10. See the final
-dated section for actual logs, scope and remaining gates. Next: staged local SWORD
-installation execution, then remote installation/maintenance and sync. Devotionals
-remain deferred. No full-parity acceptance increase.
+Latest implementation: staged local SWORD installation, fresh read-only SDK reload
+and HTTPS endpoint policy `f660f96`, following provider catalogs/planning `48467f3`.
+Full checkpoint: Mac222 passes+one index skip (223 registered,190.95s); portable173
+passes+one skip (174 registered,152.71s), GTK runtime OFF. Final focused refinements
+and SDK signature checks are recorded below. Next: bounded HTTPS transfer and safe
+archive extraction feeding this transaction, remote source management, maintenance
+and sync. Devotionals remain deferred. No full-parity acceptance increase.
 
 ## Earlier checkpoints (historical)
 
@@ -2393,3 +2392,73 @@ provider session identities, Windows/GTK4 presentation and physical host checks
 remain open. New shared code has no GTK dependency. Preserve the retained GTK3
 reference until retirement gates pass; GTK4 remains Linux presentation scope.
 Devotionals remain deferred.
+
+
+### 2026-10-31 staged local installation and SwordKit transport audit
+
+Implementation `f660f96` delivers prepare/execute APIs in Reader/FIFO/C for explicit
+expanded local SWORD roots. Whole-root data/config/permission fingerprints bind the
+observed source/destination. A verified private clone receives only the selected
+module's isolated data and exact configuration, then two renames install it.
+Rollback restores old data and SDK state on refresh failure; a failed filesystem
+rollback retains the original backup. No crash-atomicity, interprocess locking or
+fsync durability claim. Root bounds512MiB/16384 entries, isolated known driver
+layouts and unambiguous single-module .conf files limit this first execution slice.
+
+SDK reload and replacement sessions preserve tab IDs, histories, selections,
+capabilities and book caches. Search generations/scopes invalidate with monotonic
+serials. C result allocation precedes accepted writes, and committed polling does
+not allocate. New shared code is GTK-free; the retained GTK3 app is unchanged.
+Native install UI, progress/cancellation, very large-library scaling and physical
+Windows/Fedora checks remain open. See [the contract](library-installation.md).
+
+Tests found the linked SDK writing modules-conf.cache while inspecting a source.
+The shared native loader now uses SDK SWConfig parsing/augmentation without cache
+IO, rejects implicit AutoInstall and reads fresh .conf files. Installation removes
+only the staged derived cache, so a stale cache cannot hide new modules. Isolated
+inspection rejects escaping data paths before constructing drivers. The SDK loader
+signature is feature-probed, preserving both the older one-argument and newer
+cache-argument interface. Header syntax checks pass against both installed header
+sets; runtime validation uses the existing pinned local static SDK, not a new SDK.
+
+Full local Mac222 passes+one search-index skip (223 registered,190.95s); portable173
+passes+one skip (174 registered,152.71s), GTK runtime OFF. Focused ASan/UBSan8/8
+(19.03s, retained oracle leak detection disabled), TSan8/8 (34.13s). Logs:
+`build/local-final-{macos,linux-models,sanitized,thread-sanitized}-{configure,build,tests}.log`
+(where a configure log exists only for reconfigured builds). Final SDK-signature/
+general-book refinements: Mac app rebuilt plus3/3 (3.67s), portable3/3 (4.86s),
+ASan3/3 (7.04s), TSan3/3 (8.55s), `build/local-compat-*`. Final length-delimited
+fingerprint refinement passes local install1/1 on portable (2.55s), ASan (4.65s),
+TSan (5.31s), `build/local-fingerprint-*`; included in the final Mac3/3 above.
+Native-off strict C++11 all10/10 (7.05s), `build/local-final-legacy-*`. Strict C11
+public header, whitespace and changed-document relative links pass. Existing
+SDK deployment-target/retained deprecation warnings remain. Original prose only.
+
+The disposable SDK fixture exercises new/replacement RawText installs, prefix-based
+RawGenBook install/render, sibling book cache preservation, exact unknown config
+fields/notices/assets, stale source/destination rejection, source symlinks, path
+traversal before driver construction, cache-free preview, stale cache invalidation,
+injected post-install rollback, unchanged unrelated data/history, C ownership and
+preallocated allocation-free result publication. No live user library was changed.
+
+SwordKit main was inspected at d928c48b37d45502df4466194ab33bdcb1dbd1dd. Commit
+b86e795 introduces native URLSession HTTPS catalog/package downloads before local
+installation; its vendored SDK returns no HTTP transport without curl. Our current
+SDK has curl HTTP/FTP symbols, but that is not a cross-platform transfer guarantee.
+The GTK3 default is already HTTPS. Shared HttpsRepository now uses HTTPS only,
+separate catalog/package paths, bounded validated host/path/module values and
+single-pass URL encoding. HTTPS-only HEAD checks of CrossWire's catalog and rawzip
+ASV endpoint both returned200; no Bible text was downloaded. Actual remote network
+execution remains next, with TLS/redirect/transfer/extraction/cancellation checks.
+No SwordKit bridge/source, second engine, hosted CI or paid AI service was imported
+or invoked. The audit/primary links are in the installation contract.
+
+
+Final local Graphify refresh through f660f96:634 code/configuration files,11574
+nodes,31304 edges,353 communities, with community-aggregated HTML above5000 nodes.
+Source hashes unchanged by mapping; no external AI calls/tokens/cost. Coverage
+warnings:58 partially parsed files (including the conditional SDK-loader header)
+and73 without modeled symbols; raw diagnostics1823 dangling endpoints,2 self-loops,
+368 undirected endpoint collapses. These are mapping limitations, not compiler
+failures; source, two header syntax checks and SDK tests verify this boundary.
+Generated outputs remain local/untracked.
