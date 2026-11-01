@@ -1753,3 +1753,74 @@ extension CoreWorker {
         xc_request_release(try await wait(status,request))
     }
 }
+
+struct CoreSyncSettings: Sendable, Equatable {
+    var mode: Int32 = 0, listen: Int32 = 0
+    var privatePersonal = true, direct = true
+    var group = "", domain = "BIBLE-VERSE"
+    var speakers: [String] = []
+}
+struct CoreSyncNavigation: Sendable, Equatable {
+    var speaker: String, module: String, reference: String
+    var group = "1", domain = "BIBLE-VERSE"
+}
+struct CoreSyncDecision: Sendable {
+    let route: Int32
+    let navigation: CoreSyncNavigation?
+}
+struct CoreSyncEvent: Sendable { let kind: Int8, navigation: CoreSyncNavigation }
+struct CoreSyncBatch: Sendable { let active: Bool, overflow: Bool, events: [CoreSyncEvent] }
+extension CoreWorker {
+    func syncAvailable() -> Bool { xc_sync_network_available() != 0 }
+    private func syncValue(_ navigation: xc_sync_navigation) -> CoreSyncNavigation {
+        func text(_ pointer: UnsafePointer<CChar>?) -> String { pointer.map { String(cString:$0) } ?? "" }
+        return CoreSyncNavigation(speaker:text(navigation.speaker),module:text(navigation.module),reference:text(navigation.reference),group:text(navigation.group),domain:text(navigation.domain))
+    }
+    private func syncInput(_ navigation: CoreSyncNavigation, strings: SessionCStrings) throws -> xc_sync_navigation {
+        try xc_sync_navigation(speaker:strings.copy(navigation.speaker),module:strings.copy(navigation.module),reference:strings.copy(navigation.reference),group:strings.copy(navigation.group),domain:strings.copy(navigation.domain))
+    }
+    func configureSync(_ settings: CoreSyncSettings, user: String = "", phrase: String = "", acknowledged: Bool = false, network: Bool = true) async throws {
+        let handle = try worker(), strings = SessionCStrings()
+        let speakers = try settings.speakers.map { Optional(try strings.copy($0)) }
+        var config = try xc_sync_settings(mode:settings.mode,listen:settings.listen,private_personal:settings.privatePersonal ? 1:0,direct_navigation:settings.direct ? 1:0,group_tabs:0,group:strings.copy(settings.group),domain:strings.copy(settings.domain),allowed_speakers:nil,speaker_count:speakers.count)
+        var connection = try xc_sync_connection(application:strings.copy("Xiphos Native Preview"),version:strings.copy("1"),user:strings.copy(user),passphrase:strings.copy(phrase),network_acknowledged:acknowledged ? 1:0)
+        var request: OpaquePointer?
+        let status = speakers.withUnsafeBufferPointer { pointers in
+            config.allowed_speakers = pointers.baseAddress
+            return network && settings.mode != 0 ? xc_worker_configure_sync_network(handle,&config,&connection,&request):xc_worker_configure_sync(handle,&config,&request)
+        }
+        let completed = try await wait(status,request);defer { xc_request_release(completed) }
+    }
+    func pollSync() async throws -> CoreSyncBatch {
+        let handle = try worker();var request: OpaquePointer?
+        let status = xc_worker_poll_sync_network(handle,&request)
+        let completed = try await wait(status,request);defer { xc_request_release(completed) }
+        guard let owned = xc_request_take_sync_network_events(completed) else { throw CoreError(status:XC_ENGINE_ERROR) }
+        defer { xc_sync_network_events_release(owned) }
+        var events: [CoreSyncEvent] = []
+        for index in 0..<xc_sync_network_event_count(owned) {
+            var kind: CChar = 0, navigation = xc_sync_navigation()
+            guard xc_sync_network_event_get(owned,index,&kind,&navigation) == XC_OK else { throw CoreError(status:XC_ENGINE_ERROR) }
+            events.append(CoreSyncEvent(kind:kind,navigation:syncValue(navigation)))
+        }
+        return CoreSyncBatch(active:xc_sync_network_events_active(owned) != 0,overflow:xc_sync_network_events_overflow(owned) != 0,events:events)
+    }
+    func planSync(_ navigation: CoreSyncNavigation) async throws -> CoreSyncDecision {
+        let handle = try worker(), strings = SessionCStrings();var input = try syncInput(navigation,strings:strings);var request: OpaquePointer?
+        let status = xc_worker_plan_incoming_sync(handle,&input,&request)
+        let completed = try await wait(status,request);defer { xc_request_release(completed) }
+        guard let owned = xc_request_take_sync_decision(completed) else { throw CoreError(status:XC_ENGINE_ERROR) }
+        defer { xc_sync_decision_release(owned) }
+        var result = xc_sync_result()
+        guard xc_sync_decision_get(owned,&result) == XC_OK else { throw CoreError(status:XC_ENGINE_ERROR) }
+        return CoreSyncDecision(route:result.route,navigation:result.route == 0 ? nil:syncValue(result.navigation))
+    }
+    func transmitSync(_ navigation: CoreSyncNavigation, received: Bool = false) async throws -> Bool {
+        let handle = try worker(), strings = SessionCStrings();var input = try syncInput(navigation,strings:strings);var request: OpaquePointer?
+        let status = xc_worker_transmit_sync_network(handle,&input,received ? 1:0,&request)
+        let completed = try await wait(status,request);defer { xc_request_release(completed) }
+        var sent: Int32 = 0
+        guard xc_request_sync_transmitted(completed,&sent) == XC_OK else { throw CoreError(status:XC_ENGINE_ERROR) }
+        return sent != 0
+    }
+}

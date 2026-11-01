@@ -11,6 +11,7 @@ import SwiftUI
         var window: NSWindow?
         var frame: SessionWindowFrame?
     }
+    var onPassageCommitted: ((PassageTarget,Bool) -> Void)?
     let worker: CoreWorker
     private(set) var path: String
     private(set) var records: [Record] = []
@@ -60,6 +61,7 @@ import SwiftUI
                     throw SessionHostError(message: "Saved window identities do not match.")
                 }
                 let model = ReaderModel(worker: worker, startupError: nil, autostart: false)
+                model.onPassageCommitted = { [weak self] target,received in self?.onPassageCommitted?(target,received) }
                 try await model.restoreWindow(saved.windows[index], tab: row.tab, host: hosts[index])
                 var capture = row.capture; capture.hostState = saved.windows[index].hostState
                 staged.append(Record(key: row.key, model: model, capture: capture, frame: hosts[index]?.frame))
@@ -78,6 +80,7 @@ import SwiftUI
     @discardableResult func addWindow() -> ReaderModel {
         let key = UUID().uuidString
         let model = ReaderModel(worker: worker, startupError: nil)
+        model.onPassageCommitted = { [weak self] target,received in self?.onPassageCommitted?(target,received) }
         records.append(Record(key: key, model: model, capture: CoreWindowCapture(tab: 0, key: key)))
         activeKey = key; showWindow(at: records.count - 1); return model
     }
@@ -200,6 +203,8 @@ import SwiftUI
     private var terminating = false
     private var editors: [NativeEditorWindow] = []
     private var recovery: NativeRecoveryController?
+    private var sync: NativeSyncModel?
+    private var syncWindow: NativeSyncWindow?
     private var library: NativeLibraryWindow?
     private var managedRoot: String?
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -211,6 +216,11 @@ import SwiftUI
                 let worker = context.worker;managedRoot = context.managedRoot
                 let owner = NativeSessionController(worker: worker, path: try NativeSessionController.defaultPath())
                 controller = owner
+                let sync = NativeSyncModel(worker:worker);self.sync = sync
+                sync.current = { [weak owner] in owner?.records.first(where: { $0.key == owner?.activeKey })?.model.syncTarget }
+                sync.receive = { [weak self,weak owner] navigation in guard self?.terminating == false else { return false };return owner?.records.first(where: { $0.key == owner?.activeKey })?.model.receiveSync(navigation) ?? false }
+                sync.review = { [weak self,weak owner] navigation in guard self?.terminating == false else { return false };return owner?.records.first(where: { $0.key == owner?.activeKey })?.model.reviewSync(navigation) ?? false }
+                owner.onPassageCommitted = { [weak self,weak sync] target,received in guard self?.terminating == false else { return };sync?.broadcast(target,received:received) }
                 let key = "NativeRecoveryPath:" + folder.path
                 let recovery = NativeRecoveryController(worker:worker,path:UserDefaults.standard.string(forKey:key) ?? folder.appendingPathComponent("recovery.snapshot").path)
                 self.recovery = recovery
@@ -277,6 +287,10 @@ import SwiftUI
             let alert = NSAlert();alert.messageText = "Restart to use this module library";alert.informativeText = selected.path + "\nThe current library stays active until the app restarts.";alert.runModal()
         } catch { let alert = NSAlert();alert.messageText = "Module library could not be selected";alert.informativeText = error.localizedDescription;alert.runModal() }
     }
+    func openSync() {
+        guard !terminating,let sync else { return }
+        if let syncWindow { syncWindow.window.makeKeyAndOrderFront(nil) } else { syncWindow = NativeSyncWindow(model:sync) }
+    }
     func openModuleLibrary() {
         guard !terminating, let controller else { return }
         if let library { library.window.makeKeyAndOrderFront(nil);library.model.reload();return }
@@ -316,6 +330,7 @@ import SwiftUI
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard !terminating else { return .terminateLater }
+        if sync?.busy == true { let alert = NSAlert();alert.messageText = "A sync connection change is still running";alert.informativeText = "Wait for it to finish, then quit.";alert.runModal();return .terminateCancel }
         if library?.model.isBusy == true { let alert = NSAlert();alert.messageText = "A module operation is still running";alert.informativeText = "Wait for it to finish, or stop the transfer in Module Library, then quit.";alert.runModal();return .terminateCancel }
         guard let controller else { return .terminateNow }
         terminating = true
@@ -325,13 +340,13 @@ import SwiftUI
                     guard await editor.confirmClose() else { for item in editors { item.model.frozen = false }; terminating = false; sender.reply(toApplicationShouldTerminate:false); return }
                     editor.model.frozen = true
                 }
-                try await controller.prepareToQuit(); try await recovery?.clear(); sender.reply(toApplicationShouldTerminate: true) }
+                try await controller.prepareToQuit(); try await recovery?.clear(); await sync?.stop(); sender.reply(toApplicationShouldTerminate: true) }
             catch {
                 let alert = NSAlert(); alert.messageText = "Quit without saving this session?"
                 alert.informativeText = error.localizedDescription
                 alert.addButton(withTitle: "Cancel"); alert.addButton(withTitle: "Quit Without Saving")
                 let quit = alert.runModal() == .alertSecondButtonReturn
-                terminating = quit; if !quit { controller.cancelQuit();recovery?.start();for item in editors { item.model.frozen = false } }; sender.reply(toApplicationShouldTerminate: quit)
+                if quit { await sync?.stop() };terminating = quit; if !quit { controller.cancelQuit();recovery?.start();for item in editors { item.model.frozen = false } }; sender.reply(toApplicationShouldTerminate: quit)
             }
         }
         return .terminateLater

@@ -78,6 +78,7 @@ foreach(library IN LISTS sword_link_flags)
 endforeach()
 set(adapter "${CMAKE_CURRENT_SOURCE_DIR}/EditorCore.swift" "${CMAKE_CURRENT_SOURCE_DIR}/CoreReader.swift" "${CMAKE_CURRENT_SOURCE_DIR}/CoreWorker.swift")
 set(preview_sources
+  "${CMAKE_CURRENT_SOURCE_DIR}/SyncUI.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/EditorWindow.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/LibrarySetup.swift" "${CMAKE_CURRENT_SOURCE_DIR}/LibraryManagement.swift" "${CMAKE_CURRENT_SOURCE_DIR}/RecoveryUI.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SessionHostState.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SessionApp.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/ReaderApp.swift" "${CMAKE_CURRENT_SOURCE_DIR}/BookPane.swift"
@@ -159,6 +160,18 @@ if(BUILD_TESTING)
   add_custom_target(macos_editor_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/editor_smoke")
   add_test(NAME macos_rich_editor COMMAND "${CMAKE_CURRENT_BINARY_DIR}/editor_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/rich-module-fixture" "${CMAKE_CURRENT_BINARY_DIR}/native-editor-fixture")
   set_tests_properties(macos_rich_editor PROPERTIES FIXTURES_REQUIRED rich_module_fixture TIMEOUT 120)
+  add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/sync_smoke"
+    COMMAND ${SWIFTC} -swift-version 6 -D XIPHOS_PREVIEW_TEST -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
+      -I "${bridge}" ${adapter} ${preview_sources} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/SyncSmoke.swift"
+      "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
+      ${sword_link_flags} -lc++ -framework SwiftUI -framework AppKit -framework WebKit
+      -o "${CMAKE_CURRENT_BINARY_DIR}/sync_smoke"
+    DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift EditorCore.swift ${preview_sources} Tests/SyncSmoke.swift
+      Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h
+    VERBATIM)
+  add_custom_target(macos_sync_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/sync_smoke")
+  add_test(NAME macos_native_sync COMMAND "${CMAKE_CURRENT_BINARY_DIR}/sync_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/rich-module-fixture")
+  set_tests_properties(macos_native_sync PROPERTIES FIXTURES_REQUIRED rich_module_fixture RUN_SERIAL TRUE TIMEOUT 60)
   add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/recovery_smoke"
     COMMAND ${SWIFTC} -swift-version 6 -D XIPHOS_PREVIEW_TEST -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
       -I "${bridge}" ${adapter} ${preview_sources} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/RecoverySmoke.swift"

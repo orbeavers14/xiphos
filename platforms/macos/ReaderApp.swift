@@ -99,6 +99,20 @@ final class ReaderModel: ObservableObject {
     @Published private(set) var moduleOptions = ModuleOptionInfo.unknown
     private let worker: CoreWorker?
     private var tab: UInt64?
+    var onPassageCommitted: ((PassageTarget,Bool) -> Void)?
+    var syncTarget: PassageTarget? { guard !showingBook,let module = displayedModule,let entry = displayedEntry else { return nil };return PassageTarget(module:module,reference:entry.reference) }
+    @discardableResult func receiveSync(_ navigation: CoreSyncNavigation) -> Bool {
+        guard !closed,!isBusy,tab != nil else { return false }
+        run { token in try await self.visitAndPresent(module:navigation.module,reference:navigation.reference,token:token,received:true) };return true
+    }
+    @discardableResult func reviewSync(_ navigation: CoreSyncNavigation) -> Bool {
+        guard !closed,!isBusy,let worker,let tab,modules.contains(where: { $0.id == navigation.module }) else { return false }
+        run { token in
+            let references = try await worker.readReferenceList(tab:tab,module:navigation.module,expression:navigation.reference,context:self.displayedEntry?.reference ?? self.reference)
+            guard token == self.revision,!self.closed else { return }
+            self.bookNote = nil;self.referencePreview = references;self.message = "Received references for review."
+        };return true
+    }
     private var displayedEntry: RenderedEntry?
     private var displayedModule: String?
     private var revision: UInt64 = 0
@@ -425,14 +439,14 @@ final class ReaderModel: ObservableObject {
             try await self.present(entry, module: main, token: token, updateInput: false)
         }
     }
-    private func visitAndPresent(module: String, reference: String, token: UInt64) async throws {
+    private func visitAndPresent(module: String, reference: String, token: UInt64, received: Bool = false) async throws {
         guard let worker, let tab else { return }
         if modules.contains(where: { $0.id == module && $0.type == "Biblical Texts" }) {
             let pair = try await worker.studyPassage(tab: tab, module: module, commentary: commentarySelection, reference: reference)
-            try await present(pair.text, module: module, token: token, passage: pair)
+            try await present(pair.text, module: module, token: token, passage: pair, received:received)
         } else {
             let entry = try await worker.visit(tab: tab, module: module, reference: reference)
-            try await present(entry, module: module, token: token)
+            try await present(entry, module: module, token: token, received:received)
         }
     }
     private func presentDictionary(_ entry: RenderedDictionaryEntry, source: PassageTarget?,
@@ -627,7 +641,7 @@ final class ReaderModel: ObservableObject {
             try await self.visitAndPresent(module: selection, reference: submitted, token: token)
         }
     }
-    private func present(_ entry: RenderedEntry, module: String, token: UInt64, updateInput: Bool = true, passage: RenderedStudyPassage? = nil) async throws {
+    private func present(_ entry: RenderedEntry, module: String, token: UInt64, updateInput: Bool = true, passage: RenderedStudyPassage? = nil, received: Bool = false) async throws {
         guard let worker, let tab else { return }
         let pair: RenderedStudyPassage?
         if let passage { pair = passage }
@@ -687,8 +701,10 @@ final class ReaderModel: ObservableObject {
         }
         choices = selectors
         if updateInput { reference = entry.reference; selection = module }
+        let changed = displayedModule != module || displayedEntry?.reference != entry.reference
         displayedEntry = entry; displayedModule = module
         canBack = history.canBack; canForward = history.canForward
+        if changed { onPassageCommitted?(PassageTarget(module:module,reference:entry.reference),received) }
     }
     func navigate(_ direction: Int32) {
         guard let worker, let tab else { return }
@@ -1463,6 +1479,7 @@ struct XiphosNativePreview: App {
                 Button("Save") { delegate.saveSession() }.keyboardShortcut("s")
                 Button("Save As…") { delegate.saveSessionAs() }.keyboardShortcut("s",modifiers:[.command,.shift])
                 Divider()
+                Button("BibleSync…") { delegate.openSync() }
                 Button("Module Library…") { delegate.openModuleLibrary() }
                 Button("Choose Module Library Folder…") { delegate.chooseModuleLibrary() }
                 Button("New Module Library…") { delegate.chooseModuleLibrary(create:true) }
