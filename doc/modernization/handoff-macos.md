@@ -36,6 +36,14 @@ encrypted correctness, full visual/workflow parity, Windows/Fedora and native sy
 controls remain open. Devotionals deferred. Next: native sync controls and remaining
 cross-host recovery/management acceptance, without a whole-parity claim.
 
+## Future roadmap additions (2026-11-01)
+
+Owner requested [personal data sync and Apple native Handoff](shared-core-roadmap.md#personal-data-sync-across-devices).
+Shared merge/conflict/offline behavior belongs in C++; Apple continuation is a
+native adapter over portable activity records. No backend or mobile frontend is
+selected. This documentation-only checkpoint adds scope, not implementation or
+acceptance. Relative links and diff checks passed; no build required.
+
 ## Earlier checkpoints (historical)
 
 Latest checked/pushed implementation is `2b2f518`, following `d0b068c`, `f0778e0`

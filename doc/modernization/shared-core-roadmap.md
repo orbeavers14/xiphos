@@ -131,6 +131,68 @@ attribution, cache/download limits, unavailable-network behavior, cancellation a
 preservation of existing SWORD workflows. This remains future scope and does not
 change current parity acceptance.
 
+## Personal data sync across devices
+
+Owner-requested future scope, 2026-11-01. This is separate from BibleSync live
+passage sharing and local autosave/recovery; neither currently synchronizes user
+files between devices. No data-sync implementation or backend is selected yet.
+
+Planned scope:
+
+- Bookmarks, folders, tags, highlights and personal notes.
+- Study pads, journals and prayer lists, including supported document organization.
+- Reading position, named parallel sets and selected portable preferences.
+- Offline edits, stable item identities, schema/version compatibility, conflict
+  resolution, deletion tombstones, recoverable history and explicit restore.
+
+Keep merge rules, validation and versioned records in the shared C++ core.
+Platform adapters provide transport, account/credential integration and background
+scheduling. Evaluate a user-selected folder/file transport first using isolated
+original-prose fixtures; select cloud/service options separately. Apple-only
+transport must not become a requirement for Windows or Linux data compatibility.
+Do not blindly synchronize live profile files, absolute paths, machine-specific
+settings, secrets or in-progress recovery files. Define encryption, privacy,
+authentication and backup behavior before enabling network synchronization.
+
+Each device normally obtains Bible modules independently. Synchronize portable
+module identities/preferences where useful, report missing modules, and preserve
+provider licensing restrictions; this roadmap does not authorize copying licensed
+module packages. Credentials and provider access remain device/account concerns.
+
+Acceptance: two isolated clients on one host first, then cross-device/cross-platform
+checks covering concurrent edits, delete-versus-edit conflicts, offline/reconnect,
+duplicate/reordered delivery, interrupted transfer, schema upgrades and recovery
+without silent data loss. UI/account choices and transport remain future decisions.
+
+## Apple native Handoff
+
+Owner-requested future platform enhancement, 2026-11-01: continue a reading or
+study activity between supported Apple devices. Plan native Apple Handoff as a
+small activity-continuation adapter over shared reference/session contracts.
+It is distinct from continuous BibleSync passage following and from personal data
+sync. No Handoff implementation or iPhone/iPad frontend is currently delivered.
+
+Start with current module/provider identity, passage/reference and a bounded
+portable activity description. Resume using shared navigation and capability
+checks. If the destination lacks a module, access right or compatible activity,
+explain the limitation and offer an appropriate supported destination. Keep private
+notes, document contents, credentials and local filesystem paths out of advertised
+activity payloads; a document continuation may use a stable identity only after
+personal data sync can safely resolve it.
+
+Before implementation, verify Apple platform/API support, app identity, signing,
+entitlements and receiving-app requirements. A Mac-to-iPhone/iPad workflow needs
+an appropriate receiving app and is additional frontend scope, not assumed part
+of the existing three desktop frontends. Device/account requirements and behavior
+must be checked on actual supported devices; isolated clients cannot certify
+Apple Continuity behavior. Data-sync transport and Handoff should remain usable
+independently where their respective prerequisites are met.
+
+Sequence: define shared portable continuation records; implement and test Mac
+activity publication/receipt; add receiving Apple frontend support if selected;
+then validate physical-device continuation, missing-content handling, privacy,
+startup and compatibility with future product naming/app-identity decisions.
+
 ## Future product name
 
 Owner direction, recorded 2026-10-30: the finished product may be named

@@ -1,5 +1,13 @@
 # Modernization status and acceptance
 
+Roadmap addition (2026-11-01): owner requested future
+[personal data sync](shared-core-roadmap.md#personal-data-sync-across-devices)
+and [Apple native Handoff](shared-core-roadmap.md#apple-native-handoff).
+These are separate from BibleSync passage sharing. No sync backend, Apple mobile
+frontend or Handoff implementation is selected/delivered by this documentation
+change; existing implementation/acceptance counts are unchanged.
+
+
 Native recovery/management checkpoint (2026-11-01, `78d367a`): macOS now
 schedules shared recovery snapshots, offers startup Recover/Discard, reconstructs
 reading windows and unsaved source drafts, and preserves original-file conflict
