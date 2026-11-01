@@ -843,10 +843,11 @@ ModuleEditEntry Reader::save_module_edit(const ModuleEditTarget &target,const st
 }
 
 namespace xiphos::core {
+std::string Reader::transfer_destination_revision(const std::string &workspace){return detail::local_library_revision(impl_->root,workspace);}
 LocalInstallPreview Reader::prepare_local_install(const std::string &source,const std::string &module){std::lock_guard<std::mutex> lock(impl_->mutex);return detail::LocalInstallStorage(source,impl_->root,module).preview();}
-LocalInstallResult Reader::install_local_module(const LocalInstallRequest &request,const std::function<void()> &refresh){
+LocalInstallResult Reader::install_local_module(const LocalInstallRequest &request,const std::function<void()> &refresh,const std::function<void()> &before_commit){
  detail::LocalInstallStorage transaction(request.source,impl_->root,request.module);auto prepared=transaction.stage(request);const auto root=impl_->root;
- transaction.install();std::unique_ptr<Reader> replacement;
+ if(before_commit)before_commit();transaction.install();std::unique_ptr<Reader> replacement;
  try{
   replacement=std::make_unique<Reader>(root);auto verified=transaction.preview();
   if(verified.destination_revision!=prepared.destination_revision||verified.source_version!=prepared.version)throw std::runtime_error("Reloaded installation did not verify");

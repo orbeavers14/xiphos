@@ -3,6 +3,7 @@
 #include "xiphos/core/local_install.hpp"
 #include <memory>
 namespace xiphos::core::detail {
+std::string local_library_revision(const std::string &root,const std::string &workspace_parent);
 // Entire explicit library root swaps as one staged unit. Two renames, with
 // rollback/backup preservation; not crash-atomic or interprocess locked.
 class LocalInstallStorage {

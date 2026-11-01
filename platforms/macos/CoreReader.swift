@@ -385,6 +385,7 @@ struct CoreError: LocalizedError, Sendable {
         switch status {
         case XC_INVALID_ARGUMENT: return "Check the module folder and reference. This preview supports verse-key modules."
         case XC_MODULE_NOT_FOUND: return "The selected module is not installed."
+        case XC_CANCELLED: return "The transfer was cancelled."
         default: return "The SWORD engine could not complete the request."
         }
     }

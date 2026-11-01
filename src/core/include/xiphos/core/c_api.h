@@ -60,7 +60,7 @@ typedef struct xc_search_batch xc_search_batch;
 typedef struct xc_catalog xc_catalog;
 typedef struct xc_history xc_history;
 typedef enum xc_status { XC_OK = 0, XC_INVALID_ARGUMENT = 1,
-  XC_MODULE_NOT_FOUND = 2, XC_ENGINE_ERROR = 3, XC_PENDING = 4 } xc_status;
+  XC_MODULE_NOT_FOUND = 2, XC_ENGINE_ERROR = 3, XC_PENDING = 4, XC_CANCELLED = 5 } xc_status;
 /* Copied flags and borrowed CSS from an owned HTML snapshot. CSS remains valid
  * until that snapshot is released. requested/applied describe annotation word
  * layout; CSS may contain spacing-only rules while both flags are zero. */
@@ -351,6 +351,45 @@ const char *xc_library_catalog_source(const xc_library_catalog *catalog);
 size_t xc_library_catalog_count(const xc_library_catalog *catalog);
 xc_status xc_library_catalog_item(const xc_library_catalog *catalog,size_t index,xc_library_item *out);
 void xc_library_catalog_release(xc_library_catalog *catalog);
+/* Shared HTTPS catalog/package jobs. Explicit remote acknowledgement required;
+ * workspace must be an existing directory outside the module root. TLS peer/host
+ * checks and HTTPS-only redirects are mandatory. CA bundle NULL uses system
+ * trust (no insecure mode). Numeric limits can only lower hard512MiB/16384 caps;
+ * catalog jobs also cap compressed8MiB/expanded32MiB/4096 entries.
+ * All input strings/catalog data copy before return. One FIFO SDK owner; the UI
+ * can cancel/poll progress through an independent atomic control. Cancel that
+ * wins before commit prevents install; once committing, cancel returns0.
+ * Accepted jobs drain at shutdown. Results are take-once, own all strings, and
+ * survive request/worker teardown. Borrowed nested handles must not be released. */
+typedef struct xc_local_install_result xc_local_install_result;
+typedef struct xc_remote_catalog xc_remote_catalog;
+typedef struct xc_remote_install_result xc_remote_install_result;
+typedef struct xc_transfer_control xc_transfer_control;
+typedef struct {const char *id,*host,*catalog_directory,*package_directory;unsigned port;} xc_https_repository;
+typedef struct {const char *workspace,*ca_bundle;uint64_t maximum_download_bytes,maximum_expanded_bytes;unsigned maximum_entries,timeout_seconds;int remote_access_acknowledged;} xc_transfer_options;
+typedef enum {XC_TRANSFER_QUEUED=0,XC_TRANSFER_DOWNLOADING,XC_TRANSFER_EXTRACTING,XC_TRANSFER_VALIDATING,XC_TRANSFER_COMMITTING,XC_TRANSFER_COMPLETE,XC_TRANSFER_CANCELLED,XC_TRANSFER_FAILED} xc_transfer_phase;
+typedef struct {int phase;uint64_t downloaded,download_total,expanded,entries;} xc_transfer_progress;
+void xc_transfer_options_default(xc_transfer_options *out);
+xc_status xc_worker_fetch_remote_catalog(xc_worker *worker,const xc_https_repository *repository,const xc_transfer_options *options,xc_request **out);
+xc_status xc_worker_install_remote_module(xc_worker *worker,const xc_remote_catalog *catalog,const char *module,int replace,const xc_transfer_options *options,xc_request **out);
+/* Take the preallocated control immediately after admission, even while pending. */
+xc_transfer_control *xc_request_take_transfer_control(xc_request *request);
+int xc_transfer_control_cancel(xc_transfer_control *control);
+xc_status xc_transfer_control_progress(const xc_transfer_control *control,xc_transfer_progress *out);
+void xc_transfer_control_release(xc_transfer_control *control);
+xc_remote_catalog *xc_request_take_remote_catalog(xc_request *request);
+const xc_library_catalog *xc_remote_catalog_library(const xc_remote_catalog *catalog);
+const char *xc_remote_catalog_destination_revision(const xc_remote_catalog *catalog);
+const char *xc_remote_catalog_revision(const xc_remote_catalog *catalog);
+const char *xc_remote_catalog_archive_sha256(const xc_remote_catalog *catalog);
+void xc_remote_catalog_release(xc_remote_catalog *catalog);
+xc_remote_install_result *xc_request_take_remote_install_result(xc_request *request);
+const xc_local_install_result *xc_remote_install_result_installed(const xc_remote_install_result *result);
+/* Updated destination fingerprint permits the next choice from the same offer. */
+const xc_remote_catalog *xc_remote_install_result_next_catalog(const xc_remote_install_result *result);
+const char *xc_remote_install_result_archive_sha256(const xc_remote_install_result *result);
+uint64_t xc_remote_install_result_downloaded(const xc_remote_install_result *result);
+void xc_remote_install_result_release(xc_remote_install_result *result);
 /* Local execution: explicit disjoint SWORD roots only. Prepare returns full-tree
  * fingerprints (data/config/permissions), not just catalog metadata revisions.
  * Install requires both observed fingerprints and strict replace=0/1. Data and
@@ -360,7 +399,6 @@ void xc_library_catalog_release(xc_library_catalog *catalog);
  * survive worker/request teardown, and lend strings until result release.
  * No network, archive extraction or native installer UI is added by these APIs. */
 typedef struct xc_local_install_preview xc_local_install_preview;
-typedef struct xc_local_install_result xc_local_install_result;
 typedef struct {const char *module,*source_revision,*destination_revision,*source_version,*installed_version;int decision;} xc_local_install_info;
 typedef struct {const char *module,*version,*source_revision,*destination_revision;int replaced;} xc_local_install_done;
 xc_status xc_worker_prepare_local_install(xc_worker *worker,const char *source,const char *module,xc_request **out);

@@ -2,6 +2,7 @@
 #include "xiphos/core/worker.hpp"
 #include "xiphos/core/profile.hpp"
 #include "search_control.hpp"
+#include "remote_io.hpp"
 #include "xiphos/core/note_presentation.h"
 #include "xiphos/core/reference_command.hpp"
 #include "xiphos/core/passage_uri.hpp"
@@ -605,6 +606,46 @@ void validate_native_capture(const std::vector<NativeTabCapture> &tabs,const std
   if(tabs.size()>maximum_saved_tabs)throw std::invalid_argument("Too many native tabs");
   skeleton.tabs.reserve(tabs.size());for(const auto &tab:tabs)skeleton.tabs.push_back({tab.key,{},{},false,false,tab.host_state});validate_native_session(skeleton);
 }
+}
+StudyWorker::RemoteCatalogTask StudyWorker::fetch_remote_catalog(HttpsRepository repository,TransferOptions options){
+ auto control=std::make_shared<TransferControl>();
+ try{if(!transfer_options_valid(options))throw std::invalid_argument("Invalid or unacknowledged remote transfer");(void)repository_catalog_url(repository);}catch(...){detail::TransferAccess::fail(*control);return {control,selected_profile_rejection<RemoteCatalog>()};}
+ auto future=impl_->submit([repository=std::move(repository),options=std::move(options),control](Impl::State &s)mutable{
+  try{
+   detail::TransferAccess::check(*control);(void)s.reader.transfer_destination_revision(options.workspace);
+   options.maximum_download_bytes=std::min<std::uint64_t>(options.maximum_download_bytes,8*1024*1024);options.maximum_expanded_bytes=std::min<std::uint64_t>(options.maximum_expanded_bytes,32*1024*1024);options.maximum_entries=std::min<std::uint32_t>(options.maximum_entries,4096);
+   RemoteCatalog result;result.repository=repository;
+   {detail::TransferWorkspace workspace(options.workspace);const auto archive=workspace.root()/"catalog.tar.gz",expanded=workspace.root()/"library";
+    auto downloaded=detail::download_https(repository_catalog_url(repository),archive,options,*control);detail::extract_repository_archive(archive,expanded,detail::RepositoryArchive::catalog,options,*control);
+    detail::TransferAccess::phase(*control,TransferPhase::validating);result.catalog=s.reader.local_library_catalog(expanded.u8string());result.revision=library_catalog_revision(result.catalog);result.archive_sha256=std::move(downloaded.sha256);
+   }
+   result.destination_revision=s.reader.transfer_destination_revision(options.workspace);detail::TransferAccess::finish(*control);return result;
+  }catch(...){detail::TransferAccess::fail(*control);if(control->progress().phase==TransferPhase::cancelled)throw TransferCancelled();throw;}
+ });return {control,std::move(future)};
+}
+StudyWorker::RemoteInstallTask StudyWorker::install_remote_module(RemoteCatalog catalog,std::string module,TransferOptions options,bool replace){
+ auto control=std::make_shared<TransferControl>();
+ try{if(!transfer_options_valid(options)||!editable_document_revision(catalog.destination_revision)||library_catalog_revision(catalog.catalog)!=catalog.revision)throw std::invalid_argument("Invalid remote catalog or transfer options");(void)repository_module_url(catalog.repository,module);}catch(...){detail::TransferAccess::fail(*control);return {control,selected_profile_rejection<RemoteInstallResult>()};}
+ auto future=impl_->submit([catalog=std::move(catalog),module=std::move(module),options=std::move(options),replace,control](Impl::State &s)mutable{
+  try{
+   detail::TransferAccess::check(*control);if(s.reader.transfer_destination_revision(options.workspace)!=catalog.destination_revision)throw std::invalid_argument("Destination changed; refresh catalog installation state");
+   auto expected=std::find_if(catalog.catalog.items.begin(),catalog.catalog.items.end(),[&](const auto &item){return item.identity.provider=="sword"&&item.identity.item==module;});if(expected==catalog.catalog.items.end())throw std::invalid_argument("Module is not in the selected remote catalog");
+   detail::TransferWorkspace workspace(options.workspace);const auto archive=workspace.root()/"module.zip",expanded=workspace.root()/"library";
+   auto downloaded=detail::download_https(repository_module_url(catalog.repository,module),archive,options,*control);detail::extract_repository_archive(archive,expanded,detail::RepositoryArchive::module,options,*control);
+   detail::TransferAccess::phase(*control,TransferPhase::validating);auto actual=s.reader.local_library_catalog(expanded.u8string());
+   if(actual.items.size()!=1||library_catalog_revision({"sword.package",{actual.items.front()}})!=library_catalog_revision({"sword.package",{*expected}}))throw std::invalid_argument("Downloaded package does not match advertised module metadata/version");
+   auto preview=s.reader.prepare_local_install(expanded.u8string(),module);if(preview.destination_revision!=catalog.destination_revision)throw std::invalid_argument("Destination changed during download");
+   RemoteInstallResult result;result.catalog=std::move(catalog);result.archive_sha256=std::move(downloaded.sha256);result.downloaded=downloaded.bytes;
+   std::map<StudyTab,std::pair<StudySessionState,SessionCapabilities>> states;for(const auto &t:s.tabs)states.emplace(t.first,std::make_pair(t.second->capture_state(),t.second->capabilities()));
+   result.installed=s.reader.install_local_module({expanded.u8string(),module,preview.source_revision,preview.destination_revision,replace},[&]{
+    std::map<StudyTab,std::unique_ptr<StudySession>> replacement;for(const auto &t:states){auto session=StudySession::from_state(s.reader,t.second.first,t.second.second);session->continue_search_serial(*s.tabs.at(t.first));replacement.emplace(t.first,std::move(session));}s.tabs.swap(replacement);
+   },[&]{detail::TransferAccess::commit(*control);});
+   // Both fingerprints are64 bytes; update the owned next-install snapshot
+   // without allocation after the filesystem/SDK commit.
+   std::copy(result.installed.destination_revision.begin(),result.installed.destination_revision.end(),result.catalog.destination_revision.begin());
+   detail::TransferAccess::finish(*control);return result;
+  }catch(...){detail::TransferAccess::fail(*control);if(control->progress().phase==TransferPhase::cancelled)throw TransferCancelled();throw;}
+ });return {control,std::move(future)};
 }
 std::future<LocalInstallPreview> StudyWorker::prepare_local_install(std::string source,std::string module){
  try{selected_profile_path(source);if(module.empty()||module.size()>4096||!editable_document_text(module)||!editable_document_text(source))throw std::invalid_argument("Invalid installation source/module");}catch(...){return selected_profile_rejection<LocalInstallPreview>();}

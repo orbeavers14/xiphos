@@ -5,6 +5,7 @@
 #include "bookmarks.hpp"
 #include "annotations.hpp"
 #include "editable_document.hpp"
+#include "remote_install.hpp"
 #include <cstdint>
 #include <future>
 #include <memory>
@@ -69,6 +70,10 @@ public:
   StudyWorker(const StudyWorker &) = delete;
   StudyWorker &operator=(const StudyWorker &) = delete;
   std::future<std::vector<Module>> modules();
+  struct RemoteCatalogTask {std::shared_ptr<TransferControl> control;std::future<RemoteCatalog> result;};
+  struct RemoteInstallTask {std::shared_ptr<TransferControl> control;std::future<RemoteInstallResult> result;};
+  RemoteCatalogTask fetch_remote_catalog(HttpsRepository repository,TransferOptions options);
+  RemoteInstallTask install_remote_module(RemoteCatalog catalog,std::string module,TransferOptions options,bool replace=false);
   std::future<LocalInstallPreview> prepare_local_install(std::string source,std::string module);
   std::future<LocalInstallResult> install_local_module(LocalInstallRequest request);
   std::future<LibraryCatalog> library_catalog();

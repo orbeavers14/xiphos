@@ -116,6 +116,11 @@ struct xc_worker { xiphos::core::StudyWorker value; explicit xc_worker(const cha
 struct xc_local_install_preview {xiphos::core::LocalInstallPreview value;};
 struct xc_local_install_result {xiphos::core::LocalInstallResult value;};
 struct xc_library_catalog {xiphos::core::LibraryCatalog value;};
+struct xc_transfer_control {std::shared_ptr<xiphos::core::TransferControl> value;};
+struct xc_remote_catalog {xiphos::core::HttpsRepository repository;xc_library_catalog catalog;std::string revision,destination_revision,archive_sha256;};
+struct xc_remote_install_result {xc_remote_catalog catalog;xc_local_install_result installed;std::string archive_sha256;std::uint64_t downloaded=0;};
+static void adopt_remote_catalog(xc_remote_catalog &out,xiphos::core::RemoteCatalog value) noexcept {out.repository=std::move(value.repository);out.catalog.value=std::move(value.catalog);out.revision=std::move(value.revision);out.destination_revision=std::move(value.destination_revision);out.archive_sha256=std::move(value.archive_sha256);}
+static xiphos::core::RemoteCatalog copy_remote_catalog(const xc_remote_catalog &c){return {c.repository,c.catalog.value,c.revision,c.destination_revision,c.archive_sha256};}
 struct xc_library_install_plan {xiphos::core::LibraryInstallPlan value;};
 struct xc_catalog { std::vector<xiphos::core::Module> value; };
 struct xc_history { xiphos::core::HistorySnapshot value; };
@@ -132,6 +137,9 @@ struct xc_request {
   std::unique_ptr<xc_passage> prepared_passage;
   std::unique_ptr<xc_dictionary_entry> prepared_dictionary;
   std::unique_ptr<xc_lexical_entry> prepared_lexical;
+  std::unique_ptr<xc_remote_catalog> remote_catalog;
+  std::unique_ptr<xc_remote_install_result> remote_install_result;
+  std::unique_ptr<xc_transfer_control> transfer_control;
   std::unique_ptr<xc_local_install_preview> local_install_preview;
   std::unique_ptr<xc_local_install_result> local_install_result;
   std::unique_ptr<xc_library_catalog> library_catalog;
@@ -229,6 +237,8 @@ struct xc_request {
     static_assert(std::is_nothrow_move_assignable_v<xiphos::core::BookmarkSnapshot>, "Committed bookmarks publication must not allocate");
     bookmarks->value=std::move(v);
   }
+  void store(xiphos::core::RemoteCatalog v){adopt_remote_catalog(*remote_catalog,std::move(v));}
+  void store(xiphos::core::RemoteInstallResult v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>,"Committed remote result publication must not allocate");adopt_remote_catalog(remote_install_result->catalog,std::move(v.catalog));remote_install_result->installed.value=std::move(v.installed);remote_install_result->archive_sha256=std::move(v.archive_sha256);remote_install_result->downloaded=v.downloaded;}
   void store(xiphos::core::LocalInstallPreview v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>,"Preview publication must not allocate");local_install_preview->value=std::move(v);}
   void store(xiphos::core::LocalInstallResult v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>,"Installed result publication must not allocate");local_install_result->value=std::move(v);}
   void store(xiphos::core::LibraryCatalog v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>,"Catalog publication must not allocate");library_catalog->value=std::move(v);}
@@ -380,6 +390,7 @@ unsigned options_to_flags(const xiphos::core::EngineOptions &o) {
 }
 xc_status failure() noexcept {
   try { throw; }
+  catch (const xiphos::core::TransferCancelled &) { return XC_CANCELLED; }
   catch (const std::out_of_range &) { return XC_MODULE_NOT_FOUND; }
   catch (const std::invalid_argument &) { return XC_INVALID_ARGUMENT; }
   catch (...) { return XC_ENGINE_ERROR; }
@@ -388,6 +399,8 @@ template<class T> struct Request final : xc_request {
   // Allocate result envelopes before accepting a state-changing job;
   // polling then only moves owned values into already allocated storage.
   Request() {
+    if constexpr (std::is_same_v<T,xiphos::core::RemoteCatalog>){remote_catalog=std::make_unique<xc_remote_catalog>();transfer_control=std::make_unique<xc_transfer_control>();}
+    if constexpr (std::is_same_v<T,xiphos::core::RemoteInstallResult>){remote_install_result=std::make_unique<xc_remote_install_result>();transfer_control=std::make_unique<xc_transfer_control>();}
     if constexpr (std::is_same_v<T,xiphos::core::LocalInstallPreview>) local_install_preview=std::make_unique<xc_local_install_preview>();
     if constexpr (std::is_same_v<T,xiphos::core::LocalInstallResult>) local_install_result=std::make_unique<xc_local_install_result>();
     if constexpr (std::is_same_v<T,xiphos::core::LibraryCatalog>) library_catalog=std::make_unique<xc_library_catalog>();
@@ -446,6 +459,7 @@ template<class F> xc_status queue_request(xc_worker *w, xc_request **out, F oper
     *out = request.release(); return XC_OK;
   } catch (...) { return failure(); }
 }
+template<class T,class F> xc_status queue_transfer_request(xc_worker *w,xc_request **out,F operation){if(out)*out=nullptr;if(!w||!out)return XC_INVALID_ARGUMENT;try{auto request=std::make_unique<Request<T>>();auto task=operation(w->value);request->transfer_control->value=std::move(task.control);request->future=std::move(task.result);*out=request.release();return XC_OK;}catch(...){return failure();}}
 const xiphos::core::Module *catalog_at(const xc_catalog *c, size_t i) {
   return c && i < c->value.size() ? &c->value[i] : nullptr;
 }
@@ -854,6 +868,27 @@ void xc_worker_close(xc_worker *w) { delete w; }
 xc_status xc_worker_modules(xc_worker *w, xc_request **out) {
   return queue_request(w, out, [](auto &worker) { return worker.modules(); });
 }
+void xc_transfer_options_default(xc_transfer_options *out){if(out)*out={nullptr,nullptr,128ull*1024*1024,512ull*1024*1024,16384,90,0};}
+static bool transfer_c_options(const xc_transfer_options *o){return o&&bounded_image_c_text(o->workspace,4096)&&(!o->ca_bundle||!*o->ca_bundle||bounded_image_c_text(o->ca_bundle,4096))&&o->remote_access_acknowledged==1&&o->maximum_download_bytes&&o->maximum_download_bytes<=512ull*1024*1024&&o->maximum_expanded_bytes&&o->maximum_expanded_bytes<=512ull*1024*1024&&o->maximum_entries&&o->maximum_entries<=16384&&o->timeout_seconds&&o->timeout_seconds<=300;}
+static xiphos::core::TransferOptions transfer_value(const xc_transfer_options &o){return {o.workspace,o.ca_bundle?o.ca_bundle:"",o.maximum_download_bytes,o.maximum_expanded_bytes,o.maximum_entries,o.timeout_seconds,true};}
+xc_status xc_worker_fetch_remote_catalog(xc_worker *w,const xc_https_repository *r,const xc_transfer_options *o,xc_request **out){if(out)*out=nullptr;if(!r||!transfer_c_options(o)||!bounded_image_c_text(r->id,128)||!bounded_image_c_text(r->host,253)||!bounded_image_c_text(r->catalog_directory,4096)||!r->package_directory||(*r->package_directory&&!bounded_image_c_text(r->package_directory,4096))||!r->port||r->port>65535)return XC_INVALID_ARGUMENT;return queue_transfer_request<xiphos::core::RemoteCatalog>(w,out,[=](auto &worker){return worker.fetch_remote_catalog({r->id,r->host,r->catalog_directory,r->package_directory,static_cast<std::uint16_t>(r->port)},transfer_value(*o));});}
+xc_status xc_worker_install_remote_module(xc_worker *w,const xc_remote_catalog *c,const char *module,int replace,const xc_transfer_options *o,xc_request **out){if(out)*out=nullptr;if(!c||!transfer_c_options(o)||!bounded_image_c_text(module,4096)||(replace!=0&&replace!=1))return XC_INVALID_ARGUMENT;return queue_transfer_request<xiphos::core::RemoteInstallResult>(w,out,[=](auto &worker){return worker.install_remote_module(copy_remote_catalog(*c),module,transfer_value(*o),replace!=0);});}
+xc_transfer_control *xc_request_take_transfer_control(xc_request *r){return r?r->transfer_control.release():nullptr;}
+int xc_transfer_control_cancel(xc_transfer_control *c){return c&&c->value&&c->value->request_cancel();}
+xc_status xc_transfer_control_progress(const xc_transfer_control *c,xc_transfer_progress *out){if(out)*out={};if(!c||!c->value||!out)return XC_INVALID_ARGUMENT;const auto p=c->value->progress();*out={static_cast<int>(p.phase),p.downloaded,p.download_total,p.expanded,p.entries};return XC_OK;}
+void xc_transfer_control_release(xc_transfer_control *c){delete c;}
+xc_remote_catalog *xc_request_take_remote_catalog(xc_request *r){return r&&r->status==XC_OK?r->remote_catalog.release():nullptr;}
+const xc_library_catalog *xc_remote_catalog_library(const xc_remote_catalog *c){return c?&c->catalog:nullptr;}
+const char *xc_remote_catalog_destination_revision(const xc_remote_catalog *c){return c?c->destination_revision.c_str():nullptr;}
+const char *xc_remote_catalog_revision(const xc_remote_catalog *c){return c?c->revision.c_str():nullptr;}
+const char *xc_remote_catalog_archive_sha256(const xc_remote_catalog *c){return c?c->archive_sha256.c_str():nullptr;}
+void xc_remote_catalog_release(xc_remote_catalog *c){delete c;}
+xc_remote_install_result *xc_request_take_remote_install_result(xc_request *r){return r&&r->status==XC_OK?r->remote_install_result.release():nullptr;}
+const xc_local_install_result *xc_remote_install_result_installed(const xc_remote_install_result *r){return r?&r->installed:nullptr;}
+const xc_remote_catalog *xc_remote_install_result_next_catalog(const xc_remote_install_result *r){return r?&r->catalog:nullptr;}
+const char *xc_remote_install_result_archive_sha256(const xc_remote_install_result *r){return r?r->archive_sha256.c_str():nullptr;}
+uint64_t xc_remote_install_result_downloaded(const xc_remote_install_result *r){return r?r->downloaded:0;}
+void xc_remote_install_result_release(xc_remote_install_result *r){delete r;}
 xc_status xc_worker_prepare_local_install(xc_worker *w,const char *source,const char *module,xc_request **out){if(!bounded_image_c_text(source,4096)||!bounded_image_c_text(module,4096)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}return queue_request(w,out,[=](auto &worker){return worker.prepare_local_install(source,module);});}
 xc_status xc_worker_install_local_module(xc_worker *w,const char *source,const char *module,const char *from,const char *to,int replace,xc_request **out){
  if(out)*out=nullptr;if(!w||!out||!bounded_image_c_text(source,4096)||!bounded_image_c_text(module,4096)||!bounded_image_c_text(from,64)||!bounded_image_c_text(to,64)||!xiphos::core::editable_document_revision(from)||!xiphos::core::editable_document_revision(to)||(replace!=0&&replace!=1))return XC_INVALID_ARGUMENT;

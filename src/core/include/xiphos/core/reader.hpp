@@ -51,9 +51,10 @@ public:
   Reader(const Reader &) = delete;
   Reader &operator=(const Reader &) = delete;
   const std::vector<Module> &modules() const;
+  std::string transfer_destination_revision(const std::string &workspace_parent);
   LocalInstallPreview prepare_local_install(const std::string &source,const std::string &module);
   // Serialized SDK owner; refresh must stage/publish all tab caches or throw.
-  LocalInstallResult install_local_module(const LocalInstallRequest &request,const std::function<void()> &refresh);
+  LocalInstallResult install_local_module(const LocalInstallRequest &request,const std::function<void()> &refresh,const std::function<void()> &before_commit = {});
   LibraryCatalog library_catalog();
   LibraryCatalog local_library_catalog(const std::string &root);
   ModuleEditEntry read_module_edit(const ModuleEditTarget &target);

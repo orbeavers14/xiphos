@@ -73,6 +73,11 @@ Layout layout(sword::SWMgr &manager,const fs::path &root,const std::string &id){
  if(result.config.empty())throw std::invalid_argument("Module configuration file is unavailable");return result;
 }
 }
+std::string local_library_revision(const std::string &root,const std::string &workspace_parent){
+ auto destination=root_path(root);auto parent=fs::canonical(fs::u8path(workspace_parent));
+ if(!fs::is_directory(parent)||inside(destination,parent))throw std::invalid_argument("Transfer workspace must be outside the live module library");
+ return revision(destination,scan(destination));
+}
 struct LocalInstallStorage::Impl {
  fs::path source,destination,temp,staged,backup;std::string module,source_revision,destination_revision;bool installed=false,finished=false;
  Impl(const std::string &s,const std::string &d,const std::string &m):source(root_path(s)),destination(root_path(d)),module(m){
