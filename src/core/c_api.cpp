@@ -113,6 +113,8 @@ struct xc_entry { xiphos::core::Entry value; };
 struct xc_search_html_export {xiphos::core::SearchHtmlExport value;};
 struct xc_search_text_export {xiphos::core::SearchTextExport value;};
 struct xc_worker { xiphos::core::StudyWorker value; explicit xc_worker(const char *root) : value(root ? root : "") {} };
+struct xc_library_catalog {xiphos::core::LibraryCatalog value;};
+struct xc_library_install_plan {xiphos::core::LibraryInstallPlan value;};
 struct xc_catalog { std::vector<xiphos::core::Module> value; };
 struct xc_history { xiphos::core::HistorySnapshot value; };
 struct xc_request {
@@ -128,6 +130,7 @@ struct xc_request {
   std::unique_ptr<xc_passage> prepared_passage;
   std::unique_ptr<xc_dictionary_entry> prepared_dictionary;
   std::unique_ptr<xc_lexical_entry> prepared_lexical;
+  std::unique_ptr<xc_library_catalog> library_catalog;
   std::unique_ptr<xc_module_edit> module_edit;
   std::unique_ptr<xc_editable_document> editable_document;
   std::unique_ptr<xc_native_session> native_session;
@@ -222,6 +225,7 @@ struct xc_request {
     static_assert(std::is_nothrow_move_assignable_v<xiphos::core::BookmarkSnapshot>, "Committed bookmarks publication must not allocate");
     bookmarks->value=std::move(v);
   }
+  void store(xiphos::core::LibraryCatalog v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>,"Catalog publication must not allocate");library_catalog->value=std::move(v);}
   void store(xiphos::core::ModuleEditEntry v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>,"Module edit publication must not allocate");module_edit->value=std::move(v);}
   void store(xiphos::core::EditableDocument v) {static_assert(std::is_nothrow_move_assignable_v<decltype(v)>,"Editor publication must not allocate");editable_document->value=std::move(v);}
   void store(xiphos::core::NativeSessionSnapshot v) {
@@ -378,6 +382,7 @@ template<class T> struct Request final : xc_request {
   // Allocate result envelopes before accepting a state-changing job;
   // polling then only moves owned values into already allocated storage.
   Request() {
+    if constexpr (std::is_same_v<T,xiphos::core::LibraryCatalog>) library_catalog=std::make_unique<xc_library_catalog>();
     if constexpr (std::is_same_v<T,xiphos::core::ModuleEditEntry>) module_edit=std::make_unique<xc_module_edit>();
     if constexpr (std::is_same_v<T,xiphos::core::EditableDocument>) editable_document=std::make_unique<xc_editable_document>();
     if constexpr (std::is_same_v<T,xiphos::core::NativeSessionSnapshot>) native_session=std::make_unique<xc_native_session>();
@@ -841,6 +846,22 @@ void xc_worker_close(xc_worker *w) { delete w; }
 xc_status xc_worker_modules(xc_worker *w, xc_request **out) {
   return queue_request(w, out, [](auto &worker) { return worker.modules(); });
 }
+xc_status xc_worker_library_catalog(xc_worker *w,xc_request **out){return queue_request(w,out,[](auto &worker){return worker.library_catalog();});}
+xc_status xc_worker_local_library_catalog(xc_worker *w,const char *root,xc_request **out){if(!bounded_image_c_text(root,4096)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}return queue_request(w,out,[=](auto &worker){return worker.local_library_catalog(root);});}
+xc_library_catalog *xc_request_take_library_catalog(xc_request *r){return r&&r->status==XC_OK?r->library_catalog.release():nullptr;}
+const char *xc_library_catalog_source(const xc_library_catalog *c){return c?c->value.source.c_str():nullptr;}
+size_t xc_library_catalog_count(const xc_library_catalog *c){return c?c->value.items.size():0;}
+xc_status xc_library_catalog_item(const xc_library_catalog *c,size_t index,xc_library_item *out){
+ if(out)*out={};if(!c||!out||index>=c->value.items.size())return XC_INVALID_ARGUMENT;
+ const auto &i=c->value.items[index];*out={i.identity.provider.c_str(),i.identity.item.c_str(),i.title.c_str(),i.language.c_str(),i.type.c_str(),i.translation.c_str(),i.edition.c_str(),i.version.c_str(),i.versification.c_str(),i.attribution.c_str(),i.license.c_str(),i.capabilities,static_cast<int>(i.access),static_cast<int>(i.delivery),i.installed?1:0,static_cast<int>(i.download),static_cast<int>(i.offline_storage),static_cast<int>(i.text_export)};return XC_OK;
+}
+void xc_library_catalog_release(xc_library_catalog *c){delete c;}
+xc_status xc_library_plan_install(const xc_library_catalog *source,const xc_library_catalog *installed,const char *provider,const char *item,xc_library_install_plan **out){
+ if(out)*out=nullptr;if(!source||!installed||!out||!bounded_image_c_text(provider,128)||!bounded_image_c_text(item,4096))return XC_INVALID_ARGUMENT;
+ try{auto result=std::make_unique<xc_library_install_plan>();result->value=xiphos::core::plan_library_install(source->value,installed->value,{provider,item});*out=result.release();return XC_OK;}catch(...){return failure();}
+}
+xc_status xc_library_install_plan_get(const xc_library_install_plan *p,xc_library_plan *out){if(out)*out={};if(!p||!out)return XC_INVALID_ARGUMENT;const auto &v=p->value;*out={v.identity.provider.c_str(),v.identity.item.c_str(),v.source_revision.c_str(),v.destination_revision.c_str(),v.source_version.c_str(),v.installed_version.c_str(),static_cast<int>(v.decision),static_cast<int>(v.delivery)};return XC_OK;}
+void xc_library_install_plan_release(xc_library_install_plan *p){delete p;}
 void xc_search_options_default(xc_search_options *out) {
   if(out){const xiphos::core::SearchLimits limits;*out={XC_SEARCH_PHRASE,0,limits.max_results,limits.max_reference_bytes};}
 }

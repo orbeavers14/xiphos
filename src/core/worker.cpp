@@ -232,6 +232,11 @@ struct StudyWorker::Impl {
 };
 StudyWorker::StudyWorker(std::string root) : impl_(std::make_unique<Impl>(std::move(root))) {}
 StudyWorker::~StudyWorker() = default;
+std::future<LibraryCatalog> StudyWorker::library_catalog(){return impl_->submit([](Impl::State &s){return s.reader.library_catalog();});}
+std::future<LibraryCatalog> StudyWorker::local_library_catalog(std::string root){
+ if(root.empty()||root.size()>4096||!editable_document_text(root)){std::promise<LibraryCatalog> p;auto f=p.get_future();p.set_exception(std::make_exception_ptr(std::invalid_argument("Invalid local library source path")));return f;}
+ return impl_->submit([root=std::move(root)](Impl::State &s){return s.reader.local_library_catalog(root);});
+}
 std::future<std::vector<Module>> StudyWorker::modules() {
   return impl_->submit([](Impl::State &s) { return s.reader.modules(); });
 }

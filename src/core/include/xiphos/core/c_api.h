@@ -328,6 +328,38 @@ const xc_book_tree *xc_book_note_tree(const xc_book_note *note);
 const xc_note *xc_book_note_content(const xc_book_note *note);
 void xc_book_note_release(xc_book_note *note);
 xc_status xc_worker_modules(xc_worker *worker, xc_request **out);
+/* Provider-neutral, owned catalog snapshots. SWORD inspection runs only on the
+ * FIFO SDK owner, with no network, installation or implicit home augmentation
+ * for explicit local roots. Inputs copy; take once after XC_OK. All item strings
+ * borrow until catalog release. Unknown rights are never grants. No credentials
+ * belong in these DTOs. Existing module APIs/identities remain compatible. */
+typedef struct xc_library_catalog xc_library_catalog;
+typedef struct xc_library_install_plan xc_library_install_plan;
+typedef enum {XC_LIBRARY_AVAILABLE=0,XC_LIBRARY_SIGN_IN_REQUIRED,XC_LIBRARY_LICENSE_REQUIRED,XC_LIBRARY_LOCKED,XC_LIBRARY_UNAVAILABLE} xc_library_access;
+typedef enum {XC_LIBRARY_NO_DELIVERY=0,XC_LIBRARY_LOCAL_SWORD,XC_LIBRARY_PROVIDER_PACKAGE} xc_library_delivery;
+typedef enum {XC_LIBRARY_PERMISSION_UNKNOWN=0,XC_LIBRARY_PERMISSION_ALLOWED,XC_LIBRARY_PERMISSION_DENIED} xc_library_permission;
+typedef enum {XC_LIBRARY_ONLINE_READ=1,XC_LIBRARY_OFFLINE_READ=2,XC_LIBRARY_LOCAL_SEARCH=4,XC_LIBRARY_PROVIDER_SEARCH=8,XC_LIBRARY_ANNOTATIONS=16,XC_LIBRARY_CROSS_REFERENCES=32,XC_LIBRARY_TEXT_EXPORT=64,XC_LIBRARY_LOCAL_INSTALL=128,XC_LIBRARY_OFFLINE_PACKAGE=256} xc_library_capability;
+typedef struct {
+ const char *provider,*item,*title,*language,*type,*translation,*edition,*version,*versification,*attribution,*license;
+ unsigned capabilities;
+ int access,delivery,installed,download_permission,offline_storage_permission,export_permission;
+} xc_library_item;
+xc_status xc_worker_library_catalog(xc_worker *worker,xc_request **out);
+xc_status xc_worker_local_library_catalog(xc_worker *worker,const char *root,xc_request **out);
+xc_library_catalog *xc_request_take_library_catalog(xc_request *request);
+const char *xc_library_catalog_source(const xc_library_catalog *catalog);
+size_t xc_library_catalog_count(const xc_library_catalog *catalog);
+xc_status xc_library_catalog_item(const xc_library_catalog *catalog,size_t index,xc_library_item *out);
+void xc_library_catalog_release(xc_library_catalog *catalog);
+/* Pure decision, no SDK, writes or network. Metadata revisions are not package
+ * checksums or an executable authorization. Different/unknown versions require
+ * explicit replacement; provider-package downloads require explicit download
+ * AND full-package offline-storage grants. Source/destination data must be rechecked at commit. */
+typedef enum {XC_LIBRARY_INSTALL=0,XC_LIBRARY_REPLACE_CONFIRMATION_REQUIRED,XC_LIBRARY_ALREADY_INSTALLED,XC_LIBRARY_INSTALL_SIGN_IN_REQUIRED,XC_LIBRARY_INSTALL_LICENSE_REQUIRED,XC_LIBRARY_INSTALL_UNAVAILABLE,XC_LIBRARY_INSTALL_UNSUPPORTED,XC_LIBRARY_INSTALL_PERMISSION_UNKNOWN,XC_LIBRARY_INSTALL_PERMISSION_DENIED} xc_library_install_decision;
+typedef struct {const char *provider,*item,*source_revision,*destination_revision,*source_version,*installed_version;int decision,delivery;} xc_library_plan;
+xc_status xc_library_plan_install(const xc_library_catalog *source,const xc_library_catalog *installed,const char *provider,const char *item,xc_library_install_plan **out);
+xc_status xc_library_install_plan_get(const xc_library_install_plan *plan,xc_library_plan *out);
+void xc_library_install_plan_release(xc_library_install_plan *plan);
 /* Initial whole-module Bible/regular-commentary search. Owned result only;
  * native UI remains pending. Cooperative cancel and
  * progress are available on this request; no SDK pointer crosses the boundary.

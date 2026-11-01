@@ -2,6 +2,7 @@
 #pragma once
 #include "bookmark_tags.hpp"
 #include "module_edit.hpp"
+#include "library.hpp"
 #include <functional>
 #include "annotations.hpp"
 #include "module_resolution.hpp"
@@ -49,6 +50,8 @@ public:
   Reader(const Reader &) = delete;
   Reader &operator=(const Reader &) = delete;
   const std::vector<Module> &modules() const;
+  LibraryCatalog library_catalog();
+  LibraryCatalog local_library_catalog(const std::string &root);
   ModuleEditEntry read_module_edit(const ModuleEditTarget &target);
   // Serialized owner only. Callback stages/publishes refreshed tab caches after
   // SDK reload; exceptions roll back both engine and module data.

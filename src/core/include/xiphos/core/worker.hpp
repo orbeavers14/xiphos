@@ -69,6 +69,8 @@ public:
   StudyWorker(const StudyWorker &) = delete;
   StudyWorker &operator=(const StudyWorker &) = delete;
   std::future<std::vector<Module>> modules();
+  std::future<LibraryCatalog> library_catalog();
+  std::future<LibraryCatalog> local_library_catalog(std::string root);
   std::future<ModuleNameResolution> resolve_module_name(StudyTab tab, std::string requested);
   std::future<VerseImageResource> read_verse_inline_image(std::string module,std::string source,
       std::size_t maximum_bytes=maximum_verse_image_bytes);

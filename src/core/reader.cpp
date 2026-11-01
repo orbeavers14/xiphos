@@ -17,6 +17,7 @@
 #include "module_alias_catalog.hpp"
 #include "sdk_text.hpp"
 #include "module_edit_internal.hpp"
+#include "sword_library.hpp"
 #include "xml_document.hpp"
 #include "sdk_render.hpp"
 #include "search_control.hpp"
@@ -124,6 +125,8 @@ Reader::Reader(const std::string &root) : impl_(std::make_unique<Impl>()) {
 }
 Reader::~Reader() = default;
 const std::vector<Module> &Reader::modules() const { return impl_->modules; }
+LibraryCatalog Reader::library_catalog(){std::lock_guard<std::mutex> lock(impl_->mutex);return detail::sword_library_catalog(*impl_->manager,"sword.installed",true);}
+LibraryCatalog Reader::local_library_catalog(const std::string &root){std::lock_guard<std::mutex> lock(impl_->mutex);return detail::local_sword_library_catalog(root);}
 ModuleNameResolution Reader::resolve_module_name(const std::string &requested) {
   detail::validate_search_module_name(requested);
   std::lock_guard<std::mutex> lock(impl_->mutex);
