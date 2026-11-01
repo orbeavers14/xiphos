@@ -26,6 +26,7 @@ them. Transitive libraries vary with the selected SDK and TLS backend.
 | zlib | Not specified | Direct runtime 1.2.12; effective core headers 1.3.2; see notes below | Catalog gzip expansion, PNG/ZIP support and SWORD linkage | `repository_archive.cpp`, libpng/libarchive/SWORD; direct link uses Apple SDK/system zlib |
 | libcurl | 7.62 | 8.23.0; runtime verified; OpenSSL 3.6.5 TLS backend | HTTPS download, certificate/redirect checks, transfer limits, progress and cancellation | `src/core/https_download.cpp`; selected MacPorts dynamic SDK |
 | libarchive | 3.6 | 3.8.11; static runtime verified | ZIP/tar parsing beneath the core extraction policy | `src/core/repository_archive.cpp`; verified source-built SDK at `build/libarchive-sdk` |
+| BibleSync — optional networking SDK | 2.2.0 plus reviewed safe API patch | 2.2.0 at `e1d3536` plus local patch; inspected 2026-11-01 | BibleSync multicast, session matching and presence beneath shared policy; networking OFF by default | `src/core/sync_transport.cpp`; [SDK patch/build](biblesync/README.md); private local static SDK, not a global install |
 | Threads / C and C++ runtimes | Target toolchain; C11 / C++17 | Apple toolchain/system runtime on macOS 27.2; no independent package version assigned | FIFO SDK ownership, atomics, filesystem and standard-library facilities | `src/core/worker.cpp`, transfer controls and shared services; CMake Threads target / libc++ |
 | bzip2 — SWORD transitive dependency | SDK-selected; no separate Xiphos floor | 1.0.8; system runtime verified | SWORD compression support | Explicit SWORD static extra link input; Apple system library |
 | XZ / liblzma — SWORD transitive dependency | SDK-selected; no separate Xiphos floor | 5.8.4; installed metadata/prefix inspected | SWORD compression support | Explicit SWORD static extra link input; Homebrew SDK |
@@ -49,7 +50,8 @@ them. Transitive libraries vary with the selected SDK and TLS backend.
 Authoritative requirements: [core CMake](../src/core/CMakeLists.txt).
 Source provenance, limits and notices: [PNG contract](../doc/modernization/png-export-workflows.md)
 and [HTTPS/extraction contract](../doc/modernization/https-transfer.md).
-The shared core does not require GTK, WebKitGTK, BibleSync or SQLite.
+The base shared core does not require GTK, WebKitGTK, BibleSync or SQLite.
+Optional BibleSync networking requires the reviewed SDK described above.
 Installed SDK capabilities are not necessarily features actively used by the app.
 
 ## Native frontend dependencies

@@ -32,6 +32,7 @@ struct StudyWorker::Impl {
   struct State {
     Reader reader;
     SyncSettings sync;
+    SyncTransport sync_network;
     std::map<StudyTab, std::unique_ptr<StudySession>> tabs;
     StudyTab next_tab = 1;
     explicit State(const std::string &root) : reader(root) {}
@@ -702,7 +703,13 @@ std::future<ModuleMaintenanceResult> StudyWorker::maintain_module(ModuleMaintena
   return s.reader.maintain_module(request,[&]{std::map<StudyTab,std::unique_ptr<StudySession>> replacement;for(const auto &t:states){auto session=StudySession::from_state(s.reader,t.second.first,t.second.second);session->continue_search_serial(*s.tabs.at(t.first));replacement.emplace(t.first,std::move(session));}s.tabs.swap(replacement);});
  });
 }
-std::future<void> StudyWorker::configure_sync(SyncSettings settings){try{validate_sync_settings(settings);}catch(...){return selected_profile_rejection<void>();}return impl_->submit([settings=std::move(settings)](Impl::State &s)mutable{s.sync=std::move(settings);});}
+std::future<void> StudyWorker::configure_sync_network(SyncSettings settings,SyncConnection connection){
+ try{validate_sync_settings(settings);if(connection.application.size()>64||connection.version.size()>32||connection.user.size()>64||connection.passphrase.size()>64)throw std::invalid_argument("Sync connection exceeds bounds");}catch(...){return selected_profile_rejection<void>();}
+ return impl_->submit([settings=std::move(settings),connection=std::move(connection)](Impl::State &s)mutable{try{s.sync_network.configure(settings,connection);s.sync=std::move(settings);}catch(...){s.sync={};throw;}});
+}
+std::future<SyncNetworkEvents> StudyWorker::poll_sync_network(){return impl_->submit([](Impl::State &s){return s.sync_network.poll();});}
+std::future<bool> StudyWorker::transmit_sync_network(SyncNavigation navigation,bool received){try{validate_sync_navigation(navigation);}catch(...){return selected_profile_rejection<bool>();}return impl_->submit([navigation=std::move(navigation),received](Impl::State &s){return s.sync_network.transmit(navigation,received);});}
+std::future<void> StudyWorker::configure_sync(SyncSettings settings){try{validate_sync_settings(settings);}catch(...){return selected_profile_rejection<void>();}return impl_->submit([settings=std::move(settings)](Impl::State &s)mutable{s.sync_network.stop();s.sync=std::move(settings);});}
 std::future<SyncDecision> StudyWorker::plan_incoming_sync(SyncNavigation navigation){try{validate_sync_navigation(navigation);}catch(...){return selected_profile_rejection<SyncDecision>();}return impl_->submit([navigation=std::move(navigation)](Impl::State &s){auto resolved=s.reader.resolve_module_name(navigation.module);return plan_sync_navigation(s.sync,navigation,resolved.module);});}
 std::future<bool> StudyWorker::can_transmit_sync(bool received){return impl_->submit([received](Impl::State &s){return sync_transmit_allowed(s.sync,received);});}
 std::future<RecoverySnapshot> StudyWorker::read_recovery(std::string path){try{selected_profile_path(path);}catch(...){return selected_profile_rejection<RecoverySnapshot>();}return impl_->submit([path=std::move(path)](Impl::State &){return read_recovery_snapshot(path);});}

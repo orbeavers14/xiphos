@@ -1,0 +1,140 @@
+--- a/include/biblesync.hh
++++ b/include/biblesync.hh
+@@ -363,13 +363,14 @@
+     char uuid_string[BSP_UUID_PRINT_LENGTH];	// printable
+ 
+     // socket init and listener start, called from setMode().
+-    string Setup();
++    string Setup(bool privacy = false);
++    BibleSync_mode setModeInternal(BibleSync_mode, BibleSync_navigate, string, bool);
+ 
+     // dispose of network access.
+     void Shutdown();
+ 
+     // real receiver.
+-    int ReceiveInternal();		// C++ object context.
++    int ReceiveInternal(unsigned maximum_packets = ~0u);		// C++ object context.
+     int InitSelectRead(char *, struct sockaddr_in *, BibleSyncMessage *);
+ 
+     // real transmitter.
+@@ -406,6 +407,10 @@
+ 			   BibleSync_navigate n = NULL,
+ 			   string p = "");
+     inline BibleSync_mode getMode(void) { return mode; };
++
++    // Apply privacy before initial beacon/presence; bounded polling for hosts.
++    BibleSync_mode setModeWithPrivacy(BibleSync_mode, BibleSync_navigate, string, bool);
++    static int ReceiveBounded(void *, unsigned maximum_packets);
+ 
+     // library identification.
+     inline string getVersion(void) { return BibleSync_version; };
+--- a/src/biblesync.cc
++++ b/src/biblesync.cc
+@@ -128,6 +128,14 @@
+ 				  BibleSync_navigate n,
+ 				  string p)
+ {
++    return setModeInternal(m, n, p, false);
++}
++BibleSync_mode BibleSync::setModeWithPrivacy(BibleSync_mode m, BibleSync_navigate n, string p, bool privacy)
++{
++    return setModeInternal(m, n, p, privacy);
++}
++BibleSync_mode BibleSync::setModeInternal(BibleSync_mode m, BibleSync_navigate n, string p, bool privacy)
++{
+     if ((mode == BSP_MODE_DISABLE) ||
+ 	((mode != BSP_MODE_DISABLE) &&
+ 	 (n != NULL)))		// oops.
+@@ -146,7 +154,7 @@
+ 	Shutdown();
+     }
+ 
+-    string result = Setup();
++    string result = Setup(privacy);
+     if (result != "")
+     {
+ 	if (nav_func != NULL)
+@@ -160,7 +168,7 @@
+ }
+ 
+ // network init w/listener start.
+-string BibleSync::Setup()
++string BibleSync::Setup(bool privacy)
+ {
+     string retval = "";
+     bool ok_so_far = true;
+@@ -229,6 +237,12 @@
+ 	    setPrivate(false);
+ 	}
+ 
++        // Configure outgoing TTL before Setup emits any beacon or presence.
++        if (ok_so_far && client_fd >= 0 && mode == BSP_MODE_PERSONAL && !setPrivate(privacy)) {
++            ok_so_far = false;
++            retval += " IP_MULTICAST_TTL";
++        }
++
+ 	// audience == "server" insofar as he recvs nav from speaker.
+ 	if (ok_so_far && (server_fd < 0))
+ 	{
+@@ -278,9 +292,9 @@
+ 	// beacon immediately, to avoid a presence announcement from going
+ 	// out first, giving our uuid, and allowing time for a malicious
+ 	// user to start faking his own beacons & nav using our uuid.
+-	if ((mode == BSP_MODE_PERSONAL) || (mode == BSP_MODE_SPEAKER))
++	if (ok_so_far && ((mode == BSP_MODE_PERSONAL) || (mode == BSP_MODE_SPEAKER)))
+ 	{
+-	    TransmitInternal(BSP_BEACON);
++	    if (TransmitInternal(BSP_BEACON) != BSP_XMIT_OK) retval += " initial beacon";
+ 	    beacon_countdown = beacon_count;
+ 
+ 	    // speaker mode => speaker list has become irrelevant.
+@@ -296,7 +310,7 @@
+ 
+ 	// now that we're alive, tell the network world that we're here.
+ 	if (retval == "")
+-	    TransmitInternal(BSP_ANNOUNCE);
++	    if (TransmitInternal(BSP_ANNOUNCE) != BSP_XMIT_OK) retval += " initial presence";
+     }
+ 
+     return retval;
+@@ -370,7 +384,11 @@
+ 
+ #define	DEBUG_LENGTH	(4*BSP_MAX_SIZE)	// print is bigger than raw
+ 
+-int BibleSync::ReceiveInternal()
++int BibleSync::ReceiveBounded(void *myself, unsigned maximum_packets)
++{
++    return ((BibleSync *)myself)->ReceiveInternal(maximum_packets > 64 ? 64 : maximum_packets);
++}
++int BibleSync::ReceiveInternal(unsigned maximum_packets)
+ {
+     if (mode == BSP_MODE_DISABLE)
+ 	return FALSE;				// done: un-schedule polling.
+@@ -386,7 +404,8 @@
+ 
+     // anything non-empty here is at least legitimate network traffic.
+     // whether it passes muster for BibleSync is another matter.
+-    while ((recv_size = InitSelectRead(dump, &source, &bsp)) > 0)
++    unsigned packets = 0;
++    while (packets++ < maximum_packets && (recv_size = InitSelectRead(dump, &source, &bsp)) > 0)
+     {
+ 	if (recv_size < BSP_HEADER_SIZE)
+ 	{
+@@ -700,6 +719,7 @@
+ 				   : 'x');	// known: don't tell app again.
+ 
+ 			    unsigned int old_speakers_size, new_speakers_size;
++			    if (object == speakers.end() && speakers.size() >= 256) continue;
+ 			    old_speakers_size = speakers.size();
+ 
+ 			    // whether previously known or not,
+@@ -882,6 +902,9 @@
+ 	body += filler + "=" + content[filler] + "\n";
+     }
+ 
++    // Refuse oversized metadata/references rather than silently truncating them.
++    if (body.size() > BSP_MAX_PAYLOAD) return BSP_XMIT_FAILED;
++
+     // ship it.
+     strncpy(bsp.body, body.c_str(), BSP_MAX_PAYLOAD);
+     unsigned int xmit_size = min(BSP_MAX_SIZE,

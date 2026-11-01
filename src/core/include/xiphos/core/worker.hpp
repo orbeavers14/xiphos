@@ -9,6 +9,7 @@
 #include "repository_store.hpp"
 #include "recovery.hpp"
 #include "sync.hpp"
+#include "sync_transport.hpp"
 #include <cstdint>
 #include <future>
 #include <memory>
@@ -179,6 +180,9 @@ public:
   std::future<EditableDocument> save_editable_document(StudyTab tab,std::string path,std::optional<std::string> expected_revision,std::string text);
   std::future<ModuleMaintenancePreview> preview_module_maintenance(std::string module);
   std::future<ModuleMaintenanceResult> maintain_module(ModuleMaintenanceRequest request);
+  std::future<void> configure_sync_network(SyncSettings settings,SyncConnection connection);
+  std::future<SyncNetworkEvents> poll_sync_network();
+  std::future<bool> transmit_sync_network(SyncNavigation navigation,bool received_navigation=false);
   std::future<void> configure_sync(SyncSettings settings);
   std::future<SyncDecision> plan_incoming_sync(SyncNavigation navigation);
   std::future<bool> can_transmit_sync(bool received_navigation);

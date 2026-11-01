@@ -1205,12 +1205,32 @@ xc_status xc_worker_save_recovery(xc_worker *worker,const char *path,const char 
 xc_recovery_snapshot *xc_request_take_recovery_snapshot(xc_request *request);
 void xc_recovery_snapshot_release(xc_recovery_snapshot *snapshot);
 /* Shared application sync policy. No sockets or wire authentication are added.
- * Only authenticated/validated BibleSync adapter events may enter this boundary.
+ * Only wire-validated, session-matching BibleSync adapter events enter here.
  * Startup remains disabled. Settings and all strings copy before queueing. */
 typedef struct {int mode,listen,private_personal,direct_navigation,group_tabs;const char *group,*domain;const char *const *allowed_speakers;size_t speaker_count;} xc_sync_settings;
 typedef struct {const char *speaker,*module,*reference,*group,*domain;} xc_sync_navigation;
 typedef struct xc_sync_decision xc_sync_decision;
 typedef struct {int route,tab_index;xc_sync_navigation navigation;} xc_sync_result;
+/* Optional safe BibleSync SDK transport. No network is opened at startup.
+ * Explicit connection acknowledgement is required. Identity and session phrase
+ * are transmitted in plaintext by the protocol; dumps/phrases are never results.
+ * Host schedules polling, at most one effective receive per second. Each poll
+ * processes at most64 packets and returns at most32 owned events; overflow is
+ * explicit. Feed N navigation to shared planning, then explicit native actions.
+ * Failed network reconfiguration disables the previous connection. */
+typedef struct {const char *application,*version,*user,*passphrase;int network_acknowledged;} xc_sync_connection;
+typedef struct xc_sync_network_events xc_sync_network_events;
+int xc_sync_network_available(void);
+xc_status xc_worker_configure_sync_network(xc_worker *worker,const xc_sync_settings *settings,const xc_sync_connection *connection,xc_request **out);
+xc_status xc_worker_poll_sync_network(xc_worker *worker,xc_request **out);
+xc_status xc_worker_transmit_sync_network(xc_worker *worker,const xc_sync_navigation *navigation,int received_navigation,xc_request **out);
+xc_status xc_request_sync_transmitted(const xc_request *request,int *out);
+xc_sync_network_events *xc_request_take_sync_network_events(xc_request *request);
+size_t xc_sync_network_event_count(const xc_sync_network_events *events);
+int xc_sync_network_events_active(const xc_sync_network_events *events);
+int xc_sync_network_events_overflow(const xc_sync_network_events *events);
+xc_status xc_sync_network_event_get(const xc_sync_network_events *events,size_t index,char *kind,xc_sync_navigation *navigation);
+void xc_sync_network_events_release(xc_sync_network_events *events);
 xc_status xc_worker_configure_sync(xc_worker *worker,const xc_sync_settings *settings,xc_request **out);
 xc_status xc_worker_plan_incoming_sync(xc_worker *worker,const xc_sync_navigation *navigation,xc_request **out);
 xc_sync_decision *xc_request_take_sync_decision(xc_request *request);
