@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "sword_library.hpp"
+#include "uncached_manager.hpp"
 #include "search_source.hpp"
 #include "bounded_file.hpp"
 #include "xiphos/core/editable_document.hpp"
@@ -70,7 +71,7 @@ LibraryCatalog sword_library_catalog(sword::SWMgr &manager,const std::string &so
 LibraryCatalog local_sword_library_catalog(const std::string &root){
  if(root.empty()||root.size()>4096||!editable_document_text(root)||!std::filesystem::is_directory(std::filesystem::u8path(root))||!std::filesystem::is_directory(std::filesystem::u8path(root)/"mods.d"))throw std::invalid_argument("Local SWORD source requires an explicit module root with mods.d");
  // Explicit root, no standard/home augmentation, rendering filters or network.
- sword::SWMgr manager(root.c_str(),true,nullptr,false,false);
+ UncachedEngineManager manager(root.c_str(),true,nullptr,false,false);
  // Source roots are selected separately by the caller; never leak a filesystem
  // location or credential into a provider-neutral catalog identifier.
  return sword_library_catalog(manager,"sword.local",false);

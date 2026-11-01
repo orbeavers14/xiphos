@@ -356,8 +356,23 @@ endif()
 find_package(Threads REQUIRED)
 find_package(LibXml2 REQUIRED)
 find_package(PNG 1.6 REQUIRED)
-add_library(xiphos_core STATIC reader.cpp verse_image.cpp html_source.cpp html_document.cpp export_png.cpp export_images.cpp book_tree.cpp search_batch.cpp search_generation.cpp search_session.cpp search_export.cpp search_export_selection.cpp search_export_header.cpp search_html_export.cpp search_validation.cpp module_alias_catalog.cpp search.cpp search_results.cpp search_scope.cpp module_resource.cpp book_resource.cpp book_inline_images.cpp book_document.cpp book_selection.cpp session.cpp session_state.cpp session_snapshot.cpp library.cpp sword_library.cpp editable_document.cpp rich_document.cpp module_edit.cpp heading_note_presentation.cpp content.cpp link.cpp lexical.cpp navigation.cpp worker.cpp c_api.cpp preferences.cpp profile.cpp bookmarks.cpp bookmark_tags.cpp annotations.cpp xml_document.cpp preference_file.cpp bounded_file.cpp)
+add_library(xiphos_core STATIC reader.cpp verse_image.cpp html_source.cpp html_document.cpp export_png.cpp export_images.cpp book_tree.cpp search_batch.cpp search_generation.cpp search_session.cpp search_export.cpp search_export_selection.cpp search_export_header.cpp search_html_export.cpp search_validation.cpp module_alias_catalog.cpp search.cpp search_results.cpp search_scope.cpp module_resource.cpp book_resource.cpp book_inline_images.cpp book_document.cpp book_selection.cpp session.cpp session_state.cpp session_snapshot.cpp library.cpp sword_library.cpp local_install.cpp repository.cpp editable_document.cpp rich_document.cpp module_edit.cpp heading_note_presentation.cpp content.cpp link.cpp lexical.cpp navigation.cpp worker.cpp c_api.cpp preferences.cpp profile.cpp bookmarks.cpp bookmark_tags.cpp annotations.cpp xml_document.cpp preference_file.cpp bounded_file.cpp)
 add_library(Xiphos::Core ALIAS xiphos_core)
+# Older supported SDKs have a one-argument virtual loader; cache-enabled builds
+# add skipCache. Probe the actual headers instead of inferring from version text.
+function(xiphos_probe_config_loader)
+  include(CheckCXXSourceCompiles)
+  set(CMAKE_REQUIRED_LIBRARIES ${XIPHOS_SWORD_TARGET})
+  check_cxx_source_compiles("#include <swmgr.h>
+struct Probe : sword::SWMgr { void loadConfigDir(const char *, bool) override; };
+int main() { return 0; }" XIPHOS_SWORD_HAS_CONFIG_CACHE_ARGUMENT)
+  if(XIPHOS_SWORD_HAS_CONFIG_CACHE_ARGUMENT)
+    target_compile_definitions(xiphos_core PRIVATE XIPHOS_SWORD_CONFIG_CACHE_ARGUMENT=1)
+  else()
+    target_compile_definitions(xiphos_core PRIVATE XIPHOS_SWORD_CONFIG_CACHE_ARGUMENT=0)
+  endif()
+endfunction()
+xiphos_probe_config_loader()
 # SWORD does not expose its regex backend's case bit in the public API.
 # GNU/ICU SDK builds use 2; C++11-regex SDK builds use 1. Validate the matching
 # SDK build value with core_search before claiming case-sensitive parity.
@@ -1277,6 +1292,10 @@ if(BUILD_TESTING)
   string(FIND "${tab_save_tail}" "\n/******************************************************************************" tab_save_end)
   string(SUBSTRING "${tab_save_tail}" 0 ${tab_save_end} tab_save_actual)
   file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/legacy_tab_save_actual.inc" "${tab_save_actual}")
+  add_executable(core_local_install_test tests/local_install_test.cpp)
+  target_link_libraries(core_local_install_test PRIVATE Xiphos::Core)
+  add_test(NAME core_local_install COMMAND core_local_install_test "${CMAKE_CURRENT_BINARY_DIR}/local-install-fixture")
+  set_tests_properties(core_local_install PROPERTIES TIMEOUT 120)
   add_executable(core_library_catalog_test tests/library_catalog_test.cpp)
   target_link_libraries(core_library_catalog_test PRIVATE Xiphos::Core)
   add_test(NAME core_library_catalog COMMAND core_library_catalog_test "${CMAKE_CURRENT_BINARY_DIR}/library-catalog-fixture")

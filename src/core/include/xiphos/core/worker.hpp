@@ -69,6 +69,8 @@ public:
   StudyWorker(const StudyWorker &) = delete;
   StudyWorker &operator=(const StudyWorker &) = delete;
   std::future<std::vector<Module>> modules();
+  std::future<LocalInstallPreview> prepare_local_install(std::string source,std::string module);
+  std::future<LocalInstallResult> install_local_module(LocalInstallRequest request);
   std::future<LibraryCatalog> library_catalog();
   std::future<LibraryCatalog> local_library_catalog(std::string root);
   std::future<ModuleNameResolution> resolve_module_name(StudyTab tab, std::string requested);

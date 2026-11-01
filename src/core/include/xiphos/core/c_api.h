@@ -351,6 +351,26 @@ const char *xc_library_catalog_source(const xc_library_catalog *catalog);
 size_t xc_library_catalog_count(const xc_library_catalog *catalog);
 xc_status xc_library_catalog_item(const xc_library_catalog *catalog,size_t index,xc_library_item *out);
 void xc_library_catalog_release(xc_library_catalog *catalog);
+/* Local execution: explicit disjoint SWORD roots only. Prepare returns full-tree
+ * fingerprints (data/config/permissions), not just catalog metadata revisions.
+ * Install requires both observed fingerprints and strict replace=0/1. Data and
+ * config stage together; old SDK/tab state is retained until reload succeeds.
+ * Two renames, rollback/backup preservation: no crash-atomicity/interprocess lock.
+ * All strings copy before admission; preallocated results take once after OK,
+ * survive worker/request teardown, and lend strings until result release.
+ * No network, archive extraction or native installer UI is added by these APIs. */
+typedef struct xc_local_install_preview xc_local_install_preview;
+typedef struct xc_local_install_result xc_local_install_result;
+typedef struct {const char *module,*source_revision,*destination_revision,*source_version,*installed_version;int decision;} xc_local_install_info;
+typedef struct {const char *module,*version,*source_revision,*destination_revision;int replaced;} xc_local_install_done;
+xc_status xc_worker_prepare_local_install(xc_worker *worker,const char *source,const char *module,xc_request **out);
+xc_status xc_worker_install_local_module(xc_worker *worker,const char *source,const char *module,const char *source_revision,const char *destination_revision,int replace,xc_request **out);
+xc_local_install_preview *xc_request_take_local_install_preview(xc_request *request);
+xc_local_install_result *xc_request_take_local_install_result(xc_request *request);
+xc_status xc_local_install_preview_get(const xc_local_install_preview *preview,xc_local_install_info *out);
+xc_status xc_local_install_result_get(const xc_local_install_result *result,xc_local_install_done *out);
+void xc_local_install_preview_release(xc_local_install_preview *preview);
+void xc_local_install_result_release(xc_local_install_result *result);
 /* Pure decision, no SDK, writes or network. Metadata revisions are not package
  * checksums or an executable authorization. Different/unknown versions require
  * explicit replacement; provider-package downloads require explicit download

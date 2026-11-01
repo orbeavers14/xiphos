@@ -18,6 +18,8 @@
 #include "sdk_text.hpp"
 #include "module_edit_internal.hpp"
 #include "sword_library.hpp"
+#include "local_install_internal.hpp"
+#include "uncached_manager.hpp"
 #include "xml_document.hpp"
 #include "sdk_render.hpp"
 #include "search_control.hpp"
@@ -101,7 +103,7 @@ Reader::Reader(const std::string &root) : impl_(std::make_unique<Impl>()) {
     throw std::invalid_argument("Module root must be an existing directory");
   impl_->root=root;
   // SWMgr takes ownership of the filter manager, matching the legacy backend.
-  impl_->manager = std::make_unique<EngineManager>(
+  impl_->manager = std::make_unique<detail::UncachedEngineManager>(
     root.empty() ? nullptr : root.c_str(), true,
     new sword::MarkupFilterMgr(sword::FMT_XHTML), false, root.empty());
   bool transliteration_available = false;
@@ -835,6 +837,20 @@ ModuleEditEntry Reader::save_module_edit(const ModuleEditTarget &target,const st
   if(verified.revision!=prepared.revision||verified.text!=prepared.text)throw std::runtime_error("Reloaded module edit did not verify");
   impl_.swap(replacement->impl_);
   try{refresh();}catch(...){impl_.swap(replacement->impl_);throw;}
+ }catch(...){replacement.reset();transaction.rollback();throw;}
+ transaction.finish();return prepared;
+}
+}
+
+namespace xiphos::core {
+LocalInstallPreview Reader::prepare_local_install(const std::string &source,const std::string &module){std::lock_guard<std::mutex> lock(impl_->mutex);return detail::LocalInstallStorage(source,impl_->root,module).preview();}
+LocalInstallResult Reader::install_local_module(const LocalInstallRequest &request,const std::function<void()> &refresh){
+ detail::LocalInstallStorage transaction(request.source,impl_->root,request.module);auto prepared=transaction.stage(request);const auto root=impl_->root;
+ transaction.install();std::unique_ptr<Reader> replacement;
+ try{
+  replacement=std::make_unique<Reader>(root);auto verified=transaction.preview();
+  if(verified.destination_revision!=prepared.destination_revision||verified.source_version!=prepared.version)throw std::runtime_error("Reloaded installation did not verify");
+  impl_.swap(replacement->impl_);try{refresh();}catch(...){impl_.swap(replacement->impl_);throw;}
  }catch(...){replacement.reset();transaction.rollback();throw;}
  transaction.finish();return prepared;
 }

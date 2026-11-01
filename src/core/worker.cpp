@@ -606,6 +606,22 @@ void validate_native_capture(const std::vector<NativeTabCapture> &tabs,const std
   skeleton.tabs.reserve(tabs.size());for(const auto &tab:tabs)skeleton.tabs.push_back({tab.key,{},{},false,false,tab.host_state});validate_native_session(skeleton);
 }
 }
+std::future<LocalInstallPreview> StudyWorker::prepare_local_install(std::string source,std::string module){
+ try{selected_profile_path(source);if(module.empty()||module.size()>4096||!editable_document_text(module)||!editable_document_text(source))throw std::invalid_argument("Invalid installation source/module");}catch(...){return selected_profile_rejection<LocalInstallPreview>();}
+ return impl_->submit([source=std::move(source),module=std::move(module)](Impl::State &s){return s.reader.prepare_local_install(source,module);});
+}
+std::future<LocalInstallResult> StudyWorker::install_local_module(LocalInstallRequest request){
+ try{if(!local_install_arguments(request))throw std::invalid_argument("Invalid installation request");}catch(...){return selected_profile_rejection<LocalInstallResult>();}
+ return impl_->submit([request=std::move(request)](Impl::State &s){
+  std::map<StudyTab,std::pair<StudySessionState,SessionCapabilities>> states;
+  for(const auto &t:s.tabs)states.emplace(t.first,std::make_pair(t.second->capture_state(),t.second->capabilities()));
+  return s.reader.install_local_module(request,[&]{
+   std::map<StudyTab,std::unique_ptr<StudySession>> replacement;
+   for(const auto &t:states){auto session=StudySession::from_state(s.reader,t.second.first,t.second.second);session->continue_search_serial(*s.tabs.at(t.first));replacement.emplace(t.first,std::move(session));}
+   s.tabs.swap(replacement);
+  });
+ });
+}
 std::future<ModuleEditEntry> StudyWorker::read_module_edit(StudyTab tab,ModuleEditTarget target){return impl_->submit([tab,target=std::move(target)](Impl::State &s){(void)s.tab(tab);return s.reader.read_module_edit(target);});}
 std::future<ModuleEditEntry> StudyWorker::save_module_edit(StudyTab tab,ModuleEditTarget target,std::string expected,std::string text,bool erase){
  if(!module_edit_arguments(target)||!editable_document_revision(expected)||!editable_document_text(text)||(erase&&!text.empty()))return selected_profile_rejection<ModuleEditEntry>();
