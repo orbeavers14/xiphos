@@ -1,5 +1,7 @@
 # Modernization status and acceptance
 
+Keyed preview checkpoint (2026-11-01): [exact source-specific previews](keyed-search.md#exact-keyed-previews) now dispatch dictionary keys/indexed-tree paths through shared Reader/FIFO/C services, reject missing/fuzzy targets and enforce copied HTML limits. Typed batch generations, exports and native presentation remain open.
+
 Typed keyed-search checkpoint (2026-11-01): [dictionary/general-book search](keyed-search.md) now has a separate cancellable shared C++/FIFO/C service with explicit key kinds and generated-fixture checks. Existing verse-only batches/export retain their safe boundary. Typed mixed-family generations, preview/export dispatch and native controls remain next.
 
 Core priority checkpoint (2026-11-01, `c194ccf`): [AndBible/interchange/composition contract](andbible-composition.md) records bounded standalone SQLite import, revision-checked XML append/exact export, owned tag/note composition and a KJVA identity fix. Actual index execution/maintenance now passes with a capable alternate SWORD/CLucene SDK; actual encrypted original-prose unlock/clear/reopen checks pass. Native import/composition workflows, generic mixed-family search, broader semantic/RTL/corpus and cross-host acceptance remain open. No whole-feature parity promotion.

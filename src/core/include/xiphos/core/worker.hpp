@@ -92,6 +92,7 @@ public:
   std::future<VerseImageResource> read_verse_image_link(std::string module,std::string uri,
       std::size_t maximum_bytes=maximum_verse_image_bytes);
   // Owned, read-only source queries use the same engine thread, without a tab.
+  std::future<DictionaryEntry> preview_keyed_search(StudyTab tab,std::string module,std::string key,SearchKeyKind kind,std::size_t maximum_html_bytes);
   StudySearch search_keyed_module_task(StudyTab tab,SearchQuery query,SearchLimits limits = {});
   StudySearch search_module_task(StudyTab tab,SearchQuery query,SearchLimits limits = {});
   std::future<SearchResult> search_module(StudyTab tab,SearchQuery query,SearchLimits limits = {});

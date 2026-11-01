@@ -77,6 +77,7 @@ public:
   // raw requests and explicit bounds providers. Copied bounded
   // output and scoped accent/vowel filter settings. No history, session scope,
   // index creation or native UI. Optional cooperative controls never expose SDK state.
+  DictionaryEntry preview_keyed_search(const std::string &module,const std::string &key,SearchKeyKind kind,std::size_t maximum_html_bytes);
   SearchResult search_keyed_module(SearchQuery query,const SearchLimits &limits = {},std::shared_ptr<SearchControl> control = {});
   SearchResult search_module(SearchQuery query,const SearchLimits &limits = {},std::shared_ptr<SearchControl> control = {});
   // Read-only owned one-hop tree sources. Neither call selects/renders a book,

@@ -29,8 +29,26 @@ modes/scopes/families, pre-execution cancellation, unchanged verse scope/generat
 and C ownership. Fixture copies restore their own erased book content before
 searching; no source module or user library is edited.
 
-Next: typed multi-family batch generations, source-specific preview/activation,
+Next: typed multi-family batch generations, native preview/activation,
 text/HTML export dispatch, keyed retained scopes, raw indexed/attribute coverage,
 native controls and broad corpus/cross-host acceptance. Do not enable these result
 families in existing verse-only UI/export paths until those consumers dispatch
 by source capability. Existing verse-only batch failure tests remain intentional.
+
+## Exact keyed previews
+
+`preview_keyed_search` and `xc_worker_preview_keyed_search` accept an exact installed
+source ID, canonical returned key (up to4096 UTF-8/XML bytes), explicit kind1/2 and
+a nonzero HTML cap up to8MiB. They require the matching dictionary/indexed-tree
+capability and exact resolution after rendering; missing dictionary keys cannot
+fuzzy-snap to a nearby entry, and missing book paths cannot snap to a parent.
+The SDK key is restored on success or failure. No navigation, history, verse
+scope or result generation is published. Native source-specific controls and
+preview appearance/options integration remain pending.
+
+The C request returns the existing owned `xc_dictionary_entry` payload for both
+kinds: consume its module/key/HTML fields. Inputs copy before return; output
+survives request/worker teardown. This previews current installed content, not
+an immutable content revision captured at search time. The cap bounds copied
+HTML rather than the SDK's internal rendering allocation. Tests cover dictionary
+and book dispatch, wrong kinds, missing keys/paths, output limits and C lifetime.

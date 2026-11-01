@@ -325,3 +325,8 @@ Typed keyed-search checkpoint (2026-11-01): [standalone dictionary/general-book
 queries](keyed-search.md) now reuse shared execution/cancellation with explicit
 result kinds. Full mixed-family batches, typed preview/export and retained keyed
 scopes remain open; this supersedes statements that no keyed search service exists.
+
+Exact keyed previews now dispatch current dictionary/indexed-tree content with
+explicit source kind, missing-target rejection and copied HTML bounds; see the
+[keyed preview contract](keyed-search.md#exact-keyed-previews). Native preview
+consumption, typed batch generations and source-specific exports remain next.

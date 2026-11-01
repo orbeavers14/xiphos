@@ -1301,6 +1301,7 @@ xc_status xc_worker_search_module(xc_worker *w,uint64_t tab,const char *module,c
 xc_status xc_worker_search_keyed_module(xc_worker *w,uint64_t tab,const char *module,const char *expression,const xc_search_options *options,xc_request **out){
  if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;if(!w)return XC_INVALID_ARGUMENT;try{auto copied=copy_search_inputs(module,expression,options,nullptr,nullptr,false,nullptr);auto request=std::make_unique<Request<xiphos::core::SearchResult>>();auto task=w->value.search_keyed_module_task(tab,std::move(copied.query),copied.limits);request->search_control=std::move(task.control);request->future=std::move(task.result);*out=request.release();return XC_OK;}catch(...){return failure();}
 }
+xc_status xc_worker_preview_keyed_search(xc_worker *w,uint64_t tab,const char *module,const char *key,int kind,size_t maximum,xc_request **out){if(out)*out=nullptr;if(!bounded_image_c_text(module,4096)||!bounded_image_c_text(key,4096)||(kind!=1&&kind!=2)||!maximum||maximum>xiphos::core::maximum_search_export_bytes)return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.preview_keyed_search(tab,module,key,static_cast<xiphos::core::SearchKeyKind>(kind),maximum);});}
 int xc_search_key_kind(const xc_search *result){return result?static_cast<int>(result->value.key_kind):-1;}
 xc_status xc_worker_search_module_in_range(xc_worker *w,uint64_t tab,const char *module,const char *expression,
     const char *range_module,const char *range_expression,const xc_search_options *options,xc_request **out){

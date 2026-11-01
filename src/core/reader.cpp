@@ -238,6 +238,16 @@ BookChildren Reader::book_children(const std::string &id, std::uint64_t parent,
 BookEntry Reader::read_book(const std::string &id, std::uint64_t offset) {
   return book_impl(id, offset, nullptr);
 }
+DictionaryEntry Reader::preview_keyed_search(const std::string &id,const std::string &key,SearchKeyKind kind,std::size_t maximum){
+ detail::validate_search_module_name(id);if(key.empty()||key.size()>4096||key.find('\0')!=std::string::npos||!maximum||maximum>maximum_search_export_bytes||(kind!=SearchKeyKind::dictionary&&kind!=SearchKeyKind::general_book))throw std::invalid_argument("Invalid keyed preview request");
+ detail::validate_xml_text(key,4096);std::lock_guard<std::mutex> lock(impl_->mutex);auto *module=impl_->manager->getModule(id.c_str());if(!module)throw std::out_of_range("Preview source is not installed");
+ if(kind==SearchKeyKind::dictionary){if(!dynamic_cast<sword::SWLD *>(module)||std::string(module->getType())!="Lexicons / Dictionaries")throw std::invalid_argument("Preview source kind changed");}
+ else {if(!detail::indexed_book(*module))throw std::invalid_argument("Preview source kind changed");(void)detail::capture_book_tree_path(*module,key);}
+ std::unique_ptr<sword::SWKey> saved(module->getKey()->clone());if(!saved)throw std::bad_alloc();saved->setPersist(false);
+ struct Restore{ sword::SWModule &module;sword::SWKey &key;~Restore(){module.setKey(key);} } restore{*module,*saved};
+ module->getKey()->popError();module->setKey(key.c_str());auto html=detail::render_sdk_entry(*module);const auto actual=std::string(module->getKeyText());if(module->getKey()->popError()||actual!=key)throw std::out_of_range("Preview key no longer exists exactly");
+ return {id,actual,detail::copy_sdk_text(html,maximum)};
+}
 SearchResult Reader::search_keyed_module(SearchQuery query,const SearchLimits &limits,std::shared_ptr<SearchControl> control){
  detail::SearchControlScope progress(control);detail::validate_search_query(query);std::lock_guard<std::mutex> lock(impl_->mutex);
  const auto resolved=impl_->resolve_name(query.module);auto *module=resolved.module?impl_->manager->getModule(resolved.module->c_str()):nullptr;if(!module)throw std::out_of_range("Search module is not installed");
