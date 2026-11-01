@@ -20,7 +20,7 @@ them. Transitive libraries vary with the selected SDK and TLS backend.
 | Dependency | Minimum version | Installed / selected version | Purpose | Areas of use / location |
 |---|---|---|---|---|
 | CrossWire SWORD | 1.8.1 | 1.9.0.3916; runtime verified | Module discovery, versification, rendering, search and editable module drivers | `src/core/reader.cpp`, session/search/book services; selected static SDK under `/usr/local` |
-| GLib | 2.32 | 2.90.1; runtime verified | Unicode casing, UTF-8 validation, SHA256 and shared utilities | Core rendering/persistence/installation helpers; selected Homebrew SDK |
+| GLib | 2.32 | 2.90.1; runtime verified | Unicode casing, UTF-8 validation, SHA256 and shared utilities | Core rendering/persistence/installation helpers, repository/recovery checksums and sync text validation; selected Homebrew SDK |
 | libxml2 | Not specified by native finder | 2.9.13; selected headers and runtime verified | XML persistence and HTML/rich-document parsing | `xml_document.cpp`, `session_snapshot.cpp`, `rich_document.cpp`, HTML preparation; Apple SDK/system library |
 | libpng | 1.6; simplified read API enabled | 1.6.59; selected headers and static runtime verified | Bounded PNG validation, decoding and export | `src/core/export_png.cpp`, image preparation; `build/libpng-sdk` |
 | zlib | Not specified | Direct runtime 1.2.12; effective core headers 1.3.2; see notes below | Catalog gzip expansion, PNG/ZIP support and SWORD linkage | `repository_archive.cpp`, libpng/libarchive/SWORD; direct link uses Apple SDK/system zlib |

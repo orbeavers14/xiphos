@@ -1,20 +1,23 @@
 # macOS chat handoff
 
-Updated 2026-10-31. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.md),
+Updated 2026-11-01. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.md),
 [status](status.md), [core scope](shared-core-roadmap.md) and relevant parity rows.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
 ## Current checked source and active work
 
-Latest implementation: shared HTTPS catalog/package transfer and bounded extraction
-`af9a859`, feeding staged local installation `f660f96`. Full checkpoint: Mac223
-passes+one index skip (224 registered,226.42s); portable174 passes+one skip (175
-registered,191.18s), GTK runtime OFF. Final Unicode/C cancellation4/4 refinements
-and sanitizer/dependency evidence are below. Next: native installer presentation,
-persistent repository/catalog settings, maintenance and sync; physical host and
-release packaging checks remain open. Devotionals remain deferred. No full-parity
-acceptance increase.
+Latest implementation: `c9258de` adds shared ordered repository profiles/offline
+catalog caching and value edits; staged remove/cipher configuration/index
+maintenance; checksummed session/draft recovery with previous-valid fallback;
+and transport-neutral sync policy. See [contracts and remaining work](repository-management.md).
+Full Mac229 passes+one index skip (230 registered,190.51s); Mac-hosted portable180
+passes+one skip (181 registered,137.94s). Final recovery Save As refinement rebuilt
+the native app and passed2/2 on Mac, portable and ASan/UBSan. Scoped ASan/UBSan8/8
+and TSan8/8; strict C++11 native-off10/10. Detailed evidence is below. Native
+management/autosave/recovery UI, real BibleSync transport, positive indexing on a
+capable SDK, encrypted-module correctness and physical host acceptance remain open.
+Devotionals remain deferred. No full-parity acceptance increase.
 
 ## Earlier checkpoints (historical)
 
@@ -2550,3 +2553,64 @@ Windows/Linux-only versions remain unverified on this Mac; planned WinUI/WebView
 versions are not invented. Documentation-only: two-table shape/column consistency,
 relative links and whitespace pass; application tests were not rerun. No application
 source, installed SDK, dependency version or generated map was changed.
+
+## Repository management, maintenance, recovery and sync — 2026-11-01
+
+Implementation `c9258de`, integration branch `master`, authorized fork
+`orbeavers14/xiphos`. Repository profiles retain source ordering/IDs/names/enabled
+state and copied offline catalogs; shared add/update/remove/move/cache helpers and
+owned C/FIFO transport are implemented. Endpoint changes discard old cache.
+Maintenance reuses verified root staging and SDK/tab reload; in-use removal,
+stale requests, cipher configuration, index deletion, unsupported index creation
+and injected-refresh rollback are checked. Key changes invalidate indexes. Actual
+usable index creation remains unavailable on the selected SDK; this is recorded
+in test output, not counted as positive indexed execution.
+
+Recovery stores native sessions and exact draft current/saved source, origin
+revisions, target and UTF-8 selections, with SHA256 envelope, revision-checked
+primary replacement and validated `.previous` fallback. Explicit Save As to a new
+path works; a fallback cannot silently replace the damaged primary. No source is
+written or tab restored merely by reading recovery. Sync policy covers modes,
+sender selection, group/domain filters, privacy intent, echo suppression and
+copied direct/list routing; wire authentication/passphrases/multicast and native
+consumption remain pending. No new dependency, credentials or publisher content.
+
+Actual local evidence (same selected SDK/toolchains as dependency inventory):
+
+- Full native build and Mac suite:229 passes+one explicit index skip,230 registered,
+  190.51s. `build/management-full-macos-{build,tests}.log`.
+- Full portable core/Linux models on Mac, GTK runtime OFF:180 passes+one explicit
+  index skip,181 registered,137.94s. `build/management-portable-*.log`.
+- Scoped normal6/6,2.20s for sync/recovery/fresh-process/C/maintenance/repositories.
+  Existing local/HTTPS installation regression also passed5/5,6.11s before final
+  recovery/sync transport was added; both are included in the full suites above.
+- Scoped ASan/UBSan8/8,15.03s; TSan8/8,16.93s. Both include new services and existing
+  local/loopback-HTTPS installation. `build/management-final-asan-*.log` and
+  `build/management-tsan-*.log`. Leak checks remain off for legacy/SDK reasons;
+  third-party SDK/transfer/parser libraries are not all instrumented.
+- Final recovery Save As refinement: Mac native app relink and2/2,0.49s;
+  portable2/2,0.26s; ASan/UBSan2/2,0.49s. TSan8/8 already includes that final change.
+  `build/recovery-save-as-{macos,portable,asan}-{build,tests}.log`.
+- Native-off strict C++11 complete10/10,7.10s; pedantic C11 public-header syntax,
+  relative documentation links and diff whitespace checks pass.
+- C tests verify bounded input admission, copied input lifetime, take-once results,
+  teardown independence, observer-allocation failure before write admission and
+  zero-allocation successful polling for repository/recovery/sync results.
+
+Tests use disposable named original-prose fixtures, isolated loopback TLS/HTTP
+servers, and no public Bible downloads, publisher APIs or hosted builds.
+Graphify refreshed locally using code-only extraction:652 files,12,102 nodes,
+32,585 edges,395 communities; zero AI calls/tokens/cost. Source hashes unchanged by
+mapping; HTML aggregates because graph exceeds5000 nodes. Diagnostics retain58
+partial-AST files,73 no-symbol files,1891 dangling edges,2 self-loops and393
+undirected collapsed relationships. Verify against compiled source; local generated
+`graphify-out/` stays untracked, as does the unrelated `.DS_Store`.
+
+Next: finish the actual BibleSync transport integration (validated wire events,
+passphrase/privacy/mode lifecycle, two-client interoperability), then native
+recovery scheduling/editor reconstruction and conflict presentation. Repository/
+maintenance native presentation, legacy source import, capable-SDK positive index,
+encrypted correctness, interprocess/crash-install reconciliation and physical
+Windows/Fedora/release gates remain open. No current target-runtime, whole-parity
+or GTK3-retirement claim. Existing deployment26 versus selected dylib27 warnings
+remain; these tests ran on the current Mac, not older macOS.

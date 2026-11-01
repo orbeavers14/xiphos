@@ -1,5 +1,17 @@
 # Modernization status and acceptance
 
+Repository/maintenance and recovery/sync checkpoint (2026-11-01): shared ordered
+repository profiles and offline catalog persistence now exist, with owned C/FIFO
+transport and endpoint cache invalidation. Staged remove/cipher configuration/
+index maintenance now reuse verified installation transactions and reject in-use
+removals. Recovery snapshots retain exact editor source and a previous valid
+session/draft snapshot; sync mode/sender/privacy/echo/routing policy is shared.
+These are core services: native management/autosave/recovery presentation, legacy
+source import, positive index creation on a capable SDK, real BibleSync transport
+and physical Windows/Fedora acceptance remain open. See
+[the contracts and limits](repository-management.md). No whole-parity acceptance.
+
+
 HTTPS checkpoint (2026-10-31, `af9a859`): shared catalog/package download, bounded
 UTF-8 ZIP/tar extraction, atomic cancellation/commit arbitration, metadata/version
 verification and staged remote SWORD installation now exist. Full local Mac223
