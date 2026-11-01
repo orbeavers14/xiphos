@@ -1,5 +1,7 @@
 # Modernization status and acceptance
 
+Core priority checkpoint (2026-11-01, `c194ccf`): [AndBible/interchange/composition contract](andbible-composition.md) records bounded standalone SQLite import, revision-checked XML append/exact export, owned tag/note composition and a KJVA identity fix. Actual index execution/maintenance now passes with a capable alternate SWORD/CLucene SDK; actual encrypted original-prose unlock/clear/reopen checks pass. Native import/composition workflows, generic mixed-family search, broader semantic/RTL/corpus and cross-host acceptance remain open. No whole-feature parity promotion.
+
 Legacy settings/session checkpoint (2026-11-01, `4bfb38c`): shared read-only snapshots,
 strict all-tab conversion, explicit module mapping, exact-original migration
 packages/restore and Mac preview/export/next-launch integration now exist. See

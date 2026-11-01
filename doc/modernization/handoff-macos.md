@@ -5,9 +5,47 @@ Updated 2026-11-01. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Core priorities checkpoint, 2026-11-01
+
+Implementation `c194ccf` addresses the owner's three selected core priorities; see the
+[contract and remaining gates](andbible-composition.md). Final verification is recorded below. Branch/master and
+fork authorization are unchanged. Original GTK3 remains intact.
+
+Implemented: actual encrypted original-prose unlock/wrong/clear/reopen checks;
+maintenance index usability fix; bounded standalone AndBible SQLite preview,
+revision/identity-checked XML append, byte-preserving revision-checked XML export;
+shared owned tag/note composition with bounded overlap copies; KJVA identity fix;
+C/FIFO ownership bridge. Dependencies now include SQLite3 >=3.31; selected
+headers/runtime are3.54.0. The dependencies document still has exactly two tables.
+
+Actual checks on macOS27.2, AppleClang21/Swift6.4.2:
+
+- Full native regression:243 registered,242 passes and one expected primary-SDK
+  index skip,288.27s. Native source build passed after rerunning Apple's Swift
+  macro compiler with normal system access. This baseline predates the final
+  export/decoration refinements. Final complete native relink passed; all16
+  affected annotation/bookmark/maintenance/async adapter checks passed,12.46s.
+- Final alternate SWORD1.9.0/CLucene2.3.3.4 required-index lane:6/6,10.35s.
+  Includes fixture setup, actual indexing/search, encrypted maintenance and import.
+  Primary SWORD1.9.0.3916 still does not have a usable index.
+- Final scoped ASan/UBSan:4/4,8.71s, detect_leaks=0; third-party SDKs are not
+  completely instrumented. Final portable Linux-model/core-on-Mac:4/4,5.20s.
+  No physical Linux desktop, MSVC, commercial module or real-user backup claim.
+- Local deterministic Graphify refresh:678 code files,12694 nodes,34432 edges,
+  387 communities; no AI service, source hashes unchanged during analysis.
+  Generated graph remains untracked. Existing stalled diagnostic debugger and
+  its encrypted fixture child were stopped after diagnosis; no app defect was
+  inferred from the fixture encoder's unsupported default-length usage.
+
+Remaining: native AndBible chooser/conflict review and decoration consumption,
+backup schema/corpus breadth, generic dictionary/general-book search, broader
+semantic-link/canon/RTL rendering corpus and physical Windows/Linux acceptance.
+No whole parity row is promoted. Continue with the next bounded slice after
+these reviewed services; do not count a primary-SDK index skip as an index pass.
+
 ## Current checked source and active work
 
-Latest implementation: `4bfb38c`, reversible selected-file legacy settings/session
+Previous implementation: `4bfb38c`, reversible selected-file legacy settings/session
 migration. See [the workflow and limits](legacy-settings-session-migration.md).
 Sources are copied byte-for-byte into checksummed packages; known core settings
 and all saved tabs convert through temporary sessions on the single FIFO owner.

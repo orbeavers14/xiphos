@@ -311,3 +311,12 @@ shares retained C++11 dispatch with native contextual previews. Complete
 sword_uri callback characterization now supports unknown single-passage fallback
 and installed Bible contextual range previews with aggregate caps/disclosure.
 Unknown/non-Bible range navigation, anchors and keyed URI families remain open; broader families/corpus remain open.
+
+## Core priorities checkpoint, 2026-11-01
+
+[Bounded AndBible import, XML interchange, shared verse decoration and actual
+indexed/encrypted maintenance](andbible-composition.md) now have generated-fixture
+evidence. Remaining: native import/conflict review and composition integration,
+real backup/version corpus, generic dictionary/general-book search, additional
+semantic-link/rendering coverage, broader canon/RTL visual acceptance and physical
+Windows/Linux validation. These are separate from licensed providers/data sync.
