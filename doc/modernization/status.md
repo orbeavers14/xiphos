@@ -1,5 +1,13 @@
 # Modernization status and acceptance
 
+Priority checkpoint (2026-11-01): [native BibleSync controls and two independent
+local clients](native-sync.md) are checked at `526cd1c`; physical LAN/sleep/interface
+acceptance remains open. [Legacy repository review](legacy-repository-import.md)
+at `9a78747` begins the next storage-compatibility priority with read-only preview and
+explicit disabled HTTPS-source setup. Full legacy profile migration remains open;
+this supersedes older notes that native sync controls are entirely pending.
+
+
 Platform roadmap expansion (2026-11-01): owner requested
 [phones, tablets and visionOS](shared-core-roadmap.md#phones-tablets-and-visionos).
 iPhone/iPad, Android phones/tablets (planning assumption) and visionOS are future

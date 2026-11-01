@@ -16,6 +16,13 @@ acceptance increase. This supersedes older statements that Mac presentation is n
 Shared-core checkpoint, 2026-11-01. The original GTK3 application remains the
 reference; these services do not introduce a GTK dependency or another SDK owner.
 
+Priority checkpoint (2026-11-01): [native BibleSync controls and two independent
+local clients](native-sync.md) are checked at `526cd1c`; physical LAN/sleep/interface
+acceptance remains open. [Legacy repository review](legacy-repository-import.md)
+at `9a78747` begins the next storage-compatibility priority with read-only preview and
+explicit disabled HTTPS-source setup. Full legacy profile migration remains open;
+this supersedes older notes that native sync controls are entirely pending.
+
 ## Saved repository profiles
 
 `repository_store.hpp` / `repository_store.cpp` provide ordered, stable-ID HTTPS

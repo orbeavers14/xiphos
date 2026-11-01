@@ -1,5 +1,13 @@
 # Shared core: remaining scope
 
+Priority checkpoint (2026-11-01): [native BibleSync controls and two independent
+local clients](native-sync.md) are checked at `526cd1c`; physical LAN/sleep/interface
+acceptance remains open. [Legacy repository review](legacy-repository-import.md)
+at `9a78747` begins the next storage-compatibility priority with read-only preview and
+explicit disabled HTTPS-source setup. Full legacy profile migration remains open;
+this supersedes older notes that native sync controls are entirely pending.
+
+
 Native recovery/management checkpoint (2026-11-01, `78d367a`): macOS now
 schedules shared recovery snapshots, offers startup Recover/Discard, reconstructs
 reading windows and unsaved source drafts, and preserves original-file conflict
@@ -67,11 +75,11 @@ This direction supersedes earlier next-step notes that resume devotionals.
 | General books | Tree/navigation/DisplayLevel documents, scoped restore, note/image clicks, bounded inline resources/module CSS, shared geometry and combined note numbering | Native sizing/global CSS/assets/formats, complete semantic links/corpus acceptance, book windows/tabs and saved workflows |
 | Parallel reading | Real-SDK complete interpolation oracle, cloned row plans, bounded owned chapter matrices/C transport and atomic per-tab selection/chapter navigation | Compatible named-set/session repositories, command/native consumption and broad multi-canon/corpus acceptance |
 | Search | Bible/commentary basic + exact attribute modes, explicit intervals/complete last scope, private annotation context, advanced word dialects, bounded ordered batches, complete per-group result generations, stale-safe C/Swift reads, bounded selected/all text and restricted HTML export with C/Swift adapters, explicit bounded PNG embedding, native Mac text/HTML save/copy, progress/cancel, explicit saved-list import/application/edit/removal with verified snapshots and native Mac prefill | Remaining advanced module/range setup, broader URI/parallel/BibleSync abbreviation consumption, actual indexed execution, mixed families, advanced controls/settings, complete preview/export and full backend/corpus acceptance |
-| Library and installation | Module metadata/discovery subset | Favorites/hiding/grouping, sources/install/uninstall/index/cipher workflows; future translation providers and licensed offline downloads beyond SWORD modules (see below) |
-| Bookmarks and annotations | Pending | Hierarchy/order/colors, XML round trips, AndBible import, rendering precedence |
-| Writing and editing | Pending | Personal commentary, study pads, journals/prayer lists, compatible document storage |
-| Settings and sessions | Explicit scoped option import/save and book restore subsets | Complete profile/session/tab restoration, lossless migration/backup and unknown-field preservation |
-| Sync and external actions | Internal URI routing subset | BibleSync modes/privacy, IPC and full semantic action/export policies |
+| Library and installation | Shared catalogs/planning, staged local/HTTPS installs, ordered source/cache storage, maintenance and credential-free legacy HTTPS review | Favorites/hiding/grouping, broader legacy source compatibility, capable-SDK positive indexing/encrypted correctness and cross-host acceptance; future licensed providers |
+| Bookmarks and annotations | Owned XML hierarchy/order/colors, revision-checked edits, tag maps, shared highlight priority and verse-note storage | AndBible import, remaining annotation composition and complete compatibility/workflow acceptance |
+| Writing and editing | Revision-checked documents, shared rich formatting/undo, supported SWORD module edits and recovery drafts | Journal/prayer organization, remaining document links/format round trips and full workflow acceptance |
+| Settings and sessions | Scoped option/profile storage, versioned native all-tab capture/restore and checksummed recovery | Broader legacy profile/session migration, lossless backup/restore, unknown-field behavior and cross-host acceptance |
+| Sync and external actions | Shared BibleSync policy/safe networking, native Mac routing and two independent loopback clients; internal URI routing subset | Physical LAN/sleep/interface interoperability, group routing/presence/chat, IPC and remaining semantic actions; personal data sync is future scope |
 
 Native controls, accessibility, clipboard/print dialogs, window layout and platform
 packaging also remain, but are frontend responsibilities rather than a second

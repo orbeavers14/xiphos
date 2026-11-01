@@ -7,7 +7,49 @@ and pushes are authorized; preserve unrelated changes, never force-push.
 
 ## Current checked source and active work
 
-Latest implementation: `78d367a`, native recovery/autosave and module management.
+Latest priority checkpoints: `526cd1c` native sync controls/reader routing and
+real-SDK isolated two-client validation; `9a78747` read-only legacy source preview,
+owned C/FIFO transport and native review-to-disabled-source setup. See
+[native sync](native-sync.md) and [legacy source import](legacy-repository-import.md).
+
+Actual checks in this task on the same Mac/SDK environment recorded below:
+
+- Full sync baseline:235 passes plus one existing index skip,236 registered,
+  284.00s. Includes actual independent-process SDK clients on loopback, normal
+  beacon discovery, modes/session/listen filters, echo guard, reconnect and
+  injected send-failure/repair. Every test send/bind is redirected away from the
+  LAN and the SDK's normal fixed receive port.
+- Final sync-only native refinements:4/4,6.36s. Live disconnected launch/restart,
+  readable sync controls and selected-speaker fields checked; no LAN connection
+  enabled in the live GUI. No physical-device/multicast/sleep acceptance claim.
+- Later legacy source slice: final combined scoped native/core7/7,7.37s; app,
+  native sync and management test targets rebuilt. This is after the full sync
+  baseline; a new full suite was not run for the additive migration slice.
+- Final migration ASan/UBSan1/1,0.50s (detect_leaks=0); TSan1/1,3.20s; portable
+  Linux models/core on Mac1/1,0.26s. These are not physical Fedora/MSVC checks;
+  third-party libraries are not all instrumented. Networking-OFF pair fixture
+  explicitly skips before opening sockets (0.29s).
+- Live isolated migration UI: original configuration selected, HTTPS/insecure/
+  credential dispositions displayed without private fields, source review filled
+  a new disabled editor, missing package folder disabled Save, explicit package
+  input/save produced a disabled source. Original file unchanged; no server call.
+  The disposable app exited normally.
+- C11 pedantic header, relative documentation links/two-table dependency inventory
+  and diff checks passed. Local-only Graphify refresh:667 code files,12,443 nodes,
+  33,714 edges,376 communities; source hashes unchanged, no paid AI extraction.
+  Logs: `build/sync-next-*`, `build/legacy-source-*`, `build/sync-migration-graph.log`.
+
+Next priority: complete broader legacy settings/profile/session migration with
+representative original-prose fixtures and backup/restore/unknown-field behavior.
+Source import currently covers a strict credential-free HTTPS subset; no automatic
+FTP upgrade, credential transfer or full-profile import. Physical sync LAN/sleep/
+interface checks, capable-SDK indexing, encrypted correctness and cross-host gates
+remain open; data sync/Handoff/mobile/visionOS remain future scope. No whole parity
+acceptance increase. Devotionals remain deferred.
+
+Prior checked recovery/management implementation: `78d367a`.
+
+Earlier implementation: `78d367a`, native recovery/autosave and module management.
 See [the integration contract](native-recovery-management.md). One shared FIFO
 worker and C++ storage/installation services remain authoritative. No GTK3 changes.
 
