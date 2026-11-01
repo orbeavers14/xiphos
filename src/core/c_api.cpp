@@ -1298,6 +1298,10 @@ int xc_search_index_fallback(const xc_search *r){return r?(r->value.index_fallba
 int xc_search_text_options_updated(const xc_search *r){return r?(r->value.text_options_updated?1:0):-1;}
 xc_status xc_worker_search_module(xc_worker *w,uint64_t tab,const char *module,const char *expression,
     const xc_search_options *options,xc_request **out){return queue_search_module(w,tab,module,expression,options,out,nullptr,nullptr);}
+xc_status xc_worker_search_keyed_module(xc_worker *w,uint64_t tab,const char *module,const char *expression,const xc_search_options *options,xc_request **out){
+ if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;if(!w)return XC_INVALID_ARGUMENT;try{auto copied=copy_search_inputs(module,expression,options,nullptr,nullptr,false,nullptr);auto request=std::make_unique<Request<xiphos::core::SearchResult>>();auto task=w->value.search_keyed_module_task(tab,std::move(copied.query),copied.limits);request->search_control=std::move(task.control);request->future=std::move(task.result);*out=request.release();return XC_OK;}catch(...){return failure();}
+}
+int xc_search_key_kind(const xc_search *result){return result?static_cast<int>(result->value.key_kind):-1;}
 xc_status xc_worker_search_module_in_range(xc_worker *w,uint64_t tab,const char *module,const char *expression,
     const char *range_module,const char *range_expression,const xc_search_options *options,xc_request **out){
   if(!range_module||!range_expression){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}

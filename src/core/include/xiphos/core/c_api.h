@@ -540,6 +540,13 @@ int xc_search_index_fallback(const xc_search *result);
  * from actual source IDs. Explicit range_module remains an exact installed ID. */
 xc_status xc_worker_search_module(xc_worker *worker,uint64_t tab,const char *module,const char *expression,
                                   const xc_search_options *options,xc_request **out);
+/* Separate dictionary/general-book text query. Result kind must be consumed as
+ * an opaque dictionary key or book path, never a verse reference. Regex/phrase/
+ * words/multiword only; no range, last-scope, generation, export or history
+ * publication. Copied input, cancellable FIFO job, same owned xc_search result. */
+xc_status xc_worker_search_keyed_module(xc_worker *worker,uint64_t tab,const char *module,const char *expression,const xc_search_options *options,xc_request **out);
+/* 0 verse, 1 dictionary, 2 general book; -1 NULL. Existing verse APIs stay 0. */
+int xc_search_key_kind(const xc_search *result);
 /* Explicit bounds use range_module's cloned VerseKey parser and empty default
  * context as legacy set_range does. At most 4096 UTF-8 bytes/64 interval keys;
  * no 2000-verse preview expansion limit. SDK invalid/empty range semantics remain.

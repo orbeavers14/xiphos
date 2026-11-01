@@ -320,3 +320,8 @@ evidence. Remaining: native import/conflict review and composition integration,
 real backup/version corpus, generic dictionary/general-book search, additional
 semantic-link/rendering coverage, broader canon/RTL visual acceptance and physical
 Windows/Linux validation. These are separate from licensed providers/data sync.
+
+Typed keyed-search checkpoint (2026-11-01): [standalone dictionary/general-book
+queries](keyed-search.md) now reuse shared execution/cancellation with explicit
+result kinds. Full mixed-family batches, typed preview/export and retained keyed
+scopes remain open; this supersedes statements that no keyed search service exists.

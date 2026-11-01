@@ -244,6 +244,9 @@ std::future<LibraryCatalog> StudyWorker::local_library_catalog(std::string root)
 std::future<std::vector<Module>> StudyWorker::modules() {
   return impl_->submit([](Impl::State &s) { return s.reader.modules(); });
 }
+StudySearch StudyWorker::search_keyed_module_task(StudyTab tab,SearchQuery query,SearchLimits limits){
+ StudySearch task{std::make_shared<SearchControl>(),{}};task.result=impl_->submit([tab,query=std::move(query),limits,control=task.control](Impl::State &s){try{(void)s.tab(tab);return s.reader.search_keyed_module(query,limits,control);}catch(...){detail::SearchControlAccess::fail_if_queued(control);throw;}},task.control);return task;
+}
 StudySearch StudyWorker::search_module_task(StudyTab tab,SearchQuery query,SearchLimits limits) {
   StudySearch task{std::make_shared<SearchControl>(),{}};
   task.result=impl_->submit([tab,query=std::move(query),limits,control=task.control](Impl::State &s){

@@ -238,6 +238,12 @@ BookChildren Reader::book_children(const std::string &id, std::uint64_t parent,
 BookEntry Reader::read_book(const std::string &id, std::uint64_t offset) {
   return book_impl(id, offset, nullptr);
 }
+SearchResult Reader::search_keyed_module(SearchQuery query,const SearchLimits &limits,std::shared_ptr<SearchControl> control){
+ detail::SearchControlScope progress(control);detail::validate_search_query(query);std::lock_guard<std::mutex> lock(impl_->mutex);
+ const auto resolved=impl_->resolve_name(query.module);auto *module=resolved.module?impl_->manager->getModule(resolved.module->c_str()):nullptr;if(!module)throw std::out_of_range("Search module is not installed");
+ auto result=detail::capture_module_search(*impl_->manager,*module,std::move(query),limits,control,nullptr,nullptr,{}, {},0,100,false,nullptr,{},true);
+ result.resolved_module=*resolved.module;result.key_kind=dynamic_cast<sword::SWLD *>(module)?SearchKeyKind::dictionary:SearchKeyKind::general_book;progress.finish(result.cancelled);return result;
+}
 SearchResult Reader::search_module(SearchQuery query,const SearchLimits &limits,std::shared_ptr<SearchControl> control) {
   return search_impl(std::move(query),limits,std::move(control),nullptr);
 }

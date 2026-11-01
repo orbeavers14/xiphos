@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "search_source.hpp"
+#include "book_tree_source.hpp"
 #include "search_control.hpp"
 #include "search_results.hpp"
 #include "search_generation.hpp"
@@ -12,6 +13,8 @@
 #include "sdk_search.hpp"
 #include <swoptfilter.h>
 #include <versekey.h>
+#include <swld.h>
+#include <swgenbook.h>
 #include <listkey.h>
 #include <stdexcept>
 #include <thread>
@@ -63,7 +66,7 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
                                   const SearchScope *previous,std::shared_ptr<const SearchScope> *next,
                                   const SearchScopeLimits &scope_limits,const std::optional<SearchTextOptions> &previous_text,
                                   unsigned progress_begin,unsigned progress_end,bool allow_empty_output,
-                                  SearchRetainedKeys *retained,SearchRetentionLimits retention_limits) {
+                                  SearchRetainedKeys *retained,SearchRetentionLimits retention_limits,bool keyed_only) {
   if(progress_begin>progress_end||progress_end>100)throw std::invalid_argument("Invalid search progress interval");
   if(next)next->reset();
   if(retained)*retained={};
@@ -73,8 +76,13 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   if((!allow_empty_output&&(!limits.max_results||!limits.max_reference_bytes))||limits.max_results>maximum_search_results||
      limits.max_reference_bytes>maximum_search_reference_bytes)
     throw std::invalid_argument("Unsupported search output limits");
-  if(!supports_verse_search(module))
-    throw std::invalid_argument("Initial search supports Bible and regular commentary verse modules");
+  if(keyed_only){
+    const bool dictionary=dynamic_cast<sword::SWLD *>(&module)&&std::string(module.getType())=="Lexicons / Dictionaries";
+    const bool book=dynamic_cast<sword::SWGenBook *>(&module)&&indexed_book(module);
+    if((!dictionary&&!book)||query.range||query.within_last_results||next||retained||
+       (query.mode!=SearchMode::regular_expression&&query.mode!=SearchMode::phrase&&query.mode!=SearchMode::words&&query.mode!=SearchMode::multiword))
+      throw std::invalid_argument("Keyed search requires a dictionary/general book and an unscoped text mode");
+  }else if(!supports_verse_search(module))throw std::invalid_argument("Initial search supports Bible and regular commentary verse modules");
   int engine_type;
   bool whole_entry=false;
   std::optional<AttributeSearch> attribute;

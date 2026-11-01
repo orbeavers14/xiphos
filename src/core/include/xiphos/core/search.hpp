@@ -66,6 +66,7 @@ struct SearchGenerationInfo {
   std::size_t accounted_key_bytes=0;
   bool cancelled=false;
 };
+enum class SearchKeyKind { verse=0,dictionary=1,general_book=2 };
 struct SearchResult {
   SearchQuery requested;
   std::string effective_expression; // Exact copied module stripText query.
@@ -84,6 +85,7 @@ struct SearchResult {
   // Actual installed source selected by Reader. Raw requested.module stays
   // unchanged. Empty supports older isolated source/metadata fixtures.
   std::string resolved_module;
+  SearchKeyKind key_kind=SearchKeyKind::verse; // Explicit keyed search only; never infer scripture from key text.
   const std::string &source_module() const noexcept {
     return resolved_module.empty() ? requested.module : resolved_module;
   }
