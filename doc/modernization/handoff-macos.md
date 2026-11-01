@@ -5,6 +5,32 @@ Updated 2026-11-01. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Typed keyed-search checkpoint, 2026-11-01
+
+Implementation `7c75628`, master, responds to the owner's request to use the
+remaining budget on the next core priority. [Contract](keyed-search.md).
+Shared Reader/FIFO/C dictionary and indexed-tree general-book text searches now
+return explicit key kinds, preserve actual source IDs and reuse existing bounded
+SDK execution/progress/cancellation. Existing verse-only batches/exports still
+reject these sources. No native controls or second search engine were added.
+
+Checked on the same Mac host/SDK selection:
+
+- Normal search, attribute, generation, batch and keyed/fixture checks:6/6,20.00s.
+- Final indexed-tree capability guard: keyed/fixture2/2,1.63s.
+- Final ASan/UBSan keyed/fixture2/2,4.47s, detect_leaks=0; SDK instrumentation
+  remains incomplete. Alternate released SWORD1.9.0/CLucene required-index plus
+  keyed/fixture checks:4/4,6.99s. C11 header syntax and changed documentation
+  links/diff checks passed. No new full native app/suite or physical-host run.
+- Local code-only Graphify refresh:679 files,12713 nodes,34499 edges,
+  391 communities; source hashes unchanged during extraction. Generated map and
+  unrelated .DS_Store remain untracked; no paid analysis service was used.
+
+Next: typed multi-family batch generations and source-specific preview/activation
+and text/HTML export, then retained keyed scopes/indexed/attribute/corpus/native
+acceptance. The existing dictionary/general-book batch rejection tests are still
+intentional until those downstream consumers stop treating keys as verses.
+
 ## Core priorities checkpoint, 2026-11-01
 
 Implementation `c194ccf` addresses the owner's three selected core priorities; see the
