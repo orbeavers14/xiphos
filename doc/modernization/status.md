@@ -1,5 +1,12 @@
 # Modernization status and acceptance
 
+Library checkpoint (2026-10-31, `48467f3`): provider-scoped catalog identities,
+explicit capability/access/permission contracts, installed/local SWORD adapters,
+pure installation decisions and a non-SWORD catalog fixture. Full local Mac221
+passes+one index skip; portable172 passes+one skip. This remains catalog/planning
+scope: package execution, licensed-provider reading and full F27/F28 are pending.
+See the [installation contract](library-installation.md) and Mac handoff.
+
 Core storage checkpoint (2026-10-31): named parallel profile repositories and
 atomic imports (`b9d15e5`, `b7b7d23`, `01a75e4`); compatible tab XML round trips
 and owned transport (`4411783`, `7d5f491`); revision-checked bookmark edits and owned
@@ -15,7 +22,9 @@ and fresh-process/offscreen window checks now exist; other-host restart/detach a
 visual acceptance remain open. Shared [document editing](editing-workflows.md) has
 revision-checked exact-source storage, shared rich formatting/undo, staged
 RawFiles/RawGenBook source writes and native Mac editing. Full editor organization,
-draft restart and other-host acceptance remain open; installation and sync are next. Devotionals
+draft restart and other-host acceptance remain open. The [provider-neutral library
+boundary](library-installation.md) now supplies installed/local SWORD catalogs and
+pure permission-aware installation decisions; package execution and then sync are next. Devotionals
 remain deferred.
 
 Parallel checkpoint (2026-10-30): complete real-SDK interpolation oracle

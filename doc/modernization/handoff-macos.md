@@ -7,11 +7,14 @@ and pushes are authorized; preserve unrelated changes, never force-push.
 
 ## Current checked source and active work
 
-Latest implementation: shared rich documents and supported revision-checked SWORD
-writes `64ab889`, native Mac editor `f25114b`. Full checkpoint: Mac220 passes+one
-skip; portable171 passes+one skip. Final editor/restart integration4/4 (6.66s).
-See the final dated section for exact logs, supported formats and remaining gates.
-Next core priorities are installation and sync; devotionals remain deferred.
+Latest implementation: provider-neutral library catalogs and pure installation
+planning `48467f3`, following shared rich editing `64ab889` and native editor
+`f25114b`. Full local checkpoint: Mac221 passes+one index skip (222 registered,
+181.37s); portable172 passes+one skip (173 registered,152.66s), GTK runtime OFF.
+Focused ASan/UBSan5/5, TSan5/5; strict native-off C++11 all10/10. See the final
+dated section for actual logs, scope and remaining gates. Next: staged local SWORD
+installation execution, then remote installation/maintenance and sync. Devotionals
+remain deferred. No full-parity acceptance increase.
 
 ## Earlier checkpoints (historical)
 
@@ -2338,3 +2341,55 @@ symbols. Raw graph diagnostics report1782 dangling-endpoint edges,2 self-loops a
 relationships verified against source and real SDK tests. Generated graph/build
 outputs remain untracked. Next core priorities: installation, then sync, while
 continuing compatibility checks. Devotionals remain deferred.
+
+
+### 2026-10-31 provider-neutral library and installation planning
+
+Implementation `48467f3` introduces `library.hpp` provider/item identities,
+metadata/capability/access DTOs, independent unknown/allowed/denied download,
+full-package offline-storage and export grants, deterministic metadata revisions
+and pure installation decisions. SWORD stays an adapter, not the general library
+identity. Unknown/different versions require explicit replacement; another
+provider's matching item ID cannot replace a SWORD edition. An original-prose
+non-SWORD catalog fixture tests the same policy without adding an alternative
+study engine. See [the installation boundary](library-installation.md).
+
+Reader/FIFO/C APIs now return owned installed and explicit local SWORD catalogs.
+The local manager disables home augmentation; catalog inspection performs no
+installation, rendering, history visit or network operation. Empty `CipherKey=`
+entries are discarded by the linked SDK, so a bounded read-only config marker scan
+preserves declaration presence without copying key values into the DTO. Configured
+keys are not independently verified. Locked local packages can be planned for
+installation while remaining unavailable for reading. License notices do not
+automatically grant download/offline/export rights.
+
+Full local Mac221 passes+one index skip (222 registered,181.37s).
+Portable core/Linux models on Mac:172 passes+one index skip (173 registered,
+152.66s), GTK runtime OFF. Focused Mac catalog1/1 (0.76s), ASan/UBSan5/5 (12.81s, retained oracle leak checking
+off), TSan5/5 (19.75s); strict native-off C++11 all10/10 (6.53s). Logs:
+`build/library-catalog-final-{build,tests}.log` and
+`build/library-final-{macos,linux-models,sanitized,thread-sanitized,legacy}-{configure,build,tests}.log`
+(where a configure log exists only for reconfigured builds). Strict C11 header,
+whitespace and changed-document relative links pass. The tests cover explicit
+provider permission/access gates, metadata/identity bounds, real SDK inventories,
+version decisions, reading/history preservation, C observer/envelope admission,
+allocation-free polling, copied roots and owned result lifetimes. Original prose
+only; no publisher account, licensed text or credentials introduced.
+
+The local deterministic Graphify refresh covers627 code/configuration files,
+11487 nodes,30965 edges,358 communities; HTML aggregates above5000 nodes. Source
+hashes are unchanged by mapping; zero external AI calls/tokens/cost. Extractor
+coverage warnings remain57 partially parsed files and73 without modeled symbols;
+raw diagnostics report1799 dangling endpoints,2 self-loops and360 undirected
+endpoint collapses. Important boundaries were checked against source/SDK tests.
+Generated graph and build outputs remain local/untracked.
+
+This is catalog/planning infrastructure, not package execution, remote downloads,
+licensed-provider passage dispatch or full F27/F28 acceptance. Next: verified staged
+local SWORD installation with data/config consistency and SDK/tab cache refresh;
+then remote source/transfer/update/removal/progress/cancellation and maintenance,
+then sync. Authentication, provider-specific limits/reference mapping, versioned
+provider session identities, Windows/GTK4 presentation and physical host checks
+remain open. New shared code has no GTK dependency. Preserve the retained GTK3
+reference until retirement gates pass; GTK4 remains Linux presentation scope.
+Devotionals remain deferred.

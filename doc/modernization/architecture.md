@@ -454,3 +454,16 @@ previews cap the total ordered prefix at2000 and disclose limited results,
 including accessible link-only HTML. Legacy three-argument parsing remains
 per-range-only. No second frontend parser/navigation engine is introduced.
 See [URI boundaries and evidence](passage-uri-workflows.md).
+
+
+## Provider-neutral library boundary (2026-10-31)
+
+The shared [library catalog/planner](library-installation.md) uses provider-scoped
+identities, copied metadata, explicit capabilities/access and independent download,
+full-package offline-storage and export permissions. Installed/local SWORD adapters
+run only on the existing SDK FIFO owner; pure catalog validation and installation
+decisions have no SDK, GTK or network calls. The old module/reading APIs stay
+compatible. A non-SWORD fixture proves catalog/planning independence; provider
+passage dispatch, authentication, package execution and session identity migration
+remain explicit future work. GTK3 remains the retained reference and GTK4 remains
+the Linux presentation plan; no shared installation logic belongs in either UI.

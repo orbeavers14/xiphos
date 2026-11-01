@@ -80,6 +80,12 @@ provider-specific verification. Recheck terms before implementation and release;
 keep publisher attribution and licensed text separate from public source code.
 Use original-prose fixtures for automated tests.
 
+First boundary delivered (2026-10-31): the shared [library catalog and installation
+planner](library-installation.md) now uses provider-scoped identities, explicit
+capabilities/access/permissions, owned installed/local SWORD snapshots and an
+original-prose non-SWORD catalog fixture. It does not yet dispatch provider passage
+reads, install packages or contact a licensed publisher.
+
 Sequence: define provider/capability contracts alongside library installation;
 prove a non-SWORD provider with original-prose fixtures; integrate an authorized
 online source; add full offline packages only where the applicable license permits.
