@@ -78,6 +78,7 @@ foreach(library IN LISTS sword_link_flags)
 endforeach()
 set(adapter "${CMAKE_CURRENT_SOURCE_DIR}/EditorCore.swift" "${CMAKE_CURRENT_SOURCE_DIR}/CoreReader.swift" "${CMAKE_CURRENT_SOURCE_DIR}/CoreWorker.swift")
 set(preview_sources
+  "${CMAKE_CURRENT_SOURCE_DIR}/MigrationUI.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/SyncUI.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/EditorWindow.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/LibrarySetup.swift" "${CMAKE_CURRENT_SOURCE_DIR}/LibraryManagement.swift" "${CMAKE_CURRENT_SOURCE_DIR}/RecoveryUI.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SessionHostState.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SessionApp.swift"
@@ -160,6 +161,20 @@ if(BUILD_TESTING)
   add_custom_target(macos_editor_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/editor_smoke")
   add_test(NAME macos_rich_editor COMMAND "${CMAKE_CURRENT_BINARY_DIR}/editor_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/rich-module-fixture" "${CMAKE_CURRENT_BINARY_DIR}/native-editor-fixture")
   set_tests_properties(macos_rich_editor PROPERTIES FIXTURES_REQUIRED rich_module_fixture TIMEOUT 120)
+  add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/migration_smoke"
+    COMMAND ${SWIFTC} -swift-version 6 -D XIPHOS_PREVIEW_TEST -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
+      -I "${bridge}" ${adapter} ${preview_sources} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/MigrationSmoke.swift"
+      "$<TARGET_FILE:xiphos_core>" "$<TARGET_FILE:xiphos_core_render>" "$<TARGET_FILE:xiphos_core_history>" "$<TARGET_FILE:xiphos_core_options>"
+      ${sword_link_flags} -lc++ -framework SwiftUI -framework AppKit -framework WebKit
+      -o "${CMAKE_CURRENT_BINARY_DIR}/migration_smoke"
+    DEPENDS ${sdk_link_dependencies} xiphos_core xiphos_core_render xiphos_core_history xiphos_core_options CoreReader.swift CoreWorker.swift EditorCore.swift ${preview_sources} Tests/MigrationSmoke.swift
+      Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h
+    VERBATIM)
+  add_custom_target(macos_migration_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/migration_smoke")
+  add_test(NAME macos_legacy_migration COMMAND "${CMAKE_CURRENT_BINARY_DIR}/migration_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/legacy-migration-fixture")
+  set_tests_properties(macos_legacy_migration PROPERTIES FIXTURES_REQUIRED legacy_migration_fixture FIXTURES_SETUP native_legacy_migration RUN_SERIAL TRUE TIMEOUT 90)
+  add_test(NAME macos_legacy_migration_fresh_process COMMAND "${CMAKE_CURRENT_BINARY_DIR}/migration_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/legacy-migration-fixture" --verify)
+  set_tests_properties(macos_legacy_migration_fresh_process PROPERTIES FIXTURES_REQUIRED native_legacy_migration RUN_SERIAL TRUE TIMEOUT 60)
   add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/sync_smoke"
     COMMAND ${SWIFTC} -swift-version 6 -D XIPHOS_PREVIEW_TEST -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
       -I "${bridge}" ${adapter} ${preview_sources} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/SyncSmoke.swift"

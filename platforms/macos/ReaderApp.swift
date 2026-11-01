@@ -1479,6 +1479,7 @@ struct XiphosNativePreview: App {
                 Button("Save") { delegate.saveSession() }.keyboardShortcut("s")
                 Button("Save As…") { delegate.saveSessionAs() }.keyboardShortcut("s",modifiers:[.command,.shift])
                 Divider()
+                Button("Import Legacy Settings and Session…") { delegate.openLegacyMigration() }
                 Button("BibleSync…") { delegate.openSync() }
                 Button("Module Library…") { delegate.openModuleLibrary() }
                 Button("Choose Module Library Folder…") { delegate.chooseModuleLibrary() }

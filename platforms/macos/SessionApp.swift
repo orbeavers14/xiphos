@@ -203,6 +203,7 @@ import SwiftUI
     private var terminating = false
     private var editors: [NativeEditorWindow] = []
     private var recovery: NativeRecoveryController?
+    private var migration: NativeMigrationWindow?
     private var sync: NativeSyncModel?
     private var syncWindow: NativeSyncWindow?
     private var library: NativeLibraryWindow?
@@ -287,6 +288,19 @@ import SwiftUI
             let alert = NSAlert();alert.messageText = "Restart to use this module library";alert.informativeText = selected.path + "\nThe current library stays active until the app restarts.";alert.runModal()
         } catch { let alert = NSAlert();alert.messageText = "Module library could not be selected";alert.informativeText = error.localizedDescription;alert.runModal() }
     }
+    func openLegacyMigration() {
+        guard !terminating,let controller else { return }
+        if let migration { migration.window.makeKeyAndOrderFront(nil);return }
+        let model = NativeMigrationModel(worker:controller.worker)
+        model.currentSessionPath = { [weak controller] in controller?.path }
+        model.onUseSession = { [weak controller] path in
+            guard let controller,controller.canOpenWindow else { throw SessionHostError(message:"The reading session is busy.") }
+            guard ProcessInfo.processInfo.environment["XIPHOS_SESSION_PATH"] == nil else { throw SessionHostError(message:"A development session-path override is active. Select the exported session explicitly after removing that override.") }
+            try await controller.save()
+            UserDefaults.standard.set(path,forKey:NativeSessionController.sessionPreferenceKey())
+        }
+        migration = NativeMigrationWindow(model:model)
+    }
     func openSync() {
         guard !terminating,let sync else { return }
         if let syncWindow { syncWindow.window.makeKeyAndOrderFront(nil) } else { syncWindow = NativeSyncWindow(model:sync) }
@@ -330,6 +344,7 @@ import SwiftUI
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard !terminating else { return .terminateLater }
+        if migration?.model.busy == true { let alert = NSAlert();alert.messageText = "A migration operation is still running";alert.informativeText = "Wait for it to finish, then quit.";alert.runModal();return .terminateCancel }
         if sync?.busy == true { let alert = NSAlert();alert.messageText = "A sync connection change is still running";alert.informativeText = "Wait for it to finish, then quit.";alert.runModal();return .terminateCancel }
         if library?.model.isBusy == true { let alert = NSAlert();alert.messageText = "A module operation is still running";alert.informativeText = "Wait for it to finish, or stop the transfer in Module Library, then quit.";alert.runModal();return .terminateCancel }
         guard let controller else { return .terminateNow }

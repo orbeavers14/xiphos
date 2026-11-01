@@ -8,6 +8,7 @@
 #include "remote_install.hpp"
 #include "repository_store.hpp"
 #include "legacy_repositories.hpp"
+#include "legacy_migration.hpp"
 #include "recovery.hpp"
 #include "sync.hpp"
 #include "sync_transport.hpp"
@@ -190,6 +191,11 @@ public:
   std::future<bool> can_transmit_sync(bool received_navigation);
   std::future<RecoverySnapshot> read_recovery(std::string path);
   std::future<RecoverySnapshot> save_recovery(std::string path,std::optional<std::string> expected,RecoverySnapshot snapshot);
+  std::future<LegacyMigration> prepare_legacy_migration(LegacyMigrationInput input,LegacyModuleMapping mapping={});
+  std::future<LegacyMigration> read_legacy_migration(std::string path,LegacyModuleMapping mapping={});
+  std::future<LegacyMigration> save_legacy_migration(std::string path,LegacyMigration migration);
+  std::future<NativeSessionSnapshot> export_legacy_migration_session(std::string path,LegacyMigration migration);
+  std::future<void> restore_legacy_migration_sources(std::string folder,LegacyMigration migration);
   std::future<LegacyRepositoryPreview> preview_legacy_repositories(std::string path);
   std::future<RepositorySnapshot> read_repositories(std::string path);
   std::future<RepositorySnapshot> save_repositories(std::string path,std::optional<std::string> expected,RepositorySnapshot snapshot);

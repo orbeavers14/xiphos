@@ -1856,3 +1856,63 @@ extension CoreWorker {
         return sent != 0
     }
 }
+
+// Immutable owned data only: no SDK/worker pointer. Shared readers may retain
+// this value across actor hops; the last owner releases its copied C++ snapshot.
+fileprivate final class MigrationStorage: @unchecked Sendable {
+    let pointer: OpaquePointer
+    init(_ pointer: OpaquePointer) { self.pointer = pointer }
+    deinit { xc_legacy_migration_release(pointer) }
+}
+struct CoreMigrationPreview: Sendable {
+    fileprivate let storage: MigrationStorage
+    let ready: Bool, tabs: Int, sources: Int
+    let settings: [String], issues: [String]
+    let mappedCount: Int
+}
+extension CoreWorker {
+    private func migrationValue(_ request: OpaquePointer) throws -> CoreMigrationPreview {
+        guard let owned = xc_request_take_legacy_migration(request) else { throw CoreError(status:XC_ENGINE_ERROR) }
+        let storage = MigrationStorage(owned)
+        var settings: [String] = [], issues: [String] = [], mappedCount = 0
+        for index in 0..<xc_legacy_migration_setting_count(owned) {
+            var row = xc_legacy_migration_setting()
+            guard xc_legacy_migration_setting_get(owned,index,&row) == XC_OK,let section = row.section,let key = row.key else { throw CoreError(status:XC_ENGINE_ERROR) }
+            // The screen lists names/dispositions, never raw private values.
+            if row.mapped != 0 { mappedCount += 1 }
+            settings.append(String(cString:section) + "/" + String(cString:key) + (row.mapped != 0 ? " — converted":" — preserved in original backup"))
+        }
+        for index in 0..<xc_legacy_migration_issue_count(owned) {
+            var row = xc_legacy_migration_issue()
+            guard xc_legacy_migration_issue_get(owned,index,&row) == XC_OK,let module = row.module,let reason = row.reason else { throw CoreError(status:XC_ENGINE_ERROR) }
+            issues.append("Tab \(row.tab + 1): \(String(cString:module)) — \(String(cString:reason))")
+        }
+        return CoreMigrationPreview(storage:storage,ready:xc_legacy_migration_ready(owned) != 0,tabs:xc_legacy_migration_tab_count(owned),sources:xc_legacy_migration_source_count(owned),settings:settings,issues:issues,mappedCount:mappedCount)
+    }
+    func previewMigration(settings: String, tabs: String = "", options: String = "", package: String = "", mappings: [(String,String)] = []) async throws -> CoreMigrationPreview {
+        let handle = try worker(), strings = SessionCStrings();var request: OpaquePointer?
+        var pairs: [xc_legacy_module_mapping] = []
+        for (from,to) in mappings { pairs.append(xc_legacy_module_mapping(from:try strings.copy(from),to:try strings.copy(to))) }
+        var input = try xc_legacy_migration_input(settings:strings.copy(settings),tabs:strings.copy(tabs),module_options:strings.copy(options))
+        let file = try strings.copy(package)
+        let status = pairs.withUnsafeBufferPointer { rows in
+            package.isEmpty ? xc_worker_prepare_legacy_migration(handle,&input,rows.baseAddress,rows.count,&request):xc_worker_read_legacy_migration(handle,file,rows.baseAddress,rows.count,&request)
+        }
+        let completed = try await wait(status,request);defer { xc_request_release(completed) };return try migrationValue(completed)
+    }
+    func saveMigration(_ preview: CoreMigrationPreview, path: String) async throws {
+        let handle = try worker(), strings = SessionCStrings();let file = try strings.copy(path);var request: OpaquePointer?
+        let status = xc_worker_save_legacy_migration(handle,file,preview.storage.pointer,&request)
+        let completed = try await wait(status,request);xc_request_release(completed)
+    }
+    func exportMigration(_ preview: CoreMigrationPreview, path: String) async throws {
+        let handle = try worker(), strings = SessionCStrings();let file = try strings.copy(path);var request: OpaquePointer?
+        let status = xc_worker_export_legacy_migration_session(handle,file,preview.storage.pointer,&request)
+        let completed = try await wait(status,request);xc_request_release(completed)
+    }
+    func restoreMigrationOriginals(_ preview: CoreMigrationPreview, folder: String) async throws {
+        let handle = try worker(), strings = SessionCStrings();let directory = try strings.copy(folder);var request: OpaquePointer?
+        let status = xc_worker_restore_legacy_migration_sources(handle,directory,preview.storage.pointer,&request)
+        let completed = try await wait(status,request);xc_request_release(completed)
+    }
+}

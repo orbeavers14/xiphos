@@ -116,6 +116,7 @@ struct xc_entry { xiphos::core::Entry value; };
 struct xc_search_html_export {xiphos::core::SearchHtmlExport value;};
 struct xc_search_text_export {xiphos::core::SearchTextExport value;};
 struct xc_worker { xiphos::core::StudyWorker value; explicit xc_worker(const char *root) : value(root ? root : "") {} };
+struct xc_legacy_migration {xiphos::core::LegacyMigration value;};
 struct xc_legacy_repository_preview {xiphos::core::LegacyRepositoryPreview value;};
 struct xc_repository_snapshot {xiphos::core::RepositorySnapshot value;};
 struct xc_module_maintenance_preview {xiphos::core::ModuleMaintenancePreview value;};
@@ -147,6 +148,7 @@ struct xc_request {
   std::unique_ptr<xc_remote_catalog> remote_catalog;
   std::unique_ptr<xc_remote_install_result> remote_install_result;
   std::unique_ptr<xc_transfer_control> transfer_control;
+  std::unique_ptr<xc_legacy_migration> legacy_migration;
   std::unique_ptr<xc_repository_snapshot> repository_snapshot;
   std::unique_ptr<xc_legacy_repository_preview> legacy_repository_preview;
   std::unique_ptr<xc_module_maintenance_preview> module_maintenance_preview;
@@ -256,6 +258,7 @@ struct xc_request {
   void store(xiphos::core::RecoverySnapshot v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);recovery_snapshot->value=std::move(v);}
   void store(xiphos::core::SyncNetworkEvents v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);sync_network_events->value=std::move(v);}
   void store(xiphos::core::SyncDecision v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);sync_decision->value=std::move(v);}
+  void store(xiphos::core::LegacyMigration v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);legacy_migration->value=std::move(v);}
   void store(xiphos::core::LegacyRepositoryPreview v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);legacy_repository_preview->value=std::move(v);}
   void store(xiphos::core::RepositorySnapshot v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);repository_snapshot->value=std::move(v);}
   void store(xiphos::core::ModuleMaintenancePreview v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);module_maintenance_preview->value=std::move(v);}
@@ -425,6 +428,7 @@ template<class T> struct Request final : xc_request {
     if constexpr (std::is_same_v<T,xiphos::core::RecoverySnapshot>) recovery_snapshot=std::make_unique<xc_recovery_snapshot>();
     if constexpr (std::is_same_v<T,xiphos::core::SyncNetworkEvents>) sync_network_events=std::make_unique<xc_sync_network_events>();
     if constexpr (std::is_same_v<T,xiphos::core::SyncDecision>) sync_decision=std::make_unique<xc_sync_decision>();
+    if constexpr (std::is_same_v<T,xiphos::core::LegacyMigration>) legacy_migration=std::make_unique<xc_legacy_migration>();
     if constexpr (std::is_same_v<T,xiphos::core::LegacyRepositoryPreview>) legacy_repository_preview=std::make_unique<xc_legacy_repository_preview>();
     if constexpr (std::is_same_v<T,xiphos::core::RepositorySnapshot>) repository_snapshot=std::make_unique<xc_repository_snapshot>();
     if constexpr (std::is_same_v<T,xiphos::core::ModuleMaintenancePreview>) module_maintenance_preview=std::make_unique<xc_module_maintenance_preview>();
@@ -917,6 +921,21 @@ const xc_remote_catalog *xc_remote_install_result_next_catalog(const xc_remote_i
 const char *xc_remote_install_result_archive_sha256(const xc_remote_install_result *r){return r?r->archive_sha256.c_str():nullptr;}
 uint64_t xc_remote_install_result_downloaded(const xc_remote_install_result *r){return r?r->downloaded:0;}
 void xc_remote_install_result_release(xc_remote_install_result *r){delete r;}
+static xiphos::core::LegacyModuleMapping migration_mapping(const xc_legacy_module_mapping *values,size_t count){if(count>256||(!values&&count))throw std::invalid_argument("Invalid migration mapping");xiphos::core::LegacyModuleMapping result;for(size_t i=0;i<count;++i){if(!bounded_image_c_text(values[i].from,4096)||!bounded_image_c_text(values[i].to,4096)||!result.emplace(values[i].from,values[i].to).second)throw std::invalid_argument("Invalid migration mapping");}return result;}
+xc_status xc_worker_prepare_legacy_migration(xc_worker *w,const xc_legacy_migration_input *input,const xc_legacy_module_mapping *values,size_t count,xc_request **out){if(out)*out=nullptr;if(!input||!bounded_image_c_text(input->settings,4096)||(input->tabs&&*input->tabs&&!bounded_image_c_text(input->tabs,4096))||(input->module_options&&*input->module_options&&!bounded_image_c_text(input->module_options,4096)))return XC_INVALID_ARGUMENT;try{auto mapping=migration_mapping(values,count);xiphos::core::LegacyMigrationInput copied{input->settings,input->tabs?input->tabs:"",input->module_options?input->module_options:""};return queue_request(w,out,[&](auto &worker){return worker.prepare_legacy_migration(std::move(copied),std::move(mapping));});}catch(...){return failure();}}
+xc_status xc_worker_read_legacy_migration(xc_worker *w,const char *path,const xc_legacy_module_mapping *values,size_t count,xc_request **out){if(out)*out=nullptr;if(!bounded_image_c_text(path,4096))return XC_INVALID_ARGUMENT;try{auto mapping=migration_mapping(values,count);return queue_request(w,out,[&](auto &worker){return worker.read_legacy_migration(path,std::move(mapping));});}catch(...){return failure();}}
+xc_status xc_worker_save_legacy_migration(xc_worker *w,const char *path,const xc_legacy_migration *m,xc_request **out){if(out)*out=nullptr;if(!m||!bounded_image_c_text(path,4096))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.save_legacy_migration(path,m->value);});}
+xc_status xc_worker_export_legacy_migration_session(xc_worker *w,const char *path,const xc_legacy_migration *m,xc_request **out){if(out)*out=nullptr;if(!m||!bounded_image_c_text(path,4096))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.export_legacy_migration_session(path,m->value);});}
+xc_status xc_worker_restore_legacy_migration_sources(xc_worker *w,const char *path,const xc_legacy_migration *m,xc_request **out){if(out)*out=nullptr;if(!m||!bounded_image_c_text(path,4096))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.restore_legacy_migration_sources(path,m->value);});}
+xc_legacy_migration *xc_request_take_legacy_migration(xc_request *r){return r&&r->status==XC_OK?r->legacy_migration.release():nullptr;}
+int xc_legacy_migration_ready(const xc_legacy_migration *m){return m&&m->value.session?1:0;}
+size_t xc_legacy_migration_tab_count(const xc_legacy_migration *m){return m&&m->value.session?m->value.session->tabs.size():0;}
+size_t xc_legacy_migration_source_count(const xc_legacy_migration *m){return m?m->value.sources.size():0;}
+size_t xc_legacy_migration_setting_count(const xc_legacy_migration *m){return m?m->value.settings.size():0;}
+size_t xc_legacy_migration_issue_count(const xc_legacy_migration *m){return m?m->value.issues.size():0;}
+xc_status xc_legacy_migration_issue_get(const xc_legacy_migration *m,size_t index,xc_legacy_migration_issue *out){if(out)*out={};if(!m||!out||index>=m->value.issues.size())return XC_INVALID_ARGUMENT;const auto &i=m->value.issues[index];*out={i.tab,i.module.c_str(),i.reason.c_str()};return XC_OK;}
+xc_status xc_legacy_migration_setting_get(const xc_legacy_migration *m,size_t index,xc_legacy_migration_setting *out){if(out)*out={};if(!m||!out||index>=m->value.settings.size())return XC_INVALID_ARGUMENT;const auto &s=m->value.settings[index];*out={s.section.c_str(),s.key.c_str(),s.value?s.value->c_str():nullptr,s.mapped?1:0};return XC_OK;}
+void xc_legacy_migration_release(xc_legacy_migration *m){delete m;}
 xc_status xc_worker_preview_legacy_repositories(xc_worker *w,const char *path,xc_request **out){if(out)*out=nullptr;if(!bounded_image_c_text(path,4096))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.preview_legacy_repositories(path);});}
 xc_legacy_repository_preview *xc_request_take_legacy_repository_preview(xc_request *r){return r&&r->status==XC_OK?r->legacy_repository_preview.release():nullptr;}
 size_t xc_legacy_repository_preview_count(const xc_legacy_repository_preview *p){return p?p->value.candidates.size():0;}
