@@ -13,7 +13,7 @@ Current functionality, evidence and acceptance gates are in the
 ## Build and dependencies
 
 Requires a Swift 6-capable Xcode toolchain, CMake >=3.16, SWORD >=1.8.1,
-GLib >=2.32, libxml2, libpng >=1.6 with simplified reading and zlib headers/libraries. Swift compiles in Swift 6 language mode;
+GLib >=2.32, libxml2, SQLite3 >=3.31, libpng >=1.6 with simplified reading and zlib headers/libraries. Swift compiles in Swift 6 language mode;
 the native application core requires C++17 and legacy-linked helpers retain
 C++11 compatibility. GLib/libxml2 reuse existing legacy dependencies without GTK.
 

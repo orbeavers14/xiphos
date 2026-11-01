@@ -4,6 +4,7 @@
 #include "uncached_manager.hpp"
 #include "bounded_file.hpp"
 #include "xiphos/core/editable_document.hpp"
+#include "xiphos/core/search_policy.hpp"
 #include <swmodule.h>
 #include <glib.h>
 #include <algorithm>
@@ -91,7 +92,7 @@ struct LocalInstallStorage::Impl {
 LocalInstallStorage::LocalInstallStorage(const std::string &s,const std::string &d,const std::string &m):impl_(std::make_unique<Impl>(s,d,m)){}
 LocalInstallStorage::LocalInstallStorage(const std::string &d,const std::string &m):impl_(std::make_unique<Impl>(d,m)){}
 ModuleMaintenancePreview LocalInstallStorage::maintenance_preview(){
- auto files=scan(impl_->destination);UncachedEngineManager manager(impl_->destination.u8string().c_str(),true,nullptr,false,false,true);(void)layout(manager,impl_->destination,impl_->module);auto *m=manager.getModule(impl_->module.c_str());return {impl_->module,revision(impl_->destination,files),m->getConfigEntry("CipherKey")!=nullptr,m->hasSearchFramework()};
+ auto files=scan(impl_->destination);UncachedEngineManager manager(impl_->destination.u8string().c_str(),true,nullptr,false,false,true);(void)layout(manager,impl_->destination,impl_->module);auto *m=manager.getModule(impl_->module.c_str());return {impl_->module,revision(impl_->destination,files),m->getConfigEntry("CipherKey")!=nullptr,supports_indexed_search(*m)};
 }
 ModuleMaintenanceResult LocalInstallStorage::stage_maintenance(const ModuleMaintenanceRequest &request){
  if(!module_maintenance_arguments(request)||request.module!=impl_->module)throw std::invalid_argument("Invalid maintenance request");
@@ -105,18 +106,18 @@ ModuleMaintenanceResult LocalInstallStorage::stage_maintenance(const ModuleMaint
   if(request.action==ModuleMaintenanceAction::remove){fs::remove_all(impl_->staged/selected.data);fs::remove(impl_->staged/"mods.d"/selected.config);}
   else if(request.action==ModuleMaintenanceAction::set_cipher_key){
    if(!current.cipher_declared)throw std::invalid_argument("Module does not declare a cipher key");
-   m->deleteSearchFramework();if(m->hasSearchFramework())throw std::runtime_error("Cannot invalidate index before cipher change");
+   m->deleteSearchFramework();if(supports_indexed_search(*m))throw std::runtime_error("Cannot invalidate index before cipher change");
    std::string updated;std::istringstream lines(selected.config_bytes);std::string line;unsigned keys=0;
    while(std::getline(lines,line)){auto stripped=trim(line);auto equal=stripped.find('=');if(equal!=stripped.npos&&trim(stripped.substr(0,equal))=="CipherKey"){++keys;updated+="CipherKey="+request.cipher_key+(line.size()&&line.back()=='\r'?"\r":"");}else updated+=line;updated+='\n';}
    if(keys!=1)throw std::invalid_argument("Ambiguous cipher-key configuration");
    std::ofstream out(impl_->staged/"mods.d"/selected.config,std::ios::binary|std::ios::trunc);out.exceptions(std::ios::badbit|std::ios::failbit);out.write(updated.data(),static_cast<std::streamsize>(updated.size()));out.close();
   }else if(request.action==ModuleMaintenanceAction::build_index){
    if(m->getConfigEntry("CipherKey")&&!*m->getConfigEntry("CipherKey"))throw std::invalid_argument("Locked module cannot be indexed");
-   if(m->createSearchFramework()!=0||!m->hasSearchFramework())throw std::runtime_error("SWORD SDK could not create a usable search index");indexed=true;
-  }else{m->deleteSearchFramework();if(m->hasSearchFramework())throw std::runtime_error("SWORD SDK did not delete search index");}
+   if(m->createSearchFramework()!=0||!supports_indexed_search(*m))throw std::runtime_error("SWORD SDK could not create a usable search index");indexed=true;
+  }else{m->deleteSearchFramework();if(supports_indexed_search(*m))throw std::runtime_error("SWORD SDK did not delete search index");}
  }
  fs::remove(impl_->staged/"mods.d/modules-conf.cache");auto files=scan(impl_->staged);
- {UncachedEngineManager verify(impl_->staged.u8string().c_str(),true,nullptr,false,false,true);auto *m=verify.getModule(impl_->module.c_str());if((request.action==ModuleMaintenanceAction::remove)==(m!=nullptr))throw std::runtime_error("Maintenance discovery did not verify");if(m){indexed=m->hasSearchFramework();if(request.action==ModuleMaintenanceAction::set_cipher_key&&(!m->getConfigEntry("CipherKey")||request.cipher_key!=m->getConfigEntry("CipherKey")))throw std::runtime_error("Cipher configuration did not verify");}}
+ {UncachedEngineManager verify(impl_->staged.u8string().c_str(),true,nullptr,false,false,true);auto *m=verify.getModule(impl_->module.c_str());if((request.action==ModuleMaintenanceAction::remove)==(m!=nullptr))throw std::runtime_error("Maintenance discovery did not verify");if(m){indexed=supports_indexed_search(*m);if(request.action==ModuleMaintenanceAction::set_cipher_key&&(!m->getConfigEntry("CipherKey")||request.cipher_key!=m->getConfigEntry("CipherKey")))throw std::runtime_error("Cipher configuration did not verify");}}
  if(revision(impl_->destination,scan(impl_->destination))!=current.revision)throw std::invalid_argument("Library changed during maintenance");
  return {impl_->module,revision(impl_->destination,files),request.action,indexed};
 }

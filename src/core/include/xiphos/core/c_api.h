@@ -1095,6 +1095,33 @@ size_t xc_bookmark_tags_skipped_references(const xc_bookmark_tags *tags);
 size_t xc_bookmark_tags_ignored_subtrees(const xc_bookmark_tags *tags);
 size_t xc_bookmark_tags_snapshot_bytes(const xc_bookmark_tags *tags);
 void xc_bookmark_tags_release(xc_bookmark_tags *tags);
+/* Bounded standalone AndBible SQLite preview; no original writes. XML and
+ * counts are owned, unknown versifications/invalid ordinals are explicit skips.
+ * Append is one revision-checked transaction and rejects stable-ID collisions. */
+typedef struct xc_andbible_import xc_andbible_import;
+typedef struct {size_t imported,skipped,unknown_versification,invalid_ordinal,invalid_identity;} xc_andbible_counts;
+xc_status xc_worker_read_andbible_bookmarks(xc_worker *worker,const char *path,xc_request **out);
+xc_andbible_import *xc_request_take_andbible_import(xc_request *request);
+const char *xc_andbible_import_xml(const xc_andbible_import *result);
+const char *xc_andbible_import_revision(const xc_andbible_import *result);
+xc_status xc_andbible_import_counts(const xc_andbible_import *result,xc_andbible_counts *out);
+void xc_andbible_import_release(xc_andbible_import *result);
+xc_status xc_worker_append_bookmark_document(xc_worker *worker,const char *path,const char *revision,const char *xml,const char *folder,xc_request **out);
+/* Byte-preserving XML export; source revision required, NULL destination revision
+ * requires missing destination. Separate destination; take xc_bookmarks result. */
+xc_status xc_worker_export_bookmark_document(xc_worker *worker,const char *source,const char *source_revision,const char *destination,const char *destination_revision,xc_request **out);
+/* Explicit reference/paths; shared note escaping and retained color precedence.
+ * Owned plan only; callers must not paste raw tag metadata into HTML/CSS. */
+typedef struct xc_verse_decoration xc_verse_decoration;
+xc_status xc_worker_read_verse_decoration(xc_worker *worker,uint64_t tab,const char *bookmarks,const char *annotations,const char *module,const char *reference,int current,int annotation_highlight,int verse_highlight,xc_request **out);
+xc_verse_decoration *xc_request_take_verse_decoration(xc_request *request);
+const char *xc_verse_decoration_note_html(const xc_verse_decoration *decoration);
+const char *xc_verse_decoration_reference(const xc_verse_decoration *decoration);
+size_t xc_verse_decoration_tag_count(const xc_verse_decoration *decoration);
+const char *xc_verse_decoration_tag_color(const xc_verse_decoration *decoration,size_t index);
+int xc_verse_decoration_inner_color(const xc_verse_decoration *decoration);
+int xc_verse_decoration_incomplete(const xc_verse_decoration *decoration);
+void xc_verse_decoration_release(xc_verse_decoration *decoration);
 /* Explicit revision-checked SwordBookmarks storage; never navigates or renders.
  * Selected path <=4096 bytes, optional revision64 lowercase SHA-256 hex bytes,
  * optional text fields <=32768 UTF-8/XML bytes. Indices refer to the exact source
@@ -1109,7 +1136,7 @@ typedef enum xc_bookmark_kind {XC_BOOKMARK_FOLDER=0,XC_BOOKMARK_LEAF=1} xc_bookm
 typedef enum xc_bookmark_action {XC_BOOKMARK_INSERT=0,XC_BOOKMARK_UPDATE=1,XC_BOOKMARK_REMOVE=2,XC_BOOKMARK_MOVE=3} xc_bookmark_action;
 typedef enum xc_bookmark_field {
  XC_BOOKMARK_CAPTION=0,XC_BOOKMARK_COLOR,XC_BOOKMARK_MODULE,XC_BOOKMARK_KEY,
- XC_BOOKMARK_MODULE_DESCRIPTION,XC_BOOKMARK_DESCRIPTION,XC_BOOKMARK_LABEL
+ XC_BOOKMARK_MODULE_DESCRIPTION,XC_BOOKMARK_DESCRIPTION,XC_BOOKMARK_LABEL,XC_BOOKMARK_VERSIFICATION
 } xc_bookmark_field;
 #define XC_BOOKMARK_EDIT_FIELD_COUNT 6
 typedef struct {

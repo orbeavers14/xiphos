@@ -46,7 +46,7 @@ that shell, so it does not guess a Visual Studio generator/version or accept
 MinGW as native MSVC evidence. Use a new build directory when changing the
 compiler, target, runtime, dependency set or generator.
 
-Build/provide SWORD >=1.8.1, GLib >=2.32, libxml2, libpng >=1.6 (simplified read)
+Build/provide SWORD >=1.8.1, GLib >=2.32, libxml2, SQLite3 >=3.31, libpng >=1.6 (simplified read)
 and zlib development SDKs for the
 same target/compiler/runtime/configuration. Do not use Linux or MinGW libraries.
 Record actual upstream versions, source URLs/revisions, checksums, license terms,

@@ -3,6 +3,8 @@
 #include "session.hpp"
 #include "profile.hpp"
 #include "bookmarks.hpp"
+#include "andbible.hpp"
+#include "verse_decoration.hpp"
 #include "annotations.hpp"
 #include "editable_document.hpp"
 #include "remote_install.hpp"
@@ -191,6 +193,10 @@ public:
   std::future<bool> can_transmit_sync(bool received_navigation);
   std::future<RecoverySnapshot> read_recovery(std::string path);
   std::future<RecoverySnapshot> save_recovery(std::string path,std::optional<std::string> expected,RecoverySnapshot snapshot);
+  std::future<VerseDecoration> read_verse_decoration(StudyTab tab,std::string bookmarks,std::string annotations,std::string module,std::string reference,bool current,bool annotation_highlight,bool verse_highlight);
+  std::future<AndBibleImport> read_andbible_bookmarks(std::string path);
+  std::future<BookmarkSnapshot> export_bookmark_document(std::string source,std::string source_revision,std::string destination,std::optional<std::string> destination_revision);
+  std::future<BookmarkSnapshot> append_bookmark_document(std::string path,std::optional<std::string> revision,std::string xml,std::string folder);
   std::future<LegacyMigration> prepare_legacy_migration(LegacyMigrationInput input,LegacyModuleMapping mapping={});
   std::future<LegacyMigration> read_legacy_migration(std::string path,LegacyModuleMapping mapping={});
   std::future<LegacyMigration> save_legacy_migration(std::string path,LegacyMigration migration);

@@ -160,7 +160,7 @@ BookmarkTags Reader::bookmark_tags(const BookmarkSnapshot &snapshot,const std::s
     result.snapshot_bytes+=text.size();
   };
   account(result.control_module);account(result.context);account(result.revision);
-  for(const auto &candidate:result.candidates){account(candidate.color);account(candidate.foreground);account(candidate.key);if(candidate.module)account(*candidate.module);if(candidate.description)account(*candidate.description);}
+  for(const auto &candidate:result.candidates){account(candidate.color);account(candidate.foreground);account(candidate.key);if(candidate.module)account(*candidate.module);if(candidate.description)account(*candidate.description);if(candidate.source_versification)account(*candidate.source_versification);}
   result.states.reserve(result.candidates.size());
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto *control=impl_->manager->getModule(id.c_str());
@@ -175,6 +175,7 @@ BookmarkTags Reader::bookmark_tags(const BookmarkSnapshot &snapshot,const std::s
       if(!module)state=BookmarkTagState::missing;
       else state=std::string(module->getType())=="Biblical Texts"||regular_commentary(module->getType(),module->getConfigEntry("ModDrv"))?BookmarkTagState::ready:BookmarkTagState::unsupported;
     }
+    if(candidate.source_versification&&*candidate.source_versification!=key->getVersificationSystem())state=BookmarkTagState::unsupported;
     if(state==BookmarkTagState::missing||state==BookmarkTagState::unsupported)++result.skipped_modules;
     result.states.push_back(state);
   }
@@ -186,7 +187,7 @@ BookmarkTags Reader::bookmark_tags(const BookmarkSnapshot &snapshot,const std::s
     result.skipped_references+=references.skipped;result.limited=result.limited||references.limited;
     for(const auto &reference:references.references){
       if(result.occurrences==limits.occurrences){result.limited=true;return result;}
-      sword::VerseKey normalized;normalized.setLocale(key->getLocale());normalized.setText(reference.c_str());
+      sword::VerseKey normalized;normalized.setVersificationSystem(key->getVersificationSystem());normalized.setLocale(key->getLocale());normalized.setText(reference.c_str());
       const auto *book=normalized.getOSISBookName();if(!book)throw std::runtime_error("Bookmark tag has no OSIS book");
       std::string osis=std::string(book)+"."+std::to_string(normalized.getChapter())+"."+std::to_string(normalized.getVerse());
       auto found=indices.find(osis);std::size_t verse;

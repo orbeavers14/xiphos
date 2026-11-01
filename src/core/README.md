@@ -623,3 +623,8 @@ Explicit saved-search-list writes now have copied C/Swift transport through
 `xc_worker_save_search_list` / `CoreWorker.saveSearchList`. They return the core's
 verified staged snapshot without applying any search/settings state. See the
 [saved-list contract](../../doc/modernization/saved-search-lists-workflows.md).
+
+AndBible backup import additionally requires SQLite3 >=3.31 (`SQLite::SQLite3`).
+CMake accepts `SQLite3_INCLUDE_DIR` and `SQLite3_LIBRARY` for explicit SDKs.
+See the [import/composition contract](../../doc/modernization/andbible-composition.md)
+for supported schema, limits, ownership and remaining acceptance gates.

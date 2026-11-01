@@ -37,9 +37,9 @@ if $install; then
   case "$distro" in
     ubuntu|debian)
       "${elevate[@]}" apt-get update
-      "${elevate[@]}" apt-get install -y build-essential cmake ninja-build pkg-config libsword-dev libglib2.0-dev libxml2-dev libpng-dev zlib1g-dev ;;
+      "${elevate[@]}" apt-get install -y build-essential cmake ninja-build pkg-config libsword-dev libglib2.0-dev libxml2-dev libsqlite3-dev libpng-dev zlib1g-dev ;;
     fedora)
-      "${elevate[@]}" dnf install -y gcc gcc-c++ cmake ninja-build pkgconf-pkg-config sword-devel glib2-devel libxml2-devel libpng-devel zlib-devel ;;
+      "${elevate[@]}" dnf install -y gcc gcc-c++ cmake ninja-build pkgconf-pkg-config sword-devel glib2-devel libxml2-devel sqlite-devel libpng-devel zlib-devel ;;
     *) echo "Install CMake >=3.16, Ninja, a C++17 compiler, pkg-config, SWORD >=1.8.1, GLib >=2.32, libxml2, libpng >=1.6 and zlib development packages for $distro." >&2; exit 2 ;;
   esac
 fi

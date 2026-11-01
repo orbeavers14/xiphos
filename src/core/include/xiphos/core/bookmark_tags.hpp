@@ -6,6 +6,7 @@ struct BookmarkTagCandidate {
   std::size_t bookmark=0,color_source=0;
   std::string color,foreground,key;
   std::optional<std::string> module,description;
+  std::optional<std::string> source_versification;
 };
 inline constexpr std::size_t maximum_bookmark_tag_verses=65536;
 inline constexpr std::size_t maximum_bookmark_tag_occurrences=262144;

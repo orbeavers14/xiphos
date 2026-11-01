@@ -45,7 +45,7 @@ std::vector<BookmarkTagCandidate> bookmark_tag_candidates(const BookmarkSnapshot
     if(depths[i]>maximum_bookmark_depth||item.position!=positions[parent]++)throw std::invalid_argument("Invalid bookmark tag depth/order");
     if(item.kind==BookmarkKind::folder?(item.module||item.key||item.module_description||item.description):(item.caption||item.color))
       throw std::invalid_argument("Bookmark tag fields do not match node kind");
-    for(const auto *value:{&item.caption,&item.color,&item.module,&item.key,&item.module_description,&item.description,&item.label})text(*value);
+    for(const auto *value:{&item.caption,&item.color,&item.module,&item.key,&item.module_description,&item.description,&item.source_versification,&item.label})text(*value);
     children[parent].push_back(i);
   }
   struct Pending{std::size_t index;std::optional<std::size_t> color;};std::deque<Pending> queue;
@@ -57,8 +57,8 @@ std::vector<BookmarkTagCandidate> bookmark_tag_candidates(const BookmarkSnapshot
     if(item.color&&!item.color->empty())color=next.index;
     if(item.key){
       if(color){const auto &value=*snapshot.items[*color].color;auto key=bookmark_tag_reference(*item.key);
-        const std::string foreground=bookmark_tag_foreground(value.c_str());own(value);own(foreground);own(key);if(item.module)own(*item.module);if(item.description)own(*item.description);
-        result.push_back({next.index,*color,value,foreground,std::move(key),item.module,item.description});
+        const std::string foreground=bookmark_tag_foreground(value.c_str());own(value);own(foreground);own(key);if(item.module)own(*item.module);if(item.description)own(*item.description);if(item.source_versification)own(*item.source_versification);
+        result.push_back({next.index,*color,value,foreground,std::move(key),item.module,item.description,item.source_versification});
       }
     } else for(auto child:children[next.index])queue.push_back({child,color});
   }

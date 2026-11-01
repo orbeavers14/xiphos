@@ -22,6 +22,8 @@ them. Transitive libraries vary with the selected SDK and TLS backend.
 | CrossWire SWORD | 1.8.1 | 1.9.0.3916; runtime verified | Module discovery, versification, rendering, search and editable module drivers | `src/core/reader.cpp`, session/search/book services; selected static SDK under `/usr/local` |
 | GLib | 2.32 | 2.90.1; runtime verified | Unicode casing, UTF-8 validation, SHA256 and shared utilities | Core rendering/persistence/installation helpers, repository/recovery/migration checksums and sync text validation; selected Homebrew SDK |
 | libxml2 | Not specified by native finder | 2.9.13; selected headers and runtime verified | XML persistence and HTML/rich-document parsing | `xml_document.cpp`, `session_snapshot.cpp`, `rich_document.cpp`, HTML preparation; Apple SDK/system library |
+| SQLite3 | 3.31 | 3.54.0; selected headers and runtime verified | Bounded read-only AndBible backup import; no application database | `src/core/andbible.cpp`; CMake `SQLite::SQLite3`, Apple SDK/system library |
+| CLucene — alternate SWORD backend | SDK-selected; optional | 2.3.3.4 linked by alternate SWORD 1.9.0 | Actual index creation/search validation | Isolated indexing validation SDK; primary SWORD 1.9.0.3916 still lacks usable indexing |
 | libpng | 1.6; simplified read API enabled | 1.6.59; selected headers and static runtime verified | Bounded PNG validation, decoding and export | `src/core/export_png.cpp`, image preparation; `build/libpng-sdk` |
 | zlib | Not specified | Direct runtime 1.2.12; effective core headers 1.3.2; see notes below | Catalog gzip expansion, PNG/ZIP support and SWORD linkage | `repository_archive.cpp`, libpng/libarchive/SWORD; direct link uses Apple SDK/system zlib |
 | libcurl | 7.62 | 8.23.0; runtime verified; OpenSSL 3.6.5 TLS backend | HTTPS download, certificate/redirect checks, transfer limits, progress and cancellation | `src/core/https_download.cpp`; selected MacPorts dynamic SDK |
@@ -50,7 +52,8 @@ them. Transitive libraries vary with the selected SDK and TLS backend.
 Authoritative requirements: [core CMake](../src/core/CMakeLists.txt).
 Source provenance, limits and notices: [PNG contract](../doc/modernization/png-export-workflows.md)
 and [HTTPS/extraction contract](../doc/modernization/https-transfer.md).
-The base shared core does not require GTK, WebKitGTK, BibleSync or SQLite.
+The base shared core requires SQLite3 for AndBible import. GTK, WebKitGTK and
+optional BibleSync are not base-core requirements.
 Optional BibleSync networking requires the reviewed SDK described above.
 Installed SDK capabilities are not necessarily features actively used by the app.
 
@@ -90,7 +93,7 @@ HTTPS service does not link its separate SWORD bridge.
 
 Versions were checked against `build/macos/CMakeCache.txt`, generated compiler/link
 inputs, package metadata, tool versions and a temporary selected-library runtime
-probe. This update did not install, relocate or upgrade packages or modify app code.
+probe. Version inspection did not install, relocate or upgrade packages.
 
 - GLib's selected imported target is 2.90.1, ahead of old 2.86.5 fallback paths.
   Older local GLib source/build directories are unselected and not delivered by Git.

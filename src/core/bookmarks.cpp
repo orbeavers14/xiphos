@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/bookmarks.hpp"
+#include "xiphos/core/andbible.hpp"
 #include "xml_document.hpp"
 #include "preference_file.hpp"
 #include <glib.h>
@@ -10,6 +11,7 @@
 #include <functional>
 #include <memory>
 #include <stdexcept>
+#include <set>
 namespace xiphos::core {
 BookmarkSnapshot parse_bookmarks(const std::string &source) {
   auto document=detail::parse_xml_document(source,"SwordBookmarks");BookmarkSnapshot result;
@@ -39,7 +41,7 @@ BookmarkSnapshot parse_bookmarks(const std::string &source) {
       if(folder){item.caption=attribute(node,"caption");item.color=attribute(node,"color");item.label=item.caption;}
       else {
         item.module=attribute(node,"modulename");item.key=attribute(node,"key");
-        item.module_description=attribute(node,"moduledescription");item.description=attribute(node,"description");
+        item.source_versification=attribute(node,"versification");item.module_description=attribute(node,"moduledescription");item.description=attribute(node,"description");
         if(!item.description)item.label=item.key;
         else if(!item.description->empty())item.label=item.description;
         else if(item.key&&item.module)item.label=*item.key+", "+*item.module;
@@ -169,6 +171,32 @@ BookmarkSnapshot edit_bookmarks(const std::string &path,const std::optional<std:
     prepared=read_bookmarks(file.u8string());
   },detail::maximum_xml_document_bytes);
   return prepared;
+}
+
+BookmarkSnapshot append_bookmark_document(const std::string &path,const std::optional<std::string> &revision,const std::string &imported,const std::string &folder){
+ if(revision)bookmark_revision(*revision);detail::validate_xml_text(folder,4096);if(folder.empty())throw std::invalid_argument("Import folder name is required");(void)parse_bookmarks(imported);
+ BookmarkSnapshot prepared;
+ detail::replace_preference_file(path,[&](const std::filesystem::path &file,const std::string &original,bool existed){
+  if(existed!=revision.has_value())throw std::invalid_argument("Bookmark file changed; reload before importing");const auto bytes=existed?original:"<SwordBookmarks syntaxVersion='1.0'/>";
+  if(revision&&parse_bookmarks(bytes).revision!=*revision)throw std::invalid_argument("Bookmark revision changed; reload before importing");
+  auto target=detail::parse_xml_document(bytes,"SwordBookmarks"),source=detail::parse_xml_document(imported,"SwordBookmarks");std::set<std::string> seen;
+  auto identities=[&](xmlDoc *doc,bool incoming){for(auto *node:bookmark_nodes(xmlDocGetRootElement(doc))){std::unique_ptr<xmlChar,decltype(xmlFree)> id(xmlGetProp(node,BAD_CAST "andbible-entry"),xmlFree);if(id&&!seen.insert(reinterpret_cast<const char *>(id.get())).second&&incoming)throw std::invalid_argument("AndBible bookmark already exists; explicit merge review is required");}};
+  identities(target.get(),false);identities(source.get(),true);
+  auto *copy=xmlDocCopyNode(xmlDocGetRootElement(source.get()),target.get(),1);if(!copy)throw std::bad_alloc();std::unique_ptr<xmlNode,decltype(&xmlFreeNode)> owned(copy,xmlFreeNode);xmlNodeSetName(copy,BAD_CAST "Folder");if(!xmlSetProp(copy,BAD_CAST "caption",BAD_CAST folder.c_str())||!xmlAddChild(xmlDocGetRootElement(target.get()),copy))throw std::bad_alloc();owned.release();
+  xmlChar *buffer=nullptr;int length=0;xmlDocDumpFormatMemoryEnc(target.get(),&buffer,&length,"UTF-8",0);std::unique_ptr<xmlChar,decltype(xmlFree)> encoded(buffer,xmlFree);if(!buffer||length<=0)throw std::runtime_error("Bookmark import serialization failed");std::string result(reinterpret_cast<const char *>(buffer),length);prepared=parse_bookmarks(result);
+  {std::ofstream out(file,std::ios::binary);out.exceptions(std::ios::badbit|std::ios::failbit);out.write(result.data(),result.size());out.close();}if(detail::read_preference_file(file,detail::maximum_xml_document_bytes)!=result)throw std::runtime_error("Bookmark import verification failed");
+ },detail::maximum_xml_document_bytes);return prepared;
+}
+
+BookmarkSnapshot export_bookmark_document(const std::string &source,const std::string &source_revision,const std::string &destination,const std::optional<std::string> &destination_revision){
+ bookmark_revision(source_revision);if(destination_revision)bookmark_revision(*destination_revision);
+ for(const auto &path:{source,destination}){detail::validate_xml_text(path,4096);if(path.empty())throw std::invalid_argument("Bookmark export paths required");}
+ if(std::filesystem::weakly_canonical(std::filesystem::u8path(source))==std::filesystem::weakly_canonical(std::filesystem::u8path(destination)))throw std::invalid_argument("Choose a separate bookmark export destination");
+ const auto xml=detail::read_preference_file(std::filesystem::u8path(source),detail::maximum_xml_document_bytes);auto prepared=parse_bookmarks(xml);if(prepared.revision!=source_revision)throw std::invalid_argument("Bookmark source changed; reload before exporting");
+ detail::replace_preference_file(destination,[&](const std::filesystem::path &file,const std::string &old,bool existed){
+  if(existed!=destination_revision.has_value()||(destination_revision&&parse_bookmarks(old).revision!=*destination_revision))throw std::invalid_argument("Bookmark export destination changed; reload before exporting");
+  {std::ofstream out(file,std::ios::binary);out.exceptions(std::ios::badbit|std::ios::failbit);out.write(xml.data(),xml.size());out.close();}if(detail::read_preference_file(file,detail::maximum_xml_document_bytes)!=xml)throw std::runtime_error("Bookmark export verification failed");
+ },detail::maximum_xml_document_bytes);return prepared;
 }
 
 }

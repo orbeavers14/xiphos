@@ -15,6 +15,7 @@ struct BookmarkItem {
   std::optional<std::size_t> parent; // Earlier flat item; absent means document root.
   std::size_t position=0; // Recognized sibling order, not a persistent identity.
   std::optional<std::string> caption,color,module,key,module_description,description;
+  std::optional<std::string> source_versification; // Imported provenance; never silently reinterpret across canons.
   std::optional<std::string> label; // Derived legacy presentation; absent if unsafe.
 };
 struct BookmarkSnapshot {
