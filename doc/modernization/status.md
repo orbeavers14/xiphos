@@ -1,6 +1,6 @@
 # Modernization status and acceptance
 
-Mixed-search checkpoint (2026-11-01): [opt-in mixed-family batches and typed exports](mixed-search.md) now retain Bible/commentary/dictionary/indexed-tree results in one generation, preserve verse scope/settings across keyed groups and dispatch stale-safe text/passive HTML reads by actual source kind. Existing verse-only consumers remain gated. Native typed controls/activation, keyed scopes/indexed/attribute/assets and broad corpus/physical-host acceptance remain open.
+Mixed-search checkpoint (2026-11-01, `be6def6`): [opt-in mixed-family batches and typed exports](mixed-search.md) now retain Bible/commentary/dictionary/indexed-tree results in one generation, preserve verse scope/settings across keyed groups and dispatch stale-safe text/passive HTML reads by actual source kind. Existing verse-only consumers remain gated. Native typed controls/activation, keyed scopes/indexed/attribute/assets and broad corpus/physical-host acceptance remain open.
 
 Keyed preview checkpoint (2026-11-01): [exact source-specific previews](keyed-search.md#exact-keyed-previews) now dispatch dictionary keys/indexed-tree paths through shared Reader/FIFO/C services, reject missing/fuzzy targets and enforce copied HTML limits. Typed batch generations, exports and native presentation remain open.
 

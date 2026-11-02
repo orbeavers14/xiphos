@@ -5,6 +5,39 @@ Updated 2026-11-01. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Mixed search/export checkpoint, 2026-11-01
+
+Implementation `be6def6`, master. Owner requested continued search development.
+[Contract](mixed-search.md). Shared opt-in mixed batch/FIFO/C APIs now retain
+Bible/commentary/dictionary/indexed-tree source kinds and complete keys, preserve
+verse scope/settings across keyed groups, and dispatch existing visible/all text
+and passive HTML export by committed source kind. Old verse-only APIs retain
+intentional non-verse rejection. No new native mixed-family controls are claimed.
+Indexed-tree range metadata is optional; verse/other-key validation is unchanged.
+Keyed assets reject rather than entering the verse image loader.
+
+Actual checks on macOS27.2/AppleClang21/Swift6.4.2:
+
+- Complete native build passed; full suite245 registered,244 passes and one
+  expected primary-SDK index skip,286.26s. Includes final mixed export/scope tests.
+- Focused existing batch/generation/text/HTML/C export checks11/11,21.75s;
+  initial mixed/keyed/fixture3/3,2.72s. Final source included a stronger next
+  verse-last-results identity assertion, covered by the complete suite above.
+- ASan/UBSan search/scope/mixed checks5/5,20.10s; after the stronger assertion,
+  final mixed/keyed/fixture3/3,5.94s, detect_leaks=0. Third-party SDK coverage
+  remains incomplete. Alternate released SWORD1.9.0/CLucene required-index plus
+  mixed checks5/5,11.29s; final mixed/keyed/fixture3/3,3.20s.
+- Portable Linux models/core on Mac mixed/keyed/fixture3/3,2.61s. C11 header
+  syntax, changed documentation links and staged diff checks passed. Physical
+  Windows/Fedora, real licensed modules and broad corpus acceptance remain open.
+- Local code-only Graphify refresh680 files,12739 nodes,34624 edges,
+  375 communities; source hashes unchanged during extraction. Generated outputs
+  and unrelated .DS_Store remain untracked. No hosted build or paid analysis.
+
+Next: native typed preview/activation and mixed-source controls; keyed scopes,
+raw-index/attribute coverage, keyed assets and broader SDK/module/RTL acceptance.
+Do not present core service fixtures as complete native workflow acceptance.
+
 ## Exact keyed-preview checkpoint, 2026-11-01
 
 Implementation `4faa556`, master. Owner requested a bounded next step with the
