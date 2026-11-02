@@ -1,5 +1,7 @@
 # Shared project handoff: start here in every chat
 
+Native mixed-search checkpoint (2026-11-02, `fd08f98`): [macOS mixed controls, typed preview/activation and entry export](mixed-search.md#macos-integration) now consume the shared engine. Search drafts persist the opt-in flag with older-draft compatibility. Final model checks and desktop restart/clipboard rechecks pass; compact control visual acceptance, keyed scopes/assets and broader corpus/platform acceptance remain open. This supersedes older notes that all native mixed integration is pending.
+
 Legacy settings/session checkpoint (2026-11-01, `4bfb38c`): shared read-only snapshots,
 strict all-tab conversion, explicit module mapping, exact-original migration
 packages/restore and Mac preview/export/next-launch integration now exist. See

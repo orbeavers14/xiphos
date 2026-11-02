@@ -5,6 +5,46 @@ Updated 2026-11-01. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Native mixed-search checkpoint — 2026-11-02
+
+Implementation `fd08f98`, authorized fork `master`. The macOS Search pane now
+opts into dictionary/indexed-tree sources, carries typed results through exact
+preview/activation and existing retained exports, and restores the option with
+search drafts. Missing optional flags in older drafts remain verse-only.
+Dictionary activation validates and visits history within one FIFO task; book
+activation reuses canonical-path selection. Reading/history/drafts and independent
+windows are covered by original-prose tests. See [contract](mixed-search.md).
+
+Actual checks on the existing macOS27.2/AppleClang21/Swift6.4.2 setup:
+
+- Full native build passed. Full suite before the final optional draft field and
+  compact help text:246 registered,245 passed,one expected primary-index skip,
+  289.26s (`build/native-mixed-search-full-tests.log`).
+- Final source build passed (`build/native-mixed-search-final-build.log`).
+  Focused final run:9/11 passed; desktop restart/window-frame and clipboard batch
+  tests failed with denied macOS service access. Repeating those two tests with
+  desktop access, including two prerequisite tests, passed4/4,11.11s
+  (`build/native-mixed-search-desktop-recheck.log`). Final mixed model explicitly
+  checks optional-field persistence/older drafts, exact missing targets, all three
+  source kinds, typed export, reading/draft preservation and window isolation.
+- ASan/UBSan mixed/fixture checks3/3,6.69s, before the final Swift-only refinements;
+  leak detection off and third-party instrumentation incomplete. C11 header syntax
+  and final diff whitespace passed. No new alternate SDK/Linux/Windows run here.
+- Earlier disposable-window interaction confirmed exact dictionary and book
+  opening. Final compact-help/live restart recheck was blocked in the preceding
+  turn when automatic approval review could not run after the usage limit; it is
+  not claimed as visually accepted. Automated final persistence/restart checks
+  above now pass. Existing deployment26/dylib27 warnings remain.
+- Local Graphify code-only refresh:680 files,12,753 nodes,34,711 edges,
+  398 communities; source hashes unchanged,zero AI calls/tokens/cost. Large graph
+  HTML aggregates communities; heuristic/partial-extraction limits remain.
+  Generated outputs remain untracked, as does unrelated `.DS_Store`.
+
+No whole-parity, older macOS, physical Fedora/Windows or release acceptance.
+Next: final compact-control visual acceptance, then keyed assets/semantic links
+and broader module/canon/RTL compatibility. Unsupported keyed scopes/indexed and
+attribute policies remain explicit; do not infer support from mixed controls.
+
 ## Mixed search/export checkpoint, 2026-11-01
 
 Implementation `be6def6`, master. Owner requested continued search development.

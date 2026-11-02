@@ -1,6 +1,6 @@
 # Mixed-family search and export
 
-Checkpoint:2026-11-01. Opt-in shared service; no whole advanced-search or native
+Checkpoint:2026-11-02. Opt-in shared service; no whole advanced-search or native
 interface acceptance is claimed.
 
 ## Execution and retained identities
@@ -54,6 +54,26 @@ Resources reject even when verse PNG embedding is requested; a keyed path never
 enters the verse asset resolver. Verse PNG behavior is unchanged. Complete keyed
 assets, richer formats and semantic-link/corpus acceptance remain open.
 
+## macOS integration
+
+The Search pane now offers an explicit “Include dictionaries and books” option.
+The default remains verse-only. Bounds choices remain verse modules; unsupported
+keyed scopes/modes retain the shared core's per-source rejection. Single keyed
+queries use the same retained mixed generation as multiple-source queries.
+
+Copied hits retain their source kind through selection, preview, activation and
+export. Dictionary activation validates the exact canonical key and records its
+existing dictionary history within one FIFO job. Book activation selects the
+exact canonical path through the existing shared session service. Missing keys
+cannot fuzzy-open a different entry. Both open their existing native panes and
+preserve the main reading pane and unsubmitted reference draft. Keyed preview
+links require opening the result first; they never enter the verse-link parser.
+The export control now says “Include entry text” for all supported families.
+
+Native search drafts persist the opt-in flag before restoring module choices.
+Older version1 drafts without that optional field retain verse-only behavior.
+No parallel search, navigation or persistence engine was introduced.
+
 ## Evidence and next steps
 
 Original-prose fixtures exercise all supported families, one missing source,
@@ -63,6 +83,5 @@ exact/short byte caps, stale IDs, explicit partial sources, retention capacity,
 keyed resource rejection, cancellation and owned C results after worker teardown.
 Existing verse-only batch/export characterization remains intentional.
 
-Next: native typed result selection/preview/activation and controls, keyed
-last-results/range policy, keyed raw-index/attribute coverage where supported,
+Next: keyed last-results/range policy, keyed raw-index/attribute coverage where supported,
 keyed assets and broader SDK/module/canon/RTL/physical-platform acceptance.
