@@ -19,7 +19,7 @@ inline bool stopped(const std::shared_ptr<SearchControl> &control) { return cont
 // One document policy for explicit visible selections and complete returned keys.
 // The owning session supplies configured SDK reads, never a frontend renderer.
 inline SearchTextExport render_search_export_text(const std::string &title, std::size_t cap, const SearchExportDocument &document,
-						  SearchTextExport out, const std::shared_ptr<SearchControl> &control, const std::function<std::string(const std::string &, const std::string &, std::size_t)> &read, bool report_progress = true, bool include_context = false)
+						  SearchTextExport out, const std::shared_ptr<SearchControl> &control, const std::function<std::string(const SearchExportRow &, std::size_t)> &read, bool report_progress = true, bool include_context = false)
 {
 	const auto &rows = document.rows;
 	if (title.size() + 3 > cap)
@@ -55,7 +55,7 @@ inline SearchTextExport render_search_export_text(const std::string &title, std:
 		std::string scripture;
 		if (out.includes_scripture) {
 			try {
-				scripture = read(row.first, row.second, remaining - base);
+				scripture = read(row, remaining - base);
 			} catch (const std::length_error &) {
 				return fail_export(std::move(out), SearchExportStatus::output_limit, i);
 			} catch (const std::out_of_range &) {

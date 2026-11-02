@@ -96,6 +96,7 @@ public:
   StudySearch search_keyed_module_task(StudyTab tab,SearchQuery query,SearchLimits limits = {});
   StudySearch search_module_task(StudyTab tab,SearchQuery query,SearchLimits limits = {});
   std::future<SearchResult> search_module(StudyTab tab,SearchQuery query,SearchLimits limits = {});
+  StudyBatchSearch search_mixed_batch_task(StudyTab tab,std::vector<SearchQuery> queries,SearchBatchLimits limits = {});
   StudyBatchSearch search_batch_task(StudyTab tab,std::vector<SearchQuery> queries,SearchBatchLimits limits = {});
   std::future<SearchBatchResult> search_batch(StudyTab tab,std::vector<SearchQuery> queries,SearchBatchLimits limits = {});
   std::future<SearchGenerationInfo> search_generation(StudyTab tab);

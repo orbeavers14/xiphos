@@ -52,3 +52,11 @@ survives request/worker teardown. This previews current installed content, not
 an immutable content revision captured at search time. The cap bounds copied
 HTML rather than the SDK's internal rendering allocation. Tests cover dictionary
 and book dispatch, wrong kinds, missing keys/paths, output limits and C lifetime.
+
+## Mixed batches and source-specific export
+
+[Opt-in mixed-family batches](mixed-search.md) now retain typed complete keys and
+feed existing stale-safe visible/all text and passive HTML exporters. This
+supersedes the earlier pending batch/export statements for this supported slice;
+standalone keyed-query behavior remains unchanged. Native consumption, keyed
+scopes/raw-index/attribute/assets and full compatibility acceptance remain open.

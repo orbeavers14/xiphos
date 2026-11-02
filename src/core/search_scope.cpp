@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "search_scope.hpp"
 #include <versekey.h>
+#include <treekeyidx.h>
 #include <cstring>
 #include <glib.h>
 #include <stdexcept>
@@ -22,7 +23,10 @@ SearchScope::SearchScope(const sword::ListKey &keys,const SearchScopeLimits &lim
     const auto *key=keys.getElement(i);
     if(!key)throw std::runtime_error("SDK scope has a missing element");
     if(!key->getText()||!*key->getText())throw std::runtime_error("SDK scope has an empty reference");
-    account(key->getText());account(key->getRangeText());
+    account(key->getText());
+    // Indexed tree results are opaque paths and may expose no range text.
+    // Verse/other key metadata keeps its existing strict validation.
+    const auto *range=key->getRangeText();if(range||!dynamic_cast<const sword::TreeKeyIdx *>(key))account(range);
     if(const auto *verse=dynamic_cast<const sword::VerseKey *>(key))account(verse->getVersificationSystem());
     keys_.add(*key); // SDK clone retains key type, bounds, flags and versification.
   }

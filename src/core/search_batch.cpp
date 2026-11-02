@@ -15,6 +15,10 @@ void validate_limits(const SearchLimits &limits) {
 }
 }
 SearchBatchResult StudySession::search_batch(std::vector<SearchQuery> queries,const SearchBatchLimits &limits,std::shared_ptr<SearchControl> control) {
+  return search_batch_impl(std::move(queries),limits,std::move(control),false);
+}
+SearchBatchResult StudySession::search_mixed_batch(std::vector<SearchQuery> queries,const SearchBatchLimits &limits,std::shared_ptr<SearchControl> control){return search_batch_impl(std::move(queries),limits,std::move(control),true);}
+SearchBatchResult StudySession::search_batch_impl(std::vector<SearchQuery> queries,const SearchBatchLimits &limits,std::shared_ptr<SearchControl> control,bool mixed){
   detail::SearchControlScope progress(control);
   validate_limits(limits.per_module);validate_limits(limits.total);
   if(queries.empty()||queries.size()>maximum_search_batch_modules)throw std::invalid_argument("Search batch needs 1 to 32 queries");
@@ -37,14 +41,14 @@ SearchBatchResult StudySession::search_batch(std::vector<SearchQuery> queries,co
     detail::SearchRetainedKeys retained;
     try {
       group.result=reader_.search_impl(output.requested[index],remaining,control,&scope,text,true,begin,end,true,
-        generation.wants_keys()?&retained:nullptr,generation.remaining());
+        generation.wants_keys()?&retained:nullptr,generation.remaining(),mixed);
     } catch(const std::out_of_range &){group.failure=SearchBatchFailure::module_not_found;}
       catch(const std::invalid_argument &){group.failure=SearchBatchFailure::invalid_request;}
       catch(const std::length_error &){group.failure=SearchBatchFailure::engine_error;}
       catch(const std::runtime_error &){group.failure=SearchBatchFailure::engine_error;}
     if(group.result){
       auto &result=*group.result;any_executed|=result.executed;
-      if(result.effective_text_options&&result.requested.text_options&&result.requested.mode!=SearchMode::phrase){
+      if(result.key_kind==SearchKeyKind::verse&&result.effective_text_options&&result.requested.text_options&&result.requested.mode!=SearchMode::phrase){
         text=result.requested.text_options;result.text_options_updated=true;
       }
       output.scope_updated|=result.scope_updated;output.text_options_updated|=result.text_options_updated;

@@ -79,7 +79,7 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   if(keyed_only){
     const bool dictionary=dynamic_cast<sword::SWLD *>(&module)&&std::string(module.getType())=="Lexicons / Dictionaries";
     const bool book=dynamic_cast<sword::SWGenBook *>(&module)&&indexed_book(module);
-    if((!dictionary&&!book)||query.range||query.within_last_results||next||retained||
+    if((!dictionary&&!book)||query.range||query.within_last_results||next||
        (query.mode!=SearchMode::regular_expression&&query.mode!=SearchMode::phrase&&query.mode!=SearchMode::words&&query.mode!=SearchMode::multiword))
       throw std::invalid_argument("Keyed search requires a dictionary/general book and an unscoped text mode");
   }else if(!supports_verse_search(module))throw std::invalid_argument("Initial search supports Bible and regular commentary verse modules");

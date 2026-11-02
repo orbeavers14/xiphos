@@ -22,4 +22,12 @@ EntryHtmlSource StudySession::capture_entry_html(const std::string &module,const
   }
   return {module,std::move(entry.reference),std::move(entry.html),std::move(entry.lexical.css),entry.lexical.requested,entry.lexical.applied,bytes};
 }
+EntryHtmlSource StudySession::capture_search_entry_html(const std::string &module,const std::string &key,SearchKeyKind kind,const HtmlSourceLimits &limits){
+ if(kind==SearchKeyKind::verse)return capture_entry_html(module,key,limits);
+ if(!limits.max_bytes||limits.max_bytes>maximum_html_source_bytes)throw std::invalid_argument("Invalid keyed HTML source limits");
+ if(module.size()>limits.max_bytes||key.size()>limits.max_bytes-module.size())throw std::length_error("Keyed HTML metadata exceeds output capacity");
+ auto entry=reader_.keyed_search_entry(module,key,kind,limits.max_bytes-module.size()-key.size(),false,module_engine_options(module));
+ const auto bytes=module.size()+key.size()+entry.html.size();return {module,key,std::move(entry.html),{},false,false,bytes};
+}
+
 }

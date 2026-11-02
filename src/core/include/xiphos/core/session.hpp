@@ -41,6 +41,7 @@ public:
   // Up to 32 validated queries. Output budgets span all groups; execution and
   // complete next scope continue when the copied prefix budget is exhausted.
   // Per-module errors are owned group statuses; fatal failure publishes no state.
+  SearchBatchResult search_mixed_batch(std::vector<SearchQuery> queries,const SearchBatchLimits &limits = {},std::shared_ptr<SearchControl> control = {});
   SearchBatchResult search_batch(std::vector<SearchQuery> queries,const SearchBatchLimits &limits = {},std::shared_ptr<SearchControl> control = {});
   SearchGenerationInfo search_generation() const;
   // Policy applies to future generations only; no mutation of current results.
@@ -180,6 +181,8 @@ public:
   const History &history() const { return history_; }
   void clear_history() { history_.clear(); }
 private:
+  SearchBatchResult search_batch_impl(std::vector<SearchQuery> queries,const SearchBatchLimits &limits,std::shared_ptr<SearchControl> control,bool mixed);
+  EntryHtmlSource capture_search_entry_html(const std::string &module,const std::string &key,SearchKeyKind kind,const HtmlSourceLimits &limits);
   std::shared_ptr<const detail::SearchScope> search_scope_;
   std::shared_ptr<const detail::SearchGeneration> search_generation_;
   std::uint64_t search_generation_serial_=0;

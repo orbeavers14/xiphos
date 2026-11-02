@@ -13,8 +13,8 @@ SearchTextExport StudySession::export_search_visible_text(SearchTextExportReques
   static_cast<SearchExportMetadata &>(out)=detail::resolve_search_export_rows(search_generation_.get(),request.generation,
     SearchExportSelection::visible,request.rows,maximum_search_export_rows,false,control,document,request.include_search_context);
   out.includes_scripture=request.include_scripture;
-  if(out.status==SearchExportStatus::ok)out=detail::render_search_export_text(request.title,request.max_bytes,document,std::move(out),control,[&](const auto &module,const auto &key,std::size_t bytes){
-    return reader_.read_stripped(module,key,module_engine_options(module),bytes);
+  if(out.status==SearchExportStatus::ok)out=detail::render_search_export_text(request.title,request.max_bytes,document,std::move(out),control,[&](const auto &row,std::size_t bytes){
+    return reader_.read_search_stripped(row.first,row.second,row.kind,module_engine_options(row.first),bytes);
   },true,request.include_search_context);
   progress.finish(out.status==SearchExportStatus::cancelled);return out;
 }
@@ -24,8 +24,8 @@ SearchTextExport StudySession::export_search_all_text(SearchAllTextExportRequest
   static_cast<SearchExportMetadata &>(out)=detail::resolve_search_export_rows(search_generation_.get(),request.generation,
     SearchExportSelection::all_retained,{},request.max_rows,request.allow_partial_source,control,document,request.include_search_context);
   out.includes_scripture=request.include_scripture;
-  if(out.status==SearchExportStatus::ok)out=detail::render_search_export_text(request.title,request.max_bytes,document,std::move(out),control,[&](const auto &module,const auto &key,std::size_t bytes){
-    return reader_.read_stripped(module,key,module_engine_options(module),bytes);
+  if(out.status==SearchExportStatus::ok)out=detail::render_search_export_text(request.title,request.max_bytes,document,std::move(out),control,[&](const auto &row,std::size_t bytes){
+    return reader_.read_search_stripped(row.first,row.second,row.kind,module_engine_options(row.first),bytes);
   },true,request.include_search_context);
   progress.finish(out.status==SearchExportStatus::cancelled);return out;
 }

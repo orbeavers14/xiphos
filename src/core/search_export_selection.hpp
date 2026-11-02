@@ -8,6 +8,7 @@ struct SearchExportRow {
   std::string first,second; // Actual module/key, preserving the existing formatter inputs.
   std::size_t group=0;
   std::shared_ptr<const std::string> context; // One copied header per emitting group.
+  SearchKeyKind kind=SearchKeyKind::verse;
 };
 using SearchExportRows=std::vector<SearchExportRow>;
 struct SearchExportDocument {

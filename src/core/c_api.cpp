@@ -1033,8 +1033,8 @@ xc_status xc_worker_search(xc_worker *w,uint64_t tab,const xc_search_query *quer
 void xc_search_batch_limits_default(xc_search_batch_limits *out){
   if(out)*out={xiphos::core::maximum_search_results,xiphos::core::maximum_search_reference_bytes};
 }
-xc_status xc_worker_search_modules(xc_worker *w,uint64_t tab,const char *const *modules,size_t count,
-    const xc_search_query *query,const xc_search_batch_limits *total,xc_request **out){
+static xc_status queue_search_modules(xc_worker *w,uint64_t tab,const char *const *modules,size_t count,
+    const xc_search_query *query,const xc_search_batch_limits *total,xc_request **out,bool mixed){
   if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;
   if(!w||!modules||!count||count>xiphos::core::maximum_search_batch_modules||!valid_search_scope(query)||query->module)
     return XC_INVALID_ARGUMENT;
@@ -1050,11 +1050,13 @@ xc_status xc_worker_search_modules(xc_worker *w,uint64_t tab,const char *const *
       auto item=copied.query;item.module=modules[i];queries.push_back(std::move(item));
     }
     auto request=std::make_unique<Request<xiphos::core::SearchBatchResult>>();
-    auto task=w->value.search_batch_task(tab,std::move(queries),{copied.limits,{budget.max_results,budget.max_reference_bytes}});
+    auto task=mixed?w->value.search_mixed_batch_task(tab,std::move(queries),{copied.limits,{budget.max_results,budget.max_reference_bytes}}):w->value.search_batch_task(tab,std::move(queries),{copied.limits,{budget.max_results,budget.max_reference_bytes}});
     request->search_control=std::move(task.control);request->future=std::move(task.result);
     *out=request.release();return XC_OK;
   }catch(...){return failure();}
 }
+xc_status xc_worker_search_modules(xc_worker *w,uint64_t tab,const char *const *modules,size_t count,const xc_search_query *query,const xc_search_batch_limits *total,xc_request **out){return queue_search_modules(w,tab,modules,count,query,total,out,false);}
+xc_status xc_worker_search_mixed_modules(xc_worker *w,uint64_t tab,const char *const *modules,size_t count,const xc_search_query *query,const xc_search_batch_limits *total,xc_request **out){return queue_search_modules(w,tab,modules,count,query,total,out,true);}
 xc_search_batch *xc_request_take_search_batch(xc_request *r){return r&&r->status==XC_OK?r->search_batch.release():nullptr;}
 xc_status xc_search_batch_get_info(const xc_search_batch *batch,xc_search_batch_info *out){
   if(!out)return XC_INVALID_ARGUMENT;*out={};if(!batch)return XC_INVALID_ARGUMENT;

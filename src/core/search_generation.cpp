@@ -65,6 +65,9 @@ std::shared_ptr<const SearchGeneration> SearchGenerationBuilder::finish(bool can
   for(auto &group:value_.groups_)if(group.result){group.result->generation=value_.info_;group.result->generation_updated=true;}
   return std::make_shared<const SearchGeneration>(std::move(value_));
 }
+SearchKeyKind SearchGeneration::key_kind(std::size_t group)const{
+ if(group>=groups_.size()||!groups_[group].result)throw std::logic_error("Missing search group kind");return groups_[group].result->key_kind;
+}
 std::optional<std::pair<std::string,std::string>> SearchGeneration::visible_row(std::size_t group,std::size_t row) const {
   if(group>=groups_.size()||!groups_[group].result||row>=groups_[group].result->references.size())return std::nullopt;
   return std::make_pair(groups_[group].result->source_module(),groups_[group].result->references[row]);

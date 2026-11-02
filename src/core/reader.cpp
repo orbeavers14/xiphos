@@ -239,14 +239,22 @@ BookEntry Reader::read_book(const std::string &id, std::uint64_t offset) {
   return book_impl(id, offset, nullptr);
 }
 DictionaryEntry Reader::preview_keyed_search(const std::string &id,const std::string &key,SearchKeyKind kind,std::size_t maximum){
- detail::validate_search_module_name(id);if(key.empty()||key.size()>4096||key.find('\0')!=std::string::npos||!maximum||maximum>maximum_search_export_bytes||(kind!=SearchKeyKind::dictionary&&kind!=SearchKeyKind::general_book))throw std::invalid_argument("Invalid keyed preview request");
+ if(!maximum)throw std::invalid_argument("Invalid keyed preview size");return keyed_search_entry(id,key,kind,maximum,false,{});
+}
+DictionaryEntry Reader::keyed_search_entry(const std::string &id,const std::string &key,SearchKeyKind kind,std::size_t maximum,bool stripped,const std::optional<EngineOptions> &options){
+ detail::validate_search_module_name(id);if(key.empty()||key.size()>4096||key.find('\0')!=std::string::npos||maximum>maximum_search_export_bytes||(kind!=SearchKeyKind::dictionary&&kind!=SearchKeyKind::general_book))throw std::invalid_argument("Invalid keyed preview request");
  detail::validate_xml_text(key,4096);std::lock_guard<std::mutex> lock(impl_->mutex);auto *module=impl_->manager->getModule(id.c_str());if(!module)throw std::out_of_range("Preview source is not installed");
  if(kind==SearchKeyKind::dictionary){if(!dynamic_cast<sword::SWLD *>(module)||std::string(module->getType())!="Lexicons / Dictionaries")throw std::invalid_argument("Preview source kind changed");}
  else {if(!detail::indexed_book(*module))throw std::invalid_argument("Preview source kind changed");(void)detail::capture_book_tree_path(*module,key);}
+ std::unique_ptr<ScopedEngineOptions> option_scope;if(options)option_scope=std::make_unique<ScopedEngineOptions>(*impl_->manager,*options);
  std::unique_ptr<sword::SWKey> saved(module->getKey()->clone());if(!saved)throw std::bad_alloc();saved->setPersist(false);
  struct Restore{ sword::SWModule &module;sword::SWKey &key;~Restore(){module.setKey(key);} } restore{*module,*saved};
- module->getKey()->popError();module->setKey(key.c_str());auto html=detail::render_sdk_entry(*module);const auto actual=std::string(module->getKeyText());if(module->getKey()->popError()||actual!=key)throw std::out_of_range("Preview key no longer exists exactly");
+ module->getKey()->popError();module->setKey(key.c_str());auto html=stripped?detail::strip_sdk_buffer(*module,nullptr):detail::render_sdk_entry(*module);const auto actual=std::string(module->getKeyText());if(module->getKey()->popError()||actual!=key)throw std::out_of_range("Preview key no longer exists exactly");
  return {id,actual,detail::copy_sdk_text(html,maximum)};
+}
+std::string Reader::read_search_stripped(const std::string &module,const std::string &key,SearchKeyKind kind,const std::optional<EngineOptions> &options,std::size_t maximum){
+ if(kind==SearchKeyKind::verse)return read_stripped(module,key,options,maximum);
+ return keyed_search_entry(module,key,kind,maximum,true,options).html;
 }
 SearchResult Reader::search_keyed_module(SearchQuery query,const SearchLimits &limits,std::shared_ptr<SearchControl> control){
  detail::SearchControlScope progress(control);detail::validate_search_query(query);std::lock_guard<std::mutex> lock(impl_->mutex);
@@ -260,7 +268,7 @@ SearchResult Reader::search_module(SearchQuery query,const SearchLimits &limits,
 SearchResult Reader::search_impl(SearchQuery query,const SearchLimits &limits,std::shared_ptr<SearchControl> control,
                                  std::shared_ptr<const detail::SearchScope> *scope,const std::optional<SearchTextOptions> &previous_text,
                                  bool nested_job,unsigned progress_begin,unsigned progress_end,bool allow_empty_output,
-                                 detail::SearchRetainedKeys *retained,SearchRetentionLimits retention_limits) {
+                                 detail::SearchRetainedKeys *retained,SearchRetentionLimits retention_limits,bool allow_keyed) {
   std::optional<detail::SearchControlScope> progress;
   if(!nested_job)progress.emplace(control);
   detail::validate_search_query(query);
@@ -270,10 +278,12 @@ SearchResult Reader::search_impl(SearchQuery query,const SearchLimits &limits,st
   const auto resolved = impl_->resolve_name(query.module);
   auto *module = resolved.module ? impl_->manager->getModule(resolved.module->c_str()) : nullptr;
   if(!module)throw std::out_of_range("Search module is not installed");
+  const bool keyed=allow_keyed&&!detail::supports_verse_search(*module);
   std::shared_ptr<const detail::SearchScope> staged;
   auto result=detail::capture_module_search(*impl_->manager,*module,std::move(query),limits,control,
-    scope?scope->get():nullptr,scope?&staged:nullptr,{},previous_text,progress_begin,progress_end,allow_empty_output,retained,retention_limits);
+    !keyed&&scope?scope->get():nullptr,!keyed&&scope?&staged:nullptr,{},previous_text,progress_begin,progress_end,allow_empty_output,retained,retention_limits,keyed);
   result.resolved_module = *resolved.module; // Allocate before session publication.
+  if(keyed)result.key_kind=dynamic_cast<sword::SWLD *>(module)?SearchKeyKind::dictionary:SearchKeyKind::general_book;
   if(staged){*scope=std::move(staged);result.scope_updated=true;}
   if(scope&&*scope)result.scope=(*scope)->info();
   if(progress)progress->finish(result.cancelled);return result;

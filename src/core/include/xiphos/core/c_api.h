@@ -631,6 +631,11 @@ xc_status xc_worker_search_modules(xc_worker *worker,uint64_t tab,const char *co
  * release and survive later jobs/worker close. Invalid scalar getters clear out.
  * group_result is BORROWED CONST: never release it or retain beyond batch release.
  * It supports the existing const xc_search getters, without another allocation. */
+/* Opt-in mixed families, same ordered copied query and aggregate budgets.
+ * Results expose xc_search_key_kind. Only verse groups update verse scope/search
+ * settings; keyed groups reject verse ranges/last-scope/attribute/raw-index modes.
+ * Complete typed keys use the same retained generation/read/export ownership. */
+xc_status xc_worker_search_mixed_modules(xc_worker *worker,uint64_t tab,const char *const *modules,size_t count,const xc_search_query *query,const xc_search_batch_limits *total,xc_request **out);
 xc_search_batch *xc_request_take_search_batch(xc_request *request);
 xc_status xc_search_batch_get_info(const xc_search_batch *batch,xc_search_batch_info *out);
 xc_status xc_search_batch_get_group(const xc_search_batch *batch,size_t index,xc_search_batch_group_info *out);

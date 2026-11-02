@@ -330,3 +330,8 @@ Exact keyed previews now dispatch current dictionary/indexed-tree content with
 explicit source kind, missing-target rejection and copied HTML bounds; see the
 [keyed preview contract](keyed-search.md#exact-keyed-previews). Native preview
 consumption, typed batch generations and source-specific exports remain next.
+
+Mixed-search checkpoint (2026-11-01): [opt-in typed batches and complete-source
+exports](mixed-search.md) now cover Bibles/commentaries/dictionaries/indexed-tree
+books, retained identities and verse-scope isolation. Native typed consumption,
+keyed scopes/indexed/attribute/assets and broader compatibility remain next.

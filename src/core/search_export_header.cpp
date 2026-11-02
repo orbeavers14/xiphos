@@ -89,6 +89,7 @@ std::string SearchGeneration::export_header(std::size_t index) const
 	const auto &result = *groups_[index].result;
 	std::string text = "Search group " + std::to_string(index + 1) + "\nModule: " + query.module;
 	if (result.source_module() != query.module) text += "\nResolved module: " + result.source_module();
+	if(result.key_kind!=SearchKeyKind::verse)text+=result.key_kind==SearchKeyKind::dictionary?"\nResult keys: dictionary entries":"\nResult keys: general-book paths";
 	text += "\nQuery: " + query.expression + "\nMode: " + mode_name(query.mode) +
 			   "\nCase sensitive: " + flag(query.case_sensitive) + "\nScope: ";
 	if (query.range)

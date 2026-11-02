@@ -68,13 +68,13 @@ SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest reques
     std::string scripture;
     if(out.includes_scripture){
       EntryHtmlSource source;
-      try{source=capture_entry_html(row.first,row.second,{request.max_bytes});}
+      try{source=capture_search_entry_html(row.first,row.second,row.kind,{request.max_bytes});}
       catch(const std::length_error &){return finish(SearchExportStatus::output_limit,i);}
       catch(const std::out_of_range &){return finish(SearchExportStatus::module_not_found,i);}
       catch(const std::invalid_argument &){return finish(SearchExportStatus::engine_error,i);}
       catch(const std::runtime_error &){return finish(SearchExportStatus::engine_error,i);}
       detail::ExportImageResolver resolver;
-      if(embed_images)resolver=[&](const std::string &uri){return images.resolve(row.first,uri);};
+      if(embed_images&&row.kind==SearchKeyKind::verse)resolver=[&](const std::string &uri){return images.resolve(row.first,uri);};
       const auto prepared=detail::prepare_export_html(source,request.max_bytes,resolver);
       if(prepared.cancelled)return finish(SearchExportStatus::cancelled,i);
       if(prepared.limited)return finish(SearchExportStatus::output_limit,i);
@@ -104,8 +104,8 @@ SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest reques
     // Reuse the text formatter and configured SDK reads on the same owner and
     // already resolved rows. Neither representation is published on failure.
     text=detail::render_search_export_text(request.title,*request.plain_text_max_bytes,document,std::move(text),control,
-      [&](const auto &module,const auto &key,std::size_t bytes){
-        return reader_.read_stripped(module,key,module_engine_options(module),bytes);
+      [&](const auto &row,std::size_t bytes){
+        return reader_.read_search_stripped(row.first,row.second,row.kind,module_engine_options(row.first),bytes);
       },false,request.include_search_context);
     if(text.status!=SearchExportStatus::ok)return finish(text.status,text.failed_row);
     plain_text=std::move(text.text);

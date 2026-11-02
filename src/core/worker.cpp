@@ -258,6 +258,9 @@ StudySearch StudyWorker::search_module_task(StudyTab tab,SearchQuery query,Searc
 std::future<SearchResult> StudyWorker::search_module(StudyTab tab,SearchQuery query,SearchLimits limits) {
   return search_module_task(tab,std::move(query),limits).result;
 }
+StudyBatchSearch StudyWorker::search_mixed_batch_task(StudyTab tab,std::vector<SearchQuery> queries,SearchBatchLimits limits){
+ StudyBatchSearch task{std::make_shared<SearchControl>(),{}};task.result=impl_->submit([tab,queries=std::move(queries),limits,control=task.control](Impl::State &s){try{return s.tab(tab).search_mixed_batch(queries,limits,control);}catch(...){detail::SearchControlAccess::fail_if_queued(control);throw;}},task.control);return task;
+}
 StudyBatchSearch StudyWorker::search_batch_task(StudyTab tab,std::vector<SearchQuery> queries,SearchBatchLimits limits) {
   StudyBatchSearch task{std::make_shared<SearchControl>(),{}};
   task.result=impl_->submit([tab,queries=std::move(queries),limits,control=task.control](Impl::State &s){

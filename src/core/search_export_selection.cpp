@@ -38,7 +38,7 @@ SearchExportMetadata resolve_search_export_rows(const SearchGeneration *generati
       const auto row=generation->visible_row(selected[i].group,selected[i].row);
       if(!row)return fail(SearchExportStatus::invalid_selection,i);
       if(row->first.size()+row->second.size()>maximum_search_reference_bytes-bytes)return fail(SearchExportStatus::output_limit,i);
-      bytes+=row->first.size()+row->second.size();rows.push_back({row->first,row->second,selected[i].group,context(selected[i].group)});
+      bytes+=row->first.size()+row->second.size();rows.push_back({row->first,row->second,selected[i].group,context(selected[i].group),generation->key_kind(selected[i].group)});
     }
   }else{
     if(out.generation.retention!=SearchRetentionStatus::complete)return fail(SearchExportStatus::capacity_exceeded);
@@ -54,7 +54,7 @@ SearchExportMetadata resolve_search_export_rows(const SearchGeneration *generati
       for(const auto &key:value.result->references){
         const auto &module=value.result->source_module();
         if(module.size()+key.size()>maximum_search_reference_bytes-bytes)return fail(SearchExportStatus::output_limit);
-        bytes+=module.size()+key.size();rows.push_back({module,key,group,context(group)});
+        bytes+=module.size()+key.size();rows.push_back({module,key,group,context(group),value.result->key_kind});
       }
     }
   }

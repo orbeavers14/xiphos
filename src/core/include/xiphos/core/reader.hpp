@@ -217,11 +217,13 @@ public:
                                int direction);
 private:
   friend class StudySession;
+  DictionaryEntry keyed_search_entry(const std::string &module,const std::string &key,SearchKeyKind kind,std::size_t maximum,bool stripped,const std::optional<EngineOptions> &options);
+  std::string read_search_stripped(const std::string &module,const std::string &key,SearchKeyKind kind,const std::optional<EngineOptions> &options,std::size_t maximum);
   SearchResult search_impl(SearchQuery query,const SearchLimits &limits,std::shared_ptr<SearchControl> control,
                            std::shared_ptr<const detail::SearchScope> *scope,
                            const std::optional<SearchTextOptions> &previous_text = {},
                            bool nested_job=false,unsigned progress_begin=0,unsigned progress_end=100,bool allow_empty_output=false,
-                           detail::SearchRetainedKeys *retained=nullptr,SearchRetentionLimits retention_limits = {});
+                           detail::SearchRetainedKeys *retained=nullptr,SearchRetentionLimits retention_limits = {},bool allow_keyed=false);
   BookNote book_note_impl(const std::string &module, std::uint64_t offset, const std::string &identifier,
                           const EngineOptions *options, bool render_body);
   BookDocument book_document_impl(const std::string &module, std::uint64_t offset, const EngineOptions *options, const BookDocumentLimits &limits, const bool *labels = nullptr);
