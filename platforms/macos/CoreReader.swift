@@ -145,6 +145,7 @@ struct RenderedBookDocument: Sendable, Equatable {
     var resourceHTML: String { presentation?.inlineImages?.html ?? displayHTML }
     var resourceCSS: String { lexical.css + "\n" + (presentation?.stylesheet?.inlineCSS ?? "") }
 }
+enum CoreSearchKeyKind: Int32, Sendable { case verse=0, dictionary=1, generalBook=2 }
 enum CoreSearchMode: Int32, Sendable { case regularExpression=0, phrase=1, words=2, lemma=3, morphology=4, footnote=5, multiword=6, indexed=7 }
 enum CoreSearchPhase: Int32, Sendable { case queued = 0, running, complete, cancelled, failed }
 struct CoreSearchProgress: Sendable, Equatable { let phase: CoreSearchPhase; let percent: UInt32; let cancelRequested: Bool }
@@ -242,6 +243,7 @@ struct RenderedSearchResult: Sendable, Equatable {
     var indexFallback = false
     var generation = CoreSearchGeneration.empty
     var generationUpdated = false
+    var keyKind: CoreSearchKeyKind = .verse
 }
 enum CoreSearchGroupStatus: UInt32, Sendable { case success=0, invalidRequest=1, moduleNotFound=2, engineError=3 }
 struct RenderedSearchGroup: Sendable, Equatable {
@@ -553,7 +555,8 @@ enum CoreValues {
             scopeUpdated: xc_search_scope_updated(result) == 1,
             requestedTextOptions: searchTextOptions(requestedText), effectiveTextOptions: searchTextOptions(effectiveText),
             textOptionsUpdated: xc_search_text_options_updated(result) == 1, indexFallback: xc_search_index_fallback(result) == 1,
-            generation: searchGeneration(generation), generationUpdated: xc_search_generation_updated(result) == 1)
+            generation: searchGeneration(generation), generationUpdated: xc_search_generation_updated(result) == 1,
+            keyKind: CoreSearchKeyKind(rawValue: xc_search_key_kind(result))!)
     }
     static func searchBatch(_ batch: OpaquePointer) -> RenderedSearchBatch {
         var info = xc_search_batch_info(), scope = xc_search_scope_info(), text = xc_search_text_info()

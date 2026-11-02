@@ -42,6 +42,12 @@ struct SearchPane: View {
                         }
                     }
                 }.accessibilityLabel("Saved search lists")
+                Toggle("Include dictionaries and books", isOn: Binding(get: { model.mixedContent }, set: { model.setMixedContent($0) }))
+                    .accessibilityLabel("Include dictionaries and books")
+                if model.mixedContent {
+                    Text("Books and dictionaries use All text.").font(.caption).foregroundStyle(.secondary)
+                        .help("Choose Phrase, Words, Regular expression or Multiword for dictionary and book searches.")
+                }
                 Toggle("Search multiple modules", isOn: $model.searchMultipleModules)
                 if model.searchMultipleModules {
                     Button("Add selected module") { model.addModule() }
@@ -84,7 +90,7 @@ struct SearchPane: View {
                 }.accessibilityLabel("Search scope")
                 if model.scopeChoice == .bounds {
                     Picker("Bounds from", selection: $model.boundsModule) {
-                        ForEach(model.modules) { Text($0.id).tag($0.id) }
+                        ForEach(model.boundsModules) { Text($0.id).tag($0.id) }
                     }.accessibilityLabel("Search bounds module")
                     TextField("John 1:1 - John 1:3", text: $model.bounds).accessibilityLabel("Search bounds")
                 }
@@ -127,7 +133,7 @@ struct SearchPane: View {
                     Picker("Format", selection: $model.exportFormat) {
                         ForEach(SearchExportFormat.allCases) { Text($0.rawValue).tag($0) }
                     }.accessibilityLabel("Search export format")
-                    Toggle("Include scripture", isOn: $model.exportScripture)
+                    Toggle("Include entry text", isOn: $model.exportScripture)
                     Toggle("Include search details", isOn: $model.exportSearchContext)
                     if model.hasIncompleteExportSource {
                         Toggle("Export returned matches from incomplete search", isOn: $model.exportPartialSource)
@@ -162,15 +168,16 @@ struct SearchPane: View {
                             ForEach(model.hits) { hit in resultRow(hit) }
                         }
                     }.accessibilityLabel("Search results").disabled(model.isSearching || model.isClearing || model.isExporting || hostBusy)
-                    Button("Read in main pane") {
+                    Button(model.previewSource?.keyKind == .verse ? "Read in main pane" : "Open result") {
                         if let hit = model.hits.first(where: { $0.id == model.selection }) { onRead(hit) }
                     }.disabled(model.isBusy || hostBusy || !canRead || model.selection == nil)
                 }.frame(minHeight: 90)
                 if let entry = model.preview, let source = model.previewSource {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("\(source.module) • \(entry.reference)").font(.caption)
+                        if source.keyKind != .verse { Text("Open this result to follow its links.").font(.caption).foregroundStyle(.secondary) }
                         PassageView(html: entry.headingHTML + entry.html, css: entry.lexical.css, anchor: nil,
-                            onScrollFailure: { _ in }, onLink: { onLink($0, source.module, entry.reference) })
+                            onScrollFailure: { _ in }, onLink: { if source.keyKind == .verse { onLink($0, source.module, entry.reference) } })
                             .accessibilityLabel("Search result preview")
                     }.frame(minHeight: 100)
                 } else if model.isPreviewLoading { ProgressView("Loading preview…").frame(minHeight: 100) }

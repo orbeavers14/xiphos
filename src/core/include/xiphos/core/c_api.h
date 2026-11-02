@@ -173,6 +173,8 @@ xc_book_document *xc_request_take_book_document(xc_request *request);
 /* Atomic application selection of the complete document, using the same numeric
  * reading minimum as select_book. Bounds/render failures retain prior state.
  * Nonoptional owned document result; no Bible/dictionary visit or file writes. */
+/* Exact canonical search-result path, using the existing atomic selection. */
+xc_status xc_worker_select_book_document_path(xc_worker *worker,uint64_t tab,const char *module,const char *path,xc_request **out);
 xc_status xc_worker_select_book_document(xc_worker *worker, uint64_t tab, const char *module, uint64_t offset, xc_request **out);
 /* These return optional documents through book_selection_present and take_doc.
  * Navigation uses the existing direction constants and fresh shared relations.
@@ -1479,6 +1481,9 @@ void xc_dictionary_choices_release(xc_dictionary_choices *choices);
 /* Explicit dictionary visit records requested module/key after successful read.
  * No case normalization/Bible visit. History navigation commits after rendering.
  * Existing preview and key-step requests do not record dictionary history. */
+/* Search activation: exact canonical dictionary key checked on the same FIFO
+ * job before the existing history visit; missing/fuzzy keys never publish. */
+xc_status xc_worker_visit_dictionary_exact(xc_worker *worker,uint64_t tab,const char *module,const char *key,xc_request **out);
 xc_status xc_worker_visit_dictionary(xc_worker *worker, uint64_t tab, const char *module, const char *key, xc_request **out);
 xc_status xc_worker_navigate_dictionary_history(xc_worker *worker, uint64_t tab, int direction, xc_request **out);
 xc_status xc_worker_dictionary_history(xc_worker *worker, uint64_t tab, xc_request **out);

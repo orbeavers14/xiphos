@@ -645,6 +645,7 @@ xc_status xc_worker_read_book_document(xc_worker *w, uint64_t tab, const char *i
   if (!id || !*id) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.read_book_document(tab, id, offset); });
 }
+xc_status xc_worker_select_book_document_path(xc_worker *w,uint64_t tab,const char *module,const char *path,xc_request **out){if(out)*out=nullptr;if(!bounded_image_c_text(module,4096)||!bounded_image_c_text(path,4096))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.select_book_document(tab,{module,std::string(path)});});}
 xc_status xc_worker_select_book_document(xc_worker *w, uint64_t tab, const char *id, uint64_t offset, xc_request **out) {
   if (!id || !*id) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.select_book_document(tab, {id, offset}); });
@@ -1930,6 +1931,7 @@ const char *xc_dictionary_choices_key(const xc_dictionary_choices *c) { return c
 size_t xc_dictionary_choices_count(const xc_dictionary_choices *c) { return c ? c->value.keys.size() : 0; }
 const char *xc_dictionary_choices_at(const xc_dictionary_choices *c, size_t i) { return c && i < c->value.keys.size() ? c->value.keys[i].c_str() : nullptr; }
 void xc_dictionary_choices_release(xc_dictionary_choices *c) { delete c; }
+xc_status xc_worker_visit_dictionary_exact(xc_worker *w,uint64_t tab,const char *module,const char *key,xc_request **out){if(out)*out=nullptr;if(!bounded_image_c_text(module,4096)||!bounded_image_c_text(key,4096))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.visit_dictionary_exact(tab,module,key);});}
 xc_status xc_worker_visit_dictionary(xc_worker *w, uint64_t tab, const char *id, const char *key, xc_request **out) {
   if (!id || !*id || !key || !*key) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.visit_dictionary(tab, id, key); });

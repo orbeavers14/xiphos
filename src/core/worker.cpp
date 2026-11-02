@@ -847,6 +847,7 @@ std::future<DictionaryChoices> StudyWorker::dictionary_choices(StudyTab tab, std
     return s.reader.dictionary_choices(module, key);
   });
 }
+std::future<DictionaryEntry> StudyWorker::visit_dictionary_exact(StudyTab tab,std::string module,std::string key){return impl_->submit([tab,module=std::move(module),key=std::move(key)](Impl::State &s){auto &session=s.tab(tab);(void)s.reader.preview_keyed_search(module,key,SearchKeyKind::dictionary,maximum_html_source_bytes);return session.visit_dictionary(module,key);});}
 std::future<DictionaryEntry> StudyWorker::visit_dictionary(StudyTab tab, std::string module, std::string key) {
   return impl_->submit([tab, module = std::move(module), key = std::move(key)](Impl::State &s) {
     return s.tab(tab).visit_dictionary(module, key);

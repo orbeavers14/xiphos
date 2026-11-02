@@ -12,11 +12,15 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     let row: Int
     let module: String
     let reference: String
+    var keyKind: CoreSearchKeyKind = .verse
 }
 // Presentation state only. Query preparation, search, bounds, complete retained
 // scope, cancellation and configured reading all belong to the shared core.
 @MainActor final class SearchModel: ObservableObject {
     @Published private(set) var modules: [InstalledModule] = []
+    private var allModules: [InstalledModule] = []
+    @Published private(set) var mixedContent = false
+    var boundsModules: [InstalledModule] { allModules.filter(\.hasVerseSearch) }
     @Published var module = ""
     @Published var searchMultipleModules = false
     @Published var selectedModules: [String] = []
@@ -86,7 +90,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
         case .engineError: return "Unable to search this module."
         case .success:
             if group.result?.cancelled == true { return "Search stopped; showing returned matches." }
-            if group.result?.limited == true { return "Showing returned passages; more matches are available." }
+            if group.result?.limited == true { return "Showing returned matches; more matches are available." }
             return group.result?.references.isEmpty == true ? "No returned matches." : ""
         }
     }
@@ -105,10 +109,19 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     func configure(worker: CoreWorker, tab: UInt64, modules: [InstalledModule], preferred: String?) {
         guard !closed, self.tab == nil else { return }
         self.worker = worker; self.tab = tab
+        self.allModules = modules
         self.modules = modules.filter(\.hasVerseSearch)
         module = self.modules.first(where: { $0.id == preferred })?.id ?? self.modules.first?.id ?? ""
         boundsModule = module
         if self.modules.isEmpty { message = "No supported Bible or commentary modules are installed." }
+    }
+    func setMixedContent(_ enabled: Bool) {
+        guard !closed, !isBusy else { return }
+        mixedContent = enabled
+        modules = allModules.filter { $0.hasVerseSearch || (enabled && ($0.isDictionary || $0.hasBookTree)) }
+        if !modules.contains(where: { $0.id == module }) { module = modules.first?.id ?? "" }
+        selectedModules.removeAll { id in allModules.contains { $0.id == id } && !modules.contains { $0.id == id } }
+        if modules.isEmpty { message = "No supported search modules are installed." }
     }
     func close() {
         guard !closed else { return }
@@ -203,7 +216,8 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     func search() {
         guard !closed, canSearch, let worker, let tab else { return }
         let submittedModule = module, submittedExpression = expression, submittedMode = mode
-        let submittedModules = searchMultipleModules ? selectedModules : nil
+        let submittedMixed = mixedContent
+        let submittedModules = searchMultipleModules ? selectedModules : (submittedMixed ? [module] : nil)
         let sensitive = caseSensitive, last = scopeChoice == .last
         let annotations = setAnnotationOptions ? CoreSearchTextOptions(strongs: searchStrongs,
             morphology: searchMorphology, footnotes: searchFootnotes) : nil
@@ -222,7 +236,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
                     let copied = try await worker.searchModules(tab: tab, modules: submittedModules,
                         expression: submittedExpression, mode: submittedMode, caseSensitive: sensitive,
                         range: range, withinLastResults: last, textOptions: annotations,
-                        returnCancelledResults: true, onProgress: callback)
+                        returnCancelledResults: true, mixedContent: submittedMixed, onProgress: callback)
                     guard !self.closed, self.revision == token else { return }
                     self.scope = copied.scope
                     if copied.generationUpdated {
@@ -233,12 +247,12 @@ struct SearchHit: Identifiable, Sendable, Equatable {
                             guard let result = group.result else { continue }
                             for (row, reference) in result.references.enumerated() {
                                 hits.append(SearchHit(id: hits.count, group: group.requestIndex, row: row,
-                                    module: result.module, reference: reference))
+                                    module: result.module, reference: reference, keyKind: result.keyKind))
                             }
                         }
                         self.hits = hits; published = true
                     }
-                    self.message = "\(copied.copiedResultCount) passages returned across \(copied.groups.count) of \(copied.requestedModules.count) module requests."
+                    self.message = "\(copied.copiedResultCount) \(copied.copiedResultCount == 1 ? "match" : "matches") returned across \(copied.groups.count) of \(copied.requestedModules.count) module requests."
                     if copied.failureCount > 0 { self.message += " \(copied.failureCount) module requests failed." }
                     if copied.limited { self.message += " More results are available." }
                     if copied.groups.contains(where: { $0.result?.indexFallback == true }) { self.message += " Index unavailable for some modules; used multiword fallback." }
@@ -284,7 +298,9 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     private func loadPreview(_ hit: SearchHit, worker: CoreWorker, tab: UInt64, token: UInt64) async throws {
         guard !closed, revision == token else { return }
         isPreviewLoading = true
-        let entry = try await worker.readTabEntry(tab: tab, module: hit.module, reference: hit.reference)
+        let entry: RenderedEntry
+        if hit.keyKind == .verse { entry = try await worker.readTabEntry(tab: tab, module: hit.module, reference: hit.reference) }
+        else { entry = try await worker.previewKeyedSearch(tab: tab,module: hit.module,key: hit.reference,kind: hit.keyKind) }
         guard !closed, revision == token else { return }
         preview = entry; previewSource = hit; isPreviewLoading = false
     }

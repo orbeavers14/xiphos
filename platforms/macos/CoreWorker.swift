@@ -254,6 +254,12 @@ actor CoreWorker {
         let status = module.withCString { xc_worker_select_book_document(handle, tab, $0, offset, &request) }
         return try await bookDocumentValue(status, request, optional: false)!
     }
+    func selectBookDocumentPath(tab: UInt64, module: String, path: String) async throws -> RenderedBookDocument {
+        guard ![module,path].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        let handle = try worker(); var request: OpaquePointer?
+        let status = module.withCString { id in path.withCString { xc_worker_select_book_document_path(handle,tab,id,$0,&request) } }
+        return try await bookDocumentValue(status,request,optional: false)!
+    }
     func bookDocumentSelection(tab: UInt64) async throws -> RenderedBookDocument? {
         var request: OpaquePointer?
         let status = xc_worker_book_document_selection(try worker(), tab, &request)
@@ -339,7 +345,7 @@ actor CoreWorker {
                        maxResults: Int = 10000, maxReferenceBytes: Int = 8 * 1024 * 1024,
                        range: CoreSearchRange? = nil, withinLastResults: Bool = false,
                        textOptions: CoreSearchTextOptions? = nil, returnCancelledResults: Bool = false,
-                       onProgress: (@Sendable (CoreSearchProgress) async -> Void)? = nil) async throws -> RenderedSearchBatch {
+                       mixedContent: Bool = false, onProgress: (@Sendable (CoreSearchProgress) async -> Void)? = nil) async throws -> RenderedSearchBatch {
         let inputs = modules + [expression] + (range.map { [$0.module, $0.expression] } ?? [])
         guard (1...32).contains(modules.count), !inputs.contains(where: { $0.utf8.contains(0) }),
               maxResultsPerModule > 0, maxReferenceBytesPerModule > 0, maxResults > 0, maxReferenceBytes > 0,
@@ -351,7 +357,7 @@ actor CoreWorker {
                 maxResults: maxResultsPerModule, maxReferenceBytes: maxReferenceBytesPerModule,
                 range: range, withinLastResults: withinLastResults, textOptions: textOptions) { query in
                     var request: OpaquePointer?
-                    let status = xc_worker_search_modules(handle, tab, ids.baseAddress, ids.count, query, &total, &request)
+                    let status = mixedContent ? xc_worker_search_mixed_modules(handle, tab, ids.baseAddress, ids.count, query, &total, &request) : xc_worker_search_modules(handle, tab, ids.baseAddress, ids.count, query, &total, &request)
                     return (status, request)
                 }
         }
@@ -992,6 +998,19 @@ actor CoreWorker {
         guard let result = xc_request_take_dictionary_entry(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
         defer { xc_dictionary_entry_release(result) }
         return CoreValues.dictionaryEntry(result)
+    }
+    func previewKeyedSearch(tab: UInt64, module: String, key: String, kind: CoreSearchKeyKind) async throws -> RenderedEntry {
+        guard ![module,key].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        let handle = try worker(); var request: OpaquePointer?
+        let status = module.withCString { id in key.withCString { xc_worker_preview_keyed_search(handle,tab,id,$0,kind.rawValue,8*1024*1024,&request) } }
+        let entry = try await dictionaryValue(status,request)
+        return RenderedEntry(reference: entry.key, html: entry.html)
+    }
+    func visitDictionaryExact(tab: UInt64, module: String, key: String) async throws -> RenderedDictionaryEntry {
+        guard ![module,key].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        let handle = try worker(); var request: OpaquePointer?
+        let status = module.withCString { id in key.withCString { xc_worker_visit_dictionary_exact(handle,tab,id,$0,&request) } }
+        return try await dictionaryValue(status,request)
     }
     func visitDictionary(tab: UInt64, module: String, key: String) async throws -> RenderedDictionaryEntry {
         guard ![module, key].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }

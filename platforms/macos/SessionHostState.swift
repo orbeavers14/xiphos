@@ -17,7 +17,9 @@ struct SessionSearchDraft: Codable, Sendable {
     var mode: Int32, caseSensitive: Bool, annotationOptions: Bool
     var strongs: Bool, morphology: Bool, footnotes: Bool
     var scope: String, boundsModule: String, bounds: String
+    var mixedContent: Bool? // Missing in older version1 sessions; default remains verse-only.
     @MainActor init(_ search: SearchModel) {
+        mixedContent = search.mixedContent
         module = search.module; modules = search.selectedModules; multiple = search.searchMultipleModules
         expression = search.expression; mode = search.mode.rawValue; caseSensitive = search.caseSensitive
         annotationOptions = search.setAnnotationOptions; strongs = search.searchStrongs
@@ -25,6 +27,7 @@ struct SessionSearchDraft: Codable, Sendable {
         scope = search.scopeChoice.rawValue; boundsModule = search.boundsModule; bounds = search.bounds
     }
     @MainActor func apply(to search: SearchModel) {
+        search.setMixedContent(mixedContent ?? false)
         search.module = module; search.selectedModules = modules; search.searchMultipleModules = multiple
         search.expression = expression; search.mode = CoreSearchMode(rawValue: mode) ?? .phrase
         search.caseSensitive = caseSensitive; search.setAnnotationOptions = annotationOptions

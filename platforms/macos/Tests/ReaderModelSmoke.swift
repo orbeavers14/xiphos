@@ -781,6 +781,54 @@ struct ReaderModelSmoke {
         other.close(); try await worker.closeTab(tab); try await worker.closeTab(otherTab); await worker.shutdown()
         print("Native ordered batch, failure groups, actual preview/export identity, scope chaining, drafts and lifecycle passed")
     }
+    @MainActor static func mixedSearch(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let first = ReaderModel(worker: worker,startupError: nil), second = ReaderModel(worker: worker,startupError: nil)
+        try await idle(first); try await idle(second)
+        let search = first.search
+        guard !search.modules.contains(where: { $0.id == "KeyDictionary" || $0.id == "CaptureBook" }) else { fatalError("Mixed sources must be opt-in") }
+        search.setMixedContent(true)
+        guard search.modules.contains(where: { $0.id == "KeyDictionary" }) && search.modules.contains(where: { $0.id == "CaptureBook" }), search.boundsModules.allSatisfy(\.hasVerseSearch) else { fatalError("Typed catalog eligibility and verse-only bounds") }
+        first.reference = "Unsubmitted mixed-search draft"
+        let mainHTML = first.html, mainReference = first.renderedReference, mainBack = first.canBack, otherHTML = second.html
+        search.searchMultipleModules = true; search.selectedModules = ["Text","KeyDictionary","CaptureBook"]
+        search.expression = "Original"; search.mode = .phrase; search.search(); try await searchIdle(search)
+        guard search.batchResult?.failureCount == 0, let dictionary = search.hits.first(where: { $0.keyKind == .dictionary && $0.reference.lowercased().contains("john") }), let book = search.hits.first(where: { $0.keyKind == .generalBook }), search.hits.contains(where: { $0.keyKind == .verse }) else { fatalError("Native mixed groups carry all three key kinds") }
+        search.select(dictionary.id); try await searchIdle(search)
+        guard search.previewSource == dictionary, search.preview?.html.contains("dictionary signal") == true, first.html == mainHTML, first.renderedReference == mainReference, first.canBack == mainBack else { fatalError("Dictionary preview preserves reading/history") }
+        first.openSearchResult(dictionary); try await idle(first)
+        guard first.dictionaryEntry?.module == dictionary.module, first.dictionaryEntry?.key == dictionary.reference, first.dictionaryHistory?.entries.last?.module == dictionary.module, first.html == mainHTML, first.reference == "Unsubmitted mixed-search draft" else { fatalError("Exact dictionary activation uses its own pane/history and preserves draft") }
+        search.select(book.id); try await searchIdle(search)
+        guard search.previewSource == book, search.preview?.html.contains("keyed book signal") == true else { fatalError("Book preview resolves opaque source path") }
+        first.openSearchResult(book); try await idle(first)
+        guard first.showingBook, first.bookDocument?.tree.module == book.module, first.bookDocument?.tree.node.path == book.reference, first.bookDocument?.html.contains("keyed book signal") == true else { fatalError("Book activation selects exact canonical path/document") }
+        let bookHTML = first.bookDocument?.html, dictionaryHistory = first.dictionaryHistory
+        first.openSearchResult(SearchHit(id:999,group:1,row:0,module:dictionary.module,reference:"missing-key",keyKind:.dictionary)); try await idle(first)
+        guard first.showingBook, first.bookDocument?.html == bookHTML, first.dictionaryHistory == dictionaryHistory, !first.message.isEmpty else { fatalError("Missing dictionary result cannot fuzzy-activate or change history/panes") }
+        first.openSearchResult(SearchHit(id:998,group:2,row:0,module:book.module,reference:"/Missing",keyKind:.generalBook)); try await idle(first)
+        guard first.bookDocument?.html == bookHTML, first.showingBook else { fatalError("Missing book result cannot change committed document") }
+        search.exportScripture = true; search.exportFormat = .html
+        var exported: RenderedSearchHTMLExport?
+        search.exportResults(allMatches:true) { if case .html(let value) = $0 { exported = value } }; try await searchIdle(search)
+        guard exported?.status == .success, exported?.html.contains("dictionary signal") == true, exported?.html.contains("keyed book signal") == true, second.html == otherHTML, second.search.hits.isEmpty else { fatalError("Native typed HTML export and independent window state") }
+        search.searchMultipleModules = false; search.module = "CaptureBook"; search.expression = "signal"; search.search(); try await searchIdle(search)
+        guard search.hits.count == 1, search.hits[0].keyKind == .generalBook, search.message.contains("1 match returned") else { fatalError("Single keyed query keeps typed generation and singular status") }
+        let captured = search.previewSource
+        let restoredTab = try await worker.createTab(), restored = SearchModel()
+        restored.configure(worker:worker,tab:restoredTab,modules:try await worker.modules(),preferred:"Text")
+        let encoded = try JSONEncoder().encode(SessionSearchDraft(search))
+        let draft = try JSONDecoder().decode(SessionSearchDraft.self,from:encoded);draft.apply(to:restored)
+        guard restored.mixedContent, restored.module == "CaptureBook", restored.modules.contains(where: { $0.id == "CaptureBook" }), restored.expression == "signal" else { fatalError("Mixed search source choice survives native draft restoration") }
+        var legacy = try JSONSerialization.jsonObject(with:encoded) as! [String:Any]
+        legacy.removeValue(forKey:"mixedContent");legacy["module"] = "Text";legacy["modules"] = ["Text"]
+        let oldDraft = try JSONDecoder().decode(SessionSearchDraft.self,from:JSONSerialization.data(withJSONObject:legacy));oldDraft.apply(to:restored)
+        guard !restored.mixedContent, restored.module == "Text", !restored.modules.contains(where: { $0.id == "CaptureBook" }) else { fatalError("Older drafts without mixed flag remain verse-only") }
+        restored.close();try await worker.closeTab(restoredTab)
+        search.setMixedContent(false)
+        guard !search.modules.contains(where: { $0.id == "CaptureBook" }), search.selectedModules == ["Text"], search.module != "CaptureBook", search.previewSource == captured else { fatalError("Opt-out prunes keyed query choices while preserving captured results") }
+        first.close(); second.close(); await worker.shutdown()
+        print("Native mixed catalog/search, typed preview/activation, exact failures, HTML export, drafts and window isolation passed")
+    }
     @MainActor static func searchActivation(root: String) async throws {
         let library = URL(fileURLWithPath: root).appendingPathComponent("library %20 café").path
         let worker = try CoreWorker(root: library)
@@ -2035,6 +2083,9 @@ struct ReaderModelSmoke {
             guard recorded.entries.last?.key == expectedKey else { fatalError("locale snapshot lifetime") }
             print("Native environment locale startup/click checks passed")
             return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--mixed-search" {
+            try await mixedSearch(root:CommandLine.arguments[2]); return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--search-activation" {
             try await searchActivation(root: CommandLine.arguments[2]); return

@@ -780,9 +780,28 @@ final class ReaderModel: ObservableObject {
             }
         }
     }
-    var canOpenSearchResult: Bool { displayedModule != nil && displayedEntry != nil }
+    var canOpenSearchResult: Bool { worker != nil && tab != nil }
     func openSearchResult(_ hit: SearchHit) {
-        guard let worker, let tab, let main = displayedModule else { return }
+        guard let worker, let tab else { return }
+        if hit.keyKind == .dictionary {
+            let source = displayedModule.flatMap { id in displayedEntry.map { PassageTarget(module: id, reference: $0.reference) } }
+            run { token in
+                let entry = try await worker.visitDictionaryExact(tab: tab,module: hit.module,key: hit.reference)
+                let history = try await worker.dictionaryHistory(tab: tab)
+                try await self.presentDictionary(entry,source: source,history: history,token: token)
+            }
+            return
+        }
+        if hit.keyKind == .generalBook {
+            run { token in
+                let entry = try await worker.selectBookDocumentPath(tab: tab,module: hit.module,path: hit.reference)
+                let children = try await worker.bookChildren(module: hit.module,parent: entry.tree.node.offset)
+                guard token == self.revision && !self.closed else { return }
+                self.bookBrowser = entry.tree; self.bookChildren = children; self.presentBook(entry)
+            }
+            return
+        }
+        guard let main = displayedModule else { return }
         let target = PassageTarget(module: hit.module, reference: hit.reference)
         let commentary = commentarySelection
         let paired = modules.contains(where: { $0.id == main && $0.type == "Biblical Texts" })
