@@ -172,3 +172,20 @@ reject rich conversion so their original source is retained. This adds no new
 style flags, ABI fields, frontend parsing engine or dependency. Checks cover
 nested style scope, Unicode, canonical round trips, rejected unsupported metadata
 and the C/Swift editor adapter. Broader rich-markup compatibility remains open.
+
+## Representable inline CSS font traits — 2026-11-03
+
+Rich span parsing now accepts font-weight bold/700 and normal/400, plus font-style
+italic/normal. They map to the existing typed bold/italic flags, including nested
+resets and restoration of outer traits, case-insensitive keywords and last
+same-element declaration precedence. Explicit rich edits emit the existing balanced
+canonical markup; unchanged source still retains exact bytes. C/Swift consumes the
+same runs, with no new styling engine, flags or dependency.
+
+The subset rejects unrepresentable weights, relative weights, oblique, important
+qualifiers and other unsupported CSS. A normal weight inside a heading or normal
+style inside an address also rejects: their block-level implied traits cannot be
+cancelled by the current run model/canonical serializer. Such documents stay in
+Source, preserving their original markup instead of silently changing appearance.
+Checks cover inherited trait resets, Unicode/color composition, round trips,
+unsupported cases and the native C/Swift editor bridge.

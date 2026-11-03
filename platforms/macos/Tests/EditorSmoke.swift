@@ -17,6 +17,8 @@ import SwiftUI
         try FileManager.default.copyItem(atPath:sourceRoot,toPath:root)
         let legacy=try EditorRichCodec.parse("<font color='#abc'><b>Original Ω</b></font>")
         guard legacy.text=="Original Ω",legacy.runs.first?.foreground=="#aabbcc",legacy.runs.first?.flags==1 else {fatalError("Shared C/Swift legacy color parsing preserves formatting")}
+        let inlineFonts=try EditorRichCodec.parse("<span style='font-weight:700;font-style:italic'>Original Ω</span><span style='font-weight:400;font-style:normal'> plain</span>")
+        guard inlineFonts.text=="Original Ω plain",inlineFonts.runs.count==2,inlineFonts.runs[0].flags==3,inlineFonts.runs[1].flags==0 else {fatalError("Shared C/Swift inline font traits and resets preserve original text")}
         let worker = try CoreWorker(root:root)
         let model = NativeEditorModel(worker:worker,location:.newDocument); await model.start()
         guard model.ready && model.richMode else { fatalError("New rich editor not ready") }
