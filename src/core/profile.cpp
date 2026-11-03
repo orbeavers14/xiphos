@@ -171,6 +171,7 @@ std::string parallel_join(const std::vector<std::string> &items) {
 void validate_parallel_edit(const ParallelProfileEdit &edit) {
   parallel_key(edit.key);
   switch (edit.action) {
+    case ParallelProfileAction::create:
     case ParallelProfileAction::save:
       if (!edit.replacement_key.empty()) throw std::invalid_argument("Save does not rename a parallel set");
       (void)parallel_join(edit.modules);break;
@@ -222,7 +223,10 @@ std::string serialize_parallel_profile_edit(const std::string &source, const Par
   bool check_renamed_definition = false;
   const auto node_key = "parallel_set_" + edit.key;
   switch (edit.action) {
+    case ParallelProfileAction::create:
     case ParallelProfileAction::save: {
+      if (edit.action == ParallelProfileAction::create && (listed(edit.key) || find_value_node(document.get(), "modules", node_key.c_str())))
+        throw std::invalid_argument("Parallel set identity already exists; choose another name");
       const auto text = parallel_join(edit.modules);
       set_parallel_value(document.get(), node_key, text);
       if (!listed(edit.key)) {
@@ -295,7 +299,7 @@ std::string serialize_parallel_profile_edit(const std::string &source, const Par
     if (found == verified.sets.end() || found->module_text != renamed_definition)
       throw std::runtime_error("Renamed parallel definition failed verification");
   }
-  if (edit.action == ParallelProfileAction::save) {
+  if (edit.action == ParallelProfileAction::save || edit.action == ParallelProfileAction::create) {
     auto expected = parallel_join(edit.modules);
     const auto found = std::find_if(verified.sets.begin(), verified.sets.end(), [&](const auto &set) { return set.key == edit.key; });
     if (found == verified.sets.end() || !parallel_optional_text(found->module_text, expected))
@@ -309,7 +313,7 @@ static SavedParallelProfile edit_parallel_profile_impl(const std::string &path,c
   detail::replace_preference_file(path, [&](const std::filesystem::path &file, const std::string &original, bool existed) {
     if(checked&&((existed&&!revision)||(!existed&&revision)||(existed&&parallel_revision(original)!=*revision)))
       throw std::invalid_argument("Parallel profile changed; reload before editing");
-    if (!existed && edit.action != ParallelProfileAction::save)
+    if (!existed && edit.action != ParallelProfileAction::save && edit.action != ParallelProfileAction::create)
       throw std::invalid_argument("Cannot edit parallel sets in a missing profile");
     const auto serialized = serialize_parallel_profile_edit(existed ? original : "<Xiphos/>", edit);
     { std::ofstream output(file, std::ios::binary);output.exceptions(std::ios::badbit | std::ios::failbit);

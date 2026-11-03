@@ -164,5 +164,16 @@ int main(int argc,char **argv){try{
  const auto fresh=read_saved_parallel_profile(destination.u8string());
  check(edit_parallel_profile_checked(destination.u8string(),fresh.revision,activate).current_key=="Renamed","Explicit reload permits checked retry");
  rejects([&]{edit_parallel_profile((root/"missing-edit.xml").u8string(),{ParallelProfileAction::activate,"Saved","",{},false});});
+ const ParallelProfileEdit create{ParallelProfileAction::create,parallel_set_key("Study Set"),"",{"Text","Notes"},true};
+ check(create.key==parallel_set_key("Study_Set"),"Legacy names can collide");
+ const auto created_source=serialize_parallel_profile_edit("<Xiphos><!--keep--><other>original</other></Xiphos>",create);
+ check(parse_saved_parallel_profile(created_source).current_key==create.key&&created_source.find("<!--keep-->")!=std::string::npos,"Create preserves unknown XML and activation");
+ rejects([&]{serialize_parallel_profile_edit(created_source,create);});
+ for(const auto *source:{"<Xiphos><modules><parallel_set_Study_Set/></modules></Xiphos>","<Xiphos><modules/><modules><parallel_set_Study_Set>Text</parallel_set_Study_Set></modules></Xiphos>","<Xiphos><modules><parallel_set_names>Study_Set</parallel_set_names></modules></Xiphos>"})
+  rejects([&]{serialize_parallel_profile_edit(source,create);});
+ const auto new_path=root/"new-set.xml";std::filesystem::remove(new_path);
+ const auto created_set=edit_parallel_profile_checked(new_path.u8string(),std::nullopt,create);const auto preserved=bytes(new_path);
+ rejects([&]{edit_parallel_profile_checked(new_path.u8string(),created_set.revision,create);});
+ check(bytes(new_path)==preserved,"Create collision preserves exact file bytes");
  std::cout<<"Saved parallel profiles: "<<comparisons<<" XML/startup and "<<deletions<<" complete delete comparisons, raw names/duplicates/nulls, legacy migration, bounded owned data and read-only files passed\n";return 0;
 }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}

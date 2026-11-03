@@ -2038,3 +2038,49 @@ extension CoreWorker {
         let completed=try await wait(status,request);defer { xc_request_release(completed) };return try organizationValue(completed)
     }
 }
+
+struct CoreParallelSet: Sendable, Identifiable {
+    let key: String, name: String
+    let modules: [String]
+    var id: String { key }
+}
+struct CoreParallelProfile: Sendable {
+    let revision: String?
+    let current: String?
+    let sets: [CoreParallelSet]
+    static let empty = CoreParallelProfile(revision:nil,current:nil,sets:[])
+}
+extension CoreWorker {
+    private func parallelProfileValue(_ status: xc_status,_ request: OpaquePointer?) async throws -> CoreParallelProfile {
+        let completed = try await wait(status,request); defer { xc_request_release(completed) }
+        guard let result = xc_request_take_parallel_profile(completed) else { throw CoreError(status:XC_ENGINE_ERROR) }
+        defer { xc_parallel_profile_release(result) }
+        let rows = (0..<xc_parallel_profile_count(result)).map { row in
+            CoreParallelSet(key:String(cString:xc_parallel_profile_key(result,row)!),name:String(cString:xc_parallel_profile_display_name(result,row)!),modules:(0..<xc_parallel_profile_module_count(result,row)).map { String(cString:xc_parallel_profile_module(result,row,$0)!) })
+        }
+        return CoreParallelProfile(revision:xc_parallel_profile_revision(result).map { String(cString:$0) },current:xc_parallel_profile_current_key(result).map { String(cString:$0) },sets:rows)
+    }
+    func parallelProfile(tab: UInt64,path: String) async throws -> CoreParallelProfile {
+        guard !path.utf8.contains(0) else { throw CoreError(status:XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?; let handle = try worker()
+        let status = path.withCString { xc_worker_read_parallel_profile(handle,tab,$0,&request) }
+        return try await parallelProfileValue(status,request)
+    }
+    func parallelSetKey(name: String) throws -> String {
+        guard !name.utf8.contains(0) else { throw CoreError(status:XC_INVALID_ARGUMENT) }
+        var bytes = [CChar](repeating:0,count:4097), required = 0
+        let status = name.withCString { xc_parallel_set_encode_name($0,&bytes,bytes.count,&required) }
+        guard status == XC_OK else { throw CoreError(status:status) }
+        return String(decoding:bytes.prefix(required-1).map { UInt8(bitPattern:$0) },as:UTF8.self)
+    }
+    func editParallelProfile(tab: UInt64,path: String,revision: String?,action: Int32,key: String,replacement: String? = nil,modules: [String] = [],makeCurrent: Bool = false) async throws -> CoreParallelProfile {
+        let strings = SessionCStrings();let file = try strings.copy(path), identity = try strings.copy(key)
+        let expected = try revision.map { try strings.copy($0) }, renamed = try replacement.map { try strings.copy($0) }
+        let pointers: [UnsafePointer<CChar>?] = try modules.map { try strings.copy($0) };var request: OpaquePointer?;let handle = try worker()
+        let status = withExtendedLifetime(strings) { pointers.withUnsafeBufferPointer { values in
+            var edit = xc_parallel_profile_edit(action:action,key:identity,replacement_key:renamed,modules:modules.isEmpty ? nil : values.baseAddress,module_count:modules.count,make_current:makeCurrent ? 1 : 0)
+            return xc_worker_edit_parallel_profile_checked(handle,tab,file,expected,&edit,&request)
+        } }
+        return try await parallelProfileValue(status,request)
+    }
+}

@@ -1848,6 +1848,10 @@ xc_status xc_worker_save_tab_session(xc_worker *w,uint64_t tab,const char *path,
   return worker.save_tab_session(tab,path,std::move(copied));
  });
 }
+xc_status xc_parallel_set_encode_name(const char *name,char *buffer,size_t capacity,size_t *required) {
+ if(required)*required=0;if(!required||!bounded_image_c_text(name,4096)||(!buffer&&capacity))return XC_INVALID_ARGUMENT;
+ try{auto key=xiphos::core::parallel_set_key(name);xiphos::core::validate_parallel_profile_edit({xiphos::core::ParallelProfileAction::create,key,"",{},false});*required=key.size()+1;if(!buffer)return XC_OK;if(capacity<*required)return XC_INVALID_ARGUMENT;std::memcpy(buffer,key.c_str(),*required);return XC_OK;}catch(...){return failure();}
+}
 xc_status xc_worker_read_parallel_profile(xc_worker *w,uint64_t tab,const char *path,xc_request **out) {
   if (!bounded_image_c_text(path,4096)) { if(out)*out=nullptr;return XC_INVALID_ARGUMENT; }
   return queue_request(w,out,[=](auto &worker){return worker.read_parallel_profile(tab,path);});
@@ -1856,12 +1860,12 @@ static xc_status parallel_profile_edit_request(xc_worker *w,uint64_t tab,const c
   if (!out) return XC_INVALID_ARGUMENT;
   *out=nullptr;
   if ((revision&&!bounded_image_c_text(revision,64)) || !w || !edit || !bounded_image_c_text(path,4096) || !bounded_image_c_text(edit->key,4096) ||
-      edit->action<XC_PARALLEL_PROFILE_SAVE || edit->action>XC_PARALLEL_PROFILE_ACTIVATE ||
+      edit->action<XC_PARALLEL_PROFILE_SAVE || edit->action>XC_PARALLEL_PROFILE_CREATE ||
       (edit->make_current!=0 && edit->make_current!=1) || edit->module_count>4096 ||
       (edit->module_count && !edit->modules)) return XC_INVALID_ARGUMENT;
   if (edit->action==XC_PARALLEL_PROFILE_RENAME ? !bounded_image_c_text(edit->replacement_key,4096) : edit->replacement_key!=nullptr)
     return XC_INVALID_ARGUMENT;
-  if (edit->action!=XC_PARALLEL_PROFILE_SAVE && (edit->modules || edit->module_count || edit->make_current)) return XC_INVALID_ARGUMENT;
+  if (edit->action!=XC_PARALLEL_PROFILE_SAVE && edit->action!=XC_PARALLEL_PROFILE_CREATE && (edit->modules || edit->module_count || edit->make_current)) return XC_INVALID_ARGUMENT;
   for(size_t i=0;i<edit->module_count;++i)
     if(!edit->modules[i] || (*edit->modules[i] && !bounded_image_c_text(edit->modules[i],4096))) return XC_INVALID_ARGUMENT;
   return queue_request(w,out,[=](auto &worker){

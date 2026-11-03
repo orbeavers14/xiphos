@@ -47,6 +47,30 @@ import SwiftUI
         try await personal.save(erase:true)
         let cleared = try await worker.openModuleEditor(tab:try await worker.createTab(),module:"Personal",reference:"John3:16")
         guard cleared.text.isEmpty else { fatalError("Personal clear") }
+        let setsPath=folder.appendingPathComponent("parallel-sets.xml").path
+        let sets=NativeParallelSetsModel(worker:worker,path:setsPath);await sets.reload()
+        guard sets.loaded,sets.profile.revision == nil else { fatalError("Explicit empty saved-set profile") }
+        sets.name="Study Set";sets.orderedModules=["Text","TextAlt","Text"];await sets.edit(action:4)
+        guard sets.profile.sets.count==1,sets.profile.sets[0].modules==sets.orderedModules else { fatalError("Native ordered duplicate set creation: \(sets.message)") }
+        sets.newSet();sets.name="Study_Set";sets.orderedModules=["Notes"];await sets.edit(action:4)
+        guard sets.profile.sets.count==1 else { fatalError("Native name codec collision overwrote saved set") }
+        await sets.reload();sets.select("Study_Set");sets.move(2,by:-1);await sets.edit(action:0)
+        guard sets.profile.sets[0].modules==["Text","Text","TextAlt"] else { fatalError("Native saved-set ordering") }
+        let external=try String(contentsOfFile:setsPath,encoding:.utf8)+"\n"
+        try external.write(toFile:setsPath,atomically:true,encoding:.utf8)
+        sets.name="Renamed";await sets.edit(action:1)
+        guard try String(contentsOfFile:setsPath,encoding:.utf8)==external,sets.profile.sets[0].key=="Study_Set" else { fatalError("Native stale set edit overwrote external data") }
+        await sets.reload();sets.name="Renamed";await sets.edit(action:1);await sets.edit(action:3)
+        guard sets.profile.current=="Renamed" else { fatalError("Native rename/default persistence") }
+        let reloadedSets=NativeParallelSetsModel(worker:worker,path:setsPath);await reloadedSets.reload()
+        guard reloadedSets.profile.current=="Renamed",reloadedSets.profile.sets[0].modules==["Text","Text","TextAlt"] else { fatalError("Fresh native set model reload") }
+        sets.newSet();sets.name="café";sets.orderedModules=["Text"];await sets.edit(action:4)
+        sets.newSet();sets.name="cafe\u{301}";sets.orderedModules=["Notes"];await sets.edit(action:4)
+        guard sets.profile.sets.count==3 else { fatalError("Exact Unicode set names were merged") }
+        sets.select("café");guard sets.orderedModules==["Text"] else { fatalError("Composed set selection") }
+        sets.select("cafe\u{301}");guard sets.orderedModules==["Notes"] else { fatalError("Decomposed set selection") }
+        await sets.edit(action:2);guard sets.selected.isEmpty,sets.profile.sets.count==2 else { fatalError("Native selected set deletion") }
+        sets.select("Missing");guard sets.selected.isEmpty,sets.orderedModules.isEmpty else { fatalError("Missing selected identity remained an upsert target") }
         let creator = NativeBookSectionModel(worker:worker); await creator.load()
         guard creator.modules.contains(where: { $0.id == "CaptureBook" }) else { fatalError("Section creation catalog") }
         creator.module = "CaptureBook"; creator.path = "/Journals/Native Ω"

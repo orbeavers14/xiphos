@@ -212,6 +212,7 @@ import SwiftUI
     private var terminating = false
     private var editors: [NativeEditorWindow] = []
     private var sectionCreator: NativeBookSectionWindow?
+    private var parallelSets: NativeParallelSetsWindow?
     private var recovery: NativeRecoveryController?
     private var migration: NativeMigrationWindow?
     private var sync: NativeSyncModel?
@@ -331,6 +332,12 @@ import SwiftUI
         opened.model.onModulesChanged = { [weak controller] in controller?.records.forEach { $0.model.refreshModuleLibrary() } }
         library = opened
     }
+    func openParallelSets() {
+        guard !terminating,let controller else { return }
+        if let parallelSets { parallelSets.window.makeKeyAndOrderFront(nil);return }
+        do { parallelSets=NativeParallelSetsWindow(worker:controller.worker,path:try NativeSessionController.profileFolder().appendingPathComponent("parallel-sets.xml").path) }
+        catch { controller.showError(error.localizedDescription) }
+    }
     func newBookSection() {
         guard !terminating, let controller, controller.canOpenWindow else { return }
         guard managedRoot != nil else { controller.showError("Choose a module library folder and restart before creating personal book sections."); return }
@@ -375,6 +382,7 @@ import SwiftUI
         if migration?.model.busy == true { let alert = NSAlert();alert.messageText = "A migration operation is still running";alert.informativeText = "Wait for it to finish, then quit.";alert.runModal();return .terminateCancel }
         if sync?.busy == true { let alert = NSAlert();alert.messageText = "A sync connection change is still running";alert.informativeText = "Wait for it to finish, then quit.";alert.runModal();return .terminateCancel }
         if library?.model.isBusy == true { let alert = NSAlert();alert.messageText = "A module operation is still running";alert.informativeText = "Wait for it to finish, or stop the transfer in Module Library, then quit.";alert.runModal();return .terminateCancel }
+        if parallelSets?.model.busy == true { let alert=NSAlert();alert.messageText="A parallel-set change is still running";alert.informativeText="Wait for it to finish, then quit.";alert.runModal();return .terminateCancel }
         if sectionCreator?.model.busy == true { let alert = NSAlert(); alert.messageText = "A section operation is still running"; alert.informativeText = "Wait for it to finish, then quit."; alert.runModal(); return .terminateCancel }
         guard let controller else { return .terminateNow }
         terminating = true

@@ -61,6 +61,15 @@ int main(int argc,char **argv){try{
  check(xc_worker_edit_parallel_profile_checked(worker,tab,file.u8string().c_str(),revision.c_str(),&activate,&request)==XC_OK&&wait(request)==XC_OK,"C checked activation matches source snapshot");
  auto *checked=xc_request_take_parallel_profile(request);check(checked&&std::string(xc_parallel_profile_revision(checked)).size()==64,"Checked owned revision");xc_parallel_profile_release(checked);xc_request_release(request);
  const std::string stale(64,'0');check(xc_worker_edit_parallel_profile_checked(worker,tab,file.u8string().c_str(),stale.c_str(),&activate,&request)==XC_OK&&wait(request)==XC_INVALID_ARGUMENT,"C stale parallel edit rejected");xc_request_release(request);
+ size_t required=0;check(xc_parallel_set_encode_name("Study Set",nullptr,0,&required)==XC_OK&&required==10,"C codec sizing includes terminator");
+ char encoded[10];std::fill(std::begin(encoded),std::end(encoded),'!');check(xc_parallel_set_encode_name("Study Set",encoded,9,&required)==XC_INVALID_ARGUMENT&&encoded[0]=='!',"Short name buffer stays untouched");
+ check(xc_parallel_set_encode_name("Study Set",encoded,sizeof encoded,&required)==XC_OK&&std::string(encoded)=="Study_Set","C codec uses shared name conversion");
+ check(xc_parallel_set_encode_name("names",nullptr,0,&required)==XC_INVALID_ARGUMENT&&!required,"Reserved display names reject");
+ const char *new_modules[]={"Text","Notes"};xc_parallel_profile_edit create{XC_PARALLEL_PROFILE_CREATE,"Fresh_Set",nullptr,new_modules,2,0};
+ const auto latest=read_saved_parallel_profile(file.u8string());
+ check(xc_worker_edit_parallel_profile_checked(worker,tab,file.u8string().c_str(),latest.revision.c_str(),&create,&request)==XC_OK&&wait(request)==XC_OK,"C checked create accepts a fresh identity");
+ auto *created=xc_request_take_parallel_profile(request);const std::string created_revision=xc_parallel_profile_revision(created);xc_parallel_profile_release(created);xc_request_release(request);
+ check(xc_worker_edit_parallel_profile_checked(worker,tab,file.u8string().c_str(),created_revision.c_str(),&create,&request)==XC_OK&&wait(request)==XC_INVALID_ARGUMENT,"C create rejects duplicate identity even with fresh revision");xc_request_release(request);
  edit={XC_PARALLEL_PROFILE_RENAME,"Copied_Set","Final",nullptr,0,0};check(xc_worker_edit_parallel_profile(worker,tab,file.u8string().c_str(),&edit,&request)==XC_OK,"C dropped rename accepted");xc_request_release(request);xc_worker_close(worker);
  check(read_saved_parallel_profile(file.u8string()).current_key=="Final","C shutdown drains dropped edit");
  std::filesystem::remove(file);check(std::string(xc_parallel_profile_current_key(owned))=="Copied_Set"&&std::string(xc_parallel_profile_startup_modules_text(owned))=="Text&<>,Notes,","Owned result survives later write/source deletion/worker teardown");xc_parallel_profile_release(owned);xc_parallel_profile_release(nullptr);

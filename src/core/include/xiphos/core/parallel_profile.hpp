@@ -37,13 +37,15 @@ struct SavedParallelProfile {
 // render bound; never silently trim stored lists. Unknown XML is not modified.
 SavedParallelProfile parse_saved_parallel_profile(const std::string &xml);
 SavedParallelProfile read_saved_parallel_profile(const std::string &path);
-enum class ParallelProfileAction { save, rename, remove, activate };
+enum class ParallelProfileAction { save, rename, remove, activate, create };
 struct ParallelProfileEdit {
   ParallelProfileAction action = ParallelProfileAction::save;
   std::string key, replacement_key; // Raw stored identity, never a display label.
   std::vector<std::string> modules; // Used only by save; commas are not escapable.
-  bool make_current = false; // Save only; activation is explicit otherwise.
+  bool make_current = false; // Save/create only; activation is explicit otherwise.
 };
+// Create rejects any listed key or existing definition, including empty/orphan
+// definitions in later modules sections. Save retains legacy upsert behavior.
 // Mutate only owned parallel fields; preserve unrelated nodes/attributes/comments
 // and shadowed duplicates. New keys must be bounded XML local names after the
 // legacy prefix; reserved metadata suffixes names/current reject. No implicit
@@ -51,7 +53,7 @@ struct ParallelProfileEdit {
 void validate_parallel_profile_edit(const ParallelProfileEdit &edit);
 std::string serialize_parallel_profile_edit(const std::string &xml, const ParallelProfileEdit &edit);
 // Verified same-directory atomic replacement; missing files may be created only
-// by save. Prepared owned snapshot is returned without post-replacement reads.
+// by save/create. Prepared owned snapshot is returned without post-replacement reads.
 SavedParallelProfile edit_parallel_profile(const std::string &path, const ParallelProfileEdit &edit);
 
 // Null revision requires a missing file. Existing sources must match the exact

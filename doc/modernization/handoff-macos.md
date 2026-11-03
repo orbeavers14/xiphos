@@ -5,6 +5,34 @@ Updated 2026-11-01. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Saved parallel-set management — 2026-11-02
+
+Shared Create is distinct from legacy Save/upsert: any listed key or orphan/empty
+XML definition rejects, including later modules sections. Checked revisions and
+unknown-field preservation remain shared. New bounded C name-codec helper avoids
+a Swift naming engine and documents non-injective legacy conversion.
+
+File > Saved Parallel Reading Sets consumes owned snapshots for explicit profile
+storage, ordered/duplicate modules, create, selected save/rename/delete and default
+metadata. Stale/collision errors preserve bytes; exact UTF-8 selection and reload
+of a missing identity avoid unintended upserts. No native XML parser was added.
+This does not yet present/apply parallel chapters or consume defaults automatically.
+
+Native application/editor and shared profile builds pass; selected fixture/editor/
+profile checks4/4,2.77s (`build/native-parallel-final-{build,tests}.log`), including
+native collisions, ordering, stale-file protection, rename/default, fresh model
+reload, distinct composed/decomposed Unicode keys and deletion. Alternate capable
+SDK profile2/2,0.51s; ASan/UBSan2/2,0.86s,detect_leaks=0
+(`build/parallel-final-{indexed,asan}-tests.log`). Earlier native recovery/fresh-process/
+restart/library/profile regression10/10,15.85s checks the journal command checkpoint,
+not the newest saved-set adapter. Full251-test evidence belongs to `4cb0b11` below.
+Final local code-only Graphify687 files,12,937 nodes,35,436 edges,374 communities;
+source hashes unchanged,zero AI calls/tokens/cost; heuristic limits remain.
+Scoped disposable live app checked creation, duplicate module slots/default,
+collision failure and explicit reload; app quit normally. No real profiles touched.
+Next: native parallel chapter presentation and active-tab/default/session consumption,
+then remaining annotation composition/search compatibility. No full-parity promotion.
+
 ## Native journal/prayer section command — 2026-11-02
 
 Build/test baseline `4cb0b11` is pushed to the authorized fork. File > New Journal

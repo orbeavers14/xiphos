@@ -250,3 +250,35 @@ same-directory replacement checks remain shared. Returned revisions are owned,
 bounded metadata. Tests cover exact revision reads, stale/create-only rejection,
 explicit reload/retry, copied C results and no-allocation result publication.
 Native named-set management still needs to consume this checked interface.
+
+## Explicit create without overwrite
+
+`ParallelProfileAction::create` / `XC_PARALLEL_PROFILE_CREATE` use the existing
+bounded modules, optional activation, checked revision and replacement transaction.
+They reject a listed identity or any existing definition, including empty orphan
+nodes in later modules sections. Legacy Save remains an upsert. This distinction
+matters because the legacy name codec maps both “Study Set” and “Study_Set” to the
+same stored identity; a fresh revision alone does not prevent accidental overwrite.
+Create can initialize a missing profile with a null expected revision. Failed
+collision checks preserve exact file bytes and unknown XML. Native management
+must use Create for new sets and require an explicit selected set for replacement.
+
+## Native saved-set management
+
+File > Saved Parallel Reading Sets uses an explicit profile-local XML path and
+owned C snapshots. The native form creates, deliberately replaces a selected set,
+renames, deletes with confirmation, reorders/removes/adds module slots and stores
+the default identity. Repeated modules remain; existing unavailable/empty slots
+are retained rather than silently trimmed. New composition bounds adding to32
+columns; oversized legacy lists remain preserved. Exact UTF-8 keys distinguish
+canonically equivalent names; the picker uses snapshot-row identities. Reload
+clears a no-longer-listed selection so Save cannot accidentally upsert it.
+
+All mutation uses the shared checked repository and name codec. A stale snapshot
+or name collision reports failure without rewriting the file; Reload permits
+retry. No Swift XML parser or persistence engine is introduced. Creation does not
+imply activation; default metadata does not change any open reading window.
+The native parallel chapter pane, active-tab application, automatic default
+consumption and corresponding session presentation remain open. These controls
+complete a management slice, not the full parallel-reading workflow. Form drafts
+are not autosaved. Native Windows/GTK4 adapters and physical acceptance remain open.

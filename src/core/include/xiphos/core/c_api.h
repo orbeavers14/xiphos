@@ -1417,8 +1417,8 @@ void xc_tab_session_release(xc_tab_session *session);
  * limits4096 bytes, max4096 module tokens, max1024 listed sets and16MiB owned
  * snapshot. Key is raw stored identity. New keys must round trip through XML;
  * names/current metadata suffixes and commas reject. Structural C inputs reject
- * before submission; UTF-8/XML/tab/file errors arrive at poll. Save may create a
- * missing profile; other edits require an existing file. Observer/result storage
+ * before submission; UTF-8/XML/tab/file errors arrive at poll. Save/create may
+ * initialize a missing profile; other edits require an existing file. Observer/result storage
  * precedes acceptance; dropped observers do not cancel writes, shutdown drains.
  * Owned results are take-once; borrowed strings survive until result release.
  * Missing and explicit empty XML text retain the legacy scalar distinction.
@@ -1426,17 +1426,22 @@ void xc_tab_session_release(xc_tab_session *session);
  * Rename rejects destination collisions; remove uses raw keys; activate of an
  * empty/missing definition retains the old active modules. See workflow contract.
  */
+/* Shared legacy display-name codec plus edit-key validation. required includes
+ * the trailing NUL. NULL buffer/capacity0 sizes only; short buffers reject without
+ * writing. Non-injective codec: use CREATE to reject an existing identity. */
+xc_status xc_parallel_set_encode_name(const char *display_name,char *buffer,size_t capacity,size_t *required);
 typedef struct xc_parallel_profile xc_parallel_profile;
 typedef enum xc_parallel_profile_action {
   XC_PARALLEL_PROFILE_SAVE=0, XC_PARALLEL_PROFILE_RENAME=1,
-  XC_PARALLEL_PROFILE_REMOVE=2, XC_PARALLEL_PROFILE_ACTIVATE=3
+  XC_PARALLEL_PROFILE_REMOVE=2, XC_PARALLEL_PROFILE_ACTIVATE=3,
+  XC_PARALLEL_PROFILE_CREATE=4 /* never overwrites a listed or orphan identity */
 } xc_parallel_profile_action;
 typedef struct {
   int action;
   const char *key;
   const char *replacement_key; /* rename only; NULL otherwise */
-  const char *const *modules; size_t module_count; /* save only */
-  int make_current; /* save only, strict0/1 */
+  const char *const *modules; size_t module_count; /* save/create only */
+  int make_current; /* save/create only, strict0/1 */
 } xc_parallel_profile_edit;
 xc_status xc_worker_read_parallel_profile(xc_worker *worker,uint64_t tab,const char *path,xc_request **out);
 /* Conflict-aware edit: exact snapshot revision required for existing source;
