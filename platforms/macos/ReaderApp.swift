@@ -1548,6 +1548,7 @@ struct XiphosNativePreview: App {
                 Button("Choose Module Library Folder…") { delegate.chooseModuleLibrary() }
                 Button("New Module Library…") { delegate.chooseModuleLibrary(create:true) }
                 Divider()
+                Button("New Journal or Prayer Section…") { delegate.newBookSection() }
                 Button("New Study Document") { delegate.newEditorDocument() }
                 Button("Open Study Document…") { delegate.openEditorDocument() }.keyboardShortcut("o")
                 Button("Edit Personal Commentary or Book…") { delegate.editCurrentModule() }

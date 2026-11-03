@@ -1514,6 +1514,18 @@ extension CoreWorker {
         let status = module.withCString { module in reference.withCString { reference in revision.withCString { revision in text.withCString { xc_worker_save_module_edit(handle, tab, module, reference, revision, $0, erase ? 1 : 0, &request) } } } }
         return try await moduleEditorValue(status, request)
     }
+    func prepareBookSection(tab: UInt64, module: String, path: String) async throws -> EditorModuleSource {
+        guard [module,path].allSatisfy({ !$0.utf8.contains(0) }) else { throw CoreError(status:XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?; let handle = try worker()
+        let status = module.withCString { module in path.withCString { xc_worker_prepare_book_entry(handle,tab,module,$0,&request) } }
+        return try await moduleEditorValue(status,request)
+    }
+    func createBookSection(tab: UInt64, prepared: EditorModuleSource) async throws -> EditorModuleSource {
+        guard [prepared.module,prepared.reference,prepared.revision].allSatisfy({ !$0.utf8.contains(0) }) else { throw CoreError(status:XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?; let handle = try worker()
+        let status = prepared.module.withCString { module in prepared.reference.withCString { path in prepared.revision.withCString { xc_worker_create_book_entry(handle,tab,module,path,$0,"",&request) } } }
+        return try await moduleEditorValue(status,request)
+    }
     private func moduleEditorValue(_ status: xc_status, _ request: OpaquePointer?) async throws -> EditorModuleSource {
         let completed = try await wait(status, request); defer { xc_request_release(completed) }
         guard let result = xc_request_take_module_edit(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }

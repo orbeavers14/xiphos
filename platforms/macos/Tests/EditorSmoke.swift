@@ -47,6 +47,23 @@ import SwiftUI
         try await personal.save(erase:true)
         let cleared = try await worker.openModuleEditor(tab:try await worker.createTab(),module:"Personal",reference:"John3:16")
         guard cleared.text.isEmpty else { fatalError("Personal clear") }
+        let creator = NativeBookSectionModel(worker:worker); await creator.load()
+        guard creator.modules.contains(where: { $0.id == "CaptureBook" }) else { fatalError("Section creation catalog") }
+        creator.module = "CaptureBook"; creator.path = "/Journals/Native Ω"
+        guard let created = await creator.create(), created.text.isEmpty, created.reference == creator.path else { fatalError("Native empty-section creation: \(creator.message)") }
+        guard await creator.create() == nil else { fatalError("Native creation overwrote an existing section") }
+        let journal = NativeEditorModel(worker:worker,location:.module(created.module,created.reference)); await journal.start()
+        guard journal.ready, journal.source.isEmpty, journal.richMode else { fatalError("Created section did not open in normal rich editor") }
+        journal.accept(runs:[EditorRun(text:"Original journal draft Ω")]); journal.selection = NSRange(location:0,length:8); journal.format(0)
+        guard let draft = journal.recoveryDraft(), draft.target == 2, draft.module == created.module, draft.reference == created.reference, draft.savedText.isEmpty else { fatalError("Created section draft missed ordinary module recovery") }
+        journal.close()
+        let recoveredJournal = NativeEditorModel(worker:worker,location:.module(created.module,created.reference),recovered:draft); await recoveredJournal.start()
+        guard recoveredJournal.ready, recoveredJournal.dirty, recoveredJournal.source == draft.text else { fatalError("New journal draft restoration") }
+        try await recoveredJournal.save()
+        let reopenedJournal = NativeEditorModel(worker:worker,location:.module(created.module,created.reference)); await reopenedJournal.start()
+        guard reopenedJournal.source == draft.text, !reopenedJournal.dirty else { fatalError("Recovered journal save/reopen") }
+        creator.path = "/Prayers/"; guard await creator.create() == nil else { fatalError("Native malformed creation accepted") }
+        recoveredJournal.close(); reopenedJournal.close()
         let book = NativeEditorModel(worker:worker,location:.module("CaptureBook","/Original")); await book.start()
         guard book.ready && book.permitsRich else { fatalError("Book rich editor readiness: \(book.message)") }
         book.accept(runs:[EditorRun(text:"Original rich book contents")]); book.selection = NSRange(location:0,length:27); book.format(4,value:2); try await book.save()

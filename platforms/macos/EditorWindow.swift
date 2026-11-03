@@ -312,3 +312,69 @@ enum EditorCloseChoice { case save,discard,cancel }
     }
     func windowWillClose(_ notification: Notification) { model.close(); onClosed?() }
 }
+
+// The section is committed before opening an ordinary recoverable module editor.
+@MainActor final class NativeBookSectionModel: ObservableObject {
+    @Published private(set) var modules: [InstalledModule] = []
+    @Published var module = ""
+    @Published var path = "/Journals/"
+    @Published private(set) var busy = false
+    @Published private(set) var message = ""
+    private let worker: CoreWorker
+    init(worker: CoreWorker) { self.worker = worker }
+    func load() async {
+        guard !busy else { return }; busy = true; defer { busy = false }
+        do {
+            modules = try await worker.modules().filter { $0.hasBookTree }
+            if !modules.contains(where: { $0.id == module }) { module = modules.first?.id ?? "" }
+            message = modules.isEmpty ? "Install a writable personal general book first." : ""
+        } catch { message = "The book list could not be loaded. \(error.localizedDescription)" }
+    }
+    func create() async -> EditorModuleSource? {
+        guard !busy, !module.isEmpty else { return nil }
+        busy = true; defer { busy = false }
+        var tab: UInt64?
+        do {
+            let opened = try await worker.createTab(); tab = opened
+            let prepared = try await worker.prepareBookSection(tab:opened,module:module,path:path)
+            let created = try await worker.createBookSection(tab:opened,prepared:prepared)
+            try? await worker.closeTab(opened)
+            message = "Section created."
+            return created
+        } catch {
+            if let tab { try? await worker.closeTab(tab) }
+            message = "Section could not be created. Use a new absolute path in a writable, unencrypted UTF-8 personal RawGenBook. Existing sections are never replaced. \(error.localizedDescription)"
+            return nil
+        }
+    }
+}
+@MainActor final class NativeBookSectionWindow: NSObject, NSWindowDelegate {
+    let model: NativeBookSectionModel
+    let window: NSWindow
+    init(worker: CoreWorker, created: @escaping (EditorModuleSource) -> Void) {
+        model = NativeBookSectionModel(worker:worker)
+        window = NSWindow(contentRect:NSRect(x:0,y:0,width:590,height:310),styleMask:[.titled,.closable],backing:.buffered,defer:false)
+        super.init(); window.title = "New Journal or Prayer Section"; window.delegate = self; window.isReleasedWhenClosed = false
+        window.contentView = NSHostingView(rootView:NativeBookSectionPane(model:model,create:{ [weak self] in
+            guard let self else { return }
+            Task { if let result = await self.model.create() { self.window.close(); created(result) } }
+        }))
+        window.center(); window.makeKeyAndOrderFront(nil)
+        Task { await model.load() }
+    }
+    func windowShouldClose(_ sender: NSWindow) -> Bool { !model.busy }
+}
+private struct NativeBookSectionPane: View {
+    @ObservedObject var model: NativeBookSectionModel
+    let create: () -> Void
+    var body: some View {
+        VStack(alignment:.leading,spacing:12) {
+            Picker("Personal book",selection:$model.module) { ForEach(model.modules) { Text($0.description + " (" + $0.id + ")").tag($0.id) } }
+            TextField("Section path",text:$model.path)
+            Text("For example: /Journals/Today or /Prayers/Family. Missing folders are created with the section.").font(.caption).foregroundStyle(.secondary)
+            Text("Create saves an empty section immediately, then opens the editor. Closing the editor keeps that section.").font(.callout)
+            Text(model.message).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+            HStack { Spacer(); if model.busy { ProgressView().controlSize(.small) }; Button("Create and Edit",action:create).disabled(model.module.isEmpty || model.path.isEmpty).keyboardShortcut(.defaultAction) }
+        }.padding().disabled(model.busy)
+    }
+}

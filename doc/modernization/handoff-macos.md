@@ -5,6 +5,24 @@ Updated 2026-11-01. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Native journal/prayer section command — 2026-11-02
+
+Build/test baseline `4cb0b11` is pushed to the authorized fork. File > New Journal
+or Prayer Section commits a new empty section through the existing shared service,
+then opens the normal rich/source module editor. No new unsaved creation intent
+or recovery format is introduced. Form/quit guards prevent abandoning an accepted
+creation. Temporary editor leases/tabs close on success and failure.
+
+Native app/editor builds and selected fixture/editor/creation checks3/3,4.67s
+(`build/native-section-{build,tests}.log`). Includes native duplicate/malformed-path
+rejection, rich editor and new-section draft restoration/save/reopen. Scoped live
+CUA interaction in a disposable app/profile/library created /Journals/Visual Check,
+bolded original prose, saved, and navigated the book tree to rendered new content;
+normal app quit returned success. This is not full tree-management parity or a
+new fresh-process recovery acceptance claim. Existing restart/recovery evidence
+remains scoped to its earlier checkpoints. Next: collision-safe named parallel
+creation and native saved-set consumption. No physical-platform claims.
+
 ## Section creation and library organization — 2026-11-02
 
 Shared staged RawGenBook prepare/create now creates missing sections/parents with

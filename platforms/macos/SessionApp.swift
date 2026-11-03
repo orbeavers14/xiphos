@@ -211,6 +211,7 @@ import SwiftUI
     private var controller: NativeSessionController?
     private var terminating = false
     private var editors: [NativeEditorWindow] = []
+    private var sectionCreator: NativeBookSectionWindow?
     private var recovery: NativeRecoveryController?
     private var migration: NativeMigrationWindow?
     private var sync: NativeSyncModel?
@@ -330,6 +331,16 @@ import SwiftUI
         opened.model.onModulesChanged = { [weak controller] in controller?.records.forEach { $0.model.refreshModuleLibrary() } }
         library = opened
     }
+    func newBookSection() {
+        guard !terminating, let controller, controller.canOpenWindow else { return }
+        guard managedRoot != nil else { controller.showError("Choose a module library folder and restart before creating personal book sections."); return }
+        if let sectionCreator { sectionCreator.window.makeKeyAndOrderFront(nil); return }
+        sectionCreator = NativeBookSectionWindow(worker:controller.worker) { [weak self,weak controller] result in
+            self?.sectionCreator = nil
+            controller?.refreshAfterModuleEdit()
+            self?.openEditor(.module(result.module,result.reference))
+        }
+    }
     func newEditorDocument() { openEditor(.newDocument) }
     func openEditorDocument() {
         guard !terminating else { return }; let panel = NSOpenPanel(); panel.canChooseDirectories = false; panel.allowsMultipleSelection = false; panel.title = "Open Study Document"
@@ -364,6 +375,7 @@ import SwiftUI
         if migration?.model.busy == true { let alert = NSAlert();alert.messageText = "A migration operation is still running";alert.informativeText = "Wait for it to finish, then quit.";alert.runModal();return .terminateCancel }
         if sync?.busy == true { let alert = NSAlert();alert.messageText = "A sync connection change is still running";alert.informativeText = "Wait for it to finish, then quit.";alert.runModal();return .terminateCancel }
         if library?.model.isBusy == true { let alert = NSAlert();alert.messageText = "A module operation is still running";alert.informativeText = "Wait for it to finish, or stop the transfer in Module Library, then quit.";alert.runModal();return .terminateCancel }
+        if sectionCreator?.model.busy == true { let alert = NSAlert(); alert.messageText = "A section operation is still running"; alert.informativeText = "Wait for it to finish, then quit."; alert.runModal(); return .terminateCancel }
         guard let controller else { return .terminateNow }
         terminating = true
         Task {

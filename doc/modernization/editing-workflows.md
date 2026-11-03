@@ -149,5 +149,12 @@ index and prove new content appears after creation and a rebuilt index survives
 an injected rollback. This does not strengthen the transaction's crash durability
 or authorize concurrent external writers.
 
-Native section-creation controls and broader journal/prayer organization remain
-next. The shared operation alone does not establish the full journal workflow.
+File > New Journal or Prayer Section now lists general books and accepts an
+explicit path. Create and Edit commits an empty section before opening the normal
+rich/source editor; the form explains that closing the editor retains the section.
+Preparation/creation failures close the temporary tab and retain the form for retry.
+Busy creation prevents close/quit. Native checks cover duplicate/path rejection,
+rich save/reopen and ordinary module-draft recovery. A disposable live app verified
+creation, bold formatting, save and tree navigation to the rendered new content.
+Broader journal/prayer organization, move/rename/delete and full workflow parity
+remain open.
