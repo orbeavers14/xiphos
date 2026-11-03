@@ -79,7 +79,7 @@ foreach(library IN LISTS sword_link_flags)
 endforeach()
 set(adapter "${CMAKE_CURRENT_SOURCE_DIR}/EditorCore.swift" "${CMAKE_CURRENT_SOURCE_DIR}/CoreReader.swift" "${CMAKE_CURRENT_SOURCE_DIR}/CoreWorker.swift")
 set(preview_sources
-  "${CMAKE_CURRENT_SOURCE_DIR}/MigrationUI.swift"
+  "${CMAKE_CURRENT_SOURCE_DIR}/MigrationUI.swift" "${CMAKE_CURRENT_SOURCE_DIR}/BookmarkManagement.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/SyncUI.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/EditorWindow.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/LibrarySetup.swift" "${CMAKE_CURRENT_SOURCE_DIR}/LibraryManagement.swift" "${CMAKE_CURRENT_SOURCE_DIR}/RecoveryUI.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SessionHostState.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SessionApp.swift"
@@ -254,6 +254,8 @@ if(BUILD_TESTING)
   set_tests_properties(reader_model_search_html_export PROPERTIES FIXTURES_REQUIRED verse_image_fixture TIMEOUT 60)
   add_test(NAME reader_model_search_export COMMAND "${CMAKE_CURRENT_BINARY_DIR}/search_export_smoke" "${CMAKE_CURRENT_BINARY_DIR}/core/search-fixture")
   set_tests_properties(reader_model_search_export PROPERTIES FIXTURES_REQUIRED search_fixture TIMEOUT 60)
+  add_test(NAME reader_model_bookmark_import COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --bookmark-import "${CMAKE_CURRENT_BINARY_DIR}/core/andbible-fixture")
+  set_tests_properties(reader_model_bookmark_import PROPERTIES FIXTURES_REQUIRED andbible_fixture TIMEOUT 60)
   add_test(NAME reader_model_mixed_search COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --mixed-search "${CMAKE_CURRENT_BINARY_DIR}/core/keyed-search-fixture")
   set_tests_properties(reader_model_mixed_search PROPERTIES FIXTURES_REQUIRED keyed_search_fixture TIMEOUT 60)
   add_test(NAME reader_model_search_activation COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --search-activation "${CMAKE_CURRENT_BINARY_DIR}/core/verse-image-source-fixture")

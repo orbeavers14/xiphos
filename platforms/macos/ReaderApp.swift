@@ -1523,6 +1523,7 @@ struct XiphosNativePreview: App {
                 Divider()
                 Button("Import Legacy Settings and Session…") { delegate.openLegacyMigration() }
                 Button("BibleSync…") { delegate.openSync() }
+                Button("Bookmarks and Imports…") { delegate.openBookmarks() }
                 Button("Module Library…") { delegate.openModuleLibrary() }
                 Button("Choose Module Library Folder…") { delegate.chooseModuleLibrary() }
                 Button("New Module Library…") { delegate.chooseModuleLibrary(create:true) }

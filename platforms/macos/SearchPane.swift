@@ -46,7 +46,7 @@ struct SearchPane: View {
                     .accessibilityLabel("Include dictionaries and books")
                 if model.mixedContent {
                     Text("Use All text or Last results.").font(.caption).foregroundStyle(.secondary)
-                        .help("Choose Phrase, Words, Regular expression or Multiword for dictionary and book searches.")
+                        .help("Choose Phrase, Words, Regular expression, Multiword or Indexed for dictionary and book searches.")
                 }
                 Toggle("Search multiple modules", isOn: $model.searchMultipleModules)
                 if model.searchMultipleModules {

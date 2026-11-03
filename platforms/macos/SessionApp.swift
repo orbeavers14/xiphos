@@ -207,6 +207,7 @@ import SwiftUI
     private var sync: NativeSyncModel?
     private var syncWindow: NativeSyncWindow?
     private var library: NativeLibraryWindow?
+    private var bookmarks: NativeBookmarkWindow?
     private var managedRoot: String?
     func applicationDidFinishLaunching(_ notification: Notification) {
         _ = initializePreviewLocale()
@@ -304,6 +305,11 @@ import SwiftUI
     func openSync() {
         guard !terminating,let sync else { return }
         if let syncWindow { syncWindow.window.makeKeyAndOrderFront(nil) } else { syncWindow = NativeSyncWindow(model:sync) }
+    }
+    func openBookmarks() {
+        guard !terminating,let controller else { return }
+        if let bookmarks { bookmarks.window.makeKeyAndOrderFront(nil) }
+        else { bookmarks=NativeBookmarkWindow(worker:controller.worker) }
     }
     func openModuleLibrary() {
         guard !terminating, let controller else { return }

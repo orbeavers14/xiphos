@@ -781,6 +781,33 @@ struct ReaderModelSmoke {
         other.close(); try await worker.closeTab(tab); try await worker.closeTab(otherTab); await worker.shutdown()
         print("Native ordered batch, failure groups, actual preview/export identity, scope chaining, drafts and lifecycle passed")
     }
+    @MainActor static func bookmarkImport(root: String) async throws {
+        let worker=try CoreWorker(root:URL(fileURLWithPath:root).appendingPathComponent("library").path)
+        let model=BookmarkManagementModel(worker:worker)
+        let scratch=URL(fileURLWithPath:root).appendingPathComponent("native-review")
+        try? FileManager.default.removeItem(at:scratch);try FileManager.default.createDirectory(at:scratch,withIntermediateDirectories:true)
+        let source=URL(fileURLWithPath:root).appendingPathComponent("backup.sqlite"), original=try Data(contentsOf:source)
+        let destination=scratch.appendingPathComponent("bookmarks.xml"), exported=scratch.appendingPathComponent("export.xml")
+        let initial="<SwordBookmarks custom='retain'><!--keep--><Extension value='original'/></SwordBookmarks>"
+        try Data(initial.utf8).write(to:destination)
+        await model.select(destination.path,new:false);await model.review(source.path)
+        guard model.profile != nil,model.preview?.imported == 1,model.preview?.skipped == 3 else { fatalError("Native immutable import review exposes skip diagnostics") }
+        let oldRevision=model.profile?.revision
+        try Data((initial+"\n").utf8).write(to:destination)
+        await model.importReviewed()
+        guard model.preview != nil,model.profile?.revision == oldRevision,try String(contentsOf:destination,encoding:.utf8) == initial+"\n" else { fatalError("Stale import retains reviewed data and never overwrites destination") }
+        await model.select(destination.path,new:false);await model.importReviewed()
+        guard model.preview == nil,model.profile?.rows.contains(where: { !$0.folder && $0.fields[7] == "KJV" }) == true else { fatalError("Reload and explicit retry import source metadata") }
+        guard model.profile?.rows.map(\.depth) == [0,1,2,1,2] else { fatalError("Native bookmark hierarchy retains nested folder depth") }
+        let merged=try Data(contentsOf:destination)
+        guard String(decoding:merged,as:UTF8.self).contains("<!--keep-->") else { fatalError("Native import preserves unknown XML") }
+        await model.review(source.path);await model.importReviewed()
+        guard model.preview != nil,try Data(contentsOf:destination) == merged else { fatalError("Duplicate import retains pending review without duplication") }
+        await model.export(to:exported.path)
+        guard try Data(contentsOf:exported) == merged,try Data(contentsOf:source) == original else { fatalError("Native XML export is exact and source backup stays unchanged") }
+        await model.close();await worker.shutdown()
+        print("Native bookmark review, stale/duplicate guards, reload/retry, exact export and source preservation passed")
+    }
     @MainActor static func mixedSearch(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let first = ReaderModel(worker: worker,startupError: nil), second = ReaderModel(worker: worker,startupError: nil)
@@ -2096,6 +2123,9 @@ struct ReaderModelSmoke {
             guard recorded.entries.last?.key == expectedKey else { fatalError("locale snapshot lifetime") }
             print("Native environment locale startup/click checks passed")
             return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--bookmark-import" {
+            try await bookmarkImport(root:CommandLine.arguments[2]);return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--mixed-search" {
             try await mixedSearch(root:CommandLine.arguments[2]); return

@@ -1935,3 +1935,56 @@ extension CoreWorker {
         let completed = try await wait(status,request);xc_request_release(completed)
     }
 }
+
+struct CoreBookmarkRow: Identifiable, Sendable, Equatable {
+    let id: Int, parent: Int?, depth: Int, folder: Bool
+    let fields: [String?]
+    var title: String { fields[0] ?? fields[6] ?? fields[3] ?? "Untitled" }
+}
+struct CoreBookmarkProfile: Sendable, Equatable { let revision: String; let rows: [CoreBookmarkRow]; let ignored: Int }
+struct CoreAndBiblePreview: Sendable {
+    let xml: String, revision: String
+    let imported: Int, skipped: Int, unknownCanon: Int, invalidOrdinal: Int, invalidIdentity: Int
+}
+extension CoreWorker {
+    private func bookmarkValue(_ completed: OpaquePointer) throws -> CoreBookmarkProfile {
+        guard let owned = xc_request_take_bookmarks(completed) else { throw CoreError(status:XC_ENGINE_ERROR) }
+        defer { xc_bookmarks_release(owned) }
+        var depths: [Int] = []
+        let rows = try (0..<xc_bookmarks_count(owned)).map { index in
+            var has: Int32 = 0;var parent = 0
+            guard xc_bookmarks_parent(owned,index,&has,&parent) == XC_OK else { throw CoreError(status:XC_ENGINE_ERROR) }
+            guard has == 0 || parent < index else { throw CoreError(status:XC_ENGINE_ERROR) }
+            let depth = has == 0 ? 0 : depths[parent]+1
+            guard depth <= 64 else { throw CoreError(status:XC_ENGINE_ERROR) };depths.append(depth)
+            return CoreBookmarkRow(id:index,parent:has == 0 ? nil : parent,depth:depth,folder:xc_bookmarks_kind(owned,index) == 0,
+                fields:(0..<8).map { field in xc_bookmarks_field(owned,index,Int32(field)).map { String(cString:$0) } })
+        }
+        return CoreBookmarkProfile(revision:String(cString:xc_bookmarks_revision(owned)),rows:rows,ignored:xc_bookmarks_ignored_subtrees(owned))
+    }
+    func readBookmarkProfile(tab: UInt64, path: String) async throws -> CoreBookmarkProfile {
+        let strings=SessionCStrings(), path=try strings.copy(path);var request: OpaquePointer?
+        let status=xc_worker_read_bookmarks(try worker(),tab,path,&request)
+        let completed=try await wait(status,request);defer { xc_request_release(completed) };return try bookmarkValue(completed)
+    }
+    func previewAndBible(path: String) async throws -> CoreAndBiblePreview {
+        let strings=SessionCStrings(),path=try strings.copy(path);var request: OpaquePointer?
+        let status=xc_worker_read_andbible_bookmarks(try worker(),path,&request)
+        let completed=try await wait(status,request);defer { xc_request_release(completed) }
+        guard let owned=xc_request_take_andbible_import(completed) else { throw CoreError(status:XC_ENGINE_ERROR) }
+        defer { xc_andbible_import_release(owned) };var counts=xc_andbible_counts()
+        guard xc_andbible_import_counts(owned,&counts) == XC_OK else { throw CoreError(status:XC_ENGINE_ERROR) }
+        return CoreAndBiblePreview(xml:String(cString:xc_andbible_import_xml(owned)),revision:String(cString:xc_andbible_import_revision(owned)),
+            imported:counts.imported,skipped:counts.skipped,unknownCanon:counts.unknown_versification,invalidOrdinal:counts.invalid_ordinal,invalidIdentity:counts.invalid_identity)
+    }
+    func appendBookmarkImport(path: String, revision: String?, preview: CoreAndBiblePreview, folder: String) async throws -> CoreBookmarkProfile {
+        let strings=SessionCStrings(),path=try strings.copy(path),revision=try revision.map { try strings.copy($0) },xml=try strings.copy(preview.xml),folder=try strings.copy(folder);var request: OpaquePointer?
+        let status=xc_worker_append_bookmark_document(try worker(),path,revision,xml,folder,&request)
+        let completed=try await wait(status,request);defer { xc_request_release(completed) };return try bookmarkValue(completed)
+    }
+    func exportBookmarkProfile(source: String, revision: String, destination: String, destinationRevision: String?) async throws {
+        let strings=SessionCStrings(),source=try strings.copy(source),revision=try strings.copy(revision),destination=try strings.copy(destination),expected=try destinationRevision.map { try strings.copy($0) };var request: OpaquePointer?
+        let status=xc_worker_export_bookmark_document(try worker(),source,revision,destination,expected,&request)
+        let completed=try await wait(status,request);defer { xc_request_release(completed) };_ = try bookmarkValue(completed)
+    }
+}
