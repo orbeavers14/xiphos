@@ -3,7 +3,7 @@ import Foundation
 import Combine
 
 enum SearchScopeChoice: String, CaseIterable, Identifiable {
-    case all = "All text", bounds = "Bounds", last = "Last results"
+    case all = "All text", bounds = "Bounds", last = "Last results", keyed = "Entry interval"
     var id: Self { self }
 }
 struct SearchHit: Identifiable, Sendable, Equatable {
@@ -34,6 +34,8 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     @Published var scopeChoice: SearchScopeChoice = .all
     @Published var boundsModule = ""
     @Published var bounds = ""
+    @Published var firstKey = ""
+    @Published var lastKey = ""
     @Published private(set) var savedSearchLists = SavedSearchLists(moduleLists: [], ranges: [])
     @Published private(set) var isLoadingSearchSetup = false
     @Published private(set) var batchResult: RenderedSearchBatch?
@@ -222,6 +224,8 @@ struct SearchHit: Identifiable, Sendable, Equatable {
         let annotations = setAnnotationOptions ? CoreSearchTextOptions(strongs: searchStrongs,
             morphology: searchMorphology, footnotes: searchFootnotes) : nil
         let range = scopeChoice == .bounds ? CoreSearchRange(module: boundsModule, expression: bounds) : nil
+        let interval = scopeChoice == .keyed ? CoreKeyedSearchInterval(first:firstKey,last:lastKey) : nil
+        if interval != nil && (!submittedMixed || submittedModules?.count != 1 || boundsModules.contains(where: {$0.id==submittedModules?.first})) {message="Choose one dictionary or general book and enable keyed content for an entry interval.";return}
         revision &+= 1; let token = revision
         isSearching = true; progress = nil; message = "Searching…"
         task = Task { [weak self] in
@@ -236,7 +240,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
                     let copied = try await worker.searchModules(tab: tab, modules: submittedModules,
                         expression: submittedExpression, mode: submittedMode, caseSensitive: sensitive,
                         range: range, withinLastResults: last, textOptions: annotations,
-                        returnCancelledResults: true, mixedContent: submittedMixed, onProgress: callback)
+                        returnCancelledResults: true, mixedContent: submittedMixed, keyedInterval: interval, onProgress: callback)
                     guard !self.closed, self.revision == token else { return }
                     self.scope = copied.scope
                     if copied.generationUpdated {
@@ -253,7 +257,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
                         self.hits = hits; published = true
                     }
                     self.message = "\(copied.copiedResultCount) \(copied.copiedResultCount == 1 ? "match" : "matches") returned across \(copied.groups.count) of \(copied.requestedModules.count) module requests."
-                    if copied.failureCount > 0 { self.message += " \(copied.failureCount) module requests failed." }
+                    if copied.failureCount > 0 { self.message += copied.failureCount == 1 ? " 1 module request failed." : " \(copied.failureCount) module requests failed." }
                     if copied.limited { self.message += " More results are available." }
                     if copied.groups.contains(where: { $0.result?.indexFallback == true }) { self.message += " Index unavailable for some modules; used multiword fallback." }
                     if copied.cancelled { self.message = "Search stopped. " + self.message }

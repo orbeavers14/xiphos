@@ -83,7 +83,7 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
     if((!dictionary&&!book)||query.range||next||
        (query.mode!=SearchMode::regular_expression&&query.mode!=SearchMode::phrase&&query.mode!=SearchMode::words&&query.mode!=SearchMode::multiword&&query.mode!=SearchMode::indexed&&query.mode!=SearchMode::lemma&&query.mode!=SearchMode::morphology&&query.mode!=SearchMode::footnote))
       throw std::invalid_argument("Keyed search requires a dictionary/general book and a supported search mode");
-  }else if(!supports_verse_search(module))throw std::invalid_argument("Initial search supports Bible and regular commentary verse modules");
+  }else if(query.keyed_interval||!supports_verse_search(module))throw std::invalid_argument("Initial search supports Bible and regular commentary verse modules");
   int engine_type;
   bool whole_entry=false;
   std::optional<AttributeSearch> attribute;
@@ -116,6 +116,28 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   }
   const auto effective_text=query.mode!=SearchMode::phrase&&query.text_options?query.text_options:previous_text;
   ScopedSearchFilters filters(manager,effective_text);ScopedSearchModule state(module);
+  std::optional<sword::ListKey> interval;
+  if(query.keyed_interval){
+    // Enumerate real SDK order, not lexical/verse guesses. Never fuzzy-resolve
+    // endpoints; indexed engines are post-filtered against these exact keys.
+    const std::unique_ptr<sword::SWKey> saved(module.getKey()->clone());
+    struct Restore {sword::SWModule &module;const sword::SWKey &key;~Restore(){module.setKey(key);}} restore{module,*saved};
+    interval.emplace();bool found=false,finished=false;std::size_t count=0,bytes=0;
+    module.setPosition(sword::TOP);
+    while(!module.popError()){
+      if(control&&control->cancel_requested())break;
+      if(++count>maximum_search_retained_elements)throw std::length_error("Keyed interval traversal limit");
+      const auto key=copy_sdk_text(sword::SWBuf(module.getKeyText()),4096);
+      if(key.size()+1>maximum_search_retained_key_bytes-bytes)throw std::length_error("Keyed interval byte limit");
+      bytes+=key.size()+1;
+      if(key==query.keyed_interval->first)found=true;
+      if(found)interval->add(*module.getKey());
+      if(key==query.keyed_interval->last){finished=found;break;}
+      module++;
+    }
+    if(!(control&&control->cancel_requested())&&(!found||!finished))throw std::invalid_argument("Keyed interval endpoints must exist in forward module order");
+    range=*interval;
+  }
   // Capability probing must see this request's search-only filter context too.
   if((query.mode==SearchMode::words||query.mode==SearchMode::indexed)&&supports_indexed_search(module))
     engine_type=xiphos::core::detail::sdk_search_external;
@@ -137,10 +159,11 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   // Some SDK indexed tree searches ignore arbitrary-key ranges. Enforce the
   // authoritative same-source scope before counts, sorting, retention or export.
   std::optional<sword::ListKey> filtered;
-  if(keyed_only&&query.within_last_results&&previous){
+  if(keyed_only&&(interval||(query.within_last_results&&previous))){
     std::set<std::string> allowed;
-    for(int i=0;i<previous->keys().getCount();++i){
-      const auto *key=previous->keys().getElement(i);if(!key)throw std::runtime_error("Missing scoped key");
+    const auto &scope_keys=interval?*interval:previous->keys();
+    for(int i=0;i<scope_keys.getCount();++i){
+      const auto *key=scope_keys.getElement(i);if(!key)throw std::runtime_error("Missing scoped key");
       allowed.emplace(key->getText());
     }
     filtered.emplace();

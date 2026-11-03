@@ -45,19 +45,29 @@ final class ReaderModel: ObservableObject {
     @Published private(set) var parallelChapter: CoreParallelChapter?
     @Published private(set) var showingParallel = false
     var parallelProfilePath: String?
+    @Published private(set) var parallelSourceNotice=""
+    @Published private(set) var commentaryDecoration: CoreDecoratedReading?
+    private func prepareParallel(_ raw: CoreParallelChapter) async -> CoreParallelChapter {
+        parallelSourceNotice="";guard readingSources.enabled,let worker,let tab else {return raw}
+        do {let value=try await worker.decoratedParallel(tab:tab,sources:readingSources)
+            if value.annotationIncomplete {parallelSourceNotice="Some parallel bookmark or note records could not be displayed."}
+            if value.invalidColors>0 {parallelSourceNotice += " Invalid colors were omitted."};return value
+        } catch {parallelSourceNotice="Parallel notes or bookmarks could not be loaded. Reading remains available.";return raw}
+    }
     func openParallel(path: String? = nil,key: String? = nil) {
         guard !closed,!isBusy else { return }
         if path == nil,key == nil,parallelChapter != nil { showingParallel=true;return }
         guard let worker,let tab,let path=path ?? parallelProfilePath else { return }
         let reference=displayedEntry?.reference ?? self.reference
         run { token in
-            let chapter=try await worker.visitParallelProfile(tab:tab,path:path,key:key,reference:reference,flags:self.engineOptions?.rawValue ?? 0)
+            var chapter=try await worker.visitParallelProfile(tab:tab,path:path,key:key,reference:reference,flags:self.engineOptions?.rawValue ?? 0)
+            chapter=await self.prepareParallel(chapter)
             guard token==self.revision,!self.closed else { return };self.parallelChapter=chapter;self.showingParallel=true
         }
     }
     func navigateParallel(_ direction: Int32) {
         guard let worker,let tab else { return }
-        run { token in let chapter=try await worker.navigateParallel(tab:tab,direction:direction);guard token==self.revision,!self.closed else { return };self.parallelChapter=chapter }
+        run { token in let raw=try await worker.navigateParallel(tab:tab,direction:direction);let chapter=await self.prepareParallel(raw);guard token==self.revision,!self.closed else { return };self.parallelChapter=chapter }
     }
     func closeParallel() { guard !isBusy else { return };showingParallel=false }
     @Published var readingSources = CoreReadingSources()
@@ -246,7 +256,7 @@ final class ReaderModel: ObservableObject {
             }
             if let document = try await worker.bookDocumentSelection(tab:tab) { self.presentBook(document,updateInput:false) }
             self.showingBook = wasBook && self.bookDocument != nil
-            self.parallelChapter = try await worker.restoredParallel(tab:tab)
+            if let raw=try await worker.restoredParallel(tab:tab) {self.parallelChapter=await self.prepareParallel(raw)}
             self.showingParallel = self.showingParallel && self.parallelChapter != nil
         }
     }
@@ -287,7 +297,7 @@ final class ReaderModel: ObservableObject {
             bookBrowser = document.tree
             bookChildren = try await worker.bookChildren(module: document.tree.module, parent: document.tree.node.offset)
         }
-        parallelChapter = try await worker.restoredParallel(tab:restoredTab)
+        if let raw=try await worker.restoredParallel(tab:restoredTab) {parallelChapter=await prepareParallel(raw)}
         showingParallel = parallelShowing && parallelChapter != nil
         if let host {
             showingBook = host.showingBook && bookDocument != nil
@@ -426,11 +436,10 @@ final class ReaderModel: ObservableObject {
         read()
     }
     func chooseCommentary(_ module: String) {
-        guard let worker, let tab, let main = displayedModule, let entry = displayedEntry,
+        guard let worker, let tab, let main = displayedModule, displayedEntry != nil,
               modules.contains(where: { $0.id == main && $0.type == "Biblical Texts" }) else { return }
         run { token in
-            let pair = try await worker.studyPassage(tab: tab, module: main, commentary: module,
-                reference: entry.reference, record: false)
+            let pair = try await worker.selectCommentary(tab:tab,module:module)
             try await self.present(pair.text, module: main, token: token, updateInput: false, passage: pair)
         }
     }
@@ -729,6 +738,14 @@ final class ReaderModel: ObservableObject {
                 if decorated?.incomplete == true {sourceNotice="Some bookmark or note records could not be displayed.";if (decorated?.invalidColors ?? 0)>0 {sourceNotice += " Invalid colors were omitted."}}
             } catch {sourceNotice="Reading notes or bookmarks could not be loaded. The passage is still available. Reload the selected files or clear reading notes."}
         }
+        var sideDecoration: CoreDecoratedReading?
+        if sources.enabled,let pair,let side=pair.commentary {
+            do {sideDecoration=try await worker.decoratedReading(tab:tab,sources:sources,module:pair.commentaryModule,reference:side.reference,chapter:commentaryMode,numbers:numbers,highlight:highlight,commentary:true)
+                if sideDecoration?.incomplete == true {sourceNotice += " Some commentary bookmark or note records could not be displayed."}
+            } catch {sourceNotice += " Commentary notes or bookmarks could not be loaded. Reading remains available."}
+        }
+        var refreshedParallel: CoreParallelChapter?
+        if parallelChapter != nil,let raw=try await worker.restoredParallel(tab:tab) {refreshedParallel=await prepareParallel(raw)}
         let selectors = try await worker.referenceChoices(module: module, reference: entry.reference)
         let history = try await worker.history(tab)
         let options = try await worker.moduleEngineOptions(tab: tab, module: module)
@@ -759,6 +776,8 @@ final class ReaderModel: ObservableObject {
         }
         if sources==readingSources {
             readingSourceNotice=sourceNotice
+            commentaryDecoration=sideDecoration
+            if let refreshedParallel {parallelChapter=refreshedParallel}
             if let decorated {html=decorated.html;lexicalPresentation=RenderedLexicalPresentation(css:decorated.css,requested:lexicalPresentation.requested,applied:lexicalPresentation.applied)}
         }
         if let anchor = pair?.anchor, anchor.module == module {
@@ -1518,7 +1537,7 @@ struct ReaderWindow: View {
                             }
                             if let entry = model.commentaryEntry {
                                 Text(model.commentaryChapter?.title ?? entry.reference).font(.caption).padding(8)
-                                PassageView(html: model.commentaryChapter?.html ?? (entry.headingHTML + entry.html), css: (model.commentaryChapter?.lexical ?? entry.lexical).css, anchor: model.commentaryRenderedAnchor, anchorRevision: model.commentaryAnchorRevision, onScrollFailure: { model.message = $0 },
+                                PassageView(html: model.commentaryDecoration?.html ?? model.commentaryChapter?.html ?? (entry.headingHTML + entry.html), css: model.commentaryDecoration?.css ?? (model.commentaryChapter?.lexical ?? entry.lexical).css, anchor: model.commentaryRenderedAnchor, anchorRevision: model.commentaryAnchorRevision, onScrollFailure: { model.message = $0 },
                                     onLink: { model.followCommentaryLink($0) },
                                     onLinkHover: { model.previewStudyLink($0) })
                                 if model.commentaryChapter?.verses.allSatisfy({ $0.html.isEmpty && $0.headingHTML.isEmpty }) ?? (entry.html.isEmpty && entry.headingHTML.isEmpty) {

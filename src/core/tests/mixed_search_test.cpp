@@ -27,6 +27,17 @@ int main(int argc,char **argv)try{
  }
  {sword::RawGenBook writer((root/"data/CaptureBook/entries").string().c_str());writer.setKey("/שלום/العربية");writer.setEntry("<p>compatmarker שלום العربية <img src=\"café.png\"/></p>");}
  {std::ofstream file(root/"data/CaptureBook/café.png",std::ios::binary);file<<image_test::preview_png();}
+ // Original small assets exercise real MIME/path preparation across keyed families.
+ for(const auto *id:{"ImageThML","ImageOSIS","CaptureBook"}){
+  const auto directory=root/"data"/id;fs::create_directories(directory/"assets");
+  for(const auto &asset:image_test::preview_assets()){
+   const auto filename="original Ω."+asset.first;{std::ofstream out(directory/"assets"/filename,std::ios::binary);out.write(asset.second.data(),asset.second.size());}
+   const auto source="assets/original%20%CE%A9."+asset.first;
+   const auto markup=std::string("<p>assetformatmarker ")+(std::string(id)=="ImageOSIS"?"<figure src=\"":"<img src=\"")+source+"\"/></p>";
+   if(std::string(id)=="CaptureBook"){sword::RawGenBook writer((directory/"entries").string().c_str());writer.setKey(("/Assets/"+asset.first).c_str());writer.setEntry(markup.c_str());}
+   else {sword::RawLD4 writer((directory/"entries").string().c_str());writer.setKey(("Asset-"+asset.first).c_str());writer.setEntry(markup.c_str());}
+  }
+ }
  {
  Reader reader(root.string());StudySession session(reader);
  SearchQuery first{"Text","Original",SearchMode::phrase};first.range=SearchRange{"Text","John3:16-John3:17"};SearchQuery last{"Notes","Original",SearchMode::phrase};last.range=SearchRange{"Text","John4:1"};
@@ -60,6 +71,12 @@ int main(int argc,char **argv)try{
  html.images.max_images=2;auto limitedImages=session.export_search_html(html);check(limitedImages.status==SearchExportStatus::output_limit&&limitedImages.html.empty()&&!limitedImages.row_count,"Aggregate keyed image failure publishes no partial payload");html.images.max_images=maximum_search_export_images;
  for(const auto *uri:{"../café.png","https://example.invalid/café.png","file:///etc/passwd"}){bool rejected=false;try{reader.read_search_inline_image("ImageThML",uri,1024);}catch(const std::exception &){rejected=true;}check(rejected,"Keyed images cannot escape their source or fetch remote resources");}
  check(reader.read_search_image_link("ImageThML","passagestudy.jsp?action=showImage&value=caf%C3%A9.png&module=ImageOSIS").module=="ImageThML","Image command declared module cannot rebase actual ownership");
+
+ auto formats=session.search_mixed_batch({{"ImageThML","assetformatmarker",SearchMode::phrase},{"ImageOSIS","assetformatmarker",SearchMode::phrase},{"CaptureBook","assetformatmarker",SearchMode::phrase}});
+ check(!formats.failures&&formats.copied_results==15,"Five original asset types across dictionary markup and tree books");
+ for(const auto &group:formats.groups)for(const auto &key:group.result->references){const auto preview=session.preview_keyed_search(group.result->source_module(),key,group.result->key_kind,1024*1024);check(preview.html.find("data:image/")!=std::string::npos&&preview.html.find("original%20") == std::string::npos,"Percent-encoded Unicode assets become owned data resources");}
+ html.generation=formats.generation.id;auto unsupportedFormats=session.export_search_html(html);
+ check(unsupportedFormats.status==SearchExportStatus::unsupported_html&&unsupportedFormats.html.empty(),"PNG-only passive export rejects other formats atomically");
 
  const auto verse_scope=session.last_search_scope();
  auto prefixSeed=session.search_mixed_batch({{"KeyDictionary","signal",SearchMode::phrase}},{{1,4096},{1,4096}});

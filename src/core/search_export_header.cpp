@@ -92,7 +92,9 @@ std::string SearchGeneration::export_header(std::size_t index) const
 	if(result.key_kind!=SearchKeyKind::verse)text+=result.key_kind==SearchKeyKind::dictionary?"\nResult keys: dictionary entries":"\nResult keys: general-book paths";
 	text += "\nQuery: " + query.expression + "\nMode: " + mode_name(query.mode) +
 			   "\nCase sensitive: " + flag(query.case_sensitive) + "\nScope: ";
-	if (query.range)
+	if (query.keyed_interval)
+		text += "keyed interval: " + query.keyed_interval->first + " through " + query.keyed_interval->last;
+	else if (query.range)
 		text += "range (" + query.range->module + "): " + query.range->expression;
 	else if (query.within_last_results)
 		text += "previous results";

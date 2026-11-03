@@ -736,15 +736,39 @@ std::future<SyncDecision> StudyWorker::plan_incoming_sync(SyncNavigation navigat
 std::future<bool> StudyWorker::can_transmit_sync(bool received){return impl_->submit([received](Impl::State &s){return sync_transmit_allowed(s.sync,received);});}
 std::future<RecoverySnapshot> StudyWorker::read_recovery(std::string path){try{selected_profile_path(path);}catch(...){return selected_profile_rejection<RecoverySnapshot>();}return impl_->submit([path=std::move(path)](Impl::State &){return read_recovery_snapshot(path);});}
 std::future<RecoverySnapshot> StudyWorker::save_recovery(std::string path,std::optional<std::string> expected,RecoverySnapshot snapshot){try{selected_profile_path(path);if(expected&&!editable_document_revision(*expected))throw std::invalid_argument("Invalid recovery revision");(void)serialize_recovery_snapshot(snapshot);}catch(...){return selected_profile_rejection<RecoverySnapshot>();}return impl_->submit([path=std::move(path),expected=std::move(expected),snapshot=std::move(snapshot)](Impl::State &){return save_recovery_snapshot(path,expected,snapshot);});}
-std::future<DecoratedReading> StudyWorker::read_decorated_reading(StudyTab tab,std::string bookmarks,std::string annotations,std::string module,std::string reference,bool chapter,DisplayOptions display){
+std::future<ParallelChapter> StudyWorker::read_decorated_parallel(StudyTab tab,std::string bookmarks,std::string annotations){
+ try{if(!bookmarks.empty())selected_profile_path(bookmarks);if(!annotations.empty())selected_profile_path(annotations);}catch(...){return selected_profile_rejection<ParallelChapter>();}
+ return impl_->submit([tab,bookmarks=std::move(bookmarks),annotations=std::move(annotations)](Impl::State &s){
+  auto &session=s.tab(tab);const auto selected=session.parallel_selection();if(!selected)throw std::invalid_argument("No parallel selection");
+  auto result=session.read_parallel(selected->modules,selected->reference,selected->options,selected->headings,selected->max_bytes);
+  const auto marks=bookmarks.empty()?BookmarkSnapshot{}:xiphos::core::read_bookmarks(bookmarks);
+  const auto profile=annotations.empty()?AnnotationProfile{}:xiphos::core::read_annotations(annotations);
+  for(std::size_t column=0;column<result.columns.size();++column){
+   const auto &source=result.columns[column];if(source.status!=ParallelColumnStatus::ready)continue;
+   const auto target=s.reader.annotation_target(source.module,result.reference,true);
+   BookmarkTags tags;tags.control_module=target.control_module;if(!bookmarks.empty())tags=s.reader.bookmark_tags(marks,source.module,target.reference,{});
+   const auto notes=legacy_annotation_cache(profile,target.control_module,target.address.book);
+   for(auto &row:result.rows){auto &cell=row.cells.at(column);if(cell.reference.empty())continue;
+    const auto actual=s.reader.annotation_target(source.module,cell.reference,true);
+    const auto plan=compose_verse_decoration(actual,tags,notes,row.ordinal==result.selected_verse,true,true);
+    const auto remaining=selected->max_bytes-(result.snapshot_bytes-cell.html.size());
+    auto html=display_decorated_verse(cell.html,plan,result.invalid_colors,remaining);
+    result.snapshot_bytes=result.snapshot_bytes-cell.html.size()+html.size();cell.html=std::move(html);
+    result.annotation_incomplete=result.annotation_incomplete||plan.incomplete;
+   }
+  }
+  result.annotation_incomplete=result.annotation_incomplete||result.invalid_colors!=0;return result;
+ });
+}
+std::future<DecoratedReading> StudyWorker::read_decorated_reading(StudyTab tab,std::string bookmarks,std::string annotations,std::string module,std::string reference,bool chapter,DisplayOptions display,bool commentary){
  try{if(!bookmarks.empty())selected_profile_path(bookmarks);if(!annotations.empty())selected_profile_path(annotations);if(!annotation_reference_arguments(module,reference))throw std::invalid_argument("Invalid decorated reading reference");}catch(...){return selected_profile_rejection<DecoratedReading>();}
- return impl_->submit([tab,bookmarks=std::move(bookmarks),annotations=std::move(annotations),module=std::move(module),reference=std::move(reference),chapter,display](Impl::State &s){
+ return impl_->submit([tab,bookmarks=std::move(bookmarks),annotations=std::move(annotations),module=std::move(module),reference=std::move(reference),chapter,display,commentary](Impl::State &s){
   auto &session=s.tab(tab);auto marks=bookmarks.empty()?BookmarkSnapshot{}:xiphos::core::read_bookmarks(bookmarks);auto profile=annotations.empty()?AnnotationProfile{}:xiphos::core::read_annotations(annotations);
   auto selected=s.reader.annotation_target(module,reference,true);BookmarkTags tags;tags.control_module=selected.control_module;if(!bookmarks.empty())tags=s.reader.bookmark_tags(marks,module,selected.reference,{});
   auto notes=legacy_annotation_cache(profile,selected.control_module,selected.address.book);DecoratedReading result;std::size_t copied=0;
   auto decorate=[&](Entry &entry){if(copied>=maximum_decorated_reading_bytes)throw std::length_error("Decorated reading exceeds byte limit");auto target=s.reader.annotation_target(module,entry.reference,true);auto plan=compose_verse_decoration(target,tags,notes,target.reference==selected.reference,true,display.highlight_selected);result.incomplete=result.incomplete||plan.incomplete;entry.html=display_decorated_verse(entry.html,plan,result.invalid_colors,maximum_decorated_reading_bytes-copied);copied+=entry.html.size();};
-  if(chapter){auto reading=session.read_chapter(module,reference,display);for(auto &entry:reading.verses)decorate(entry);auto options=display;options.highlight_selected=false;result.html=display_chapter(reading,options);result.css=reading.lexical.css;}
-  else{auto reading=session.read_entry_snapshot(module,reference);decorate(reading);result.html=std::move(reading.html);result.css=reading.lexical.css;}
+  if(chapter){auto reading=commentary?session.read_commentary_chapter(module,reference,display):session.read_chapter(module,reference,display);for(auto &entry:reading.verses)decorate(entry);auto options=display;options.highlight_selected=false;result.html=commentary?display_commentary_chapter(reading,reading.verse_ordinals,options):display_chapter(reading,options);result.css=reading.lexical.css;}
+  else{auto reading=commentary?session.read_commentary_entry_snapshot(module,reference):session.read_entry_snapshot(module,reference);if(commentary)reading.html=reading.heading_html+reading.html;decorate(reading);result.html=std::move(reading.html);result.css=reading.lexical.css;}
   if(result.html.size()>maximum_decorated_reading_bytes||result.css.size()>maximum_decorated_reading_bytes-result.html.size())throw std::length_error("Decorated reading exceeds byte limit");result.incomplete=result.incomplete||result.invalid_colors!=0;return result;
  });
 }
@@ -1074,6 +1098,7 @@ std::future<Entry> StudyWorker::read_entry(StudyTab tab, std::string module, std
     return s.tab(tab).read_entry(module, reference);
   });
 }
+std::future<StudyPassage> StudyWorker::select_commentary(StudyTab tab,std::string commentary){return impl_->submit([tab,commentary=std::move(commentary)](Impl::State &s){return s.tab(tab).select_commentary(commentary);});}
 std::future<StudyPassage> StudyWorker::read_passage(StudyTab tab, std::string module, std::string commentary,
                                                   std::string reference) {
   return impl_->submit([tab, module = std::move(module), commentary = std::move(commentary),

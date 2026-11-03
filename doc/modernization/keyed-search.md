@@ -91,3 +91,27 @@ case settings compare with actual SDK results, then exact previews, complete
 same-source narrowing and byte-identical source data are checked. Swift mixed
 adapters consume all eight sources. This does not prove every compressor, driver,
 module-filter combination or licensed corpus.
+
+## Inclusive keyed intervals — 2026-11-03
+
+`SearchQuery::keyed_interval` carries exact first/last opaque keys in the resolved
+source's SDK traversal order, including both endpoints. It is distinct from verse
+ranges and cannot combine with them or last-results narrowing. The source must
+be a supported dictionary or indexed-tree general book. Missing/reversed endpoints
+reject; no nearby-key fallback, lexicographic sorting or VerseKey conversion occurs.
+Traversal is capped at100000 entries/16MiB of accounted key bytes, including the
+prefix before the first endpoint; cancellation remains cooperative. These bounds
+do not cap SDK internal search allocations/time.
+
+Every SDK result, including actual indexed results, is intersected with the exact
+interval before totals, copied prefix limits, retention and exports. Subsequent
+mixed last-results searches use the complete retained interval results. Export
+context discloses the endpoints. Standalone C++ queries and mixed FIFO queries use
+the same implementation. The additive C mixed-interval entry point keeps existing
+query structs/ABI unchanged; owned result endpoint getters survive worker teardown.
+
+Native Entry interval inputs apply to one explicitly selected dictionary or book
+with keyed content enabled. Exact returned keys/paths are required. Optional draft
+fields survive sessions; older drafts decode without them. Scoped shared and Swift
+checks cover singleton/multiple-entry intervals across all eight generated sources,
+invalid endpoints, opaque Unicode keys, owned input/output and actual index filtering.

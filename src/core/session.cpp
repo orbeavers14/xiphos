@@ -583,6 +583,12 @@ StudyPassage StudySession::read_passage(const std::string &module, const std::st
   if (!commentary.empty()) result.commentary = read_commentary_entry(commentary, result.text.reference);
   return result;
 }
+StudyPassage StudySession::select_commentary(const std::string &commentary) {
+  if(!reading_selection_)throw std::invalid_argument("No current passage for commentary selection");
+  auto result=read_passage(reading_selection_->module,commentary,reading_selection_->reference);
+  std::optional<Location> selected{Location{result.text.reference,result.module,result.commentary_module}};
+  reading_selection_=std::move(selected);return result;
+}
 StudyPassage StudySession::visit_passage(const std::string &module, const std::string &commentary,
                                          const std::string &reference) {
   auto result = read_passage(module, commentary, reference);

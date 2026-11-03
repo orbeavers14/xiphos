@@ -24,6 +24,12 @@ actor ProgressLog {
         guard narrowed.failureCount == 0, narrowed.copiedResultCount == ids.count,
               narrowed.groups.map({ $0.result?.references }) == seed.groups.map({ $0.result?.references }),
               try await worker.history(tab).count == 0 else { fatalError("Swift attribute narrowing retains source keys without navigation") }
+        for id in ids {
+            let key=id.contains("Dictionary") ? "JOHN.3.16" : "/Part/Entry Ω"
+            let interval=CoreKeyedSearchInterval(first:key,last:key)
+            let bounded=try await worker.searchModules(tab:tab,modules:[id],expression:"Alpha",mode:.footnote,mixedContent:true,keyedInterval:interval)
+            guard bounded.failureCount==0,bounded.copiedResultCount==1,bounded.groups[0].result?.references==[key],bounded.groups[0].result?.keyedInterval==interval else {fatalError("Swift copied interval and exact opaque endpoint")}
+        }
         try await worker.closeTab(tab); await worker.shutdown()
         guard seed.copiedResultCount == ids.count else { fatalError("Owned mixed attribute result survives shutdown") }
         print("Swift keyed OSIS/ThML dictionary/book attributes and retained scopes passed")

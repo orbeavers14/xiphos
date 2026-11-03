@@ -965,6 +965,16 @@ xc_status xc_worker_read_decorated_reading(xc_worker *w,uint64_t tab,const char 
  if(out)*out=nullptr;if((marks&&*marks&&!bounded_image_c_text(marks,4096))||(notes&&*notes&&!bounded_image_c_text(notes,4096))||!bounded_image_c_text(module,4096)||!bounded_image_c_text(reference,32768)||(chapter!=0&&chapter!=1)||(numbers!=0&&numbers!=1)||(highlight!=0&&highlight!=1))return XC_INVALID_ARGUMENT;
  return queue_request(w,out,[=](auto &worker){return worker.read_decorated_reading(tab,marks?marks:"",notes?notes:"",module,reference,chapter!=0,{numbers!=0,highlight!=0});});
 }
+xc_status xc_worker_read_decorated_commentary(xc_worker *w,uint64_t tab,const char *marks,const char *notes,const char *module,const char *reference,int chapter,int numbers,int highlight,xc_request **out){
+ if(out)*out=nullptr;if((marks&&*marks&&!bounded_image_c_text(marks,4096))||(notes&&*notes&&!bounded_image_c_text(notes,4096))||!bounded_image_c_text(module,4096)||!bounded_image_c_text(reference,32768)||(chapter!=0&&chapter!=1)||(numbers!=0&&numbers!=1)||(highlight!=0&&highlight!=1))return XC_INVALID_ARGUMENT;
+ return queue_request(w,out,[=](auto &worker){return worker.read_decorated_reading(tab,marks?marks:"",notes?notes:"",module,reference,chapter!=0,{numbers!=0,highlight!=0},true);});
+}
+xc_status xc_worker_read_decorated_parallel(xc_worker *w,uint64_t tab,const char *marks,const char *notes,xc_request **out){
+ if(out)*out=nullptr;if((marks&&*marks&&!bounded_image_c_text(marks,4096))||(notes&&*notes&&!bounded_image_c_text(notes,4096)))return XC_INVALID_ARGUMENT;
+ return queue_request(w,out,[=](auto &worker){return worker.read_decorated_parallel(tab,marks?marks:"",notes?notes:"");});
+}
+int xc_parallel_annotations_incomplete(const xc_parallel_chapter *r){return r&&r->value.annotation_incomplete;}
+size_t xc_parallel_invalid_colors(const xc_parallel_chapter *r){return r?r->value.invalid_colors:0;}
 xc_decorated_reading *xc_request_take_decorated_reading(xc_request *r){return r&&r->status==XC_OK?r->decorated_reading.release():nullptr;}
 const char *xc_decorated_reading_html(const xc_decorated_reading *r){return r?r->value.html.c_str():nullptr;}
 const char *xc_decorated_reading_css(const xc_decorated_reading *r){return r?r->value.css.c_str():nullptr;}
@@ -1064,7 +1074,7 @@ void xc_search_batch_limits_default(xc_search_batch_limits *out){
   if(out)*out={xiphos::core::maximum_search_results,xiphos::core::maximum_search_reference_bytes};
 }
 static xc_status queue_search_modules(xc_worker *w,uint64_t tab,const char *const *modules,size_t count,
-    const xc_search_query *query,const xc_search_batch_limits *total,xc_request **out,bool mixed){
+    const xc_search_query *query,const xc_search_batch_limits *total,xc_request **out,bool mixed,const char *first=nullptr,const char *last=nullptr){
   if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;
   if(!w||!modules||!count||count>xiphos::core::maximum_search_batch_modules||!valid_search_scope(query)||query->module)
     return XC_INVALID_ARGUMENT;
@@ -1074,6 +1084,7 @@ static xc_status queue_search_modules(xc_worker *w,uint64_t tab,const char *cons
   try{
     auto copied=copy_search_inputs(modules[0],query->expression,query->options,query->range_module,query->range_expression,
       query->scope==XC_SEARCH_SCOPE_LAST,query->text_options);
+    if(first||last){if(!first||!last||!mixed||query->scope!=XC_SEARCH_SCOPE_ALL)throw std::invalid_argument("Invalid keyed interval scope");copied.query.keyed_interval=xiphos::core::KeyedSearchInterval{first,last};}
     std::vector<xiphos::core::SearchQuery> queries;queries.reserve(count);
     for(size_t i=0;i<count;++i){
       if(!modules[i])throw std::invalid_argument("NULL batch module");
@@ -1087,6 +1098,7 @@ static xc_status queue_search_modules(xc_worker *w,uint64_t tab,const char *cons
 }
 xc_status xc_worker_search_modules(xc_worker *w,uint64_t tab,const char *const *modules,size_t count,const xc_search_query *query,const xc_search_batch_limits *total,xc_request **out){return queue_search_modules(w,tab,modules,count,query,total,out,false);}
 xc_status xc_worker_search_mixed_modules(xc_worker *w,uint64_t tab,const char *const *modules,size_t count,const xc_search_query *query,const xc_search_batch_limits *total,xc_request **out){return queue_search_modules(w,tab,modules,count,query,total,out,true);}
+xc_status xc_worker_search_mixed_modules_interval(xc_worker *w,uint64_t tab,const char *const *modules,size_t count,const xc_search_query *query,const xc_search_batch_limits *total,const char *first,const char *last,xc_request **out){if(!first||!last){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}return queue_search_modules(w,tab,modules,count,query,total,out,true,first,last);}
 xc_search_batch *xc_request_take_search_batch(xc_request *r){return r&&r->status==XC_OK?r->search_batch.release():nullptr;}
 xc_status xc_search_batch_get_info(const xc_search_batch *batch,xc_search_batch_info *out){
   if(!out)return XC_INVALID_ARGUMENT;*out={};if(!batch)return XC_INVALID_ARGUMENT;
@@ -1361,6 +1373,8 @@ xc_status xc_search_get_scope(const xc_search *r,xc_search_scope_info *out){
 }
 int xc_search_scope_updated(const xc_search *r){return r?(r->value.scope_updated?1:0):-1;}
 int xc_search_within_last_results(const xc_search *r){return r?(r->value.requested.within_last_results?1:0):-1;}
+const char *xc_search_keyed_interval_first(const xc_search *r){return r&&r->value.requested.keyed_interval?r->value.requested.keyed_interval->first.c_str():nullptr;}
+const char *xc_search_keyed_interval_last(const xc_search *r){return r&&r->value.requested.keyed_interval?r->value.requested.keyed_interval->last.c_str():nullptr;}
 const char *xc_search_range_module(const xc_search *r){return r&&r->value.requested.range?r->value.requested.range->module.c_str():nullptr;}
 const char *xc_search_range_expression(const xc_search *r){return r&&r->value.requested.range?r->value.requested.range->expression.c_str():nullptr;}
 xc_search *xc_request_take_search(xc_request *r){return r&&r->status==XC_OK?r->search_result.release():nullptr;}
@@ -1403,6 +1417,7 @@ xc_status xc_worker_navigate_chapter(xc_worker *w, uint64_t tab, const char *id,
   if (!id || !*id || !ref || !*ref) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.navigate_chapter(tab, id, ref, direction); });
 }
+xc_status xc_worker_select_commentary(xc_worker *w,uint64_t tab,const char *commentary,xc_request **out){if(out)*out=nullptr;if(!commentary||(*commentary&&!bounded_image_c_text(commentary,4096)))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.select_commentary(tab,commentary);});}
 xc_status xc_worker_read_passage(xc_worker *w, uint64_t tab, const char *id, const char *commentary,
                                   const char *ref, xc_request **out) {
   if (!id || !*id || !commentary || !ref || !*ref) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }

@@ -648,6 +648,12 @@ xc_status xc_worker_search_modules(xc_worker *worker,uint64_t tab,const char *co
  * shared capability/fallback policy; exact-key filtering enforces keyed scope.
  * Complete typed keys use the same retained generation/read/export ownership. */
 xc_status xc_worker_search_mixed_modules(xc_worker *worker,uint64_t tab,const char *const *modules,size_t count,const xc_search_query *query,const xc_search_batch_limits *total,xc_request **out);
+/* Inclusive exact opaque endpoints in each requested keyed module's traversal
+ * order. Scope must be ALL; verse groups fail individually. Bounded traversal
+ * (100000 keys/16MiB), never fuzzy resolution. Existing structs/ABI unchanged. */
+xc_status xc_worker_search_mixed_modules_interval(xc_worker *worker,uint64_t tab,const char *const *modules,size_t count,const xc_search_query *query,const xc_search_batch_limits *total,const char *first,const char *last,xc_request **out);
+const char *xc_search_keyed_interval_first(const xc_search *result);
+const char *xc_search_keyed_interval_last(const xc_search *result);
 xc_search_batch *xc_request_take_search_batch(xc_request *request);
 xc_status xc_search_batch_get_info(const xc_search_batch *batch,xc_search_batch_info *out);
 xc_status xc_search_batch_get_group(const xc_search_batch *batch,size_t index,xc_search_batch_group_info *out);
@@ -855,6 +861,9 @@ xc_status xc_worker_navigate_chapter(xc_worker *worker, uint64_t tab, const char
 /* Synchronized Bible/optional commentary snapshots. commentary must be non-NULL;
  * empty requests no commentary. Selection/type errors arrive through poll.
  * Visits and navigation commit history only after both renders succeed. */
+/* Render/commit only the current passage's commentary choice. No history entry
+ * or cursor change; failure preserves the current pair. Empty clears the pane. */
+xc_status xc_worker_select_commentary(xc_worker *worker,uint64_t tab,const char *commentary,xc_request **out);
 xc_status xc_worker_read_passage(xc_worker *worker, uint64_t tab, const char *module, const char *commentary, const char *reference, xc_request **out);
 xc_status xc_worker_visit_passage(xc_worker *worker, uint64_t tab, const char *module, const char *commentary, const char *reference, xc_request **out);
 /* Explicit Bible links replace the Bible; commentary links replace commentary,
@@ -1168,6 +1177,14 @@ xc_status xc_worker_export_bookmark_document(xc_worker *worker,const char *sourc
  * no reading result. SDK internal rendering allocations are outside this bound. */
 typedef struct xc_decorated_reading xc_decorated_reading;
 xc_status xc_worker_read_decorated_reading(xc_worker *worker,uint64_t tab,const char *bookmarks,const char *annotations,const char *module,const char *reference,int chapter,int verse_numbers,int highlight_selected,xc_request **out);
+/* Commentary preserves sparse section ordinals, headings and note numbering. */
+xc_status xc_worker_read_decorated_commentary(xc_worker *worker,uint64_t tab,const char *bookmarks,const char *annotations,const char *module,const char *reference,int chapter,int verse_numbers,int highlight_selected,xc_request **out);
+/* Re-read current parallel selection without navigation/selection publication.
+ * Decorate each ready column using its actual module/reference. Source files
+ * read once; output respects the selection's original aggregate byte limit. */
+xc_status xc_worker_read_decorated_parallel(xc_worker *worker,uint64_t tab,const char *bookmarks,const char *annotations,xc_request **out);
+int xc_parallel_annotations_incomplete(const xc_parallel_chapter *chapter);
+size_t xc_parallel_invalid_colors(const xc_parallel_chapter *chapter);
 xc_decorated_reading *xc_request_take_decorated_reading(xc_request *request);
 const char *xc_decorated_reading_html(const xc_decorated_reading *reading);
 const char *xc_decorated_reading_css(const xc_decorated_reading *reading);

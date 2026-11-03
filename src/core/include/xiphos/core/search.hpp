@@ -31,6 +31,7 @@ enum class SearchMode { regular_expression=0, phrase=1, words=2, lemma=3, morpho
 // Legacy sidebar range uses the designated Bible module's own VerseKey parser,
 // which may differ from the searched commentary module's versification.
 struct SearchRange { std::string module, expression; };
+struct KeyedSearchInterval { std::string first,last; }; // Inclusive exact SDK keys, in module traversal order.
 struct SearchQuery {
   std::string module, expression;
   SearchMode mode=SearchMode::phrase;
@@ -38,6 +39,7 @@ struct SearchQuery {
   std::optional<SearchRange> range;
   bool within_last_results=false; // Session-only; mutually exclusive with range.
   std::optional<SearchTextOptions> text_options; // Exact phrase preserves prior search settings.
+  std::optional<KeyedSearchInterval> keyed_interval; // Same resolved source only; excludes range/last.
 };
 struct SearchLimits {
   std::size_t max_results=1000;

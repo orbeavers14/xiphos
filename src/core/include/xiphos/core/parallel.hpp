@@ -26,6 +26,8 @@ struct ParallelChapter {
   std::vector<ParallelColumn> columns;
   std::vector<ParallelRow> rows;
   std::size_t snapshot_bytes = 0;
+  bool annotation_incomplete=false;
+  std::size_t invalid_colors=0;
 };
 // Lightweight committed per-tab intent, suitable for future session storage.
 // Raw module tokens retain order; actual control/reference come from success.

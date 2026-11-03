@@ -151,6 +151,7 @@ enum CoreSearchPhase: Int32, Sendable { case queued = 0, running, complete, canc
 struct CoreSearchProgress: Sendable, Equatable { let phase: CoreSearchPhase; let percent: UInt32; let cancelRequested: Bool }
 struct CoreSearchTextOptions: Sendable, Equatable { var strongs = false; var morphology = false; var footnotes = false }
 struct CoreSearchScope: Sendable, Equatable { let present: Bool; let elementCount: UInt64 }
+struct CoreKeyedSearchInterval: Sendable, Equatable { let first: String; let last: String }
 struct CoreSearchRange: Sendable, Equatable { let module: String; let expression: String }
 // IDs are ephemeral within the originating live worker/tab. Keep that origin
 // with a selection; never substitute the latest ID after a stale response.
@@ -244,6 +245,7 @@ struct RenderedSearchResult: Sendable, Equatable {
     var generation = CoreSearchGeneration.empty
     var generationUpdated = false
     var keyKind: CoreSearchKeyKind = .verse
+    var keyedInterval: CoreKeyedSearchInterval? = nil
 }
 enum CoreSearchGroupStatus: UInt32, Sendable { case success=0, invalidRequest=1, moduleNotFound=2, engineError=3 }
 struct RenderedSearchGroup: Sendable, Equatable {
@@ -556,7 +558,8 @@ enum CoreValues {
             requestedTextOptions: searchTextOptions(requestedText), effectiveTextOptions: searchTextOptions(effectiveText),
             textOptionsUpdated: xc_search_text_options_updated(result) == 1, indexFallback: xc_search_index_fallback(result) == 1,
             generation: searchGeneration(generation), generationUpdated: xc_search_generation_updated(result) == 1,
-            keyKind: CoreSearchKeyKind(rawValue: xc_search_key_kind(result))!)
+            keyKind: CoreSearchKeyKind(rawValue: xc_search_key_kind(result))!,
+            keyedInterval: xc_search_keyed_interval_first(result).map {CoreKeyedSearchInterval(first:String(cString:$0),last:String(cString:xc_search_keyed_interval_last(result)!))})
     }
     static func searchBatch(_ batch: OpaquePointer) -> RenderedSearchBatch {
         var info = xc_search_batch_info(), scope = xc_search_scope_info(), text = xc_search_text_info()

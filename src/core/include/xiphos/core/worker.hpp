@@ -199,7 +199,8 @@ public:
   std::future<bool> can_transmit_sync(bool received_navigation);
   std::future<RecoverySnapshot> read_recovery(std::string path);
   std::future<RecoverySnapshot> save_recovery(std::string path,std::optional<std::string> expected,RecoverySnapshot snapshot);
-  std::future<DecoratedReading> read_decorated_reading(StudyTab tab,std::string bookmarks,std::string annotations,std::string module,std::string reference,bool chapter,DisplayOptions display={});
+  std::future<ParallelChapter> read_decorated_parallel(StudyTab tab,std::string bookmarks,std::string annotations);
+  std::future<DecoratedReading> read_decorated_reading(StudyTab tab,std::string bookmarks,std::string annotations,std::string module,std::string reference,bool chapter,DisplayOptions display={},bool commentary=false);
   std::future<VerseDecoration> read_verse_decoration(StudyTab tab,std::string bookmarks,std::string annotations,std::string module,std::string reference,bool current,bool annotation_highlight,bool verse_highlight);
   std::future<LibraryOrganizationSnapshot> read_library_organization(std::string path);
   std::future<LibraryOrganizationSnapshot> set_library_organization(std::string path,std::optional<std::string> revision,LibraryOrganizationEntry entry);
@@ -282,6 +283,7 @@ public:
   std::future<EntryHtmlSource> capture_entry_html(StudyTab tab,std::string module,std::string reference,HtmlSourceLimits limits = {});
   std::future<Entry> read_entry_snapshot(StudyTab tab,std::string module,std::string reference);
   std::future<Entry> read_commentary_entry_snapshot(StudyTab tab,std::string module,std::string reference);
+  std::future<StudyPassage> select_commentary(StudyTab tab,std::string commentary);
   std::future<StudyPassage> read_passage(StudyTab tab, std::string module, std::string commentary, std::string reference);
   std::future<StudyPassage> visit_passage(StudyTab tab, std::string module, std::string commentary, std::string reference);
   std::future<StudyPassage> visit_linked_passage(StudyTab tab, std::string bible, std::string commentary, PassageLink target, bool commentary_visible = true);

@@ -45,6 +45,33 @@ computed theme styles, missing-source fallback, clearing and window restoration.
 Disposable live checks include Hebrew/Arabic reading, single/chapter modes,
 expandable notes and real quit/restart with selected sources.
 
-This is a main-reading presentation slice. Commentary-side-pane, dictionary and
-parallel annotation styling, all legacy color/theme forms, complete corpus/canon
-and physical Windows/Fedora acceptance remain open. No full feature-parity claim.
+Dictionary annotations, all legacy color/theme forms, complete corpus/canon and
+physical Windows/Fedora acceptance remain open. No full feature-parity claim.
+
+## Commentary and parallel styling — 2026-11-03
+
+The additive decorated-commentary service uses the existing sparse commentary
+chapter renderer, including section ordinals, headings, numbering and anchors.
+Single-entry output includes its shared heading HTML. It reuses the same generic/
+module-specific saved-note and first-tag precedence as main reading.
+
+Decorated parallel reads use the tab's committed selection/options without
+changing selection, navigation, history or source files. Profiles are read once;
+each ready column composes tags/notes against its actual module/reference.
+Duplicate columns and unavailable statuses remain intact. Added HTML counts toward
+the selection's original aggregate snapshot limit; insufficient budget publishes
+no partial matrix and preserves committed selection. Diagnostics are owned by the
+existing parallel result, with additive C getters.
+
+Native source changes/reloads, parallel navigation and session restore reapply
+these shared snapshots. Missing sources use fresh undecorated content plus a
+notice; clearing sources removes side/parallel styles too. Source-cell links and
+chapter anchors retain their original routing. Choosing a commentary now commits
+the active reading pair in the shared session without adding/moving history;
+read-only passage previews retain their existing semantics. A restart test exposed
+and verifies this persistence correction.
+
+Checks cover sparse commentary notes/anchors, ordered duplicate/unavailable
+parallel columns, generic notes/tag precedence, failure/clear/restart behavior,
+output-budget atomicity and unchanged main history. Broader visual/corpus and
+physical-host acceptance remains separate.

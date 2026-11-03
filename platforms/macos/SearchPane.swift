@@ -45,8 +45,8 @@ struct SearchPane: View {
                 Toggle("Include dictionaries and books", isOn: Binding(get: { model.mixedContent }, set: { model.setMixedContent($0) }))
                     .accessibilityLabel("Include dictionaries and books")
                 if model.mixedContent {
-                    Text("Use All text or Last results.").font(.caption).foregroundStyle(.secondary)
-                        .help("Choose Phrase, Words, Regular expression, Multiword or Indexed for dictionary and book searches.")
+                    Text("All entries, entry interval, or last results.").font(.caption).foregroundStyle(.secondary)
+                        .help("Text and attribute modes work with dictionary and book entries. Verse bounds apply only to Bibles and commentaries.")
                 }
                 Toggle("Search multiple modules", isOn: $model.searchMultipleModules)
                 if model.searchMultipleModules {
@@ -93,6 +93,11 @@ struct SearchPane: View {
                         ForEach(model.boundsModules) { Text($0.id).tag($0.id) }
                     }.accessibilityLabel("Search bounds module")
                     TextField("John 1:1 - John 1:3", text: $model.bounds).accessibilityLabel("Search bounds")
+                }
+                if model.scopeChoice == .keyed {
+                    TextField("Exact first entry key",text:$model.firstKey).accessibilityLabel("First entry key")
+                    TextField("Exact last entry key",text:$model.lastKey).accessibilityLabel("Last entry key")
+                    Text("Inclusive; exact first and last keys.").font(.caption)
                 }
                 Toggle("Case sensitive", isOn: $model.caseSensitive)
                 Toggle("Set annotation options", isOn: $model.setAnnotationOptions)

@@ -131,6 +131,7 @@ public:
   EntryHtmlSource capture_entry_html(const std::string &module,const std::string &reference,const HtmlSourceLimits &limits = {});
   Entry read_entry_snapshot(const std::string &module,const std::string &reference);
   Entry read_commentary_entry_snapshot(const std::string &module,const std::string &reference);
+  StudyPassage select_commentary(const std::string &commentary); // Changes current pair, preserves history.
   StudyPassage read_passage(const std::string &module, const std::string &commentary,
                             const std::string &reference);
   StudyPassage visit_passage(const std::string &module, const std::string &commentary,

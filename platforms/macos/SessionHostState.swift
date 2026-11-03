@@ -17,8 +17,10 @@ struct SessionSearchDraft: Codable, Sendable {
     var mode: Int32, caseSensitive: Bool, annotationOptions: Bool
     var strongs: Bool, morphology: Bool, footnotes: Bool
     var scope: String, boundsModule: String, bounds: String
+    var firstKey: String?, lastKey: String?
     var mixedContent: Bool? // Missing in older version1 sessions; default remains verse-only.
     @MainActor init(_ search: SearchModel) {
+        firstKey=search.firstKey;lastKey=search.lastKey
         mixedContent = search.mixedContent
         module = search.module; modules = search.selectedModules; multiple = search.searchMultipleModules
         expression = search.expression; mode = search.mode.rawValue; caseSensitive = search.caseSensitive
@@ -35,6 +37,7 @@ struct SessionSearchDraft: Codable, Sendable {
         // A last-results scope cannot survive the intentionally discarded results.
         search.scopeChoice = scope == SearchScopeChoice.last.rawValue ? .all : SearchScopeChoice(rawValue: scope) ?? .all
         search.boundsModule = boundsModule; search.bounds = bounds
+        search.firstKey=firstKey ?? "";search.lastKey=lastKey ?? ""
     }
 }
 private struct SessionHostEnvelope: Codable {
@@ -79,6 +82,7 @@ struct SessionHostState: Codable, Sendable {
         guard state.version == 1, state.search.modules.count <= 32,
               CoreSearchMode(rawValue: state.search.mode) != nil,
               SearchScopeChoice(rawValue: state.search.scope) != nil,
+              [state.search.firstKey,state.search.lastKey].allSatisfy({ $0.map {$0.utf8.count<=4096 && !$0.utf8.contains(0)} ?? true }),
               state.frame?.valid != false,state.readingSources?.valid != false else {
             throw SessionHostError(message: "This saved window layout is unsupported.")
         }

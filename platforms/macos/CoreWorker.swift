@@ -347,11 +347,12 @@ actor CoreWorker {
                        maxResults: Int = 10000, maxReferenceBytes: Int = 8 * 1024 * 1024,
                        range: CoreSearchRange? = nil, withinLastResults: Bool = false,
                        textOptions: CoreSearchTextOptions? = nil, returnCancelledResults: Bool = false,
-                       mixedContent: Bool = false, onProgress: (@Sendable (CoreSearchProgress) async -> Void)? = nil) async throws -> RenderedSearchBatch {
-        let inputs = modules + [expression] + (range.map { [$0.module, $0.expression] } ?? [])
+                       mixedContent: Bool = false, keyedInterval: CoreKeyedSearchInterval? = nil, onProgress: (@Sendable (CoreSearchProgress) async -> Void)? = nil) async throws -> RenderedSearchBatch {
+        let inputs = modules + [expression] + (range.map { [$0.module, $0.expression] } ?? []) + (keyedInterval.map {[$0.first,$0.last]} ?? [])
         guard (1...32).contains(modules.count), !inputs.contains(where: { $0.utf8.contains(0) }),
               maxResultsPerModule > 0, maxReferenceBytesPerModule > 0, maxResults > 0, maxReferenceBytes > 0,
-              !(withinLastResults && range != nil) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+              !(withinLastResults && range != nil),
+              keyedInterval == nil || (mixedContent && range == nil && !withinLastResults) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         let handle = try worker()
         var total = xc_search_batch_limits(max_results: maxResults, max_reference_bytes: maxReferenceBytes)
         let (status, request) = withModuleStrings(modules) { ids in
@@ -359,7 +360,9 @@ actor CoreWorker {
                 maxResults: maxResultsPerModule, maxReferenceBytes: maxReferenceBytesPerModule,
                 range: range, withinLastResults: withinLastResults, textOptions: textOptions) { query in
                     var request: OpaquePointer?
-                    let status = mixedContent ? xc_worker_search_mixed_modules(handle, tab, ids.baseAddress, ids.count, query, &total, &request) : xc_worker_search_modules(handle, tab, ids.baseAddress, ids.count, query, &total, &request)
+                    let status: xc_status
+                    if let keyedInterval {status=keyedInterval.first.withCString {first in keyedInterval.last.withCString {last in xc_worker_search_mixed_modules_interval(handle,tab,ids.baseAddress,ids.count,query,&total,first,last,&request)}}}
+                    else {status = mixedContent ? xc_worker_search_mixed_modules(handle, tab, ids.baseAddress, ids.count, query, &total, &request) : xc_worker_search_modules(handle, tab, ids.baseAddress, ids.count, query, &total, &request)}
                     return (status, request)
                 }
         }
@@ -1390,6 +1393,11 @@ actor CoreWorker {
                                 lexical: CoreValues.lexicalLayout { xc_passage_lexical_layout(result, $0) }), commentary: commentary,
             anchor: xc_passage_anchor(result).map { RenderedPassageAnchor(module: String(cString: xc_passage_anchor_module(result)!), text: String(cString: $0)) })
     }
+    func selectCommentary(tab: UInt64,module: String) async throws -> RenderedStudyPassage {
+        let strings=SessionCStrings(),name=try strings.copy(module);var request: OpaquePointer?;let handle=try worker()
+        let status=withExtendedLifetime(strings) {xc_worker_select_commentary(handle,tab,name,&request)}
+        return try await passage(status,request)
+    }
     func studyPassage(tab: UInt64, module: String, commentary: String, reference: String, record: Bool = true) async throws -> RenderedStudyPassage {
         guard ![module, commentary, reference].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?
@@ -2098,6 +2106,8 @@ struct CoreParallelRow: Sendable { let reference: String; let cells: [CoreParall
 struct CoreParallelChapter: Sendable {
     let reference: String, title: String
     let columns: [CoreParallelColumn], rows: [CoreParallelRow]
+    var annotationIncomplete=false
+    var invalidColors=0
 }
 extension CoreWorker {
     private func parallelChapterValue(_ status: xc_status,_ request: OpaquePointer?) async throws -> CoreParallelChapter {
@@ -2106,7 +2116,13 @@ extension CoreWorker {
         defer { xc_parallel_chapter_release(value) }
         let columns=(0..<xc_parallel_column_count(value)).map { c in CoreParallelColumn(requested:String(cString:xc_parallel_column_requested(value,c)!),module:xc_parallel_column_module(value,c).map { String(cString:$0) } ?? "",ready:xc_parallel_column_state(value,c)==XC_PARALLEL_READY,rtl:xc_parallel_column_is_rtl(value,c) != 0) }
         let rows=(0..<xc_parallel_row_count(value)).map { r in CoreParallelRow(reference:String(cString:xc_parallel_row_reference(value,r)!),cells:columns.indices.map { c in CoreParallelCell(reference:xc_parallel_cell_reference(value,r,c).map { String(cString:$0) } ?? "",html:xc_parallel_cell_html(value,r,c).map { String(cString:$0) } ?? "",headings:(0..<xc_parallel_cell_heading_count(value,r,c)).map { String(cString:xc_parallel_cell_heading(value,r,c,$0)!) }) }) }
-        return CoreParallelChapter(reference:String(cString:xc_parallel_reference(value)!),title:String(cString:xc_parallel_title(value)!),columns:columns,rows:rows)
+        return CoreParallelChapter(reference:String(cString:xc_parallel_reference(value)!),title:String(cString:xc_parallel_title(value)!),columns:columns,rows:rows,annotationIncomplete:xc_parallel_annotations_incomplete(value) != 0,invalidColors:xc_parallel_invalid_colors(value))
+    }
+    func decoratedParallel(tab: UInt64,sources: CoreReadingSources) async throws -> CoreParallelChapter {
+        let strings=SessionCStrings(),marks=try sources.bookmarks.map {try strings.copy($0)},notes=try sources.annotations.map {try strings.copy($0)}
+        var request: OpaquePointer?;let handle=try worker()
+        let status=withExtendedLifetime(strings) {xc_worker_read_decorated_parallel(handle,tab,marks,notes,&request)}
+        return try await parallelChapterValue(status,request)
     }
     func visitParallelProfile(tab: UInt64,path: String,key: String?,reference: String,flags: UInt32) async throws -> CoreParallelChapter {
         let strings=SessionCStrings();let file=try strings.copy(path),selected=try key.map { try strings.copy($0) },ref=try strings.copy(reference)
@@ -2172,10 +2188,10 @@ struct CoreReadingSources: Codable,Sendable,Equatable {
 }
 struct CoreDecoratedReading: Sendable {let html: String,css: String;let incomplete: Bool;let invalidColors: Int}
 extension CoreWorker {
-    func decoratedReading(tab: UInt64,sources: CoreReadingSources,module: String,reference: String,chapter: Bool,numbers: Bool,highlight: Bool) async throws -> CoreDecoratedReading {
+    func decoratedReading(tab: UInt64,sources: CoreReadingSources,module: String,reference: String,chapter: Bool,numbers: Bool,highlight: Bool,commentary: Bool=false) async throws -> CoreDecoratedReading {
         let strings=SessionCStrings(),marks=try sources.bookmarks.map {try strings.copy($0)},notes=try sources.annotations.map {try strings.copy($0)},name=try strings.copy(module),ref=try strings.copy(reference)
         var request: OpaquePointer?;let handle=try worker()
-        let status=withExtendedLifetime(strings) {xc_worker_read_decorated_reading(handle,tab,marks,notes,name,ref,chapter ? 1 : 0,numbers ? 1 : 0,highlight ? 1 : 0,&request)}
+        let status=withExtendedLifetime(strings) {commentary ? xc_worker_read_decorated_commentary(handle,tab,marks,notes,name,ref,chapter ? 1 : 0,numbers ? 1 : 0,highlight ? 1 : 0,&request) : xc_worker_read_decorated_reading(handle,tab,marks,notes,name,ref,chapter ? 1 : 0,numbers ? 1 : 0,highlight ? 1 : 0,&request)}
         let completed=try await wait(status,request);defer {xc_request_release(completed)}
         guard let result=xc_request_take_decorated_reading(completed) else {throw CoreError(status:XC_ENGINE_ERROR)};defer {xc_decorated_reading_release(result)}
         return CoreDecoratedReading(html:String(cString:xc_decorated_reading_html(result)!),css:String(cString:xc_decorated_reading_css(result)!),incomplete:xc_decorated_reading_incomplete(result) != 0,invalidColors:xc_decorated_reading_invalid_colors(result))

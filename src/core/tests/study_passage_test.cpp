@@ -71,6 +71,12 @@ int main(int argc, char **argv) {
           "commentary follows normalized Bible passage");
     check(first.commentary->html.find("Notes original commentary café") != std::string::npos,
           "real RawCom rendered snapshot");
+    const auto selected=session.select_commentary("OtherNotes");
+    const auto state=session.capture_state();
+    check(selected.commentary_module=="OtherNotes"&&state.reading->commentary=="OtherNotes"&&state.history.size()==1&&state.history[0].commentary=="Notes"&&state.history_cursor==0,"Commentary choice persists current pair without rewriting history");
+    auto selected_restored=StudySession::from_state(reader,state);check(selected_restored->reading_selection()->commentary=="OtherNotes","Captured commentary choice survives session restoration");
+    fails<std::out_of_range>([&]{session.select_commentary("Missing");},"Missing selection rejects");check(session.reading_selection()->commentary=="OtherNotes","Failed commentary choice preserves current pair");
+    session.select_commentary("Notes");
     session.visit_passage("Text", "OtherNotes", "John 3:17");
     const auto back = session.navigate_passage(-1);
     check(back.commentary_module == "Notes" && back.text.reference == "John 3:16", "back restores recorded pair");

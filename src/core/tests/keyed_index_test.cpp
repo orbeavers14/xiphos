@@ -32,6 +32,8 @@ int main(int argc,char **argv)try{
  for(const auto *id:{"IndexDictionary","IndexBook"}){
   auto raw=reader.search_keyed_module({id,"alpha beta",SearchMode::indexed});
   check(raw.engine_type==-4&&!raw.index_fallback&&raw.executed&&raw.references.size()==2,"Actual keyed raw index syntax uses OR");
+  SearchQuery interval{id,"alpha beta",SearchMode::indexed};const auto endpoint=std::string(id)=="IndexDictionary"?"BETA.KEY":"/Part/Beta";interval.keyed_interval=KeyedSearchInterval{endpoint,endpoint};
+  auto bounded=reader.search_keyed_module(interval);check(bounded.engine_type==-4&&bounded.total_results==1&&bounded.references==std::vector<std::string>{endpoint},"Actual index cannot escape exact inclusive interval");
   auto words=reader.search_keyed_module({id,"alpha beta",SearchMode::words});
   check(words.engine_type==-4&&!words.index_fallback&&words.references.empty(),"Actual keyed indexed Words uses AND");
   auto seed=session.search_mixed_batch({{id,"alpha",SearchMode::indexed}});check(!seed.failures&&seed.copied_results==1,"Indexed mixed generation retains exact key");

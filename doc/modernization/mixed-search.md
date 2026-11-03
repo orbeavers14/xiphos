@@ -20,7 +20,8 @@ common query/options across its ordered module list; C++ supports per-group
 queries as before.
 
 Only verse groups update the tab's complete verse last-results scope and saved
-search annotation choices. Keyed groups reject verse ranges. Lemma/morphology/footnote modes reuse SDK
+search annotation choices. Keyed groups reject verse ranges. Inclusive exact entry intervals are available
+through the [typed interval API](keyed-search.md#inclusive-keyed-intervals--2026-11-03). Lemma/morphology/footnote modes reuse SDK
 entry attributes (see [keyed contract](keyed-search.md#keyed-entry-attributes--2026-11-03)). Indexed mode now uses the
 existing SDK capability probe and explicit multiword-fallback metadata.
 Last-results searches now use complete retained keys from one matching actual
@@ -117,7 +118,7 @@ exact/short byte caps, stale IDs, explicit partial sources, retention capacity,
 keyed resource rejection, cancellation and owned C results after worker teardown.
 Existing verse-only batch/export characterization remains intentional.
 
-Next: keyed interval policies where supported,
+Next: broader keyed interval/corpus acceptance,
 keyed assets and broader SDK/module/canon/RTL/physical-platform acceptance.
 
 ## Actual keyed indexes
@@ -133,3 +134,18 @@ key set before copying counts, sorting, complete retention or export. This
 applies to automatic indexed Words too. Filtering keeps source order, removes
 out-of-scope paths and cannot expand tree parents into unrequested children.
 No verse parser or second search engine is introduced.
+
+## Broader original asset corpus — 2026-11-03
+
+Generated OSIS/ThML dictionary and tree-book fixtures now contain original PNG,
+JPEG, GIF, BMP and static SVG images, with percent-encoded Unicode filenames.
+Shared resource preparation owns all15 preview images. Native production WebKit
+actually decodes all15 under the existing data-only image/content-script policy.
+This validates rendered images, not just MIME hints or string substitution.
+Fixtures contain original tiny artwork, with no downloaded module content.
+
+The existing passive-export policy remains explicitly static PNG only. Exporting
+the mixed-format corpus fails atomically, with no partial document. Existing
+path traversal/remote/file URI and aggregate image-limit rejection remains checked.
+This is broader generated-corpus evidence, not acceptance of every format,
+compressor, module filter, real-world corpus or physical platform.

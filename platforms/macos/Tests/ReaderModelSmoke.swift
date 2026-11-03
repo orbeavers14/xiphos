@@ -782,6 +782,29 @@ struct ReaderModelSmoke {
         other.close(); try await worker.closeTab(tab); try await worker.closeTab(otherTab); await worker.shutdown()
         print("Native ordered batch, failure groups, actual preview/export identity, scope chaining, drafts and lifecycle passed")
     }
+    @MainActor static func assetFormats(root: String) async throws {
+        _ = NSApplication.shared
+        let worker=try CoreWorker(root:root),tab=try await worker.createTab()
+        let batch=try await worker.searchModules(tab:tab,modules:["ImageThML","ImageOSIS","CaptureBook"],expression:"assetformatmarker",mixedContent:true)
+        guard batch.failureCount==0,batch.copiedResultCount==15 else {fatalError("Original asset corpus must search all three keyed sources")}
+        var body=""
+        for group in batch.groups {guard let result=group.result else {fatalError("Missing asset group")};for key in result.references {
+            let entry=try await worker.previewKeyedSearch(tab:tab,module:result.module,key:key,kind:result.keyKind)
+            guard entry.html.contains("data:image/") else {fatalError("Keyed asset preview omitted owned resource")};body += entry.html
+        }}
+        let config=WKWebViewConfiguration();config.websiteDataStore = .nonPersistent();config.defaultWebpagePreferences.allowsContentJavaScript=false
+        let web=WKWebView(frame:NSRect(x:0,y:0,width:600,height:500),configuration:config)
+        let window=NSWindow(contentRect:web.frame,styleMask:.borderless,backing:.buffered,defer:false);window.isReleasedWhenClosed=false;window.contentView=web;defer {window.close()}
+        let coordinator=PassageView.Coordinator();web.navigationDelegate=coordinator
+        coordinator.navigation=web.loadHTMLString(PassageView.documentHTML(html:body,css:"",allowsInlineImages:true),baseURL:nil)
+        let deadline=Date().addingTimeInterval(15)
+        while true {
+            let ready=(try? await withCheckedThrowingContinuation {continuation in web.evaluateJavaScript("document.images.length===15 && Array.from(document.images).every(image => image.complete && image.naturalWidth>0 && image.naturalHeight>0)",in:nil,in:.defaultClient) {result in switch result {case .success(let value):continuation.resume(returning:value as? Bool == true);case .failure(let error):continuation.resume(throwing:error)}}}) ?? false
+            if ready {break};guard Date()<deadline else {fatalError("Production WebKit failed original PNG/JPEG/GIF/BMP/SVG keyed assets")};try await Task.sleep(nanoseconds:10_000_000)
+        }
+        try await worker.closeTab(tab);await worker.shutdown()
+        print("Original PNG/JPEG/GIF/BMP/SVG assets decode through shared keyed previews and production data-only WebKit policy")
+    }
     @MainActor static func readingDecorations(root: String) async throws {
         _ = NSApplication.shared
         let worker=try CoreWorker(root:root),folder=FileManager.default.temporaryDirectory.appendingPathComponent("reading-decorations-"+UUID().uuidString)
@@ -803,15 +826,23 @@ struct ReaderModelSmoke {
             if let web=find(host) {styleOK=(try? await withCheckedThrowingContinuation { continuation in web.evaluateJavaScript("(() => {let tag=document.querySelector('.xc-reading-tag'),note=document.querySelector('.xc-reading-annotation');return !!tag && !!note && getComputedStyle(tag).backgroundColor==='rgb(170, 187, 204)' && getComputedStyle(note).backgroundColor==='rgb(238, 238, 238)' && getComputedStyle(note).color==='rgb(17, 34, 51)';})()",in:nil,in:.defaultClient) {result in switch result {case .success(let value):continuation.resume(returning:value as? Bool == true);case .failure(let error):continuation.resume(throwing:error)}}}) ?? false}
             guard Date()<deadline else {fatalError("Native production WebKit did not apply first-tag/inner-note theme styling")};if !styleOK {try await Task.sleep(nanoseconds:10_000_000)}
         }
+        model.chooseCommentary("Notes");try await idle(model)
+        guard model.commentaryDecoration?.html.contains("xc-personal-note")==true else {fatalError("Side commentary misses generic saved note")}
+        model.setCommentaryChapterMode(true);try await idle(model)
+        guard model.commentaryDecoration?.html.contains("xc-personal-note")==true,model.commentaryRenderedAnchor != nil else {fatalError("Sparse commentary decoration lost note or anchor")}
+        let sets=folder.appendingPathComponent("parallel.xml").path
+        _ = try await worker.editParallelProfile(tab:model.sessionTab!,path:sets,revision:nil,action:0,key:"Style",modules:["Text","Notes","Text","Missing"],makeCurrent:true)
+        model.openParallel(path:sets,key:"Style");try await idle(model)
+        guard let parallel=model.parallelChapter,parallel.columns.count==4,parallel.rows[15].cells.prefix(3).allSatisfy({$0.html.contains("xc-personal-note")}),parallel.rows[15].cells[0].html.contains("#aabbcc") else {fatalError("Native parallel notes lose actual source, duplicate columns or tag priority")}
         model.showChapter=true;model.refreshDisplay();try await idle(model)
         guard model.html.contains("id=\"verse-16\""),model.renderedAnchor=="verse-16",model.html.contains("xc-personal-note"),model.reference=="Unsubmitted reading draft" else {fatalError("Decorated chapter lost anchors or draft")}
         try FileManager.default.removeItem(atPath:marks);model.refreshDisplay();try await idle(model)
-        guard !model.html.contains("xc-reading-decoration"),!model.readingSourceNotice.isEmpty,model.renderedAnchor=="verse-16" else {fatalError("Missing source retained stale styling or blocked reading")}
+        guard !model.html.contains("xc-reading-decoration"),!model.readingSourceNotice.isEmpty,model.commentaryDecoration==nil,!(model.parallelChapter?.rows[15].cells[0].html.contains("xc-personal-note") ?? true),model.renderedAnchor=="verse-16" else {fatalError("Missing source retained stale styling or blocked reading")}
         try xml.replacingOccurrences(of:"#aabbcc",with:"#123456;position:fixed").write(toFile:marks,atomically:true,encoding:.utf8);model.refreshDisplay();try await idle(model)
         guard model.readingSourceNotice.contains("Invalid colors"),!model.html.contains("position:fixed"),model.html.contains("xc-reading-annotation") else {fatalError("Malformed color injected CSS or lost annotation priority")}
         try xml.write(toFile:marks,atomically:true,encoding:.utf8);model.refreshDisplay();try await idle(model);try await owner.save()
         let restored=NativeSessionController(worker:worker,path:session,showsWindows:false);try await restored.start();let copy=restored.records[0].model
-        guard copy.readingSources==model.readingSources,copy.html.contains("background-color:#aabbcc"),copy.reference=="Unsubmitted reading draft" else {fatalError("Explicit reading source paths/styles did not restore with the window")}
+        guard copy.readingSources==model.readingSources,copy.html.contains("background-color:#aabbcc"),copy.reference=="Unsubmitted reading draft",copy.commentaryDecoration?.html.contains("xc-personal-note")==true,copy.parallelChapter?.rows[15].cells[0].html.contains("xc-personal-note")==true else {fatalError("Explicit reading source restoration: paths=\(copy.readingSources==model.readingSources) main=\(copy.html.contains("background-color:#aabbcc")) draft=\(copy.reference=="Unsubmitted reading draft") commentary=\(copy.commentarySelection):\(copy.commentaryDecoration?.html.contains("xc-personal-note") ?? false) parallel=\(copy.parallelChapter?.rows[15].cells[0].html.contains("xc-personal-note") ?? false)")}
         copy.applyReadingSources(CoreReadingSources());try await idle(copy);guard !copy.html.contains("xc-reading-decoration"),copy.readingSourceNotice.isEmpty else {fatalError("Clearing sources retained stale decoration")}
         for record in owner.records+restored.records {record.model.close()};await worker.shutdown()
         print("Native explicit reading sources, theme precedence, per-verse anchors, invalid/missing-source handling and restart state passed")
@@ -953,14 +984,16 @@ struct ReaderModelSmoke {
         search.scopeChoice = .all
         search.searchMultipleModules = false; search.module = "CaptureBook"; search.expression = "signal"; search.search(); try await searchIdle(search)
         guard search.hits.count == 1, search.hits[0].keyKind == .generalBook, search.message.contains("1 match returned") else { fatalError("Single keyed query keeps typed generation and singular status") }
+        search.scopeChoice = .keyed;search.firstKey="/Original";search.lastKey="/Original";search.search();try await searchIdle(search)
+        guard search.hits.count==1,search.batchResult?.groups[0].result?.keyedInterval==CoreKeyedSearchInterval(first:"/Original",last:"/Original") else {fatalError("Native entry interval uses shared exact source endpoints")}
         let captured = search.previewSource
         let restoredTab = try await worker.createTab(), restored = SearchModel()
         restored.configure(worker:worker,tab:restoredTab,modules:try await worker.modules(),preferred:"Text")
         let encoded = try JSONEncoder().encode(SessionSearchDraft(search))
         let draft = try JSONDecoder().decode(SessionSearchDraft.self,from:encoded);draft.apply(to:restored)
-        guard restored.mixedContent, restored.module == "CaptureBook", restored.modules.contains(where: { $0.id == "CaptureBook" }), restored.expression == "signal" else { fatalError("Mixed search source choice survives native draft restoration") }
+        guard restored.mixedContent, restored.module == "CaptureBook", restored.modules.contains(where: { $0.id == "CaptureBook" }), restored.expression == "signal",restored.scopeChoice == .keyed,restored.firstKey == "/Original",restored.lastKey == "/Original" else { fatalError("Mixed search source choice survives native draft restoration") }
         var legacy = try JSONSerialization.jsonObject(with:encoded) as! [String:Any]
-        legacy.removeValue(forKey:"mixedContent");legacy["module"] = "Text";legacy["modules"] = ["Text"]
+        legacy.removeValue(forKey:"firstKey");legacy.removeValue(forKey:"lastKey");legacy["scope"]=SearchScopeChoice.all.rawValue;legacy.removeValue(forKey:"mixedContent");legacy["module"] = "Text";legacy["modules"] = ["Text"]
         let oldDraft = try JSONDecoder().decode(SessionSearchDraft.self,from:JSONSerialization.data(withJSONObject:legacy));oldDraft.apply(to:restored)
         guard !restored.mixedContent, restored.module == "Text", !restored.modules.contains(where: { $0.id == "CaptureBook" }) else { fatalError("Older drafts without mixed flag remain verse-only") }
         first.followSearchLink("sword://KeyDictionary/ALPHA",hit:book);try await idle(first)
@@ -2233,6 +2266,7 @@ struct ReaderModelSmoke {
             print("Native environment locale startup/click checks passed")
             return
         }
+        if CommandLine.arguments.count == 3,CommandLine.arguments[1] == "--asset-formats" {try await assetFormats(root:CommandLine.arguments[2]);return}
         if CommandLine.arguments.count == 3,CommandLine.arguments[1] == "--reading-decorations" {try await readingDecorations(root:CommandLine.arguments[2]);return}
         if CommandLine.arguments.count == 3,CommandLine.arguments[1] == "--parallel-reading" { try await parallelReading(root:CommandLine.arguments[2]);return }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--library-organization" {

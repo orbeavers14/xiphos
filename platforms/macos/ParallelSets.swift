@@ -128,6 +128,7 @@ struct NativeParallelChapterPane: View {
                 Text("Parallel Reading — "+chapter.title).font(.headline).lineLimit(2)
                 HStack { Button("Previous") { model.navigateParallel(-1) };Button("Next") { model.navigateParallel(1) };Spacer(minLength:0);Button("Close") { model.closeParallel() } }
             }.padding(8)
+            if !model.parallelSourceNotice.isEmpty {Text(model.parallelSourceNotice).font(.caption).foregroundStyle(.secondary)}
             PassageView(html:table,css:".xc-parallel {border-collapse:collapse;min-width:100%;} .xc-parallel td,.xc-parallel th {vertical-align:top;padding:8px;border:1px solid GrayText;min-width:160px;} .xc-parallel thead th {position:sticky;top:0;background:Canvas;} .xc-parallel-heading {font-weight:bold;}",anchor:nil,onScrollFailure:{model.message=$0},onLink:{model.followLink($0)},onContextLink:{ uri,module,reference in model.followLink(uri,currentModule:module,currentReference:reference) })
         }.frame(minWidth:230,minHeight:220).disabled(model.isBusy)
     }

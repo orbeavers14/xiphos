@@ -63,6 +63,15 @@ int main(int argc,char **argv)try{
    check(result.key_kind==(id.find("Dictionary")!=id.npos?SearchKeyKind::dictionary:SearchKeyKind::general_book),"Attribute key family preserved");
   }
   for(const auto &id:ids){
+   const auto first=id.find("Dictionary")!=id.npos?"JOHN.3.16":"/Part/Entry Ω";
+   SearchQuery interval{id,"Alpha",SearchMode::footnote};interval.keyed_interval=KeyedSearchInterval{first,first};
+   auto bounded=reader.search_keyed_module(interval);check(bounded.total_results==1&&bounded.references==std::vector<std::string>{first},"Inclusive singleton attribute interval keeps exact opaque key");
+   SearchQuery ordered{id,"Original",SearchMode::phrase};ordered.keyed_interval=KeyedSearchInterval{id.find("Dictionary")!=id.npos?"ALPHA.KEY":first,id.find("Dictionary")!=id.npos?first:"/Part/Other"};
+   auto two=reader.search_keyed_module(ordered);check(two.references.size()==2&&two.total_results==2,"Multi-entry interval includes both endpoints in SDK order");
+   auto batch=session.search_mixed_batch({interval});check(!batch.failures&&batch.copied_results==1,"Interval result retained by mixed session");
+   SearchAllTextExportRequest exported;exported.generation=batch.generation.id;exported.include_search_context=true;
+   auto text=session.export_search_all_text(exported);check(text.status==SearchExportStatus::ok&&text.text.find("keyed interval: "+std::string(first))!=text.text.npos,"Retained export discloses interval endpoints");
+   for(auto endpoints:{KeyedSearchInterval{first,"missing"},KeyedSearchInterval{"missing",first},KeyedSearchInterval{first,id.find("Dictionary")!=id.npos?"ALPHA.KEY":"/Part"}}){interval.keyed_interval=endpoints;bool rejected=false;try{reader.search_keyed_module(interval);}catch(const std::invalid_argument &){rejected=true;}check(rejected,"Missing/reversed endpoints never broaden keyed search");}
    auto seed=session.search_mixed_batch({{id,"G140",SearchMode::lemma}});
    check(!seed.failures&&seed.copied_results==1,"Mixed attribute seed");
    SearchQuery query{id,"Alpha",SearchMode::footnote};query.within_last_results=true;
@@ -83,7 +92,12 @@ int main(int argc,char **argv)try{
  check(xc_worker_search_keyed_module(worker,tab,"AttrBookOSIS",expression.c_str(),&options,&request)==XC_OK,"C attribute admission");
  expression="changed";options.mode=XC_SEARCH_FOOTNOTE;
  check(wait(request)==XC_OK,"C attribute execution");auto *owned=xc_request_take_search(request);
- check(owned&&!xc_request_take_search(request),"C attribute take once");xc_request_release(request);xc_worker_close(worker);
+ check(owned&&!xc_request_take_search(request),"C attribute take once");xc_request_release(request);
+ const char *sources[]={"AttrDictionaryZipOSIS"};xc_search_query scoped{};scoped.expression="Alpha";scoped.scope=XC_SEARCH_SCOPE_ALL;scoped.options=&options;
+ std::string first="JOHN.3.16";check(xc_worker_search_mixed_modules_interval(worker,tab,sources,1,&scoped,nullptr,first.c_str(),first.c_str(),&request)==XC_OK,"C interval admission");first="changed";
+ check(wait(request)==XC_OK,"C interval execution");auto *batch=xc_request_take_search_batch(request);xc_request_release(request);xc_worker_close(worker);
+ const auto *group=xc_search_batch_group_result(batch,0);xc_search_info bounded{};
+ check(group&&xc_search_get_info(group,&bounded)==XC_OK&&bounded.result_count==1&&std::string(xc_search_keyed_interval_first(group))=="JOHN.3.16"&&std::string(xc_search_keyed_interval_last(group))=="JOHN.3.16","C copied interval metadata/result outlives input and worker");xc_search_batch_release(batch);
  xc_search_info info{};check(xc_search_get_info(owned,&info)==XC_OK&&info.result_count==1&&xc_search_key_kind(owned)==2&&std::string(xc_search_reference(owned,0))=="/Part/Entry Ω","Copied attribute input/result survives worker teardown");
  xc_search_release(owned);
  check(bytes(root/"data")==original,"Attribute searches never modify source data");
