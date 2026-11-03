@@ -189,3 +189,13 @@ cancelled by the current run model/canonical serializer. Such documents stay in
 Source, preserving their original markup instead of silently changing appearance.
 Checks cover inherited trait resets, Unicode/color composition, round trips,
 unsupported cases and the native C/Swift editor bridge.
+
+### Inline CSS text decoration — 2026-11-03
+
+Rich conversion accepts `text-decoration: underline`, `line-through`, their
+combination and `none`. Decorations compose with the existing font/color runs.
+As in HTML, `none` does not cancel decorations propagated from an ancestor;
+later declarations on the same span replace that span's local decoration.
+Canonical `<u>`/`<s>` markup retains the result. Unknown decoration styles,
+colors, overline, duplicate tokens and priority qualifiers preserve Source by
+rejecting rich conversion. No new flags, dependency or frontend formatter.
