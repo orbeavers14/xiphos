@@ -30,4 +30,14 @@ EntryHtmlSource StudySession::capture_search_entry_html(const std::string &modul
  const auto bytes=module.size()+key.size()+entry.html.size();return {module,key,std::move(entry.html),{},false,false,bytes};
 }
 
+DictionaryEntry StudySession::preview_keyed_search(const std::string &module,const std::string &key,SearchKeyKind kind,std::size_t maximum){
+ if(kind!=SearchKeyKind::dictionary&&kind!=SearchKeyKind::general_book)throw std::invalid_argument("Expected keyed search preview");
+ auto source=capture_search_entry_html(module,key,kind,{maximum});
+ auto prepared=prepare_book_inline_images(source.html,[&](const std::string &uri,std::size_t bytes){
+   auto image=reader_.read_search_inline_image(module,uri,bytes);
+   return BookImageResource{{{module,{},{},{},{}},{uri,{},image.media_type}},std::move(image.data)};
+ },{64,maximum_book_image_bytes,maximum});
+ return {module,key,std::move(prepared.html)};
+}
+
 }

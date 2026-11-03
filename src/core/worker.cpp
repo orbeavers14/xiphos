@@ -183,7 +183,7 @@ struct StudyWorker::Impl {
       if(const auto *image=std::get_if<VerseImageLink>(&target)){
         if(current_reference.empty()||current_reference.find('\0')!=std::string::npos)
           throw std::invalid_argument("Image command requires committed reading context");
-        return reader.read_verse_image_link(image->module,image->uri);
+        return reader.read_search_image_link(image->module,image->uri);
       }
       return note_target(tab, std::get<StudyNoteLink>(target));
     }
@@ -244,7 +244,11 @@ std::future<LibraryCatalog> StudyWorker::local_library_catalog(std::string root)
 std::future<std::vector<Module>> StudyWorker::modules() {
   return impl_->submit([](Impl::State &s) { return s.reader.modules(); });
 }
-std::future<DictionaryEntry> StudyWorker::preview_keyed_search(StudyTab tab,std::string module,std::string key,SearchKeyKind kind,std::size_t maximum){return impl_->submit([tab,module=std::move(module),key=std::move(key),kind,maximum](Impl::State &s){(void)s.tab(tab);return s.reader.preview_keyed_search(module,key,kind,maximum);});}
+std::future<DictionaryEntry> StudyWorker::preview_keyed_search(StudyTab tab,std::string module,std::string key,SearchKeyKind kind,std::size_t maximum){
+  return impl_->submit([tab,module=std::move(module),key=std::move(key),kind,maximum](Impl::State &s){
+    return s.tab(tab).preview_keyed_search(module,key,kind,maximum);
+  });
+}
 StudySearch StudyWorker::search_keyed_module_task(StudyTab tab,SearchQuery query,SearchLimits limits){
  StudySearch task{std::make_shared<SearchControl>(),{}};task.result=impl_->submit([tab,query=std::move(query),limits,control=task.control](Impl::State &s){try{(void)s.tab(tab);return s.reader.search_keyed_module(query,limits,control);}catch(...){detail::SearchControlAccess::fail_if_queued(control);throw;}},task.control);return task;
 }

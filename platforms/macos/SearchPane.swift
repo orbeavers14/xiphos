@@ -10,7 +10,7 @@ struct SearchPane: View {
     let hostBusy: Bool
     let canRead: Bool
     let onRead: (SearchHit) -> Void
-    let onLink: (String, String, String) -> Void
+    let onLink: (String, SearchHit) -> Void
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             VStack(alignment: .leading, spacing: 6) {
@@ -175,9 +175,8 @@ struct SearchPane: View {
                 if let entry = model.preview, let source = model.previewSource {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("\(source.module) • \(entry.reference)").font(.caption)
-                        if source.keyKind != .verse { Text("Open this result to follow its links.").font(.caption).foregroundStyle(.secondary) }
                         PassageView(html: entry.headingHTML + entry.html, css: entry.lexical.css, anchor: nil,
-                            onScrollFailure: { _ in }, onLink: { if source.keyKind == .verse { onLink($0, source.module, entry.reference) } })
+                            onScrollFailure: { _ in }, onLink: { onLink($0, source) }, allowsInlineImages: source.keyKind != .verse)
                             .accessibilityLabel("Search result preview")
                     }.frame(minHeight: 100)
                 } else if model.isPreviewLoading { ProgressView("Loading preview…").frame(minHeight: 100) }

@@ -127,6 +127,7 @@ public:
   // Same renderer/cleanup/notes as live reads, no history or selection changes.
   // Owned source only: no HTML document/assets/output-size contract implied.
   // Bounded body/CSS source; no profile discovery publication or output writes.
+  DictionaryEntry preview_keyed_search(const std::string &module,const std::string &key,SearchKeyKind kind,std::size_t maximum_html_bytes);
   EntryHtmlSource capture_entry_html(const std::string &module,const std::string &reference,const HtmlSourceLimits &limits = {});
   Entry read_entry_snapshot(const std::string &module,const std::string &reference);
   Entry read_commentary_entry_snapshot(const std::string &module,const std::string &reference);

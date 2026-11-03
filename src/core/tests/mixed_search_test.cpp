@@ -2,6 +2,9 @@
 #include "xiphos/core/worker.hpp"
 #include "xiphos/core/c_api.h"
 #include <rawgenbook.h>
+#include <rawld4.h>
+#include <fstream>
+#include "image_source_test_support.hpp"
 #include <filesystem>
 #include <iostream>
 #include <thread>
@@ -12,6 +15,18 @@ static xc_status wait(xc_request *r){auto end=std::chrono::steady_clock::now()+s
 int main(int argc,char **argv)try{
  check(argc==3,"Scratch and generated source required");fs::path root=argv[1];check(root.filename()=="mixed-search-fixture","Named disposable root only");fs::remove_all(root);fs::copy(fs::path(argv[2]),root,fs::copy_options::recursive);fs::remove(root/"mods.d/modules-conf.cache");
  {sword::RawGenBook writer((root/"data/CaptureBook/entries").string().c_str());writer.setKey("/Image");writer.setEntry("<p>Original assetmarker <img src=\"missing.png\"/></p>");}
+
+ // Original generated dictionary drivers/markup and a non-ASCII book path.
+ for(const auto *id:{"ImageThML","ImageOSIS"}){
+   auto prefix=(root/"data"/id/"entries");fs::create_directories(prefix.parent_path());
+   check(sword::RawLD4::createModule(prefix.string().c_str())==0,"Create RawLD4 compatibility dictionary");
+   {sword::RawLD4 writer(prefix.string().c_str());writer.setKey("שלום");
+    writer.setEntry(std::string(id)=="ImageOSIS"?"<p>compatmarker שלום العربية <figure src=\"café.png\"/></p>":"<p>compatmarker שלום العربية <img src=\"café.png\"/></p>");}
+   {std::ofstream conf(root/"mods.d"/(std::string(id)+".conf"));conf<<'['<<id<<"]\nDataPath=./data/"<<id<<"/entries\nModDrv=RawLD4\nSourceType="<<(std::string(id)=="ImageOSIS"?"OSIS":"ThML")<<"\nEncoding=UTF-8\nDirection=RtoL\n";}
+   {std::ofstream file(prefix.parent_path()/"café.png",std::ios::binary);file<<image_test::preview_png();}
+ }
+ {sword::RawGenBook writer((root/"data/CaptureBook/entries").string().c_str());writer.setKey("/שלום/العربية");writer.setEntry("<p>compatmarker שלום العربية <img src=\"café.png\"/></p>");}
+ {std::ofstream file(root/"data/CaptureBook/café.png",std::ios::binary);file<<image_test::preview_png();}
  {
  Reader reader(root.string());StudySession session(reader);
  SearchQuery first{"Text","Original",SearchMode::phrase};first.range=SearchRange{"Text","John3:16-John3:17"};SearchQuery last{"Notes","Original",SearchMode::phrase};last.range=SearchRange{"Text","John4:1"};
@@ -31,6 +46,20 @@ int main(int argc,char **argv)try{
  all.generation=id;check(session.export_search_all_text(all).status==SearchExportStatus::stale,"Replaced generation cannot export stale mixed rows");
  keyed.range=SearchRange{"Text","John3:16"};auto invalid=session.search_mixed_batch({keyed,{"CaptureBook","signal",SearchMode::lemma}});check(invalid.failures==2,"Keyed groups reject verse scopes and attribute modes");
  auto asset=session.search_mixed_batch({{"CaptureBook","assetmarker",SearchMode::phrase}});html.generation=asset.generation.id;html.include_search_context=false;html.plain_text_max_bytes.reset();html.images.policy=SearchHtmlImagePolicy::embedded_static_png;auto blocked=session.export_search_html(html);check(blocked.status==SearchExportStatus::unsupported_html&&blocked.html.empty()&&!blocked.row_count&&!blocked.images.count,"Keyed resources cannot enter verse image loader or leak partial documents");
+
+ auto compat=session.search_mixed_batch({{"ImageThML","compatmarker",SearchMode::phrase},{"ImageOSIS","compatmarker",SearchMode::phrase},{"CaptureBook","compatmarker",SearchMode::phrase}});
+ check(!compat.failures&&compat.copied_results==3,"RawLD4 ThML/OSIS and Unicode tree compatibility");
+ for(std::size_t group=0;group<3;++group){auto &result=*compat.groups[group].result;check(result.references.size()==1,"One exact Unicode result per source");auto preview=session.preview_keyed_search(result.source_module(),result.references[0],result.key_kind,1024*1024);check(preview.html.find("data:image/png;base64,")!=std::string::npos&&preview.html.find("שלום")!=std::string::npos,"Keyed previews embed owned module images and retain RTL text");}
+ for(const auto *id:{"ImageThML","ImageOSIS","CaptureBook"})for(auto mode:{SearchMode::phrase,SearchMode::words,SearchMode::regular_expression,SearchMode::multiword}){
+   auto result=reader.search_keyed_module({id,"שלום",mode});check(result.executed&&result.references.size()==1,"Unicode text queries work across supported keyed modes and markup");
+ }
+ html.generation=compat.generation.id;html.images.policy=SearchHtmlImagePolicy::reject;
+ check(session.export_search_html(html).status==SearchExportStatus::unsupported_html,"Keyed images remain opt-in");
+ html.images.policy=SearchHtmlImagePolicy::embedded_static_png;
+ auto embedded=session.export_search_html(html);check(embedded.status==SearchExportStatus::ok&&embedded.row_count==3&&embedded.images.count==3&&embedded.images.unique_count==3&&embedded.html.find("data:image/png;base64,")!=std::string::npos,"Mixed keyed exports embed static PNG from each actual module");
+ html.images.max_images=2;auto limitedImages=session.export_search_html(html);check(limitedImages.status==SearchExportStatus::output_limit&&limitedImages.html.empty()&&!limitedImages.row_count,"Aggregate keyed image failure publishes no partial payload");html.images.max_images=maximum_search_export_images;
+ for(const auto *uri:{"../café.png","https://example.invalid/café.png","file:///etc/passwd"}){bool rejected=false;try{reader.read_search_inline_image("ImageThML",uri,1024);}catch(const std::exception &){rejected=true;}check(rejected,"Keyed images cannot escape their source or fetch remote resources");}
+ check(reader.read_search_image_link("ImageThML","passagestudy.jsp?action=showImage&value=caf%C3%A9.png&module=ImageOSIS").module=="ImageThML","Image command declared module cannot rebase actual ownership");
  session.set_search_retention_limits({1,4096});auto capped=session.search_mixed_batch({{"KeyDictionary","signal",SearchMode::phrase}});all.generation=capped.generation.id;check(capped.generation.retention==SearchRetentionStatus::capacity_exceeded&&session.export_search_all_text(all).status==SearchExportStatus::capacity_exceeded,"Typed complete retention enforces aggregate capacity");
  auto legacy=session.search_batch({{"KeyDictionary","signal",SearchMode::phrase}});check(legacy.failures==1&&legacy.groups[0].failure==SearchBatchFailure::invalid_request,"Existing verse-only API retains its boundary");
  }
@@ -38,6 +67,12 @@ int main(int argc,char **argv)try{
  check(xc_worker_visit_dictionary_exact(worker,tab,"KeyDictionary","missing-key",&request)==XC_OK&&wait(request)!=XC_OK,"Exact dictionary activation rejects missing keys");xc_request_release(request);check(xc_worker_dictionary_history(worker,tab,&request)==XC_OK&&wait(request)==XC_OK,"Read unchanged history");auto *history=xc_request_take_dictionary_history(request);check(history&&xc_dictionary_history_count(history)==0,"Failed exact activation does not publish dictionary history");xc_dictionary_history_release(history);xc_request_release(request);
  const auto *dictionary=xc_search_batch_group_result(owned,1);check(xc_worker_visit_dictionary_exact(worker,tab,xc_search_source_module(dictionary),xc_search_reference(dictionary,0),&request)==XC_OK&&wait(request)==XC_OK,"Exact dictionary activation visits canonical result");auto *activated=xc_request_take_dictionary_entry(request);xc_request_release(request);
  check(xc_worker_select_book_document_path(worker,tab,"CaptureBook","/Missing",&request)==XC_OK&&wait(request)!=XC_OK,"Book activation rejects missing canonical path");xc_request_release(request);check(xc_worker_select_book_document_path(worker,tab,"CaptureBook","/Original",&request)==XC_OK&&wait(request)==XC_OK,"Book activation uses canonical search path");auto *document=xc_request_take_book_document(request);xc_request_release(request);xc_worker_close(worker);check(activated&&document&&std::string(xc_dictionary_entry_html(activated)).find("signal")!=std::string::npos,"Activated typed copies survive worker teardown");xc_dictionary_entry_release(activated);xc_book_document_release(document);
+ DictionaryEntry imagePreview;{StudyWorker imagesWorker(root.string());auto imagesTab=imagesWorker.create_tab().get();
+ imagePreview=imagesWorker.preview_keyed_search(imagesTab,"ImageOSIS","שלום",SearchKeyKind::dictionary,1024*1024).get();
+ auto imageLink=imagesWorker.follow_study_link_at(imagesTab,"ImageThML","שלום","passagestudy.jsp?action=showImage&value=caf%C3%A9.png&module=ImageOSIS").get();
+ check(std::get<VerseImageResource>(imageLink).module=="ImageThML"&&std::get<VerseImageResource>(imageLink).data==image_test::preview_png(),"Dictionary image links keep actual source ownership on FIFO worker");
+ auto scripture=imagesWorker.follow_study_link_at(imagesTab,"ImageThML","שלום","sword://Text/John3:17").get();check(std::get<PassageLink>(scripture).module=="Text","Explicit scripture link never parses source dictionary key as verse");
+ imagesWorker.close_tab(imagesTab).get();}check(imagePreview.html.find("data:image/png;base64,")!=std::string::npos,"Prepared keyed image copies survive shutdown");
  xc_search_batch_info info{};check(xc_search_batch_get_info(owned,&info)==XC_OK&&info.group_count==3&&!info.failure_count&&xc_search_key_kind(xc_search_batch_group_result(owned,0))==0&&xc_search_key_kind(xc_search_batch_group_result(owned,1))==1&&xc_search_key_kind(xc_search_batch_group_result(owned,2))==2,"Owned C mixed families survive worker teardown");xc_search_batch_release(owned);
- std::cout<<"Mixed typed batches, retained keys/scopes, partial/stale/bounded text/HTML exports, asset rejection, cancellation and C ownership passed\n";return 0;
+ std::cout<<"Mixed typed batches, retained keys/scopes, partial/stale/bounded text/HTML exports, keyed images/Unicode/RTL, cancellation and C ownership passed\n";return 0;
 }catch(const std::exception &e){std::cerr<<e.what()<<'\n';return 1;}

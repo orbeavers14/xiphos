@@ -334,6 +334,25 @@ BookImageResource Reader::read_book_inline_image(const std::string &id, const st
   if (!module) throw std::out_of_range("Module is not installed");
   return detail::capture_book_image_resource(*module, std::move(command), maximum_bytes);
 }
+VerseImageResource Reader::read_search_image_link(const std::string &id,const std::string &uri,std::size_t maximum_bytes) {
+  detail::validate_search_module_name(id);
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto *module=impl_->manager->getModule(id.c_str());
+  if(!module)throw std::out_of_range("Image source is not installed");
+  if(!detail::supports_verse_search(*module)&&!(dynamic_cast<sword::SWLD *>(module)&&std::string(module->getType())=="Lexicons / Dictionaries"))
+    throw std::invalid_argument("Unsupported study image source");
+  return detail::capture_module_image_resource(*module,uri,maximum_bytes,detail::VerseImageSourceKind::study_command);
+}
+VerseImageResource Reader::read_search_inline_image(const std::string &id,const std::string &source,std::size_t maximum_bytes) {
+  detail::validate_search_module_name(id);
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto *module=impl_->manager->getModule(id.c_str());
+  if(!module)throw std::out_of_range("Image source is not installed");
+  const bool dictionary=dynamic_cast<sword::SWLD *>(module)&&std::string(module->getType())=="Lexicons / Dictionaries";
+  if(!detail::supports_verse_search(*module)&&!dictionary&&!detail::indexed_book(*module))
+    throw std::invalid_argument("Unsupported search image source");
+  return detail::capture_module_image_resource(*module,source,maximum_bytes);
+}
 VerseImageResource Reader::read_verse_inline_image(const std::string &id,const std::string &source,std::size_t maximum_bytes) {
   return verse_image_impl(id,source,maximum_bytes,false);
 }

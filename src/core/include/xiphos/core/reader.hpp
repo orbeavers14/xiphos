@@ -116,8 +116,14 @@ public:
   // Uses the same bounded module-directory file policy and owned byte result.
   BookImageResource read_book_inline_image(const std::string &module, const std::string &source,
                                            std::size_t maximum_bytes = maximum_book_image_bytes);
-  // Exact rendered Bible/commentary image source, resolved under that module's
-  // actual SDK directory. No network reads, key/history/filter changes or decode.
+  // Actual installed search source owns resources; frontend paths are never accepted.
+  // Study commands support verse/dictionary sources; books retain their own handler.
+  VerseImageResource read_search_image_link(const std::string &module,const std::string &uri,
+                                          std::size_t maximum_bytes=maximum_verse_image_bytes);
+  VerseImageResource read_search_inline_image(const std::string &module,const std::string &source,
+                                            std::size_t maximum_bytes);
+  // Exact rendered Bible/commentary image source, resolved under its actual SDK
+  // directory. No network reads, key/history/filter changes or decode.
   VerseImageResource read_verse_inline_image(const std::string &module,const std::string &source,
       std::size_t maximum_bytes=maximum_verse_image_bytes);
   // Actual SDK showImage command: query decoding and source-URI decoding are

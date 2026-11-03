@@ -551,7 +551,10 @@ xc_status xc_worker_search_keyed_module(xc_worker *worker,uint64_t tab,const cha
 int xc_search_key_kind(const xc_search *result);
 /* Exact installed source and canonical returned key; kind1/2 required. No fuzzy
  * dictionary fallback, verse parsing, navigation/history or generation update.
- * HTML cap1..8MiB. Take xc_dictionary_entry: module/key/html for either kind. */
+ * Session-configured HTML includes bounded inline module images using the book
+ * preparation policy; unresolved sources remain subject to host CSP. Raw Reader
+ * previews remain available in C++. HTML cap1..8MiB. Take xc_dictionary_entry:
+ * module/key/prepared html for either kind. */
 xc_status xc_worker_preview_keyed_search(xc_worker *worker,uint64_t tab,const char *module,const char *key,int kind,size_t maximum_html_bytes,xc_request **out);
 /* Explicit bounds use range_module's cloned VerseKey parser and empty default
  * context as legacy set_range does. At most 4096 UTF-8 bytes/64 interval keys;

@@ -823,6 +823,15 @@ struct ReaderModelSmoke {
         legacy.removeValue(forKey:"mixedContent");legacy["module"] = "Text";legacy["modules"] = ["Text"]
         let oldDraft = try JSONDecoder().decode(SessionSearchDraft.self,from:JSONSerialization.data(withJSONObject:legacy));oldDraft.apply(to:restored)
         guard !restored.mixedContent, restored.module == "Text", !restored.modules.contains(where: { $0.id == "CaptureBook" }) else { fatalError("Older drafts without mixed flag remain verse-only") }
+        first.followSearchLink("sword://KeyDictionary/ALPHA",hit:book);try await idle(first)
+        guard first.dictionaryEntry?.key == "ALPHA",first.html == mainHTML else { fatalError("Book search preview follows dictionary link through existing pane routing") }
+        first.followSearchLink("sword://Text/16-17",hit:dictionary);try await idle(first)
+        guard first.referencePreview?.entries.count == 2,first.referencePreview?.entries.first?.reference.contains("3:16") == true else { fatalError("Relative Bible links use main reading context, never a dictionary key") }
+        first.followSearchLink("sword://Text/John3:17",hit:dictionary);try await idle(first)
+        guard first.renderedReference.contains("3:17") else { fatalError("Dictionary search preview follows explicit Bible link") }
+        let linkedHTML=first.html
+        first.followSearchLink("https://example.invalid/",hit:dictionary);try await idle(first)
+        guard first.html == linkedHTML,!first.message.isEmpty else { fatalError("Unsupported search links cannot browse or alter reading") }
         restored.close();try await worker.closeTab(restoredTab)
         search.setMixedContent(false)
         guard !search.modules.contains(where: { $0.id == "CaptureBook" }), search.selectedModules == ["Text"], search.module != "CaptureBook", search.previewSource == captured else { fatalError("Opt-out prunes keyed query choices while preserving captured results") }

@@ -523,6 +523,10 @@ final class ReaderModel: ObservableObject {
             do { link = try await worker.followBookPaneLink(tab: tab, mainModule: self.displayedModule ?? "",
                 mainReference: self.displayedEntry?.reference ?? "", uri: uri) }
             catch { throw BookLinkError() }
+            try await self.presentBookPaneLink(link,token:token)
+        }
+    }
+    private func presentBookPaneLink(_ link: RenderedBookPaneLink, token: UInt64) async throws {
             guard token == self.revision && !self.closed else { return }
             if case .study(let target) = link {
                 try await self.presentStudyLink(target, mainModule: self.displayedModule, clearNote: false, token: token)
@@ -540,7 +544,6 @@ final class ReaderModel: ObservableObject {
                 guard token == self.revision && !self.closed else { return }
                 self.bookImage = preview; self.message = ""
             }
-        }
     }
     func closeBook() { guard !closed, !isBusy else { return }; showingBook = false }
     func readBookKey() {
@@ -812,6 +815,26 @@ final class ReaderModel: ObservableObject {
                 try await self.present(pair.text, module: pair.module, token: token, passage: pair)
             } else {
                 try await self.visitAndPresent(module: target.module, reference: target.reference, token: token)
+            }
+        }
+    }
+    func followSearchLink(_ uri: String, hit: SearchHit) {
+        if hit.keyKind == .verse { followLink(uri,currentModule:hit.module,currentReference:hit.reference); return }
+        guard !closed, !isBusy, let worker, let tab else { return }
+        run { token in
+            if hit.keyKind == .dictionary {
+                // Revalidate captured source identity before interpreting its links.
+                _ = try await worker.previewKeyedSearch(tab:tab,module:hit.module,key:hit.reference,kind:hit.keyKind)
+                let link = try await worker.followStudyLinkAt(tab:tab,currentModule:hit.module,currentReference:self.displayedEntry?.reference ?? "",uri:uri)
+                try await self.presentStudyLink(link,mainModule:self.displayedModule,clearNote:false,token:token)
+            } else {
+                let entry = try await worker.selectBookDocumentPath(tab:tab,module:hit.module,path:hit.reference)
+                let children = try await worker.bookChildren(module:hit.module,parent:entry.tree.node.offset)
+                guard token == self.revision && !self.closed else { return }
+                self.bookBrowser = entry.tree; self.bookChildren = children; self.presentBook(entry)
+                let link = try await worker.followBookPaneLink(tab:tab,mainModule:self.displayedModule ?? "",
+                    mainReference:self.displayedEntry?.reference ?? "",uri:uri)
+                try await self.presentBookPaneLink(link,token:token)
             }
         }
     }
@@ -1175,7 +1198,7 @@ struct ReaderWindow: View {
                     .tabItem { Text("Modules") }
                     SearchPane(model: model.search, hostBusy: model.isBusy, canRead: model.canOpenSearchResult,
                         onRead: model.openSearchResult,
-                        onLink: { uri, module, reference in model.followLink(uri, currentModule: module, currentReference: reference) })
+                        onLink: { uri, hit in model.followSearchLink(uri, hit: hit) })
                         .tabItem { Text("Search") }
                 }
                 if model.studyNote != nil || model.referencePreview != nil || model.bookNote != nil {

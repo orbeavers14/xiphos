@@ -8,8 +8,7 @@
 #include <optional>
 #include <stdexcept>
 namespace xiphos::core::detail {
-VerseImageResource capture_verse_image_resource(sword::SWModule &module,const std::string &source,std::size_t maximum_bytes,VerseImageSourceKind kind){
- if(!supports_verse_search(module))throw std::invalid_argument("Image source requires a supported Bible or commentary module");
+VerseImageResource capture_module_image_resource(sword::SWModule &module,const std::string &source,std::size_t maximum_bytes,VerseImageSourceKind kind){
  if(!maximum_bytes||maximum_bytes>maximum_verse_image_bytes||source.empty()||source.size()>32768||
     source.find('\0')!=std::string::npos||!g_utf8_validate(source.data(),source.size(),nullptr))
   throw std::invalid_argument("Invalid bounded verse image source");
@@ -20,10 +19,24 @@ VerseImageResource capture_verse_image_resource(sword::SWModule &module,const st
  // only that URI suffix; decoding the native prefix can change literal % paths.
  if(module.getMarkup()==sword::FMT_OSIS&&directory){
   const auto prefix=(kind==VerseImageSourceKind::study_command?std::string{}:std::string("file:"))+*directory;
-  if(uri.compare(0,prefix.size(),prefix)==0)uri.erase(0,prefix.size());
+  if(uri.compare(0,prefix.size(),prefix)==0){
+    auto consumed=prefix.size();
+    // SDK directories need not end in a separator. Strip only a complete
+    // directory boundary, including the separator the OSIS renderer appended.
+    if(!directory->empty()&&directory->back()!='/'&&directory->back()!='\\'){
+      if(consumed<uri.size()&&(uri[consumed]=='/'||uri[consumed]=='\\'))++consumed;
+      else consumed=0;
+    }
+    if(consumed)uri.erase(0,consumed);
+  }
  }
  const auto command=book_inline_image_link(uri);
  const auto path=module_resource_path(directory,normalize_module_image_filename(command.filename),false);
  return {module.getName(),source,command.media_type,read_module_resource_bytes(path,maximum_bytes,"Verse image")};
 }
+VerseImageResource capture_verse_image_resource(sword::SWModule &module,const std::string &source,std::size_t maximum_bytes,VerseImageSourceKind kind){
+ if(!supports_verse_search(module))throw std::invalid_argument("Image source requires a supported Bible or commentary module");
+ return capture_module_image_resource(module,source,maximum_bytes,kind);
+}
+
 }

@@ -21,7 +21,7 @@ SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest reques
   detail::ExportImages images({request.images.max_images,request.images.max_original_bytes,
     request.images.max_pixels,request.max_bytes},
     [this](const std::string &module,const std::string &source,std::size_t maximum){
-      return reader_.read_verse_inline_image(module,source,maximum);
+      return reader_.read_search_inline_image(module,source,maximum);
     },control);
   const bool embed_images=request.images.policy==SearchHtmlImagePolicy::embedded_static_png;
   detail::SearchExportDocument document;const auto &rows=document.rows;SearchHtmlExport out;
@@ -74,7 +74,7 @@ SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest reques
       catch(const std::invalid_argument &){return finish(SearchExportStatus::engine_error,i);}
       catch(const std::runtime_error &){return finish(SearchExportStatus::engine_error,i);}
       detail::ExportImageResolver resolver;
-      if(embed_images&&row.kind==SearchKeyKind::verse)resolver=[&](const std::string &uri){return images.resolve(row.first,uri);};
+      if(embed_images)resolver=[&](const std::string &uri){return images.resolve(row.first,uri);};
       const auto prepared=detail::prepare_export_html(source,request.max_bytes,resolver);
       if(prepared.cancelled)return finish(SearchExportStatus::cancelled,i);
       if(prepared.limited)return finish(SearchExportStatus::output_limit,i);
