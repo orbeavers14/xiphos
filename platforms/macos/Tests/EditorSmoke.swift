@@ -10,9 +10,11 @@ import SwiftUI
     @MainActor static func main() async throws {
         guard CommandLine.arguments.count == 3 else { fatalError("Module and disposable editor paths required") }
         _ = NSApplication.shared; NSApplication.shared.setActivationPolicy(.prohibited)
-        let root = CommandLine.arguments[1], folder = URL(fileURLWithPath:CommandLine.arguments[2])
+        let sourceRoot = CommandLine.arguments[1], folder = URL(fileURLWithPath:CommandLine.arguments[2])
         guard folder.lastPathComponent == "native-editor-fixture" else { fatalError("Disposable editor folder only") }
         try? FileManager.default.removeItem(at:folder); try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
+        let root=folder.appendingPathComponent("module-library").path
+        try FileManager.default.copyItem(atPath:sourceRoot,toPath:root)
         let worker = try CoreWorker(root:root)
         let model = NativeEditorModel(worker:worker,location:.newDocument); await model.start()
         guard model.ready && model.richMode else { fatalError("New rich editor not ready") }

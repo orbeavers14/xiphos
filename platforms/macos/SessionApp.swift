@@ -68,9 +68,10 @@ import SwiftUI
                     throw SessionHostError(message: "Saved window identities do not match.")
                 }
                 let model = ReaderModel(worker: worker, startupError: nil, autostart: false)
+                model.parallelProfilePath = organizationPath.map { URL(fileURLWithPath:$0).deletingLastPathComponent().appendingPathComponent("parallel-sets.xml").path }
                 model.applyLibraryOrganization(libraryOrganization,notice:organizationNotice)
                 model.onPassageCommitted = { [weak self] target,received in self?.onPassageCommitted?(target,received) }
-                try await model.restoreWindow(saved.windows[index], tab: row.tab, host: hosts[index])
+                try await model.restoreWindow(saved.windows[index], tab: row.tab, host: hosts[index],parallelShowing:row.capture.parallelShowing)
                 var capture = row.capture; capture.hostState = saved.windows[index].hostState
                 staged.append(Record(key: row.key, model: model, capture: capture, frame: hosts[index]?.frame))
             }
@@ -88,6 +89,7 @@ import SwiftUI
     @discardableResult func addWindow() -> ReaderModel {
         let key = UUID().uuidString
         let model = ReaderModel(worker: worker, startupError: nil)
+        model.parallelProfilePath = organizationPath.map { URL(fileURLWithPath:$0).deletingLastPathComponent().appendingPathComponent("parallel-sets.xml").path }
         model.applyLibraryOrganization(libraryOrganization,notice:organizationNotice)
         model.onPassageCommitted = { [weak self] target,received in self?.onPassageCommitted?(target,received) }
         records.append(Record(key: key, model: model, capture: CoreWindowCapture(tab: 0, key: key)))
@@ -141,7 +143,7 @@ import SwiftUI
         var captures: [CoreWindowCapture] = []
         for record in selected {
             guard let tab = record.model.sessionTab else { throw SessionHostError(message: "A reading window could not be saved.") }
-            var capture = record.capture; capture.tab = tab
+            var capture = record.capture; capture.tab = tab; capture.parallelShowing = record.model.showingParallel
             capture.hostState = try SessionHostState(record.model, frame: record.window?.frame ?? record.frame?.rect).encoded(preserving: record.capture.hostState)
             captures.append(capture)
         }
@@ -157,7 +159,7 @@ import SwiftUI
         var captures: [CoreWindowCapture] = []
         for record in records {
             guard let tab = record.model.sessionTab else { return nil }
-            var capture = record.capture; capture.tab = tab
+            var capture = record.capture; capture.tab = tab; capture.parallelShowing = record.model.showingParallel
             capture.hostState = try SessionHostState(record.model,frame:record.window?.frame ?? record.frame?.rect).encoded(preserving:record.capture.hostState)
             captures.append(capture)
         }
@@ -335,7 +337,9 @@ import SwiftUI
     func openParallelSets() {
         guard !terminating,let controller else { return }
         if let parallelSets { parallelSets.window.makeKeyAndOrderFront(nil);return }
-        do { parallelSets=NativeParallelSetsWindow(worker:controller.worker,path:try NativeSessionController.profileFolder().appendingPathComponent("parallel-sets.xml").path) }
+        do { parallelSets=NativeParallelSetsWindow(worker:controller.worker,path:try NativeSessionController.profileFolder().appendingPathComponent("parallel-sets.xml").path,apply:{ [weak controller] path,key in
+            guard let controller,let model=controller.records.first(where: { $0.key==controller.activeKey })?.model else { return };model.openParallel(path:path,key:key)
+        }) }
         catch { controller.showError(error.localizedDescription) }
     }
     func newBookSection() {

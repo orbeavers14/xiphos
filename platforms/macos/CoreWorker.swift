@@ -2084,3 +2084,45 @@ extension CoreWorker {
         return try await parallelProfileValue(status,request)
     }
 }
+
+struct CoreParallelColumn: Sendable {
+    let requested: String, module: String
+    let ready: Bool, rtl: Bool
+}
+struct CoreParallelCell: Sendable { let reference: String, html: String, headings: [String] }
+struct CoreParallelRow: Sendable { let reference: String; let cells: [CoreParallelCell] }
+struct CoreParallelChapter: Sendable {
+    let reference: String, title: String
+    let columns: [CoreParallelColumn], rows: [CoreParallelRow]
+}
+extension CoreWorker {
+    private func parallelChapterValue(_ status: xc_status,_ request: OpaquePointer?) async throws -> CoreParallelChapter {
+        let completed=try await wait(status,request);defer { xc_request_release(completed) }
+        guard let value=xc_request_take_parallel_chapter(completed) else { throw CoreError(status:XC_ENGINE_ERROR) }
+        defer { xc_parallel_chapter_release(value) }
+        let columns=(0..<xc_parallel_column_count(value)).map { c in CoreParallelColumn(requested:String(cString:xc_parallel_column_requested(value,c)!),module:xc_parallel_column_module(value,c).map { String(cString:$0) } ?? "",ready:xc_parallel_column_state(value,c)==XC_PARALLEL_READY,rtl:xc_parallel_column_is_rtl(value,c) != 0) }
+        let rows=(0..<xc_parallel_row_count(value)).map { r in CoreParallelRow(reference:String(cString:xc_parallel_row_reference(value,r)!),cells:columns.indices.map { c in CoreParallelCell(reference:xc_parallel_cell_reference(value,r,c).map { String(cString:$0) } ?? "",html:xc_parallel_cell_html(value,r,c).map { String(cString:$0) } ?? "",headings:(0..<xc_parallel_cell_heading_count(value,r,c)).map { String(cString:xc_parallel_cell_heading(value,r,c,$0)!) }) }) }
+        return CoreParallelChapter(reference:String(cString:xc_parallel_reference(value)!),title:String(cString:xc_parallel_title(value)!),columns:columns,rows:rows)
+    }
+    func visitParallelProfile(tab: UInt64,path: String,key: String?,reference: String,flags: UInt32) async throws -> CoreParallelChapter {
+        let strings=SessionCStrings();let file=try strings.copy(path),selected=try key.map { try strings.copy($0) },ref=try strings.copy(reference)
+        var request: OpaquePointer?;let handle=try worker()
+        let status=withExtendedLifetime(strings) { xc_worker_visit_parallel_profile(handle,tab,file,selected,ref,flags,1,16*1024*1024,&request) }
+        return try await parallelChapterValue(status,request)
+    }
+    func navigateParallel(tab: UInt64,direction: Int32) async throws -> CoreParallelChapter {
+        var request: OpaquePointer?;let status=xc_worker_navigate_parallel_chapter(try worker(),tab,direction,&request)
+        return try await parallelChapterValue(status,request)
+    }
+    func restoredParallel(tab: UInt64) async throws -> CoreParallelChapter? {
+        var request: OpaquePointer?;let handle=try worker()
+        let completed=try await wait(xc_worker_parallel_selection(handle,tab,&request),request);defer { xc_request_release(completed) }
+        guard let selection=xc_request_take_parallel_selection(completed) else { throw CoreError(status:XC_ENGINE_ERROR) }
+        defer { xc_parallel_selection_release(selection) };guard xc_parallel_selection_present(selection) != 0 else { return nil }
+        // Selection storage owns all pointers until the read request has copied them.
+        let modules=(0..<xc_parallel_selection_module_count(selection)).map { xc_parallel_selection_module(selection,$0) }
+        let reference=xc_parallel_selection_reference(selection),flags=xc_parallel_selection_engine_flags(selection),headings=xc_parallel_selection_headings(selection),limit=xc_parallel_selection_max_bytes(selection)
+        let status=modules.withUnsafeBufferPointer { xc_worker_read_parallel(handle,tab,$0.baseAddress,$0.count,reference,flags,headings,limit,&request) }
+        return try await parallelChapterValue(status,request)
+    }
+}

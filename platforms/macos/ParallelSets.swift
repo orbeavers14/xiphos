@@ -52,6 +52,7 @@ import Combine
 }
 private struct NativeParallelSetsPane: View {
     @ObservedObject var model: NativeParallelSetsModel
+    let apply: () -> Void
     var body: some View {
         VStack(alignment:.leading,spacing:10) {
             Text("Saved Parallel Reading Sets").font(.headline)
@@ -76,13 +77,14 @@ private struct NativeParallelSetsPane: View {
                 Button("Create New Set") { Task { await model.edit(action:4) } }.disabled(model.name.isEmpty || model.orderedModules.isEmpty)
                 Button("Save Selected") { Task { await model.edit(action:0) } }.disabled(model.selected.isEmpty)
                 Button("Rename Selected") { Task { await model.edit(action:1) } }.disabled(model.selected.isEmpty || model.name.isEmpty)
+                Button("Read Selected",action:apply).disabled(model.selected.isEmpty)
                 Button("Make Default") { Task { await model.edit(action:3) } }.disabled(model.selected.isEmpty)
                 Button("Delete Set") {
                     let alert=NSAlert();alert.messageText="Delete this saved parallel set?";alert.informativeText="This removes the saved set, not its installed modules.";alert.addButton(withTitle:"Delete Set");alert.addButton(withTitle:"Cancel")
                     if alert.runModal() == .alertFirstButtonReturn { Task { await model.edit(action:2) } }
                 }.disabled(model.selected.isEmpty)
             }.disabled(!model.loaded)
-            Text("These controls manage saved sets. Existing reading windows keep their current content.").font(.caption).foregroundStyle(.secondary)
+            Text("Read Selected opens this set in the active reading window. Make Default selects the set opened by Parallel Reading.").font(.caption).foregroundStyle(.secondary)
             Text(model.message).font(.caption).textSelection(.enabled)
         }.padding().disabled(model.busy).task { await model.reload() }
     }
@@ -90,11 +92,43 @@ private struct NativeParallelSetsPane: View {
 @MainActor final class NativeParallelSetsWindow: NSObject, NSWindowDelegate {
     let model: NativeParallelSetsModel
     let window: NSWindow
-    init(worker: CoreWorker,path: String) {
+    init(worker: CoreWorker,path: String,apply: @escaping (String,String) -> Void) {
         model=NativeParallelSetsModel(worker:worker,path:path)
-        window=NSWindow(contentRect:NSRect(x:0,y:0,width:790,height:520),styleMask:[.titled,.closable,.resizable],backing:.buffered,defer:false)
-        super.init();window.title="Saved Parallel Reading Sets";window.isReleasedWhenClosed=false;window.delegate=self
-        window.contentView=NSHostingView(rootView:NativeParallelSetsPane(model:model));window.center();window.makeKeyAndOrderFront(nil)
+        window=NSWindow(contentRect:NSRect(x:0,y:0,width:960,height:520),styleMask:[.titled,.closable,.resizable],backing:.buffered,defer:false)
+        super.init();window.minSize=NSSize(width:900,height:480);window.title="Saved Parallel Reading Sets";window.isReleasedWhenClosed=false;window.delegate=self
+        window.contentView=NSHostingView(rootView:NativeParallelSetsPane(model:model,apply:{ [weak self] in guard let self,!self.model.selected.isEmpty else { return };apply(self.model.path,self.model.selected) }));window.center();window.makeKeyAndOrderFront(nil)
     }
     func windowShouldClose(_ sender: NSWindow) -> Bool { !model.busy }
+}
+
+// Layout adapts the already aligned shared matrix; it performs no verse matching.
+struct NativeParallelChapterPane: View {
+    @ObservedObject var model: ReaderModel
+    let chapter: CoreParallelChapter
+    private func escape(_ value: String) -> String { value.replacingOccurrences(of:"&",with:"&amp;").replacingOccurrences(of:"<",with:"&lt;").replacingOccurrences(of:">",with:"&gt;").replacingOccurrences(of:"\"",with:"&quot;") }
+    var table: String {
+        var result="<table class=\"xc-parallel\"><thead><tr><th>Reference</th>"
+        for column in chapter.columns { result += "<th>"+escape(column.requested)+(column.ready ? "" : " (unavailable)")+"</th>" }
+        result += "</tr></thead><tbody>"
+        for row in chapter.rows {
+            result += "<tr><th>"+escape(row.reference)+"</th>"
+            for (index,cell) in row.cells.enumerated() {
+                let column=chapter.columns[index]
+                result += "<td dir=\""+(column.rtl ? "rtl" : "ltr")+"\" data-xc-module=\""+escape(column.module)+"\" data-xc-reference=\""+escape(cell.reference)+"\">"
+                for heading in cell.headings { result += "<div class=\"xc-parallel-heading\">"+heading+"</div>" }
+                result += cell.html+"</td>"
+            }
+            result += "</tr>"
+        }
+        return result+"</tbody></table>"
+    }
+    var body: some View {
+        VStack(alignment:.leading,spacing:8) {
+            VStack(alignment:.leading,spacing:6) {
+                Text("Parallel Reading — "+chapter.title).font(.headline).lineLimit(2)
+                HStack { Button("Previous") { model.navigateParallel(-1) };Button("Next") { model.navigateParallel(1) };Spacer(minLength:0);Button("Close") { model.closeParallel() } }
+            }.padding(8)
+            PassageView(html:table,css:".xc-parallel {border-collapse:collapse;min-width:100%;} .xc-parallel td,.xc-parallel th {vertical-align:top;padding:8px;border:1px solid GrayText;min-width:160px;} .xc-parallel thead th {position:sticky;top:0;background:Canvas;} .xc-parallel-heading {font-weight:bold;}",anchor:nil,onScrollFailure:{model.message=$0},onLink:{model.followLink($0)},onContextLink:{ uri,module,reference in model.followLink(uri,currentModule:module,currentReference:reference) })
+        }.frame(minWidth:230,minHeight:220).disabled(model.isBusy)
+    }
 }

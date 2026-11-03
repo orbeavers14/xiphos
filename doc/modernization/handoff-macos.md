@@ -1,9 +1,45 @@
 # macOS chat handoff
 
-Updated 2026-11-01. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.md),
+Updated 2026-11-02. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.md),
 [status](status.md), [core scope](shared-core-roadmap.md) and relevant parity rows.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
+
+## Native parallel chapter/session integration — 2026-11-02
+
+Baseline `1a86ac2` is pushed. Native Read Selected and Preferences > Parallel
+Reading now consume the shared atomic visit/default service and copied bounded
+chapter matrices. Native table layout does not align verses. Missing/repeated
+columns, text direction, headings and source-specific links retain shared source
+identity. Independent parallel chapter navigation leaves main passage/history/
+draft unchanged; failed apply retains the old matrix. Close hides retained intent;
+reopen keeps its chapter. Session/recovery capture uses actual pane visibility;
+restore rereads stored options/selection rather than the current default.
+
+Production WebKit click transport supplies the source cell's module/reference in
+an isolated world; module scripts stay disabled and passive content policy stays
+in force. Initial native link/editor/restart/parallel selection checks8/8,11.71s.
+The real production-view contextual click/script-isolation check passes in the
+full rerun. Scoped disposable live app checked default opening, shared table,
+independent John4 navigation while main stayed John3:16, real quit/restart and
+keyboard horizontal access to later columns. Visual inspection found a pane-width
+regression; final compact header fits the existing side pane and keeps neighboring
+controls visible. Real profiles/modules were untouched; app quit normally.
+
+The initial full run exposed editor-fixture contamination of keyed/mixed search:
+new journal sections were written into the shared source fixture. EditorSmoke now
+copies that library into its own named disposable folder before any module writes.
+The final run confirms keyed search and native mixed search pass with that isolation.
+Do not cite `native-parallel-complete-tests.log` as a successful full suite.
+Final full rerun evidence is being recorded in `native-parallel-reviewed-tests.log`.
+Local code-only Graphify refresh687 files,12,955 nodes,35,522 edges,389 communities;
+source hashes unchanged,zero AI calls/tokens/cost; heuristic limitations remain.
+
+Remaining: images/assets in parallel content, selected-verse scrolling/highlight,
+detached-window parity, broader canon/RTL/corpus and physical-host acceptance.
+Next core boundary: add exact-source checked annotation writes before exposing
+native annotation composition/saves. Existing annotation writes retain legacy
+upsert behavior; a long-lived editor needs an explicit stale-source check.
 
 ## Saved parallel-set management — 2026-11-02
 

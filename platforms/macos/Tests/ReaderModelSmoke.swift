@@ -2,6 +2,7 @@
 import Foundation
 import AppKit
 import WebKit
+import SwiftUI
 @main
 struct ReaderModelSmoke {
     // Original-prose variant fixtures contain no encoded text except spacing.
@@ -780,6 +781,53 @@ struct ReaderModelSmoke {
         guard model.result == held, model.batchResult == nil else { fatalError("Closed batch model suppresses late publication") }
         other.close(); try await worker.closeTab(tab); try await worker.closeTab(otherTab); await worker.shutdown()
         print("Native ordered batch, failure groups, actual preview/export identity, scope chaining, drafts and lifecycle passed")
+    }
+    @MainActor static func parallelReading(root: String) async throws {
+        _ = NSApplication.shared
+        let worker=try CoreWorker(root:root)
+        let folder=FileManager.default.temporaryDirectory.appendingPathComponent("native-parallel-"+UUID().uuidString,isDirectory:true)
+        try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
+        defer { try? FileManager.default.removeItem(at:folder) }
+        let profile=folder.appendingPathComponent("parallel-sets.xml").path,session=folder.appendingPathComponent("session.xml").path
+        let owner=NativeSessionController(worker:worker,path:session,showsWindows:false,organizationPath:folder.appendingPathComponent("library.xml").path)
+        try await owner.start();guard let model=owner.records.first?.model else { fatalError("Parallel reading host") };try await idle(model)
+        var contextLink: (String,String,String)?
+        let probe=NSHostingView(rootView:PassageView(html:"<table><tr><td data-xc-module=\"TextAlt\" data-xc-reference=\"John 3:16\"><a id=\"parallel-link\" href=\"sword:///17\">Original contextual link</a></td></tr></table><script>document.body.dataset.moduleRan='yes'</script>",anchor:nil,onScrollFailure:{_ in},onLink:{_ in fatalError("Context click escaped into generic navigation")},onContextLink:{contextLink=($0,$1,$2)}))
+        let probeWindow=NSWindow(contentRect:NSRect(x:0,y:0,width:600,height:240),styleMask:.borderless,backing:.buffered,defer:false)
+        probeWindow.isReleasedWhenClosed=false;probeWindow.contentView=probe;probe.layoutSubtreeIfNeeded()
+        defer { probeWindow.close() }
+        func webView(_ view:NSView) -> WKWebView? { if let web=view as? WKWebView { return web };for child in view.subviews { if let web=webView(child) { return web } };return nil }
+        let deadline=Date().addingTimeInterval(15)
+        while webView(probe)==nil { guard Date()<deadline else { fatalError("Native parallel web view creation") };try await Task.sleep(nanoseconds:1_000_000) }
+        let web=webView(probe)!
+        func evaluate(_ script:String) async throws -> Bool { try await withCheckedThrowingContinuation { continuation in web.evaluateJavaScript(script,in:nil,in:.defaultClient) { result in switch result { case .success(let value):continuation.resume(returning:value as? Bool == true);case .failure(let error):continuation.resume(throwing:error) } } } }
+        while (try? await evaluate("document.getElementById('parallel-link') !== null")) != true { guard Date()<deadline else { fatalError("Parallel link document load") };try await Task.sleep(nanoseconds:1_000_000) }
+        guard try await evaluate("!document.body.dataset.moduleRan") else { fatalError("Parallel module script ran") }
+        _ = try await evaluate("document.getElementById('parallel-link').click();true")
+        while contextLink==nil { guard Date()<deadline else { fatalError("Parallel contextual click callback") };try await Task.sleep(nanoseconds:1_000_000) }
+        guard contextLink?.0=="sword:///17",contextLink?.1=="TextAlt",contextLink?.2=="John 3:16" else { fatalError("Parallel link lost source module/reference") }
+        let tab=model.sessionTab!,main=model.html,reference=model.reference,back=model.canBack
+        _ = try await worker.editParallelProfile(tab:tab,path:profile,revision:nil,action:4,key:"Study",modules:["Text","Missing<&","TextAlt","Text"],makeCurrent:true)
+        model.reference="Unsubmitted reference draft"
+        model.openParallel();try await idle(model)
+        guard model.showingParallel,let chapter=model.parallelChapter,chapter.columns.map(\.requested)==["Text","Missing<&","TextAlt","Text"],!chapter.columns[1].ready,!chapter.rows.isEmpty else { fatalError("Native matrix preserves ordered missing/duplicate slots") }
+        guard model.html==main,model.canBack==back,model.reference=="Unsubmitted reference draft" else { fatalError("Parallel open changed main reading/history/draft") }
+        model.navigateParallel(1);try await idle(model)
+        guard model.parallelChapter?.reference != chapter.reference,model.html==main,model.canBack==back else { fatalError("Parallel navigation isolation") }
+        let navigated=model.parallelChapter!.reference
+        model.closeParallel();model.openParallel();guard model.showingParallel,model.parallelChapter?.reference==navigated else { fatalError("Reopening parallel pane reset its independent chapter") }
+        model.openParallel(path:profile,key:"Unknown");try await idle(model)
+        guard model.parallelChapter?.reference==navigated,model.showingParallel else { fatalError("Failed parallel application replaced prior matrix") }
+        try await owner.save()
+        let restored=NativeSessionController(worker:worker,path:session,showsWindows:false,organizationPath:folder.appendingPathComponent("library.xml").path)
+        try await restored.start();guard let reread=restored.records.first?.model else { fatalError("Parallel session restore") }
+        guard reread.showingParallel,reread.parallelChapter?.reference==navigated,reread.parallelChapter?.columns.map(\.requested)==chapter.columns.map(\.requested),reread.reference=="Unsubmitted reference draft" else { fatalError("Parallel visibility/intent/session presentation restoration") }
+        reread.closeParallel();try await restored.save()
+        let hidden=NativeSessionController(worker:worker,path:session,showsWindows:false)
+        try await hidden.start();guard let hiddenModel=hidden.records.first?.model,!hiddenModel.showingParallel,hiddenModel.parallelChapter != nil else { fatalError("Hidden parallel intent must survive without reopening pane") }
+        for host in [owner,restored,hidden] { for record in host.records { record.model.close() } }
+        await worker.shutdown()
+        print("Native default/selected parallel matrices, failure isolation, independent navigation and session visibility restored; initial main reference \(reference)")
     }
     @MainActor static func libraryOrganization(root: String) async throws {
         let folder=URL(fileURLWithPath:root).appendingPathComponent("native-organization")
@@ -2151,6 +2199,7 @@ struct ReaderModelSmoke {
             print("Native environment locale startup/click checks passed")
             return
         }
+        if CommandLine.arguments.count == 3,CommandLine.arguments[1] == "--parallel-reading" { try await parallelReading(root:CommandLine.arguments[2]);return }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--library-organization" {
             try await libraryOrganization(root:CommandLine.arguments[2]);return
         }

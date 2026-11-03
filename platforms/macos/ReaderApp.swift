@@ -42,6 +42,24 @@ private struct LexiconProfileSaveError: LocalizedError {
 @MainActor
 final class ReaderModel: ObservableObject {
     let search = SearchModel()
+    @Published private(set) var parallelChapter: CoreParallelChapter?
+    @Published private(set) var showingParallel = false
+    var parallelProfilePath: String?
+    func openParallel(path: String? = nil,key: String? = nil) {
+        guard !closed,!isBusy else { return }
+        if path == nil,key == nil,parallelChapter != nil { showingParallel=true;return }
+        guard let worker,let tab,let path=path ?? parallelProfilePath else { return }
+        let reference=displayedEntry?.reference ?? self.reference
+        run { token in
+            let chapter=try await worker.visitParallelProfile(tab:tab,path:path,key:key,reference:reference,flags:self.engineOptions?.rawValue ?? 0)
+            guard token==self.revision,!self.closed else { return };self.parallelChapter=chapter;self.showingParallel=true
+        }
+    }
+    func navigateParallel(_ direction: Int32) {
+        guard let worker,let tab else { return }
+        run { token in let chapter=try await worker.navigateParallel(tab:tab,direction:direction);guard token==self.revision,!self.closed else { return };self.parallelChapter=chapter }
+    }
+    func closeParallel() { guard !isBusy else { return };showingParallel=false }
     @Published var modules: [InstalledModule] = []
     @Published private(set) var libraryOrganization = CoreLibraryOrganization.empty
     @Published private(set) var libraryOrganizationNotice = ""
@@ -219,10 +237,12 @@ final class ReaderModel: ObservableObject {
             }
             if let document = try await worker.bookDocumentSelection(tab:tab) { self.presentBook(document,updateInput:false) }
             self.showingBook = wasBook && self.bookDocument != nil
+            self.parallelChapter = try await worker.restoredParallel(tab:tab)
+            self.showingParallel = self.showingParallel && self.parallelChapter != nil
         }
     }
     var sessionTab: UInt64? { tab }
-    func restoreWindow(_ saved: CoreSavedWindow, tab restoredTab: UInt64, host: SessionHostState?) async throws {
+    func restoreWindow(_ saved: CoreSavedWindow, tab restoredTab: UInt64, host: SessionHostState?, parallelShowing: Bool = false) async throws {
         guard let worker, !closed, tab == nil else { throw SessionHostError(message: "This reading window cannot be restored.") }
         tab = restoredTab
         defer { isBusy = false }
@@ -257,6 +277,8 @@ final class ReaderModel: ObservableObject {
             bookBrowser = document.tree
             bookChildren = try await worker.bookChildren(module: document.tree.module, parent: document.tree.node.offset)
         }
+        parallelChapter = try await worker.restoredParallel(tab:restoredTab)
+        showingParallel = parallelShowing && parallelChapter != nil
         if let host {
             showingBook = host.showingBook && bookDocument != nil
             reference = host.referenceDraft; dictionaryKey = host.dictionaryDraft; bookKey = host.bookDraft
@@ -868,12 +890,11 @@ final class ReaderModel: ObservableObject {
         followLink(uri, currentModule: commentarySelection, currentReference: entry.reference, navigationModule: displayedModule)
     }
     func followLink(_ uri: String, currentModule: String? = nil, currentReference: String? = nil, navigationModule: String? = nil) {
-        guard let worker, let tab, let displayedModule, let displayedEntry else { return }
-        let module = currentModule ?? displayedModule
-        let context = currentReference ?? displayedEntry.reference
+        guard let worker, let tab, let module = currentModule ?? displayedModule, let context = currentReference ?? displayedEntry?.reference else { return }
+        let mainModule = displayedModule
         run { token in
             let link = try await worker.followStudyLinkAt(tab: tab, currentModule: module, currentReference: context, uri: uri, navigationModule: navigationModule)
-            try await self.presentStudyLink(link, mainModule: displayedModule, clearNote: currentReference == nil, token: token)
+            try await self.presentStudyLink(link, mainModule: mainModule, clearNote: currentReference == nil, token: token)
         }
     }
     private func presentStudyLink(_ link: ContextualStudyLink, mainModule: String?, clearNote: Bool, token: UInt64) async throws {
@@ -955,6 +976,7 @@ struct PassageView: NSViewRepresentable {
     var onLink: (String) -> Void
     var onLinkHover: ((String) -> Void)? = nil
     var allowsInlineImages = false
+    var onContextLink: ((String,String,String) -> Void)? = nil
     @MainActor final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var loaded: String?
         var loadedCSS: String?
@@ -965,7 +987,13 @@ struct PassageView: NSViewRepresentable {
         var onScrollFailure: ((String) -> Void)?
         var onLink: ((String) -> Void)?
         var onLinkHover: ((String) -> Void)?
+        var onContextLink: ((String,String,String) -> Void)?
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            if message.name == "xiphosContextLink",message.frameInfo.isMainFrame,
+               let fields=message.body as? [String:String],let uri=fields["uri"],let module=fields["module"],let reference=fields["reference"],
+               uri.utf8.count<=32768,module.utf8.count<=4096,reference.utf8.count<=32768 {
+                onContextLink?(uri,module,reference);return
+            }
             guard message.name == "xiphosHover", message.frameInfo.isMainFrame,
                   let uri = message.body as? String, uri.utf8.count <= 32_768 else { return }
             onLinkHover?(uri)
@@ -1011,9 +1039,18 @@ struct PassageView: NSViewRepresentable {
         // Trusted transport runs in an isolated world; module scripts remain
         // disabled. The core interprets the URI, never this event script.
         config.userContentController.add(context.coordinator, contentWorld: .defaultClient, name: "xiphosHover")
+        config.userContentController.add(context.coordinator, contentWorld: .defaultClient, name: "xiphosContextLink")
         config.userContentController.addUserScript(WKUserScript(source: """
             (() => {
                 let previous = null;
+                document.addEventListener('click', event => {
+                    const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
+                    const cell = link ? link.closest('td[data-xc-module][data-xc-reference]') : null;
+                    if (!cell || !cell.dataset.xcModule) return;
+                    if (link.href.length > 32768 || cell.dataset.xcModule.length > 4096 || cell.dataset.xcReference.length > 32768) { event.preventDefault(); return; }
+                    event.preventDefault();
+                    window.webkit.messageHandlers.xiphosContextLink.postMessage({uri: link.href, module: cell.dataset.xcModule, reference: cell.dataset.xcReference});
+                }, true);
                 document.addEventListener('mouseover', event => {
                     const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
                     const uri = link ? link.href : null;
@@ -1035,6 +1072,7 @@ struct PassageView: NSViewRepresentable {
         context.coordinator.onScrollFailure = onScrollFailure
         context.coordinator.onLink = onLink
         context.coordinator.onLinkHover = onLinkHover
+        context.coordinator.onContextLink = onContextLink
         let changedAnchor = context.coordinator.anchor != anchor || context.coordinator.anchorRevision != anchorRevision
         context.coordinator.anchor = anchor
         context.coordinator.anchorRevision = anchorRevision
@@ -1068,7 +1106,8 @@ struct PassageView: NSViewRepresentable {
     static func dismantleNSView(_ view: WKWebView, coordinator: Coordinator) {
         view.configuration.userContentController.removeScriptMessageHandler(forName: "xiphosHover", contentWorld: .defaultClient)
         view.navigationDelegate = nil
-        coordinator.onLink = nil; coordinator.onLinkHover = nil
+        view.configuration.userContentController.removeScriptMessageHandler(forName: "xiphosContextLink", contentWorld: .defaultClient)
+        coordinator.onLink = nil; coordinator.onLinkHover = nil; coordinator.onContextLink = nil
     }
 }
 
@@ -1369,6 +1408,7 @@ struct ReaderWindow: View {
                 }.padding(.horizontal, 12).padding(.bottom, 8).disabled(model.isBusy)
                 HStack {
                     Menu("Preferences") {
+                        Button("Parallel Reading") { model.openParallel() }.disabled(model.parallelProfilePath == nil)
                         Button("Import reading options…") { choosePreferenceFile() }
                         Button("Save reading options…") { chooseSaveFile() }
                         Divider()
@@ -1400,8 +1440,9 @@ struct ReaderWindow: View {
                 Divider()
                 Text("Xiphos native preview • Chapter reading and history slice").font(.caption).foregroundStyle(.secondary).padding(8)
             }.frame(minWidth: 450)
-            if model.modules.contains(where: { $0.type == "Commentaries" }) || model.dictionarySelection != nil || model.showingBook {
+            if model.modules.contains(where: { $0.type == "Commentaries" }) || model.dictionarySelection != nil || model.showingBook || model.showingParallel {
                 VSplitView {
+                    if model.showingParallel,let chapter=model.parallelChapter { NativeParallelChapterPane(model:model,chapter:chapter) }
                     if model.modules.contains(where: { $0.type == "Commentaries" }) {
                         VStack(alignment: .leading, spacing: 0) {
                             HStack {

@@ -278,7 +278,30 @@ All mutation uses the shared checked repository and name codec. A stale snapshot
 or name collision reports failure without rewriting the file; Reload permits
 retry. No Swift XML parser or persistence engine is introduced. Creation does not
 imply activation; default metadata does not change any open reading window.
-The native parallel chapter pane, active-tab application, automatic default
-consumption and corresponding session presentation remain open. These controls
-complete a management slice, not the full parallel-reading workflow. Form drafts
+The native matrix pane and session integration are described below. Form drafts
 are not autosaved. Native Windows/GTK4 adapters and physical acceptance remain open.
+
+## Native chapter pane and session integration
+
+Read Selected applies a stored set to the active reading tab through the existing
+atomic shared visit operation. Preferences > Parallel Reading opens the default
+when no selection exists, or reopens the retained parallel chapter. The native
+table presents the copied shared row/cell matrix, including duplicate and missing
+columns and per-column text direction; it does not align or reinterpret verses.
+Previous/Next use shared parallel navigation without changing main history or the
+unsubmitted main reference draft. Failed application retains the previous matrix.
+Closing the pane hides it while retaining its independent chapter.
+
+Session/recovery captures include the real pane visibility and the core's existing
+parallel selection. Restore rereads that exact selection/options and shows it only
+when it was open. It does not silently replace it with the current default set.
+New windows do not automatically open a default parallel pane.
+
+Table links use the clicked cell's module/reference in the existing shared study
+router. Trusted isolated-world WebKit transport cancels browser navigation before
+sending that context; module scripts remain disabled and the existing passive
+content policy stays in effect. A real WebKit check exercises the production view
+and verifies contextual transport with module scripts disabled. Parallel image/
+asset presentation, selected-verse scrolling/highlighting, detached-window parity,
+broader canon/RTL/corpus and physical-host acceptance remain open. Textual alignment
+retains the documented control-module limitations; it is not cross-canon mapping.
