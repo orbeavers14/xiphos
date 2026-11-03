@@ -1,5 +1,10 @@
 # Modernization status and acceptance
 
+Hardening clarification (2026-11-03): keep shared-core compatibility, ownership,
+cancellation and data-safety checks active during feature work. Final packaging,
+full physical-platform/release and frontend acceptance remain closing gates.
+This supersedes the earlier blanket deferral; see [current scope](shared-core-roadmap.md).
+
 Limited-usage checkpoint (2026-11-03, `0e43cae`, `bcb83f6`): explicit BMP-to-PNG
 export and legacy font-color rich editing now pass focused shared/C/Swift/native
 and sanitizer checks. Original PNG-only policy and unsupported-markup Source

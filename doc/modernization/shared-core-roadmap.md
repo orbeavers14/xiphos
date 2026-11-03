@@ -1,9 +1,12 @@
 # Shared core: remaining scope
 
-Owner priority update (2026-11-03): leave the broad core-hardening workstream
-(physical cross-platform/compiler/packaging/cancellation acceptance) until last.
-Continue bounded feature work in the other five areas. Ordinary checks needed
-for each change still apply; this does not mark hardening complete.
+Owner clarification (2026-11-03): shared-core hardening remains active alongside
+feature development. Check relevant compiler/SWORD compatibility, C/FIFO ownership,
+cancellation and persistence/data-safety behavior as affected services change.
+This is shared-engine work, separate from frontend presentation. Final packaging,
+full physical-platform/release acceptance and frontend acceptance remain closing
+gates. Older instructions to defer the entire hardening workstream are superseded;
+these gates are bounded acceptance requirements, not an indefinite extra feature.
 
 Owner priority update (2026-11-02): work through search/content, bookmarks and
 annotations, parallel saved workflows, editing, then library organization. Remaining

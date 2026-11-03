@@ -5,6 +5,14 @@ Updated 2026-11-03. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Hardening priority clarification — 2026-11-03
+
+The owner clarified that ongoing shared-core hardening stays active with feature
+work: relevant compiler/SWORD behavior, ownership, cancellation and persistence/
+data-safety verification. Final packaging, full physical-platform/release and
+frontend acceptance remain closing gates. This supersedes the blanket deferral
+recorded below. Documentation-only clarification; diff checks, no builds needed.
+
 ## Limited-usage assets/editing work — 2026-11-03
 
 Owner explicitly leaves broad core hardening until last. Account usage tool
