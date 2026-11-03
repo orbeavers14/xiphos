@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/andbible.hpp"
 #include "xml_document.hpp"
+#include "bookmark_import_xml.hpp"
 #include "preference_file.hpp"
 #include <glib.h>
 #include <filesystem>
@@ -12,7 +13,7 @@
 #include <stdexcept>
 namespace xiphos::core {
 namespace {
-std::string prop(xmlNode *node,const char *name){std::unique_ptr<xmlChar,decltype(xmlFree)> value(xmlGetProp(node,BAD_CAST name),xmlFree);return value?reinterpret_cast<const char *>(value.get()):"";}
+std::string prop(xmlNode *node,const char *name){std::unique_ptr<xmlChar,decltype(xmlFree)> value(xmlGetNoNsProp(node,BAD_CAST name),xmlFree);return value?reinterpret_cast<const char *>(value.get()):"";}
 bool named(xmlNode *node,const char *name){return node->type==XML_ELEMENT_NODE&&!xmlStrcmp(node->name,BAD_CAST name);}
 std::vector<xmlNode *> leaves(xmlNode *root){std::vector<xmlNode *> out;std::function<void(xmlNode *)> visit=[&](xmlNode *parent){for(auto *node=parent->children;node;node=node->next)if(named(node,"Bookmark"))out.push_back(node);else if(named(node,"Folder"))visit(node);};visit(root);return out;}
 std::string digest(const std::string &value){std::unique_ptr<gchar,decltype(&g_free)> hash(g_compute_checksum_for_data(G_CHECKSUM_SHA256,reinterpret_cast<const guchar *>(value.data()),value.size()),g_free);if(!hash)throw std::bad_alloc();return hash.get();}
@@ -33,14 +34,16 @@ struct Documents {
   if(node->type!=XML_ELEMENT_NODE){if(node->content)add(text,reinterpret_cast<const char *>(node->content));return text;}
   std::vector<std::pair<std::string,std::string>> attrs;
   for(auto *attribute=node->properties;attribute;attribute=attribute->next){std::string key=reinterpret_cast<const char *>(attribute->name);if(wrapper&&!attribute->ns&&(key=="andbible-source"||key=="caption"))continue;
+   if(wrapper&&attribute->ns&&attribute->ns->href&&!xmlStrcmp(attribute->ns->href,BAD_CAST detail::bookmark_import_xml_namespace)&&(key=="root"||key=="caption"))continue;
    if(attribute->ns&&attribute->ns->href)key=std::string(reinterpret_cast<const char *>(attribute->ns->href))+":"+key;
    std::unique_ptr<xmlChar,decltype(xmlFree)> value(xmlNodeListGetString(node->doc,attribute->children,1),xmlFree);attrs.emplace_back(key,value?reinterpret_cast<const char *>(value.get()):"");}
+  if(wrapper){const auto caption=named(node,"SwordBookmarks")?xmlHasNsProp(node,BAD_CAST "caption",nullptr)?std::make_optional(prop(node,"caption")):std::nullopt:detail::import_root_caption(node);if(caption)attrs.emplace_back("caption",*caption);}
   std::sort(attrs.begin(),attrs.end());for(const auto &attribute:attrs){add(text,attribute.first);add(text,attribute.second);}
   for(auto *child=node->children;child;child=child->next){if(container&&(named(child,"Folder")||named(child,"Bookmark")||xmlIsBlankNode(child)))continue;add(text,representation(child,false,false,depth+1));}
   return text;
  }
  std::string context(xmlNode *node){auto found=contexts.find(node);if(found!=contexts.end())return found->second;
-  const bool wrapper=named(node,"SwordBookmarks")||xmlHasProp(node,BAD_CAST "andbible-source");
+  const bool wrapper=named(node,"SwordBookmarks")||detail::imported_bookmark_root(node)||xmlHasNsProp(node,BAD_CAST "andbible-source",nullptr);
   auto value=digest(representation(node,true,wrapper));
   if(!wrapper&&node->parent&&node->parent->type==XML_ELEMENT_NODE){std::size_t position=0;for(auto *previous=node->prev;previous;previous=previous->prev)if(named(previous,"Folder")||named(previous,"Bookmark"))++position;value=digest(context(node->parent)+":"+std::to_string(position)+":"+value);}
   contexts.emplace(node,value);return value;
@@ -67,8 +70,7 @@ struct Documents {
   if(review.ambiguous||(policy==BookmarkImportPolicy::reject_collisions&&!review.collisions.empty())||(policy==BookmarkImportPolicy::skip_identical&&review.conflicting))throw std::invalid_argument("Bookmark collisions require a different explicit policy or source correction");
   if(!review.new_items&&!incoming.empty())return original; // Byte-identical repeat, without another import folder.
   for(auto *node:incoming)if(existing.count(prop(node,"andbible-entry"))){xmlUnlinkNode(node);xmlFreeNode(node);}
-  auto *copy=xmlDocCopyNode(xmlDocGetRootElement(source.get()),target.get(),1);if(!copy)throw std::bad_alloc();std::unique_ptr<xmlNode,decltype(&xmlFreeNode)> owned(copy,xmlFreeNode);
-  xmlNodeSetName(copy,BAD_CAST "Folder");if(!xmlSetProp(copy,BAD_CAST "caption",BAD_CAST folder.c_str())||!xmlAddChild(xmlDocGetRootElement(target.get()),copy))throw std::bad_alloc();owned.release();
+  auto copy=detail::copy_bookmark_import_root(source.get(),target.get(),folder);if(!xmlAddChild(xmlDocGetRootElement(target.get()),copy.get()))throw std::bad_alloc();copy.release();
   xmlChar *raw=nullptr;int size=0;xmlDocDumpFormatMemoryEnc(target.get(),&raw,&size,"UTF-8",0);std::unique_ptr<xmlChar,decltype(xmlFree)> encoded(raw,xmlFree);if(!raw||size<=0)throw std::runtime_error("Bookmark merge serialization failed");return {reinterpret_cast<const char *>(raw),static_cast<std::size_t>(size)};
  }
 };

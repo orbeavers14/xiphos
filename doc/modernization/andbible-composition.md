@@ -160,9 +160,7 @@ bytes/revision and add no import folder, though verified replacement may still
 replace the file. Generic unidentified entries remain explicit append operations.
 
 Application recomputes the comparison inside the existing verified replacement
-and exact revision guard. As in legacy append, a root caption currently becomes the chosen import-folder
-caption; preserving the separate original caption is the next metadata gap. Other
-new-entry folder/root metadata and
+and exact revision guard. New-entry folder/root metadata and
 existing unknown XML remains intact. Source/limit/stale/conflict failures leave
 the destination unchanged. The original SQLite backup is never changed.
 Owned C review counts/collision rows and revisions survive request/worker close;
@@ -176,3 +174,22 @@ repeated source UUID rejection, unknown metadata, attribute order, inherited
 color conflicts, UTF-16 destination XML, mixed new/duplicate imports, byte-idempotent
 repeats, ambiguous IDs, stale guards, C ownership and native policy/export flows.
 Real-user backup/schema migration and destructive conflict resolution remain open.
+
+## Import root metadata preservation — 2026-11-03
+
+Append and merge now retain an original root caption separately from the chosen
+import-folder caption, using the stable protocol namespace
+`urn:xiphos:bookmarks:import:1`. The wrapper records its original root type and,
+when present, the original unqualified caption. This is storage metadata, not a
+product-branding choice. Namespace-prefix collisions get a distinct prefix;
+a default namespace cannot accidentally make marker attributes unqualified.
+Conflicting reserved metadata rejects the transaction instead of overwriting it.
+
+Review recognizes these wrappers for generic stable identities as well as legacy
+AndBible wrappers. It compares the original caption while ignoring the chosen
+outer folder name. Unknown namespaced captions/attributes remain distinct and
+preserved; namespace prefix spelling does not invent a conflict. Import may
+serialize to UTF-8, while exact XML export still copies the resulting bytes.
+Original root captions, empty versus absent values, unknown namespaces and
+reserved-metadata collisions are covered by generated fixtures. No new dependency
+or public ABI change is introduced by this metadata correction.

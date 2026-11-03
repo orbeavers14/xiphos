@@ -2,6 +2,7 @@
 #include "xiphos/core/bookmarks.hpp"
 #include "xiphos/core/andbible.hpp"
 #include "xml_document.hpp"
+#include "bookmark_import_xml.hpp"
 #include "preference_file.hpp"
 #include <glib.h>
 #include <filesystem>
@@ -182,7 +183,7 @@ BookmarkSnapshot append_bookmark_document(const std::string &path,const std::opt
   auto target=detail::parse_xml_document(bytes,"SwordBookmarks"),source=detail::parse_xml_document(imported,"SwordBookmarks");std::set<std::string> seen;
   auto identities=[&](xmlDoc *doc,bool incoming){for(auto *node:bookmark_nodes(xmlDocGetRootElement(doc))){std::unique_ptr<xmlChar,decltype(xmlFree)> id(xmlGetProp(node,BAD_CAST "andbible-entry"),xmlFree);if(id&&!seen.insert(reinterpret_cast<const char *>(id.get())).second&&incoming)throw std::invalid_argument("AndBible bookmark already exists; explicit merge review is required");}};
   identities(target.get(),false);identities(source.get(),true);
-  auto *copy=xmlDocCopyNode(xmlDocGetRootElement(source.get()),target.get(),1);if(!copy)throw std::bad_alloc();std::unique_ptr<xmlNode,decltype(&xmlFreeNode)> owned(copy,xmlFreeNode);xmlNodeSetName(copy,BAD_CAST "Folder");if(!xmlSetProp(copy,BAD_CAST "caption",BAD_CAST folder.c_str())||!xmlAddChild(xmlDocGetRootElement(target.get()),copy))throw std::bad_alloc();owned.release();
+  auto copy=detail::copy_bookmark_import_root(source.get(),target.get(),folder);if(!xmlAddChild(xmlDocGetRootElement(target.get()),copy.get()))throw std::bad_alloc();copy.release();
   xmlChar *buffer=nullptr;int length=0;xmlDocDumpFormatMemoryEnc(target.get(),&buffer,&length,"UTF-8",0);std::unique_ptr<xmlChar,decltype(xmlFree)> encoded(buffer,xmlFree);if(!buffer||length<=0)throw std::runtime_error("Bookmark import serialization failed");std::string result(reinterpret_cast<const char *>(buffer),length);prepared=parse_bookmarks(result);
   {std::ofstream out(file,std::ios::binary);out.exceptions(std::ios::badbit|std::ios::failbit);out.write(result.data(),result.size());out.close();}if(detail::read_preference_file(file,detail::maximum_xml_document_bytes)!=result)throw std::runtime_error("Bookmark import verification failed");
  },detail::maximum_xml_document_bytes);return prepared;
