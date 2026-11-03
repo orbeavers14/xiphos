@@ -49,10 +49,13 @@ Stale generations, bad ordinals, capacity/output failures and unsupported markup
 publish no partial document. These are current installed contents, not immutable
 search-time content revisions; external module changes are not interprocess locked.
 
-Keyed HTML uses the existing passive allowlist but has no image loader yet.
-Resources reject even when verse PNG embedding is requested; a keyed path never
-enters the verse asset resolver. Verse PNG behavior is unchanged. Complete keyed
-assets, richer formats and semantic-link/corpus acceptance remain open.
+Keyed HTML uses the existing passive allowlist. The explicit static-PNG option
+now resolves dictionary/indexed-tree images from the actual source module using
+the shared resource resolver and per-document cache. Count, original-byte, pixel
+and encoded-output budgets aggregate across all families. Default resource
+rejection and all-or-nothing publication remain unchanged. Active formats are
+not accepted by static-PNG export. Complete assets, richer formats and broader
+semantic-link/corpus acceptance remain open.
 
 ## macOS integration
 
@@ -66,13 +69,36 @@ export. Dictionary activation validates the exact canonical key and records its
 existing dictionary history within one FIFO job. Book activation selects the
 exact canonical path through the existing shared session service. Missing keys
 cannot fuzzy-open a different entry. Both open their existing native panes and
-preserve the main reading pane and unsubmitted reference draft. Keyed preview
-links require opening the result first; they never enter the verse-link parser.
+preserve the main reading pane and unsubmitted reference draft. Keyed preview links now use source-specific routing. Dictionary links revalidate
+the exact captured entry before invoking the shared contextual link service.
+Book links first select/show the exact source document, then use its existing
+book-pane handler; relative scripture links retain the main reading context.
+Image links open the existing native viewers. Opaque source keys never become
+verse context for preview rendering. Explicit supported scripture/dictionary/book
+links retain the existing core URI semantics; arbitrary web navigation rejects.
 The export control now says “Include entry text” for all supported families.
 
 Native search drafts persist the opt-in flag before restoring module choices.
 Older version1 drafts without that optional field retain verse-only behavior.
 No parallel search, navigation or persistence engine was introduced.
+
+Session/FIFO keyed previews now apply the session's module engine options and
+reuse bounded book inline-image preparation. Their HTML retains semantic links;
+the native preview allows only prepared data-image loads and disables module
+scripts/network/filesystem subresources. Missing or unsupported preview assets
+retain the existing book preparation fallback; export failures still publish no
+partial document. Raw Reader keyed previews remain raw SDK HTML. The shared
+resource resolver handles OSIS directories with and without trailing separators
+without decoding a native directory prefix or accepting a sibling-prefix match.
+
+Generated compatibility fixtures add RawLD4 dictionaries in ThML and OSIS,
+Unicode image names, Hebrew/Arabic keys/text and nested book paths. Phrase,
+words, regex and multiword searches, exact previews, source-owned image commands,
+static PNG export and aggregate-limit failure are checked. Live native checks
+confirm compact controls, OSIS dictionary and book preview images/viewers,
+preserved Bible reading and mixed-option/module/query restoration after restart.
+These scoped checks do not establish broad commercial-module or cross-platform
+visual acceptance.
 
 ## Evidence and next steps
 

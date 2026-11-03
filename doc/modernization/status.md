@@ -1,5 +1,7 @@
 # Modernization status and acceptance
 
+Keyed image/link checkpoint (2026-11-02, `607b83f`): [native keyed previews and opt-in PNG export](mixed-search.md) now reuse shared resource/link services. RawLD4 OSIS/ThML Unicode/RTL fixtures, alternate SDK and portable-on-Mac checks pass. Live compact controls, dictionary/book image viewers and real quit/restart draft restoration are verified. Full suite245 passes plus one expected index skip; final relative-link refinement9/9. Broader corpus/physical-platform and complete asset acceptance remain open.
+
 Native mixed-search checkpoint (2026-11-02, `fd08f98`): [macOS mixed controls, typed preview/activation and entry export](mixed-search.md#macos-integration) now consume the shared engine. Search drafts persist the opt-in flag with older-draft compatibility. Final model checks and desktop restart/clipboard rechecks pass; compact control visual acceptance, keyed scopes/assets and broader corpus/platform acceptance remain open. This supersedes older notes that all native mixed integration is pending.
 
 Mixed-search checkpoint (2026-11-01, `be6def6`): [opt-in mixed-family batches and typed exports](mixed-search.md) now retain Bible/commentary/dictionary/indexed-tree results in one generation, preserve verse scope/settings across keyed groups and dispatch stale-safe text/passive HTML reads by actual source kind. Existing verse-only consumers remain gated. Native typed controls/activation, keyed scopes/indexed/attribute/assets and broad corpus/physical-host acceptance remain open.

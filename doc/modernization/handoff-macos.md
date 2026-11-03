@@ -5,6 +5,59 @@ Updated 2026-11-01. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Keyed images, links and compatibility — 2026-11-02
+
+Implementation `607b83f`, authorized fork `master`. [Mixed-search contract](mixed-search.md).
+Session/FIFO/C keyed previews apply module engine options and existing bounded
+book image preparation. Native previews allow prepared data images and route
+links by committed source kind. Dictionary sources revalidate exactly; relative
+Bible links use the actual main passage context. Book links select/show the exact
+source document and reuse the existing pane handler. Image commands open existing
+viewers; dictionary commands retain actual source ownership even with a different
+declared URI module. Generic shared module resource reads retain containment,
+normalization and copied-byte policies. Verse-only APIs retain their gates.
+
+Opt-in search HTML static-PNG export now covers dictionaries/indexed-tree books,
+using the existing shared cache/aggregate image budgets and no partial documents.
+Default resource rejection remains. The OSIS source-directory normalizer now
+handles directories without a trailing separator and checks a complete directory
+boundary. It does not decode native directory prefixes or allow sibling-prefix
+matches. No user libraries, public Bible downloads, licensed texts or paid AI.
+
+Actual checks on macOS27.2/AppleClang21/Swift6.4.2:
+
+- Complete native build and246 registered tests:245 passed,one expected primary
+  index skip,286.41s (`build/keyed-assets-full-{build,tests}.log`). This was before
+  the final Swift-only relative-link context refinement. Final native app/model
+  rebuild and focused search/activation/restart/clipboard checks9/9,16.07s
+  (`build/keyed-assets-final-native-{build,tests}.log`). Initial restricted Swift
+  build denied compiler plugin setup; native rebuild with compiler access passed.
+- New original fixtures cover RawLD4 dictionaries with OSIS/ThML, Unicode image
+  names, Hebrew/Arabic keys and prose, nested book paths, four supported text
+  modes, preview embedding, static PNG export, aggregate failure, denied local
+  escape/network sources, dictionary image/explicit scripture links and copied
+  results after worker teardown. Final native models also exercise relative
+  Bible links from dictionary search, book-to-dictionary links and denied web URIs.
+- ASan/UBSan mixed/fixture3/3,6.63s,detect_leaks=0; third-party coverage incomplete.
+  Alternate released SWORD1.9.0/CLucene mixed/fixture3/3,4.02s. Portable Linux
+  model/core build on this Mac mixed/fixture3/3,4.29s. These are not physical
+  Fedora/Windows checks. Logs `build/keyed-assets-{asan,indexed,portable}-*.log`.
+- Live CUA checks with a disposable registered test app/profile/library verified
+  compact guidance fits, OSIS dictionary and Unicode-path book previews render
+  text/images, clicking each image opens its existing viewer and main Bible stays
+  unchanged. Quit/relaunch confirmed opt-in,module,query and selected book restore.
+  Initial newly named test bundle timed out in CUA; the registered bundle worked.
+  Test processes were closed through their own app menu. Real profiles untouched.
+- C11 header syntax, whitespace and documentation links pass. Graphify refreshed
+  locally:680 files,12,764 nodes,34,762 edges,386 communities; code-only,source
+  hashes unchanged,zero AI calls/tokens/cost. Generated graph and unrelated
+  `.DS_Store` remain untracked. Existing deployment26/dylib27 warnings remain.
+
+Complete assets/image formats, broad real-module semantic/RTL/canon coverage,
+keyed scopes/raw-index/attributes and physical-platform/release acceptance remain
+open. No whole-parity or GTK3-retirement promotion. The prior final compact-control
+and live search-draft restart blockers are now resolved by the scoped checks above.
+
 ## Native mixed-search checkpoint — 2026-11-02
 
 Implementation `fd08f98`, authorized fork `master`. The macOS Search pane now

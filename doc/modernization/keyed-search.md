@@ -29,11 +29,10 @@ modes/scopes/families, pre-execution cancellation, unchanged verse scope/generat
 and C ownership. Fixture copies restore their own erased book content before
 searching; no source module or user library is edited.
 
-Next: typed multi-family batch generations, native preview/activation,
-text/HTML export dispatch, keyed retained scopes, raw indexed/attribute coverage,
-native controls and broad corpus/cross-host acceptance. Do not enable these result
-families in existing verse-only UI/export paths until those consumers dispatch
-by source capability. Existing verse-only batch failure tests remain intentional.
+The [mixed-search integration](mixed-search.md) now supplies opt-in typed batches,
+exports and native consumers. Keyed retained scopes, raw indexed/attribute modes
+and broad corpus/cross-host acceptance remain open. Existing verse-only batch
+failure tests remain intentional.
 
 ## Exact keyed previews
 
@@ -43,8 +42,10 @@ a nonzero HTML cap up to8MiB. They require the matching dictionary/indexed-tree
 capability and exact resolution after rendering; missing dictionary keys cannot
 fuzzy-snap to a nearby entry, and missing book paths cannot snap to a parent.
 The SDK key is restored on success or failure. No navigation, history, verse
-scope or result generation is published. Native source-specific controls and
-preview appearance/options integration remain pending.
+scope or result generation is published. Session/FIFO/C previews now apply the
+module engine options and prepare bounded inline images; raw Reader previews
+retain raw SDK output. Native typed controls and source-specific links are
+documented in the [mixed-search contract](mixed-search.md#macos-integration).
 
 The C request returns the existing owned `xc_dictionary_entry` payload for both
 kinds: consume its module/key/HTML fields. Inputs copy before return; output
@@ -58,5 +59,6 @@ and book dispatch, wrong kinds, missing keys/paths, output limits and C lifetime
 [Opt-in mixed-family batches](mixed-search.md) now retain typed complete keys and
 feed existing stale-safe visible/all text and passive HTML exporters. This
 supersedes the earlier pending batch/export statements for this supported slice;
-standalone keyed-query behavior remains unchanged. Native consumption, keyed
-scopes/raw-index/attribute/assets and full compatibility acceptance remain open.
+standalone keyed-query behavior remains unchanged. Native typed consumption,
+preview images/links and opt-in keyed PNG export are checked. Keyed scopes/raw
+index/attributes, complete assets and full compatibility acceptance remain open.
