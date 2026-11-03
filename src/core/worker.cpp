@@ -796,6 +796,12 @@ std::future<SavedParallelProfile> StudyWorker::read_parallel_profile(StudyTab ta
     (void)s.tab(tab);return read_saved_parallel_profile(path);
   });
 }
+std::future<SavedParallelProfile> StudyWorker::edit_parallel_profile_checked(StudyTab tab,std::string path,std::optional<std::string> revision,ParallelProfileEdit edit) {
+  validate_parallel_profile_edit(edit);
+  return impl_->submit([tab,path=std::move(path),revision=std::move(revision),edit=std::move(edit)](Impl::State &s){
+    (void)s.tab(tab);return xiphos::core::edit_parallel_profile_checked(path,revision,edit);
+  });
+}
 std::future<SavedParallelProfile> StudyWorker::edit_parallel_profile(StudyTab tab, std::string path, ParallelProfileEdit edit) {
   try { selected_profile_path(path);validate_parallel_profile_edit(edit); }
   catch (...) { return selected_profile_rejection<SavedParallelProfile>(); }

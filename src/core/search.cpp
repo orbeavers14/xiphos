@@ -19,6 +19,7 @@
 #include <stdexcept>
 #include <thread>
 #include <algorithm>
+#include <set>
 namespace xiphos::core::detail {
 namespace {
 class ScopedSearchFilters {
@@ -80,7 +81,7 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
     const bool dictionary=dynamic_cast<sword::SWLD *>(&module)&&std::string(module.getType())=="Lexicons / Dictionaries";
     const bool book=dynamic_cast<sword::SWGenBook *>(&module)&&indexed_book(module);
     if((!dictionary&&!book)||query.range||next||
-       (query.mode!=SearchMode::regular_expression&&query.mode!=SearchMode::phrase&&query.mode!=SearchMode::words&&query.mode!=SearchMode::multiword))
+       (query.mode!=SearchMode::regular_expression&&query.mode!=SearchMode::phrase&&query.mode!=SearchMode::words&&query.mode!=SearchMode::multiword&&query.mode!=SearchMode::indexed))
       throw std::invalid_argument("Keyed search requires a dictionary/general book and a supported text mode");
   }else if(!supports_verse_search(module))throw std::invalid_argument("Initial search supports Bible and regular commentary verse modules");
   int engine_type;
@@ -131,8 +132,25 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   }
   ProgressContext context{&module,control.get(),std::this_thread::get_id(),progress_begin,progress_end};
   const int flags=(query.case_sensitive?0:XIPHOS_SWORD_SEARCH_ICASE_FLAG)|(whole_entry?xiphos::core::detail::sdk_search_whole_entry:0);
-  auto &list=module.search(stripped.c_str(),engine_type,flags,
+  auto &sdk_list=module.search(stripped.c_str(),engine_type,flags,
                            range?&*range:nullptr,nullptr,search_percent,&context);
+  // Some SDK indexed tree searches ignore arbitrary-key ranges. Enforce the
+  // authoritative same-source scope before counts, sorting, retention or export.
+  std::optional<sword::ListKey> filtered;
+  if(keyed_only&&query.within_last_results&&previous){
+    std::set<std::string> allowed;
+    for(int i=0;i<previous->keys().getCount();++i){
+      const auto *key=previous->keys().getElement(i);if(!key)throw std::runtime_error("Missing scoped key");
+      allowed.emplace(key->getText());
+    }
+    filtered.emplace();
+    for(int i=0;i<sdk_list.getCount();++i){
+      if(control&&control->cancel_requested())break;
+      const auto *key=sdk_list.getElement(i);if(!key)throw std::runtime_error("Missing SDK result key");
+      if(allowed.erase(key->getText()))filtered->add(*key);
+    }
+  }
+  auto &list=filtered?*filtered:sdk_list;
   // Legacy copies the complete scope before sorting indexed display results.
   auto staged=next?std::make_shared<const SearchScope>(list,scope_limits):nullptr;
   if(engine_type==xiphos::core::detail::sdk_search_external)list.sort();

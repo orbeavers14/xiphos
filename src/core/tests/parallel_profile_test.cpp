@@ -153,6 +153,16 @@ int main(int argc,char **argv){try{
  check(bytes(destination)==original_bytes&&std::filesystem::status(destination).permissions()==original_permissions,"Rejected edit preserves bytes and permissions");
  const auto final=edit_parallel_profile(destination.u8string(),{ParallelProfileAction::rename,"Saved","Renamed",{},false});
  check(final.current_key=="Renamed"&&final.sets[0].modules==std::vector<std::string>({"Text","Notes"})&&std::filesystem::status(destination).permissions()==original_permissions,"Atomic rename retains modules and file permissions");
+ ParallelProfileEdit activate{ParallelProfileAction::activate,"Renamed","",{},false};
+ const auto checked=edit_parallel_profile_checked(destination.u8string(),final.revision,activate);
+ check(checked.revision==read_saved_parallel_profile(destination.u8string()).revision,"Checked parallel edits return exact source revision");
+ {std::ofstream external(destination,std::ios::app);external<<"\n";}
+ const auto changed=bytes(destination);
+ rejects([&]{edit_parallel_profile_checked(destination.u8string(),checked.revision,activate);});
+ rejects([&]{edit_parallel_profile_checked(destination.u8string(),std::nullopt,activate);});
+ check(bytes(destination)==changed,"Stale and create-only parallel edits preserve external changes");
+ const auto fresh=read_saved_parallel_profile(destination.u8string());
+ check(edit_parallel_profile_checked(destination.u8string(),fresh.revision,activate).current_key=="Renamed","Explicit reload permits checked retry");
  rejects([&]{edit_parallel_profile((root/"missing-edit.xml").u8string(),{ParallelProfileAction::activate,"Saved","",{},false});});
  std::cout<<"Saved parallel profiles: "<<comparisons<<" XML/startup and "<<deletions<<" complete delete comparisons, raw names/duplicates/nulls, legacy migration, bounded owned data and read-only files passed\n";return 0;
 }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}

@@ -56,6 +56,11 @@ int main(int argc,char **argv){try{
  check(!xc_parallel_profile_key(owned,9)&&!xc_parallel_profile_module(owned,1,9)&&!xc_parallel_profile_legacy_slot(owned,5)&&!xc_parallel_profile_count(nullptr)&&!xc_parallel_profile_current_key(nullptr),"Invalid C snapshot access is safe");
  check(xc_worker_read_parallel_profile(worker,tab,file.u8string().c_str(),&request)==XC_OK&&wait(request)==XC_OK,"C explicit read");auto *read=xc_request_take_parallel_profile(request);xc_request_release(request);
  check(std::string(xc_parallel_profile_names_text(read))=="Drained,Copied_Set"&&std::string(xc_parallel_profile_current_key(read))=="Copied_Set"&&std::string(xc_parallel_profile_active_modules_text(read))=="Text&<>,Notes,","C raw scalar getters");xc_parallel_profile_release(read);
+ const std::string revision=xc_parallel_profile_revision(owned);check(revision.size()==64,"C parallel revision owns exact digest");
+ xc_parallel_profile_edit activate{XC_PARALLEL_PROFILE_ACTIVATE,"Copied_Set",nullptr,nullptr,0,0};
+ check(xc_worker_edit_parallel_profile_checked(worker,tab,file.u8string().c_str(),revision.c_str(),&activate,&request)==XC_OK&&wait(request)==XC_OK,"C checked activation matches source snapshot");
+ auto *checked=xc_request_take_parallel_profile(request);check(checked&&std::string(xc_parallel_profile_revision(checked)).size()==64,"Checked owned revision");xc_parallel_profile_release(checked);xc_request_release(request);
+ const std::string stale(64,'0');check(xc_worker_edit_parallel_profile_checked(worker,tab,file.u8string().c_str(),stale.c_str(),&activate,&request)==XC_OK&&wait(request)==XC_INVALID_ARGUMENT,"C stale parallel edit rejected");xc_request_release(request);
  edit={XC_PARALLEL_PROFILE_RENAME,"Copied_Set","Final",nullptr,0,0};check(xc_worker_edit_parallel_profile(worker,tab,file.u8string().c_str(),&edit,&request)==XC_OK,"C dropped rename accepted");xc_request_release(request);xc_worker_close(worker);
  check(read_saved_parallel_profile(file.u8string()).current_key=="Final","C shutdown drains dropped edit");
  std::filesystem::remove(file);check(std::string(xc_parallel_profile_current_key(owned))=="Copied_Set"&&std::string(xc_parallel_profile_startup_modules_text(owned))=="Text&<>,Notes,","Owned result survives later write/source deletion/worker teardown");xc_parallel_profile_release(owned);xc_parallel_profile_release(nullptr);

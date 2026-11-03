@@ -1835,10 +1835,10 @@ xc_status xc_worker_read_parallel_profile(xc_worker *w,uint64_t tab,const char *
   if (!bounded_image_c_text(path,4096)) { if(out)*out=nullptr;return XC_INVALID_ARGUMENT; }
   return queue_request(w,out,[=](auto &worker){return worker.read_parallel_profile(tab,path);});
 }
-xc_status xc_worker_edit_parallel_profile(xc_worker *w,uint64_t tab,const char *path,const xc_parallel_profile_edit *edit,xc_request **out) {
+static xc_status parallel_profile_edit_request(xc_worker *w,uint64_t tab,const char *path,const xc_parallel_profile_edit *edit,xc_request **out,const char *revision,bool checked) {
   if (!out) return XC_INVALID_ARGUMENT;
   *out=nullptr;
-  if (!w || !edit || !bounded_image_c_text(path,4096) || !bounded_image_c_text(edit->key,4096) ||
+  if ((revision&&!bounded_image_c_text(revision,64)) || !w || !edit || !bounded_image_c_text(path,4096) || !bounded_image_c_text(edit->key,4096) ||
       edit->action<XC_PARALLEL_PROFILE_SAVE || edit->action>XC_PARALLEL_PROFILE_ACTIVATE ||
       (edit->make_current!=0 && edit->make_current!=1) || edit->module_count>4096 ||
       (edit->module_count && !edit->modules)) return XC_INVALID_ARGUMENT;
@@ -1853,9 +1853,11 @@ xc_status xc_worker_edit_parallel_profile(xc_worker *w,uint64_t tab,const char *
     copy.key=edit->key;copy.replacement_key=edit->replacement_key?edit->replacement_key:"";
     copy.make_current=edit->make_current!=0;copy.modules.reserve(edit->module_count);
     for(size_t i=0;i<edit->module_count;++i)copy.modules.emplace_back(edit->modules[i]);
-    return worker.edit_parallel_profile(tab,path,std::move(copy));
+    return checked?worker.edit_parallel_profile_checked(tab,path,revision?std::make_optional(std::string(revision)):std::nullopt,std::move(copy)):worker.edit_parallel_profile(tab,path,std::move(copy));
   });
 }
+xc_status xc_worker_edit_parallel_profile(xc_worker *w,uint64_t tab,const char *path,const xc_parallel_profile_edit *edit,xc_request **out){return parallel_profile_edit_request(w,tab,path,edit,out,nullptr,false);}
+xc_status xc_worker_edit_parallel_profile_checked(xc_worker *w,uint64_t tab,const char *path,const char *revision,const xc_parallel_profile_edit *edit,xc_request **out){return parallel_profile_edit_request(w,tab,path,edit,out,revision,true);}
 xc_status xc_worker_read_search_lists(xc_worker *w, uint64_t tab, const char *path, xc_request **out) {
   if (!path || !*path) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.read_search_lists(tab, path); });
@@ -2522,6 +2524,7 @@ int xc_tab_session_parallel_showing(const xc_tab_session *s,size_t row){return s
 void xc_tab_session_release(xc_tab_session *s){delete s;}
 size_t xc_parallel_profile_count(const xc_parallel_profile *p){return p?p->value.sets.size():0;}
 const char *xc_parallel_profile_names_text(const xc_parallel_profile *p){return p&&p->value.names_text?p->value.names_text->c_str():nullptr;}
+const char *xc_parallel_profile_revision(const xc_parallel_profile *p){return p?p->value.revision.c_str():nullptr;}
 const char *xc_parallel_profile_current_key(const xc_parallel_profile *p){return p&&p->value.current_key?p->value.current_key->c_str():nullptr;}
 const char *xc_parallel_profile_active_modules_text(const xc_parallel_profile *p){return p&&p->value.active_modules_text?p->value.active_modules_text->c_str():nullptr;}
 const char *xc_parallel_profile_startup_modules_text(const xc_parallel_profile *p){return p&&p->value.startup_modules_text?p->value.startup_modules_text->c_str():nullptr;}

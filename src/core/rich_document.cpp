@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/rich_document.hpp"
+#include "xiphos/core/link.hpp"
 #include "xml_document.hpp"
 #include <libxml/HTMLparser.h>
 #include <algorithm>
@@ -16,7 +17,13 @@ bool equal(const RichStyle &a,const RichStyle &b){return std::tie(a.flags,a.bloc
 std::string lower(std::string s){for(auto &c:s)if(c>='A'&&c<='Z')c+=32;return s;}
 std::string trim(std::string s){const auto first=s.find_first_not_of(" \t\r\n");return first==s.npos?"":s.substr(first,s.find_last_not_of(" \t\r\n")-first+1);}
 std::string color(std::string s){s=lower(trim(s));if(s.empty())return s;static const std::map<std::string,std::string> names{{"black","#000000"},{"white","#ffffff"},{"red","#ff0000"},{"green","#008000"},{"blue","#0000ff"},{"yellow","#ffff00"},{"gray","#808080"},{"grey","#808080"},{"purple","#800080"},{"orange","#ffa500"}};auto n=names.find(s);if(n!=names.end())return n->second;if(s.size()==4&&s[0]=='#'){std::string full="#";for(std::size_t i=1;i<4;++i){full+=s[i];full+=s[i];}s=std::move(full);}if(s.size()!=7||s[0]!='#'||!std::all_of(s.begin()+1,s.end(),[](char c){return(c>='0'&&c<='9')||(c>='a'&&c<='f');}))invalid();return s;}
-bool uri(const std::string &s){if(s.empty())return true;if(s.size()>4096||!editable_document_text(s)||std::any_of(s.begin(),s.end(),[](unsigned char c){return c<=32||c==127;}))return false;auto v=lower(s);for(auto p:{"sword://","bible://","https://","http://","mailto:"})if(v.rfind(p,0)==0)return true;return false;}
+bool uri(const std::string &s){if(s.empty())return true;if(s.size()>4096||!editable_document_text(s)||std::any_of(s.begin(),s.end(),[](unsigned char c){return c<=32||c==127;}))return false;auto v=lower(s);for(auto p:{"sword://","bible://","https://","http://","mailto:"})if(v.rfind(p,0)==0)return true;
+ if(v.rfind("passagestudy.jsp?",0)==0||v.rfind("xiphos.url?",0)==0){
+   // Validate command syntax with the same core router used by reading panes.
+   // Context is supplied at activation, not embedded into the saved document.
+   try{(void)contextual_study_link(s,"editor-context");return true;}catch(const std::invalid_argument &){return false;}
+ }
+ return false;}
 std::string escape(const std::string &s){std::string out;for(char c:s){switch(c){case '&':out+="&amp;";break;case '<':out+="&lt;";break;case '>':out+="&gt;";break;case '"':out+="&quot;";break;default:out+=c;}if(out.size()>maximum_editable_document_bytes)invalid();}return out;}
 
 void append(RichDocument &d,std::string text,const RichStyle &style){if(text.empty())return;if(!d.runs.empty()&&equal(d.runs.back().style,style))d.runs.back().text+=text;else{if(d.runs.size()>=max_runs)invalid();d.runs.push_back({std::move(text),style});}}

@@ -544,7 +544,8 @@ xc_status xc_worker_search_module(xc_worker *worker,uint64_t tab,const char *mod
                                   const xc_search_options *options,xc_request **out);
 /* Separate dictionary/general-book text query. Result kind must be consumed as
  * an opaque dictionary key or book path, never a verse reference. Regex/phrase/
- * words/multiword only; no range, last-scope, generation, export or history
+ * words/multiword/indexed only; indexed capability/fallback matches verse policy.
+ * No range, last-scope, generation, export or history
  * publication. Copied input, cancellable FIFO job, same owned xc_search result. */
 xc_status xc_worker_search_keyed_module(xc_worker *worker,uint64_t tab,const char *module,const char *expression,const xc_search_options *options,xc_request **out);
 /* 0 verse, 1 dictionary, 2 general book; -1 NULL. Existing verse APIs stay 0. */
@@ -641,7 +642,8 @@ xc_status xc_worker_search_modules(xc_worker *worker,uint64_t tab,const char *co
  * settings. Keyed last scope requires one same-source group in the preceding
  * complete successful generation; ambiguous/missing/incomplete scopes reject.
  * Clear search scope also invalidates keyed scope without deleting exports.
- * Keyed groups still reject verse ranges/attribute/raw-index modes.
+ * Keyed groups still reject verse ranges/attribute modes. Indexed mode uses the
+ * shared capability/fallback policy; exact-key filtering enforces keyed scope.
  * Complete typed keys use the same retained generation/read/export ownership. */
 xc_status xc_worker_search_mixed_modules(xc_worker *worker,uint64_t tab,const char *const *modules,size_t count,const xc_search_query *query,const xc_search_batch_limits *total,xc_request **out);
 xc_search_batch *xc_request_take_search_batch(xc_request *request);
@@ -1414,6 +1416,10 @@ typedef struct {
   int make_current; /* save only, strict0/1 */
 } xc_parallel_profile_edit;
 xc_status xc_worker_read_parallel_profile(xc_worker *worker,uint64_t tab,const char *path,xc_request **out);
+/* Conflict-aware edit: exact snapshot revision required for existing source;
+ * NULL requires missing destination. Original entry point retains legacy policy. */
+xc_status xc_worker_edit_parallel_profile_checked(xc_worker *worker,uint64_t tab,const char *path,const char *revision,const xc_parallel_profile_edit *edit,xc_request **out);
+const char *xc_parallel_profile_revision(const xc_parallel_profile *profile);
 xc_status xc_worker_edit_parallel_profile(xc_worker *worker,uint64_t tab,const char *path,const xc_parallel_profile_edit *edit,xc_request **out);
 xc_parallel_profile *xc_request_take_parallel_profile(xc_request *request);
 size_t xc_parallel_profile_count(const xc_parallel_profile *profile);

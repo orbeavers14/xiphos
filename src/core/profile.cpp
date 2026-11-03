@@ -15,6 +15,8 @@
 #include <cerrno>
 #include <cstdlib>
 #include <limits>
+#include <glib.h>
+#include "xiphos/core/editable_document.hpp"
 namespace xiphos::core {
 namespace {
 constexpr std::size_t maximum_profile_bytes = detail::maximum_xml_document_bytes;
@@ -85,9 +87,15 @@ std::string parallel_set_display_name(const std::string &key) {
   parallel_text(key, maximum_saved_parallel_key_bytes);
   auto display = key;std::replace(display.begin(), display.end(), '_', ' ');return display;
 }
+namespace {
+std::string parallel_revision(const std::string &source) {
+  std::unique_ptr<gchar,decltype(&g_free)> value(g_compute_checksum_for_data(G_CHECKSUM_SHA256,reinterpret_cast<const guchar *>(source.data()),source.size()),g_free);
+  if(!value)throw std::bad_alloc();return value.get();
+}
+}
 SavedParallelProfile parse_saved_parallel_profile(const std::string &source) {
   auto document = parse_document(source);
-  SavedParallelProfile result;
+  SavedParallelProfile result;result.revision=parallel_revision(source);result.snapshot_bytes=result.revision.size();
   auto account = [&](const std::string &text) {
     if (text.size() > maximum_saved_parallel_snapshot_bytes - result.snapshot_bytes)
       throw std::invalid_argument("Saved parallel snapshot exceeds byte bounds");
@@ -295,10 +303,12 @@ std::string serialize_parallel_profile_edit(const std::string &source, const Par
   }
   return result;
 }
-SavedParallelProfile edit_parallel_profile(const std::string &path, const ParallelProfileEdit &edit) {
+static SavedParallelProfile edit_parallel_profile_impl(const std::string &path,const ParallelProfileEdit &edit,bool checked,const std::optional<std::string> &revision) {
   validate_parallel_edit(edit);
   SavedParallelProfile prepared;
   detail::replace_preference_file(path, [&](const std::filesystem::path &file, const std::string &original, bool existed) {
+    if(checked&&((existed&&!revision)||(!existed&&revision)||(existed&&parallel_revision(original)!=*revision)))
+      throw std::invalid_argument("Parallel profile changed; reload before editing");
     if (!existed && edit.action != ParallelProfileAction::save)
       throw std::invalid_argument("Cannot edit parallel sets in a missing profile");
     const auto serialized = serialize_parallel_profile_edit(existed ? original : "<Xiphos/>", edit);
@@ -309,6 +319,13 @@ SavedParallelProfile edit_parallel_profile(const std::string &path, const Parall
     prepared = read_saved_parallel_profile(file.u8string());
   }, maximum_profile_bytes);
   return prepared;
+}
+SavedParallelProfile edit_parallel_profile(const std::string &path,const ParallelProfileEdit &edit) {
+  return edit_parallel_profile_impl(path,edit,false,{});
+}
+SavedParallelProfile edit_parallel_profile_checked(const std::string &path,const std::optional<std::string> &revision,const ParallelProfileEdit &edit) {
+  if(revision&&!editable_document_revision(*revision))throw std::invalid_argument("Invalid parallel profile revision");
+  return edit_parallel_profile_impl(path,edit,true,revision);
 }
 bool saved_tab_yes(const std::optional<std::string> &text) { return text && *text == "yes"; }
 TabVisibility saved_tab_visibility(const SavedTab &tab, TabVisibility fallback) {

@@ -30,6 +30,7 @@ struct SavedParallelProfile {
   std::optional<std::vector<std::string>> startup_modules;
   ParallelStartupSource startup_source = ParallelStartupSource::none;
   std::size_t snapshot_bytes = 0;
+  std::string revision; // Exact source bytes, for conflict-aware native edits.
 };
 // Explicit read-only legacy XML subset, including startup fallback ordering.
 // Named/active token counts have storage bounds distinct from the32-column
@@ -53,4 +54,7 @@ std::string serialize_parallel_profile_edit(const std::string &xml, const Parall
 // by save. Prepared owned snapshot is returned without post-replacement reads.
 SavedParallelProfile edit_parallel_profile(const std::string &path, const ParallelProfileEdit &edit);
 
+// Null revision requires a missing file. Existing sources must match the exact
+// snapshot revision; unknown fields and concurrent-change guards remain shared.
+SavedParallelProfile edit_parallel_profile_checked(const std::string &path,const std::optional<std::string> &revision,const ParallelProfileEdit &edit);
 }
