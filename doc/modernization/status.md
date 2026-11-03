@@ -1,5 +1,15 @@
 # Modernization status and acceptance
 
+Keyed last-results checkpoint (2026-11-02, `30e0baf`): [dictionary/book narrowing](mixed-search.md) now uses complete same-source retained keys, preserves verse scope and exports, and rejects incomplete/ambiguous prior sources. Final scoped checks12/12; sanitizer and alternate SDK checks3/3 each. Remaining search range/index/attribute policies and priorities2–5 remain active.
+
+Owner priority update (2026-11-02): work through search/content, bookmarks and
+annotations, parallel saved workflows, editing, then library organization. Remaining
+BibleSync networking/group/presence/chat and external IPC/actions are a stretch
+goal; delivery is undecided and they are not a core completion requirement.
+Preserve existing checked implementations without expanding them. Persistence and
+legacy migration remain important compatibility work, separate from this sequence.
+Personal data sync and Apple Handoff retain their separate future-roadmap status.
+
 Keyed image/link checkpoint (2026-11-02, `607b83f`): [native keyed previews and opt-in PNG export](mixed-search.md) now reuse shared resource/link services. RawLD4 OSIS/ThML Unicode/RTL fixtures, alternate SDK and portable-on-Mac checks pass. Live compact controls, dictionary/book image viewers and real quit/restart draft restoration are verified. Full suite245 passes plus one expected index skip; final relative-link refinement9/9. Broader corpus/physical-platform and complete asset acceptance remain open.
 
 Native mixed-search checkpoint (2026-11-02, `fd08f98`): [macOS mixed controls, typed preview/activation and entry export](mixed-search.md#macos-integration) now consume the shared engine. Search drafts persist the opt-in flag with older-draft compatibility. Final model checks and desktop restart/clipboard rechecks pass; compact control visual acceptance, keyed scopes/assets and broader corpus/platform acceptance remain open. This supersedes older notes that all native mixed integration is pending.

@@ -5,6 +5,47 @@ Updated 2026-11-01. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Keyed last-results and revised priorities — 2026-11-02
+
+Implementation `30e0baf`, authorized fork `master`. Owner made remaining BibleSync
+and external-action work an optional stretch goal with delivery undecided; retain
+existing implementations, do not expand them ahead of search/content, bookmarks/
+annotations, parallel saved workflows, editing and library organization. Personal
+data sync/Handoff remain separate future roadmap items. Legacy migration and
+cross-host restoration are compatibility hardening, not ongoing device sync.
+
+First search slice: mixed dictionary/book Last results uses complete retained
+same-source keys from the preceding successful generation. It rejects missing,
+ambiguous repeated sources, incomplete/cancelled searches and capacity-exceeded
+retention. Every group reads the previous generation; earlier same-request groups
+cannot change the source scope. Hidden retained keys participate, cloned book
+paths do not expand and repeated empty searches stay empty. Verse scope/settings
+remain separate. Clear last invalidates keyed scope but preserves export identity.
+Standalone keyed Reader searches still reject session-only scopes. Mac guidance
+and Clear last availability consume this service; no new navigation/search engine.
+See [contract](mixed-search.md).
+
+Actual local checks on the current macOS27.2/AppleClang21/Swift6.4.2 setup:
+
+- Native app/model/mixed target build passed. Relinked relevant scope, generation,
+  batch and C-boundary targets; final selected suite12/12,24.41s, including native
+  keyed narrowing and prerequisite fixtures (`build/keyed-scope-regression-*.log`).
+- ASan/UBSan mixed/fixture3/3,4.86s,detect_leaks=0; SDK coverage incomplete
+  (`build/keyed-scope-asan-*.log`). Alternate SWORD1.9.0/CLucene mixed/fixture3/3,
+  2.03s (`build/keyed-scope-indexed-*.log`). C11 syntax and whitespace pass.
+- Graphify local code-only refresh680 files,12,766 nodes,34,768 edges,
+  379 communities; source hashes unchanged,zero AI calls/tokens/cost. Existing
+  heuristic/extractor limitations apply. Generated graph and unrelated `.DS_Store`
+  stay untracked. Existing deployment26/dylib27 warnings remain.
+
+No new full-suite/physical-platform or live-window acceptance claim for this
+slice. The preceding keyed-image live visual/restart evidence remains valid for
+that checkpoint. Native last-scope behavior is checked in the model here.
+Next: continue step1's remaining keyed range/index/attribute capability policies
+and compatibility; then step2 native bookmark/import/conflict/composition workflows,
+step3 parallel saved sets,step4 document organization/round trips,step5 library
+favorites/hiding/grouping. These priorities are not all completed by this slice.
+
 ## Keyed images, links and compatibility — 2026-11-02
 
 Implementation `607b83f`, authorized fork `master`. [Mixed-search contract](mixed-search.md).

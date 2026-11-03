@@ -20,8 +20,14 @@ common query/options across its ordered module list; C++ supports per-group
 queries as before.
 
 Only verse groups update the tab's complete verse last-results scope and saved
-search annotation choices. Keyed groups reject verse ranges, last-results scope,
-attribute modes and raw indexed syntax. Their basic text modes use the same
+search annotation choices. Keyed groups reject verse ranges, attribute modes and raw indexed syntax.
+Last-results searches now use complete retained keys from one matching actual
+source in the preceding successful, non-cancelled generation. Missing, repeated,
+partial or capacity-exceeded sources reject instead of broadening. Empty sets
+stay empty across repeated narrowing. All groups in a batch read the preceding
+generation, so earlier groups in the same request cannot change later scopes.
+Clear last invalidates both keyed and verse scopes while keeping exports intact.
+Standalone keyed Reader queries still reject session-only last scopes. Their basic text modes use the same
 filter preparation and cooperative progress/cancellation as standalone keyed
 search. A cancelled job before any execution keeps the previous generation;
 late cancellation retains the existing completed-prefix rules.
@@ -109,5 +115,5 @@ exact/short byte caps, stale IDs, explicit partial sources, retention capacity,
 keyed resource rejection, cancellation and owned C results after worker teardown.
 Existing verse-only batch/export characterization remains intentional.
 
-Next: keyed last-results/range policy, keyed raw-index/attribute coverage where supported,
+Next: keyed range policy and raw-index/attribute coverage where supported,
 keyed assets and broader SDK/module/canon/RTL/physical-platform acceptance.

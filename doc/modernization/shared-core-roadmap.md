@@ -1,5 +1,13 @@
 # Shared core: remaining scope
 
+Owner priority update (2026-11-02): work through search/content, bookmarks and
+annotations, parallel saved workflows, editing, then library organization. Remaining
+BibleSync networking/group/presence/chat and external IPC/actions are a stretch
+goal; delivery is undecided and they are not a core completion requirement.
+Preserve existing checked implementations without expanding them. Persistence and
+legacy migration remain important compatibility work, separate from this sequence.
+Personal data sync and Apple Handoff retain their separate future-roadmap status.
+
 Legacy settings/session checkpoint (2026-11-01, `4bfb38c`): shared read-only snapshots,
 strict all-tab conversion, explicit module mapping, exact-original migration
 packages/restore and Mac preview/export/next-launch integration now exist. See
@@ -64,7 +72,7 @@ finished. Whole workflows and data compatibility remain the acceptance units.
 
 Defer further devotional work and retain its checked date/read services. Focus
 core work on parallel reading, bookmarks/annotations, editing, module installation,
-sync, complete session persistence and broader compatibility testing. Start with
+complete session persistence and broader compatibility testing. Start with
 parallel reading; develop persistence foundations alongside stateful services,
 and run compatibility checks throughout rather than treating them as a final step.
 Publisher-approved translation providers remain future installation/library scope;
@@ -88,7 +96,7 @@ This direction supersedes earlier next-step notes that resume devotionals.
 | Bookmarks and annotations | Owned XML hierarchy/order/colors, revision-checked edits, tag maps, shared highlight priority and verse-note storage | AndBible import, remaining annotation composition and complete compatibility/workflow acceptance |
 | Writing and editing | Revision-checked documents, shared rich formatting/undo, supported SWORD module edits and recovery drafts | Journal/prayer organization, remaining document links/format round trips and full workflow acceptance |
 | Settings and sessions | Scoped profile storage, native all-tab capture/restore/recovery, explicit legacy settings/tabs/modops conversion with exact source packages/restore and module mapping | Representative real profiles, complete user-directory/assets migration, unsupported appearance controls and cross-host acceptance |
-| Sync and external actions | Shared BibleSync policy/safe networking, native Mac routing and two independent loopback clients; internal URI routing subset | Physical LAN/sleep/interface interoperability, group routing/presence/chat, IPC and remaining semantic actions; personal data sync is future scope |
+| Sync and external actions (stretch goal; delivery undecided) | Shared BibleSync policy/safe networking, native Mac routing and two independent loopback clients; internal URI routing subset | Optional future work: physical LAN/sleep/interface interoperability, group routing/presence/chat, IPC and remaining semantic actions; personal data sync is separate future scope |
 
 Native controls, accessibility, clipboard/print dialogs, window layout and platform
 packaging also remain, but are frontend responsibilities rather than a second
