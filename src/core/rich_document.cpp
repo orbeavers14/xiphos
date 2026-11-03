@@ -35,11 +35,12 @@ struct Parser {
  void walk(xmlNode *nodes,RichStyle style,int list=0,unsigned depth=0){if(depth>64)invalid();for(auto *n=nodes;n;n=n->next){
   if(n->type==XML_TEXT_NODE){if(n->content)add(reinterpret_cast<const char *>(n->content),style);continue;}
   if(n->type!=XML_ELEMENT_NODE)invalid();auto tag=lower(reinterpret_cast<const char *>(n->name));auto next=style;
-  for(auto *p=n->properties;p;p=p->next){auto key=lower(reinterpret_cast<const char *>(p->name));if(!((tag=="a"&&key=="href")||(tag=="span"&&key=="style")||(tag=="ol"&&key=="type")))invalid();}
+  for(auto *p=n->properties;p;p=p->next){auto key=lower(reinterpret_cast<const char *>(p->name));if(!((tag=="a"&&key=="href")||(tag=="span"&&key=="style")||(tag=="font"&&key=="color")||(tag=="ol"&&key=="type")))invalid();}
   bool block=false;
   if(tag=="b"||tag=="strong")next.flags|=1;else if(tag=="i"||tag=="em")next.flags|=2;else if(tag=="u")next.flags|=4;else if(tag=="s"||tag=="strike"||tag=="del")next.flags|=8;
   else if(tag=="br"){add("\n",style);continue;}
   else if(tag=="a"){next.link=prop(n,"href");if(!uri(next.link))invalid();}
+  else if(tag=="font"){const auto value=trim(prop(n,"color"));if(!value.empty())next.foreground=color(value);}
   else if(tag=="span"){auto css=prop(n,"style");std::size_t at=0;while(at<css.size()){auto end=css.find(';',at);auto part=trim(css.substr(at,end==css.npos?css.npos:end-at));if(!part.empty()){auto colon=part.find(':');if(colon==part.npos)invalid();auto key=lower(trim(part.substr(0,colon)));auto value=part.substr(colon+1);if(key=="color")next.foreground=color(value);else if(key=="background-color")next.background=color(value);else invalid();}if(end==css.npos)break;at=end+1;}}
   else if(tag=="ul"||tag=="ol"){if(list)invalid();int kind=9;if(tag=="ol"){const auto type=lower(prop(n,"type"));if(!type.empty()&&type!="1"&&type!="a"&&type!="i")invalid();kind=type=="a"?12:type=="i"?11:10;}boundary(style);walk(n->children,style,kind,depth+1);continue;}
   else if(tag=="li"){if(!list)invalid();next.block=static_cast<RichBlock>(list);block=true;}

@@ -158,3 +158,17 @@ rich save/reopen and ordinary module-draft recovery. A disposable live app verif
 creation, bold formatting, save and tree navigation to the rendered new content.
 Broader journal/prayer organization, move/rename/delete and full workflow parity
 remain open.
+
+## Legacy font-color fragments — 2026-11-03
+
+The shared parser now accepts legacy `<font color>` wrappers, maps their color
+through the existing bounded color validator, and exposes the same typed runs
+used by C/Swift/native formatting. Nested colors restore the outer style;
+colorless wrappers inherit it. An explicit rich edit serializes canonical color
+spans; opening/saving unchanged source still preserves exact original bytes.
+
+Font faces/sizes, event attributes and invalid/injected color values continue to
+reject rich conversion so their original source is retained. This adds no new
+style flags, ABI fields, frontend parsing engine or dependency. Checks cover
+nested style scope, Unicode, canonical round trips, rejected unsupported metadata
+and the C/Swift editor adapter. Broader rich-markup compatibility remains open.

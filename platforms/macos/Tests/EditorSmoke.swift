@@ -15,6 +15,8 @@ import SwiftUI
         try? FileManager.default.removeItem(at:folder); try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
         let root=folder.appendingPathComponent("module-library").path
         try FileManager.default.copyItem(atPath:sourceRoot,toPath:root)
+        let legacy=try EditorRichCodec.parse("<font color='#abc'><b>Original Ω</b></font>")
+        guard legacy.text=="Original Ω",legacy.runs.first?.foreground=="#aabbcc",legacy.runs.first?.flags==1 else {fatalError("Shared C/Swift legacy color parsing preserves formatting")}
         let worker = try CoreWorker(root:root)
         let model = NativeEditorModel(worker:worker,location:.newDocument); await model.start()
         guard model.ready && model.richMode else { fatalError("New rich editor not ready") }
