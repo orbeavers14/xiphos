@@ -1,5 +1,14 @@
 # Modernization status and acceptance
 
+Intervals/assets/side-styling checkpoint (2026-11-03, `4c63dc9`): inclusive
+exact keyed intervals and native draft controls, original five-format assets
+with15 actual WebKit decodes, and shared commentary/parallel note styling now
+pass local checks. Commentary choice now persists without altering history.
+Full native254 passes/two expected index skips; alternate actual-index,
+sanitizer and portable checks pass. Final compact UI/restart verified separately.
+See [Mac evidence and limits](handoff-macos.md#keyed-intervals-broader-assets-and-sideparallel-annotations--2026-11-03).
+Real corpus/physical-platform/full-workflow acceptance remains open.
+
 Verse-note selection checkpoint (2026-11-03): cursor/selection now survives
 periodic autosave and fresh-process recovery with validated Unicode offsets.
 Native scoped checks4/4 and disposable live note-selection check pass; see

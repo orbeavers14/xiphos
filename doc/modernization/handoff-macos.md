@@ -5,6 +5,62 @@ Updated 2026-11-03. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Keyed intervals, broader assets and side/parallel annotations — 2026-11-03
+
+Implementation `4c63dc9`, sequential `master` on the authorized fork. Inclusive
+exact keyed intervals now follow bounded SDK traversal order, reject missing/
+reversed endpoints and verse/last-scope combinations, and post-filter actual
+indexed results before counts/retention/export. C mixed-interval transport keeps
+existing structs unchanged; native inputs and optional session-draft fields use
+the same service. Eight generated keyed sources check exact Unicode endpoints,
+multi-entry inclusion, owned inputs/results and complete retained exports.
+See [interval contract](keyed-search.md#inclusive-keyed-intervals--2026-11-03).
+
+Original PNG/JPEG/GIF/BMP/static-SVG fixtures cover Unicode encoded filenames in
+OSIS/ThML dictionaries and tree books. All15 previews actually decode in native
+production WebKit; non-PNG passive export rejects atomically under its existing
+explicit PNG-only policy. No downloaded artwork or third-party module corpus.
+See [asset evidence](mixed-search.md#broader-original-asset-corpus--2026-11-03).
+
+Shared decorated-commentary reads preserve sparse anchors/headings/numbering.
+Parallel snapshots reuse committed source/options, decorate each actual column,
+preserve duplicate/unavailable columns and account added bytes against the
+original limit. Budget/source failures publish no partial styled output. Native
+refresh/clear/navigation/restore uses fresh shared snapshots and discloses source
+failures. A restart test exposed commentary choice being presentation-only;
+new shared select_commentary commits the active pair without adding/moving history
+or changing read-only preview semantics. Its source failure/state round trip is
+checked. See [styling contract](reading-annotations.md#commentary-and-parallel-styling--2026-11-03).
+
+Actual local evidence: full native256 registered,254 passed,two expected primary
+SDK index skips,300.84s (`build/interval-styling-assets-full-native-{build,tests}.log`).
+Focused native10/10,9.64s (`interval-styling-assets-native-recheck-tests.log`);
+alternate capable SWORD/actual index7/7,3.93s (`...-indexed-final-tests.log`);
+ASan/UBSan6/6,12.02s,detect_leaks=0 (`...-asan-final-tests.log`);
+portable Linux-model build on this Mac6/6,6.70s (`...-portable-final-tests.log`).
+C11 header syntax and whitespace checks pass. Existing SDK/deployment warnings
+remain; no physical Windows/Fedora acceptance claim.
+
+The full suite preceded only final help-text/layout and singular-status wording
+refinements. Final native preview rebuild passes (`...-final-ui-build.log`). Live
+disposable app verified commentary/parallel notes and first-tag edge, inclusive
+book query returning one exact result, missing endpoint producing one failed
+group, and real quit/restart with selected commentary/chapter/source paths and
+interval endpoints. Overly rigid help wrapping clipped compact content; concise
+hints restored normal layout and were visually rechecked after restart. The final
+restored query returns its expected single result. App quit normally; real
+profiles/libraries were untouched. Saved notes in these checks are original prose.
+
+Final local code-only Graphify689 files,13,100 nodes,36,123 edges,378 communities;
+source hashes unchanged by mapping,zero provider calls/tokens/cost; graph-health
+and heuristic-edge limits remain. Outputs stay local/untracked. Logs use prefix
+`build/interval-styling-assets-`; intermediate failures are not success evidence.
+
+Remaining: representative real module/backups/canon/RTL and physical-host
+acceptance, broader asset/export formats, dictionary-specific annotation design
+and whole-workflow visual acceptance. No full parity promotion; the three current
+requests now have implementations and generated-corpus/local native evidence.
+
 ## Broader keyed dictionary drivers — 2026-11-03
 
 Expanded original-prose compatibility fixtures now cover RawLD, RawLD4 and
