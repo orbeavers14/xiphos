@@ -206,6 +206,8 @@ public:
   std::future<LibraryOrganizationSnapshot> set_library_organization(std::string path,std::optional<std::string> revision,LibraryOrganizationEntry entry);
   std::future<AndBibleImport> read_andbible_bookmarks(std::string path);
   std::future<BookmarkSnapshot> export_bookmark_document(std::string source,std::string source_revision,std::string destination,std::optional<std::string> destination_revision);
+  std::future<BookmarkImportReview> review_bookmark_import(std::string path,std::optional<std::string> revision,std::string xml);
+  std::future<BookmarkSnapshot> merge_bookmark_document(std::string path,std::optional<std::string> revision,std::string xml,std::string folder,BookmarkImportPolicy policy);
   std::future<BookmarkSnapshot> append_bookmark_document(std::string path,std::optional<std::string> revision,std::string xml,std::string folder);
   std::future<LegacyMigration> prepare_legacy_migration(LegacyMigrationInput input,LegacyModuleMapping mapping={});
   std::future<LegacyMigration> read_legacy_migration(std::string path,LegacyModuleMapping mapping={});

@@ -782,6 +782,31 @@ struct ReaderModelSmoke {
         other.close(); try await worker.closeTab(tab); try await worker.closeTab(otherTab); await worker.shutdown()
         print("Native ordered batch, failure groups, actual preview/export identity, scope chaining, drafts and lifecycle passed")
     }
+    @MainActor static func bookmarkMerge(root: String) async throws {
+        let folder=FileManager.default.temporaryDirectory.appendingPathComponent("bookmark-merge-model-"+UUID().uuidString)
+        try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true);defer {try? FileManager.default.removeItem(at:folder)}
+        let source=URL(fileURLWithPath:root),file=folder.appendingPathComponent("bookmarks.xml").path
+        try FileManager.default.copyItem(at:source.appendingPathComponent("bookmarks.xml"),to:URL(fileURLWithPath:file))
+        let worker=try CoreWorker(root:source.appendingPathComponent("library").path),model=BookmarkManagementModel(worker:worker)
+        await model.select(file,new:false);let initial=try Data(contentsOf:URL(fileURLWithPath:file));let revision=model.profile?.revision
+        await model.review(source.appendingPathComponent("backup.sqlite").path)
+        guard model.mergeReview?.identical==2,model.mergeReview?.conflicting==0,!model.canImport else {fatalError("Native default rejects exact repeat until policy chosen")}
+        model.mergePolicy = .skipIdentical;guard model.canImport else {fatalError("Exact-repeat choice should allow reviewed repeat")};await model.importReviewed()
+        guard model.preview==nil,model.profile?.revision==revision,try Data(contentsOf:URL(fileURLWithPath:file))==initial else {fatalError("Native repeat import changed XML or made another folder")}
+        await model.review(source.appendingPathComponent("updated-backup.sqlite").path)
+        guard model.mergeReview?.newItems==1,model.mergeReview?.conflicting==2,!model.canImport else {fatalError("Native reviewed note changes and new entry counts")}
+        model.mergePolicy = .skipIdentical;guard !model.canImport else {fatalError("Exact-repeat policy cannot silently accept changed notes")}
+        model.mergePolicy = .keepExisting;guard model.canImport else {fatalError("Explicit keep-existing should admit only new entries")};await model.importReviewed()
+        let saved=try String(contentsOfFile:file,encoding:.utf8)
+        guard model.preview==nil,saved.contains("Original newly imported note"),!saved.contains("Original updated incoming note"),saved.contains("custom=\"retain\"") else {fatalError("Native merge loses destination metadata or overwrites existing notes")}
+        await model.review(source.appendingPathComponent("backup.sqlite").path);model.mergePolicy = .skipIdentical
+        try (saved+"<!--External modification-->").write(toFile:file,atomically:true,encoding:.utf8);await model.importReviewed()
+        guard model.preview != nil,model.message.contains("not saved"),try String(contentsOfFile:file,encoding:.utf8)==saved+"<!--External modification-->" else {fatalError("Reviewed stale destination must preserve external bytes")}
+        await model.select(file,new:false);let exported=folder.appendingPathComponent("exact-export.xml").path;await model.export(to:exported)
+        guard try Data(contentsOf:URL(fileURLWithPath:file))==Data(contentsOf:URL(fileURLWithPath:exported)) else {fatalError("Merged XML export must retain exact metadata/source")}
+        await model.close();await worker.shutdown()
+        print("Native explicit duplicate/conflict policy, actual backup changes, byte-idempotent repeat, new-only merge and stale/export guards passed")
+    }
     @MainActor static func assetFormats(root: String) async throws {
         _ = NSApplication.shared
         let worker=try CoreWorker(root:root),tab=try await worker.createTab()
@@ -2271,6 +2296,7 @@ struct ReaderModelSmoke {
             print("Native environment locale startup/click checks passed")
             return
         }
+        if CommandLine.arguments.count == 3,CommandLine.arguments[1] == "--bookmark-merge" {try await bookmarkMerge(root:CommandLine.arguments[2]);return}
         if CommandLine.arguments.count == 3,CommandLine.arguments[1] == "--asset-formats" {try await assetFormats(root:CommandLine.arguments[2]);return}
         if CommandLine.arguments.count == 3,CommandLine.arguments[1] == "--reading-decorations" {try await readingDecorations(root:CommandLine.arguments[2]);return}
         if CommandLine.arguments.count == 3,CommandLine.arguments[1] == "--parallel-reading" { try await parallelReading(root:CommandLine.arguments[2]);return }

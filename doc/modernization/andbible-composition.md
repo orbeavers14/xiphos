@@ -1,7 +1,8 @@
 # AndBible import, bookmark interchange and verse composition
 
-Checkpoint: 2026-11-01. Shared C++17 core, C11 ownership bridge; native chooser,
-merge review and renderer integration remain separate acceptance work.
+Checkpoint: 2026-11-03. Shared C++17 core, owned C11/Swift transport, explicit
+native import review and reading composition are implemented in scoped slices.
+Representative real-backup and whole-workflow acceptance remain open.
 
 ## Import and interchange
 
@@ -36,8 +37,8 @@ backup corpus acceptance is claimed from generated fixtures.
 `append_bookmark_document` imports supported SwordBookmarks XML beneath an
 explicit folder in one verified same-directory replacement. Existing exact-byte
 revision and existence guards apply. Unknown XML/comments and import metadata
-survive. Stable AndBible identity collisions reject the whole operation; explicit
-conflict-review/update semantics remain future work. Generic XML has no invented
+survive. The existing append API still rejects stable identity collisions. Explicit
+non-destructive review/merge is now available separately, as described below. Generic XML has no invented
 persistent identity and follows the explicit append request.
 
 `export_bookmark_document` copies the complete valid XML, byte-for-byte, to a
@@ -132,3 +133,46 @@ Core bounds, checksum, previous-valid fallback and conflict rules remain shared.
 Native periodic/fresh-process and live startup-prompt checks pass; caret position
 and in-reading highlight/style integration, plus full cross-platform/corpus
 acceptance, remain open.
+
+## Non-destructive collision review and merge — 2026-11-03
+
+`review_bookmark_import` compares an explicit incoming XML snapshot with the
+expected destination revision/existence. One stable AndBible entry/tag-membership
+identity can be new, identical, conflicting or ambiguous in the destination.
+Unidentified generic XML bookmarks remain new append entries; the service does
+not invent persistent identities. Duplicate incoming identities reject preview;
+ambiguous destination identities are disclosed and prevent application.
+
+The comparison includes all leaf attributes/children and inherited folder
+attributes, order and unknown metadata. Attribute ordering and outer import-folder
+captions do not cause false conflicts; import-source checksums are provenance,
+not entry content. Canonical namespace URIs, text and unknown leaf content remain
+significant. Comparison work is bounded to64MiB and depth64, and copied collision
+strings to16MiB. Unsupported/oversized metadata rejects instead of being ignored.
+
+Explicit policies are reject collisions (default), skip identical (any conflicting
+metadata still stops the whole transaction), and keep existing (skip every
+unambiguous collision and import only new entries). None overwrites a note,
+updates existing tag metadata or removes old memberships. There is no destructive
+replace policy or two-way synchronization. A bookmark filed under two labels is
+two reviewed entries. Exact repeats with no new entries preserve destination
+bytes/revision and add no import folder, though verified replacement may still
+replace the file. Generic unidentified entries remain explicit append operations.
+
+Application recomputes the comparison inside the existing verified replacement
+and exact revision guard. As in legacy append, a root caption currently becomes the chosen import-folder
+caption; preserving the separate original caption is the next metadata gap. Other
+new-entry folder/root metadata and
+existing unknown XML remains intact. Source/limit/stale/conflict failures leave
+the destination unchanged. The original SQLite backup is never changed.
+Owned C review counts/collision rows and revisions survive request/worker close;
+existing C structs and append semantics remain unchanged. Native chooser/review
+shows counts, existing/incoming descriptions and an explicit policy selector.
+Changing the destination requires review against that destination. Preview pins
+the copied imported XML, not a live link to a subsequently changed backup.
+
+Generated original-prose checks cover actual backup note changes/new entries,
+repeated source UUID rejection, unknown metadata, attribute order, inherited
+color conflicts, UTF-16 destination XML, mixed new/duplicate imports, byte-idempotent
+repeats, ambiguous IDs, stale guards, C ownership and native policy/export flows.
+Real-user backup/schema migration and destructive conflict resolution remain open.

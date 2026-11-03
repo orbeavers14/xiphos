@@ -36,6 +36,7 @@ struct xc_annotation_target { xiphos::core::AnnotationTarget value; };
 struct xc_annotations { xiphos::core::AnnotationProfile value; };
 struct xc_annotation_cache { xiphos::core::AnnotationCache value; };
 struct xc_bookmark_tags { xiphos::core::BookmarkTags value; };
+struct xc_bookmark_import_review {xiphos::core::BookmarkImportReview value;};
 struct xc_andbible_import {xiphos::core::AndBibleImport value;};
 struct xc_decorated_reading {xiphos::core::DecoratedReading value;};
 struct xc_verse_decoration {xiphos::core::VerseDecoration value;};
@@ -153,6 +154,7 @@ struct xc_request {
   std::unique_ptr<xc_remote_install_result> remote_install_result;
   std::unique_ptr<xc_transfer_control> transfer_control;
   std::unique_ptr<xc_andbible_import> andbible_import;
+  std::unique_ptr<xc_bookmark_import_review> bookmark_import_review;
   std::unique_ptr<xc_verse_decoration> verse_decoration;
   std::unique_ptr<xc_decorated_reading> decorated_reading;
   std::unique_ptr<xc_legacy_migration> legacy_migration;
@@ -266,6 +268,7 @@ struct xc_request {
   void store(xiphos::core::RecoverySnapshot v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);recovery_snapshot->value=std::move(v);}
   void store(xiphos::core::SyncNetworkEvents v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);sync_network_events->value=std::move(v);}
   void store(xiphos::core::SyncDecision v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);sync_decision->value=std::move(v);}
+  void store(xiphos::core::BookmarkImportReview v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);bookmark_import_review->value=std::move(v);}
   void store(xiphos::core::AndBibleImport v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);andbible_import->value=std::move(v);}
   void store(xiphos::core::DecoratedReading v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);decorated_reading->value=std::move(v);}
   void store(xiphos::core::VerseDecoration v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);verse_decoration->value=std::move(v);}
@@ -440,6 +443,7 @@ template<class T> struct Request final : xc_request {
     if constexpr (std::is_same_v<T,xiphos::core::RecoverySnapshot>) recovery_snapshot=std::make_unique<xc_recovery_snapshot>();
     if constexpr (std::is_same_v<T,xiphos::core::SyncNetworkEvents>) sync_network_events=std::make_unique<xc_sync_network_events>();
     if constexpr (std::is_same_v<T,xiphos::core::SyncDecision>) sync_decision=std::make_unique<xc_sync_decision>();
+    if constexpr (std::is_same_v<T,xiphos::core::BookmarkImportReview>) bookmark_import_review=std::make_unique<xc_bookmark_import_review>();
     if constexpr (std::is_same_v<T,xiphos::core::AndBibleImport>) andbible_import=std::make_unique<xc_andbible_import>();
     if constexpr (std::is_same_v<T,xiphos::core::DecoratedReading>) decorated_reading=std::make_unique<xc_decorated_reading>();
     if constexpr (std::is_same_v<T,xiphos::core::VerseDecoration>) verse_decoration=std::make_unique<xc_verse_decoration>();
@@ -959,6 +963,14 @@ const char *xc_andbible_import_xml(const xc_andbible_import *r){return r?r->valu
 const char *xc_andbible_import_revision(const xc_andbible_import *r){return r?r->value.revision.c_str():nullptr;}
 xc_status xc_andbible_import_counts(const xc_andbible_import *r,xc_andbible_counts *out){if(out)*out={};if(!r||!out)return XC_INVALID_ARGUMENT;*out={r->value.imported,r->value.skipped,r->value.unknown_versification,r->value.invalid_ordinal,r->value.invalid_identity};return XC_OK;}
 void xc_andbible_import_release(xc_andbible_import *r){delete r;}
+xc_status xc_worker_review_bookmark_import(xc_worker *w,const char *path,const char *revision,const char *xml,xc_request **out){if(out)*out=nullptr;if(!bounded_image_c_text(path,4096)||!bounded_image_c_text(xml,16*1024*1024)||(revision&&(!bounded_image_c_text(revision,64)||!xiphos::core::editable_document_revision(revision))))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.review_bookmark_import(path,revision?std::make_optional(std::string(revision)):std::nullopt,xml);});}
+xc_status xc_worker_merge_bookmark_document(xc_worker *w,const char *path,const char *revision,const char *xml,const char *folder,int policy,xc_request **out){if(out)*out=nullptr;if(policy<0||policy>2||!bounded_image_c_text(path,4096)||!bounded_image_c_text(xml,16*1024*1024)||!bounded_image_c_text(folder,4096)||(revision&&(!bounded_image_c_text(revision,64)||!xiphos::core::editable_document_revision(revision))))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.merge_bookmark_document(path,revision?std::make_optional(std::string(revision)):std::nullopt,xml,folder,static_cast<xiphos::core::BookmarkImportPolicy>(policy));});}
+xc_bookmark_import_review *xc_request_take_bookmark_import_review(xc_request *r){return r&&r->status==XC_OK?r->bookmark_import_review.release():nullptr;}
+xc_status xc_bookmark_import_review_counts(const xc_bookmark_import_review *r,xc_bookmark_import_counts *out){if(out)*out={};if(!r||!out)return XC_INVALID_ARGUMENT;const auto &v=r->value;*out={v.new_items,v.identical,v.conflicting,v.ambiguous,v.unidentified,v.collisions.size()};return XC_OK;}
+xc_status xc_bookmark_import_review_collision(const xc_bookmark_import_review *r,size_t index,xc_bookmark_import_collision *out){if(out)*out={};if(!r||!out||index>=r->value.collisions.size())return XC_INVALID_ARGUMENT;const auto &v=r->value.collisions[index];*out={static_cast<int>(v.kind),v.identity.c_str(),v.key.c_str(),v.existing_description.c_str(),v.incoming_description.c_str()};return XC_OK;}
+const char *xc_bookmark_import_review_source_revision(const xc_bookmark_import_review *r){return r?r->value.source_revision.c_str():nullptr;}
+const char *xc_bookmark_import_review_destination_revision(const xc_bookmark_import_review *r){return r&&r->value.destination_revision?r->value.destination_revision->c_str():nullptr;}
+void xc_bookmark_import_review_release(xc_bookmark_import_review *r){delete r;}
 xc_status xc_worker_append_bookmark_document(xc_worker *w,const char *path,const char *revision,const char *xml,const char *folder,xc_request **out){if(out)*out=nullptr;if(!bounded_image_c_text(path,4096)||!bounded_image_c_text(xml,16*1024*1024)||!bounded_image_c_text(folder,4096)||(revision&&(!bounded_image_c_text(revision,64)||!xiphos::core::editable_document_revision(revision))))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.append_bookmark_document(path,revision?std::make_optional(std::string(revision)):std::nullopt,xml,folder);});}
 xc_status xc_worker_export_bookmark_document(xc_worker *w,const char *source,const char *revision,const char *destination,const char *destination_revision,xc_request **out){if(out)*out=nullptr;if(!bounded_image_c_text(source,4096)||!bounded_image_c_text(destination,4096)||!bounded_image_c_text(revision,64)||!xiphos::core::editable_document_revision(revision)||(destination_revision&&(!bounded_image_c_text(destination_revision,64)||!xiphos::core::editable_document_revision(destination_revision))))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.export_bookmark_document(source,revision,destination,destination_revision?std::make_optional(std::string(destination_revision)):std::nullopt);});}
 xc_status xc_worker_read_decorated_reading(xc_worker *w,uint64_t tab,const char *marks,const char *notes,const char *module,const char *reference,int chapter,int numbers,int highlight,xc_request **out){

@@ -1966,6 +1966,12 @@ struct CoreBookmarkRow: Identifiable, Sendable, Equatable {
     var title: String { fields[0] ?? fields[6] ?? fields[3] ?? "Untitled" }
 }
 struct CoreBookmarkProfile: Sendable, Equatable { let revision: String; let rows: [CoreBookmarkRow]; let ignored: Int }
+enum CoreBookmarkImportPolicy: Int32,CaseIterable,Identifiable {case reject=0,skipIdentical=1,keepExisting=2
+    var id: Self {self}
+    var title: String {switch self {case .reject:"Stop on duplicates";case .skipIdentical:"Skip exact repeats";case .keepExisting:"Keep existing entries"}}
+}
+struct CoreBookmarkImportCollision: Sendable,Identifiable {let id: String,key: String,existing: String,incoming: String;let kind: Int32}
+struct CoreBookmarkImportReview: Sendable {let sourceRevision: String,destinationRevision: String?;let newItems: Int,identical: Int,conflicting: Int,ambiguous: Int,unidentified: Int;let collisions: [CoreBookmarkImportCollision]}
 struct CoreAndBiblePreview: Sendable {
     let xml: String, revision: String
     let imported: Int, skipped: Int, unknownCanon: Int, invalidOrdinal: Int, invalidIdentity: Int
@@ -2000,6 +2006,20 @@ extension CoreWorker {
         guard xc_andbible_import_counts(owned,&counts) == XC_OK else { throw CoreError(status:XC_ENGINE_ERROR) }
         return CoreAndBiblePreview(xml:String(cString:xc_andbible_import_xml(owned)),revision:String(cString:xc_andbible_import_revision(owned)),
             imported:counts.imported,skipped:counts.skipped,unknownCanon:counts.unknown_versification,invalidOrdinal:counts.invalid_ordinal,invalidIdentity:counts.invalid_identity)
+    }
+    func reviewBookmarkImport(path: String,revision: String?,preview: CoreAndBiblePreview) async throws -> CoreBookmarkImportReview {
+        let strings=SessionCStrings(),file=try strings.copy(path),expected=try revision.map {try strings.copy($0)},xml=try strings.copy(preview.xml);var request: OpaquePointer?;let handle=try worker()
+        let status=withExtendedLifetime(strings) {xc_worker_review_bookmark_import(handle,file,expected,xml,&request)}
+        let completed=try await wait(status,request);defer {xc_request_release(completed)}
+        guard let value=xc_request_take_bookmark_import_review(completed) else {throw CoreError(status:XC_ENGINE_ERROR)};defer {xc_bookmark_import_review_release(value)}
+        var counts=xc_bookmark_import_counts();guard xc_bookmark_import_review_counts(value,&counts)==XC_OK else {throw CoreError(status:XC_ENGINE_ERROR)}
+        let collisions=try (0..<counts.collision_count).map {index in var row=xc_bookmark_import_collision();guard xc_bookmark_import_review_collision(value,index,&row)==XC_OK else {throw CoreError(status:XC_ENGINE_ERROR)};return CoreBookmarkImportCollision(id:String(cString:row.identity),key:String(cString:row.key),existing:String(cString:row.existing_description),incoming:String(cString:row.incoming_description),kind:row.kind)}
+        return CoreBookmarkImportReview(sourceRevision:String(cString:xc_bookmark_import_review_source_revision(value)),destinationRevision:xc_bookmark_import_review_destination_revision(value).map {String(cString:$0)},newItems:counts.new_items,identical:counts.identical,conflicting:counts.conflicting,ambiguous:counts.ambiguous,unidentified:counts.unidentified,collisions:collisions)
+    }
+    func mergeBookmarkImport(path: String,revision: String?,preview: CoreAndBiblePreview,folder: String,policy: CoreBookmarkImportPolicy) async throws -> CoreBookmarkProfile {
+        let strings=SessionCStrings(),file=try strings.copy(path),expected=try revision.map {try strings.copy($0)},xml=try strings.copy(preview.xml),name=try strings.copy(folder);var request: OpaquePointer?;let handle=try worker()
+        let status=withExtendedLifetime(strings) {xc_worker_merge_bookmark_document(handle,file,expected,xml,name,policy.rawValue,&request)}
+        let completed=try await wait(status,request);defer {xc_request_release(completed)};return try bookmarkValue(completed)
     }
     func appendBookmarkImport(path: String, revision: String?, preview: CoreAndBiblePreview, folder: String) async throws -> CoreBookmarkProfile {
         let strings=SessionCStrings(),path=try strings.copy(path),revision=try revision.map { try strings.copy($0) },xml=try strings.copy(preview.xml),folder=try strings.copy(folder);var request: OpaquePointer?

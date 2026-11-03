@@ -10,6 +10,8 @@ import AppKit
     @Published private(set) var profile: CoreBookmarkProfile?
     @Published private(set) var preview: CoreAndBiblePreview?
     @Published private(set) var source = ""
+    @Published private(set) var mergeReview: CoreBookmarkImportReview?
+    @Published var mergePolicy: CoreBookmarkImportPolicy = .reject
     @Published private(set) var busy = false
     @Published var folder = "Imported from AndBible"
     @Published var message = "Choose an existing bookmark file or a new destination."
@@ -19,24 +21,26 @@ import AppKit
     private func ownedTab() async throws -> UInt64 {
         if let tab { return tab };let created=try await worker.createTab();tab=created;return created
     }
+    var canImport: Bool {guard !busy,!path.isEmpty,!folder.isEmpty,preview != nil,let review=mergeReview,review.ambiguous==0 else {return false};switch mergePolicy {case .reject:return review.identical==0&&review.conflicting==0;case .skipIdentical:return review.conflicting==0;case .keepExisting:return true}}
+    private func refreshReview() async throws {mergeReview=nil;if let preview,!path.isEmpty {mergeReview=try await worker.reviewBookmarkImport(path:path,revision:profile?.revision,preview:preview)}}
     func select(_ selected: String, new: Bool) async {
         guard !busy else { return };busy=true;defer { busy=false }
         do {
             let snapshot: CoreBookmarkProfile?
             if new { snapshot=nil } else { snapshot=try await worker.readBookmarkProfile(tab:ownedTab(),path:selected) }
-            path=selected;profile=snapshot;message=new ? "New file will be created when you import." : "Bookmark file loaded. Unknown XML is preserved."
+            path=selected;profile=snapshot;mergePolicy = .reject;try await refreshReview();message=new ? "New file will be created when you import." : "Bookmark file loaded. Unknown XML is preserved."
         } catch { message="Unable to open bookmark file: \(error.localizedDescription)" }
     }
     func review(_ selected: String) async {
         guard !busy else { return };busy=true;defer { busy=false }
-        do { let value=try await worker.previewAndBible(path:selected);preview=value;source=selected;message="Backup reviewed. Import adds a new folder and preserves the original backup." }
-        catch { preview=nil;source="";message="Unable to review backup: \(error.localizedDescription)" }
+        do { let value=try await worker.previewAndBible(path:selected);preview=value;source=selected;mergePolicy = .reject;try await refreshReview();message="Backup reviewed. Choose a collision policy; the original backup is preserved." }
+        catch { preview=nil;mergeReview=nil;source="";message="Unable to review backup: \(error.localizedDescription)" }
     }
     func importReviewed() async {
-        guard !busy,!path.isEmpty,!folder.isEmpty,let preview else { return };busy=true;defer { busy=false }
+        guard canImport,let preview else { return };busy=true;defer { busy=false }
         do {
-            profile=try await worker.appendBookmarkImport(path:path,revision:profile?.revision,preview:preview,folder:folder)
-            self.preview=nil;source="";message="Import saved.";onSaved?()
+            profile=try await worker.mergeBookmarkImport(path:path,revision:profile?.revision,preview:preview,folder:folder,policy:mergePolicy)
+            self.preview=nil;mergeReview=nil;source="";message="Import saved using the selected collision policy. Existing notes were not overwritten.";onSaved?()
         } catch { message="Import was not saved. The file may have changed or contain these bookmarks already. Reload the destination and review before retrying. \(error.localizedDescription)" }
     }
     func export(to destination: String) async {
@@ -78,8 +82,16 @@ struct BookmarkManagementView: View {
             if let preview=model.preview {
                 Text(URL(fileURLWithPath:model.source).lastPathComponent).bold()
                 Text("Bookmarks: \(preview.imported) · Skipped: \(preview.skipped) · Unknown versifications: \(preview.unknownCanon) · Invalid ranges: \(preview.invalidOrdinal) · Invalid identities: \(preview.invalidIdentity)")
-                Text("Unsupported versifications, invalid ranges and invalid identities are skipped. The original backup is preserved. Duplicate identities and changed destinations stop the import.").font(.caption)
-                HStack { TextField("New folder",text:$model.folder);Button("Import Reviewed Backup") { Task { await model.importReviewed() } }.disabled(model.path.isEmpty || model.folder.isEmpty) }
+                Text("Unsupported versifications and invalid rows are skipped. The original backup is preserved. Choose how to handle repeated entries; changed destinations always stop the import.").font(.caption)
+                if let review=model.mergeReview {
+                    Text("New entries: \(review.newItems) · Exact repeats: \(review.identical) · Conflicts: \(review.conflicting) · Ambiguous identities: \(review.ambiguous)")
+                    Text("A bookmark filed under two tags appears as two entries.").font(.caption)
+                    Picker("Existing entries",selection:$model.mergePolicy) {ForEach(CoreBookmarkImportPolicy.allCases) {Text($0.title).tag($0)}}
+                    Text("Skip exact repeats stops if metadata or tag context differs. Keep existing entries skips all collisions and imports only new entries. Neither choice overwrites existing notes or removes existing tags.").font(.caption)
+                    if review.ambiguous>0 {Text("Repeated identities in the destination must be corrected before import.").foregroundStyle(.secondary)}
+                    if !review.collisions.isEmpty {ScrollView {VStack(alignment:.leading) {ForEach(review.collisions) {row in VStack(alignment:.leading) {Text(row.key + (row.kind==1 ? " — exact repeat" : row.kind==3 ? " — ambiguous identity" : " — conflict"));if row.kind==2 {Text("Existing: "+row.existing).font(.caption);Text("Incoming: "+row.incoming).font(.caption);Text("Tag or additional metadata may also differ.").font(.caption)}}}}}.frame(maxHeight:120)}
+                }
+                HStack { TextField("New folder",text:$model.folder);Button("Import Reviewed Backup") { Task { await model.importReviewed() } }.disabled(!model.canImport) }
             }
             List(model.profile?.rows ?? []) { row in
                 VStack(alignment:.leading) {

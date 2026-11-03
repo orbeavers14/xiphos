@@ -1165,6 +1165,25 @@ const char *xc_andbible_import_xml(const xc_andbible_import *result);
 const char *xc_andbible_import_revision(const xc_andbible_import *result);
 xc_status xc_andbible_import_counts(const xc_andbible_import *result,xc_andbible_counts *out);
 void xc_andbible_import_release(xc_andbible_import *result);
+/* Read-only merge review; exact destination revision/existence guard. Stable
+ * membership IDs only: generic unidentified bookmarks remain explicit appends.
+ * Conflicts include complete leaf metadata and inherited folder context. No
+ * overwrite policy. Repeated incoming identities reject; ambiguous destination
+ * identities are reported and prevent application. */
+typedef struct xc_bookmark_import_review xc_bookmark_import_review;
+typedef struct {size_t new_items,identical,conflicting,ambiguous,unidentified,collision_count;} xc_bookmark_import_counts;
+typedef struct {int kind;const char *identity,*key,*existing_description,*incoming_description;} xc_bookmark_import_collision;
+enum {XC_BOOKMARK_IMPORT_REJECT=0,XC_BOOKMARK_IMPORT_SKIP_IDENTICAL=1,XC_BOOKMARK_IMPORT_KEEP_EXISTING=2};
+xc_status xc_worker_review_bookmark_import(xc_worker *worker,const char *path,const char *revision,const char *xml,xc_request **out);
+xc_bookmark_import_review *xc_request_take_bookmark_import_review(xc_request *request);
+xc_status xc_bookmark_import_review_counts(const xc_bookmark_import_review *review,xc_bookmark_import_counts *out);
+xc_status xc_bookmark_import_review_collision(const xc_bookmark_import_review *review,size_t index,xc_bookmark_import_collision *out);
+const char *xc_bookmark_import_review_source_revision(const xc_bookmark_import_review *review);
+const char *xc_bookmark_import_review_destination_revision(const xc_bookmark_import_review *review);
+void xc_bookmark_import_review_release(xc_bookmark_import_review *review);
+/* Policy is explicit; destination revision and collision policy are recomputed
+ * in verified replacement. Existing append API retains its rejection contract. */
+xc_status xc_worker_merge_bookmark_document(xc_worker *worker,const char *path,const char *revision,const char *xml,const char *folder,int policy,xc_request **out);
 xc_status xc_worker_append_bookmark_document(xc_worker *worker,const char *path,const char *revision,const char *xml,const char *folder,xc_request **out);
 /* Byte-preserving XML export; source revision required, NULL destination revision
  * requires missing destination. Separate destination; take xc_bookmarks result. */

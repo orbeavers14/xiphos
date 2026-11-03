@@ -54,10 +54,11 @@ AndBibleImport read_andbible_bookmarks(const std::string &path){
  std::unique_ptr<xmlDoc,decltype(&xmlFreeDoc)> doc(xmlNewDoc(BAD_CAST "1.0"),xmlFreeDoc);if(!doc)throw std::bad_alloc();auto *root=xmlNewNode(nullptr,BAD_CAST "SwordBookmarks");if(!root)throw std::bad_alloc();xmlDocSetRootElement(doc.get(),root);prop(root,"syntaxVersion","1.0");prop(root,"andbible-source",result.revision);
  std::unique_ptr<Query> links,notes;if(links_present)links=std::make_unique<Query>(db.db,"SELECT labelId FROM BibleBookmarkToLabel WHERE bookmarkId=?1 ORDER BY orderNumber,rowid");if(notes_present)notes=std::make_unique<Query>(db.db,"SELECT notes FROM BibleBookmarkNotes WHERE bookmarkId=?1 ORDER BY rowid");
  auto folder=[&](Label &label){if(!label.folder){label.folder=xmlNewChild(root,nullptr,BAD_CAST "Folder",nullptr);if(!label.folder)throw std::bad_alloc();prop(label.folder,"caption",label.name);prop(label.folder,"color",label.color);}return label.folder;};
- Label unfiled{"Uncategorized","",nullptr};Query bookmarks(db.db,"SELECT id,v11n,ordinalStart,ordinalEnd,book FROM BibleBookmark ORDER BY rowid");std::size_t rows=0,leaves=0,aggregate=0;
+ Label unfiled{"Uncategorized","",nullptr};Query bookmarks(db.db,"SELECT id,v11n,ordinalStart,ordinalEnd,book FROM BibleBookmark ORDER BY rowid");std::size_t rows=0,leaves=0,aggregate=0;std::set<std::string> bookmark_ids;
  auto account=[&](const std::string &s){if(s.size()>maximum_bookmark_snapshot_bytes-aggregate)invalid();aggregate+=s.size();};
  while(bookmarks.next()){
   if(++rows>5000)invalid();auto id=uuid(bookmarks.s,0);if(id.empty()){++result.skipped;++result.invalid_identity;continue;}
+  if(!bookmark_ids.insert(id).second)throw std::invalid_argument("AndBible bookmark identities repeat");
   auto v11n=text(bookmarks.s,1,128),module=text(bookmarks.s,4,4096);sword::VerseKey lower;lower.setVersificationSystem(v11n.c_str());if(v11n.empty()||v11n!=lower.getVersificationSystem()){++result.skipped;++result.unknown_versification;continue;}
   auto start=sqlite3_column_int64(bookmarks.s,2),end=sqlite3_column_int64(bookmarks.s,3);
   if(sqlite3_column_type(bookmarks.s,2)!=SQLITE_INTEGER||sqlite3_column_type(bookmarks.s,3)!=SQLITE_INTEGER||start<0||end<start||end>LONG_MAX){++result.skipped;++result.invalid_ordinal;continue;}
