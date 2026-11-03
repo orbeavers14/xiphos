@@ -30,5 +30,5 @@ SearchGenerationRead StudySession::read_search_generation(std::uint64_t id,std::
   return search_generation_?search_generation_->read(id,group,source,limits):SearchGenerationRead{};
 }
 SearchScopeInfo StudySession::last_search_scope() const {return search_scope_?search_scope_->info():SearchScopeInfo{};}
-void StudySession::clear_search_scope(){search_scope_.reset();}
+void StudySession::clear_search_scope(){search_scope_.reset();keyed_search_scope_cleared_=true;}
 }

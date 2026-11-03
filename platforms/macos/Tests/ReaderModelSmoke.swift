@@ -811,6 +811,10 @@ struct ReaderModelSmoke {
         var exported: RenderedSearchHTMLExport?
         search.exportResults(allMatches:true) { if case .html(let value) = $0 { exported = value } }; try await searchIdle(search)
         guard exported?.status == .success, exported?.html.contains("dictionary signal") == true, exported?.html.contains("keyed book signal") == true, second.html == otherHTML, second.search.hits.isEmpty else { fatalError("Native typed HTML export and independent window state") }
+        search.searchMultipleModules = false;search.module = "KeyDictionary";search.expression = "second";search.search();try await searchIdle(search)
+        search.scopeChoice = .last;search.expression = "signal";search.search();try await searchIdle(search)
+        guard search.batchResult?.failureCount == 0,search.hits.count == 1,search.hits.first?.reference == "ALPHA" else { fatalError("Native keyed last results use complete source-specific keys") }
+        search.scopeChoice = .all
         search.searchMultipleModules = false; search.module = "CaptureBook"; search.expression = "signal"; search.search(); try await searchIdle(search)
         guard search.hits.count == 1, search.hits[0].keyKind == .generalBook, search.message.contains("1 match returned") else { fatalError("Single keyed query keeps typed generation and singular status") }
         let captured = search.previewSource

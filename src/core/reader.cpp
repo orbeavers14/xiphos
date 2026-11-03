@@ -281,7 +281,7 @@ SearchResult Reader::search_impl(SearchQuery query,const SearchLimits &limits,st
   const bool keyed=allow_keyed&&!detail::supports_verse_search(*module);
   std::shared_ptr<const detail::SearchScope> staged;
   auto result=detail::capture_module_search(*impl_->manager,*module,std::move(query),limits,control,
-    !keyed&&scope?scope->get():nullptr,!keyed&&scope?&staged:nullptr,{},previous_text,progress_begin,progress_end,allow_empty_output,retained,retention_limits,keyed);
+    scope?scope->get():nullptr,!keyed&&scope?&staged:nullptr,{},previous_text,progress_begin,progress_end,allow_empty_output,retained,retention_limits,keyed);
   result.resolved_module = *resolved.module; // Allocate before session publication.
   if(keyed)result.key_kind=dynamic_cast<sword::SWLD *>(module)?SearchKeyKind::dictionary:SearchKeyKind::general_book;
   if(staged){*scope=std::move(staged);result.scope_updated=true;}

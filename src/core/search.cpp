@@ -70,7 +70,7 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   if(progress_begin>progress_end||progress_end>100)throw std::invalid_argument("Invalid search progress interval");
   if(next)next->reset();
   if(retained)*retained={};
-  if(query.within_last_results&&(!next||query.range))
+  if(query.within_last_results&&(query.range||(!keyed_only&&!next)||(keyed_only&&!previous)))
     throw std::invalid_argument("Last-search scope requires a session and excludes explicit range");
   validate_search_query(query);
   if((!allow_empty_output&&(!limits.max_results||!limits.max_reference_bytes))||limits.max_results>maximum_search_results||
@@ -79,9 +79,9 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   if(keyed_only){
     const bool dictionary=dynamic_cast<sword::SWLD *>(&module)&&std::string(module.getType())=="Lexicons / Dictionaries";
     const bool book=dynamic_cast<sword::SWGenBook *>(&module)&&indexed_book(module);
-    if((!dictionary&&!book)||query.range||query.within_last_results||next||
+    if((!dictionary&&!book)||query.range||next||
        (query.mode!=SearchMode::regular_expression&&query.mode!=SearchMode::phrase&&query.mode!=SearchMode::words&&query.mode!=SearchMode::multiword))
-      throw std::invalid_argument("Keyed search requires a dictionary/general book and an unscoped text mode");
+      throw std::invalid_argument("Keyed search requires a dictionary/general book and a supported text mode");
   }else if(!supports_verse_search(module))throw std::invalid_argument("Initial search supports Bible and regular commentary verse modules");
   int engine_type;
   bool whole_entry=false;

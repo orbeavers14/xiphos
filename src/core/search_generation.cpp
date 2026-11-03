@@ -65,6 +65,22 @@ std::shared_ptr<const SearchGeneration> SearchGenerationBuilder::finish(bool can
   for(auto &group:value_.groups_)if(group.result){group.result->generation=value_.info_;group.result->generation_updated=true;}
   return std::make_shared<const SearchGeneration>(std::move(value_));
 }
+std::shared_ptr<const SearchScope> SearchGeneration::keyed_scope(const std::string &module) const {
+  if(info_.retention!=SearchRetentionStatus::complete||info_.cancelled||info_.failed_groups||info_.group_count!=info_.requested_count)
+    throw std::invalid_argument("Keyed last results require a complete successful generation");
+  std::shared_ptr<const SearchScope> found;
+  for(const auto &group:groups_)if(group.result&&group.result->source_module()==module&&group.result->key_kind!=SearchKeyKind::verse){
+    if(found)throw std::invalid_argument("Keyed last results require one unambiguous retained source");
+    found=group.keys;
+    // An already-empty last scope short-circuits SDK execution. Retain that
+    // authoritative empty set rather than broadening or making it unsearchable.
+    if(!found&&group.result->requested.within_last_results&&!group.result->executed&&!group.result->total_results)
+      found=std::make_shared<const SearchScope>(sword::ListKey{});
+    if(!found)throw std::invalid_argument("Missing complete keyed scope");
+  }
+  if(!found)throw std::invalid_argument("No retained keyed search for this source");
+  return found;
+}
 SearchKeyKind SearchGeneration::key_kind(std::size_t group)const{
  if(group>=groups_.size()||!groups_[group].result)throw std::logic_error("Missing search group kind");return groups_[group].result->key_kind;
 }

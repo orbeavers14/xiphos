@@ -27,6 +27,7 @@ public:
   // Private authoritative visible row; no SDK traversal or output expansion.
   std::optional<std::pair<std::string,std::string>> visible_row(std::size_t group,std::size_t row) const;
   // Plain committed request/result metadata only; no SDK traversal or mutable UI fields.
+  std::shared_ptr<const SearchScope> keyed_scope(const std::string &module) const;
   SearchKeyKind key_kind(std::size_t group) const;
   std::string export_header(std::size_t group) const;
   std::string export_source_summary() const;

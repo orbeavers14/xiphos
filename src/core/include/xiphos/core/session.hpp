@@ -186,6 +186,7 @@ private:
   EntryHtmlSource capture_search_entry_html(const std::string &module,const std::string &key,SearchKeyKind kind,const HtmlSourceLimits &limits);
   std::shared_ptr<const detail::SearchScope> search_scope_;
   std::shared_ptr<const detail::SearchGeneration> search_generation_;
+  bool keyed_search_scope_cleared_=false;
   std::uint64_t search_generation_serial_=0;
   SearchRetentionLimits search_retention_limits_;
   std::optional<SearchTextOptions> search_text_options_;

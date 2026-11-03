@@ -638,7 +638,10 @@ xc_status xc_worker_search_modules(xc_worker *worker,uint64_t tab,const char *co
  * It supports the existing const xc_search getters, without another allocation. */
 /* Opt-in mixed families, same ordered copied query and aggregate budgets.
  * Results expose xc_search_key_kind. Only verse groups update verse scope/search
- * settings; keyed groups reject verse ranges/last-scope/attribute/raw-index modes.
+ * settings. Keyed last scope requires one same-source group in the preceding
+ * complete successful generation; ambiguous/missing/incomplete scopes reject.
+ * Clear search scope also invalidates keyed scope without deleting exports.
+ * Keyed groups still reject verse ranges/attribute/raw-index modes.
  * Complete typed keys use the same retained generation/read/export ownership. */
 xc_status xc_worker_search_mixed_modules(xc_worker *worker,uint64_t tab,const char *const *modules,size_t count,const xc_search_query *query,const xc_search_batch_limits *total,xc_request **out);
 xc_search_batch *xc_request_take_search_batch(xc_request *request);

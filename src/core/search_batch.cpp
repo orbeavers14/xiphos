@@ -40,7 +40,18 @@ SearchBatchResult StudySession::search_batch_impl(std::vector<SearchQuery> queri
       std::min(limits.per_module.max_reference_bytes,limits.total.max_reference_bytes-output.copied_reference_bytes)};
     detail::SearchRetainedKeys retained;
     try {
-      group.result=reader_.search_impl(output.requested[index],remaining,control,&scope,text,true,begin,end,true,
+      auto *active_scope=&scope;
+      std::shared_ptr<const detail::SearchScope> keyed_scope;
+      if(mixed&&output.requested[index].within_last_results){
+        const auto resolved=reader_.resolve_module_name(output.requested[index].module);
+        const auto &modules=reader_.modules();
+        const auto source=std::find_if(modules.begin(),modules.end(),[&](const Module &m){return resolved.module&&m.id==*resolved.module;});
+        if(source!=modules.end()&&!source->verse_search){
+          if(keyed_search_scope_cleared_||!search_generation_)throw std::invalid_argument("Keyed last results are unavailable");
+          keyed_scope=search_generation_->keyed_scope(source->id);active_scope=&keyed_scope;
+        }
+      }
+      group.result=reader_.search_impl(output.requested[index],remaining,control,active_scope,text,true,begin,end,true,
         generation.wants_keys()?&retained:nullptr,generation.remaining(),mixed);
     } catch(const std::out_of_range &){group.failure=SearchBatchFailure::module_not_found;}
       catch(const std::invalid_argument &){group.failure=SearchBatchFailure::invalid_request;}
@@ -72,7 +83,7 @@ SearchBatchResult StudySession::search_batch_impl(std::vector<SearchQuery> queri
   }else output.generation=search_generation();
   for(auto &group:output.groups)if(group.result){group.result->generation=output.generation;group.result->generation_updated=output.generation_updated;}
   search_scope_=std::move(scope);search_text_options_=text;
-  if(staged){search_generation_serial_=staged->info().id;search_generation_=std::move(staged);}
+  if(staged){search_generation_serial_=staged->info().id;search_generation_=std::move(staged);keyed_search_scope_cleared_=false;}
   progress.finish(output.cancelled);return output;
 }
 }

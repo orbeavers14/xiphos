@@ -45,7 +45,7 @@ struct SearchPane: View {
                 Toggle("Include dictionaries and books", isOn: Binding(get: { model.mixedContent }, set: { model.setMixedContent($0) }))
                     .accessibilityLabel("Include dictionaries and books")
                 if model.mixedContent {
-                    Text("Books and dictionaries use All text.").font(.caption).foregroundStyle(.secondary)
+                    Text("Use All text or Last results.").font(.caption).foregroundStyle(.secondary)
                         .help("Choose Phrase, Words, Regular expression or Multiword for dictionary and book searches.")
                 }
                 Toggle("Search multiple modules", isOn: $model.searchMultipleModules)
@@ -119,7 +119,7 @@ struct SearchPane: View {
                 }
                 Spacer()
                 Button("Clear last") { model.clearScope() }
-                    .disabled(model.isBusy || hostBusy || !model.scope.present)
+                    .disabled(model.isBusy || hostBusy || !model.scope.present && !(model.mixedContent && (model.batchResult?.generation.id ?? 0) != 0))
                     .help("Clear the scope used by Search within last results")
             }
             HStack {

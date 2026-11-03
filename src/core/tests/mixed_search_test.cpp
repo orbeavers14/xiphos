@@ -60,7 +60,30 @@ int main(int argc,char **argv)try{
  html.images.max_images=2;auto limitedImages=session.export_search_html(html);check(limitedImages.status==SearchExportStatus::output_limit&&limitedImages.html.empty()&&!limitedImages.row_count,"Aggregate keyed image failure publishes no partial payload");html.images.max_images=maximum_search_export_images;
  for(const auto *uri:{"../café.png","https://example.invalid/café.png","file:///etc/passwd"}){bool rejected=false;try{reader.read_search_inline_image("ImageThML",uri,1024);}catch(const std::exception &){rejected=true;}check(rejected,"Keyed images cannot escape their source or fetch remote resources");}
  check(reader.read_search_image_link("ImageThML","passagestudy.jsp?action=showImage&value=caf%C3%A9.png&module=ImageOSIS").module=="ImageThML","Image command declared module cannot rebase actual ownership");
+
+ const auto verse_scope=session.last_search_scope();
+ auto prefixSeed=session.search_mixed_batch({{"KeyDictionary","signal",SearchMode::phrase}},{{1,4096},{1,4096}});
+ SearchQuery hidden{"KeyDictionary","dictionary",SearchMode::phrase};hidden.within_last_results=true;
+ auto fromHidden=session.search_mixed_batch({hidden});check(!fromHidden.failures&&fromHidden.copied_results==1&&fromHidden.groups[0].result->references[0]=="JOHN.3.16","Keyed last results include complete keys beyond visible prefix");
+ auto seed=session.search_mixed_batch({{"KeyDictionary","second",SearchMode::phrase}},{{1,4096},{1,4096}});
+ SearchQuery narrow{"KeyDictionary","signal",SearchMode::phrase};narrow.within_last_results=true;
+ auto narrowed=session.search_mixed_batch({narrow});check(!narrowed.failures&&narrowed.copied_results==1&&narrowed.groups[0].result->references[0]=="ALPHA","Keyed last scope searches retained dictionary keys, never whole module");
+ check(session.last_search_scope().element_count==verse_scope.element_count,"Keyed last results never replace verse scope");
+ auto bookSeed=session.search_mixed_batch({{"CaptureBook","keyed",SearchMode::phrase}});SearchQuery bookNarrow{"CaptureBook","compatmarker",SearchMode::phrase};bookNarrow.within_last_results=true;
+ auto bookEmpty=session.search_mixed_batch({bookNarrow});check(!bookEmpty.failures&&bookEmpty.copied_results==0,"Cloned tree last scope cannot expand into an unrequested Unicode section");
+ for(int again=0;again<3;++again){auto emptyAgain=session.search_mixed_batch({bookNarrow});check(!emptyAgain.failures&&!emptyAgain.copied_results,"Repeated empty keyed scopes stay empty without broadening");}
+ session.search_mixed_batch({{"KeyDictionary","second",SearchMode::phrase},{"KeyDictionary","signal",SearchMode::phrase}});
+ check(session.search_mixed_batch({narrow}).failures==1,"Repeated prior sources reject ambiguous keyed scope");
+ session.search_mixed_batch({{"ImageThML","compatmarker",SearchMode::phrase}});SearchQuery foreign{"ImageOSIS","compatmarker",SearchMode::phrase};foreign.within_last_results=true;
+ check(session.search_mixed_batch({foreign}).failures==1,"Same opaque key in another module cannot supply keyed scope");
+ auto clearSeed=session.search_mixed_batch({{"KeyDictionary","second",SearchMode::phrase}});session.clear_search_scope();
+ SearchHtmlExportRequest stillExport;stillExport.generation=clearSeed.generation.id;stillExport.selection=SearchExportSelection::all_retained;
+ check(session.export_search_html(stillExport).status==SearchExportStatus::ok,"Clearing keyed scope preserves retained export generation");
+ check(session.search_mixed_batch({narrow}).failures==1,"Clear last invalidates keyed scope without broadening");
+ session.search_mixed_batch({{"KeyDictionary","second",SearchMode::phrase},{"Missing","x",SearchMode::phrase}});
+ check(session.search_mixed_batch({narrow}).failures==1,"Incomplete prior search cannot become authoritative keyed scope");
  session.set_search_retention_limits({1,4096});auto capped=session.search_mixed_batch({{"KeyDictionary","signal",SearchMode::phrase}});all.generation=capped.generation.id;check(capped.generation.retention==SearchRetentionStatus::capacity_exceeded&&session.export_search_all_text(all).status==SearchExportStatus::capacity_exceeded,"Typed complete retention enforces aggregate capacity");
+ check(session.search_mixed_batch({narrow}).failures==1,"Capacity-exceeded generation cannot supply keyed scope");
  auto legacy=session.search_batch({{"KeyDictionary","signal",SearchMode::phrase}});check(legacy.failures==1&&legacy.groups[0].failure==SearchBatchFailure::invalid_request,"Existing verse-only API retains its boundary");
  }
  xc_worker *worker=nullptr;check(xc_worker_open(root.string().c_str(),&worker)==XC_OK,"C worker open");xc_request *request=nullptr;check(xc_worker_create_tab(worker,&request)==XC_OK&&wait(request)==XC_OK,"C tab");auto tab=xc_request_tab(request);xc_request_release(request);const char *modules[]={"Text","KeyDictionary","CaptureBook"};xc_search_options options;xc_search_options_default(&options);options.mode=XC_SEARCH_PHRASE;xc_search_query query{};query.expression="Original";query.options=&options;query.scope=XC_SEARCH_SCOPE_ALL;check(xc_worker_search_mixed_modules(worker,tab,modules,3,&query,nullptr,&request)==XC_OK,"C mixed admission");query.expression="changed";check(wait(request)==XC_OK,"C mixed execution");auto *owned=xc_request_take_search_batch(request);check(owned&&!xc_request_take_search_batch(request),"C mixed take once");xc_request_release(request);
