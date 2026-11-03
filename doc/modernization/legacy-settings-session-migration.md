@@ -100,7 +100,8 @@ Original-prose generated module/profile fixtures cover full two-tab conversion,
 multiple tabs sections, inherited/explicit pane flags, initial histories,
 dictionary/book/parallel state, module settings, unknown/duplicate fields, exact
 backup restoration, changed sources, existing destinations, missing modules and
-explicit mappings, empty versus omitted tabs, UTF-16 XML and Latin-1 INI comments,
+explicit mappings, empty versus omitted tabs, UTF-16 little/big-endian and declared Latin-1 XML, Latin-1 INI comments,
+sparse duplicate-section lookup with first-empty-value precedence,
 large unknown values, DTD/overflow rejection, C admission copying and ownership after worker teardown.
 Fresh core and native processes restore converted sessions. Native checks cover
 preview invalidation, protected current-session paths, explicit activation after
