@@ -1124,6 +1124,22 @@ void xc_bookmark_tags_release(xc_bookmark_tags *tags);
 /* Bounded standalone AndBible SQLite preview; no original writes. XML and
  * counts are owned, unknown versifications/invalid ordinals are explicit skips.
  * Append is one revision-checked transaction and rejects stable-ID collisions. */
+/* Explicit provider-scoped favorites/hidden/group metadata. Inputs copy before
+ * return; preallocated owned results survive worker shutdown. NULL revision is
+ * create-only; existing sources require exact revision. NULL group means empty. */
+typedef struct xc_library_organization xc_library_organization;
+typedef struct {const char *provider,*item,*group;int favorite,hidden;} xc_library_organization_entry;
+xc_status xc_worker_read_library_organization(xc_worker *worker,const char *path,xc_request **out);
+xc_status xc_worker_set_library_organization(xc_worker *worker,const char *path,const char *revision,const xc_library_organization_entry *entry,xc_request **out);
+xc_library_organization *xc_request_take_library_organization(xc_request *request);
+const char *xc_library_organization_revision(const xc_library_organization *profile);
+size_t xc_library_organization_count(const xc_library_organization *profile);
+const char *xc_library_organization_provider(const xc_library_organization *profile,size_t index);
+const char *xc_library_organization_item(const xc_library_organization *profile,size_t index);
+const char *xc_library_organization_group(const xc_library_organization *profile,size_t index);
+int xc_library_organization_favorite(const xc_library_organization *profile,size_t index);
+int xc_library_organization_hidden(const xc_library_organization *profile,size_t index);
+void xc_library_organization_release(xc_library_organization *profile);
 typedef struct xc_andbible_import xc_andbible_import;
 typedef struct {size_t imported,skipped,unknown_versification,invalid_ordinal,invalid_identity;} xc_andbible_counts;
 xc_status xc_worker_read_andbible_bookmarks(xc_worker *worker,const char *path,xc_request **out);
@@ -1247,6 +1263,13 @@ typedef struct xc_module_edit xc_module_edit;
  * Release after exporting to an independent file, or close the tab. */
 xc_status xc_worker_release_module_editor(xc_worker *worker,uint64_t tab,xc_request **out);
 xc_status xc_worker_read_module_edit(xc_worker *worker,uint64_t tab,const char *module,const char *reference,xc_request **out);
+/* Explicit new unencrypted UTF-8 RawGenBook section. Preparation performs no
+ * writes and returns empty text/offset0 with a whole-module revision. Creation
+ * requires that revision and a still-missing canonical path, stages parent nodes
+ * privately and uses existing reload/cache/rollback policy. Existing nodes never
+ * become overwrite targets. Both return the owned module-edit result. */
+xc_status xc_worker_prepare_book_entry(xc_worker *worker,uint64_t tab,const char *module,const char *path,xc_request **out);
+xc_status xc_worker_create_book_entry(xc_worker *worker,uint64_t tab,const char *module,const char *path,const char *revision,const char *text,xc_request **out);
 xc_status xc_worker_save_module_edit(xc_worker *worker,uint64_t tab,const char *module,const char *reference,const char *revision,const char *text,int erase,xc_request **out);
 xc_module_edit *xc_request_take_module_edit(xc_request *request);
 const char *xc_module_edit_module(const xc_module_edit *entry);

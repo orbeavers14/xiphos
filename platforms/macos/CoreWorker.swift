@@ -1988,3 +1988,41 @@ extension CoreWorker {
         let completed=try await wait(status,request);defer { xc_request_release(completed) };_ = try bookmarkValue(completed)
     }
 }
+
+struct CoreLibraryIdentity: Hashable, Sendable {
+    let provider: String, item: String
+    static func ==(a: Self,b: Self) -> Bool { a.provider.utf8.elementsEqual(b.provider.utf8) && a.item.utf8.elementsEqual(b.item.utf8) }
+    func hash(into hasher: inout Hasher) { hasher.combine(provider.utf8.count);for byte in provider.utf8 { hasher.combine(byte) };hasher.combine(item.utf8.count);for byte in item.utf8 { hasher.combine(byte) } }
+}
+struct CoreLibraryPreference: Sendable, Equatable { let identity: CoreLibraryIdentity; var favorite: Bool, hidden: Bool; var group: String }
+struct CoreLibraryOrganization: Sendable, Equatable {
+    var revision: String?
+    var entries: [CoreLibraryIdentity:CoreLibraryPreference] = [:]
+    static let empty = CoreLibraryOrganization(revision:nil)
+    func preference(provider: String, item: String) -> CoreLibraryPreference? { entries[CoreLibraryIdentity(provider:provider,item:item)] }
+}
+extension CoreWorker {
+    private func organizationValue(_ completed: OpaquePointer) throws -> CoreLibraryOrganization {
+        guard let owned=xc_request_take_library_organization(completed) else { throw CoreError(status:XC_ENGINE_ERROR) }
+        defer { xc_library_organization_release(owned) }
+        var copied=CoreLibraryOrganization(revision:String(cString:xc_library_organization_revision(owned)))
+        for index in 0..<xc_library_organization_count(owned) {
+            let identity=CoreLibraryIdentity(provider:String(cString:xc_library_organization_provider(owned,index)),item:String(cString:xc_library_organization_item(owned,index)))
+            guard copied.entries[identity] == nil else { throw CoreError(status:XC_ENGINE_ERROR) }
+            copied.entries[identity]=CoreLibraryPreference(identity:identity,favorite:xc_library_organization_favorite(owned,index)==1,hidden:xc_library_organization_hidden(owned,index)==1,group:String(cString:xc_library_organization_group(owned,index)))
+        }
+        return copied
+    }
+    func libraryOrganization(path: String) async throws -> CoreLibraryOrganization {
+        let strings=SessionCStrings(),copied=try strings.copy(path)
+        if !FileManager.default.fileExists(atPath:path) { return .empty }
+        var request: OpaquePointer?;let status=xc_worker_read_library_organization(try worker(),copied,&request)
+        let completed=try await wait(status,request);defer { xc_request_release(completed) };return try organizationValue(completed)
+    }
+    func setLibraryOrganization(path: String, revision: String?, preference: CoreLibraryPreference) async throws -> CoreLibraryOrganization {
+        let strings=SessionCStrings(),path=try strings.copy(path),expected=try revision.map { try strings.copy($0) }
+        var entry=xc_library_organization_entry(provider:try strings.copy(preference.identity.provider),item:try strings.copy(preference.identity.item),group:try strings.copy(preference.group),favorite:preference.favorite ? 1:0,hidden:preference.hidden ? 1:0)
+        var request: OpaquePointer?;let status=xc_worker_set_library_organization(try worker(),path,expected,&entry,&request)
+        let completed=try await wait(status,request);defer { xc_request_release(completed) };return try organizationValue(completed)
+    }
+}

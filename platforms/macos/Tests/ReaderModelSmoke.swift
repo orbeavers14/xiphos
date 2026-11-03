@@ -781,6 +781,33 @@ struct ReaderModelSmoke {
         other.close(); try await worker.closeTab(tab); try await worker.closeTab(otherTab); await worker.shutdown()
         print("Native ordered batch, failure groups, actual preview/export identity, scope chaining, drafts and lifecycle passed")
     }
+    @MainActor static func libraryOrganization(root: String) async throws {
+        let folder=URL(fileURLWithPath:root).appendingPathComponent("native-organization")
+        try? FileManager.default.removeItem(at:folder);try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
+        let path=folder.appendingPathComponent("organization.xml").path
+        let worker=try CoreWorker(root:root),first=ReaderModel(worker:worker,startupError:nil),second=ReaderModel(worker:worker,startupError:nil)
+        try await idle(first);try await idle(second);let html=first.html,reference=first.renderedReference
+        let library=LibraryManagementModel(worker:worker,path:folder.appendingPathComponent("repositories.profile").path,workspace:folder.appendingPathComponent("transfer").path,allowsChanges:false,organizationPath:path)
+        library.onOrganizationChanged = { first.applyLibraryOrganization($0);second.applyLibraryOrganization($0) }
+        library.reload();await library.waitUntilIdle()
+        guard let selected=library.installed.first(where: { $0.module == "Text" }) else { fatalError("Organization uses installed provider identity") }
+        library.selectInstalled(selected.id);library.favorite=true;library.hidden=true;library.organizationGroup="Study Ω";library.saveOrganization();await library.waitUntilIdle()
+        guard library.organization.revision != nil,!first.sidebarModules.contains(where: { $0.id == "Text" }),!second.sidebarModules.contains(where: { $0.id == "Text" }),first.html == html,first.renderedReference == reference else { fatalError("Hidden preferences affect lists in both windows without changing reading") }
+        guard library.installed.contains(where: { $0.module == "Text" }) else { fatalError("Hidden installed modules remain manageable") }
+        let stale=library.organization.revision
+        let changed=try await worker.setLibraryOrganization(path:path,revision:stale,preference:CoreLibraryPreference(identity:CoreLibraryIdentity(provider:selected.provider,item:selected.module),favorite:true,hidden:false,group:"External"))
+        library.organizationGroup="Stale";library.saveOrganization();await library.waitUntilIdle()
+        guard library.organization.revision == stale,library.message.contains("Reload before retrying"),try await worker.libraryOrganization(path:path).revision == changed.revision else { fatalError("Stale native preferences cannot overwrite another edit") }
+        library.reload();await library.waitUntilIdle()
+        guard first.isFavorite("Text"),first.sidebarGroups.contains(where: { $0.id == "Group: External" && $0.modules.contains(where: { $0.id == "Text" }) }) else { fatalError("Explicit reload restores grouping and favorite ordering") }
+        let owner=NativeSessionController(worker:worker,path:folder.appendingPathComponent("session.xml").path,showsWindows:false,organizationPath:path)
+        try await owner.start();guard let restored=owner.records.first?.model else { fatalError("Organization restart window") };try await idle(restored)
+        guard restored.isFavorite("Text"),restored.libraryOrganization.revision == changed.revision else { fatalError("New session owner restores organization preferences") }
+        let composed=CoreLibraryIdentity(provider:"sword",item:"caf\u{00e9}"),decomposed=CoreLibraryIdentity(provider:"sword",item:"cafe\u{0301}")
+        guard composed != decomposed,Set([composed,decomposed]).count == 2 else { fatalError("Native provider identities preserve exact UTF8 byte distinctions") }
+        first.close();second.close();restored.close();await worker.shutdown()
+        print("Native organization save/reload/restart, stale guards, provider identity, module visibility and reading preservation passed")
+    }
     @MainActor static func bookmarkImport(root: String) async throws {
         let worker=try CoreWorker(root:URL(fileURLWithPath:root).appendingPathComponent("library").path)
         let model=BookmarkManagementModel(worker:worker)
@@ -2123,6 +2150,9 @@ struct ReaderModelSmoke {
             guard recorded.entries.last?.key == expectedKey else { fatalError("locale snapshot lifetime") }
             print("Native environment locale startup/click checks passed")
             return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--library-organization" {
+            try await libraryOrganization(root:CommandLine.arguments[2]);return
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--bookmark-import" {
             try await bookmarkImport(root:CommandLine.arguments[2]);return

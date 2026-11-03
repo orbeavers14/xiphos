@@ -1,5 +1,13 @@
 # Shared project handoff: start here in every chat
 
+Section/library checkpoint (2026-11-02): staged RawGenBook section creation and
+search-index invalidation now preserve fresh queries and rollback. Owned library
+organization transport and native favorites/hiding/groups update reading windows
+and persist across restart. Full native249 passes/two expected skips; actual-index
+alternate SDK and sanitizer/portable selected checks pass. See [Mac evidence and
+limits](handoff-macos.md#section-creation-and-library-organization--2026-11-02).
+Native creation controls and saved parallel workflows remain next; no parity promotion.
+
 Active priorities checkpoint (2026-11-02, core `564f9dd`, Mac `7646977`): actual keyed indexes and exact last-key filtering, native AndBible review/conflict/import/export, checked parallel-set edits, internal rich links and library-organization storage now exist. Full native247 passes plus two expected index skips; alternate SDK7/7. See [Mac evidence and limits](handoff-macos.md#active-priorities-checkpoint--2026-11-02). Continuous priorities1–5 remain active; these are scoped advances, not complete workflow acceptance.
 
 Owner priority update (2026-11-02): work through search/content, bookmarks and

@@ -879,7 +879,7 @@ ModuleEditEntry Reader::save_module_edit(const ModuleEditTarget &target,const st
  detail::ModuleEditStorage transaction(*impl_->manager,target);auto prepared=transaction.stage(expected,text,erase);const auto root=impl_->root;
  transaction.install();std::unique_ptr<Reader> replacement;
  try{
-  replacement=std::make_unique<Reader>(root);auto verified=replacement->read_module_edit(target);
+  replacement=std::make_unique<Reader>(root);auto verified=replacement->read_module_edit({target.module,target.reference});
   if(verified.revision!=prepared.revision||verified.text!=prepared.text)throw std::runtime_error("Reloaded module edit did not verify");
   impl_.swap(replacement->impl_);
   try{refresh();}catch(...){impl_.swap(replacement->impl_);throw;}

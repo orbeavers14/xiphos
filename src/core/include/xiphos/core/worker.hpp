@@ -3,6 +3,7 @@
 #include "session.hpp"
 #include "profile.hpp"
 #include "bookmarks.hpp"
+#include "library_organization.hpp"
 #include "andbible.hpp"
 #include "verse_decoration.hpp"
 #include "annotations.hpp"
@@ -197,6 +198,8 @@ public:
   std::future<RecoverySnapshot> read_recovery(std::string path);
   std::future<RecoverySnapshot> save_recovery(std::string path,std::optional<std::string> expected,RecoverySnapshot snapshot);
   std::future<VerseDecoration> read_verse_decoration(StudyTab tab,std::string bookmarks,std::string annotations,std::string module,std::string reference,bool current,bool annotation_highlight,bool verse_highlight);
+  std::future<LibraryOrganizationSnapshot> read_library_organization(std::string path);
+  std::future<LibraryOrganizationSnapshot> set_library_organization(std::string path,std::optional<std::string> revision,LibraryOrganizationEntry entry);
   std::future<AndBibleImport> read_andbible_bookmarks(std::string path);
   std::future<BookmarkSnapshot> export_bookmark_document(std::string source,std::string source_revision,std::string destination,std::optional<std::string> destination_revision);
   std::future<BookmarkSnapshot> append_bookmark_document(std::string path,std::optional<std::string> revision,std::string xml,std::string folder);

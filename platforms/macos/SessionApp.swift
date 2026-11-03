@@ -13,6 +13,12 @@ import SwiftUI
     }
     var onPassageCommitted: ((PassageTarget,Bool) -> Void)?
     let worker: CoreWorker
+    let organizationPath: String?
+    private var libraryOrganization = CoreLibraryOrganization.empty
+    private var organizationNotice = ""
+    func applyLibraryOrganization(_ value: CoreLibraryOrganization) {
+        libraryOrganization=value;organizationNotice="";records.forEach { $0.model.applyLibraryOrganization(value) }
+    }
     private(set) var path: String
     private(set) var records: [Record] = []
     private(set) var activeKey: String?
@@ -23,8 +29,8 @@ import SwiftUI
     var canOpenWindow: Bool { !operation && !quitting }
     private let showsWindows: Bool
     private let offscreenWindows: Bool
-    init(worker: CoreWorker, path: String, showsWindows: Bool = true, offscreenWindows: Bool = false) {
-        self.worker = worker; self.path = path; self.showsWindows = showsWindows; self.offscreenWindows = offscreenWindows
+    init(worker: CoreWorker, path: String, showsWindows: Bool = true, offscreenWindows: Bool = false,organizationPath: String? = nil) {
+        self.organizationPath=organizationPath;self.worker = worker; self.path = path; self.showsWindows = showsWindows; self.offscreenWindows = offscreenWindows
     }
     static func profileFolder() throws -> URL {
         if let selected = ProcessInfo.processInfo.environment["XIPHOS_PROFILE_DIRECTORY"], !selected.isEmpty { return URL(fileURLWithPath:selected,isDirectory:true) }
@@ -46,6 +52,7 @@ import SwiftUI
         guard records.isEmpty, !operation else { return }
         operation = true
         defer { operation = false }
+        if let path=organizationPath { do { libraryOrganization=try await worker.libraryOrganization(path:path) } catch { organizationNotice="Library preferences could not be loaded. Open Module Library and reload." } }
         guard recovered != nil || FileManager.default.fileExists(atPath: path) else { addWindow(); return }
         var stagedIDs: [UInt64] = []
         do {
@@ -61,6 +68,7 @@ import SwiftUI
                     throw SessionHostError(message: "Saved window identities do not match.")
                 }
                 let model = ReaderModel(worker: worker, startupError: nil, autostart: false)
+                model.applyLibraryOrganization(libraryOrganization,notice:organizationNotice)
                 model.onPassageCommitted = { [weak self] target,received in self?.onPassageCommitted?(target,received) }
                 try await model.restoreWindow(saved.windows[index], tab: row.tab, host: hosts[index])
                 var capture = row.capture; capture.hostState = saved.windows[index].hostState
@@ -80,6 +88,7 @@ import SwiftUI
     @discardableResult func addWindow() -> ReaderModel {
         let key = UUID().uuidString
         let model = ReaderModel(worker: worker, startupError: nil)
+        model.applyLibraryOrganization(libraryOrganization,notice:organizationNotice)
         model.onPassageCommitted = { [weak self] target,received in self?.onPassageCommitted?(target,received) }
         records.append(Record(key: key, model: model, capture: CoreWindowCapture(tab: 0, key: key)))
         activeKey = key; showWindow(at: records.count - 1); return model
@@ -214,9 +223,10 @@ import SwiftUI
         Task {
             do {
                 let folder = try NativeSessionController.profileFolder()
+                try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
                 let context = try await NativeLibrarySetup.open(profile:folder,explicit:ProcessInfo.processInfo.environment["XIPHOS_MODULE_ROOT"],stored:UserDefaults.standard.string(forKey:NativeLibrarySetup.preferenceKey(profile:folder)),isolated:ProcessInfo.processInfo.environment["XIPHOS_PROFILE_DIRECTORY"].map { !$0.isEmpty } ?? false)
                 let worker = context.worker;managedRoot = context.managedRoot
-                let owner = NativeSessionController(worker: worker, path: try NativeSessionController.defaultPath())
+                let owner = NativeSessionController(worker: worker, path: try NativeSessionController.defaultPath(),organizationPath:folder.appendingPathComponent("library-organization.xml").path)
                 controller = owner
                 let sync = NativeSyncModel(worker:worker);self.sync = sync
                 sync.current = { [weak owner] in owner?.records.first(where: { $0.key == owner?.activeKey })?.model.syncTarget }
@@ -315,7 +325,8 @@ import SwiftUI
         guard !terminating, let controller else { return }
         if let library { library.window.makeKeyAndOrderFront(nil);library.model.reload();return }
         let workspace = FileManager.default.temporaryDirectory.appendingPathComponent("org.xiphos.module-transfer",isDirectory:true).path
-        let opened = NativeLibraryWindow(worker:controller.worker,path:(try? NativeSessionController.profileFolder().appendingPathComponent("repositories.profile").path) ?? controller.path + ".repositories",workspace:workspace,allowsChanges:managedRoot != nil)
+        let opened = NativeLibraryWindow(worker:controller.worker,path:(try? NativeSessionController.profileFolder().appendingPathComponent("repositories.profile").path) ?? controller.path + ".repositories",workspace:workspace,allowsChanges:managedRoot != nil,organizationPath:controller.organizationPath)
+        opened.model.onOrganizationChanged = { [weak controller] value in controller?.applyLibraryOrganization(value) }
         opened.model.onModulesChanged = { [weak controller] in controller?.records.forEach { $0.model.refreshModuleLibrary() } }
         library = opened
     }

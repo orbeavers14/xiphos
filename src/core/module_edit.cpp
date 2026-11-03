@@ -2,6 +2,7 @@
 #include "module_edit_internal.hpp"
 #include "bounded_file.hpp"
 #include "sdk_text.hpp"
+#include "xiphos/core/search_policy.hpp"
 #include <rawfiles.h>
 #include <rawgenbook.h>
 #include <versekey.h>
@@ -35,12 +36,18 @@ bool full_verse(const std::string &text){
 }
 }
 struct ModuleEditStorage::Impl {
- ModuleEditTarget target;std::string driver,source_type,signature,original_digest;std::filesystem::path data,dir,temp,staged,backup;std::string suffix;
+ ModuleEditTarget target;sword::ConfigEntMap configuration;std::string driver,source_type,signature,original_digest;std::filesystem::path data,dir,temp,staged,backup;std::string suffix;
  SWTextEncoding encoding;SWTextDirection direction;SWTextMarkup markup;std::string language;bool installed=false,finished=false;
  explicit Impl(sword::SWMgr &manager,const ModuleEditTarget &t):target(t){
   if(!module_edit_arguments(t))throw std::invalid_argument("Invalid module editing target");auto *module=manager.getModule(t.module.c_str());if(!module)throw std::invalid_argument("Editable module is not installed");
+  configuration=module->getConfig();
   auto value=[&](const char *key){const auto *v=module->getConfigEntry(key);if(v&&std::char_traits<char>::length(v)>4096)throw std::invalid_argument("Module editing metadata exceeds bounds");return std::string(v?v:"");};driver=value("ModDrv");source_type=value("SourceType");
   if((driver!="RawFiles"&&driver!="RawGenBook")||!value("CipherKey").empty()||module->getEncoding()!=sword::ENC_UTF8)throw std::invalid_argument("Editing requires an unencrypted UTF-8 RawFiles or RawGenBook module");
+  if(t.create_book_entry){
+   if(driver!="RawGenBook"||t.reference.size()<2||t.reference.size()>4096||t.reference.front()!='/'||t.reference.back()=='/')throw std::invalid_argument("Book creation requires an absolute new tree path");
+   for(unsigned char c:t.reference)if(c<32||c==127)throw std::invalid_argument("Invalid new book path");
+   for(std::size_t begin=1;begin<t.reference.size();){auto end=t.reference.find('/',begin);auto part=t.reference.substr(begin,end==std::string::npos?end:end-begin);if(part.empty()||part=="."||part=="..")throw std::invalid_argument("New book path is not canonical");if(end==std::string::npos)break;begin=end+1;}
+  }
   if(driver=="RawGenBook"&&!value("KeyType").empty()&&value("KeyType")!="TreeKey")throw std::invalid_argument("Editing requires indexed general-book keys");
   if(driver=="RawFiles"&&!value("Versification").empty()&&value("Versification")!="KJV")throw std::invalid_argument("Personal commentary editing requires its supported KJV canon");
   if(driver=="RawFiles"&&!full_verse(t.reference))throw std::invalid_argument("Personal commentary editing requires one full book, chapter and verse");
@@ -54,10 +61,12 @@ struct ModuleEditStorage::Impl {
   signature=t.module+":"+signature;suffix=driver=="RawFiles"?"":data.filename().u8string();
  }
  std::unique_ptr<sword::SWModule> open(const std::filesystem::path &base){auto prefix=driver=="RawFiles"?base:base/std::filesystem::u8path(suffix);if(driver=="RawFiles")return std::make_unique<sword::RawFiles>(prefix.u8string().c_str(),target.module.c_str(),nullptr,nullptr,encoding,direction,markup,language.c_str());return std::make_unique<sword::RawGenBook>(prefix.u8string().c_str(),target.module.c_str(),nullptr,nullptr,encoding,direction,markup,language.c_str());}
- ModuleEditEntry entry(sword::SWModule &module,const Files &files){
+ ModuleEditEntry entry(sword::SWModule &module,const Files &files,bool created=false){
   std::unique_ptr<sword::SWKey> key(module.createKey());std::uint64_t offset=0;std::string reference;
   if(driver=="RawFiles"){auto *verse=dynamic_cast<sword::VerseKey *>(key.get());if(!verse)throw std::invalid_argument("Personal commentary key is unsupported");verse->setAutoNormalize(false);verse->setText(target.reference.c_str());if(verse->getError()||verse->getChapter()<1||verse->getVerse()<1)throw std::invalid_argument("Invalid personal commentary verse");reference=verse->getOSISRef();}
-  else{auto *tree=dynamic_cast<sword::TreeKeyIdx *>(key.get());if(!tree||target.reference.front()!='/')throw std::invalid_argument("General-book editing requires an exact existing path");tree->setText(target.reference.c_str());if(tree->getError()||tree->getOffset()==0||std::string(tree->getText())!=target.reference)throw std::invalid_argument("General-book editing path is unavailable");offset=tree->getOffset();reference=tree->getText();}
+  else{auto *tree=dynamic_cast<sword::TreeKeyIdx *>(key.get());if(!tree||target.reference.front()!='/')throw std::invalid_argument("General-book editing requires an exact existing path");tree->popError();tree->setText(target.reference.c_str());const bool exists=!tree->getError()&&tree->getOffset()!=0&&std::string(tree->getText())==target.reference;
+   if(target.create_book_entry&&!created){if(exists)throw std::invalid_argument("Book entry already exists");return {target.module,target.reference,driver,"",hash(signature+":"+target.reference+":"+digest(files)),0,source_type};}
+   if(!exists)throw std::invalid_argument("General-book editing path is unavailable");offset=tree->getOffset();reference=tree->getText();}
   module.setKey(*key);auto text=copy_sdk_text(module.getRawEntryBuf(),maximum_editable_document_bytes);auto revision=hash(signature+":"+reference+":"+digest(files));return {target.module,reference,driver,std::move(text),std::move(revision),offset,source_type};
  }
 };
@@ -70,10 +79,27 @@ ModuleEditStorage::~ModuleEditStorage(){if(impl_->installed&&!impl_->finished){t
  std::filesystem::remove_all(impl_->temp,ignored);}}
 ModuleEditEntry ModuleEditStorage::read(){auto files=scan(impl_->dir);auto module=impl_->open(impl_->dir);return impl_->entry(*module,files);}
 ModuleEditEntry ModuleEditStorage::stage(const std::string &expected,const std::string &text,bool erase){
- if(!editable_document_revision(expected)||!editable_document_text(text)||(erase&&!text.empty()))throw std::invalid_argument("Invalid module edit arguments");auto before=scan(impl_->dir);impl_->original_digest=digest(before);auto old=impl_->open(impl_->dir);auto current=impl_->entry(*old,before);if(!old->isWritable())throw std::invalid_argument("Module data is read-only");if(current.revision!=expected)throw std::invalid_argument("Module changed; reopen before editing");old.reset();
+ if(!editable_document_revision(expected)||!editable_document_text(text)||(erase&&(!text.empty()||impl_->target.create_book_entry)))throw std::invalid_argument("Invalid module edit arguments");auto before=scan(impl_->dir);impl_->original_digest=digest(before);auto old=impl_->open(impl_->dir);auto current=impl_->entry(*old,before);if(!old->isWritable())throw std::invalid_argument("Module data is read-only");if(current.revision!=expected)throw std::invalid_argument("Module changed; reopen before editing");old.reset();
  static std::atomic<unsigned long> counter{0};for(unsigned attempt=0;attempt<64;++attempt){impl_->temp=impl_->dir.parent_path()/(".xiphos-module-edit-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())+"-"+std::to_string(counter++));if(std::filesystem::create_directory(impl_->temp))break;impl_->temp.clear();}if(impl_->temp.empty())throw std::runtime_error("Cannot stage module edit");std::filesystem::permissions(impl_->temp,std::filesystem::perms::owner_all,std::filesystem::perm_options::replace);impl_->staged=impl_->temp/"new";impl_->backup=impl_->temp/"old";
- std::filesystem::copy(impl_->dir,impl_->staged,std::filesystem::copy_options::recursive);auto module=impl_->open(impl_->staged);(void)impl_->entry(*module,before);if(!module->isWritable())throw std::invalid_argument("Module data is read-only");module->popError();if(erase&&impl_->driver=="RawGenBook")module->setEntry("",0);else if(erase)module->deleteEntry();else module->setEntry(text.c_str(),static_cast<long>(text.size()));module->flush();if(module->popError())throw std::runtime_error("SWORD module edit failed");module.reset();
- auto after=scan(impl_->staged);module=impl_->open(impl_->staged);auto result=impl_->entry(*module,after);if(result.reference!=current.reference||result.offset!=current.offset||result.text!=(erase?std::string{}:text))throw std::runtime_error("Staged module edit did not verify");return result;
+ std::filesystem::copy(impl_->dir,impl_->staged,std::filesystem::copy_options::recursive);
+ sword::ConfigEntMap staged_configuration=impl_->configuration;
+ auto configure=[&](const char *name,const std::filesystem::path &path){staged_configuration.erase(name);staged_configuration.emplace(name,path.u8string().c_str());};
+ configure("AbsoluteDataPath",impl_->staged);configure("PrefixPath",impl_->staged);configure("DataPath",impl_->driver=="RawFiles"?impl_->staged:impl_->staged/std::filesystem::u8path(impl_->suffix));
+ auto module=impl_->open(impl_->staged);module->setConfig(&staged_configuration);
+ // Invalidate only a recognized usable index, never an unrelated asset folder
+ // or an index from an unsupported backend. Every path stays in the private copy.
+ const auto caches=[&]{return std::filesystem::exists(impl_->staged/"lucene")||std::filesystem::exists(impl_->staged/"xapian");};
+ const bool indexed=supports_indexed_search(*module);
+ if(caches()&&!indexed)throw std::invalid_argument("Existing search cache needs explicit maintenance before editing");
+ if(indexed){
+  module.reset(); // Close probe handles before deleting the private cache.
+  module=impl_->open(impl_->staged);module->setConfig(&staged_configuration);module->deleteSearchFramework();
+  if(caches()||supports_indexed_search(*module))throw std::runtime_error("Staged search index invalidation failed");
+ }
+ (void)impl_->entry(*module,before);if(!module->isWritable())throw std::invalid_argument("Module data is read-only");module->popError();
+ if(impl_->target.create_book_entry){auto *tree=dynamic_cast<sword::TreeKeyIdx *>(module->getKey());if(!tree)throw std::runtime_error("Missing staged tree key");tree->popError();tree->assureKeyPath(impl_->target.reference.c_str());tree->save();if(tree->getError()||tree->getOffset()==0||std::string(tree->getText())!=impl_->target.reference)throw std::runtime_error("Staged book path creation did not verify");}
+ if(erase&&impl_->driver=="RawGenBook")module->setEntry("",0);else if(erase)module->deleteEntry();else module->setEntry(text.c_str(),static_cast<long>(text.size()));module->flush();if(module->popError())throw std::runtime_error("SWORD module edit failed");module.reset();
+ auto after=scan(impl_->staged);module=impl_->open(impl_->staged);auto result=impl_->entry(*module,after,true);if(result.reference!=current.reference||(!impl_->target.create_book_entry&&result.offset!=current.offset)||result.text!=(erase?std::string{}:text))throw std::runtime_error("Staged module edit did not verify");return result;
 }
 void ModuleEditStorage::install(){if(digest(scan(impl_->dir))!=impl_->original_digest)throw std::invalid_argument("Module changed during save");std::filesystem::rename(impl_->dir,impl_->backup);try{std::filesystem::rename(impl_->staged,impl_->dir);impl_->installed=true;}catch(...){std::filesystem::rename(impl_->backup,impl_->dir);throw;}}
 void ModuleEditStorage::rollback(){if(!impl_->installed)return;std::filesystem::rename(impl_->dir,impl_->staged);std::filesystem::rename(impl_->backup,impl_->dir);impl_->installed=false;}

@@ -5,6 +5,34 @@ Updated 2026-11-01. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Section creation and library organization — 2026-11-02
+
+Shared staged RawGenBook prepare/create now creates missing sections/parents with
+whole-module revisions, no overwrite and rollback. Actual CLucene testing found
+stale indexes after module writes; recognized usable indexes are now invalidated
+only in the private staged copy. Unknown/unsupported caches reject preserving data.
+Fresh searches fall back until rebuild. Injected failure restores content/tree/index.
+
+Organization now has owned FIFO/C snapshots and native Module Library favorite,
+hide-in-list and group controls. Exact UTF-8 identities, conflict/reload, cross-window
+sidebars and explicit profile restart persistence are checked. A disposable live
+app verified hiding without changing displayed content, unhide/group/favorite and
+real quit/restart. Real profiles/modules were untouched.
+
+Final-source native build/full suite:251 registered,249 passed,two expected primary
+SDK index skips,268.85s (`build/creation-organization-verified-{build,tests}.log`).
+Alternate capable SDK required actual-index creation/rollback plus organization and
+fixture:3/3,2.30s (`build/book-creation-final-tests.log`). ASan/UBSan selected3/3,
+4.32s,detect_leaks=0; portable models on this Mac3/3,2.08s
+(`build/organization-verified-{asan,portable}-tests.log`). No physical Windows/Fedora
+acceptance. Deployment26/dylib27 warnings remain. Code-only local Graphify refresh:
+686 files,12,892 nodes,35,263 edges,419 communities; source hashes unchanged,zero
+AI calls/tokens/cost. Existing extraction/heuristic limitations remain.
+
+Next: native journal/prayer section creation followed by normal editor/recovery,
+then saved parallel-set consumption and remaining annotation/search compatibility.
+Tree move/rename/delete, new module creation and complete journal parity remain open.
+
 ## Active priorities checkpoint — 2026-11-02
 
 Core implementation `564f9dd`, native bookmark integration `7646977`, authorized

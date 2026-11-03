@@ -61,11 +61,11 @@ output to4MiB, runs to16384, traversal depth to64 and link length to4096 bytes.
 The FIFO worker reads/saves installed, unencrypted UTF-8 `RawFiles` personal
 commentaries (supported KJV canon) and indexed `RawGenBook` general books.
 RawFiles targets require one explicit book/chapter/verse; general-book targets
-must be exact existing absolute tree paths. Unsupported drivers, encodings,
+must be exact existing absolute tree paths for ordinary editing. Unsupported drivers, encodings,
 encryption, canons and book key types reject. General-book Clear Entry removes
 content while retaining the tree node/offset; personal-note deletion uses the SDK
-`deleteEntry` contract. General-book entry creation/tree organization and module creation are
-outside this slice. Linked entries follow the installed SDK's write/delete
+`deleteEntry` contract. A separate prepare/create operation supports new absolute RawGenBook sections;
+move/rename/tree deletion and module creation remain outside this slice. Linked entries follow the installed SDK's write/delete
 semantics; this service does not detach links into independent entries.
 
 Each module must own an isolated data directory below its configured module root.
@@ -129,3 +129,25 @@ and Unicode text round-trip without embedding a synthetic source module.
 Unknown actions and malformed image commands reject; scripts and arbitrary local
 file links remain outside the rich subset. Journal/prayer organization and full
 legacy markup compatibility remain open.
+
+## Staged general-book section creation and index freshness
+
+Explicit prepare/create calls through C++/FIFO/C create a missing UTF-8 RawGenBook
+path, including missing parents, inside the private staged tree. Prepare reads
+without writing. Paths reject empty/dot segments, trailing slashes and controls;
+existing entries reject instead of overwriting. The whole-module revision guards
+intervening edits. Empty sections are valid and reread through the ordinary editor
+API after commit. Sibling tab selections and existing offsets remain preserved.
+
+Module writes now invalidate a recognized usable search index in the staged copy,
+using a driver configured only for that private tree. RawGenBook writes otherwise
+leave an old SDK index searchable. Fresh queries fall back to current content
+until rebuild. Known cache artifacts that this SDK cannot use reject the edit
+without deleting unknown assets or foreign/corrupt caches. Rollback restores the
+original content, tree and index together. Actual CLucene checks require a usable
+index and prove new content appears after creation and a rebuilt index survives
+an injected rollback. This does not strengthen the transaction's crash durability
+or authorize concurrent external writers.
+
+Native section-creation controls and broader journal/prayer organization remain
+next. The shared operation alone does not establish the full journal workflow.

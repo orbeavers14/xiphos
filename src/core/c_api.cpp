@@ -120,6 +120,7 @@ struct xc_search_text_export {xiphos::core::SearchTextExport value;};
 struct xc_worker { xiphos::core::StudyWorker value; explicit xc_worker(const char *root) : value(root ? root : "") {} };
 struct xc_legacy_migration {xiphos::core::LegacyMigration value;};
 struct xc_legacy_repository_preview {xiphos::core::LegacyRepositoryPreview value;};
+struct xc_library_organization {xiphos::core::LibraryOrganizationSnapshot value;};
 struct xc_repository_snapshot {xiphos::core::RepositorySnapshot value;};
 struct xc_module_maintenance_preview {xiphos::core::ModuleMaintenancePreview value;};
 struct xc_module_maintenance_result {xiphos::core::ModuleMaintenanceResult value;};
@@ -154,6 +155,7 @@ struct xc_request {
   std::unique_ptr<xc_verse_decoration> verse_decoration;
   std::unique_ptr<xc_legacy_migration> legacy_migration;
   std::unique_ptr<xc_repository_snapshot> repository_snapshot;
+  std::unique_ptr<xc_library_organization> library_organization;
   std::unique_ptr<xc_legacy_repository_preview> legacy_repository_preview;
   std::unique_ptr<xc_module_maintenance_preview> module_maintenance_preview;
   std::unique_ptr<xc_module_maintenance_result> module_maintenance_result;
@@ -266,6 +268,7 @@ struct xc_request {
   void store(xiphos::core::VerseDecoration v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);verse_decoration->value=std::move(v);}
   void store(xiphos::core::LegacyMigration v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);legacy_migration->value=std::move(v);}
   void store(xiphos::core::LegacyRepositoryPreview v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);legacy_repository_preview->value=std::move(v);}
+  void store(xiphos::core::LibraryOrganizationSnapshot v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);library_organization->value=std::move(v);}
   void store(xiphos::core::RepositorySnapshot v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);repository_snapshot->value=std::move(v);}
   void store(xiphos::core::ModuleMaintenancePreview v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);module_maintenance_preview->value=std::move(v);}
   void store(xiphos::core::ModuleMaintenanceResult v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);module_maintenance_result->value=std::move(v);}
@@ -438,6 +441,7 @@ template<class T> struct Request final : xc_request {
     if constexpr (std::is_same_v<T,xiphos::core::VerseDecoration>) verse_decoration=std::make_unique<xc_verse_decoration>();
     if constexpr (std::is_same_v<T,xiphos::core::LegacyMigration>) legacy_migration=std::make_unique<xc_legacy_migration>();
     if constexpr (std::is_same_v<T,xiphos::core::LegacyRepositoryPreview>) legacy_repository_preview=std::make_unique<xc_legacy_repository_preview>();
+    if constexpr (std::is_same_v<T,xiphos::core::LibraryOrganizationSnapshot>) library_organization=std::make_unique<xc_library_organization>();
     if constexpr (std::is_same_v<T,xiphos::core::RepositorySnapshot>) repository_snapshot=std::make_unique<xc_repository_snapshot>();
     if constexpr (std::is_same_v<T,xiphos::core::ModuleMaintenancePreview>) module_maintenance_preview=std::make_unique<xc_module_maintenance_preview>();
     if constexpr (std::is_same_v<T,xiphos::core::ModuleMaintenanceResult>) module_maintenance_result=std::make_unique<xc_module_maintenance_result>();
@@ -968,6 +972,17 @@ size_t xc_legacy_repository_preview_count(const xc_legacy_repository_preview *p)
 xc_status xc_legacy_repository_preview_get(const xc_legacy_repository_preview *p,size_t index,xc_legacy_repository_candidate *out){if(out)*out={};if(!out||!p||index>=p->value.candidates.size())return XC_INVALID_ARGUMENT;const auto &row=p->value.candidates[index];*out={row.line,static_cast<int>(row.disposition),row.name.c_str(),row.host.c_str(),row.catalog_directory.c_str()};return XC_OK;}
 xc_status xc_repository_snapshot_accept_legacy(xc_repository_snapshot *p,const xc_legacy_repository_preview *preview,size_t index,const char *id,const char *packages){if(!p||!preview||index>=preview->value.candidates.size()||!bounded_image_c_text(id,128)||!bounded_image_c_text(packages,4096))return XC_INVALID_ARGUMENT;try{p->value=xiphos::core::accept_legacy_repository(p->value,preview->value.candidates[index],id,packages);return XC_OK;}catch(...){return failure();}}
 void xc_legacy_repository_preview_release(xc_legacy_repository_preview *p){delete p;}
+xc_status xc_worker_read_library_organization(xc_worker *w,const char *path,xc_request **out){if(out)*out=nullptr;if(!bounded_image_c_text(path,4096))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.read_library_organization(path);});}
+xc_status xc_worker_set_library_organization(xc_worker *w,const char *path,const char *revision,const xc_library_organization_entry *entry,xc_request **out){if(out)*out=nullptr;if(!entry||!bounded_image_c_text(path,4096)||(revision&&!bounded_image_c_text(revision,64))||!bounded_image_c_text(entry->provider,256)||!bounded_image_c_text(entry->item,4096)||(entry->group&&*entry->group&&!bounded_image_c_text(entry->group,256))||(entry->favorite!=0&&entry->favorite!=1)||(entry->hidden!=0&&entry->hidden!=1))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.set_library_organization(path,revision?std::make_optional(std::string(revision)):std::nullopt,{{entry->provider,entry->item},entry->favorite!=0,entry->hidden!=0,entry->group?entry->group:""});});}
+xc_library_organization *xc_request_take_library_organization(xc_request *r){return r&&r->status==XC_OK?r->library_organization.release():nullptr;}
+const char *xc_library_organization_revision(const xc_library_organization *p){return p?p->value.revision.c_str():nullptr;}
+size_t xc_library_organization_count(const xc_library_organization *p){return p?p->value.entries.size():0;}
+const char *xc_library_organization_provider(const xc_library_organization *p,size_t i){return p&&i<p->value.entries.size()?p->value.entries[i].identity.provider.c_str():nullptr;}
+const char *xc_library_organization_item(const xc_library_organization *p,size_t i){return p&&i<p->value.entries.size()?p->value.entries[i].identity.item.c_str():nullptr;}
+const char *xc_library_organization_group(const xc_library_organization *p,size_t i){return p&&i<p->value.entries.size()?p->value.entries[i].group.c_str():nullptr;}
+int xc_library_organization_favorite(const xc_library_organization *p,size_t i){return p&&i<p->value.entries.size()?static_cast<int>(p->value.entries[i].favorite):-1;}
+int xc_library_organization_hidden(const xc_library_organization *p,size_t i){return p&&i<p->value.entries.size()?static_cast<int>(p->value.entries[i].hidden):-1;}
+void xc_library_organization_release(xc_library_organization *p){delete p;}
 xc_status xc_repository_snapshot_create(xc_repository_snapshot **out){if(out)*out=nullptr;if(!out)return XC_INVALID_ARGUMENT;try{*out=new xc_repository_snapshot;return XC_OK;}catch(...){return failure();}}
 xc_status xc_repository_snapshot_put(xc_repository_snapshot *p,const xc_https_repository *r,const char *name,int enabled){if(!p||!r||!bounded_image_c_text(r->id,128)||!bounded_image_c_text(r->host,253)||!bounded_image_c_text(r->catalog_directory,4096)||!bounded_image_c_text(r->package_directory,4096)||!bounded_image_c_text(name,4096)||r->port>65535||(enabled!=0&&enabled!=1))return XC_INVALID_ARGUMENT;try{p->value=xiphos::core::put_repository(p->value,{r->id,r->host,r->catalog_directory,r->package_directory,static_cast<std::uint16_t>(r->port)},name,enabled!=0);return XC_OK;}catch(...){return failure();}}
 xc_status xc_repository_snapshot_remove(xc_repository_snapshot *p,const char *id){if(!p||!bounded_image_c_text(id,128))return XC_INVALID_ARGUMENT;try{p->value=xiphos::core::remove_repository(p->value,id);return XC_OK;}catch(...){return failure();}}
@@ -1702,6 +1717,8 @@ xc_status xc_rich_document_run(const xc_rich_document *d,size_t at,xc_rich_run *
 const char *xc_rich_document_html(const xc_rich_document *d){return d?d->html.c_str():nullptr;}const char *xc_rich_document_text(const xc_rich_document *d){return d?d->text.c_str():nullptr;}void xc_rich_document_release(xc_rich_document *d){delete d;}
 xc_status xc_worker_release_module_editor(xc_worker *w,uint64_t tab,xc_request **out){return queue_request(w,out,[=](auto &worker){return worker.release_module_editor(tab);});}
 xc_status xc_worker_read_module_edit(xc_worker *w,uint64_t tab,const char *module,const char *reference,xc_request **out){if(!bounded_image_c_text(module,4096)||!bounded_image_c_text(reference,32768)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}return queue_request(w,out,[=](auto &worker){return worker.read_module_edit(tab,{module,reference});});}
+xc_status xc_worker_prepare_book_entry(xc_worker *w,uint64_t tab,const char *module,const char *path,xc_request **out){if(out)*out=nullptr;if(!bounded_image_c_text(module,4096)||!bounded_image_c_text(path,4096))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.read_module_edit(tab,{module,path,true});});}
+xc_status xc_worker_create_book_entry(xc_worker *w,uint64_t tab,const char *module,const char *path,const char *revision,const char *text,xc_request **out){if(out)*out=nullptr;if(!w||!out||!bounded_image_c_text(module,4096)||!bounded_image_c_text(path,4096)||!bounded_image_c_text(revision,64)||!xiphos::core::editable_document_revision(revision)||!text||(*text&&!bounded_image_c_text(text,xiphos::core::maximum_editable_document_bytes))||!xiphos::core::editable_document_text(text))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.save_module_edit(tab,{module,path,true},revision,text,false);});}
 xc_status xc_worker_save_module_edit(xc_worker *w,uint64_t tab,const char *module,const char *reference,const char *revision,const char *text,int erase,xc_request **out){if(out)*out=nullptr;if(!w||!out||!bounded_image_c_text(module,4096)||!bounded_image_c_text(reference,32768)||!bounded_image_c_text(revision,64)||!xiphos::core::editable_document_revision(revision)||!text||(*text&&!bounded_image_c_text(text,xiphos::core::maximum_editable_document_bytes))||!xiphos::core::editable_document_text(text)||(erase!=0&&erase!=1)||(erase&&*text))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.save_module_edit(tab,{module,reference},revision,text,erase!=0);});}
 xc_module_edit *xc_request_take_module_edit(xc_request *r){return r&&r->status==XC_OK?r->module_edit.release():nullptr;}
 const char *xc_module_edit_module(const xc_module_edit *e){return e?e->value.module.c_str():nullptr;}const char *xc_module_edit_reference(const xc_module_edit *e){return e?e->value.reference.c_str():nullptr;}const char *xc_module_edit_source_type(const xc_module_edit *e){return e?e->value.source_type.c_str():nullptr;}const char *xc_module_edit_driver(const xc_module_edit *e){return e?e->value.driver.c_str():nullptr;}const char *xc_module_edit_text(const xc_module_edit *e){return e?e->value.text.c_str():nullptr;}const char *xc_module_edit_revision(const xc_module_edit *e){return e?e->value.revision.c_str():nullptr;}uint64_t xc_module_edit_offset(const xc_module_edit *e){return e?e->value.offset:0;}void xc_module_edit_release(xc_module_edit *e){delete e;}

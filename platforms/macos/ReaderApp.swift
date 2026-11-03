@@ -43,6 +43,25 @@ private struct LexiconProfileSaveError: LocalizedError {
 final class ReaderModel: ObservableObject {
     let search = SearchModel()
     @Published var modules: [InstalledModule] = []
+    @Published private(set) var libraryOrganization = CoreLibraryOrganization.empty
+    @Published private(set) var libraryOrganizationNotice = ""
+    func applyLibraryOrganization(_ value: CoreLibraryOrganization, notice: String = "") { libraryOrganization=value;libraryOrganizationNotice=notice }
+    func isFavorite(_ module: String) -> Bool { libraryOrganization.preference(provider:"sword",item:module)?.favorite ?? false }
+    var sidebarModules: [InstalledModule] {
+        modules.filter { libraryOrganization.preference(provider:"sword",item:$0.id)?.hidden != true }.sorted {
+            let first=isFavorite($0.id),second=isFavorite($1.id);return first == second ? $0.id < $1.id : first
+        }
+    }
+    func sidebarSection(_ module: InstalledModule) -> String {
+        let group=libraryOrganization.preference(provider:"sword",item:module.id)?.group ?? ""
+        return group.isEmpty ? module.type : "Group: " + group
+    }
+    struct SidebarGroup: Identifiable { let id: String, modules: [InstalledModule] }
+    var sidebarGroups: [SidebarGroup] {
+        let grouped=Dictionary(grouping:sidebarModules,by:sidebarSection)
+        return grouped.keys.sorted().map { SidebarGroup(id:$0,modules:grouped[$0]!) }
+    }
+
     @Published var selection: String?
     @Published private(set) var commentarySelection = ""
     @Published private(set) var commentaryEntry: RenderedEntry?
@@ -1182,11 +1201,11 @@ struct ReaderWindow: View {
             VSplitView {
                 TabView {
                 List(selection: $model.selection) {
-                    ForEach(Array(Set(model.modules.map(\.type))).sorted(), id: \.self) { type in
-                        Section(type) {
-                            ForEach(model.modules.filter { $0.type == type }) { module in
+                    ForEach(model.sidebarGroups) { group in
+                        Section(group.id) {
+                            ForEach(group.modules) { module in
                                 VStack(alignment: .leading, spacing: 3) {
-                                    Text(module.id)
+                                    Text((model.isFavorite(module.id) ? "★ " : "") + module.id).accessibilityLabel(module.id + (model.isFavorite(module.id) ? ", favorite" : ""))
                                     Text(module.description).font(.caption).foregroundStyle(.secondary).lineLimit(2)
                                 }.tag(module.id)
                             }
@@ -1195,6 +1214,7 @@ struct ReaderWindow: View {
                 }.frame(minHeight: 120)
                     .disabled(model.isBusy)
                     .accessibilityLabel("Installed SWORD modules")
+                    .safeAreaInset(edge:.bottom) { if !model.libraryOrganizationNotice.isEmpty { Text(model.libraryOrganizationNotice).font(.caption).padding(6) } }
                     .tabItem { Text("Modules") }
                     SearchPane(model: model.search, hostBusy: model.isBusy, canRead: model.canOpenSearchResult,
                         onRead: model.openSearchResult,

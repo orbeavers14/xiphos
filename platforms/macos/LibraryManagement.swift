@@ -37,15 +37,33 @@ import XiphosCore
     @Published var cipherKey = ""
     private var editingID: String?
     private var operation: Task<Void,Never>?
+    let organizationPath: String?
+    @Published private(set) var organization = CoreLibraryOrganization.empty
+    @Published var favorite = false
+    @Published var hidden = false
+    @Published var organizationGroup = ""
+    var onOrganizationChanged: ((CoreLibraryOrganization) -> Void)?
     var onModulesChanged: (() -> Void)?
-    init(worker: CoreWorker,path: String,workspace: String,allowsChanges: Bool = true) { self.worker = worker;self.path = path;self.workspace = workspace;self.allowsChanges = allowsChanges }
+    init(worker: CoreWorker,path: String,workspace: String,allowsChanges: Bool = true,organizationPath: String? = nil) { self.organizationPath=organizationPath;self.worker = worker;self.path = path;self.workspace = workspace;self.allowsChanges = allowsChanges }
     var sourceIndex: Int? { profile?.rows.firstIndex { $0.id == sourceID } }
     var hasUnsavedSourceChanges: Bool {
         guard let index = sourceIndex, let row = profile?.rows[index] else { return true }
         return editingID != row.id || name != row.name || host != row.endpoint.host || catalog != row.endpoint.catalog || packages != row.endpoint.packages || UInt32(port) != row.endpoint.port || enabled != row.enabled
     }
     func selectLocal(_ id: String?) { localID = id;offer = nil }
-    func selectInstalled(_ id: String?) { installedID = id;maintenance = nil;cipherKey = "" }
+    func selectInstalled(_ id: String?) {
+        installedID=id;maintenance=nil;cipherKey=""
+        let selected=installed.first { $0.id == id };let value=selected.flatMap { organization.preference(provider:$0.provider,item:$0.module) }
+        favorite=value?.favorite ?? false;hidden=value?.hidden ?? false;organizationGroup=value?.group ?? ""
+    }
+    func saveOrganization() {
+        guard let path=organizationPath,let selected=installed.first(where: { $0.id == installedID }) else { return }
+        let preference=CoreLibraryPreference(identity:CoreLibraryIdentity(provider:selected.provider,item:selected.module),favorite:favorite,hidden:hidden,group:organizationGroup)
+        run(failureHint:"Library preferences could not be saved. Reload before retrying.") {
+            let value=try await self.worker.setLibraryOrganization(path:path,revision:self.organization.revision,preference:preference)
+            self.organization=value;self.onOrganizationChanged?(value);self.message="Library preferences saved. Hiding affects the module list; installed files are unchanged."
+        }
+    }
     var selectedRemote: CoreLibraryChoice? { remote.first { $0.id == remoteID } }
     func run(transferring: Bool = false,failureHint: String = "Operation did not complete. Reload the library or source and try again.",_ action: @escaping @MainActor () async throws -> Void) {
         guard !isBusy else { return };isBusy = true;self.transferring = transferring;message = "Working…";progress = nil
@@ -58,7 +76,7 @@ import XiphosCore
     func waitUntilIdle() async { await operation?.value }
     func cancel() { if transferring { operation?.cancel() } }
     func reload() {
-        run { self.installed = try await self.worker.libraryInventory();self.profile = try await self.worker.readRepositories(path:self.path);self.remote = [];self.offer = nil;self.maintenance = nil;self.message = "Library and sources loaded.";if let id = self.sourceID, self.profile?.rows.contains(where: { $0.id == id }) != true { self.sourceID = nil } }
+        run { self.installed = try await self.worker.libraryInventory();if let path=self.organizationPath { self.organization=try await self.worker.libraryOrganization(path:path);self.onOrganizationChanged?(self.organization);self.selectInstalled(self.installedID) };self.profile = try await self.worker.readRepositories(path:self.path);self.remote = [];self.offer = nil;self.maintenance = nil;self.message = "Library and sources loaded.";if let id = self.sourceID, self.profile?.rows.contains(where: { $0.id == id }) != true { self.sourceID = nil } }
     }
     func selectSource(_ id: String?) {
         guard !isBusy else { return };sourceID = id;remoteID = nil;remote = [];offer = nil
@@ -197,6 +215,9 @@ struct LibraryManagementPane: View {
     private var installed: some View {
         VStack(alignment:.leading) {
             List(selection:Binding(get:{ model.installedID },set:{ model.selectInstalled($0) })) { ForEach(model.installed) { item in Text(item.module + (item.version.isEmpty ? "" : " · " + item.version) + " — " + item.title).tag(item.id) } }
+            if model.organizationPath != nil,model.installedID != nil {
+                HStack { Toggle("Favorite",isOn:$model.favorite);Toggle("Hide in module list",isOn:$model.hidden);TextField("Group (optional)",text:$model.organizationGroup);Button("Save Organization") { model.saveOrganization() } }.disabled(model.isBusy)
+            }
             Button("Manage Selected Module") { model.inspectModule() }.disabled(!model.allowsChanges || model.installedID == nil)
             if let offer = model.maintenance {
                 Text(offer.module).font(.headline)
@@ -213,8 +234,8 @@ struct LibraryManagementPane: View {
 @MainActor final class NativeLibraryWindow: NSObject,NSWindowDelegate {
     let model: LibraryManagementModel
     let window: NSWindow
-    init(worker: CoreWorker,path: String,workspace: String,show: Bool = true,allowsChanges: Bool = true) {
-        model = LibraryManagementModel(worker:worker,path:path,workspace:workspace,allowsChanges:allowsChanges)
+    init(worker: CoreWorker,path: String,workspace: String,show: Bool = true,allowsChanges: Bool = true,organizationPath: String? = nil) {
+        model = LibraryManagementModel(worker:worker,path:path,workspace:workspace,allowsChanges:allowsChanges,organizationPath:organizationPath)
         window = NSWindow(contentRect:NSRect(x:0,y:0,width:1040,height:760),styleMask:[.titled,.closable,.miniaturizable,.resizable],backing:.buffered,defer:false)
         super.init();window.title = "Module Library";window.minSize = NSSize(width:920,height:690);window.isReleasedWhenClosed = false;window.delegate = self;window.contentView = NSHostingView(rootView:LibraryManagementPane(model:model));window.center();if show { window.makeKeyAndOrderFront(nil) } else { window.orderOut(nil) };model.reload()
     }

@@ -13,7 +13,19 @@ and verified replacement. Observed changes reject; this is not an interprocess l
 false and an empty group resets preferences without deleting unknown metadata.
 No profile discovery or user-library scanning occurs.
 
+FIFO/C transport returns owned snapshots and copies inputs before admission on
+the existing worker. The macOS Module Library presents explicit Favorite, Hide in
+module list and Group controls, with revision-checked Save and Reload on conflict.
+Hidden modules remain available in installed-module management and search/pickers.
+Reading sidebars show favorites first within their sections; a custom group
+replaces the default type section. Preferences update all reading windows without
+changing selections and reload from the explicit profile metadata path at restart.
+Swift identities compare/hash UTF-8 bytes, matching the shared repository rather
+than merging canonically equivalent Unicode identifiers.
+
 Generated checks cover provider separation, preference reset, unknown fields,
-revision conflict/create-only protection and exact rereads. FIFO/C transport,
-native filtering/group controls and broader migration/platform acceptance remain
-next; the storage foundation alone is not a completed library-management workflow.
+revision conflict/create-only protection, exact rereads, copied C ownership,
+native cross-window filtering, stale-save rejection and fresh-controller reload.
+A disposable native app/profile also verified hide/unhide, favorites/custom groups
+and real quit/restart while retaining the displayed passage. Broader migration,
+real libraries and physical platform acceptance remain open.
