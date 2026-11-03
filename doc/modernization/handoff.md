@@ -5,6 +5,11 @@ cancellation and data-safety checks active during feature work. Final packaging,
 full physical-platform/release and frontend acceptance remain closing gates.
 This supersedes the earlier blanket deferral; see [current scope](shared-core-roadmap.md).
 
+Sequential follow-through (2026-11-03, `0db20c6`, `eae356b`, `45483a5`, `78fd573`):
+CSS decorations, sparse/encoded legacy migration checks and original Latin-1
+keyed search/preview/export now pass focused checks. The alternate SDK also proves
+actual Latin-1 indexed execution without fallback. See [Mac evidence and limits](handoff-macos.md#sequential-formatting-migration-and-corpus-follow-through--2026-11-03).
+
 Import/markup checkpoint (2026-11-03, `668652e`, `b9eef8c`, `b186d33`): explicit
 non-destructive import review/policies, original root-caption/namespace retention
 and representable inline CSS font traits now pass focused shared/C/native/

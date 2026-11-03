@@ -698,3 +698,14 @@ subsequent focused metadata/rich native, alternate SDK and sanitizer checks pass
 Disposable native collision/repeat workflows verified. See [exact evidence and
 remaining limits](handoff-macos.md#import-review-metadata-and-inline-rich-styles--2026-11-03).
 This does not close broad corpus, physical-platform or complete feature parity.
+
+## Sequential compatibility follow-through (2026-11-03)
+
+CSS underline/strike-through, sparse and encoded legacy migration regression
+coverage, Latin-1 keyed content/actual indexing, and LZSS compressed dictionary
+coverage are checked at `0db20c6`, `eae356b`, `45483a5`, `78fd573`, `2af1887`.
+Combined native256 passes/two expected index skips; final corpus-target compile
+and scoped primary/alternate/sanitizer/portable checks are recorded in
+[the Mac handoff](handoff-macos.md#sequential-formatting-migration-and-corpus-follow-through--2026-11-03).
+BZIP2/XZ corpus checks need a capable SDK; broad real-user, complete legacy assets
+migration and physical-platform acceptance remain open. GTK3 is preserved.

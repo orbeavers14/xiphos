@@ -5,6 +5,52 @@ Updated 2026-11-03. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Sequential formatting, migration and corpus follow-through — 2026-11-03
+
+Owner requested moving directly from one priority to the next. `0db20c6` adds
+representable CSS underline/line-through/none to the same rich run model, keeping
+ancestor decorations and same-element precedence. Unsupported decoration styles
+remain Source. Final focused alternate1/1,1.62s; native2/2,3.59s; ASan/UBSan1/1,
+2.66s (`build/decoration-*-tests.log`).
+
+`eae356b` expands migration regression evidence for sparse duplicate settings
+sections, first-empty-key fallback and signed numeric prefixes. Declared UTF-16BE
+and ISO-8859-1 XML review as UTF-8 while packages/restored copies retain exact
+original bytes. No conversion behavior change was needed. Native3/3,1.92s;
+alternate3/3,1.50s; ASan/UBSan3/3,3.82s,including fixture/fresh-process prerequisites
+(`build/migration-encoding-*-tests.log`).
+
+`45483a5` checks original Latin-1 RawLD content through four UTF-8 keyed query
+modes, previews and mixed text export. Alternate2/2,1.63s; ASan2/2,4.37s
+(`build/keyed-encoding-*-tests.log`). `78fd573` adds an actual Latin-1 RawLD4 index
+on the capable alternate SDK: index execution without fallback and both decoded
+previews pass1/1,0.30s (`build/keyed-latin-index-tests.log`). Portable Linux-model
+checks on this Mac4/4,3.38s cover rich/keyed/migration/fresh-process together
+(`build/compatibility-portable-tests.log`). Sanitizer checks use detect_leaks=0;
+this is not physical Linux or a fully instrumented SWORD SDK.
+
+`2af1887` extends the attribute corpus to ten sources with original OSIS/ThML
+LZSS zLD dictionaries. Exact SDK attribute matches, intervals, narrowing, limits,
+cancellation, previews and unchanged module data pass alternate1/1,0.66s;
+ASan/UBSan1/1,1.21s; portable1/1,0.58s
+(`build/keyed-compression-*-tests.log`). BZIP2/XZ constructors are absent from the
+alternate library despite installed headers; those fixtures remain unverified,
+without introducing a new mandatory SDK capability.
+
+Combined full native build/suite passes256 with two expected index skips out of
+258 registered,296.39s (`build/import-compat-final-native-{build,tests}.log`).
+The final index/LZSS fixture additions followed that build; both final targets
+subsequently compile, LZSS passes and primary index explicitly skips,0.91s
+(`build/compatibility-final-native-corpus-tests.log`). Local code-only Graphify
+692 files,13208 nodes,36464 edges,363 communities; source hashes stable through
+mapping and zero provider calls/tokens/cost (`build/compatibility-final-graph.log`).
+Changed local documentation links and whitespace checks pass. New checks use
+only generated original prose and disposable directories. Remaining corpus work
+includes broader encodings, key collation, module filters/compression and real-user
+samples; complete legacy directory/assets migration, unsupported passive image
+formats and physical-platform/full-workflow acceptance remain open. Keep ongoing
+shared-core hardening active. Generated Graphify outputs and .DS_Store stay local.
+
 ## Import review, metadata and inline rich styles — 2026-11-03
 
 Sequential master commits `668652e`, `b9eef8c`, `b186d33`. Bookmark import now

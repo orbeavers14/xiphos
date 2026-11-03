@@ -57,9 +57,12 @@ fallback, Unicode source/selection, external-file conflicts, unchanged snapshots
 both-generation clearing, cancellation, stale offers, local/remote replacement and
 editor-use removal guards are covered. No public Bible corpus was downloaded.
 
-Windows and Linux presentation, legacy source import, capable-SDK positive index
-creation, real encrypted-module correctness, native sync controls and full parity
-acceptance remain open. The current SDK reports an explicit index-creation skip.
+Windows and Linux presentation, complete legacy user-directory/assets migration,
+representative real-user recovery and full parity acceptance remain open. Later
+checked settings/session migration, capable-SDK actual indexing and native sync
+controls are recorded in [the current Mac handoff](handoff-macos.md); the primary
+SDK still reports explicit index-creation skips. Those later slices do not imply
+physical-platform or full-workflow acceptance.
 Autosave is recovery assistance, not an interprocess lock or power-loss guarantee.
 
 ## Verse-note cursor recovery — 2026-11-03
