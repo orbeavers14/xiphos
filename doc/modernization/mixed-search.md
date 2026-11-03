@@ -149,3 +149,12 @@ the mixed-format corpus fails atomically, with no partial document. Existing
 path traversal/remote/file URI and aggregate image-limit rejection remains checked.
 This is broader generated-corpus evidence, not acceptance of every format,
 compressor, module filter, real-world corpus or physical platform.
+
+## Legacy single-byte keyed content — 2026-11-03
+
+An original-prose RawLD fixture declared as Latin-1 now checks UTF-8 accented
+queries through phrase, words, regular-expression and multiword searches. Exact
+keyed previews and mixed text exports retain the decoded `café` text. This checks
+SDK conversion through the shared paths, without rewriting module source bytes.
+It does not establish every legacy encoding, dictionary key collation or actual
+indexed Latin-1 behavior; broader real-world corpus acceptance remains open.
