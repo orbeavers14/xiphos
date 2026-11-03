@@ -49,6 +49,21 @@ import SwiftUI
         try await personal.save(erase:true)
         let cleared = try await worker.openModuleEditor(tab:try await worker.createTab(),module:"Personal",reference:"John3:16")
         guard cleared.text.isEmpty else { fatalError("Personal clear") }
+        let annotationsPath=folder.appendingPathComponent("annotations.xml").path
+        let annotations=NativeAnnotationModel(worker:worker,path:annotationsPath,module:"Text",reference:"John3:16")
+        await annotations.load();guard annotations.matches,annotations.profile==nil else {fatalError("Native note canonical/create target")}
+        annotations.note="Original & <note> Ω";guard await annotations.save(),!annotations.dirty else {fatalError("Native checked note save: \(annotations.message)")}
+        let originalRevision=annotations.profile!.revision
+        let annotationExternal=try String(contentsOfFile:annotationsPath,encoding:.utf8)+"\n<!--External note metadata-->"
+        try annotationExternal.write(toFile:annotationsPath,atomically:true,encoding:.utf8)
+        annotations.note="Pending native note";guard await annotations.save()==false,annotations.dirty,annotations.profile!.revision==originalRevision,try String(contentsOfFile:annotationsPath,encoding:.utf8)==annotationExternal else {fatalError("Native stale note overwrote external data or lost draft")}
+        await annotations.load();annotations.note="Retried note";guard await annotations.save() else {fatalError("Native note reload/retry")}
+        let bookmarkPath=folder.appendingPathComponent("composition-bookmarks.xml").path
+        try "<SwordBookmarks/>".write(toFile:bookmarkPath,atomically:true,encoding:.utf8)
+        annotations.bookmarkPath=bookmarkPath;await annotations.preview()
+        guard annotations.decoration?.noteHTML=="Retried note",annotations.decoration?.inner==1 else {fatalError("Native saved composition uses shared escaped notes and highlight precedence: \(annotations.message)")}
+        annotations.reference="John3:17";guard !annotations.matches,await annotations.save()==false else {fatalError("Changed native note target accepted without loading")}
+        annotations.reference="John3:16";guard await annotations.save(remove:true),annotations.note.isEmpty else {fatalError("Native checked note removal")}
         let setsPath=folder.appendingPathComponent("parallel-sets.xml").path
         let sets=NativeParallelSetsModel(worker:worker,path:setsPath);await sets.reload()
         guard sets.loaded,sets.profile.revision == nil else { fatalError("Explicit empty saved-set profile") }

@@ -105,4 +105,19 @@ rejects malformed digests without allocating; copied inputs and preallocated
 owned results retain take-once and no-allocation committed polling behavior.
 Generated tests cover stale source preservation, copied revision lifetime,
 canonical KJVA generic targets, removal, unknown metadata and explicit reload.
-Native annotation composition/save controls remain next.
+File > Personal Verse Notes now consumes copied targets/profiles for checked
+plain-text save/remove, module-specific or generic targets, explicit existing-file
+selection and conflict reload/retry. Target changes require Load before Save;
+unknown fields and later duplicates remain. Legacy-hidden/duplicate records are
+disclosed. Closing, reloading or quitting with a dirty draft asks before discard;
+a failed save retains the draft and blocks close. Note entry uses the visible
+main verse even while a book pane is open, independently of BibleSync policy.
+
+Choose Bookmark XML and Preview Saved Composition consume the shared owned plan:
+ordered tag-color metadata, escaped saved-note HTML, highlight precedence and
+incomplete-source diagnostics. Raw color strings are displayed as text, never
+injected into HTML/CSS. The preview explicitly excludes unsaved editor text. This
+is not yet in-place reading highlighting or full native color styling. The new
+note-form drafts are not yet part of autosave/crash recovery; normal quit is
+protected by Save/Discard/Cancel. Complete annotation display integration, draft
+recovery and cross-platform/full-corpus acceptance remain open.

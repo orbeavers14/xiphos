@@ -5,6 +5,38 @@ Updated 2026-11-02. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Native personal notes and saved composition — 2026-11-02
+
+File > Personal Verse Notes now consumes owned shared targets/profiles, checked
+raw-label saves/removals and shared saved bookmark/note composition. Module/
+reference/generic changes require Load before Save. Conflicts preserve the draft;
+reload/open/close/quit protect dirty text. Legacy duplicates/hidden records are
+disclosed. Raw tag colors are text, never injected styling; note HTML is escaped
+by the core. Preview explicitly reads saved files, not the unsaved draft. Notes
+use a dedicated displayed-verse target rather than BibleSync's book-pane gate.
+
+Final native app/editor build and annotation/composition/editor fixtures7/7,6.38s
+(`build/native-annotations-checked-{build,tests}.log`). Earlier final-guard native
+recovery/fresh-process/restart/editor/annotation suite11/11,13.69s preceded the last
+note-entry source decoupling and status wording; those final refinements have the
+7-test rebuild plus live source-entry verification. Shared core alternate SDK and
+sanitizer evidence remains below. No new full-suite claim after `3d8f57b`.
+
+Disposable live app verified entry while a book pane was open, plain note save,
+ordered red/green tag metadata and annotation-first precedence with saved-note
+HTML, unsaved-draft exclusion, Cancel Quit retaining the draft and Save Quit.
+Normal app exit returned success; the generated XML independently contained the
+expected saved draft. Real profiles/modules were untouched. Final tiny status/
+empty-source wording changes are model/build checked, not a new live capture.
+Code-only local Graphify688 files,13,007 nodes,35,747 edges,393 communities; source
+hashes unchanged,zero AI calls/tokens/cost. Heuristic/extraction limits remain.
+
+Next: note-form autosave/crash recovery, in-reading highlight/style integration,
+remaining keyed range/attribute/asset compatibility and broader platform/corpus
+acceptance. These new note-form drafts are NOT yet included in recovery snapshots;
+normal quit is protected. No full annotation/visual parity or physical Windows/
+Fedora acceptance claim. Preserve unrelated `.DS_Store` and generated graph output.
+
 ## Checked annotation-write boundary — 2026-11-02
 
 Annotation snapshots now carry bounded exact-source revisions. New checked raw

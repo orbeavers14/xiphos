@@ -83,6 +83,7 @@ set(preview_sources
   "${CMAKE_CURRENT_SOURCE_DIR}/SyncUI.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/EditorWindow.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/ParallelSets.swift"
+  "${CMAKE_CURRENT_SOURCE_DIR}/AnnotationManagement.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/LibrarySetup.swift" "${CMAKE_CURRENT_SOURCE_DIR}/LibraryManagement.swift" "${CMAKE_CURRENT_SOURCE_DIR}/RecoveryUI.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SessionHostState.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SessionApp.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/ReaderApp.swift" "${CMAKE_CURRENT_SOURCE_DIR}/BookPane.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/ImagePreview.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SearchModel.swift"

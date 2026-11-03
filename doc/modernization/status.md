@@ -1,5 +1,11 @@
 # Modernization status and acceptance
 
+Personal-note checkpoint (2026-11-02): shared exact-source checked annotation
+writes and native plain-text note editing/saved composition now preserve stale
+sources and unsaved drafts on failed save/quit. Final scoped native7/7; sanitizer
+core6/6 and alternate SDK4/4. See [Mac evidence and limits](handoff-macos.md#native-personal-notes-and-saved-composition--2026-11-02).
+Note-form recovery and in-reading styling remain open; no full-parity promotion.
+
 Native parallel checkpoint (2026-11-02, `3d8f57b`): saved sets now apply to the
 active tab's shared chapter matrix, with independent navigation, source-specific
 links and restored visibility/selection. Full native250 passes/two expected index

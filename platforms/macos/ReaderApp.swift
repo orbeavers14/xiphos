@@ -137,6 +137,7 @@ final class ReaderModel: ObservableObject {
     private let worker: CoreWorker?
     private var tab: UInt64?
     var onPassageCommitted: ((PassageTarget,Bool) -> Void)?
+    var annotationEditingTarget: PassageTarget? { guard let module=displayedModule,let entry=displayedEntry else {return nil};return PassageTarget(module:module,reference:entry.reference) }
     var syncTarget: PassageTarget? { guard !showingBook,let module = displayedModule,let entry = displayedEntry else { return nil };return PassageTarget(module:module,reference:entry.reference) }
     @discardableResult func receiveSync(_ navigation: CoreSyncNavigation) -> Bool {
         guard !closed,!isBusy,tab != nil else { return false }
@@ -1585,6 +1586,7 @@ struct XiphosNativePreview: App {
                 Button("Import Legacy Settings and Session…") { delegate.openLegacyMigration() }
                 Button("BibleSync…") { delegate.openSync() }
                 Button("Bookmarks and Imports…") { delegate.openBookmarks() }
+                Button("Personal Verse Notes…") { delegate.openPersonalNotes() }
                 Button("Saved Parallel Reading Sets…") { delegate.openParallelSets() }
                 Button("Module Library…") { delegate.openModuleLibrary() }
                 Button("Choose Module Library Folder…") { delegate.chooseModuleLibrary() }

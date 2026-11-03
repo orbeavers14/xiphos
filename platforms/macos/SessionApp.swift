@@ -221,6 +221,7 @@ import SwiftUI
     private var syncWindow: NativeSyncWindow?
     private var library: NativeLibraryWindow?
     private var bookmarks: NativeBookmarkWindow?
+    private var annotations: NativeAnnotationWindow?
     private var managedRoot: String?
     func applicationDidFinishLaunching(_ notification: Notification) {
         _ = initializePreviewLocale()
@@ -334,6 +335,12 @@ import SwiftUI
         opened.model.onModulesChanged = { [weak controller] in controller?.records.forEach { $0.model.refreshModuleLibrary() } }
         library = opened
     }
+    func openPersonalNotes() {
+        guard !terminating,let controller else {return}
+        if let annotations {annotations.window.makeKeyAndOrderFront(nil);return}
+        guard let target=controller.records.first(where:{$0.key==controller.activeKey})?.model.annotationEditingTarget else {let alert=NSAlert();alert.messageText="Open a Bible passage first";alert.informativeText="Then use Personal Verse Notes to add or edit its note.";alert.runModal();return}
+        do {annotations=NativeAnnotationWindow(worker:controller.worker,path:try NativeSessionController.profileFolder().appendingPathComponent("annotations.xml").path,module:target.module,reference:target.reference)}catch {controller.showError(error.localizedDescription)}
+    }
     func openParallelSets() {
         guard !terminating,let controller else { return }
         if let parallelSets { parallelSets.window.makeKeyAndOrderFront(nil);return }
@@ -386,14 +393,16 @@ import SwiftUI
         if migration?.model.busy == true { let alert = NSAlert();alert.messageText = "A migration operation is still running";alert.informativeText = "Wait for it to finish, then quit.";alert.runModal();return .terminateCancel }
         if sync?.busy == true { let alert = NSAlert();alert.messageText = "A sync connection change is still running";alert.informativeText = "Wait for it to finish, then quit.";alert.runModal();return .terminateCancel }
         if library?.model.isBusy == true { let alert = NSAlert();alert.messageText = "A module operation is still running";alert.informativeText = "Wait for it to finish, or stop the transfer in Module Library, then quit.";alert.runModal();return .terminateCancel }
+        if annotations?.model.busy == true {let alert=NSAlert();alert.messageText="A note operation is still running";alert.informativeText="Wait for it to finish, then quit.";alert.runModal();return .terminateCancel}
         if parallelSets?.model.busy == true { let alert=NSAlert();alert.messageText="A parallel-set change is still running";alert.informativeText="Wait for it to finish, then quit.";alert.runModal();return .terminateCancel }
         if sectionCreator?.model.busy == true { let alert = NSAlert(); alert.messageText = "A section operation is still running"; alert.informativeText = "Wait for it to finish, then quit."; alert.runModal(); return .terminateCancel }
         guard let controller else { return .terminateNow }
         terminating = true
         Task {
             do {
+                if let annotations {guard await annotations.confirmClose() else {terminating=false;sender.reply(toApplicationShouldTerminate:false);return};annotations.model.frozen=true}
                 for editor in editors {
-                    guard await editor.confirmClose() else { for item in editors { item.model.frozen = false }; terminating = false; sender.reply(toApplicationShouldTerminate:false); return }
+                    guard await editor.confirmClose() else { for item in editors { item.model.frozen = false };annotations?.model.frozen=false; terminating = false; sender.reply(toApplicationShouldTerminate:false); return }
                     editor.model.frozen = true
                 }
                 try await controller.prepareToQuit(); try await recovery?.clear(); await sync?.stop(); sender.reply(toApplicationShouldTerminate: true) }
@@ -402,7 +411,7 @@ import SwiftUI
                 alert.informativeText = error.localizedDescription
                 alert.addButton(withTitle: "Cancel"); alert.addButton(withTitle: "Quit Without Saving")
                 let quit = alert.runModal() == .alertSecondButtonReturn
-                if quit { await sync?.stop() };terminating = quit; if !quit { controller.cancelQuit();recovery?.start();for item in editors { item.model.frozen = false } }; sender.reply(toApplicationShouldTerminate: quit)
+                if quit { await sync?.stop() };terminating = quit; if !quit { controller.cancelQuit();recovery?.start();annotations?.model.frozen=false;for item in editors { item.model.frozen = false } }; sender.reply(toApplicationShouldTerminate: quit)
             }
         }
         return .terminateLater

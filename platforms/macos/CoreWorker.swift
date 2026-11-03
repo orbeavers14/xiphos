@@ -2126,3 +2126,36 @@ extension CoreWorker {
         return try await parallelChapterValue(status,request)
     }
 }
+
+struct CoreAnnotationRow: Sendable { let label: String?,note: String?;let visible: Bool }
+struct CoreAnnotationProfile: Sendable { let revision: String;let rows: [CoreAnnotationRow] }
+struct CoreAnnotationTarget: Sendable { let module: String,reference: String,label: String }
+struct CoreVerseDecoration: Sendable { let reference: String,noteHTML: String;let colors: [String];let inner: Int32;let incomplete: Bool }
+extension CoreWorker {
+    private func annotationProfileValue(_ status: xc_status,_ request: OpaquePointer?) async throws -> CoreAnnotationProfile {
+        let completed=try await wait(status,request);defer { xc_request_release(completed) }
+        guard let value=xc_request_take_annotations(completed) else { throw CoreError(status:XC_ENGINE_ERROR) };defer { xc_annotations_release(value) }
+        return CoreAnnotationProfile(revision:String(cString:xc_annotations_revision(value)!),rows:(0..<xc_annotations_count(value)).map { row in CoreAnnotationRow(label:xc_annotations_field(value,row,1).map {String(cString:$0)},note:xc_annotations_field(value,row,2).map {String(cString:$0)},visible:xc_annotations_legacy_visible(value,row) != 0) })
+    }
+    func annotations(tab: UInt64,path: String) async throws -> CoreAnnotationProfile {
+        let strings=SessionCStrings(),file=try strings.copy(path);var request: OpaquePointer?;let handle=try worker()
+        let status=withExtendedLifetime(strings) { xc_worker_read_annotations(handle,tab,file,&request) };return try await annotationProfileValue(status,request)
+    }
+    func annotationTarget(tab: UInt64,module: String,reference: String,generic: Bool) async throws -> CoreAnnotationTarget {
+        let strings=SessionCStrings(),name=try strings.copy(module),ref=try strings.copy(reference);var request: OpaquePointer?;let handle=try worker()
+        let status=withExtendedLifetime(strings) { xc_worker_annotation_target(handle,tab,name,ref,generic ? 1 : 0,&request) }
+        let completed=try await wait(status,request);defer { xc_request_release(completed) };guard let value=xc_request_take_annotation_target(completed) else { throw CoreError(status:XC_ENGINE_ERROR) };defer { xc_annotation_target_release(value) }
+        return CoreAnnotationTarget(module:String(cString:xc_annotation_target_control_module(value)!),reference:String(cString:xc_annotation_target_reference(value)!),label:String(cString:xc_annotation_target_label(value)!))
+    }
+    func saveAnnotation(tab: UInt64,path: String,revision: String?,label: String,note: String,remove: Bool = false) async throws -> CoreAnnotationProfile {
+        let strings=SessionCStrings(),file=try strings.copy(path),identity=try strings.copy(label),expected=try revision.map { try strings.copy($0) },text=try strings.copy(note);var request: OpaquePointer?;let handle=try worker()
+        let status=withExtendedLifetime(strings) { var edit=xc_annotation_edit(action:remove ? 1 : 0,label:identity,note:remove ? nil : text);return xc_worker_edit_annotations_checked(handle,tab,file,expected,&edit,&request) }
+        return try await annotationProfileValue(status,request)
+    }
+    func verseDecoration(tab: UInt64,bookmarks: String,annotations: String,module: String,reference: String) async throws -> CoreVerseDecoration {
+        let strings=SessionCStrings(),marks=try strings.copy(bookmarks),notes=try strings.copy(annotations),name=try strings.copy(module),ref=try strings.copy(reference);var request: OpaquePointer?;let handle=try worker()
+        let status=withExtendedLifetime(strings) { xc_worker_read_verse_decoration(handle,tab,marks,notes,name,ref,1,1,1,&request) }
+        let completed=try await wait(status,request);defer { xc_request_release(completed) };guard let value=xc_request_take_verse_decoration(completed) else { throw CoreError(status:XC_ENGINE_ERROR) };defer { xc_verse_decoration_release(value) }
+        return CoreVerseDecoration(reference:String(cString:xc_verse_decoration_reference(value)!),noteHTML:String(cString:xc_verse_decoration_note_html(value)!),colors:(0..<xc_verse_decoration_tag_count(value)).map {String(cString:xc_verse_decoration_tag_color(value,$0)!)},inner:xc_verse_decoration_inner_color(value),incomplete:xc_verse_decoration_incomplete(value) != 0)
+    }
+}
