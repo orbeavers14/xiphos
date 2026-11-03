@@ -156,5 +156,8 @@ An original-prose RawLD fixture declared as Latin-1 now checks UTF-8 accented
 queries through phrase, words, regular-expression and multiword searches. Exact
 keyed previews and mixed text exports retain the decoded `café` text. This checks
 SDK conversion through the shared paths, without rewriting module source bytes.
-It does not establish every legacy encoding, dictionary key collation or actual
-indexed Latin-1 behavior; broader real-world corpus acceptance remains open.
+The alternate SWORD/CLucene build also creates an actual Latin-1 dictionary
+index and resolves UTF-8 accented queries with index execution (no fallback),
+then verifies decoded previews for every hit. This does not establish every
+legacy encoding or dictionary key collation; real-world corpus acceptance remains
+open.
