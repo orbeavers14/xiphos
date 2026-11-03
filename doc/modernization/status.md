@@ -1,5 +1,11 @@
 # Modernization status and acceptance
 
+Limited-usage checkpoint (2026-11-03, `0e43cae`, `bcb83f6`): explicit BMP-to-PNG
+export and legacy font-color rich editing now pass focused shared/C/Swift/native
+and sanitizer checks. Original PNG-only policy and unsupported-markup Source
+fallback remain. Broad core hardening is deferred until last by owner direction.
+See [Mac evidence](handoff-macos.md#limited-usage-assetsediting-work--2026-11-03).
+
 Intervals/assets/side-styling checkpoint (2026-11-03, `4c63dc9`): inclusive
 exact keyed intervals and native draft controls, original five-format assets
 with15 actual WebKit decodes, and shared commentary/parallel note styling now

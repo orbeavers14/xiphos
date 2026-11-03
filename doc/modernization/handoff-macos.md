@@ -5,6 +5,48 @@ Updated 2026-11-03. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Limited-usage assets/editing work — 2026-11-03
+
+Owner explicitly leaves broad core hardening until last. Account usage tool
+reported15% five-hour/62% weekly remaining at task selection, then4%/61% at the
+last check before final handoff. No rate-limit reset was consumed. Selected two
+bounded feature slices; ordinary change verification still ran.
+
+`0e43cae`: opt-in policy2 exports supported uncompressed24-bit Windows BMP as
+PNG. Existing policy1 remains PNG-only; no C struct/layout or dependency change.
+Exact40-byte DIB/54-byte offset containers, sizes/reserved fields/planes/bit depth,
+orientation/padding and budgets validate before conversion with existing libpng.
+Top-down/bottom-up BGR pixels round-trip correctly. Unsupported BMP variants and
+JPEG/GIF/SVG still reject. Per-module/URI cache retains original-source byte/pixel
+accounting and aggregate failures remain atomic. Native explicit PNG/BMP toggle,
+C/Swift enum transport and keyed export are checked. Dependency minimum now
+explicitly requires libpng simplified read/write support. See
+[contract](png-export-workflows.md#optional-bmp-conversion--2026-11-03).
+
+Bitmap evidence: native integration8/8,10.05s (`build/bitmap-export-native-tests.log`);
+final codec/cache2/2,0.19s (`...-native-final-tests.log`); alternate SDK5/5,2.08s
+(`...-indexed-final-tests.log`); ASan/UBSan5/5,6.08s,detect_leaks=0
+(`...-asan-tests.log`). Final PNG compatibility/C admission checks3/3 on each
+native/alternate SDK,2.91s/3.01s (`bitmap-export-compat-{native,indexed}-tests.log`).
+The formerly-invalid numeric policy2 test now uses99; positive policy2 explicitly
+checks byte-identical existing PNG document output. C11 syntax passes.
+
+`bcb83f6`: legacy font-color wrappers now parse into existing rich color runs.
+Nested colors restore outer style; colorless wrappers inherit it. Unicode and
+canonical round trips pass; font face/size/event/injected-color attributes still
+reject conversion so original Source remains recoverable. No frontend formatting
+engine, new style fields or dependency. See [contract](editing-workflows.md#legacy-font-color-fragments--2026-11-03).
+Final native editor/core2/2,4.17s; alternate SDK1/1,1.69s; ASan/UBSan1/1,2.73s,
+detect_leaks=0 (`build/legacy-font-{native,indexed,asan}-final-tests.log`).
+Native preview rebuilds. No full-suite, new live visual, physical platform or
+whole-parity claim for these changes. Existing deployment/SDK warnings remain.
+
+Local code-only Graphify689 files,13,104 nodes,36,144 edges,419 communities;
+source hashes unchanged by mapping,zero provider calls/tokens/cost. Outputs stay
+local/untracked (`build/limited-usage-final-graph.log`). Unrelated .DS_Store remains
+untracked. Next: remaining legacy rich-markup/resource/export and bookmark/merge
+compatibility, then persistence/content corpus work. Broad hardening stays last.
+
 ## Keyed intervals, broader assets and side/parallel annotations — 2026-11-03
 
 Implementation `4c63dc9`, sequential `master` on the authorized fork. Inclusive
