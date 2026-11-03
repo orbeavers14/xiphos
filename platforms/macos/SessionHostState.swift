@@ -49,7 +49,9 @@ struct SessionHostState: Codable, Sendable {
     var dictionarySourceModule: String?, dictionarySourceReference: String?
     var search: SessionSearchDraft
     var frame: SessionWindowFrame?
+    var readingSources: CoreReadingSources?
     @MainActor init(_ model: ReaderModel, frame: NSRect? = nil) {
+        readingSources=model.readingSources
         showingBook = model.showingBook; showChapter = model.showChapter
         verseNumbers = model.verseNumbers; highlightSelected = model.highlightSelected
         referenceDraft = model.reference; dictionaryDraft = model.dictionaryKey; bookDraft = model.bookKey
@@ -77,7 +79,7 @@ struct SessionHostState: Codable, Sendable {
         guard state.version == 1, state.search.modules.count <= 32,
               CoreSearchMode(rawValue: state.search.mode) != nil,
               SearchScopeChoice(rawValue: state.search.scope) != nil,
-              state.frame?.valid != false else {
+              state.frame?.valid != false,state.readingSources?.valid != false else {
             throw SessionHostError(message: "This saved window layout is unsupported.")
         }
         return state

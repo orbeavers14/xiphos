@@ -5,6 +5,41 @@ Updated 2026-11-03. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## In-reading annotation styling — 2026-11-03
+
+Shared bounded reading presentation now reuses canonical tag/note composition,
+first-tag/inner-note precedence and tab render options. Exact RGB/GDK16 color
+validation prevents raw CSS injection. Notes expand inside the passage; chapter
+anchors and verse links remain. Owned FIFO/C output preserves history and does
+not write source files. See [contract](reading-annotations.md).
+
+Native explicit Show in Reading, reload/clear, note-save/import refresh and
+per-window optional source-path persistence are integrated. Missing sources show
+normal reading plus a notice; incomplete metadata/invalid colors are disclosed.
+The native host palette was refined after live inspection showed low contrast;
+final blue/white note styling and a bookmark-color edge remain readable.
+
+Actual evidence: full native build253 registered tests,251 passed,two expected
+primary-SDK index skips,296.92s (`build/reading-decorations-full-native-*.log`).
+That full run preceded only the final host-palette CSS adjustment; the final
+palette model/fixture rebuild passes2/2,3.73s,including real production WebKit
+computed styling (`reading-decorations-final-palette-model-*.log`). Alternate
+capable SWORD SDK2/2,2.09s; ASan/UBSan2/2,4.78s,detect_leaks=0; portable Linux-model
+build on this Mac2/2,2.07s (`reading-decorations-{final-indexed,final-asan,portable}-tests.log`).
+C11 syntax and whitespace pass. No physical Windows/Fedora acceptance claim.
+
+Disposable live app verified Hebrew/Arabic main reading, expandable saved notes,
+first red tag versus inner note priority, a separately tagged next verse, chapter
+anchor and real quit/restart with both selected files and chapter mode. Initial
+low-contrast defaults were corrected and visually rechecked. App quit normally;
+real profiles/libraries were untouched. Local code-only Graphify688 files,
+13,047 nodes,35,910 edges,427 communities; source hashes unchanged,zero AI
+calls/tokens/cost; existing extraction/heuristic limits remain.
+
+Next: keyed attribute search and bounded-key compatibility, then remaining assets,
+annotation styling in side/parallel panes and broader compiler/corpus acceptance.
+Do not broaden the BibleSync/external-action stretch scope.
+
 ## Explicit verse-note recovery — 2026-11-03
 
 New shared annotation recovery target carries the source notes path, core-derived

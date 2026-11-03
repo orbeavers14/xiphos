@@ -199,6 +199,7 @@ public:
   std::future<bool> can_transmit_sync(bool received_navigation);
   std::future<RecoverySnapshot> read_recovery(std::string path);
   std::future<RecoverySnapshot> save_recovery(std::string path,std::optional<std::string> expected,RecoverySnapshot snapshot);
+  std::future<DecoratedReading> read_decorated_reading(StudyTab tab,std::string bookmarks,std::string annotations,std::string module,std::string reference,bool chapter,DisplayOptions display={});
   std::future<VerseDecoration> read_verse_decoration(StudyTab tab,std::string bookmarks,std::string annotations,std::string module,std::string reference,bool current,bool annotation_highlight,bool verse_highlight);
   std::future<LibraryOrganizationSnapshot> read_library_organization(std::string path);
   std::future<LibraryOrganizationSnapshot> set_library_organization(std::string path,std::optional<std::string> revision,LibraryOrganizationEntry entry);

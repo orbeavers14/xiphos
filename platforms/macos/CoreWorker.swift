@@ -2163,3 +2163,21 @@ extension CoreWorker {
         return CoreVerseDecoration(reference:String(cString:xc_verse_decoration_reference(value)!),noteHTML:String(cString:xc_verse_decoration_note_html(value)!),colors:(0..<xc_verse_decoration_tag_count(value)).map {String(cString:xc_verse_decoration_tag_color(value,$0)!)},inner:xc_verse_decoration_inner_color(value),incomplete:xc_verse_decoration_incomplete(value) != 0)
     }
 }
+
+struct CoreReadingSources: Codable,Sendable,Equatable {
+    var bookmarks: String? = nil
+    var annotations: String? = nil
+    var enabled: Bool { !(bookmarks ?? "").isEmpty || !(annotations ?? "").isEmpty }
+    var valid: Bool { [bookmarks,annotations].allSatisfy { $0.map { $0.utf8.count<=4096 && !$0.utf8.contains(0) } ?? true } }
+}
+struct CoreDecoratedReading: Sendable {let html: String,css: String;let incomplete: Bool;let invalidColors: Int}
+extension CoreWorker {
+    func decoratedReading(tab: UInt64,sources: CoreReadingSources,module: String,reference: String,chapter: Bool,numbers: Bool,highlight: Bool) async throws -> CoreDecoratedReading {
+        let strings=SessionCStrings(),marks=try sources.bookmarks.map {try strings.copy($0)},notes=try sources.annotations.map {try strings.copy($0)},name=try strings.copy(module),ref=try strings.copy(reference)
+        var request: OpaquePointer?;let handle=try worker()
+        let status=withExtendedLifetime(strings) {xc_worker_read_decorated_reading(handle,tab,marks,notes,name,ref,chapter ? 1 : 0,numbers ? 1 : 0,highlight ? 1 : 0,&request)}
+        let completed=try await wait(status,request);defer {xc_request_release(completed)}
+        guard let result=xc_request_take_decorated_reading(completed) else {throw CoreError(status:XC_ENGINE_ERROR)};defer {xc_decorated_reading_release(result)}
+        return CoreDecoratedReading(html:String(cString:xc_decorated_reading_html(result)!),css:String(cString:xc_decorated_reading_css(result)!),incomplete:xc_decorated_reading_incomplete(result) != 0,invalidColors:xc_decorated_reading_invalid_colors(result))
+    }
+}

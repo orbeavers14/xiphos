@@ -1159,6 +1159,19 @@ xc_status xc_worker_append_bookmark_document(xc_worker *worker,const char *path,
 xc_status xc_worker_export_bookmark_document(xc_worker *worker,const char *source,const char *source_revision,const char *destination,const char *destination_revision,xc_request **out);
 /* Explicit reference/paths; shared note escaping and retained color precedence.
  * Owned plan only; callers must not paste raw tag metadata into HTML/CSS. */
+/* Optional NULL/empty source paths disable that source, with no discovery.
+ * One bounded owned reading snapshot uses shared tab options and canonical
+ * annotation/tag precedence. No history/search/selection visit or file writes.
+ * Invalid colors are omitted with diagnostics; source/limit failures publish
+ * no reading result. SDK internal rendering allocations are outside this bound. */
+typedef struct xc_decorated_reading xc_decorated_reading;
+xc_status xc_worker_read_decorated_reading(xc_worker *worker,uint64_t tab,const char *bookmarks,const char *annotations,const char *module,const char *reference,int chapter,int verse_numbers,int highlight_selected,xc_request **out);
+xc_decorated_reading *xc_request_take_decorated_reading(xc_request *request);
+const char *xc_decorated_reading_html(const xc_decorated_reading *reading);
+const char *xc_decorated_reading_css(const xc_decorated_reading *reading);
+int xc_decorated_reading_incomplete(const xc_decorated_reading *reading);
+size_t xc_decorated_reading_invalid_colors(const xc_decorated_reading *reading);
+void xc_decorated_reading_release(xc_decorated_reading *reading);
 typedef struct xc_verse_decoration xc_verse_decoration;
 xc_status xc_worker_read_verse_decoration(xc_worker *worker,uint64_t tab,const char *bookmarks,const char *annotations,const char *module,const char *reference,int current,int annotation_highlight,int verse_highlight,xc_request **out);
 xc_verse_decoration *xc_request_take_verse_decoration(xc_request *request);

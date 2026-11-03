@@ -22,6 +22,8 @@ import AppKit
     private var originRevision: String?
     let recoveryID: String
     var onRecoveryChanged: (() -> Void)?
+    var onUseInReading: ((CoreReadingSources) -> Void)?
+    var onSaved: (() -> Void)?
     init(worker: CoreWorker,path: String,module: String,reference: String,recovered: CoreRecoveryDraft? = nil) {
         self.worker=worker;self.path=path;self.module=module;self.reference=reference;recoveryID=recovered?.id ?? UUID().uuidString
         if let recovered,let label=recovered.annotationLabel,recovered.target==3 {
@@ -52,7 +54,7 @@ import AppKit
     }
     @discardableResult func save(remove: Bool = false) async -> Bool {
         guard !busy,!frozen,matches,let target else { return false };busy=true;defer {busy=false}
-        do {if tab==nil {tab=try await worker.createTab()};let saved=try await worker.saveAnnotation(tab:tab!,path:path,revision:originRevision,label:target.label,note:note,remove:remove);accept(saved);message=remove ? "First matching note removed. Any duplicate records are retained." : "Note saved.";return true }
+        do {if tab==nil {tab=try await worker.createTab()};let saved=try await worker.saveAnnotation(tab:tab!,path:path,revision:originRevision,label:target.label,note:note,remove:remove);accept(saved);onSaved?();message=remove ? "First matching note removed. Any duplicate records are retained." : "Note saved.";return true }
         catch {message="The note was not saved. The file may have changed. Reload before retrying, or copy your draft to keep it. \(error.localizedDescription)";return false}
     }
     func preview() async {
@@ -83,7 +85,7 @@ private struct NativeAnnotationPane: View {
             Text(model.target.map {$0.module+" · "+$0.reference} ?? "No note loaded").font(.headline)
             if model.duplicateCount>1 {Text("Multiple legacy records share this target. Save updates the first; later records remain and may take precedence in the legacy display.").font(.caption)}
             TextEditor(text:$model.note).font(.body).frame(minHeight:150).onChange(of:model.note) {_ in model.draftChanged()}
-            HStack {Button("Save Note") {Task {await model.save()}};Button("Remove Note") {
+            HStack {Button("Show in Reading") {model.onUseInReading?(CoreReadingSources(bookmarks:model.bookmarkPath.isEmpty ? nil : model.bookmarkPath,annotations:model.path))}.disabled(model.profile == nil);Button("Save Note") {Task {await model.save()}};Button("Remove Note") {
                 let alert=NSAlert();alert.messageText="Remove this saved note?";alert.informativeText="Only the first matching record is removed. Other notes and duplicate records remain.";alert.addButton(withTitle:"Remove Note");alert.addButton(withTitle:"Cancel")
                 if alert.runModal() == .alertFirstButtonReturn {Task {await model.save(remove:true)}}
             }.disabled(model.profile == nil);Spacer();if model.dirty {Text("Unsaved changes").font(.caption)}}.disabled(!model.matches)

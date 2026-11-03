@@ -60,6 +60,14 @@ final class ReaderModel: ObservableObject {
         run { token in let chapter=try await worker.navigateParallel(tab:tab,direction:direction);guard token==self.revision,!self.closed else { return };self.parallelChapter=chapter }
     }
     func closeParallel() { guard !isBusy else { return };showingParallel=false }
+    @Published var readingSources = CoreReadingSources()
+    @Published private(set) var readingSourceNotice = ""
+    private var sourceChange: UInt64 = 0
+    func applyReadingSources(_ sources: CoreReadingSources) {
+        guard sources.valid,!closed else {return};readingSources=sources;sourceChange &+= 1;let serial=sourceChange
+        if !isBusy {refreshDisplay();return}
+        Task {while isBusy {guard !closed,serial==sourceChange else {return};try? await Task.sleep(nanoseconds:10_000_000)};guard !closed,serial==sourceChange else {return};refreshDisplay()}
+    }
     @Published var modules: [InstalledModule] = []
     @Published private(set) var libraryOrganization = CoreLibraryOrganization.empty
     @Published private(set) var libraryOrganizationNotice = ""
@@ -251,6 +259,7 @@ final class ReaderModel: ObservableObject {
         lexiconPreferences = try await worker.lexiconPreferences(tab: restoredTab)
         crossReferencesInVerseList = try await worker.crossReferencePreviewList(tab: restoredTab)
         if let host {
+            readingSources=host.readingSources ?? CoreReadingSources()
             showChapter = host.showChapter; verseNumbers = host.verseNumbers; highlightSelected = host.highlightSelected
         }
         selection = saved.module
@@ -688,6 +697,7 @@ final class ReaderModel: ObservableObject {
     }
     private func present(_ entry: RenderedEntry, module: String, token: UInt64, updateInput: Bool = true, passage: RenderedStudyPassage? = nil, received: Bool = false) async throws {
         guard let worker, let tab else { return }
+        let sources=readingSources
         let pair: RenderedStudyPassage?
         if let passage { pair = passage }
         else if modules.contains(where: { $0.id == module && $0.type == "Biblical Texts" }) {
@@ -713,6 +723,12 @@ final class ReaderModel: ObservableObject {
         let commentaryContentOptions = if let pair, pair.commentary != nil {
             try await worker.contentDisplayOptions(tab: tab, module: pair.commentaryModule)
         } else { ContentDisplayOptions.unknown }
+        var decorated: CoreDecoratedReading?,sourceNotice=""
+        if sources.enabled {
+            do {decorated=try await worker.decoratedReading(tab:tab,sources:sources,module:module,reference:entry.reference,chapter:chapterMode,numbers:numbers,highlight:highlight)
+                if decorated?.incomplete == true {sourceNotice="Some bookmark or note records could not be displayed.";if (decorated?.invalidColors ?? 0)>0 {sourceNotice += " Invalid colors were omitted."}}
+            } catch {sourceNotice="Reading notes or bookmarks could not be loaded. The passage is still available. Reload the selected files or clear reading notes."}
+        }
         let selectors = try await worker.referenceChoices(module: module, reference: entry.reference)
         let history = try await worker.history(tab)
         let options = try await worker.moduleEngineOptions(tab: tab, module: module)
@@ -740,6 +756,10 @@ final class ReaderModel: ObservableObject {
             html = entry.html; renderedAnchor = nil; renderedReference = entry.reference
             lexicalPresentation = entry.lexical
             message = entry.html.isEmpty ? "This module has no text at this reference." : ""
+        }
+        if sources==readingSources {
+            readingSourceNotice=sourceNotice
+            if let decorated {html=decorated.html;lexicalPresentation=RenderedLexicalPresentation(css:decorated.css,requested:lexicalPresentation.requested,applied:lexicalPresentation.applied)}
         }
         if let anchor = pair?.anchor, anchor.module == module {
             renderedAnchor = anchor.text; renderedAnchorRevision &+= 1
@@ -1094,6 +1114,15 @@ struct PassageView: NSViewRepresentable {
             <style>:root { color-scheme: light dark; } body { font: 18px Georgia, serif; line-height: 1.55; margin: 24px; }
             /* Existing Xiphos editor/template.h styles this SWORD class red. */
             span.wordsOfJesus { color: red; }
+            :root { --xc-highlight-fg:#ffffff; --xc-highlight-bg:#174ea6; --xc-current-verse:LinkText; }
+            .xc-reading-annotation {color:var(--xc-highlight-bg);background-color:var(--xc-highlight-fg);}
+            .xc-reading-current-highlight {color:var(--xc-highlight-fg);background-color:var(--xc-highlight-bg);}
+            .xc-reading-current-text {color:var(--xc-current-verse);}
+            .xc-reading-tag {padding-inline-start:4px;}
+            .xc-reading-tag a {color:inherit;}
+            .xc-personal-note {margin:6px 0;padding:4px 8px;border-inline-start:3px solid GrayText;}
+            .xc-personal-note summary {font:small-caption;cursor:pointer;}
+
             .xc-reference { margin-bottom: 20px; } .xc-reference header { font-weight: bold; }
             .xc-verse, .xc-commentary-section { scroll-margin-top: 12px; }
             .xc-verse.xc-current, .xc-commentary-section.xc-current { background: Highlight; color: HighlightText; }
@@ -1409,6 +1438,8 @@ struct ReaderWindow: View {
                 }.padding(.horizontal, 12).padding(.bottom, 8).disabled(model.isBusy)
                 HStack {
                     Menu("Preferences") {
+                        Button("Reload Reading Notes") {model.refreshDisplay()}.disabled(!model.readingSources.enabled)
+                        Button("Clear Reading Notes") {model.applyReadingSources(CoreReadingSources())}.disabled(!model.readingSources.enabled)
                         Button("Parallel Reading") { model.openParallel() }.disabled(model.parallelProfilePath == nil)
                         Button("Import reading options…") { choosePreferenceFile() }
                         Button("Save reading options…") { chooseSaveFile() }
@@ -1431,6 +1462,7 @@ struct ReaderWindow: View {
                 PassageView(html: model.html, css: model.lexicalPresentation.css, anchor: model.renderedAnchor, anchorRevision: model.renderedAnchorRevision,
                             onScrollFailure: { model.message = $0 }, onLink: { model.followLink($0) },
                             onLinkHover: { model.previewStudyLink($0) })
+                if !model.readingSourceNotice.isEmpty {Text(model.readingSourceNotice).font(.caption).foregroundStyle(.secondary).padding(8)}
                 if !model.message.isEmpty {
                     Text(model.message).foregroundStyle(.secondary).padding(12)
                         .accessibilityLabel(model.message)

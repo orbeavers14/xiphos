@@ -1,5 +1,12 @@
 # Modernization status and acceptance
 
+Reading-annotation checkpoint (2026-11-03): shared bounded safe-color rendering
+and native explicit source selection now style saved notes/bookmarks in main
+single-verse/chapter reading and restore those choices with each window. Full
+native251 passes/two expected skips; final palette and live restart checked.
+See [contract and limits](reading-annotations.md) and [Mac evidence](handoff-macos.md#in-reading-annotation-styling--2026-11-03).
+Side/parallel-pane styling, search compatibility and broader acceptance remain.
+
 Verse-note recovery checkpoint (2026-11-03): explicit annotation recovery now
 preserves canonical target, original revision and draft text through periodic
 autosave and fresh-process/native startup restoration. Stale recovered saves

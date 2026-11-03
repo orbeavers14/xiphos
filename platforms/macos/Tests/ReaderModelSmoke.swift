@@ -782,6 +782,40 @@ struct ReaderModelSmoke {
         other.close(); try await worker.closeTab(tab); try await worker.closeTab(otherTab); await worker.shutdown()
         print("Native ordered batch, failure groups, actual preview/export identity, scope chaining, drafts and lifecycle passed")
     }
+    @MainActor static func readingDecorations(root: String) async throws {
+        _ = NSApplication.shared
+        let worker=try CoreWorker(root:root),folder=FileManager.default.temporaryDirectory.appendingPathComponent("reading-decorations-"+UUID().uuidString)
+        try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true);defer {try? FileManager.default.removeItem(at:folder)}
+        let marks=folder.appendingPathComponent("bookmarks.xml").path,notes=folder.appendingPathComponent("notes.xml").path,session=folder.appendingPathComponent("session.xml").path
+        let xml="<SwordBookmarks><Folder color='#aabbcc'><Bookmark key='John3:16' module='Text'/></Folder></SwordBookmarks>"
+        try xml.write(toFile:marks,atomically:true,encoding:.utf8)
+        try "<Xiphos><osisrefmarkedverses><markedverse label=' John.3.16' list='Original &amp; &lt;note&gt; Ω'/></osisrefmarkedverses></Xiphos>".write(toFile:notes,atomically:true,encoding:.utf8)
+        let owner=NativeSessionController(worker:worker,path:session,showsWindows:false);try await owner.start();let model=owner.records[0].model;try await idle(model)
+        let back=model.canBack,rendered=model.renderedReference
+        model.reference="Unsubmitted reading draft";model.applyReadingSources(CoreReadingSources(bookmarks:marks,annotations:notes));try await idle(model)
+        guard model.html.contains("background-color:#aabbcc"),model.html.contains("xc-reading-annotation"),model.html.contains("Original &amp; &lt;note&gt; Ω"),model.readingSourceNotice.isEmpty,model.canBack==back,model.renderedReference==rendered,model.reference=="Unsubmitted reading draft" else {fatalError("Native shared single-verse styling changed source/navigation or lost tag/note: \(model.readingSourceNotice)")}
+        var styleOK=false
+        let host=NSHostingView(rootView:PassageView(html:model.html,css:":root {--xc-highlight-fg:#eeeeee;--xc-highlight-bg:#112233;}",anchor:nil,onScrollFailure:{_ in},onLink:{_ in}))
+        let window=NSWindow(contentRect:NSRect(x:0,y:0,width:600,height:240),styleMask:.borderless,backing:.buffered,defer:false);window.isReleasedWhenClosed=false;window.contentView=host;host.layoutSubtreeIfNeeded();defer {window.close()}
+        func find(_ view:NSView)->WKWebView? {if let web=view as? WKWebView {return web};for child in view.subviews {if let web=find(child) {return web}};return nil}
+        let deadline=Date().addingTimeInterval(15)
+        while !styleOK {
+            if let web=find(host) {styleOK=(try? await withCheckedThrowingContinuation { continuation in web.evaluateJavaScript("(() => {let tag=document.querySelector('.xc-reading-tag'),note=document.querySelector('.xc-reading-annotation');return !!tag && !!note && getComputedStyle(tag).backgroundColor==='rgb(170, 187, 204)' && getComputedStyle(note).backgroundColor==='rgb(238, 238, 238)' && getComputedStyle(note).color==='rgb(17, 34, 51)';})()",in:nil,in:.defaultClient) {result in switch result {case .success(let value):continuation.resume(returning:value as? Bool == true);case .failure(let error):continuation.resume(throwing:error)}}}) ?? false}
+            guard Date()<deadline else {fatalError("Native production WebKit did not apply first-tag/inner-note theme styling")};if !styleOK {try await Task.sleep(nanoseconds:10_000_000)}
+        }
+        model.showChapter=true;model.refreshDisplay();try await idle(model)
+        guard model.html.contains("id=\"verse-16\""),model.renderedAnchor=="verse-16",model.html.contains("xc-personal-note"),model.reference=="Unsubmitted reading draft" else {fatalError("Decorated chapter lost anchors or draft")}
+        try FileManager.default.removeItem(atPath:marks);model.refreshDisplay();try await idle(model)
+        guard !model.html.contains("xc-reading-decoration"),!model.readingSourceNotice.isEmpty,model.renderedAnchor=="verse-16" else {fatalError("Missing source retained stale styling or blocked reading")}
+        try xml.replacingOccurrences(of:"#aabbcc",with:"#123456;position:fixed").write(toFile:marks,atomically:true,encoding:.utf8);model.refreshDisplay();try await idle(model)
+        guard model.readingSourceNotice.contains("Invalid colors"),!model.html.contains("position:fixed"),model.html.contains("xc-reading-annotation") else {fatalError("Malformed color injected CSS or lost annotation priority")}
+        try xml.write(toFile:marks,atomically:true,encoding:.utf8);model.refreshDisplay();try await idle(model);try await owner.save()
+        let restored=NativeSessionController(worker:worker,path:session,showsWindows:false);try await restored.start();let copy=restored.records[0].model
+        guard copy.readingSources==model.readingSources,copy.html.contains("background-color:#aabbcc"),copy.reference=="Unsubmitted reading draft" else {fatalError("Explicit reading source paths/styles did not restore with the window")}
+        copy.applyReadingSources(CoreReadingSources());try await idle(copy);guard !copy.html.contains("xc-reading-decoration"),copy.readingSourceNotice.isEmpty else {fatalError("Clearing sources retained stale decoration")}
+        for record in owner.records+restored.records {record.model.close()};await worker.shutdown()
+        print("Native explicit reading sources, theme precedence, per-verse anchors, invalid/missing-source handling and restart state passed")
+    }
     @MainActor static func parallelReading(root: String) async throws {
         _ = NSApplication.shared
         let worker=try CoreWorker(root:root)
@@ -2199,6 +2233,7 @@ struct ReaderModelSmoke {
             print("Native environment locale startup/click checks passed")
             return
         }
+        if CommandLine.arguments.count == 3,CommandLine.arguments[1] == "--reading-decorations" {try await readingDecorations(root:CommandLine.arguments[2]);return}
         if CommandLine.arguments.count == 3,CommandLine.arguments[1] == "--parallel-reading" { try await parallelReading(root:CommandLine.arguments[2]);return }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--library-organization" {
             try await libraryOrganization(root:CommandLine.arguments[2]);return

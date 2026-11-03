@@ -13,6 +13,8 @@ import AppKit
     @Published private(set) var busy = false
     @Published var folder = "Imported from AndBible"
     @Published var message = "Choose an existing bookmark file or a new destination."
+    var onSaved: (() -> Void)?
+    var onUseInReading: ((CoreReadingSources) -> Void)?
     init(worker: CoreWorker) { self.worker=worker }
     private func ownedTab() async throws -> UInt64 {
         if let tab { return tab };let created=try await worker.createTab();tab=created;return created
@@ -34,7 +36,7 @@ import AppKit
         guard !busy,!path.isEmpty,!folder.isEmpty,let preview else { return };busy=true;defer { busy=false }
         do {
             profile=try await worker.appendBookmarkImport(path:path,revision:profile?.revision,preview:preview,folder:folder)
-            self.preview=nil;source="";message="Import saved."
+            self.preview=nil;source="";message="Import saved.";onSaved?()
         } catch { message="Import was not saved. The file may have changed or contain these bookmarks already. Reload the destination and review before retrying. \(error.localizedDescription)" }
     }
     func export(to destination: String) async {
@@ -64,6 +66,7 @@ struct BookmarkManagementView: View {
             HStack {
                 Button("Open Bookmarks…") { open("Open bookmark XML") { await model.select($0,new:false) } }
                 Button("New Bookmark File…") { save("Choose a new bookmark file") { await model.select($0,new:true) } }
+                Button("Show in Reading") {model.onUseInReading?(CoreReadingSources(bookmarks:model.path))}.disabled(model.profile == nil)
                 Button("Reload") { Task { await model.select(model.path,new:false) } }.disabled(model.path.isEmpty)
                 if model.busy { ProgressView().controlSize(.small) }
             }

@@ -16,6 +16,11 @@ import SwiftUI
     let organizationPath: String?
     private var libraryOrganization = CoreLibraryOrganization.empty
     private var organizationNotice = ""
+    func applyReadingSources(_ sources: CoreReadingSources) {
+        var merged=records.first(where:{$0.key==activeKey})?.model.readingSources ?? CoreReadingSources()
+        if let marks=sources.bookmarks {merged.bookmarks=marks};if let notes=sources.annotations {merged.annotations=notes}
+        records.forEach {$0.model.applyReadingSources(merged)}
+    }
     func applyLibraryOrganization(_ value: CoreLibraryOrganization) {
         libraryOrganization=value;organizationNotice="";records.forEach { $0.model.applyLibraryOrganization(value) }
     }
@@ -90,6 +95,7 @@ import SwiftUI
         let key = UUID().uuidString
         let model = ReaderModel(worker: worker, startupError: nil)
         model.parallelProfilePath = organizationPath.map { URL(fileURLWithPath:$0).deletingLastPathComponent().appendingPathComponent("parallel-sets.xml").path }
+        model.readingSources=records.first(where:{$0.key==activeKey})?.model.readingSources ?? CoreReadingSources()
         model.applyLibraryOrganization(libraryOrganization,notice:organizationNotice)
         model.onPassageCommitted = { [weak self] target,received in self?.onPassageCommitted?(target,received) }
         records.append(Record(key: key, model: model, capture: CoreWindowCapture(tab: 0, key: key)))
@@ -325,7 +331,7 @@ import SwiftUI
     func openBookmarks() {
         guard !terminating,let controller else { return }
         if let bookmarks { bookmarks.window.makeKeyAndOrderFront(nil) }
-        else { bookmarks=NativeBookmarkWindow(worker:controller.worker) }
+        else { bookmarks=NativeBookmarkWindow(worker:controller.worker);bookmarks?.model.onUseInReading = {[weak controller] sources in controller?.applyReadingSources(sources)};bookmarks?.model.onSaved = {[weak controller] in controller?.records.forEach {$0.model.applyReadingSources($0.model.readingSources)}} }
     }
     func openModuleLibrary() {
         guard !terminating, let controller else { return }
@@ -339,6 +345,8 @@ import SwiftUI
     private func openAnnotation(path: String,module: String,reference: String,recovered: CoreRecoveryDraft? = nil) {
         guard !terminating,let controller else {return}
         let opened=NativeAnnotationWindow(worker:controller.worker,path:path,module:module,reference:reference,recovered:recovered)
+        opened.model.onUseInReading = {[weak controller] sources in controller?.applyReadingSources(sources)}
+        opened.model.onSaved = {[weak controller] in controller?.records.forEach {$0.model.applyReadingSources($0.model.readingSources)}}
         opened.model.onRecoveryChanged = {[weak self] in self?.recovery?.request()}
         opened.onClosed = {[weak self,weak opened] in self?.annotations.removeAll {$0 === opened};self?.recovery?.request()}
         annotations.append(opened)
