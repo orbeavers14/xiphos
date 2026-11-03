@@ -163,3 +163,23 @@ including mismatched chapter/verse, null color settings and negative/non-boolean
 legacy flags. Strict C11 linkage is checked in the same C++11 test target. This is
 scoped priority equivalence; surrounding paragraph/HTML treatment, actual GTK
 rendering and native annotation composition are separate acceptance work.
+
+## Native review/import/export integration
+
+The macOS File menu now exposes Bookmarks and Imports. Users explicitly choose
+an existing XML destination or a new file, review a closed standalone AndBible
+SQLite backup, inspect imported/skipped reason counts, name a destination folder
+and commit the reviewed immutable copy. Unsupported versifications, invalid
+ordinals and invalid UUIDs are skipped; originals are not rewritten. Recognized
+folder hierarchy and source module/key/versification metadata are shown.
+
+The adapter consumes shared copied C results and revision-checked append/export
+services. Stale destinations and duplicate imported identities retain the pending
+review and committed display. Reload is explicit; retry requires another Import
+click. XML export preserves exact source bytes and checks both source and existing
+destination revisions. No alternate bookmark repository or XML parser lives in
+Swift. Generated native tests cover stale rejection, reload/retry, duplicates,
+source preservation, nested depths and exact export. Scoped live interaction with
+generated files verifies destination selection, backup review and saved import.
+General bookmark editing/drag-drop, full highlight composition, real backup
+variants and whole workflow/platform acceptance remain open.

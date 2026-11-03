@@ -239,3 +239,14 @@ missing control modules and render limits fail without replacing the old selecti
 It uses the existing alias, options and missing-column policies, never silently
 truncates, and does not edit the selected profile. Storage activation and tab
 application are intentionally separate commands; neither implies the other.
+
+## Checked named-set edits
+
+Saved parallel snapshots now include an exact-source SHA256 revision. New
+`edit_parallel_profile_checked` C++/FIFO and C entry points reject a stale loaded
+profile; null expected revision means create only if missing. The original
+entry point retains legacy behavior. Unknown settings/comments and existing
+same-directory replacement checks remain shared. Returned revisions are owned,
+bounded metadata. Tests cover exact revision reads, stale/create-only rejection,
+explicit reload/retry, copied C results and no-allocation result publication.
+Native named-set management still needs to consume this checked interface.

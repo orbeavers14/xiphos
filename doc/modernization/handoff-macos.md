@@ -5,6 +5,58 @@ Updated 2026-11-01. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Active priorities checkpoint — 2026-11-02
+
+Core implementation `564f9dd`, native bookmark integration `7646977`, authorized
+fork `master`. Owner requested continuous work through priorities1–5; remaining
+BibleSync/external actions stay stretch-only with delivery undecided.
+
+- Search: keyed Indexed mode uses the shared capability/fallback policy. Actual
+  RawLD4/RawGenBook external indexes prove raw OR/Words AND. The SDK ignores some
+  indexed book ranges; exact-key intersection now enforces authoritative last
+  scope before counts, retention and exports, including automatic indexed Words.
+- Bookmarks: File > Bookmarks and Imports consumes shared C copies for explicit
+  XML destination selection, standalone AndBible review/skip diagnostics,
+  revision-checked import, reload/retry, duplicate protection and exact export.
+  Native folder depths preserve hierarchy. Unknown/skipped inputs do not rewrite
+  original backups. No separate Swift repository/parser was introduced.
+- Parallel sets: owned exact-source revisions and new checked C++/FIFO/C edits
+  reject stale/create-only conflicts while preserving legacy entry points.
+- Editing: validated internal study commands now round-trip in rich links.
+- Library organization: shared bounded revision-checked favorites/hidden/group
+  metadata stores exact provider/item identities and preserves unknown XML.
+  Native controls and FIFO/C organization transport remain open.
+
+Actual evidence on macOS27.2/AppleClang21/Swift6.4.2:
+
+- Final full native build and249 registered tests:247 passed,two explicit expected
+  primary-SDK index skips,290.29s (`build/priorities-reviewed-native-build.log`,
+  `build/priorities-full-native-tests.log`). Earlier focused native import/mixed
+  checks6/6,5.41s. The full run includes final nesting and accurate skip guidance.
+- Alternate released SWORD1.9.0/CLucene selected checks7/7,3.92s,including actual
+  keyed index execution; initial actual-index/mixed suite4/4,2.51s. Final metadata
+  digest-byte accounting was refined afterward and covered by the native full run.
+- ASan/UBSan selected checks6/6,7.68s,detect_leaks=0; final checked-profile
+  accounting rebuild/recheck2/2,1.09s. Third-party SDK coverage remains incomplete.
+  Logs `build/priorities-{indexed,asan}-*.log` and final-asan variants.
+- Scoped live CUA interaction with a disposable registered app/profile/library
+  selected generated XML/SQLite fixtures, displayed review counts, committed
+  explicit import and showed module/range/canon/note text. The visual review then
+  improved nesting and clarified skipped records; those final refinements are
+  covered by the full native model checks, not a second live capture. App quit
+  through its own menu; real libraries/profiles were untouched.
+- C11 syntax, diff whitespace pass. Graphify code-only local refresh685 files,
+  12,840 nodes,35,035 edges,397 communities; source hashes unchanged,zero AI
+  calls/tokens/cost. Existing extraction/heuristic limits apply. Generated graph
+  and unrelated `.DS_Store` stay untracked. Deployment26/dylib27 warnings remain.
+
+No full workflow/parity or physical Windows/Fedora acceptance. Search attribute/
+range/corpus gates, bookmark editing/composition/real backups, native parallel-set
+consumption, journal/prayer organization and native library organization remain.
+Continue with safe general-book section creation as the next journal/prayer core
+boundary, then consume checked saved-set and library organization services. Keep
+recovery intent explicit before exposing any new unsaved creation workflow.
+
 ## Keyed last-results and revised priorities — 2026-11-02
 
 Implementation `30e0baf`, authorized fork `master`. Owner made remaining BibleSync

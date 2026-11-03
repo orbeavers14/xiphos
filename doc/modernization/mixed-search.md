@@ -20,7 +20,8 @@ common query/options across its ordered module list; C++ supports per-group
 queries as before.
 
 Only verse groups update the tab's complete verse last-results scope and saved
-search annotation choices. Keyed groups reject verse ranges, attribute modes and raw indexed syntax.
+search annotation choices. Keyed groups reject verse ranges and attribute modes. Indexed mode now uses the
+existing SDK capability probe and explicit multiword-fallback metadata.
 Last-results searches now use complete retained keys from one matching actual
 source in the preceding successful, non-cancelled generation. Missing, repeated,
 partial or capacity-exceeded sources reject instead of broadening. Empty sets
@@ -115,5 +116,19 @@ exact/short byte caps, stale IDs, explicit partial sources, retention capacity,
 keyed resource rejection, cancellation and owned C results after worker teardown.
 Existing verse-only batch/export characterization remains intentional.
 
-Next: keyed range policy and raw-index/attribute coverage where supported,
+Next: keyed range/attribute policies where supported,
 keyed assets and broader SDK/module/canon/RTL/physical-platform acceptance.
+
+## Actual keyed indexes
+
+Original-prose RawLD4 and RawGenBook fixtures create and execute actual SDK
+indexes in the alternate SWORD/CLucene build. Raw advanced indexed syntax keeps
+SDK OR behavior; Words keeps sidebar AND preparation. Primary builds without a
+usable index skip the positive gate explicitly and retain reported fallback.
+
+The SDK's indexed general-book search can ignore an arbitrary-key range. Shared
+execution now intersects keyed last-results output with the exact authoritative
+key set before copying counts, sorting, complete retention or export. This
+applies to automatic indexed Words too. Filtering keeps source order, removes
+out-of-scope paths and cannot expand tree parents into unrequested children.
+No verse parser or second search engine is introduced.

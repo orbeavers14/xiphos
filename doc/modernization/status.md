@@ -1,5 +1,7 @@
 # Modernization status and acceptance
 
+Active priorities checkpoint (2026-11-02, core `564f9dd`, Mac `7646977`): actual keyed indexes and exact last-key filtering, native AndBible review/conflict/import/export, checked parallel-set edits, internal rich links and library-organization storage now exist. Full native247 passes plus two expected index skips; alternate SDK7/7. See [Mac evidence and limits](handoff-macos.md#active-priorities-checkpoint--2026-11-02). Continuous priorities1–5 remain active; these are scoped advances, not complete workflow acceptance.
+
 Keyed last-results checkpoint (2026-11-02, `30e0baf`): [dictionary/book narrowing](mixed-search.md) now uses complete same-source retained keys, preserves verse scope and exports, and rejects incomplete/ambiguous prior sources. Final scoped checks12/12; sanitizer and alternate SDK checks3/3 each. Remaining search range/index/attribute policies and priorities2–5 remain active.
 
 Owner priority update (2026-11-02): work through search/content, bookmarks and

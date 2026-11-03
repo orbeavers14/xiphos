@@ -12,7 +12,7 @@ worker API, but no history, verse last-scope or retained generation is published
 Supported sources are SWLD dictionaries and SWGenBook sources with the existing
 indexed TreeKeyIdx capability. Exact/catalog-resolved source identity is retained.
 Supported modes are regex, phrase, words and explicit multiword. Verse bounds,
-last-results scopes, raw indexed/attribute modes and unsupported sources reject.
+last-results scopes, attribute modes and unsupported sources reject.
 Words may use the existing SDK index optimization when available; raw advanced
 indexed syntax is not enabled by this service.
 
@@ -30,7 +30,7 @@ and C ownership. Fixture copies restore their own erased book content before
 searching; no source module or user library is edited.
 
 The [mixed-search integration](mixed-search.md) now supplies opt-in typed batches,
-exports and native consumers. Keyed retained scopes, raw indexed/attribute modes
+exports and native consumers. Keyed retained scopes, attribute modes
 and broad corpus/cross-host acceptance remain open. Existing verse-only batch
 failure tests remain intentional.
 
@@ -60,5 +60,10 @@ and book dispatch, wrong kinds, missing keys/paths, output limits and C lifetime
 feed existing stale-safe visible/all text and passive HTML exporters. This
 supersedes the earlier pending batch/export statements for this supported slice;
 standalone keyed-query behavior remains unchanged. Native typed consumption,
-preview images/links and opt-in keyed PNG export are checked. Keyed scopes/raw
-index/attributes, complete assets and full compatibility acceptance remain open.
+preview images/links and opt-in keyed PNG export are checked. Keyed scopes/attributes, complete assets and full compatibility acceptance remain open.
+
+Indexed dictionary/book queries now use the existing capability/fallback path;
+actual external-index OR/Words AND and keyed last-scope isolation are checked in
+a separate disposable fixture. See [mixed indexed policy](mixed-search.md#actual-keyed-indexes).
+Attribute and verse-range requests remain rejected. The standalone Reader query
+still has no session-owned last-results scope.

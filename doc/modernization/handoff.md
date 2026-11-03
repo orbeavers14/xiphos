@@ -1,5 +1,7 @@
 # Shared project handoff: start here in every chat
 
+Active priorities checkpoint (2026-11-02, core `564f9dd`, Mac `7646977`): actual keyed indexes and exact last-key filtering, native AndBible review/conflict/import/export, checked parallel-set edits, internal rich links and library-organization storage now exist. Full native247 passes plus two expected index skips; alternate SDK7/7. See [Mac evidence and limits](handoff-macos.md#active-priorities-checkpoint--2026-11-02). Continuous priorities1–5 remain active; these are scoped advances, not complete workflow acceptance.
+
 Owner priority update (2026-11-02): work through search/content, bookmarks and
 annotations, parallel saved workflows, editing, then library organization. Remaining
 BibleSync networking/group/presence/chat and external IPC/actions are a stretch

@@ -119,3 +119,13 @@ Windows/GTK4 editor adapters and physical Windows/Fedora validation remain open.
 These supported services and offscreen checks do not establish whole F25/F26
 workflow or visual parity. Installation and sync are the next core priorities;
 devotionals remain deferred.
+
+## Internal links in rich documents
+
+Rich formatting now retains validated `passagestudy.jsp` and `xiphos.url` study
+commands alongside existing URI links. Syntax is checked by the shared contextual
+router; activation supplies its live context later. Serialized query ampersands
+and Unicode text round-trip without embedding a synthetic source module.
+Unknown actions and malformed image commands reject; scripts and arbitrary local
+file links remain outside the rich subset. Journal/prayer organization and full
+legacy markup compatibility remain open.
