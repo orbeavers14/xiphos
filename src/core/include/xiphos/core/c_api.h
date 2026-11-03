@@ -542,9 +542,10 @@ int xc_search_index_fallback(const xc_search *result);
  * from actual source IDs. Explicit range_module remains an exact installed ID. */
 xc_status xc_worker_search_module(xc_worker *worker,uint64_t tab,const char *module,const char *expression,
                                   const xc_search_options *options,xc_request **out);
-/* Separate dictionary/general-book text query. Result kind must be consumed as
+/* Separate dictionary/general-book query. Result kind must be consumed as
  * an opaque dictionary key or book path, never a verse reference. Regex/phrase/
- * words/multiword/indexed only; indexed capability/fallback matches verse policy.
+ * words/multiword/indexed and lemma/morphology/footnote modes; attribute matches
+ * require attributes supplied by the module filters. Indexed fallback matches verse policy.
  * No range, last-scope, generation, export or history
  * publication. Copied input, cancellable FIFO job, same owned xc_search result. */
 xc_status xc_worker_search_keyed_module(xc_worker *worker,uint64_t tab,const char *module,const char *expression,const xc_search_options *options,xc_request **out);
@@ -642,7 +643,8 @@ xc_status xc_worker_search_modules(xc_worker *worker,uint64_t tab,const char *co
  * settings. Keyed last scope requires one same-source group in the preceding
  * complete successful generation; ambiguous/missing/incomplete scopes reject.
  * Clear search scope also invalidates keyed scope without deleting exports.
- * Keyed groups still reject verse ranges/attribute modes. Indexed mode uses the
+ * Keyed groups reject verse ranges; attribute modes use SDK entry attributes.
+ * Indexed mode uses the
  * shared capability/fallback policy; exact-key filtering enforces keyed scope.
  * Complete typed keys use the same retained generation/read/export ownership. */
 xc_status xc_worker_search_mixed_modules(xc_worker *worker,uint64_t tab,const char *const *modules,size_t count,const xc_search_query *query,const xc_search_batch_limits *total,xc_request **out);

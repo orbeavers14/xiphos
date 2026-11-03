@@ -5,6 +5,25 @@ Updated 2026-11-03. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Keyed entry-attribute search — 2026-11-03
+
+Shared dictionary/indexed-tree queries now accept lemma/morphology/footnote
+through the existing SDK attribute engine, exact whole-entry flags and copied
+opaque keys. Mixed batches keep complete same-source last scopes; verse ranges
+still reject. Original OSIS/ThML RawLD4/RawGenBook fixtures compare against actual
+SDK results, distinguish identifier prefixes and case, check prefix counts,
+cancellation, C ownership and unchanged source data. Swift mixed adapters cover
+all four sources and retained narrowing. See [contract](keyed-search.md#keyed-entry-attributes--2026-11-03).
+
+Actual local checks: native core5/5,8.76s; final Swift/fixture5/5,7.31s;
+alternate capable SDK5/5,7.11s; ASan/UBSan4/4,5.73s,detect_leaks=0;
+portable Linux-model build on this Mac4/4,3.78s. Logs:
+`build/keyed-attributes-{native,swift,final-indexed,asan,portable}-tests.log`.
+The native application builds; no new physical Windows/Fedora acceptance or
+full-suite claim. Existing deployment/SDK warnings remain. Graphify is refreshed
+locally after source edits; no AI providers. Keyed intervals, complete assets,
+corpus validation and annotation side/parallel styling remain open.
+
 ## In-reading annotation styling — 2026-11-03
 
 Shared bounded reading presentation now reuses canonical tag/note composition,

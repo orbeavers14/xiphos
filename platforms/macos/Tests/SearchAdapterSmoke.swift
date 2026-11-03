@@ -6,6 +6,28 @@ actor ProgressLog {
     func snapshot() -> [CoreSearchProgress] { items }
 }
 @main struct SearchAdapterSmoke {
+    static func keyedAttributes(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let tab = try await worker.createTab()
+        let ids = ["AttrDictionaryOSIS", "AttrBookOSIS", "AttrDictionaryThML", "AttrBookThML"]
+        for (mode, expression, count) in [(CoreSearchMode.lemma, "G140", 4), (.morphology, "N-ASF", 4), (.footnote, "Alpha", 8)] {
+            let result = try await worker.searchModules(tab: tab, modules: ids, expression: expression, mode: mode, mixedContent: true)
+            guard result.failureCount == 0, result.copiedResultCount == count,
+                  result.groups.count == 4, !result.scopeUpdated else { fatalError("Swift keyed attributes share bounded mixed execution") }
+            for (index, group) in result.groups.enumerated() {
+                guard let hit = group.result, hit.engineType == -3, hit.mode == mode,
+                      hit.references.contains(index % 2 == 0 ? "JOHN.3.16" : "/Part/Entry Ω") else { fatalError("Swift retains exact opaque attribute keys and mode") }
+            }
+        }
+        let seed = try await worker.searchModules(tab: tab, modules: ids, expression: "G140", mode: .lemma, mixedContent: true)
+        let narrowed = try await worker.searchModules(tab: tab, modules: ids, expression: "Alpha", mode: .footnote, withinLastResults: true, mixedContent: true)
+        guard narrowed.failureCount == 0, narrowed.copiedResultCount == 4,
+              narrowed.groups.map({ $0.result?.references }) == seed.groups.map({ $0.result?.references }),
+              try await worker.history(tab).count == 0 else { fatalError("Swift attribute narrowing retains source keys without navigation") }
+        try await worker.closeTab(tab); await worker.shutdown()
+        guard seed.copiedResultCount == 4 else { fatalError("Owned mixed attribute result survives shutdown") }
+        print("Swift keyed OSIS/ThML dictionary/book attributes and retained scopes passed")
+    }
     static func attributes(root: String) async throws {
         let worker = try CoreWorker(root: root)
         let tab = try await worker.createTab(), other = try await worker.createTab()
@@ -352,6 +374,9 @@ actor ProgressLog {
         print("Swift shared PNG export policy, exact limits, unavailable/cancelled outcomes and owned statistics passed")
     }
     static func main() async throws {
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--keyed-attributes" {
+            try await keyedAttributes(root: CommandLine.arguments[2]); return
+        }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--html-images" {
             try await htmlImages(root: CommandLine.arguments[2]); return
         }

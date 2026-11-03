@@ -11,10 +11,10 @@ worker API, but no history, verse last-scope or retained generation is published
 
 Supported sources are SWLD dictionaries and SWGenBook sources with the existing
 indexed TreeKeyIdx capability. Exact/catalog-resolved source identity is retained.
-Supported modes are regex, phrase, words and explicit multiword. Verse bounds,
-last-results scopes, attribute modes and unsupported sources reject.
-Words may use the existing SDK index optimization when available; raw advanced
-indexed syntax is not enabled by this service.
+Supported modes are regex, phrase, words, explicit multiword/indexed and
+lemma/morphology/footnote attributes. Verse bounds, standalone last-results scopes
+and unsupported sources reject. Indexed mode uses the shared capability/fallback
+policy. Attribute matches require metadata populated by the module filters.
 
 `SearchResult::key_kind` and `xc_search_key_kind` distinguish verse(0), dictionary(1)
 and general book(2); NULL C results return-1. Result keys are opaque SDK identities.
@@ -30,8 +30,8 @@ and C ownership. Fixture copies restore their own erased book content before
 searching; no source module or user library is edited.
 
 The [mixed-search integration](mixed-search.md) now supplies opt-in typed batches,
-exports and native consumers. Keyed retained scopes, attribute modes
-and broad corpus/cross-host acceptance remain open. Existing verse-only batch
+exports and native consumers. Keyed retained scopes are supported by mixed batches; broad corpus/cross-host
+acceptance remains open. Existing verse-only batch
 failure tests remain intentional.
 
 ## Exact keyed previews
@@ -60,10 +60,26 @@ and book dispatch, wrong kinds, missing keys/paths, output limits and C lifetime
 feed existing stale-safe visible/all text and passive HTML exporters. This
 supersedes the earlier pending batch/export statements for this supported slice;
 standalone keyed-query behavior remains unchanged. Native typed consumption,
-preview images/links and opt-in keyed PNG export are checked. Keyed scopes/attributes, complete assets and full compatibility acceptance remain open.
+preview images/links and opt-in keyed PNG export are checked. Complete assets and full compatibility acceptance remain open.
 
 Indexed dictionary/book queries now use the existing capability/fallback path;
 actual external-index OR/Words AND and keyed last-scope isolation are checked in
 a separate disposable fixture. See [mixed indexed policy](mixed-search.md#actual-keyed-indexes).
-Attribute and verse-range requests remain rejected. The standalone Reader query
+Verse-range requests remain rejected. The standalone Reader query
 still has no session-owned last-results scope.
+
+## Keyed entry attributes — 2026-11-03
+
+Lemma, morphology and footnote modes now reuse the shared SWORD entry-attribute
+engine for supported dictionaries and indexed-tree general books. Lemma and
+morphology keep exact whole-entry identifier matching; footnote body searches
+keep substring/case behavior. No verse conversion or separate matching engine is
+introduced. Plain sources without those attributes return empty results.
+
+Original-prose RawLD4/RawGenBook fixtures with OSIS/ThML filters compare shared
+results directly with SDK results for all three modes and both case settings.
+They distinguish G140/G1401 and N-ASF/N-ASF1, retain Unicode/verse-shaped opaque
+keys, check complete same-source last-result narrowing, prefix counts,
+cancellation, copied C input/result lifetime and byte-identical source data.
+This proves these drivers/filters, not all module families or third-party corpora.
+Explicit keyed intervals remain undesigned; verse ranges continue to reject.

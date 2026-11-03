@@ -81,8 +81,8 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
     const bool dictionary=dynamic_cast<sword::SWLD *>(&module)&&std::string(module.getType())=="Lexicons / Dictionaries";
     const bool book=dynamic_cast<sword::SWGenBook *>(&module)&&indexed_book(module);
     if((!dictionary&&!book)||query.range||next||
-       (query.mode!=SearchMode::regular_expression&&query.mode!=SearchMode::phrase&&query.mode!=SearchMode::words&&query.mode!=SearchMode::multiword&&query.mode!=SearchMode::indexed))
-      throw std::invalid_argument("Keyed search requires a dictionary/general book and a supported text mode");
+       (query.mode!=SearchMode::regular_expression&&query.mode!=SearchMode::phrase&&query.mode!=SearchMode::words&&query.mode!=SearchMode::multiword&&query.mode!=SearchMode::indexed&&query.mode!=SearchMode::lemma&&query.mode!=SearchMode::morphology&&query.mode!=SearchMode::footnote))
+      throw std::invalid_argument("Keyed search requires a dictionary/general book and a supported search mode");
   }else if(!supports_verse_search(module))throw std::invalid_argument("Initial search supports Bible and regular commentary verse modules");
   int engine_type;
   bool whole_entry=false;

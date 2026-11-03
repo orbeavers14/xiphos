@@ -20,7 +20,8 @@ common query/options across its ordered module list; C++ supports per-group
 queries as before.
 
 Only verse groups update the tab's complete verse last-results scope and saved
-search annotation choices. Keyed groups reject verse ranges and attribute modes. Indexed mode now uses the
+search annotation choices. Keyed groups reject verse ranges. Lemma/morphology/footnote modes reuse SDK
+entry attributes (see [keyed contract](keyed-search.md#keyed-entry-attributes--2026-11-03)). Indexed mode now uses the
 existing SDK capability probe and explicit multiword-fallback metadata.
 Last-results searches now use complete retained keys from one matching actual
 source in the preceding successful, non-cancelled generation. Missing, repeated,
@@ -116,7 +117,7 @@ exact/short byte caps, stale IDs, explicit partial sources, retention capacity,
 keyed resource rejection, cancellation and owned C results after worker teardown.
 Existing verse-only batch/export characterization remains intentional.
 
-Next: keyed range/attribute policies where supported,
+Next: keyed interval policies where supported,
 keyed assets and broader SDK/module/canon/RTL/physical-platform acceptance.
 
 ## Actual keyed indexes

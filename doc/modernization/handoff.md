@@ -1,5 +1,12 @@
 # Shared project handoff: start here in every chat
 
+Keyed-attribute checkpoint (2026-11-03): shared dictionary/tree-book lemma,
+morphology and footnote searches now preserve exact opaque keys and complete
+same-source narrowing. OSIS/ThML fixtures, C ownership and Swift adapters pass
+on both local SDK builds, with sanitizer/portable checks. See
+[Mac evidence](handoff-macos.md#keyed-entry-attribute-search--2026-11-03).
+Keyed intervals, broader corpus/assets and remaining annotation acceptance stay open.
+
 Reading-annotation checkpoint (2026-11-03): shared bounded safe-color rendering
 and native explicit source selection now style saved notes/bookmarks in main
 single-verse/chapter reading and restore those choices with each window. Full
