@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "xiphos/core/annotations.hpp"
+#include "xiphos/core/editable_document.hpp"
 #include <glib.h>
 #include <libxml/parser.h>
 #include <cstring>
@@ -100,6 +101,21 @@ int main(int argc,char **argv){try{
  const auto destination=root/"edited.xml";std::filesystem::remove(destination);const auto saved=edit_annotations(destination.u8string(),{AnnotationAction::save,"Text Gen.1.1","Original & <>文字"});const auto original_bytes=bytes(destination);const auto original_permissions=std::filesystem::status(destination).permissions();check(saved.records.size()==1&&saved.records[0].note=="Original & <>文字","Explicit missing profile save returns verified staged snapshot");
  rejects([&]{edit_annotations(destination.u8string(),{AnnotationAction::save,"bad","note"});});check(bytes(destination)==original_bytes&&std::filesystem::status(destination).permissions()==original_permissions,"Rejected note edit preserves bytes and permissions");
  const auto cleared=edit_annotations(destination.u8string(),{AnnotationAction::remove,"Text Gen.1.1",""});check(cleared.records.empty()&&std::filesystem::status(destination).permissions()==original_permissions,"Verified note removal retains profile/permissions");const auto missing=root/"missing-edit.xml";std::filesystem::remove(missing);rejects([&]{edit_annotations(missing.u8string(),{AnnotationAction::remove,"Text Gen.1.1",""});});check(!std::filesystem::exists(missing),"Removal never creates a missing annotation profile");
+ const auto checked_path=root/"checked.xml";std::filesystem::remove(checked_path);
+ AnnotationEdit checked_edit{AnnotationAction::save,"Text Gen.1.1","Original checked note"};
+ const auto created=edit_annotations_checked(checked_path.u8string(),std::nullopt,checked_edit);
+ check(created.revision==read_editable_document(checked_path.u8string()).revision&&created.revision.size()==64,"Annotation revision hashes exact serialized bytes");
+ rejects([&]{edit_annotations_checked(checked_path.u8string(),std::nullopt,checked_edit);});
+ {std::ofstream external(checked_path,std::ios::app);external<<"\n<!--External original metadata-->";}
+ const auto changed=bytes(checked_path);
+ rejects([&]{edit_annotations_checked(checked_path.u8string(),created.revision,checked_edit);});
+ check(bytes(checked_path)==changed,"Stale annotation edit preserves exact external bytes");
+ const auto fresh=read_annotations(checked_path.u8string());checked_edit.note="Retried note";
+ const auto retried=edit_annotations_checked(checked_path.u8string(),fresh.revision,checked_edit);
+ check(retried.records[0].note=="Retried note"&&bytes(checked_path).find("External original metadata")!=std::string::npos,"Reload/retry preserves unknown XML metadata");
+ rejects([&]{edit_annotations_checked((root/"missing-checked.xml").u8string(),retried.revision,checked_edit);});
+ rejects([&]{edit_annotations_checked(checked_path.u8string(),std::string(64,'G'),checked_edit);});
+ check(edit_annotations_checked(checked_path.u8string(),retried.revision,{AnnotationAction::remove,"Text Gen.1.1",""}).records.empty(),"Checked removal uses exact loaded revision");
  std::cout<<"Annotation edits: "<<edits<<" complete frozen/current writer comparisons and verified staged round trips passed\n";
  std::cout<<"Personal annotations: "<<comparisons<<" complete frozen/current cache/cursor comparisons, raw metadata, prefix diagnostics, escaping and safe bounds passed\n";return 0;
 }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}

@@ -31,6 +31,7 @@ struct AnnotationProfile {
   std::vector<AnnotationRecord> records; // All element children of first section.
   std::optional<std::size_t> legacy_stop_child;
   std::size_t shadowed_sections=0,snapshot_bytes=0;
+  std::string revision; // Exact source SHA256 for checked native edits.
 };
 struct VerseAnnotation {
   int chapter=0,verse=0,packed=0;
@@ -65,6 +66,9 @@ void validate_annotation_edit(const AnnotationEdit &edit);
 // Remove also accepts malformed raw labels so imported records can be repaired.
 std::string serialize_annotation_edit(const std::string &xml,const AnnotationEdit &edit);
 AnnotationProfile edit_annotations(const std::string &path,const AnnotationEdit &edit);
+// Null requires a missing destination; existing files require the loaded revision.
+// Original edit_annotations retains its legacy upsert behavior.
+AnnotationProfile edit_annotations_checked(const std::string &path,const std::optional<std::string> &revision,const AnnotationEdit &edit);
 // Characterized legacy cursor behavior, including unlabeled/whitespace barriers
 // and malformed-label prefix abort. Generic module matches all; ASCII-insensitive
 // module/book comparison. No installed module or active tab required.

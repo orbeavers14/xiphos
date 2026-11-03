@@ -2,6 +2,7 @@
 #include "xiphos/core/annotations.hpp"
 #include "xml_document.hpp"
 #include "preference_file.hpp"
+#include "xiphos/core/editable_document.hpp"
 #include <glib.h>
 #include <filesystem>
 #include <fstream>
@@ -47,8 +48,12 @@ std::string annotation_note_html(const std::string &note) {
     case '\n':result+="<br />";break;case '"':result+="&quot;";break;case '\'':result+="&apos;";break;default:result+=c;}}
   return result;
 }
+static std::string annotation_revision(const std::string &source) {
+ const std::unique_ptr<gchar,decltype(&g_free)> digest(g_compute_checksum_for_data(G_CHECKSUM_SHA256,reinterpret_cast<const guchar *>(source.data()),source.size()),g_free);
+ if(!digest)throw std::bad_alloc();return digest.get();
+}
 AnnotationProfile parse_annotations(const std::string &source) {
-  auto document=detail::parse_xml_document(source,"Xiphos");AnnotationProfile result;xmlNode *section=nullptr;
+  auto document=detail::parse_xml_document(source,"Xiphos");AnnotationProfile result;result.revision=annotation_revision(source);annotation_account(result.snapshot_bytes,result.revision,64);xmlNode *section=nullptr;
   for(auto *node=xmlDocGetRootElement(document.get())->children;node;node=node->next)
     if(!xmlStrcmp(node->name,BAD_CAST "osisrefmarkedverses")){if(!section)section=node;else ++result.shadowed_sections;}
   if(!section)return result;
@@ -148,9 +153,10 @@ std::string serialize_annotation_edit(const std::string &source,const Annotation
   } else if(verified.records.size()+1!=before.records.size())throw std::runtime_error("Annotation removal count failed verification");
   return result;
 }
-AnnotationProfile edit_annotations(const std::string &path,const AnnotationEdit &edit) {
+static AnnotationProfile edit_annotations_impl(const std::string &path,const AnnotationEdit &edit,bool checked,const std::optional<std::string> &revision) {
   validate_annotation_edit(edit);AnnotationProfile prepared;
   detail::replace_preference_file(path,[&](const std::filesystem::path &file,const std::string &source,bool existed){
+    if(checked&&((existed&&!revision)||(!existed&&revision)||(existed&&annotation_revision(source)!=*revision)))throw std::invalid_argument("Annotations changed; reload before editing");
     if(!existed&&edit.action!=AnnotationAction::save)throw std::invalid_argument("Cannot remove annotations from a missing profile");
     const auto serialized=serialize_annotation_edit(existed?source:"<Xiphos/>",edit);
     {std::ofstream output(file,std::ios::binary);output.exceptions(std::ios::badbit|std::ios::failbit);output.write(serialized.data(),static_cast<std::streamsize>(serialized.size()));output.close();}
@@ -158,6 +164,12 @@ AnnotationProfile edit_annotations(const std::string &path,const AnnotationEdit 
     prepared=read_annotations(file.u8string());
   },detail::maximum_xml_document_bytes);
   return prepared;
+}
+
+AnnotationProfile edit_annotations(const std::string &path,const AnnotationEdit &edit) { return edit_annotations_impl(path,edit,false,{}); }
+AnnotationProfile edit_annotations_checked(const std::string &path,const std::optional<std::string> &revision,const AnnotationEdit &edit) {
+ if(revision&&!editable_document_revision(*revision))throw std::invalid_argument("Invalid annotation revision");
+ return edit_annotations_impl(path,edit,true,revision);
 }
 
 bool annotation_cache_arguments(const std::string &module,const std::string &book) {

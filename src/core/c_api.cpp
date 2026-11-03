@@ -1629,13 +1629,21 @@ xc_status xc_worker_annotation_target(xc_worker *w,uint64_t tab,const char *modu
  if(!bounded_image_c_text(module,4096)||!bounded_image_c_text(reference,32768)||(generic!=0&&generic!=1)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
  return queue_request(w,out,[=](auto &worker){return worker.annotation_target(tab,module,reference,generic!=0);});
 }
-xc_status xc_worker_edit_verse_annotation(xc_worker *w,uint64_t tab,const char *path,const xc_verse_annotation_edit *edit,xc_request **out){
+static bool annotation_revision_c(const char *value) noexcept {
+ if(!bounded_image_c_text(value,64)||std::strlen(value)!=64)return false;
+ for(size_t i=0;i<64;++i)if(!((value[i]>='0'&&value[i]<='9')||(value[i]>='a'&&value[i]<='f')))return false;
+ return true;
+}
+static xc_status verse_annotation_edit_request(xc_worker *w,uint64_t tab,const char *path,const xc_verse_annotation_edit *edit,xc_request **out,const char *revision,bool checked){
+ if(revision&&!annotation_revision_c(revision)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
  if(out)*out=nullptr;
  if(!w||!out||!edit||!bounded_image_c_text(path,4096)||!bounded_image_c_text(edit->module,4096)||!bounded_image_c_text(edit->reference,32768)||
     (edit->generic!=0&&edit->generic!=1)||(edit->action!=XC_ANNOTATION_SAVE&&edit->action!=XC_ANNOTATION_REMOVE))return XC_INVALID_ARGUMENT;
  if(edit->action==XC_ANNOTATION_SAVE?(!edit->note||(*edit->note&&!bounded_image_c_text(edit->note,XC_ANNOTATION_MAX_NOTE_BYTES))):edit->note!=nullptr)return XC_INVALID_ARGUMENT;
- return queue_request(w,out,[=](auto &worker){return worker.edit_verse_annotation(tab,path,edit->module,edit->reference,edit->generic!=0,static_cast<xiphos::core::AnnotationAction>(edit->action),edit->note?edit->note:"");});
+ return queue_request(w,out,[=](auto &worker){return checked?worker.edit_verse_annotation_checked(tab,path,revision?std::make_optional(std::string(revision)):std::nullopt,edit->module,edit->reference,edit->generic!=0,static_cast<xiphos::core::AnnotationAction>(edit->action),edit->note?edit->note:""):worker.edit_verse_annotation(tab,path,edit->module,edit->reference,edit->generic!=0,static_cast<xiphos::core::AnnotationAction>(edit->action),edit->note?edit->note:"");});
 }
+xc_status xc_worker_edit_verse_annotation(xc_worker *w,uint64_t tab,const char *path,const xc_verse_annotation_edit *edit,xc_request **out){return verse_annotation_edit_request(w,tab,path,edit,out,nullptr,false);}
+xc_status xc_worker_edit_verse_annotation_checked(xc_worker *w,uint64_t tab,const char *path,const char *revision,const xc_verse_annotation_edit *edit,xc_request **out){return verse_annotation_edit_request(w,tab,path,edit,out,revision,true);}
 xc_status xc_worker_read_verse_annotation_cache(xc_worker *w,uint64_t tab,const char *path,const char *module,const char *reference,xc_request **out){
  if(!bounded_image_c_text(path,4096)||!bounded_image_c_text(module,4096)||!bounded_image_c_text(reference,32768)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
  return queue_request(w,out,[=](auto &worker){return worker.read_verse_annotation_cache(tab,path,module,reference);});
@@ -1644,14 +1652,18 @@ xc_status xc_worker_read_annotations(xc_worker *w,uint64_t tab,const char *path,
  if(!bounded_image_c_text(path,4096)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
  return queue_request(w,out,[=](auto &worker){return worker.read_annotations(tab,path);});
 }
-xc_status xc_worker_edit_annotations(xc_worker *w,uint64_t tab,const char *path,const xc_annotation_edit *edit,xc_request **out){
+static xc_status annotation_edit_request(xc_worker *w,uint64_t tab,const char *path,const xc_annotation_edit *edit,xc_request **out,const char *revision,bool checked){
+ if(revision&&!annotation_revision_c(revision)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
  if(out)*out=nullptr;
  if(!w||!out||!edit||!bounded_image_c_text(path,4096)||!edit->label||(*edit->label&&!bounded_image_c_text(edit->label,4096))||
     (edit->action!=XC_ANNOTATION_SAVE&&edit->action!=XC_ANNOTATION_REMOVE))return XC_INVALID_ARGUMENT;
  static_assert(XC_ANNOTATION_MAX_NOTE_BYTES==xiphos::core::maximum_annotation_note_bytes,"Annotation note bounds differ");
  if(edit->action==XC_ANNOTATION_SAVE?(!*edit->label||!edit->note||(*edit->note&&!bounded_image_c_text(edit->note,XC_ANNOTATION_MAX_NOTE_BYTES))):edit->note!=nullptr)return XC_INVALID_ARGUMENT;
- return queue_request(w,out,[=](auto &worker){return worker.edit_annotations(tab,path,{static_cast<xiphos::core::AnnotationAction>(edit->action),edit->label,edit->note?edit->note:""});});
+ return queue_request(w,out,[=](auto &worker){return checked?worker.edit_annotations_checked(tab,path,revision?std::make_optional(std::string(revision)):std::nullopt,{static_cast<xiphos::core::AnnotationAction>(edit->action),edit->label,edit->note?edit->note:""}):worker.edit_annotations(tab,path,{static_cast<xiphos::core::AnnotationAction>(edit->action),edit->label,edit->note?edit->note:""});});
 }
+xc_status xc_worker_edit_annotations(xc_worker *w,uint64_t tab,const char *path,const xc_annotation_edit *edit,xc_request **out){return annotation_edit_request(w,tab,path,edit,out,nullptr,false);}
+xc_status xc_worker_edit_annotations_checked(xc_worker *w,uint64_t tab,const char *path,const char *revision,const xc_annotation_edit *edit,xc_request **out){return annotation_edit_request(w,tab,path,edit,out,revision,true);}
+const char *xc_annotations_revision(const xc_annotations *p){return p?p->value.revision.c_str():nullptr;}
 xc_status xc_worker_read_annotation_cache(xc_worker *w,uint64_t tab,const char *path,const char *module,const char *book,xc_request **out){
  if(!bounded_image_c_text(path,4096)||!bounded_image_c_text(module,4096)||!bounded_image_c_text(book,4096)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
  return queue_request(w,out,[=](auto &worker){return worker.read_annotation_cache(tab,path,module,book);});

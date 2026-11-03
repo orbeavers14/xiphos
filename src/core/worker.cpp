@@ -563,6 +563,14 @@ std::future<AnnotationProfile> StudyWorker::edit_verse_annotation(StudyTab tab,s
     (void)s.tab(tab);const auto target=s.reader.annotation_target(module,reference,generic);return xiphos::core::edit_annotations(path,{action,target.label,note});
   });
 }
+std::future<AnnotationProfile> StudyWorker::edit_verse_annotation_checked(StudyTab tab,std::string path,std::optional<std::string> revision,std::string module,std::string reference,bool generic,AnnotationAction action,std::string note) {
+ try{selected_profile_path(path);if(revision&&!editable_document_revision(*revision))throw std::invalid_argument("Invalid annotation revision");if(!annotation_reference_arguments(module,reference))throw std::invalid_argument("Invalid annotation target arguments");validate_annotation_note(action,note);}catch(...){return selected_profile_rejection<AnnotationProfile>();}
+ return impl_->submit([tab,path=std::move(path),revision=std::move(revision),module=std::move(module),reference=std::move(reference),generic,action,note=std::move(note)](Impl::State &s){(void)s.tab(tab);const auto target=s.reader.annotation_target(module,reference,generic);return xiphos::core::edit_annotations_checked(path,revision,{action,target.label,note});});
+}
+std::future<AnnotationProfile> StudyWorker::edit_annotations_checked(StudyTab tab,std::string path,std::optional<std::string> revision,AnnotationEdit edit) {
+ try{selected_profile_path(path);if(revision&&!editable_document_revision(*revision))throw std::invalid_argument("Invalid annotation revision");validate_annotation_edit(edit);}catch(...){return selected_profile_rejection<AnnotationProfile>();}
+ return impl_->submit([tab,path=std::move(path),revision=std::move(revision),edit=std::move(edit)](Impl::State &s){(void)s.tab(tab);return xiphos::core::edit_annotations_checked(path,revision,edit);});
+}
 std::future<AnnotationCache> StudyWorker::read_verse_annotation_cache(StudyTab tab,std::string path,std::string module,std::string reference) {
   try {selected_profile_path(path);if(!annotation_reference_arguments(module,reference))throw std::invalid_argument("Invalid annotation target arguments");}
   catch(...){return selected_profile_rejection<AnnotationCache>();}

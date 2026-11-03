@@ -5,6 +5,22 @@ Updated 2026-11-02. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Checked annotation-write boundary — 2026-11-02
+
+Annotation snapshots now carry bounded exact-source revisions. New checked raw
+and canonical-verse C++/FIFO/C writes reject stale/create-only conflicts; legacy
+entry points keep their prior behavior. Unknown XML, duplicate semantics and
+canonical source identity remain shared. New C digest validation allocates nothing
+for malformed revisions; successful committed polling still allocates nothing.
+
+Actual final source checks: alternate SDK annotation/target/fixture4/4,2.20s;
+native annotation/target/composition/fixtures6/6,5.48s; ASan/UBSan same6/6,9.94s,
+detect_leaks=0 (`build/checked-annotations-{indexed,native,asan}-tests.log`). Native
+app relink passes. C11 syntax and whitespace pass. The full250-pass/two-skip native
+suite below belongs to `3d8f57b` before this annotation work. No new native annotation
+UI or physical-platform acceptance is claimed. Next: copied native annotation
+snapshots, revision-checked note editing and shared bookmark/note composition.
+
 ## Native parallel chapter/session integration — 2026-11-02
 
 Baseline `1a86ac2` is pushed. Native Read Selected and Preferences > Parallel

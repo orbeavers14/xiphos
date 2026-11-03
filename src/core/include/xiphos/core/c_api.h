@@ -1038,6 +1038,9 @@ typedef struct xc_annotation_target xc_annotation_target;
 typedef struct {int action,generic;const char *module,*reference,*note;} xc_verse_annotation_edit;
 xc_status xc_worker_annotation_target(xc_worker *worker,uint64_t tab,const char *module,const char *reference,int generic,xc_request **out);
 xc_status xc_worker_edit_verse_annotation(xc_worker *worker,uint64_t tab,const char *path,const xc_verse_annotation_edit *edit,xc_request **out);
+/* Checked variants require the loaded exact-source revision; NULL creates only
+ * a missing profile. Original entry points retain legacy update semantics. */
+xc_status xc_worker_edit_verse_annotation_checked(xc_worker *worker,uint64_t tab,const char *path,const char *revision,const xc_verse_annotation_edit *edit,xc_request **out);
 xc_status xc_worker_read_verse_annotation_cache(xc_worker *worker,uint64_t tab,const char *path,const char *module,const char *reference,xc_request **out);
 xc_annotation_target *xc_request_take_annotation_target(xc_request *request);
 const char *xc_annotation_target_control_module(const xc_annotation_target *target);
@@ -1052,6 +1055,8 @@ int xc_annotation_target_generic(const xc_annotation_target *target);
 void xc_annotation_target_release(xc_annotation_target *target);
 xc_status xc_worker_read_annotations(xc_worker *worker,uint64_t tab,const char *path,xc_request **out);
 xc_status xc_worker_edit_annotations(xc_worker *worker,uint64_t tab,const char *path,const xc_annotation_edit *edit,xc_request **out);
+xc_status xc_worker_edit_annotations_checked(xc_worker *worker,uint64_t tab,const char *path,const char *revision,const xc_annotation_edit *edit,xc_request **out);
+const char *xc_annotations_revision(const xc_annotations *profile);
 xc_status xc_worker_read_annotation_cache(xc_worker *worker,uint64_t tab,const char *path,const char *module,const char *book,xc_request **out);
 xc_annotations *xc_request_take_annotations(xc_request *request);
 size_t xc_annotations_count(const xc_annotations *profile);

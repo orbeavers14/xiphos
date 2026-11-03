@@ -87,3 +87,22 @@ Hebrew/Arabic phrase search and passage links. Mixed-family batches preserve
 Bible/commentary results and explicit dictionary/general-book failures. Generic
 family search, additional semantic-link/rendering cases, broader versification
 and RTL visual/corpus acceptance remain open.
+
+## Checked personal annotation writes
+
+Annotation snapshots now own the SHA256 revision of the exact source XML. New
+checked C++/FIFO/C save/remove calls require that loaded revision for an existing
+file, or a null revision for a still-missing file. Both raw stored-label operations
+and SDK-canonical verse-target operations use this guard. The original entry
+points retain their legacy update semantics. Unknown XML, duplicate/first-write
+behavior and the retained last-match cache policy stay unchanged.
+
+Revision mismatches, changed whitespace/comments and missing-versus-existing
+conflicts reject before replacement. Reload/retry uses the fresh snapshot; this
+remains an observed-change check, not an interprocess lock or automatic merge.
+Revision metadata counts toward bounded snapshots. New C revision validation
+rejects malformed digests without allocating; copied inputs and preallocated
+owned results retain take-once and no-allocation committed polling behavior.
+Generated tests cover stale source preservation, copied revision lifetime,
+canonical KJVA generic targets, removal, unknown metadata and explicit reload.
+Native annotation composition/save controls remain next.
