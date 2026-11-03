@@ -8,6 +8,7 @@
 #include <rawld.h>
 #include <zld.h>
 #include <zipcomprs.h>
+#include <lzsscomprs.h>
 #include <rawgenbook.h>
 #include <markupfiltmgr.h>
 #include <filesystem>
@@ -28,17 +29,17 @@ static std::string content(unsigned i,bool thml){
 static xc_status wait(xc_request *r){auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(30);xc_status status;while((status=xc_request_poll(r))==XC_PENDING){check(std::chrono::steady_clock::now()<deadline,"C keyed attribute deadline");std::this_thread::sleep_for(std::chrono::milliseconds(1));}return status;}
 int main(int argc,char **argv)try{
  check(argc==2,"Named disposable keyed-attribute root required");const fs::path root=argv[1];check(root.filename()=="keyed-attributes-fixture","Named scratch only");fs::remove_all(root);fs::create_directories(root/"mods.d");
- const std::vector<std::string> ids{"AttrDictionaryOSIS","AttrBookOSIS","AttrDictionaryThML","AttrBookThML","AttrDictionaryRawOSIS","AttrDictionaryRawThML","AttrDictionaryZipOSIS","AttrDictionaryZipThML"};
+ const std::vector<std::string> ids{"AttrDictionaryOSIS","AttrBookOSIS","AttrDictionaryThML","AttrBookThML","AttrDictionaryRawOSIS","AttrDictionaryRawThML","AttrDictionaryZipOSIS","AttrDictionaryZipThML","AttrDictionaryLzssOSIS","AttrDictionaryLzssThML"};
  for(const auto &id:ids){const bool dictionary=id.find("Dictionary")!=id.npos,thml=id.find("ThML")!=id.npos;auto directory=root/"data"/id;fs::create_directories(directory);auto prefix=(directory/"entries").string();
-  const bool zipped=id.find("Zip")!=id.npos,raw=id.find("Raw")!=id.npos;
+  const bool lzss=id.find("Lzss")!=id.npos,zipped=id.find("Zip")!=id.npos||lzss,raw=id.find("Raw")!=id.npos;
   const auto dictionaryEntries=[&](sword::SWModule &writer){for(unsigned i=0;i<3;++i){writer.setKey(i==0?"John.3.16":i==1?"Alpha.Key":"שלום");writer.setEntry(content(i,thml).c_str());}};
   if(dictionary){
-   if(zipped){check(sword::zLD::createModule(prefix.c_str())==0,"Create compressed dictionary");sword::zLD writer(prefix.c_str(),nullptr,nullptr,2,new sword::ZipCompress());dictionaryEntries(writer);writer.flush();}
+   if(zipped){check(sword::zLD::createModule(prefix.c_str())==0,"Create compressed dictionary");sword::zLD writer(prefix.c_str(),nullptr,nullptr,2,lzss?static_cast<sword::SWCompress *>(new sword::LZSSCompress()):static_cast<sword::SWCompress *>(new sword::ZipCompress()));dictionaryEntries(writer);writer.flush();}
    else if(raw){check(sword::RawLD::createModule(prefix.c_str())==0,"Create RawLD dictionary");sword::RawLD writer(prefix.c_str());dictionaryEntries(writer);}
    else {check(sword::RawLD4::createModule(prefix.c_str())==0,"Create RawLD4 dictionary");sword::RawLD4 writer(prefix.c_str());dictionaryEntries(writer);}
   }
   else{check(sword::RawGenBook::createModule(prefix.c_str())==0,"Create book");sword::RawGenBook writer(prefix.c_str());for(unsigned i=0;i<3;++i){writer.setKey(i==0?"/Part/Entry Ω":i==1?"/Part/Other":"/Part/שלום");writer.setEntry(content(i,thml).c_str());}}
-  std::ofstream conf(root/"mods.d"/(id+".conf"));conf<<'['<<id<<"]\nDataPath=./data/"<<id<<"/entries\nModDrv="<<(dictionary?(zipped?"zLD":raw?"RawLD":"RawLD4"):"RawGenBook")<<"\nSourceType="<<(thml?"ThML":"OSIS")<<"\nEncoding=UTF-8\n";if(zipped)conf<<"CompressType=ZIP\nBlockCount=2\n";for(const char *filter:{"Strongs","Morph","Footnotes"})conf<<"GlobalOptionFilter="<<(thml?"ThML":"OSIS")<<filter<<'\n';
+  std::ofstream conf(root/"mods.d"/(id+".conf"));conf<<'['<<id<<"]\nDataPath=./data/"<<id<<"/entries\nModDrv="<<(dictionary?(zipped?"zLD":raw?"RawLD":"RawLD4"):"RawGenBook")<<"\nSourceType="<<(thml?"ThML":"OSIS")<<"\nEncoding=UTF-8\n";if(zipped)conf<<"CompressType="<<(lzss?"LZSS":"ZIP")<<"\nBlockCount=2\n";for(const char *filter:{"Strongs","Morph","Footnotes"})conf<<"GlobalOptionFilter="<<(thml?"ThML":"OSIS")<<filter<<'\n';
  }
  const auto original=bytes(root/"data");
  std::map<std::string,std::vector<std::string>> expected;

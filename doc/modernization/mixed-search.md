@@ -161,3 +161,17 @@ index and resolves UTF-8 accented queries with index execution (no fallback),
 then verifies decoded previews for every hit. This does not establish every
 legacy encoding or dictionary key collation; real-world corpus acceptance remains
 open.
+
+## Additional compressed dictionaries — 2026-11-03
+
+The keyed attribute corpus now includes original OSIS and ThML LZSS-compressed
+zLD dictionaries alongside ZIP, RawLD/RawLD4 and tree books (ten sources total).
+The same exact SDK comparisons cover lemma/morphology/footnote queries,
+case choices, previews, singleton/multiple-key intervals, last-result narrowing,
+limits and cancellation. Source data must remain byte-identical afterward.
+
+BZIP2/XZ fixtures were investigated but are not enabled: the alternate local
+SWORD library exposes their headers without the compressor constructor symbols.
+Accepting headers alone as a capability check would break otherwise supported
+builds. Their real-module coverage remains open for a suitably built SDK; this
+adds no compression dependency or application-side decoder.
