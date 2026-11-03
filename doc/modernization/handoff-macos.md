@@ -5,6 +5,41 @@ Updated 2026-11-03. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Import review, metadata and inline rich styles — 2026-11-03
+
+Sequential master commits `668652e`, `b9eef8c`, `b186d33`. Bookmark import now
+reviews exact source/destination revisions and distinguishes identical, conflicting
+and ambiguous stable identities. Explicit reject/skip-identical/keep-existing
+policies never overwrite existing notes; ambiguous destinations reject. AndBible
+identity includes label membership; repeated backup UUIDs reject. Copied FIFO/C/
+Swift transport and native management controls share this policy. Generic source
+root captions and namespace metadata survive both import paths, including UTF-16
+input and namespace-prefix collisions. See [import contract](andbible-composition.md).
+
+Rich editing accepts representable inline bold/700, normal/400 and italic/normal
+CSS with nested scope and last-declaration precedence. Heading/address resets
+that the existing run model cannot express remain in Source. No dependency or
+ABI layout change. See [editing contract](editing-workflows.md).
+
+Import full native suite: 258 registered,256 passes,two expected primary-SDK index
+skips,303.38s (`build/bookmark-merge-full-native-tests.log`). Alternate SDK3/3,
+ASan/UBSan3/3 and portable Linux models on Mac3/3 passed for the merge slice.
+Metadata expanded checks: alternate4/4,native5/5,ASan4/4,portable4/4; final empty/
+absent/UTF-16-source cases subsequently passed alternate1/1 and final native/
+sanitizer merge tests. Final inline-style checks: alternate1/1,4.56s; native3/3,
+4.08s; ASan/UBSan2/2,3.25s (`build/inline-font-*-final-tests.log`), leak detection
+disabled as previously documented. Native preview rebuilt; C11/diff checks pass.
+
+Disposable live native review verified default rejection, repeat-only skip,
+conflict descriptions, keep-existing importing only new entries, compact controls
+and normal quit. Original profiles/backups untouched. Cosmetic policy/status text
+was refined afterward and compiled/model-tested. No new physical Fedora/MSVC,
+real-user corpus or whole-parity acceptance. Local code-only Graphify692 files,
+13207 nodes,36463 edges,392 communities; zero provider calls/tokens/cost. Outputs
+and unrelated .DS_Store remain untracked. Continue remaining representable rich
+markup/resource/export compatibility, persistence/migration and broader corpus;
+keep relevant core hardening active throughout.
+
 ## Hardening priority clarification — 2026-11-03
 
 The owner clarified that ongoing shared-core hardening stays active with feature

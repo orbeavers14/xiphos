@@ -5,6 +5,13 @@ cancellation and data-safety checks active during feature work. Final packaging,
 full physical-platform/release and frontend acceptance remain closing gates.
 This supersedes the earlier blanket deferral; see [current scope](shared-core-roadmap.md).
 
+Import/markup checkpoint (2026-11-03, `668652e`, `b9eef8c`, `b186d33`): explicit
+non-destructive import review/policies, original root-caption/namespace retention
+and representable inline CSS font traits now pass focused shared/C/native/
+sanitizer checks. Merge full native256 passes/two expected index skips; scoped
+live management verified with disposable files. See [Mac evidence](handoff-macos.md#import-review-metadata-and-inline-rich-styles--2026-11-03).
+Real-user/cross-host and whole-workflow acceptance remain open.
+
 Limited-usage checkpoint (2026-11-03, `0e43cae`, `bcb83f6`): explicit BMP-to-PNG
 export and legacy font-color rich editing now pass focused shared/C/Swift/native
 and sanitizer checks. Original PNG-only policy and unsupported-markup Source

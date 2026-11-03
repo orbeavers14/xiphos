@@ -688,3 +688,13 @@ suppressed. See the [exact environment, commands and limits](handoff-linux.md).
 The owner subsequently approved publication; the identical tested code tree is
 published on `linux/native-parity` as `3f9a068a`. No hosted workflow was dispatched
 or enabled; no whole-feature acceptance or retirement changes.
+
+## Import/markup compatibility checkpoint (2026-11-03)
+
+`668652e`, `b9eef8c`, `b186d33`: reviewed non-destructive bookmark merge policies,
+legacy root metadata preservation and inline CSS font traits share the existing
+core/worker/native bridge. Full merge native256 passes plus two expected skips;
+subsequent focused metadata/rich native, alternate SDK and sanitizer checks pass.
+Disposable native collision/repeat workflows verified. See [exact evidence and
+remaining limits](handoff-macos.md#import-review-metadata-and-inline-rich-styles--2026-11-03).
+This does not close broad corpus, physical-platform or complete feature parity.
