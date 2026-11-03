@@ -37,6 +37,7 @@ int main(int argc,char **argv){try{
  const std::string html=xc_search_html_export_html(owned);check(html.find("img-src data:")!=std::string::npos&&html.find("data:image/png;base64,")!=std::string::npos,"Complete PNG document is borrowed until result release");
  images.max_pixels=64;rows[0]={0,valid};
  auto run=[&]{check(xc_worker_export_search_html_with_images(worker,tab,&input,&images,&request)==XC_OK,"Submit image policy");return take();};
+ images.policy=XC_HTML_IMAGES_EMBEDDED_STATIC_PNG_BMP;auto *compatible=run();check(xc_search_html_export_get_info(compatible,&info)==XC_OK&&info.disposition==XC_SEARCH_EXPORT_OK&&std::string(xc_search_html_export_html(compatible))==html,"Additive bitmap policy preserves existing PNG export bytes through C");xc_search_html_export_release(compatible);images.policy=XC_HTML_IMAGES_EMBEDDED_STATIC_PNG;
  auto failure=[&](int expected){auto *out=run();check(xc_search_html_export_get_info(out,&info)==XC_OK&&info.disposition==expected&&xc_search_html_export_get_images(out,&stats)==XC_OK&&!stats.count&&!stats.unique_count&&!stats.original_bytes&&!stats.pixels&&!xc_search_html_export_size(out),"Failure clears all asset counts and document");xc_search_html_export_release(out);};
  input.max_bytes=html.size();auto *exact=run();check(std::string(xc_search_html_export_html(exact))==html,"Exact final C HTML image byte cap accepted");xc_search_html_export_release(exact);
  --input.max_bytes;failure(XC_SEARCH_EXPORT_OUTPUT_LIMIT);input.max_bytes=1024*1024;
@@ -46,7 +47,7 @@ int main(int argc,char **argv){try{
  images.max_original_bytes=150;images.max_pixels=128;rows[1]={0,missing};failure(XC_SEARCH_EXPORT_UNSUPPORTED_HTML);rows[1]={0,valid};images.max_original_bytes=75;images.max_pixels=64;
  ++input.generation;failure(XC_SEARCH_EXPORT_STALE);--input.generation;
  auto rejects=[&](const xc_search_html_image_options *value){request=reinterpret_cast<xc_request *>(1);check(xc_worker_export_search_html_with_images(worker,tab,&input,value,&request)==XC_INVALID_ARGUMENT&&!request,"Invalid image input clears observer before submission");};
- rejects(nullptr);images.policy=2;rejects(&images);images.policy=1;images.max_images=0;rejects(&images);images.max_images=65;rejects(&images);images.max_images=2;
+ rejects(nullptr);images.policy=99;rejects(&images);images.policy=1;images.max_images=0;rejects(&images);images.max_images=65;rejects(&images);images.max_images=2;
  images.max_original_bytes=0;rejects(&images);images.max_original_bytes=8*1024*1024+1;rejects(&images);images.max_original_bytes=75;
  images.max_pixels=0;rejects(&images);images.max_pixels=16*1024*1024+1;rejects(&images);images.max_pixels=64;
  check(xc_worker_export_search_html_with_images(nullptr,tab,&input,&images,&request)==XC_INVALID_ARGUMENT&&!request&&xc_worker_export_search_html_with_images(worker,tab,nullptr,&images,&request)==XC_INVALID_ARGUMENT&&!request&&xc_worker_export_search_html_with_images(worker,tab,&input,&images,nullptr)==XC_INVALID_ARGUMENT,"NULL image API arguments");
