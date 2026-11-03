@@ -146,7 +146,7 @@ struct SearchPane: View {
                             .help("Enable Include search details to label incomplete output. Only returned matches are exported; this choice resets for each new search result.")
                     }
                     if model.exportFormat == .html {
-                        Toggle("Embed PNG images", isOn: $model.exportImages).disabled(!model.exportScripture)
+                        Toggle("Embed PNG/BMP images", isOn: $model.exportImages).disabled(!model.exportScripture)
                     }
                 }.disabled(model.isBusy || hostBusy || model.hits.isEmpty).accessibilityLabel("Export search results")
                 Spacer()

@@ -8,6 +8,7 @@ inline constexpr std::size_t maximum_export_image_count=maximum_search_export_im
 struct ExportImageLimits {
   std::size_t count=maximum_export_image_count,original_bytes=maximum_search_export_bytes;
   std::size_t pixels=maximum_export_image_pixels,encoded_bytes=maximum_search_export_bytes;
+  bool allow_bitmap=false;
 };
 using ExportImageStatistics=SearchHtmlImageStatistics;
 // Private per-document cache. Identity includes the actual source module and

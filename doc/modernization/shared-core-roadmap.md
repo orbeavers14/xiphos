@@ -1,5 +1,10 @@
 # Shared core: remaining scope
 
+Owner priority update (2026-11-03): leave the broad core-hardening workstream
+(physical cross-platform/compiler/packaging/cancellation acceptance) until last.
+Continue bounded feature work in the other five areas. Ordinary checks needed
+for each change still apply; this does not mark hardening complete.
+
 Owner priority update (2026-11-02): work through search/content, bookmarks and
 annotations, parallel saved workflows, editing, then library organization. Remaining
 BibleSync networking/group/presence/chat and external IPC/actions are a stretch

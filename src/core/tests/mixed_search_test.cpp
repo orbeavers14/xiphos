@@ -78,6 +78,13 @@ int main(int argc,char **argv)try{
  html.generation=formats.generation.id;auto unsupportedFormats=session.export_search_html(html);
  check(unsupportedFormats.status==SearchExportStatus::unsupported_html&&unsupportedFormats.html.empty(),"PNG-only passive export rejects other formats atomically");
 
+ html.images.policy=SearchHtmlImagePolicy::embedded_static_png_bmp;html.selection=SearchExportSelection::visible;html.rows.clear();
+ for(std::size_t group=0;group<formats.groups.size();++group)for(std::size_t row=0;row<formats.groups[group].result->references.size();++row){const auto &key=formats.groups[group].result->references[row];if(key=="ASSET-BMP"||key=="/Assets/bmp")html.rows.push_back({group,row});}
+ check(html.rows.size()==3,"One original bitmap per keyed source");
+ auto bitmapExport=session.export_search_html(html);check(bitmapExport.status==SearchExportStatus::ok&&bitmapExport.row_count==3&&bitmapExport.images.count==3&&bitmapExport.images.unique_count==3&&bitmapExport.images.original_bytes==210&&bitmapExport.images.pixels==12&&bitmapExport.html.find("data:image/png;base64,")!=std::string::npos&&bitmapExport.html.find("data:image/bmp")==std::string::npos,"Opt-in bitmap export converts actual keyed resources to PNG with original aggregate accounting");
+ html.images.max_original_bytes=209;auto shortBitmap=session.export_search_html(html);check(shortBitmap.status==SearchExportStatus::output_limit&&shortBitmap.html.empty()&&!shortBitmap.row_count,"Aggregate bitmap source limit remains atomic");html.images.max_original_bytes=maximum_search_export_bytes;
+ html.selection=SearchExportSelection::all_retained;html.rows.clear();check(session.export_search_html(html).status==SearchExportStatus::unsupported_html,"Bitmap opt-in still rejects JPEG/GIF/SVG exports");
+
  const auto verse_scope=session.last_search_scope();
  auto prefixSeed=session.search_mixed_batch({{"KeyDictionary","signal",SearchMode::phrase}},{{1,4096},{1,4096}});
  SearchQuery hidden{"KeyDictionary","dictionary",SearchMode::phrase};hidden.within_last_results=true;

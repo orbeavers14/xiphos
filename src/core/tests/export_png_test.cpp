@@ -3,6 +3,7 @@
 #include "xiphos/core/search_export.hpp"
 #include "image_source_test_support.hpp"
 #include <zlib.h>
+#include <png.h>
 #include <glib.h>
 #include <iostream>
 #include <future>
@@ -29,6 +30,20 @@ ExportPng prepare(const std::string &data,std::size_t bytes=maximum_search_expor
 }
 void empty_failure(const ExportPng &out,ExportPngStatus status){check(out.status==status&&out.data_url.empty()&&!out.width&&!out.height&&!out.original_bytes&&!out.pixels,"Failure has no partial URI or misleading successful image metadata");}
 int main(){try{
+ std::string bmp;for(const auto &asset:image_test::preview_assets())if(asset.first=="bmp")bmp=asset.second;
+ const auto bitmap=[&](const std::string &data,std::size_t raw=maximum_search_export_bytes,std::size_t encoded=maximum_search_export_bytes,std::size_t pixels=maximum_export_image_pixels){return prepare_export_bitmap({"Original","original.bmp","image/bmp",data},raw,encoded,pixels);};
+ bmp[54]=char(255); // Distinct bottom-left magenta; top-left stays red.
+ auto converted=bitmap(bmp);check(converted.status==ExportPngStatus::ok&&converted.width==2&&converted.height==2&&converted.pixels==4&&converted.original_bytes==70,"BMP conversion accounts original bytes and dimensions");
+ const auto decode=[&](const ExportPng &image){gsize size=0;std::unique_ptr<guchar,decltype(&g_free)> data(g_base64_decode(image.data_url.substr(22).c_str(),&size),g_free);png_image state{};state.version=PNG_IMAGE_VERSION;check(png_image_begin_read_from_memory(&state,data.get(),size),"Converted PNG parses");state.format=PNG_FORMAT_RGB;std::vector<png_byte> pixels(PNG_IMAGE_SIZE(state));const auto ok=png_image_finish_read(&state,nullptr,pixels.data(),0,nullptr);png_image_free(&state);check(ok,"Converted PNG pixels decode");return pixels;};
+ auto bottom=decode(converted);check(bottom[0]==255&&bottom[1]==0&&bottom[2]==0&&bottom[6]==255&&bottom[7]==0&&bottom[8]==255,"Bottom-up BMP row orientation and BGR channels preserved");
+ auto top=bmp;top[22]=char(254);top[23]=top[24]=top[25]=char(255);auto top_pixels=decode(bitmap(top));check(top_pixels[0]==255&&top_pixels[2]==255&&top_pixels[6]==255&&top_pixels[8]==0,"Top-down BMP row orientation preserved");
+ check(bitmap(bmp,bmp.size(),converted.data_url.size(),4).data_url==converted.data_url,"Exact bitmap byte/encoded/pixel budgets");
+ empty_failure(bitmap(bmp,bmp.size()-1),ExportPngStatus::output_limit);empty_failure(bitmap(bmp,bmp.size(),converted.data_url.size()-1),ExportPngStatus::output_limit);empty_failure(bitmap(bmp,bmp.size(),maximum_search_export_bytes,3),ExportPngStatus::output_limit);
+ for(std::size_t size=0;size<bmp.size();++size)empty_failure(bitmap(bmp.substr(0,size)),ExportPngStatus::unsupported);
+ for(const auto offset:{2,6,10,14,26,28,30,34,46,50}){auto invalid=bmp;invalid[offset]^=1;empty_failure(bitmap(invalid),ExportPngStatus::unsupported);}
+ empty_failure(bitmap(bmp+"trailing"),ExportPngStatus::unsupported);
+ auto stop_bitmap=std::make_shared<SearchControl>();stop_bitmap->request_cancel();empty_failure(prepare_export_bitmap({"Original","original.bmp","image/bmp",bmp},70,4096,4,stop_bitmap),ExportPngStatus::cancelled);
+ empty_failure(prepare_export_png({"Original","original.bmp","image/bmp",bmp},70,4096,4),ExportPngStatus::unsupported);
  const auto png=image_test::preview_png();const auto out=prepare(png);
  check(out.status==ExportPngStatus::ok&&out.width==8&&out.height==8&&out.pixels==64&&out.original_bytes==png.size(),"Actual pixel decode and exact original source accounting");
  check(out.data_url.rfind("data:image/png;base64,",0)==0,"PNG data URL has fixed core-owned MIME");

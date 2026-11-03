@@ -1,8 +1,8 @@
 # Shared static PNG export preparation
 
-Updated 2026-10-20. This checked private C++ service prepares an owned PNG data
-URL. It is not yet image support in HTML exports: those still reject resources
-until the complete-document policy consumes this service.
+Updated 2026-11-03. This private C++ service prepares owned PNG data URLs for
+the explicit complete-document image export policy. Static PNG behavior is
+described below; optional BMP conversion is documented at the end.
 
 ## Content validation and bounds
 
@@ -29,7 +29,7 @@ pixel decoding. No upstream codec source is copied into the repository.
 
 ## Dependency and local SDK provenance
 
-Native core builds require libpng >=1.6 with simplified reading and zlib, using
+Native core builds require libpng >=1.6 with simplified reading/writing and zlib, using
 CMake `PNG::PNG`/`ZLIB::ZLIB`. The legacy native-disabled C++11 helper build still
 returns before these dependency checks. Linux's explicit dependency installer
 now lists PNG/zlib development packages; Windows and Mac guides list discovery
@@ -88,3 +88,28 @@ Next: consume this service in a bounded per-document resource policy with no
 partial output, then copy options/results through existing platform adapters.
 The previously blocked local export-HTML preview remains unvalidated; do not work
 around browser URL policy to claim visual/CSP runtime acceptance.
+
+## Optional BMP conversion — 2026-11-03
+
+Policy2 (`embedded_static_png_bmp` / `XC_HTML_IMAGES_EMBEDDED_STATIC_PNG_BMP`)
+adds uncompressed24-bit Windows BMP with an exact40-byte DIB header and54-byte
+pixel offset. Policy1 remains PNG-only and policy0 still rejects images. Existing
+C structs/ABI are unchanged. The native explicit toggle is now Embed PNG/BMP
+images; previewing other formats does not grant export permission.
+
+The core validates the complete BMP container, reserved fields, dimensions,
+planes/bit depth, compression, palette metadata, row padding and declared/actual
+sizes before allocating pixels. Top-down/bottom-up orientation and BGR channels
+are preserved. Unsupported BMP variants, appended/truncated data and other media
+formats reject. Source byte/pixel/output limits and cooperative cancellation apply.
+The existing libpng simplified write API creates a PNG data URL; original BMP
+metadata/payload is not copied into the export. No new dependency is introduced.
+
+Per-document cache identity remains actual module plus exact source URI. Statistics
+count original BMP bytes and decoded pixels once per unique resource; repeated
+occurrences still count toward the occurrence cap. Aggregate failure publishes no
+partial HTML or successful-resource metadata. Existing PNG validation/preservation
+semantics remain unchanged. Original fixture tests decode resulting pixels and
+check orientation, exact/short budgets, malformed inputs, cancellation, cache
+identity, mixed keyed export and the Swift/C path. JPEG/GIF/SVG and other BMP
+variants remain outside passive export scope.

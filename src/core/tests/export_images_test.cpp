@@ -9,6 +9,11 @@ using namespace xiphos::core;
 using namespace xiphos::core::detail;
 void check(bool ok,const char *message){if(!ok)throw std::runtime_error(message);}
 int main(){try{
+ std::string bmp;for(const auto &asset:image_test::preview_assets())if(asset.first=="bmp")bmp=asset.second;
+ unsigned bitmapLoads=0;ExportImages bitmapCache({3,70,4,4096,true},[&](const std::string &module,const std::string &source,std::size_t){++bitmapLoads;return VerseImageResource{module,source,"image/bmp",bmp};});
+ check(bitmapCache.resolve("Original","image.bmp").status==ExportPngStatus::ok&&bitmapCache.resolve("Original","image.bmp").status==ExportPngStatus::ok&&bitmapLoads==1,"Converted bitmap cache preserves exact source ownership");
+ check(bitmapCache.statistics().count==2&&bitmapCache.statistics().unique_count==1&&bitmapCache.statistics().original_bytes==70&&bitmapCache.statistics().pixels==4,"Repeated converted bitmap accounts original bytes and pixels once");
+ check(bitmapCache.resolve("Other","image.bmp").status==ExportPngStatus::output_limit&&bitmapLoads==1,"Another module cannot reuse converted bitmap budget or cache identity");
  const auto png=image_test::preview_png();const auto encoded=prepare_export_png({"Text","preview.png","image/png",png},75,8192,64);
  check(encoded.status==ExportPngStatus::ok,"Original PNG must decode");
  std::size_t loads=0;

@@ -1150,7 +1150,7 @@ xc_status xc_worker_export_search_rich_html_with_context(xc_worker *w,uint64_t t
   if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;
   if(include_search_context!=0&&include_search_context!=1)return XC_INVALID_ARGUMENT;
   if(plain_text_max_bytes>xiphos::core::maximum_search_export_bytes)return XC_INVALID_ARGUMENT;
-  if(!images||(images->policy!=XC_HTML_IMAGES_REJECT&&images->policy!=XC_HTML_IMAGES_EMBEDDED_STATIC_PNG)||
+  if(!images||(images->policy!=XC_HTML_IMAGES_REJECT&&images->policy!=XC_HTML_IMAGES_EMBEDDED_STATIC_PNG&&images->policy!=XC_HTML_IMAGES_EMBEDDED_STATIC_PNG_BMP)||
      !images->max_images||images->max_images>xiphos::core::maximum_search_export_images||
      !images->max_original_bytes||images->max_original_bytes>xiphos::core::maximum_search_export_bytes||
      !images->max_pixels||images->max_pixels>xiphos::core::maximum_search_export_image_pixels)return XC_INVALID_ARGUMENT;

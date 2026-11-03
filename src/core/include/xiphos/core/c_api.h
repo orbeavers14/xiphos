@@ -783,11 +783,12 @@ typedef struct {
 void xc_search_html_export_request_default(xc_search_html_export_request *out);
 xc_status xc_worker_export_search_html(xc_worker *worker,uint64_t tab,const xc_search_html_export_request *input,xc_request **out);
 /* Additive image options: the existing request/info layouts and default function
- * remain unchanged. Values copy before return. Only static decoded PNG images
- * from each row's actual module can be embedded; no network or frontend paths.
+ * remain unchanged. Values copy before return. Policy1 embeds static decoded PNG;
+ * policy2 also converts supported uncompressed24-bit BMP to PNG. Resources come
+ * from each row's actual module; no network or frontend paths.
  * All limits positive: <=64 occurrences, <=8MiB unique original bytes,
  * <=16Mi unique pixels; final HTML bytes retain the existing max_bytes cap. */
-typedef enum {XC_HTML_IMAGES_REJECT=0,XC_HTML_IMAGES_EMBEDDED_STATIC_PNG=1} xc_html_image_policy;
+typedef enum {XC_HTML_IMAGES_REJECT=0,XC_HTML_IMAGES_EMBEDDED_STATIC_PNG=1,XC_HTML_IMAGES_EMBEDDED_STATIC_PNG_BMP=2} xc_html_image_policy;
 typedef struct {int policy;size_t max_images,max_original_bytes,max_pixels;} xc_search_html_image_options;
 void xc_search_html_image_options_default(xc_search_html_image_options *out);
 /* images is required, including an explicit reject policy if desired. */

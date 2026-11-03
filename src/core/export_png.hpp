@@ -19,4 +19,9 @@ struct ExportPng {
 // Limits cover logical bytes/pixels, not all codec temporaries or execution time.
 ExportPng prepare_export_png(const VerseImageResource &source,std::size_t max_original_bytes,
     std::size_t max_encoded_bytes,std::size_t max_pixels,const std::shared_ptr<SearchControl> &control={});
+// Opt-in PNG plus uncompressed 24-bit Windows BMP. BMP is decoded/re-encoded
+// as PNG; unsupported variants fail without a partial resource.
+ExportPng prepare_export_bitmap(const VerseImageResource &source,std::size_t max_original_bytes,
+    std::size_t max_encoded_bytes,std::size_t max_pixels,const std::shared_ptr<SearchControl> &control={});
+
 }

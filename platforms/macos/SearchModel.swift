@@ -351,7 +351,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
                 let payload: SearchExportPayload
                 if format == .html {
                     var images = CoreHTMLImageOptions()
-                    if embedImages && includeScripture { images.policy = .embeddedStaticPNG }
+                    if embedImages && includeScripture { images.policy = .embeddedStaticPNGBMP }
                     let rows = allMatches ? [] : selected.map { [CoreSearchVisibleRow(group: $0.group, row: $0.row)] } ?? []
                     payload = .html(try await worker.exportSearchHTML(tab: tab, generation: source.generation.id,
                         selection: allMatches ? .allRetained : .visible, rows: rows, title: title,

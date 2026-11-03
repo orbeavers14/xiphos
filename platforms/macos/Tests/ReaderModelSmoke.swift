@@ -802,6 +802,11 @@ struct ReaderModelSmoke {
             let ready=(try? await withCheckedThrowingContinuation {continuation in web.evaluateJavaScript("document.images.length===15 && Array.from(document.images).every(image => image.complete && image.naturalWidth>0 && image.naturalHeight>0)",in:nil,in:.defaultClient) {result in switch result {case .success(let value):continuation.resume(returning:value as? Bool == true);case .failure(let error):continuation.resume(throwing:error)}}}) ?? false
             if ready {break};guard Date()<deadline else {fatalError("Production WebKit failed original PNG/JPEG/GIF/BMP/SVG keyed assets")};try await Task.sleep(nanoseconds:10_000_000)
         }
+        var rows:[CoreSearchVisibleRow]=[]
+        for (group,item) in batch.groups.enumerated() {for (row,key) in (item.result?.references ?? []).enumerated() {if key=="ASSET-BMP" || key=="/Assets/bmp" {rows.append(CoreSearchVisibleRow(group:group,row:row))}}}
+        var images=CoreHTMLImageOptions();images.policy = .embeddedStaticPNGBMP
+        let exported=try await worker.exportSearchHTML(tab:tab,generation:batch.generation.id,rows:rows,title:"Original bitmap export",includeScripture:true,images:images)
+        guard rows.count==3,exported.status == .success,exported.rowCount==3,exported.html.contains("data:image/png;base64,"),!exported.html.contains("data:image/bmp") else {fatalError("Swift/C bitmap export must retain actual keyed source and converted PNG")}
         try await worker.closeTab(tab);await worker.shutdown()
         print("Original PNG/JPEG/GIF/BMP/SVG assets decode through shared keyed previews and production data-only WebKit policy")
     }
