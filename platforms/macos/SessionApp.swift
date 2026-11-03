@@ -221,7 +221,7 @@ import SwiftUI
     private var syncWindow: NativeSyncWindow?
     private var library: NativeLibraryWindow?
     private var bookmarks: NativeBookmarkWindow?
-    private var annotations: NativeAnnotationWindow?
+    private var annotations: [NativeAnnotationWindow] = []
     private var managedRoot: String?
     func applicationDidFinishLaunching(_ notification: Notification) {
         _ = initializePreviewLocale()
@@ -262,8 +262,8 @@ import SwiftUI
                 if let saved { for draft in saved.drafts { self.openRecoveredEditor(draft) } }
                 recovery.capture = { [weak owner] in try await owner?.captureRecoverySession() }
                 recovery.drafts = { [weak self = self] in
-                    guard let self, !self.editors.contains(where: { $0.model.isBusy }) else { return nil }
-                    return self.editors.compactMap { $0.model.recoveryDraft() }
+                    guard let self, !self.editors.contains(where: { $0.model.isBusy }),!self.annotations.contains(where:{$0.model.busy}) else { return nil }
+                    return self.editors.compactMap { $0.model.recoveryDraft() } + self.annotations.compactMap {$0.model.recoveryDraft()}
                 }
                 recovery.onError = { message in let alert = NSAlert(); alert.messageText = "Autosave paused"; alert.informativeText = "Save documents normally or use Save As. Your original documents and modules are unchanged. " + message; alert.runModal() }
                 recovery.start()
@@ -282,6 +282,7 @@ import SwiftUI
         editors.append(editor)
     }
     private func openRecoveredEditor(_ draft: CoreRecoveryDraft) {
+        if draft.target==3 {openAnnotation(path:draft.path,module:draft.module,reference:draft.reference,recovered:draft);return}
         let location: NativeEditorLocation = draft.target == 1 ? .file(draft.path) : draft.target == 2 ? .module(draft.module,draft.reference) : .newDocument
         openEditor(location,recovered:draft)
     }
@@ -335,11 +336,18 @@ import SwiftUI
         opened.model.onModulesChanged = { [weak controller] in controller?.records.forEach { $0.model.refreshModuleLibrary() } }
         library = opened
     }
+    private func openAnnotation(path: String,module: String,reference: String,recovered: CoreRecoveryDraft? = nil) {
+        guard !terminating,let controller else {return}
+        let opened=NativeAnnotationWindow(worker:controller.worker,path:path,module:module,reference:reference,recovered:recovered)
+        opened.model.onRecoveryChanged = {[weak self] in self?.recovery?.request()}
+        opened.onClosed = {[weak self,weak opened] in self?.annotations.removeAll {$0 === opened};self?.recovery?.request()}
+        annotations.append(opened)
+    }
     func openPersonalNotes() {
         guard !terminating,let controller else {return}
-        if let annotations {annotations.window.makeKeyAndOrderFront(nil);return}
+        if let opened=annotations.last {opened.window.makeKeyAndOrderFront(nil);return}
         guard let target=controller.records.first(where:{$0.key==controller.activeKey})?.model.annotationEditingTarget else {let alert=NSAlert();alert.messageText="Open a Bible passage first";alert.informativeText="Then use Personal Verse Notes to add or edit its note.";alert.runModal();return}
-        do {annotations=NativeAnnotationWindow(worker:controller.worker,path:try NativeSessionController.profileFolder().appendingPathComponent("annotations.xml").path,module:target.module,reference:target.reference)}catch {controller.showError(error.localizedDescription)}
+        do {openAnnotation(path:try NativeSessionController.profileFolder().appendingPathComponent("annotations.xml").path,module:target.module,reference:target.reference)}catch {controller.showError(error.localizedDescription)}
     }
     func openParallelSets() {
         guard !terminating,let controller else { return }
@@ -393,16 +401,16 @@ import SwiftUI
         if migration?.model.busy == true { let alert = NSAlert();alert.messageText = "A migration operation is still running";alert.informativeText = "Wait for it to finish, then quit.";alert.runModal();return .terminateCancel }
         if sync?.busy == true { let alert = NSAlert();alert.messageText = "A sync connection change is still running";alert.informativeText = "Wait for it to finish, then quit.";alert.runModal();return .terminateCancel }
         if library?.model.isBusy == true { let alert = NSAlert();alert.messageText = "A module operation is still running";alert.informativeText = "Wait for it to finish, or stop the transfer in Module Library, then quit.";alert.runModal();return .terminateCancel }
-        if annotations?.model.busy == true {let alert=NSAlert();alert.messageText="A note operation is still running";alert.informativeText="Wait for it to finish, then quit.";alert.runModal();return .terminateCancel}
+        if annotations.contains(where:{$0.model.busy}) {let alert=NSAlert();alert.messageText="A note operation is still running";alert.informativeText="Wait for it to finish, then quit.";alert.runModal();return .terminateCancel}
         if parallelSets?.model.busy == true { let alert=NSAlert();alert.messageText="A parallel-set change is still running";alert.informativeText="Wait for it to finish, then quit.";alert.runModal();return .terminateCancel }
         if sectionCreator?.model.busy == true { let alert = NSAlert(); alert.messageText = "A section operation is still running"; alert.informativeText = "Wait for it to finish, then quit."; alert.runModal(); return .terminateCancel }
         guard let controller else { return .terminateNow }
         terminating = true
         Task {
             do {
-                if let annotations {guard await annotations.confirmClose() else {terminating=false;sender.reply(toApplicationShouldTerminate:false);return};annotations.model.frozen=true}
+                for note in annotations {guard await note.confirmClose() else {annotations.forEach {$0.model.frozen=false};terminating=false;sender.reply(toApplicationShouldTerminate:false);return};note.model.frozen=true}
                 for editor in editors {
-                    guard await editor.confirmClose() else { for item in editors { item.model.frozen = false };annotations?.model.frozen=false; terminating = false; sender.reply(toApplicationShouldTerminate:false); return }
+                    guard await editor.confirmClose() else { for item in editors { item.model.frozen = false };annotations.forEach {$0.model.frozen=false}; terminating = false; sender.reply(toApplicationShouldTerminate:false); return }
                     editor.model.frozen = true
                 }
                 try await controller.prepareToQuit(); try await recovery?.clear(); await sync?.stop(); sender.reply(toApplicationShouldTerminate: true) }
@@ -411,7 +419,7 @@ import SwiftUI
                 alert.informativeText = error.localizedDescription
                 alert.addButton(withTitle: "Cancel"); alert.addButton(withTitle: "Quit Without Saving")
                 let quit = alert.runModal() == .alertSecondButtonReturn
-                if quit { await sync?.stop() };terminating = quit; if !quit { controller.cancelQuit();recovery?.start();annotations?.model.frozen=false;for item in editors { item.model.frozen = false } }; sender.reply(toApplicationShouldTerminate: quit)
+                if quit { await sync?.stop() };terminating = quit; if !quit { controller.cancelQuit();recovery?.start();annotations.forEach {$0.model.frozen=false};for item in editors { item.model.frozen = false } }; sender.reply(toApplicationShouldTerminate: quit)
             }
         }
         return .terminateLater

@@ -4,7 +4,7 @@
 #include "editable_document.hpp"
 #include "module_edit.hpp"
 namespace xiphos::core {
-enum class RecoveryTarget {untitled=0,file,module};
+enum class RecoveryTarget {untitled=0,file,module,annotation};
 struct RecoveryDraft {
  std::string id,title;
  RecoveryTarget target=RecoveryTarget::untitled;
@@ -13,6 +13,7 @@ struct RecoveryDraft {
  std::optional<std::string> origin_revision;
  std::string saved_text,text; // exact UTF-8 source, no rendered HTML conversion
  std::size_t selection_start=0,selection_end=0; // UTF-8 byte offsets
+ std::string annotation_label; // Annotation only; exact core-derived stored identity.
 };
 struct RecoverySnapshot {
  NativeSessionSnapshot session;

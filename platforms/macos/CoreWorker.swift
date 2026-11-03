@@ -63,6 +63,8 @@ struct CoreRecoveryDraft: Sendable, Equatable {
     var originRevision: String?
     var savedText: String, text: String
     var selectionStart = 0, selectionEnd = 0
+    var annotationLabel: String? = nil
+    var annotationGeneric = false
 }
 struct CoreRecoveryFile: Sendable {
     let session: CoreNativeSessionFile
@@ -1558,10 +1560,10 @@ extension CoreWorker {
         defer { xc_native_session_release(session) }
         let drafts = try (0..<xc_recovery_snapshot_count(owned)).map { index in
             var d = xc_recovery_draft()
-            guard xc_recovery_snapshot_draft(owned,index,&d) == XC_OK else { throw CoreError(status:XC_ENGINE_ERROR) }
+            guard xc_recovery_snapshot_draft(owned,index,&d) == XC_OK,d.target<=3 else { throw CoreError(status:XC_ENGINE_ERROR) }
             return CoreRecoveryDraft(id:String(cString:d.id!),title:String(cString:d.title!),target:d.target,
                 path:String(cString:d.path!),module:String(cString:d.module!),reference:String(cString:d.reference!),
-                originRevision:d.origin_revision.map { String(cString:$0) },savedText:String(cString:d.saved_text!),text:String(cString:d.text!),selectionStart:d.selection_start,selectionEnd:d.selection_end)
+                originRevision:d.origin_revision.map { String(cString:$0) },savedText:String(cString:d.saved_text!),text:String(cString:d.text!),selectionStart:d.selection_start,selectionEnd:d.selection_end,annotationLabel:xc_recovery_snapshot_annotation_label(owned,index).map {String(cString:$0)},annotationGeneric:xc_recovery_snapshot_annotation_generic(owned,index) != 0)
         }
         return CoreRecoveryFile(session:try nativeSessionValue(session),drafts:drafts,revision:String(cString:xc_recovery_snapshot_revision(owned)!),previous:xc_recovery_snapshot_from_previous(owned) != 0)
     }
@@ -1577,15 +1579,17 @@ extension CoreWorker {
         guard !path.utf8.contains(0), !session.xml.utf8.contains(0) else { throw CoreError(status:XC_INVALID_ARGUMENT) }
         var native: OpaquePointer?;let parsed = session.xml.withCString { xc_native_session_parse($0,&native) }
         guard parsed == XC_OK, let native else { throw CoreError(status:parsed) };defer { xc_native_session_release(native) }
-        let strings = SessionCStrings();var rows: [xc_recovery_draft] = []
+        let strings = SessionCStrings();var rows: [xc_recovery_draft] = [];var annotationRows: [(xc_recovery_draft,UnsafePointer<CChar>)] = []
         for d in drafts {
-            rows.append(xc_recovery_draft(id:try strings.copy(d.id),title:try strings.copy(d.title),target:d.target,
+            let row = xc_recovery_draft(id:try strings.copy(d.id),title:try strings.copy(d.title),target:d.target,
                 path:try strings.copy(d.path),module:try strings.copy(d.module),reference:try strings.copy(d.reference),origin_revision:try d.originRevision.map { try strings.copy($0) },
-                saved_text:try strings.copy(d.savedText),text:try strings.copy(d.text),selection_start:d.selectionStart,selection_end:d.selectionEnd))
+                saved_text:try strings.copy(d.savedText),text:try strings.copy(d.text),selection_start:d.selectionStart,selection_end:d.selectionEnd)
+            if d.target==3 {guard let label=d.annotationLabel else {throw CoreError(status:XC_INVALID_ARGUMENT)};annotationRows.append((row,try strings.copy(label)))} else {rows.append(row)}
         }
         var snapshot: OpaquePointer?
         let created = withExtendedLifetime(strings) { rows.withUnsafeBufferPointer { xc_recovery_snapshot_create(native,$0.baseAddress,$0.count,&snapshot) } }
         guard created == XC_OK, let snapshot else { throw CoreError(status:created) };defer { xc_recovery_snapshot_release(snapshot) }
+        for (row,label) in annotationRows {var input=row;let status=withExtendedLifetime(strings) {xc_recovery_snapshot_append_annotation(snapshot,&input,label)};guard status==XC_OK else {throw CoreError(status:status)}}
         let expected = try revision.map { try strings.copy($0) };let handle = try worker();var request: OpaquePointer?
         let status = withExtendedLifetime(strings) { path.withCString { xc_worker_save_recovery(handle,$0,expected,snapshot,&request) } }
         let completed = try await wait(status,request);defer { xc_request_release(completed) }

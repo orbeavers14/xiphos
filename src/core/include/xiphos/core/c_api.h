@@ -1316,6 +1316,14 @@ typedef struct xc_native_session xc_native_session;
 typedef struct xc_recovery_snapshot xc_recovery_snapshot;
 typedef struct {const char *id,*title;int target;const char *path,*module,*reference,*origin_revision,*saved_text,*text;size_t selection_start,selection_end;} xc_recovery_draft;
 xc_status xc_recovery_snapshot_create(const xc_native_session *session,const xc_recovery_draft *drafts,size_t count,xc_recovery_snapshot **out);
+/* Annotation drafts use target3 plus an explicit canonical stored label. The
+ * old input struct/layout and create function remain unchanged (targets0..2).
+ * Append copies/validates before replacing the owned in-memory snapshot; failure
+ * leaves it unchanged. Annotation snapshots serialize as version2; old version1
+ * files remain readable. No source-note writes occur during recovery storage. */
+xc_status xc_recovery_snapshot_append_annotation(xc_recovery_snapshot *snapshot,const xc_recovery_draft *draft,const char *label);
+const char *xc_recovery_snapshot_annotation_label(const xc_recovery_snapshot *snapshot,size_t index);
+int xc_recovery_snapshot_annotation_generic(const xc_recovery_snapshot *snapshot,size_t index);
 xc_status xc_recovery_snapshot_parse(const char *bytes,size_t size,xc_recovery_snapshot **out);
 size_t xc_recovery_snapshot_count(const xc_recovery_snapshot *snapshot);
 const char *xc_recovery_snapshot_revision(const xc_recovery_snapshot *snapshot);

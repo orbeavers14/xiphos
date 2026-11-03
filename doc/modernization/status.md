@@ -1,5 +1,12 @@
 # Modernization status and acceptance
 
+Verse-note recovery checkpoint (2026-11-03): explicit annotation recovery now
+preserves canonical target, original revision and draft text through periodic
+autosave and fresh-process/native startup restoration. Stale recovered saves
+reject; older recovery snapshots remain readable. Native6/6, alternate SDK2/2,
+sanitizer2/2. See [Mac evidence and limits](handoff-macos.md#explicit-verse-note-recovery--2026-11-03).
+In-reading highlight styling, caret restoration and broader compatibility remain.
+
 Personal-note checkpoint (2026-11-02): shared exact-source checked annotation
 writes and native plain-text note editing/saved composition now preserve stale
 sources and unsaved drafts on failed save/quit. Final scoped native7/7; sanitizer

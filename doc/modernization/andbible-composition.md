@@ -117,7 +117,18 @@ Choose Bookmark XML and Preview Saved Composition consume the shared owned plan:
 ordered tag-color metadata, escaped saved-note HTML, highlight precedence and
 incomplete-source diagnostics. Raw color strings are displayed as text, never
 injected into HTML/CSS. The preview explicitly excludes unsaved editor text. This
-is not yet in-place reading highlighting or full native color styling. The new
-note-form drafts are not yet part of autosave/crash recovery; normal quit is
-protected by Save/Discard/Cancel. Complete annotation display integration, draft
-recovery and cross-platform/full-corpus acceptance remain open.
+is not yet in-place reading highlighting or full native color styling. Validated note-form drafts now participate in periodic recovery with an explicit
+annotation target: notes-file path, control module/reference, exact stored label,
+source revision and saved/current plain text. Recovery never treats a verse note
+as a whole-file editor save. Version2 snapshots carry annotation labels; ordinary
+snapshots retain version1 and old files remain readable. The C input struct stays
+unchanged; a distinct transactional append operation adds annotation drafts.
+
+Native restore opens the note form without reading over the recovered text or
+refreshing its original revision. Stale saves retain the recovered draft. Multiple
+recovered note windows participate in autosave and quit review. Unvalidated note
+text recovers as an untitled document, with no invented source-write intent.
+Core bounds, checksum, previous-valid fallback and conflict rules remain shared.
+Native periodic/fresh-process and live startup-prompt checks pass; caret position
+and in-reading highlight/style integration, plus full cross-platform/corpus
+acceptance, remain open.

@@ -18,6 +18,15 @@ import AppKit
             do { try await model.save();fatalError("Recovered stale origin overwrote newer file") } catch {}
             check(try String(contentsOfFile:draft.path,encoding:.utf8) == "External source update","Fresh process protects changed source")
             try await model.save(to:fixture.appendingPathComponent("recovered.spt").path);check(!model.dirty,"Recovered Save As establishes saved baseline")
+            let noteFile=try await worker.readRecovery(path:fixture.appendingPathComponent("fresh-note.recovery").path)
+            let noteDraft=noteFile.drafts[0]
+            check(noteDraft.target==3 && noteDraft.annotationLabel==" John.3.16" && noteDraft.annotationGeneric,"Fresh process distinguishes annotation identity and generic control")
+            let note=NativeAnnotationModel(worker:worker,path:noteDraft.path,module:noteDraft.module,reference:noteDraft.reference,recovered:noteDraft)
+            check(note.matches && note.dirty && note.note=="Recovered Ω verse note" && note.recoveryID==noteDraft.id,"Recovered note restores exact source and stable identity")
+            check(await note.save()==false && note.note==noteDraft.text,"Recovered stale annotation cannot replace newer source or lose draft")
+            let preserved=try String(contentsOfFile:noteDraft.path,encoding:.utf8)
+            check(preserved.contains("External annotation metadata"),"Fresh-process source metadata remains unchanged")
+            await note.load();note.note="Recovered note after explicit reload";check(await note.save(),"Reload permits a deliberate checked retry")
             model.close();for record in owner.records { record.model.close() };await worker.shutdown();return
         }
         try? FileManager.default.removeItem(at:fixture);try FileManager.default.createDirectory(at:fixture,withIntermediateDirectories:true)
@@ -48,6 +57,20 @@ import AppKit
         editor.accept(text:"Intermediate source");latest = [editor.recoveryDraft()!];autosave.request()
         editor.accept(text:"Latest Ω unsaved draft");editor.selection = NSRange(location:7,length:1);latest = [editor.recoveryDraft()!];await autosave.flush()
         let final = try await worker.readRecovery(path:path);check(final.drafts[0].text == "Latest Ω unsaved draft","Coalesced save keeps newest text")
+        let notePath=fixture.appendingPathComponent("notes.xml").path
+        let note=NativeAnnotationModel(worker:worker,path:notePath,module:"Text",reference:"John3:16");note.generic=true
+        await note.load();note.note="Original saved verse note";check(await note.save(),"Create note before autosave")
+        note.note="Recovered Ω verse note";note.draftChanged()
+        let noteAutosave=NativeRecoveryController(worker:worker,path:fixture.appendingPathComponent("note-autosave.recovery").path,interval:100_000_000)
+        noteAutosave.capture={session};noteAutosave.drafts={note.recoveryDraft().map {[$0]} ?? []};note.onRecoveryChanged={[weak noteAutosave] in noteAutosave?.request()};noteAutosave.start()
+        let noteDeadline=Date().addingTimeInterval(5)
+        while true {if let stored=try? await worker.readRecovery(path:noteAutosave.path),stored.drafts.first?.text==note.note {check(stored.drafts[0].annotationLabel==" John.3.16" && stored.drafts[0].annotationGeneric,"Annotation autosave preserves generic canonical identity");break};check(Date()<noteDeadline,"Periodic annotation autosave did not run");try await Task.sleep(nanoseconds:100_000_000)}
+        await noteAutosave.stop()
+        _ = try await worker.saveRecovery(path:fixture.appendingPathComponent("fresh-note.recovery").path,revision:nil,session:session,drafts:[note.recoveryDraft()!])
+        let externalNotes=try String(contentsOfFile:notePath,encoding:.utf8)+"\n<!--External annotation metadata-->"
+        try externalNotes.write(toFile:notePath,atomically:true,encoding:.utf8)
+        let unattached=NativeAnnotationModel(worker:worker,path:notePath,module:"Missing",reference:"John3:16")
+        await unattached.load();unattached.note="Unattached source draft";check(unattached.recoveryDraft()?.target==0,"Unvalidated note intent recovers only as an untitled document")
         // Core origin revision remains stale after an external source edit.
         try "External source update".write(toFile:file,atomically:true,encoding:.utf8)
         _ = try await worker.saveRecovery(path:fixture.appendingPathComponent("fresh.recovery").path,revision:nil,session:session,drafts:latest)

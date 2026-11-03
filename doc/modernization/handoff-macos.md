@@ -1,9 +1,44 @@
 # macOS chat handoff
 
-Updated 2026-11-02. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.md),
+Updated 2026-11-03. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.md),
 [status](status.md), [core scope](shared-core-roadmap.md) and relevant parity rows.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
+
+## Explicit verse-note recovery — 2026-11-03
+
+New shared annotation recovery target carries the source notes path, core-derived
+stored label, control module/reference, original revision and exact saved/current
+text. Annotation snapshots use version2; ordinary snapshots keep version1 and
+existing files remain readable. The old C draft struct/layout and create API stay
+unchanged; transactional append/getters expose the new type. Failed appends leave
+the owned snapshot unchanged. Source files are never written by recovery storage.
+Private module-creation intents are rejected because recovery does not serialize
+that intent. Annotation reference/note/label and aggregate bounds are explicit.
+
+Native note forms now join periodic recovery and restore their source intent
+without refreshing the old revision or replacing the draft with live-file text.
+Generic identity and stable draft IDs survive. Multiple recovered note windows
+participate in capture/quit. Unvalidated unattached text becomes an untitled
+recovered document, never a fabricated notes-file save target.
+
+Final native app/recovery/editor and shared tests6/6,9.07s, including real periodic
+note autosave and fresh-process reconstruction/stale refusal/explicit reload.
+Alternate SDK shared recovery/fresh process2/2,0.44s; ASan/UBSan2/2,0.96s,
+detect_leaks=0 (`build/annotation-recovery-final-{native,indexed,asan}-tests.log`).
+The app's actual startup recovery prompt was then checked with a generated
+version2 snapshot and isolated profile/library: Recover opened Personal Verse
+Notes with exact Unicode draft, generic flag and dirty state; Save rejected the
+newer source while retaining the draft. Discard on normal quit affected only this
+disposable test draft; app exit succeeded. This is a seeded restart UI check, not
+a simulated power-loss/fsync acceptance claim. Real profiles were untouched.
+
+C11 syntax/whitespace pass. Local code-only Graphify688 files,13,016 nodes,35,792
+edges,408 communities; source hashes unchanged,zero AI calls/tokens/cost; existing
+heuristic limits remain. No new full-suite or physical-platform claim after the
+parallel checkpoint below. Full reading highlight styling, note caret restoration,
+remaining search range/attribute/assets and corpus/Windows/Fedora acceptance remain.
+This supersedes the earlier note-form recovery TODO below.
 
 ## Native personal notes and saved composition — 2026-11-02
 
