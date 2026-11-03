@@ -8,6 +8,7 @@ import AppKit
     @Published var reference: String
     @Published var generic = false
     @Published var note = ""
+    @Published var selection = NSRange(location:0,length:0) {didSet {if selection != oldValue {onRecoveryChanged?()}}}
     @Published var bookmarkPath = ""
     @Published var frozen = false
     @Published private(set) var path: String
@@ -31,6 +32,10 @@ import AppKit
             loadedModule=self.module;loadedReference=self.reference;loadedGeneric=generic
             target=CoreAnnotationTarget(module:self.module,reference:self.reference,label:label)
             originRevision=recovered.originRevision;savedNote=recovered.savedText;note=recovered.text
+            let bytes=note.utf8
+            if recovered.selectionStart>=0,recovered.selectionEnd>=recovered.selectionStart,recovered.selectionEnd<=bytes.count,
+               let lower=String.Index(bytes.index(bytes.startIndex,offsetBy:recovered.selectionStart),within:note),
+               let upper=String.Index(bytes.index(bytes.startIndex,offsetBy:recovered.selectionEnd),within:note) {selection=NSRange(lower..<upper,in:note)}
             message="Recovered unsaved note. Save checks the original file revision; copy the draft before reloading if the source changed."
         }
     }
@@ -39,7 +44,7 @@ import AppKit
     var dirty: Bool { !note.utf8.elementsEqual(savedNote.utf8) }
     var duplicateCount: Int { guard let target else { return 0 };return profile?.rows.filter { $0.label?.utf8.elementsEqual(target.label.utf8)==true }.count ?? 0 }
     private func accept(_ snapshot: CoreAnnotationProfile?) {
-        profile=snapshot;originRevision=snapshot?.revision;note=snapshot?.rows.first(where: { $0.label?.utf8.elementsEqual(target?.label.utf8 ?? "".utf8)==true })?.note ?? "";savedNote=note;decoration=nil;onRecoveryChanged?()
+        profile=snapshot;originRevision=snapshot?.revision;note=snapshot?.rows.first(where: { $0.label?.utf8.elementsEqual(target?.label.utf8 ?? "".utf8)==true })?.note ?? "";savedNote=note;selection=NSRange(location:0,length:0);decoration=nil;onRecoveryChanged?()
     }
     func load(path selected: String? = nil) async {
         guard !busy,!frozen else { return };busy=true;defer {busy=false}
@@ -64,11 +69,56 @@ import AppKit
     }
     func recoveryDraft() -> CoreRecoveryDraft? {
         guard dirty else {return nil}
-        guard let target else {return CoreRecoveryDraft(id:recoveryID,title:"Unattached verse note",originRevision:nil,savedText:"",text:note)}
-        return CoreRecoveryDraft(id:recoveryID,title:target.module+" · "+target.reference,target:3,path:path,module:target.module,reference:target.reference,originRevision:originRevision,savedText:savedNote,text:note,annotationLabel:target.label,annotationGeneric:loadedGeneric)
+        let range=Range(selection,in:note)
+        let start=range.map {note[..<$0.lowerBound].utf8.count} ?? 0
+        let end=range.map {note[..<$0.upperBound].utf8.count} ?? 0
+        guard let target else {var draft=CoreRecoveryDraft(id:recoveryID,title:"Unattached verse note",originRevision:nil,savedText:"",text:note);draft.selectionStart=start;draft.selectionEnd=end;return draft}
+        var draft=CoreRecoveryDraft(id:recoveryID,title:target.module+" · "+target.reference,target:3,path:path,module:target.module,reference:target.reference,originRevision:originRevision,savedText:savedNote,text:note,annotationLabel:target.label,annotationGeneric:loadedGeneric)
+        draft.selectionStart=start;draft.selectionEnd=end;return draft
     }
     func draftChanged() {if dirty {message="Unsaved note changes."};onRecoveryChanged?()}
-    func discard() {note=savedNote;onRecoveryChanged?()}
+    func discard() {note=savedNote;selection=NSRange(location:0,length:0);onRecoveryChanged?()}
+}
+// AppKit selection is UTF-16; recovery stores validated UTF-8 offsets in the
+// shared snapshot. Keep marked input intact until its composition commits.
+struct NativeAnnotationText: NSViewRepresentable {
+    @ObservedObject var model: NativeAnnotationModel
+    @MainActor final class Coordinator: NSObject,NSTextViewDelegate {
+        let model: NativeAnnotationModel
+        var updating=false
+        init(_ model: NativeAnnotationModel) {self.model=model}
+        func textDidChange(_ notification: Notification) {
+            guard !updating,let view=notification.object as? NSTextView else {return}
+            model.note=view.string;model.selection=view.selectedRange();model.draftChanged()
+        }
+        func textViewDidChangeSelection(_ notification: Notification) {
+            guard !updating,let view=notification.object as? NSTextView else {return}
+            model.selection=view.selectedRange()
+        }
+    }
+    func makeCoordinator() -> Coordinator {Coordinator(model)}
+    func makeNSView(context: Context) -> NSScrollView {
+        let scroll=NSScrollView();scroll.hasVerticalScroller=true
+        let view=NSTextView(frame:.zero);view.delegate=context.coordinator
+        view.isRichText=false;view.importsGraphics=false;view.allowsUndo=true
+        view.font=NSFont.systemFont(ofSize:NSFont.systemFontSize)
+        view.isVerticallyResizable=true;view.isHorizontallyResizable=false
+        view.autoresizingMask=[.width];view.textContainer?.widthTracksTextView=true
+        view.textContainerInset=NSSize(width:8,height:8)
+        view.setAccessibilityLabel("Verse note")
+        scroll.documentView=view;return scroll
+    }
+    func updateNSView(_ scroll: NSScrollView,context: Context) {
+        guard let view=scroll.documentView as? NSTextView else {return}
+        view.isEditable = !model.busy && !model.frozen
+        guard !view.hasMarkedText() else {return}
+        context.coordinator.updating=true;defer {context.coordinator.updating=false}
+        if !view.string.utf8.elementsEqual(model.note.utf8) {view.string=model.note;view.undoManager?.removeAllActions()}
+        let count=(model.note as NSString).length
+        let location=min(model.selection.location,count)
+        let range=NSRange(location:location,length:min(model.selection.length,count-location))
+        if view.selectedRange() != range {view.setSelectedRange(range);view.scrollRangeToVisible(range)}
+    }
 }
 private struct NativeAnnotationPane: View {
     @ObservedObject var model: NativeAnnotationModel
@@ -84,7 +134,7 @@ private struct NativeAnnotationPane: View {
             HStack {Text(model.path).font(.caption).textSelection(.enabled);Spacer();Button("Open Notes File…") {if mayReload() {choose {path in Task {await model.load(path:path)}}}}}
             Text(model.target.map {$0.module+" · "+$0.reference} ?? "No note loaded").font(.headline)
             if model.duplicateCount>1 {Text("Multiple legacy records share this target. Save updates the first; later records remain and may take precedence in the legacy display.").font(.caption)}
-            TextEditor(text:$model.note).font(.body).frame(minHeight:150).onChange(of:model.note) {_ in model.draftChanged()}
+            NativeAnnotationText(model:model).frame(minHeight:150)
             HStack {Button("Show in Reading") {model.onUseInReading?(CoreReadingSources(bookmarks:model.bookmarkPath.isEmpty ? nil : model.bookmarkPath,annotations:model.path))}.disabled(model.profile == nil);Button("Save Note") {Task {await model.save()}};Button("Remove Note") {
                 let alert=NSAlert();alert.messageText="Remove this saved note?";alert.informativeText="Only the first matching record is removed. Other notes and duplicate records remain.";alert.addButton(withTitle:"Remove Note");alert.addButton(withTitle:"Cancel")
                 if alert.runModal() == .alertFirstButtonReturn {Task {await model.save(remove:true)}}

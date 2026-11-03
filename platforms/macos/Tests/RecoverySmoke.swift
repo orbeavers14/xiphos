@@ -22,7 +22,11 @@ import AppKit
             let noteDraft=noteFile.drafts[0]
             check(noteDraft.target==3 && noteDraft.annotationLabel==" John.3.16" && noteDraft.annotationGeneric,"Fresh process distinguishes annotation identity and generic control")
             let note=NativeAnnotationModel(worker:worker,path:noteDraft.path,module:noteDraft.module,reference:noteDraft.reference,recovered:noteDraft)
-            check(note.matches && note.dirty && note.note=="Recovered Ω verse note" && note.recoveryID==noteDraft.id,"Recovered note restores exact source and stable identity")
+            check(note.matches && note.dirty && note.note=="Recovered Ω 🕊 verse note" && note.recoveryID==noteDraft.id,"Recovered note restores exact source and stable identity")
+            check(note.selection==NSRange(location:10,length:4) && noteDraft.selectionStart==10 && noteDraft.selectionEnd==17,"Fresh-process Unicode note selection restores UTF-8 offsets as UTF-16")
+            var malformed=noteDraft;malformed.selectionStart=11;malformed.selectionEnd=12
+            let invalidSelection=NativeAnnotationModel(worker:worker,path:noteDraft.path,module:noteDraft.module,reference:noteDraft.reference,recovered:malformed)
+            check(invalidSelection.selection==NSRange(location:0,length:0) && invalidSelection.note==noteDraft.text,"Mid-codepoint selection cannot corrupt recovered text")
             check(await note.save()==false && note.note==noteDraft.text,"Recovered stale annotation cannot replace newer source or lose draft")
             let preserved=try String(contentsOfFile:noteDraft.path,encoding:.utf8)
             check(preserved.contains("External annotation metadata"),"Fresh-process source metadata remains unchanged")
@@ -60,11 +64,19 @@ import AppKit
         let notePath=fixture.appendingPathComponent("notes.xml").path
         let note=NativeAnnotationModel(worker:worker,path:notePath,module:"Text",reference:"John3:16");note.generic=true
         await note.load();note.note="Original saved verse note";check(await note.save(),"Create note before autosave")
-        note.note="Recovered Ω verse note";note.draftChanged()
+        note.note="Recovered Ω 🕊 verse note";note.selection=NSRange(location:10,length:4);note.draftChanged()
         let noteAutosave=NativeRecoveryController(worker:worker,path:fixture.appendingPathComponent("note-autosave.recovery").path,interval:100_000_000)
         noteAutosave.capture={session};noteAutosave.drafts={note.recoveryDraft().map {[$0]} ?? []};note.onRecoveryChanged={[weak noteAutosave] in noteAutosave?.request()};noteAutosave.start()
         let noteDeadline=Date().addingTimeInterval(5)
         while true {if let stored=try? await worker.readRecovery(path:noteAutosave.path),stored.drafts.first?.text==note.note {check(stored.drafts[0].annotationLabel==" John.3.16" && stored.drafts[0].annotationGeneric,"Annotation autosave preserves generic canonical identity");break};check(Date()<noteDeadline,"Periodic annotation autosave did not run");try await Task.sleep(nanoseconds:100_000_000)}
+        let textView=NSTextView(frame:.zero);textView.string=note.note
+        textView.setSelectedRange(NSRange(location:14,length:0))
+        let coordinator=NativeAnnotationText.Coordinator(note)
+        coordinator.textViewDidChangeSelection(Notification(name:NSTextView.didChangeSelectionNotification,object:textView))
+        check(note.selection==NSRange(location:14,length:0),"Actual AppKit selection delegate updates note model")
+        let selectionDeadline=Date().addingTimeInterval(5)
+        while true {let stored=try await worker.readRecovery(path:noteAutosave.path);if stored.drafts[0].selectionStart==17 && stored.drafts[0].selectionEnd==17 {break};check(Date()<selectionDeadline,"Selection-only autosave did not run");try await Task.sleep(nanoseconds:100_000_000)}
+        note.selection=NSRange(location:10,length:4)
         await noteAutosave.stop()
         _ = try await worker.saveRecovery(path:fixture.appendingPathComponent("fresh-note.recovery").path,revision:nil,session:session,drafts:[note.recoveryDraft()!])
         let externalNotes=try String(contentsOfFile:notePath,encoding:.utf8)+"\n<!--External annotation metadata-->"

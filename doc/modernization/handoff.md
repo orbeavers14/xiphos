@@ -1,5 +1,11 @@
 # Shared project handoff: start here in every chat
 
+Verse-note selection checkpoint (2026-11-03): cursor/selection now survives
+periodic autosave and fresh-process recovery with validated Unicode offsets.
+Native scoped checks4/4 and disposable live note-selection check pass; see
+[Mac evidence](handoff-macos.md#verse-note-cursor-recovery--2026-11-03).
+Broader input-method/workflow acceptance remains.
+
 Keyed-attribute checkpoint (2026-11-03): shared dictionary/tree-book lemma,
 morphology and footnote searches now preserve exact opaque keys and complete
 same-source narrowing. OSIS/ThML fixtures, C ownership and Swift adapters pass

@@ -61,3 +61,15 @@ Windows and Linux presentation, legacy source import, capable-SDK positive index
 creation, real encrypted-module correctness, native sync controls and full parity
 acceptance remain open. The current SDK reports an explicit index-creation skip.
 Autosave is recovery assistance, not an interprocess lock or power-loss guarantee.
+
+## Verse-note cursor recovery — 2026-11-03
+
+The native plain-text verse-note editor now tracks the AppKit cursor/selection.
+Recovery snapshots use the existing shared UTF-8 offset fields; the view converts
+valid offsets to AppKit UTF-16 ranges. Invalid/mid-codepoint offsets reset the
+selection without changing recovered note text or its original revision.
+Selection-only changes schedule autosave. Unattached note drafts retain their
+selection in the existing untitled-document fallback. Reload/discard resets the
+selection; stale saves still preserve the draft. Marked input is left intact
+until composition finishes. This does not add rich-note markup or undo-history
+persistence, and full input-method/physical-platform acceptance remains pending.

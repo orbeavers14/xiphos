@@ -5,6 +5,25 @@ Updated 2026-11-03. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Verse-note cursor recovery — 2026-11-03
+
+Native plain-note editing now tracks AppKit UTF-16 selections and serializes
+validated UTF-8 offsets using existing shared recovery fields. Fresh-process
+restoration covers Ω plus an emoji; invalid/mid-codepoint offsets reset selection
+without changing source text/revision. Actual AppKit delegate selection updates
+and selection-only periodic autosave are checked. Reload/discard resets selection;
+stale saves remain guarded. Plain NSTextView leaves marked composition intact.
+See [contract](native-recovery-management.md#verse-note-cursor-recovery--2026-11-03).
+
+Final native scoped editor/recovery checks4/4,7.21s, including exact-byte view
+refresh (`build/note-caret-verified-tests.log`). Native
+app builds. Disposable live editor verified exact Unicode paste, Ω/emoji visible
+selection, dirty indicator and discard/quit. Keyboard typing through automation
+mis-encoded the emoji, so exact paste was used and inspected. Real profiles were
+untouched. Local code-only Graphify refreshed689 files,13,070 nodes,35,984 edges,
+394 communities; source hashes unchanged,zero provider calls/tokens/cost.
+Broader input-method, full workflow and physical-host acceptance remain.
+
 ## Keyed entry-attribute search — 2026-11-03
 
 Shared dictionary/indexed-tree queries now accept lemma/morphology/footnote
