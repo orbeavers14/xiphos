@@ -5,6 +5,21 @@ Updated 2026-11-03. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Broader keyed dictionary drivers — 2026-11-03
+
+Expanded original-prose compatibility fixtures now cover RawLD, RawLD4 and
+ZIP-compressed zLD dictionaries plus RawGenBook, using OSIS/ThML filters (eight
+sources). Three entries cross a two-entry compressed block boundary. Actual SDK
+and shared results agree for all attribute/case modes; exact entry previews,
+retained narrowing and unchanged source bytes pass. Swift mixed adapters consume
+all eight. This is compatibility evidence, not a new matching implementation.
+
+Final native core/Swift2/2,0.72s; alternate capable SDK1/1,0.58s;
+ASan/UBSan1/1,1.13s,detect_leaks=0; portable-on-Mac1/1,0.49s.
+Logs: `build/keyed-driver-compat-{swift,indexed,asan,portable}-tests.log`.
+Physical Windows/Fedora, all compressors and real corpus acceptance remain open.
+Local code-only Graphify refreshed after source edits, with no AI providers.
+
 ## Verse-note cursor recovery — 2026-11-03
 
 Native plain-note editing now tracks AppKit UTF-16 selections and serializes

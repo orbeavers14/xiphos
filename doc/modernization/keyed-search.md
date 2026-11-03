@@ -83,3 +83,11 @@ keys, check complete same-source last-result narrowing, prefix counts,
 cancellation, copied C input/result lifetime and byte-identical source data.
 This proves these drivers/filters, not all module families or third-party corpora.
 Explicit keyed intervals remain undesigned; verse ranges continue to reject.
+
+The compatibility fixture also covers RawLD and ZIP-compressed zLD dictionaries
+with OSIS/ThML filters, alongside RawLD4 and RawGenBook (eight generated sources).
+Three entries cross a two-entry compressed block boundary. All three modes and
+case settings compare with actual SDK results, then exact previews, complete
+same-source narrowing and byte-identical source data are checked. Swift mixed
+adapters consume all eight sources. This does not prove every compressor, driver,
+module-filter combination or licensed corpus.
