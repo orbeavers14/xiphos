@@ -1,5 +1,13 @@
 # Shared project handoff: start here in every chat
 
+Native parallel checkpoint (2026-11-02, `3d8f57b`): saved sets now apply to the
+active tab's shared chapter matrix, with independent navigation, source-specific
+links and restored visibility/selection. Full native250 passes/two expected index
+skips; final compact layout and real restart checked. Editor writes now use a
+private fixture copy, correcting search-test contamination. See [Mac evidence and
+limits](handoff-macos.md#native-parallel-chaptersession-integration--2026-11-02).
+Annotation conflict/composition and remaining search compatibility continue next.
+
 Section/library checkpoint (2026-11-02): staged RawGenBook section creation and
 search-index invalidation now preserve fresh queries and rollback. Owned library
 organization transport and native favorites/hiding/groups update reading windows

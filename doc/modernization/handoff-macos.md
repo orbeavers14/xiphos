@@ -31,7 +31,11 @@ new journal sections were written into the shared source fixture. EditorSmoke no
 copies that library into its own named disposable folder before any module writes.
 The final run confirms keyed search and native mixed search pass with that isolation.
 Do not cite `native-parallel-complete-tests.log` as a successful full suite.
-Final full rerun evidence is being recorded in `native-parallel-reviewed-tests.log`.
+Final-source parallel checkpoint `3d8f57b`: native rebuild and252 registered
+tests,250 passed,two expected primary-SDK index skips,248.19s
+(`build/native-parallel-reviewed-{build,tests}.log`). Includes the final compact
+header and isolated editor copy. This full result predates the next annotation
+revision work; do not attribute it to later source changes.
 Local code-only Graphify refresh687 files,12,955 nodes,35,522 edges,389 communities;
 source hashes unchanged,zero AI calls/tokens/cost; heuristic limitations remain.
 
