@@ -30,9 +30,18 @@ ReaderModel::ReaderModel(xc_worker &worker) : worker_(&worker), owns_worker_(fal
   xc_request *request = nullptr; auto status = xc_worker_modules(worker_, &request);
   accept(status, request, Operation::catalog);
 }
+ReaderModel::ReaderModel(xc_worker &worker, const RestoredWindow &restored)
+    : worker_(&worker), owns_worker_(false), tab_(restored.tab), restoring_(restored)
+{
+	xc_request *r = nullptr;
+	auto status = xc_worker_modules(worker_, &r);
+	accept(status, r, Operation::catalog);
+}
 ReaderModel::~ReaderModel() {
-  // Fallback for non-UI callers. GTK explicitly transfers ownership to GTask.
-  if (auto *worker = detach()) std::thread([worker] { xc_worker_close(worker); }).join();
+	xc_editor_buffer_release(editor_buffer_);
+	// Fallback for non-UI callers. GTK explicitly transfers ownership to GTask.
+	if (auto *worker = detach())
+		std::thread([worker] { xc_worker_close(worker); }).join();
 }
 xc_worker *ReaderModel::detach() {
   closed_ = true; ready_ = false; back_ = forward_ = false;
@@ -53,6 +62,14 @@ bool ReaderModel::accept(xc_status status, xc_request *request, Operation operat
   }
   xc_request_release(hover_request_); hover_request_ = nullptr;
   request_ = request; operation_ = operation; error_.clear(); notice_.clear(); ++revision_; return true;
+}
+bool ReaderModel::reload_modules()
+{
+	if (!ready() || busy())
+		return false;
+	xc_request *r = nullptr;
+	auto s = xc_worker_modules(worker_, &r);
+	return accept(s, r, Operation::catalog_refresh);
 }
 bool ReaderModel::visit(const std::string &bible, const std::string &commentary, const std::string &reference) {
   if (!ready() || busy()) return false;
@@ -325,16 +342,38 @@ void ReaderModel::tick() {
   if (status == XC_PENDING) return;
   std::unique_ptr<xc_request, decltype(&xc_request_release)> completed(request_, xc_request_release);
   request_ = nullptr; ++revision_;
-  if (status != XC_OK) { error_ = message(status); return; }
+  if (status != XC_OK) {
+	  pending_search_uri_.clear();
+	  restoring_.reset();
+	  error_ = message(status);
+	  return;
+  }
   xc_request *next = nullptr;
-  if (take_extended(completed.get())) return;
+  if (take_extended(completed.get())) {
+	  if (!request_ && restoring_)
+		  restore_next();
+	  return;
+  }
   switch (operation_) {
   default: error_ = "Unknown native operation."; break;
+  case Operation::catalog_refresh:
   case Operation::catalog: {
     std::unique_ptr<xc_catalog, decltype(&xc_catalog_release)> catalog(xc_request_take_catalog(completed.get()), xc_catalog_release);
     if (!catalog) { error_ = "Missing module catalog."; return; }
+    modules_.clear();
+    ++catalog_version_;
     for (size_t i = 0; i < xc_catalog_count(catalog.get()); ++i)
       modules_.push_back({copy(xc_catalog_id(catalog.get(), i)), copy(xc_catalog_description(catalog.get(), i)), copy(xc_catalog_type(catalog.get(), i)), xc_catalog_is_dictionary(catalog.get(), i) != 0, xc_catalog_declared_engine_flags(catalog.get(), i), xc_catalog_is_regular_commentary(catalog.get(), i) != 0, xc_catalog_has_headings(catalog.get(), i) != 0, xc_catalog_lexicon_roles(catalog.get(), i), copy(xc_catalog_language(catalog.get(), i)), xc_catalog_has_book_tree(catalog.get(), i) != 0, xc_catalog_has_verse_search(catalog.get(), i) != 0});
+    if (operation_ == Operation::catalog_refresh) {
+	    if (!passage_.bible.empty())
+		    refresh();
+	    break;
+    }
+    if (restoring_) {
+	    ready_ = true;
+	    restore_next();
+	    break;
+    }
     auto submitted = xc_worker_create_tab(worker_, &next); accept(submitted, next, Operation::tab); break;
   }
   case Operation::tab: {
@@ -521,5 +560,7 @@ void ReaderModel::tick() {
     accept(submitted, next, Operation::passage); break;
   }
   }
+  if (!request_ && restoring_)
+	  restore_next();
 }
 }

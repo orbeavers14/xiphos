@@ -7,6 +7,14 @@ std::string copy(const char *p) { return p ? p : ""; }
 bool has_nul(const std::string &s) { return s.find('\0') != std::string::npos; }
 BookNode node(const xc_book_node &n) { return {n.offset, copy(n.path), copy(n.title), n.present != 0, n.has_children != 0}; }
 }
+bool ReaderModel::decorate_parallel()
+{
+	if (!ready() || busy() || parallel_.columns.empty())
+		return false;
+	xc_request *r = nullptr;
+	auto s = xc_worker_read_decorated_parallel(worker_, tab_, bookmarks_.path.empty() ? nullptr : bookmarks_.path.c_str(), annotations_.path.empty() ? nullptr : annotations_.path.c_str(), &r);
+	return accept(s, r, Operation::parallel_decoration);
+}
 bool ReaderModel::choose_book(const std::string &module) {
   if (!ready() || busy() || has_nul(module)) return false;
   xc_request *r = nullptr;
@@ -94,7 +102,16 @@ bool ReaderModel::search(const SearchInput &input) {
   if (input.scope == XC_SEARCH_SCOPE_BOUNDS) { query.range_module = input.range_module.c_str(); query.range_expression = input.range.c_str(); }
   if (input.annotations) query.text_options = &*input.annotations;
   std::vector<const char *> names; for (const auto &m : input.modules) names.push_back(m.c_str());
-  xc_request *r = nullptr; auto s = xc_worker_search_modules(worker_, tab_, names.data(), names.size(), &query, nullptr, &r);
+  xc_request *r = nullptr;
+  xc_status s;
+  if (input.interval) {
+	  if (!input.mixed || input.scope != XC_SEARCH_SCOPE_ALL || has_nul(input.interval->first) || has_nul(input.interval->second))
+		  return false;
+	  s = xc_worker_search_mixed_modules_interval(worker_, tab_, names.data(), names.size(), &query, nullptr, input.interval->first.c_str(), input.interval->second.c_str(), &r);
+  } else if (input.mixed)
+	  s = xc_worker_search_mixed_modules(worker_, tab_, names.data(), names.size(), &query, nullptr, &r);
+  else
+	  s = xc_worker_search_modules(worker_, tab_, names.data(), names.size(), &query, nullptr, &r);
   return accept(s, r, Operation::search_batch);
 }
 bool ReaderModel::cancel_search() { return request_ && xc_request_cancel_search(request_) == XC_OK; }
@@ -117,16 +134,38 @@ bool ReaderModel::preview_search_hit(size_t i) {
   if (!ready() || busy() || i >= search_results_.hits.size()) return false;
   const auto &hit = search_results_.hits[i];
   pending_module_ = hit.module;
+  pending_search_source_ = hit;
+  if (hit.kind != 0) {
+	  xc_request *r = nullptr;
+	  auto s = xc_worker_preview_keyed_search(worker_, tab_, hit.module.c_str(), hit.reference.c_str(), hit.kind, 8 * 1024 * 1024, &r);
+	  return accept(s, r, Operation::search_keyed_preview);
+  }
   xc_request *r = nullptr; auto s = xc_worker_read_tab_entry(worker_, tab_, hit.module.c_str(), hit.reference.c_str(), &r);
   return accept(s, r, Operation::search_preview);
 }
 bool ReaderModel::activate_search_hit(size_t i) {
   if (!ready() || busy() || i >= search_results_.hits.size()) return false;
-  const auto hit = search_results_.hits[i]; xc_request *r = nullptr;
-  const auto *main = module(passage_.bible);
-  if (!main || main->type != "Biblical Texts") return visit(hit.module, "", hit.reference);
-  auto s = xc_worker_visit_linked_passage(worker_, tab_, passage_.bible.c_str(), passage_.commentary.c_str(), hit.module.c_str(), hit.reference.c_str(), &r);
-  return accept(s, r, Operation::passage);
+  return activate_target(search_results_.hits[i]);
+}
+bool ReaderModel::activate_target(const SearchHit &hit)
+{
+	xc_request *r = nullptr;
+	if (hit.kind == 1) {
+		dictionary_source_module_ = passage_.bible;
+		dictionary_source_reference_ = passage_.reference;
+		auto s = xc_worker_visit_dictionary_exact(worker_, tab_, hit.module.c_str(), hit.reference.c_str(), &r);
+		return accept(s, r, Operation::dictionary);
+	}
+	if (hit.kind == 2) {
+		xc_saved_book_selection saved{hit.module.c_str(), hit.reference.c_str(), nullptr};
+		auto s = xc_worker_restore_book_document_selection(worker_, tab_, &saved, XC_BOOK_RESTORE_DISPLAY_KEY, &r);
+		return accept(s, r, Operation::book_document);
+	}
+	const auto *main = module(passage_.bible);
+	if (!main || main->type != "Biblical Texts")
+		return visit(hit.module, "", hit.reference);
+	auto s = xc_worker_visit_linked_passage(worker_, tab_, passage_.bible.c_str(), passage_.commentary.c_str(), hit.module.c_str(), hit.reference.c_str(), &r);
+	return accept(s, r, Operation::passage);
 }
 bool ReaderModel::export_search(bool html, bool all, const std::vector<size_t> &selection,
                                 bool scripture, bool context, bool images, bool partial) {
@@ -144,7 +183,7 @@ bool ReaderModel::export_search(bool html, bool all, const std::vector<size_t> &
     input.rows = all ? nullptr : rows.data(); input.row_count = all ? 0 : rows.size();
     input.include_scripture = scripture; input.allow_partial_source = partial;
     xc_search_html_image_options policy; xc_search_html_image_options_default(&policy);
-    policy.policy = images ? XC_HTML_IMAGES_EMBEDDED_STATIC_PNG : XC_HTML_IMAGES_REJECT;
+    policy.policy = images ? XC_HTML_IMAGES_EMBEDDED_STATIC_PNG_BMP : XC_HTML_IMAGES_REJECT;
     s = xc_worker_export_search_rich_html_with_context(worker_, tab_, &input, &policy, 8 * 1024 * 1024, context, &r);
   } else if (all) {
     xc_search_all_text_export_request input; xc_search_all_text_export_request_default(&input);
@@ -167,8 +206,191 @@ bool ReaderModel::parse_search_modules(const std::string &text) {
   xc_request *r = nullptr; auto s = xc_worker_parse_search_module_list(worker_, tab_, text.c_str(), &r);
   return accept(s, r, Operation::search_names);
 }
+bool ReaderModel::follow_search_link(const std::string &uri)
+{
+	if (!ready() || busy() || has_nul(uri) || search_preview_.module.empty())
+		return false;
+	const auto hit = search_preview_source_;
+	if (hit.kind == 0)
+		return follow(hit.module, uri, hit.reference);
+	xc_request *r = nullptr;
+	xc_status s;
+	if (hit.kind == 1) {
+		s = xc_worker_preview_keyed_search(worker_, tab_, hit.module.c_str(), hit.reference.c_str(), hit.kind, 8 * 1024 * 1024, &r);
+		if (!accept(s, r, Operation::search_link_validate))
+			return false;
+	} else {
+		xc_saved_book_selection saved{hit.module.c_str(), hit.reference.c_str(), nullptr};
+		s = xc_worker_restore_book_document_selection(worker_, tab_, &saved, XC_BOOK_RESTORE_DISPLAY_KEY, &r);
+		if (!accept(s, r, Operation::book_document))
+			return false;
+	}
+	pending_search_uri_ = uri;
+	return true;
+}
+bool ReaderModel::edit_search_list(const std::string &path, bool range, const std::string &label,
+				   const std::string &value, bool remove)
+{
+	if (!ready() || busy() || has_nul(path) || has_nul(label) || has_nul(value))
+		return false;
+	const int kind = range ? XC_SAVED_SEARCH_RANGES : XC_SAVED_SEARCH_MODULES;
+	xc_saved_search_list_edit edit{kind, label.c_str(), value.c_str()};
+	xc_request *r = nullptr;
+	auto s = remove ? xc_worker_remove_search_list(worker_, tab_, path.c_str(), kind, label.c_str(), &r)
+			: xc_worker_save_search_list(worker_, tab_, path.c_str(), &edit, &r);
+	return accept(s, r, Operation::search_lists);
+}
+bool ReaderModel::visit_parallel(const std::vector<std::string> &modules, const std::string &reference)
+{
+	if (!ready() || busy() || modules.empty() || modules.size() > XC_PARALLEL_MAX_COLUMNS || has_nul(reference))
+		return false;
+	std::vector<const char *> ids;
+	for (const auto &m : modules) {
+		if (has_nul(m))
+			return false;
+		ids.push_back(m.c_str());
+	}
+	xc_request *r = nullptr;
+	auto s = xc_worker_visit_parallel(worker_, tab_, ids.data(), ids.size(), reference.c_str(), engine_flags_, 1, XC_PARALLEL_MAX_SNAPSHOT_BYTES, &r);
+	return accept(s, r, Operation::parallel);
+}
+bool ReaderModel::navigate_parallel(int direction)
+{
+	if (!ready() || busy() || parallel_.columns.empty())
+		return false;
+	xc_request *r = nullptr;
+	auto s = xc_worker_navigate_parallel_chapter(worker_, tab_, direction, &r);
+	return accept(s, r, Operation::parallel);
+}
+bool ReaderModel::new_parallel_profile(const std::string &path)
+{
+	if (!ready() || busy() || path.empty() || has_nul(path))
+		return false;
+	parallel_profile_ = {path, std::nullopt, {}};
+	++revision_;
+	return true;
+}
+bool ReaderModel::load_parallel_profile(const std::string &path)
+{
+	if (!ready() || busy() || has_nul(path))
+		return false;
+	xc_request *r = nullptr;
+	auto s = xc_worker_read_parallel_profile(worker_, tab_, path.c_str(), &r);
+	if (!accept(s, r, Operation::parallel_profile))
+		return false;
+	pending_parallel_profile_ = path;
+	return true;
+}
+bool ReaderModel::edit_parallel_set(int action, const std::string &key, const std::string &replacement,
+				    const std::vector<std::string> &modules, bool make_default)
+{
+	if (!ready() || busy() || parallel_profile_.path.empty() || has_nul(key) || has_nul(replacement))
+		return false;
+	std::vector<const char *> ids;
+	for (const auto &m : modules) {
+		if (has_nul(m))
+			return false;
+		ids.push_back(m.c_str());
+	}
+	auto encode = [](const std::string &name) {
+		size_t size = 0;
+		if (xc_parallel_set_encode_name(name.c_str(), nullptr, 0, &size) != XC_OK)
+			return std::string();
+		std::string value(size, '\0');
+		if (xc_parallel_set_encode_name(name.c_str(), value.data(), value.size(), &size) != XC_OK)
+			return std::string();
+		value.resize(size - 1);
+		return value;
+	};
+	const auto identity = action == XC_PARALLEL_PROFILE_CREATE ? encode(key) : key;
+	const auto renamed = action == XC_PARALLEL_PROFILE_RENAME ? encode(replacement) : replacement;
+	xc_parallel_profile_edit edit{action, identity.c_str(), action == XC_PARALLEL_PROFILE_RENAME ? renamed.c_str() : nullptr,
+				      ids.empty() ? nullptr : ids.data(), ids.size(), make_default};
+	xc_request *r = nullptr;
+	auto s = xc_worker_edit_parallel_profile_checked(worker_, tab_, parallel_profile_.path.c_str(),
+							 parallel_profile_.revision ? parallel_profile_.revision->c_str() : nullptr, &edit, &r);
+	if (!accept(s, r, Operation::parallel_profile))
+		return false;
+	pending_parallel_profile_ = parallel_profile_.path;
+	return true;
+}
+bool ReaderModel::open_parallel_set(const std::string &key, const std::string &reference)
+{
+	if (!ready() || busy() || parallel_profile_.path.empty() || has_nul(key) || has_nul(reference))
+		return false;
+	xc_request *r = nullptr;
+	auto s = xc_worker_visit_parallel_profile(worker_, tab_, parallel_profile_.path.c_str(), key.empty() ? nullptr : key.c_str(), reference.c_str(), engine_flags_, 1, XC_PARALLEL_MAX_SNAPSHOT_BYTES, &r);
+	return accept(s, r, Operation::parallel);
+}
 bool ReaderModel::take_extended(xc_request *r) {
-  switch (operation_) {
+	if (take_repository(r))
+		return true;
+	switch (operation_) {
+	case Operation::restored_parallel: {
+		std::unique_ptr<xc_parallel_selection, decltype(&xc_parallel_selection_release)> p(xc_request_take_parallel_selection(r), xc_parallel_selection_release);
+		if (p && xc_parallel_selection_present(p.get())) {
+			std::vector<std::string> names;
+			for (size_t i = 0; i < xc_parallel_selection_module_count(p.get()); ++i)
+				names.push_back(copy(xc_parallel_selection_module(p.get(), i)));
+			std::vector<const char *> ids;
+			for (const auto &s : names)
+				ids.push_back(s.c_str());
+			xc_request *next = nullptr;
+			auto status = xc_worker_read_parallel(worker_, tab_, ids.data(), ids.size(), xc_parallel_selection_reference(p.get()), xc_parallel_selection_engine_flags(p.get()), xc_parallel_selection_headings(p.get()), xc_parallel_selection_max_bytes(p.get()), &next);
+			accept(status, next, Operation::parallel);
+		}
+		return true;
+	}
+	case Operation::parallel_decoration:
+	case Operation::parallel: {
+		std::unique_ptr<xc_parallel_chapter, decltype(&xc_parallel_chapter_release)> p(xc_request_take_parallel_chapter(r), xc_parallel_chapter_release);
+		if (!p) {
+			error_ = "Missing parallel chapter.";
+			return true;
+		}
+		ParallelReading value;
+		value.reference = copy(xc_parallel_reference(p.get()));
+		value.title = copy(xc_parallel_title(p.get()));
+		value.revision = parallel_.revision + 1;
+		value.selection_revision = parallel_.selection_revision + (operation_ == Operation::parallel ? 1 : 0);
+		value.annotations_incomplete = xc_parallel_annotations_incomplete(p.get());
+		value.invalid_colors = xc_parallel_invalid_colors(p.get());
+		for (size_t c = 0; c < xc_parallel_column_count(p.get()); ++c)
+			value.columns.push_back({copy(xc_parallel_column_requested(p.get(), c)), copy(xc_parallel_column_module(p.get(), c)), int(xc_parallel_column_state(p.get(), c)), xc_parallel_column_is_rtl(p.get(), c) != 0});
+		for (size_t row = 0; row < xc_parallel_row_count(p.get()); ++row) {
+			ParallelRow v;
+			v.reference = copy(xc_parallel_row_reference(p.get(), row));
+			for (size_t c = 0; c < value.columns.size(); ++c) {
+				std::string html;
+				for (size_t h = 0; h < xc_parallel_cell_heading_count(p.get(), row, c); ++h)
+					html += copy(xc_parallel_cell_heading(p.get(), row, c, h));
+				html += copy(xc_parallel_cell_html(p.get(), row, c));
+				v.cells.push_back({copy(xc_parallel_cell_reference(p.get(), row, c)), std::move(html)});
+			}
+			value.rows.push_back(std::move(v));
+		}
+		parallel_ = std::move(value);
+		return true;
+	}
+	case Operation::parallel_profile: {
+		std::unique_ptr<xc_parallel_profile, decltype(&xc_parallel_profile_release)> p(xc_request_take_parallel_profile(r), xc_parallel_profile_release);
+		if (!p) {
+			error_ = "Missing parallel profile.";
+			return true;
+		}
+		ParallelProfile value;
+		value.path = pending_parallel_profile_;
+		if (auto *revision = xc_parallel_profile_revision(p.get()))
+			value.revision = revision;
+		for (size_t i = 0; i < xc_parallel_profile_count(p.get()); ++i) {
+			ParallelSet set{copy(xc_parallel_profile_key(p.get(), i)), copy(xc_parallel_profile_display_name(p.get(), i)), {}};
+			for (size_t j = 0; j < xc_parallel_profile_module_count(p.get(), i); ++j)
+				set.modules.push_back(copy(xc_parallel_profile_module(p.get(), i, j)));
+			value.sets.push_back(std::move(set));
+		}
+		parallel_profile_ = std::move(value);
+		return true;
+	}
   case Operation::book_document:
   case Operation::book_uri_document: {
     std::unique_ptr<xc_book_document, decltype(&xc_book_document_release)> d(xc_request_take_book_document(r), xc_book_document_release);
@@ -189,7 +411,14 @@ bool ReaderModel::take_extended(xc_request *r) {
       if (value.anchor) value.anchor_revision = ++book_anchor_revision_;
     }
     const bool changed_module = book_.module != value.module; book_ = std::move(value);
-    if (changed_module) { book_contents_ = {}; browse_book(); }
+    if (!pending_search_uri_.empty()) {
+	    const auto uri = std::move(pending_search_uri_);
+	    pending_search_uri_.clear();
+	    follow_book(uri);
+    } else if (changed_module) {
+	    book_contents_ = {};
+	    browse_book();
+    }
     return true;
   }
   case Operation::book_key: {
@@ -232,16 +461,40 @@ bool ReaderModel::take_extended(xc_request *r) {
       const auto *result = xc_search_batch_group_result(b.get(), g);
       if (result) {
         xc_search_get_info(result, &copied.info);
-        for (size_t row = 0; row < copied.info.result_count; ++row) value.hits.push_back({copy(xc_search_source_module(result)), copy(xc_search_reference(result, row)), g, row});
+	for (size_t row = 0; row < copied.info.result_count; ++row)
+		value.hits.push_back({copy(xc_search_source_module(result)), copy(xc_search_reference(result, row)), g, row, xc_search_key_kind(result)});
       }
       value.groups.push_back(std::move(copied));
     }
     search_results_ = std::move(value); search_preview_ = {}; return true;
   }
+  case Operation::search_keyed_preview:
+  case Operation::search_link_validate: {
+	  std::unique_ptr<xc_dictionary_entry, decltype(&xc_dictionary_entry_release)> e(xc_request_take_dictionary_entry(r), xc_dictionary_entry_release);
+	  if (!e) {
+		  error_ = "Missing keyed search preview.";
+		  pending_search_uri_.clear();
+		  return true;
+	  }
+	  if (operation_ == Operation::search_keyed_preview) {
+		  search_preview_ = {copy(xc_dictionary_entry_module(e.get())), copy(xc_dictionary_entry_key(e.get())), copy(xc_dictionary_entry_html(e.get())), ""};
+		  search_preview_source_ = pending_search_source_;
+	  } else {
+		  const auto uri = std::move(pending_search_uri_);
+		  pending_search_uri_.clear();
+		  xc_request *next = nullptr;
+		  auto s = xc_worker_follow_study_link_at(worker_, tab_, search_preview_source_.module.c_str(), passage_.reference.c_str(), uri.c_str(), &next);
+		  accept(s, next, Operation::link);
+	  }
+	  return true;
+  }
   case Operation::search_preview: {
     std::unique_ptr<xc_entry, decltype(&xc_entry_release)> e(xc_request_take_entry(r), xc_entry_release);
-    if (e) search_preview_ = {pending_module_, copy(xc_entry_reference(e.get())), copy(xc_entry_html(e.get())), ""};
-    else error_ = "Missing search preview.";
+    if (e) {
+	    search_preview_ = {pending_module_, copy(xc_entry_reference(e.get())), copy(xc_entry_html(e.get())), ""};
+	    search_preview_source_ = pending_search_source_;
+    } else
+	    error_ = "Missing search preview.";
     return true;
   }
   case Operation::search_export: {

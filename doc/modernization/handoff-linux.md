@@ -1,5 +1,107 @@
 # Linux / Fedora / WSL2 chat handoff
 
+Active 2026-11-03: `linux/november-mac-parity`, based on `23d0142f`.
+Owner requests catch-up to current Mac. Start with typed mixed search, exact
+keyed activation/preview/links, intervals, BMP export and saved-list editing,
+then bookmarks/annotations, parallel, editing, storage and module management.
+Platform adapters only; no new shared engine. Serial low-memory builds.
+
+
+## WIP checkpoint — 2026-11-03
+
+The owner indicated usage may be exhausted. Preserve this branch and resume here;
+do not describe the latest changes as validated Mac parity. No hosted jobs ran.
+
+Implemented in this working slice (platform adapters over existing shared APIs):
+
+- Typed mixed verse/dictionary/general-book search, exact intervals, previews,
+  activation and links; named search-list edits and PNG/BMP export options.
+- Parallel matrices with duplicate/missing/RTL columns, independent navigation,
+  checked saved sets, decorated reading, and isolated-world link transport.
+  Cell HTML is inserted after creating the host table; module attributes do not
+  supply the captured navigation source.
+- Bookmark hierarchy edits, AndBible collision review/explicit merge policies,
+  exact XML export to a new destination; captured-label revision-checked verse
+  notes and shared main/commentary/parallel decoration.
+- Source/file/module editing, staged book sections, shared undo/dirty buffers,
+  Save As to a new file, rich runs/formatting including blocks, Source fallback,
+  native Unicode selection and unsaved-close protection.
+- Ordered multiwindow session save/restore with fresh core tab IDs and GTK host
+  controls. Recovery uses shared snapshot/revision storage, 30-second scheduling,
+  explicit Recover/Discard/Keep, original source revisions and UTF-8 selections.
+  The latest full-session recovery bootstrap is **not yet desktop-validated**.
+- Module library UI: local catalog/review/install, HTTPS acknowledgement/TLS,
+  endpoint profiles/offline caches, cancellation/progress, maintenance previews,
+  provider-scoped favorites/hidden/groups, explicit legacy source review,
+  settings/session/module-option migration and assets review/copy. The library
+  desktop controls still need direct smoke/manual acceptance.
+
+Shared fixes are deliberately small: explicit `<cstring>` include, missing
+libxml include for the mixed-search test, saved-list XML character validation,
+non-null rejection futures for invalid maintenance requests, and GLib directory
+iteration so asset-copy C++ allocation failures unwind rather than terminate
+inside libstdc++'s noexcept iterator advance. The frozen legacy XML differential
+check stays exact, while its empty-string and malformed-ampersand expectations
+account for libxml2 2.15 behavior observed here.
+
+Actual environment: Fedora 45 aarch64, GCC 16, GTK 4.24.1, WebKit 2.54.2,
+libxml2 2.15.4, released SWORD 1.9; ~4GiB RAM. Compiler/GTK/WebKit/SWORD headers
+are installed locally. libarchive and clang-format headers/tools were extracted
+under ignored `build/linux-sdk`; do not commit them or generated module fixtures.
+Use `build/november-linux`, **one build at a time**, `--parallel 1`, Debug
+`-O0 -g0`. Configuration also needs the extracted libarchive include directory
+and `/usr/lib64/libarchive.so.13`; see `CMakeCache.txt` locally.
+
+Inspected validation so far:
+
+- Mixed search: 4/4 prerequisite/model tests pass.
+- Parallel model: 2/2 prerequisite/model tests pass.
+- Repositories: 3/3 prerequisite/model tests pass.
+- Sessions: 3/3 prerequisite/model tests pass before the final restore helper
+  refactor; repeat after the checkpoint build.
+- Recovery: 3/3 prerequisite/model tests pass before final session-copy/bootstrap
+  changes; repeat after the checkpoint build.
+- Native rich-editor desktop smoke passes (Unicode/style preservation/fallback).
+- Original book/search GTK desktop smoke passes after adding the explicit book
+  placeholder. Expanded parallel/rich/notes/host-state smoke was added afterward
+  and still needs to run.
+- Full serial suite: 201 registered; 196 passes, 1 optional sync skip, 4 failures.
+  The four failures were investigated and their focused retests all pass after
+  the shared fixes above. The full suite must be rerun on the final tree.
+- Management subset: 9/10 pass, including local library/migration/assets,
+  bookmark import and the four core fixes. The HTTPS adapter test originally
+  expected a queued request for missing acknowledgement, but the ABI rejects
+  at admission; its assertion is corrected and needs a rerun.
+
+Checkpoint build now succeeds for the app and changed test executables.
+The final checkpoint subset passes **6/6**, including HTTPS loopback,
+recovery, sessions and repositories with their prerequisites; inspected
+`build/november-checkpoint-tests.log`. Expanded desktop and final full-suite
+validation remain outstanding. Shared hardening is committed separately; the
+Linux adapter changes are a local WIP checkpoint and have not been pushed.
+
+Logs are ignored local `build/november-*.log`, especially `full-tests`,
+`management-tests`, `checkpoint-build`, `study-desktop`, and `rich-smoke`.
+The display is available with `GDK_BACKEND=x11 GSK_RENDERER=cairo`; WebKit needs
+write access to `/run/user/1000/webkitgtk` and `/run/user/1000/.flatpak` (or a
+reviewed desktop-test escalation). Keep the WebKit sandbox enabled.
+
+Immediate resume steps:
+
+1. Check the checkpoint build log/process, then run the changed model tests,
+   HTTPS loopback test and expanded `linux_study_ui_smoke` against the combined
+   original-prose fixture (`build/native-linux/ui-smoke-fixture` locally).
+2. Exercise actual process session save/restart, crash recovery Recover/Discard/
+   Keep, previous-snapshot and stale-source handling, and library controls.
+   In particular verify UI freeze/unfreeze on all recovery submission failures,
+   source/module editor binding release, caret retention, and clean close/quit.
+3. Finish GTK-only page/pane visibility persistence and review remaining Mac
+   parity differences. Optional BibleSync remains a stretch goal. Do not declare
+   visual/workflow, corpus/RTL/accessibility, packaging or release gates closed.
+4. Reformat newly changed code as needed, run full serial CTest, update this
+   evidence and status/parity only as supported, then commit/push checked work.
+   The prior released-SWORD ASan search overlap defect was not retested this turn.
+
 ## Integration into master (2026-10-22)
 
 At the owner's request, `linux/native-parity` through `f0b6e57` is integrated
