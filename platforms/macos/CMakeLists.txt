@@ -103,6 +103,15 @@ add_custom_command(OUTPUT "${app}/Contents/MacOS/XiphosNativePreview"
     ../../src/core/include/xiphos/core/c_api.h
   VERBATIM)
 add_custom_target(macos_preview ALL DEPENDS "${app}/Contents/MacOS/XiphosNativePreview")
+# Explicit release gate: development SDK linkage is expected to fail until the
+# bundle contains its non-system closure and each dependency supports its floor.
+find_package(Python3 COMPONENTS Interpreter QUIET)
+if(Python3_Interpreter_FOUND)
+  add_custom_target(macos_runtime_audit
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/runtime-audit.py" "${app}"
+    DEPENDS macos_preview VERBATIM)
+endif()
+
 if(BUILD_TESTING)
   add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/search_adapter_smoke"
     COMMAND ${SWIFTC} -swift-version 6 -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"

@@ -413,3 +413,12 @@ stale results and closed windows suppress destinations. HTML copy advertises the
 native HTML pasteboard type; Plain text remains available as its own format. See
 [native destination evidence](../../doc/modernization/native-search-html-export-workflows.md)
 for exact checks and remaining parity gates.
+
+## Runtime closure checks
+
+The explicit runtime audit and development-only bundle helper are documented in
+[the runtime packaging contract](../../doc/modernization/native-runtime-packaging.md).
+They detect external SDK paths/OS-floor mismatches and can make a separate
+ad-hoc-signed development bundle with a verified Mach-O closure. Current SDKs
+require macOS27; this does not validate the requested13 minimum or produce a
+redistributable release. Ordinary builds do not run the release audit automatically.
