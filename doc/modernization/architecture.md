@@ -486,3 +486,13 @@ checks used curl8.23.0 and libarchive3.8.11. Native-off C++11 helpers retain the
 existing dependencies. See [transfer contracts, provenance, checks and GTK
 coupling analysis](https-transfer.md). No native installer UI or persistent source
 repository is accepted yet.
+
+### Legacy asset preservation
+
+`legacy_assets.cpp` inventories and verifies complete selected regular-file trees.
+The existing worker owns IO; additive preallocated C results and copied Swift
+values drive native review/copy. Private staged publication shares no GTK logic
+and does not activate modules or reinterpret unknown settings. See
+[the copy and bounds contract](legacy-assets-migration.md). The manual
+[real-corpus runner](real-corpus-validation.md) reuses tree fingerprints to prove
+that module validation leaves inputs unchanged.

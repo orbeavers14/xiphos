@@ -120,6 +120,7 @@ struct xc_entry { xiphos::core::Entry value; };
 struct xc_search_html_export {xiphos::core::SearchHtmlExport value;};
 struct xc_search_text_export {xiphos::core::SearchTextExport value;};
 struct xc_worker { xiphos::core::StudyWorker value; explicit xc_worker(const char *root) : value(root ? root : "") {} };
+struct xc_legacy_assets {xiphos::core::LegacyAssets value;};
 struct xc_legacy_migration {xiphos::core::LegacyMigration value;};
 struct xc_legacy_repository_preview {xiphos::core::LegacyRepositoryPreview value;};
 struct xc_library_organization {xiphos::core::LibraryOrganizationSnapshot value;};
@@ -157,6 +158,7 @@ struct xc_request {
   std::unique_ptr<xc_bookmark_import_review> bookmark_import_review;
   std::unique_ptr<xc_verse_decoration> verse_decoration;
   std::unique_ptr<xc_decorated_reading> decorated_reading;
+  std::unique_ptr<xc_legacy_assets> legacy_assets;
   std::unique_ptr<xc_legacy_migration> legacy_migration;
   std::unique_ptr<xc_repository_snapshot> repository_snapshot;
   std::unique_ptr<xc_library_organization> library_organization;
@@ -272,6 +274,7 @@ struct xc_request {
   void store(xiphos::core::AndBibleImport v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);andbible_import->value=std::move(v);}
   void store(xiphos::core::DecoratedReading v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);decorated_reading->value=std::move(v);}
   void store(xiphos::core::VerseDecoration v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);verse_decoration->value=std::move(v);}
+  void store(xiphos::core::LegacyAssets v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);legacy_assets->value=std::move(v);}
   void store(xiphos::core::LegacyMigration v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);legacy_migration->value=std::move(v);}
   void store(xiphos::core::LegacyRepositoryPreview v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);legacy_repository_preview->value=std::move(v);}
   void store(xiphos::core::LibraryOrganizationSnapshot v){static_assert(std::is_nothrow_move_assignable_v<decltype(v)>);library_organization->value=std::move(v);}
@@ -447,6 +450,7 @@ template<class T> struct Request final : xc_request {
     if constexpr (std::is_same_v<T,xiphos::core::AndBibleImport>) andbible_import=std::make_unique<xc_andbible_import>();
     if constexpr (std::is_same_v<T,xiphos::core::DecoratedReading>) decorated_reading=std::make_unique<xc_decorated_reading>();
     if constexpr (std::is_same_v<T,xiphos::core::VerseDecoration>) verse_decoration=std::make_unique<xc_verse_decoration>();
+    if constexpr (std::is_same_v<T,xiphos::core::LegacyAssets>) legacy_assets=std::make_unique<xc_legacy_assets>();
     if constexpr (std::is_same_v<T,xiphos::core::LegacyMigration>) legacy_migration=std::make_unique<xc_legacy_migration>();
     if constexpr (std::is_same_v<T,xiphos::core::LegacyRepositoryPreview>) legacy_repository_preview=std::make_unique<xc_legacy_repository_preview>();
     if constexpr (std::is_same_v<T,xiphos::core::LibraryOrganizationSnapshot>) library_organization=std::make_unique<xc_library_organization>();
@@ -943,6 +947,15 @@ const char *xc_remote_install_result_archive_sha256(const xc_remote_install_resu
 uint64_t xc_remote_install_result_downloaded(const xc_remote_install_result *r){return r?r->downloaded:0;}
 void xc_remote_install_result_release(xc_remote_install_result *r){delete r;}
 static xiphos::core::LegacyModuleMapping migration_mapping(const xc_legacy_module_mapping *values,size_t count){if(count>256||(!values&&count))throw std::invalid_argument("Invalid migration mapping");xiphos::core::LegacyModuleMapping result;for(size_t i=0;i<count;++i){if(!bounded_image_c_text(values[i].from,4096)||!bounded_image_c_text(values[i].to,4096)||!result.emplace(values[i].from,values[i].to).second)throw std::invalid_argument("Invalid migration mapping");}return result;}
+xc_status xc_worker_inspect_legacy_assets(xc_worker *w,const char *source,xc_request **out){if(out)*out=nullptr;if(!bounded_image_c_text(source,4096))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.inspect_legacy_assets(source);});}
+xc_status xc_worker_copy_legacy_assets(xc_worker *w,const char *source,const char *revision,const char *destination,xc_request **out){if(out)*out=nullptr;if(!bounded_image_c_text(source,4096)||!bounded_image_c_text(revision,64)||!xiphos::core::editable_document_revision(revision)||!bounded_image_c_text(destination,4096))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.copy_legacy_assets(source,revision,destination);});}
+xc_legacy_assets *xc_request_take_legacy_assets(xc_request *r){return r&&r->status==XC_OK?r->legacy_assets.release():nullptr;}
+const char *xc_legacy_assets_source(const xc_legacy_assets *a){return a?a->value.source.c_str():nullptr;}
+const char *xc_legacy_assets_revision(const xc_legacy_assets *a){return a?a->value.revision.c_str():nullptr;}
+size_t xc_legacy_assets_count(const xc_legacy_assets *a){return a?a->value.entries.size():0;}
+uint64_t xc_legacy_assets_bytes(const xc_legacy_assets *a){return a?a->value.bytes:0;}
+xc_status xc_legacy_assets_get(const xc_legacy_assets *a,size_t index,xc_legacy_asset *out){if(out)*out={};if(!a||!out||index>=a->value.entries.size())return XC_INVALID_ARGUMENT;const auto &e=a->value.entries[index];*out={e.path.c_str(),e.revision.c_str(),e.bytes,e.directory?1:0};return XC_OK;}
+void xc_legacy_assets_release(xc_legacy_assets *a){delete a;}
 xc_status xc_worker_prepare_legacy_migration(xc_worker *w,const xc_legacy_migration_input *input,const xc_legacy_module_mapping *values,size_t count,xc_request **out){if(out)*out=nullptr;if(!input||!bounded_image_c_text(input->settings,4096)||(input->tabs&&*input->tabs&&!bounded_image_c_text(input->tabs,4096))||(input->module_options&&*input->module_options&&!bounded_image_c_text(input->module_options,4096)))return XC_INVALID_ARGUMENT;try{auto mapping=migration_mapping(values,count);xiphos::core::LegacyMigrationInput copied{input->settings,input->tabs?input->tabs:"",input->module_options?input->module_options:""};return queue_request(w,out,[&](auto &worker){return worker.prepare_legacy_migration(std::move(copied),std::move(mapping));});}catch(...){return failure();}}
 xc_status xc_worker_read_legacy_migration(xc_worker *w,const char *path,const xc_legacy_module_mapping *values,size_t count,xc_request **out){if(out)*out=nullptr;if(!bounded_image_c_text(path,4096))return XC_INVALID_ARGUMENT;try{auto mapping=migration_mapping(values,count);return queue_request(w,out,[&](auto &worker){return worker.read_legacy_migration(path,std::move(mapping));});}catch(...){return failure();}}
 xc_status xc_worker_save_legacy_migration(xc_worker *w,const char *path,const xc_legacy_migration *m,xc_request **out){if(out)*out=nullptr;if(!m||!bounded_image_c_text(path,4096))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.save_legacy_migration(path,m->value);});}

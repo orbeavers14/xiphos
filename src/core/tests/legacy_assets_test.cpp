@@ -1,0 +1,26 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+#include "xiphos/core/worker.hpp"
+#include "xiphos/core/c_api.h"
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <thread>
+using namespace xiphos::core;
+namespace fs=std::filesystem;
+void check(bool v,const char *why){if(!v)throw std::runtime_error(why);}
+template<class F>void rejects(F f){try{f();}catch(const std::exception &){return;}throw std::runtime_error("Expected asset rejection");}
+void write(const fs::path &p,const std::string &v){std::ofstream out(p,std::ios::binary);out<<v;}
+std::string read(const fs::path &p){std::ifstream in(p,std::ios::binary);return {std::istreambuf_iterator<char>(in),{}};}
+xc_status wait(xc_request *r){auto until=std::chrono::steady_clock::now()+std::chrono::seconds(30);xc_status s;while((s=xc_request_poll(r))==XC_PENDING){check(std::chrono::steady_clock::now()<until,"Asset request timeout");std::this_thread::sleep_for(std::chrono::milliseconds(1));}return s;}
+int main(int argc,char **argv)try{
+ check(argc==2,"Disposable root required");auto root=fs::u8path(argv[1]);check(root.filename()=="legacy-assets-fixture","Named fixture only");fs::remove_all(root);fs::create_directories(root/"old/bookmarks");fs::create_directories(root/"old/pads/empty");fs::create_directories(root/"library/mods.d");auto source=root/"old";write(source/"bookmarks/bookmarks.xml","<SwordBookmarks custom='retain'/>");write(source/"pads/café.pad",std::string("Original Ω")+'\0'+"binary");write(source/".hidden","private");write(source/"template.pad","");
+ StudyWorker worker((root/"library").u8string());auto plan=worker.inspect_legacy_assets(source.u8string()).get();check(plan.entries.size()==7&&plan.bytes>0,"Inventory includes hidden/empty files and empty directories");auto copied=worker.copy_legacy_assets(source.u8string(),plan.revision,(root/"copy").u8string()).get();check(copied.revision==plan.revision&&fs::is_directory(root/"copy/pads/empty")&&read(root/"copy/pads/café.pad")==read(source/"pads/café.pad"),"Complete binary Unicode tree verified without conversion");
+ rejects([&]{copy_legacy_assets(source.u8string(),plan.revision,(root/"copy").u8string());});rejects([&]{copy_legacy_assets(source.u8string(),plan.revision,(source/"inside").u8string());});
+ write(source/".hidden","changed");rejects([&]{copy_legacy_assets(source.u8string(),plan.revision,(root/"stale").u8string());});check(!fs::exists(root/"stale"),"Stale plan publishes nothing");write(source/".hidden","private");
+ std::error_code linkError;fs::create_symlink(source/"template.pad",source/"linked",linkError);if(!linkError){rejects([&]{inspect_legacy_assets(source.u8string());});fs::remove(source/"linked");}else std::cout<<"Symlink fixture unavailable on this host\n";write(source/"CON.txt","unsupported portable name");rejects([&]{inspect_legacy_assets(source.u8string());});fs::remove(source/"CON.txt");
+ linkError.clear();fs::create_symlink(root/"missing",root/"dangling",linkError);if(!linkError){rejects([&]{copy_legacy_assets(source.u8string(),plan.revision,(root/"dangling").u8string());});check(fs::is_symlink(fs::symlink_status(root/"dangling")),"Dangling destination symlink is preserved");fs::remove(root/"dangling");}
+ write(source/"oversize","");fs::resize_file(source/"oversize",128ull*1024*1024+1);rejects([&]{inspect_legacy_assets(source.u8string());});fs::remove(source/"oversize");
+ xc_worker *cw=nullptr;check(xc_worker_open((root/"library").u8string().c_str(),&cw)==XC_OK,"C worker");xc_request *request=nullptr;std::string selected=source.u8string();check(xc_worker_inspect_legacy_assets(cw,selected.c_str(),&request)==XC_OK,"C review admission");selected.clear();check(wait(request)==XC_OK,"C reviewed");auto owned=xc_request_take_legacy_assets(request);check(owned&&!xc_request_take_legacy_assets(request),"Owned take once");xc_request_release(request);xc_worker_close(cw);check(xc_legacy_assets_count(owned)==7&&std::string(xc_legacy_assets_revision(owned))==plan.revision,"Review survives worker teardown");xc_legacy_asset row{};check(xc_legacy_assets_get(owned,0,&row)==XC_OK&&row.path,"Borrowed entry");check(xc_legacy_assets_get(owned,999,&row)==XC_INVALID_ARGUMENT&&!row.path&&!row.bytes,"Invalid getter clears output");xc_legacy_assets_release(owned);
+ check(xc_worker_open((root/"library").u8string().c_str(),&cw)==XC_OK,"C copy worker");std::string copiedSource=source.u8string(),copiedRevision=plan.revision,copiedTarget=(root/"c-copy").u8string();check(xc_worker_copy_legacy_assets(cw,copiedSource.c_str(),copiedRevision.c_str(),copiedTarget.c_str(),&request)==XC_OK,"C copy admission");copiedSource.clear();copiedRevision.clear();copiedTarget.clear();check(wait(request)==XC_OK,"C copy uses admission-time input copies");owned=xc_request_take_legacy_assets(request);xc_request_release(request);xc_worker_close(cw);check(owned&&std::string(xc_legacy_assets_revision(owned))==plan.revision&&read(root/"c-copy/pads/café.pad")==read(source/"pads/café.pad"),"C copy result owns verified tree after teardown");xc_legacy_assets_release(owned);
+ check(inspect_legacy_assets(source.u8string()).revision==plan.revision,"Source remains unchanged");std::cout<<"Legacy complete-tree asset review/copy checks passed\n";return 0;
+}catch(const std::exception &e){std::cerr<<e.what()<<'\n';return 1;}

@@ -416,6 +416,20 @@ typedef struct {const char *settings,*tabs,*module_options;} xc_legacy_migration
 typedef struct {const char *from,*to;} xc_legacy_module_mapping;
 typedef struct {size_t tab;const char *module,*reason;} xc_legacy_migration_issue;
 typedef struct {const char *section,*key,*value;int mapped;} xc_legacy_migration_setting;
+/* Owned copied directory review. Entry strings are borrowed until release.
+ * Requests preallocate results, copy inputs on admission and use the FIFO.
+ * Copy requires exact reviewed revision and a new destination outside source. */
+typedef struct xc_legacy_assets xc_legacy_assets;
+typedef struct {const char *path,*revision;uint64_t bytes;int directory;} xc_legacy_asset;
+xc_status xc_worker_inspect_legacy_assets(xc_worker *,const char *source,xc_request **out);
+xc_status xc_worker_copy_legacy_assets(xc_worker *,const char *source,const char *revision,const char *destination,xc_request **out);
+xc_legacy_assets *xc_request_take_legacy_assets(xc_request *);
+const char *xc_legacy_assets_source(const xc_legacy_assets *);
+const char *xc_legacy_assets_revision(const xc_legacy_assets *);
+size_t xc_legacy_assets_count(const xc_legacy_assets *);
+uint64_t xc_legacy_assets_bytes(const xc_legacy_assets *);
+xc_status xc_legacy_assets_get(const xc_legacy_assets *,size_t index,xc_legacy_asset *out);
+void xc_legacy_assets_release(xc_legacy_assets *);
 xc_status xc_worker_prepare_legacy_migration(xc_worker *worker,const xc_legacy_migration_input *input,const xc_legacy_module_mapping *mapping,size_t count,xc_request **out);
 xc_status xc_worker_read_legacy_migration(xc_worker *worker,const char *path,const xc_legacy_module_mapping *mapping,size_t count,xc_request **out);
 xc_status xc_worker_save_legacy_migration(xc_worker *worker,const char *path,const xc_legacy_migration *migration,xc_request **out);

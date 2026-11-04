@@ -12,6 +12,7 @@
 #include "repository_store.hpp"
 #include "legacy_repositories.hpp"
 #include "legacy_migration.hpp"
+#include "legacy_assets.hpp"
 #include "recovery.hpp"
 #include "sync.hpp"
 #include "sync_transport.hpp"
@@ -209,6 +210,8 @@ public:
   std::future<BookmarkImportReview> review_bookmark_import(std::string path,std::optional<std::string> revision,std::string xml);
   std::future<BookmarkSnapshot> merge_bookmark_document(std::string path,std::optional<std::string> revision,std::string xml,std::string folder,BookmarkImportPolicy policy);
   std::future<BookmarkSnapshot> append_bookmark_document(std::string path,std::optional<std::string> revision,std::string xml,std::string folder);
+  std::future<LegacyAssets> inspect_legacy_assets(std::string source);
+  std::future<LegacyAssets> copy_legacy_assets(std::string source,std::string revision,std::string destination);
   std::future<LegacyMigration> prepare_legacy_migration(LegacyMigrationInput input,LegacyModuleMapping mapping={});
   std::future<LegacyMigration> read_legacy_migration(std::string path,LegacyModuleMapping mapping={});
   std::future<LegacyMigration> save_legacy_migration(std::string path,LegacyMigration migration);

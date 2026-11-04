@@ -1960,6 +1960,35 @@ extension CoreWorker {
     }
 }
 
+struct CoreLegacyAsset: Sendable {let path: String;let bytes: UInt64;let directory: Bool}
+struct CoreLegacyAssets: Sendable {let source: String;let revision: String;let entries: [CoreLegacyAsset];let bytes: UInt64}
+extension CoreWorker {
+    private func copiedAssets(_ request: OpaquePointer) throws -> CoreLegacyAssets {
+        guard let owned = xc_request_take_legacy_assets(request) else {throw CoreError(status:XC_ENGINE_ERROR)}
+        defer {xc_legacy_assets_release(owned)}
+        guard let source = xc_legacy_assets_source(owned),let revision = xc_legacy_assets_revision(owned) else {throw CoreError(status:XC_ENGINE_ERROR)}
+        var entries: [CoreLegacyAsset] = []
+        for index in 0..<xc_legacy_assets_count(owned) {
+            var row = xc_legacy_asset()
+            guard xc_legacy_assets_get(owned,index,&row) == XC_OK,let path = row.path else {throw CoreError(status:XC_ENGINE_ERROR)}
+            entries.append(CoreLegacyAsset(path:String(cString:path),bytes:row.bytes,directory:row.directory != 0))
+        }
+        return CoreLegacyAssets(source:String(cString:source),revision:String(cString:revision),entries:entries,bytes:xc_legacy_assets_bytes(owned))
+    }
+    func inspectLegacyAssets(_ source: String) async throws -> CoreLegacyAssets {
+        let handle = try worker(),strings = SessionCStrings();let selected = try strings.copy(source);var request: OpaquePointer?
+        let status = xc_worker_inspect_legacy_assets(handle,selected,&request)
+        let completed = try await wait(status,request);defer {xc_request_release(completed)}
+        return try copiedAssets(completed)
+    }
+    func copyLegacyAssets(_ preview: CoreLegacyAssets,to destination: String) async throws -> CoreLegacyAssets {
+        let handle = try worker(),strings = SessionCStrings();let source = try strings.copy(preview.source),revision = try strings.copy(preview.revision),target = try strings.copy(destination);var request: OpaquePointer?
+        let status = xc_worker_copy_legacy_assets(handle,source,revision,target,&request)
+        let completed = try await wait(status,request);defer {xc_request_release(completed)}
+        return try copiedAssets(completed)
+    }
+}
+
 struct CoreBookmarkRow: Identifiable, Sendable, Equatable {
     let id: Int, parent: Int?, depth: Int, folder: Bool
     let fields: [String?]

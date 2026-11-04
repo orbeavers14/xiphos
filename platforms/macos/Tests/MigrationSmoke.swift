@@ -14,6 +14,19 @@ import AppKit
             for row in restored.records { row.model.close() };await worker.shutdown();return
         }
         let model = NativeMigrationModel(worker:worker)
+        let assetRoot = root.appendingPathComponent("native-assets")
+        try FileManager.default.createDirectory(at:assetRoot.appendingPathComponent("empty"),withIntermediateDirectories:true)
+        let assetBytes = Data([0,1,2,255]);try assetBytes.write(to:assetRoot.appendingPathComponent("original.pad"))
+        model.assetFolder = assetRoot.path;model.reviewAssets();await model.waitUntilIdle()
+        check(model.assetPreview?.entries.count == 2 && !model.needsAssetReview,"Native asset review copies complete source manifest")
+        let assetCopy = root.appendingPathComponent("native-assets-copy")
+        model.copyAssets(to:assetCopy.path);await model.waitUntilIdle()
+        let copiedBytes = try Data(contentsOf:assetCopy.appendingPathComponent("original.pad"))
+        check(model.copiedAssetFolder == assetCopy.path && copiedBytes == assetBytes,"Native copy uses shared verified binary asset migration")
+        try Data([9]).write(to:assetRoot.appendingPathComponent("original.pad"))
+        let staleCopy = root.appendingPathComponent("native-assets-stale")
+        model.copyAssets(to:staleCopy.path);await model.waitUntilIdle();check(!FileManager.default.fileExists(atPath:staleCopy.path),"Changed source blocks stale native asset preview")
+        model.assetFolder = root.path;check(model.needsAssetReview,"New asset selection invalidates old review")
         model.settings = root.appendingPathComponent("settings.xml").path;model.tabs = root.appendingPathComponent("tabs.xml").path;model.options = root.appendingPathComponent("modops.conf").path
         model.prepare();await model.waitUntilIdle()
         check(model.preview?.ready == true && model.preview?.tabs == 2 && !model.needsPreview,"Owned native migration preview copies complete conversion")

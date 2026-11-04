@@ -4,6 +4,9 @@ import SwiftUI
 
 @MainActor final class NativeMigrationModel: ObservableObject {
     let worker: CoreWorker
+    @Published var assetFolder = ""
+    @Published private(set) var assetPreview: CoreLegacyAssets?
+    @Published private(set) var copiedAssetFolder: String?
     @Published var settings = ""
     @Published var tabs = ""
     @Published var options = ""
@@ -68,6 +71,14 @@ import SwiftUI
             }
         }
     }
+    var needsAssetReview: Bool { assetPreview?.source != URL(fileURLWithPath:assetFolder).standardizedFileURL.resolvingSymlinksInPath().path }
+    func reviewAssets() {
+        run { self.assetPreview = nil;self.copiedAssetFolder = nil;self.assetPreview = try await self.worker.inspectLegacyAssets(self.assetFolder);self.message = "Folder reviewed. Copy into a new folder to preserve all files, hidden files and empty directories." }
+    }
+    func copyAssets(to destination: String) {
+        guard !needsAssetReview,let preview = assetPreview,!protectsCurrentSession(destination) else {return}
+        run { let copied = try await self.worker.copyLegacyAssets(preview,to:destination);self.copiedAssetFolder = copied.source;self.message = "All reviewed assets copied and verified. Originals are unchanged. Open bookmarks or study pads from the new folder when ready." }
+    }
     func restoreOriginals(folder: String) {
         guard !needsPreview,let preview,!protectsCurrentSession(folder) else { return }
         run { try await self.worker.restoreMigrationOriginals(preview,folder:folder);self.message = "Exact originals restored into the new folder. Existing legacy files were not changed." }
@@ -93,6 +104,20 @@ struct NativeMigrationView: View {
         VStack(alignment:.leading,spacing:12) {
             Text("Import Legacy Settings and Session").font(.title2)
             Text("Select settings.xml and optional saved tabs/modops.conf. You can also reopen a migration package. Supported settings become a native session; other settings remain in the exact original backup.").fixedSize(horizontal:false,vertical:true)
+            DisclosureGroup("Copy a complete legacy asset folder") {
+                Text("Select the legacy Xiphos folder, or an external study-pad/module folder separately. Every regular file is retained, including bookmarks, notes, templates and hidden files. Select linked targets separately; symbolic links are refused. Copying does not activate modules or change saved absolute paths.").font(.caption).fixedSize(horizontal:false,vertical:true)
+                HStack {
+                    TextField("Legacy asset folder",text:$model.assetFolder)
+                    Button("Choose Folder…") {let panel = NSOpenPanel();panel.canChooseDirectories = true;panel.canChooseFiles = false;panel.showsHiddenFiles = true;if panel.runModal() == .OK,let path = panel.url?.path {model.assetFolder = path}}
+                    Button("Review Folder") {model.reviewAssets()}.disabled(model.assetFolder.isEmpty)
+                }.disabled(model.busy)
+                if let assets = model.assetPreview {
+                    Text("\(assets.entries.filter { !$0.directory }.count) files · \(assets.entries.filter { $0.directory }.count) folders · \(ByteCountFormatter.string(fromByteCount:Int64(assets.bytes),countStyle:.file))")
+                    ScrollView {VStack(alignment:.leading) {ForEach(assets.entries,id:\.path) {entry in Text(entry.path + (entry.directory ? "/":"")).font(.caption).textSelection(.enabled)}}.frame(maxWidth:.infinity,alignment:.leading)}.frame(maxHeight:100)
+                    Button("Copy Verified Assets…") {destination("Copy into a New Folder","Migrated Legacy Assets") {model.copyAssets(to:$0)}}.disabled(model.busy || model.needsAssetReview)
+                    if model.needsAssetReview {Text("Folder selection changed. Review again.").font(.caption)}
+                }
+            }
             Grid(alignment:.leading) {
                 GridRow { Text("Settings");TextField("settings.xml",text:$model.settings);Button("Choose…") { choose(0) } }
                 GridRow { Text("Saved tabs");TextField("Optional tabs file",text:$model.tabs);Button("Choose…") { choose(1) } }

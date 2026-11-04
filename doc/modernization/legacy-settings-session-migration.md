@@ -109,6 +109,8 @@ export and package reopening without consulting changed originals. Actual final
 build/test and live-UI results are recorded in [the Mac handoff](handoff-macos.md).
 
 Physical Fedora/MSVC/native Windows/Linux UI, representative real-user profiles,
-full display/visual parity, platform geometry translation and complete legacy
-user-directory/assets migration remain acceptance work. No whole F05/F29/F37
+full display/visual parity, platform geometry translation and representative
+whole-directory workflows remain acceptance work. The shared
+[complete-folder asset copy](legacy-assets-migration.md) now preserves a selected
+legacy tree; external references require separate explicit selection. No whole F05/F29/F37
 parity group is accepted by this scoped settings/session workflow.
