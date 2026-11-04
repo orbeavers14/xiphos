@@ -76,3 +76,21 @@ selection in the existing untitled-document fallback. Reload/discard resets the
 selection; stale saves still preserve the draft. Marked input is left intact
 until composition finishes. This does not add rich-note markup or undo-history
 persistence, and full input-method/physical-platform acceptance remains pending.
+
+## Library operation cancellation
+
+Native local installation and module maintenance now use additive shared task/C
+entry points with the existing atomic transfer gate. Old C/C++ entry points remain
+available and preserve validation, module-use/editor leases, tab restoration,
+revision checks, staged verification and rollback. Cancel Operation is available
+while preparation is active and disabled when commit starts.
+
+SWORD index creation is not force-interrupted. The inspected released SDK's index
+loop does not honor the search termination flag; throwing through its indexing
+callback is not used as an unsafe substitute. A cancellation requested during that
+call waits for it to finish normally, then discards staging before publication.
+Local filesystem staging also drains before its publication checkpoint. The UI
+states that cancellation is requested and waits for the operation to finish safely.
+After the gate commits, late cancellation loses and success remains success.
+Tests inject cancellation after verified local/index staging and before installed
+files change, check C task/control ownership and preserve existing rollback tests.

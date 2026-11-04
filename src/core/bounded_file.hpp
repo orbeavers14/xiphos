@@ -2,6 +2,7 @@
 #pragma once
 #include <filesystem>
 #include <cstddef>
+#include <functional>
 #include <string>
 #include <stdexcept>
 namespace xiphos::core::detail {
@@ -13,4 +14,7 @@ public:using std::invalid_argument::invalid_argument;
 // Binary/NUL-preserving bounded read shared by preference and resource adapters.
 std::string read_bounded_file(const std::filesystem::path &path, std::size_t maximum_bytes,
                               const char *description = "File");
+// Cooperative checkpoint before each bounded read chunk and after completion.
+std::string read_bounded_file(const std::filesystem::path &path,std::size_t maximum_bytes,
+ const char *description,const std::function<void()> &checkpoint);
 }

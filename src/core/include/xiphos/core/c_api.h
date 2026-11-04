@@ -423,6 +423,10 @@ typedef struct xc_legacy_assets xc_legacy_assets;
 typedef struct {const char *path,*revision;uint64_t bytes;int directory;} xc_legacy_asset;
 xc_status xc_worker_inspect_legacy_assets(xc_worker *,const char *source,xc_request **out);
 xc_status xc_worker_copy_legacy_assets(xc_worker *,const char *source,const char *revision,const char *destination,xc_request **out);
+/* Cancellable variants expose take-once xc_request_take_transfer_control before
+ * polling. Cancel winning before publication yields XC_CANCELLED and no copy. */
+xc_status xc_worker_inspect_legacy_assets_task(xc_worker *,const char *source,xc_request **out);
+xc_status xc_worker_copy_legacy_assets_task(xc_worker *,const char *source,const char *revision,const char *destination,xc_request **out);
 xc_legacy_assets *xc_request_take_legacy_assets(xc_request *);
 const char *xc_legacy_assets_source(const xc_legacy_assets *);
 const char *xc_legacy_assets_revision(const xc_legacy_assets *);
@@ -483,6 +487,9 @@ typedef struct {const char *module,*revision;int cipher_declared,indexed;} xc_mo
 typedef struct {const char *module,*revision;int action,indexed;} xc_module_maintenance_done;
 xc_status xc_worker_preview_module_maintenance(xc_worker *worker,const char *module,xc_request **out);
 xc_status xc_worker_maintain_module(xc_worker *worker,const char *module,const char *revision,int action,const char *cipher_key,xc_request **out);
+/* SDK calls drain normally; cancellation winning before publication discards
+ * staging and yields XC_CANCELLED. It loses once installation commit starts. */
+xc_status xc_worker_maintain_module_task(xc_worker *worker,const char *module,const char *revision,int action,const char *cipher_key,xc_request **out);
 xc_module_maintenance_preview *xc_request_take_module_maintenance_preview(xc_request *request);
 xc_module_maintenance_result *xc_request_take_module_maintenance_result(xc_request *request);
 xc_status xc_module_maintenance_preview_get(const xc_module_maintenance_preview *preview,xc_module_maintenance_info *out);
@@ -494,6 +501,8 @@ typedef struct {const char *module,*source_revision,*destination_revision,*sourc
 typedef struct {const char *module,*version,*source_revision,*destination_revision;int replaced;} xc_local_install_done;
 xc_status xc_worker_prepare_local_install(xc_worker *worker,const char *source,const char *module,xc_request **out);
 xc_status xc_worker_install_local_module(xc_worker *worker,const char *source,const char *module,const char *source_revision,const char *destination_revision,int replace,xc_request **out);
+/* Cancellable staged install; take the transfer control before polling. */
+xc_status xc_worker_install_local_module_task(xc_worker *worker,const char *source,const char *module,const char *source_revision,const char *destination_revision,int replace,xc_request **out);
 xc_local_install_preview *xc_request_take_local_install_preview(xc_request *request);
 xc_local_install_result *xc_request_take_local_install_result(xc_request *request);
 xc_status xc_local_install_preview_get(const xc_local_install_preview *preview,xc_local_install_info *out);

@@ -678,17 +678,21 @@ std::future<LocalInstallPreview> StudyWorker::prepare_local_install(std::string 
  try{selected_profile_path(source);if(module.empty()||module.size()>4096||!editable_document_text(module)||!editable_document_text(source))throw std::invalid_argument("Invalid installation source/module");}catch(...){return selected_profile_rejection<LocalInstallPreview>();}
  return impl_->submit([source=std::move(source),module=std::move(module)](Impl::State &s){return s.reader.prepare_local_install(source,module);});
 }
-std::future<LocalInstallResult> StudyWorker::install_local_module(LocalInstallRequest request){
- try{if(!local_install_arguments(request))throw std::invalid_argument("Invalid installation request");}catch(...){return selected_profile_rejection<LocalInstallResult>();}
- return impl_->submit([request=std::move(request)](Impl::State &s){
+std::future<LocalInstallResult> StudyWorker::install_local_module(LocalInstallRequest request){return install_local_module_task(std::move(request)).result;}
+StudyWorker::LocalInstallTask StudyWorker::install_local_module_task(LocalInstallRequest request){
+ auto control=std::make_shared<TransferControl>();
+ try{if(!local_install_arguments(request))throw std::invalid_argument("Invalid installation request");}catch(...){detail::TransferAccess::fail(*control);return {control,selected_profile_rejection<LocalInstallResult>()};}
+ auto future=impl_->submit([request=std::move(request),control](Impl::State &s){
+  try{detail::TransferAccess::phase(*control,TransferPhase::validating);
   std::map<StudyTab,std::pair<StudySessionState,SessionCapabilities>> states;
   for(const auto &t:s.tabs)states.emplace(t.first,std::make_pair(t.second->capture_state(),t.second->capabilities()));
-  return s.reader.install_local_module(request,[&]{
+  auto result=s.reader.install_local_module(request,[&]{
    std::map<StudyTab,std::unique_ptr<StudySession>> replacement;
    for(const auto &t:states){auto session=StudySession::from_state(s.reader,t.second.first,t.second.second);session->continue_search_serial(*s.tabs.at(t.first));replacement.emplace(t.first,std::move(session));}
    s.tabs.swap(replacement);
-  });
- });
+  },[&]{detail::TransferAccess::commit(*control);});detail::TransferAccess::finish(*control);return result;
+  }catch(...){detail::TransferAccess::fail(*control);throw;}
+ });return {control,std::move(future)};
 }
 std::future<void> StudyWorker::release_module_editor(StudyTab tab){return impl_->submit([tab](Impl::State &s){(void)s.tab(tab);s.editor_modules.erase(tab);});}
 std::future<ModuleEditEntry> StudyWorker::read_module_edit(StudyTab tab,ModuleEditTarget target){return impl_->submit([tab,target=std::move(target)](Impl::State &s){(void)s.tab(tab);auto result=s.reader.read_module_edit(target);s.editor_modules[tab]=result.module;return result;});}
@@ -716,9 +720,12 @@ std::future<ModuleMaintenancePreview> StudyWorker::preview_module_maintenance(st
  if(module.empty()||module.size()>4096||!editable_document_text(module))return selected_profile_rejection<ModuleMaintenancePreview>();
  return impl_->submit([module=std::move(module)](Impl::State &s){return s.reader.preview_module_maintenance(module);});
 }
-std::future<ModuleMaintenanceResult> StudyWorker::maintain_module(ModuleMaintenanceRequest request){
- if(!module_maintenance_arguments(request))return selected_profile_rejection<ModuleMaintenanceResult>();
- return impl_->submit([request=std::move(request)](Impl::State &s){
+std::future<ModuleMaintenanceResult> StudyWorker::maintain_module(ModuleMaintenanceRequest request){return maintain_module_task(std::move(request)).result;}
+StudyWorker::ModuleMaintenanceTask StudyWorker::maintain_module_task(ModuleMaintenanceRequest request){
+ auto control=std::make_shared<TransferControl>();
+ if(!module_maintenance_arguments(request)){detail::TransferAccess::fail(*control);return {control,selected_profile_rejection<ModuleMaintenanceResult>()};}
+ auto future=impl_->submit([request=std::move(request),control](Impl::State &s){
+  try{detail::TransferAccess::phase(*control,TransferPhase::validating);
   if(request.action==ModuleMaintenanceAction::remove)for(const auto &entry:s.editor_modules)if(s.tabs.count(entry.first)&&entry.second==request.module)throw std::invalid_argument("Module is open in an editor; close it before removal");
   std::map<StudyTab,std::pair<StudySessionState,SessionCapabilities>> states;
   for(const auto &t:s.tabs){auto state=t.second->capture_state();if(request.action==ModuleMaintenanceAction::remove){
@@ -727,8 +734,9 @@ std::future<ModuleMaintenanceResult> StudyWorker::maintain_module(ModuleMaintena
    if(state.parallel)used=used||state.parallel->control_module==m||std::find(state.parallel->modules.begin(),state.parallel->modules.end(),m)!=state.parallel->modules.end();
    if(used)throw std::invalid_argument("Module is in use by a tab or its history; close that tab before removal");
   }states.emplace(t.first,std::make_pair(std::move(state),t.second->capabilities()));}
-  return s.reader.maintain_module(request,[&]{std::map<StudyTab,std::unique_ptr<StudySession>> replacement;for(const auto &t:states){auto session=StudySession::from_state(s.reader,t.second.first,t.second.second);session->continue_search_serial(*s.tabs.at(t.first));replacement.emplace(t.first,std::move(session));}s.tabs.swap(replacement);});
- });
+  auto result=s.reader.maintain_module(request,[&]{std::map<StudyTab,std::unique_ptr<StudySession>> replacement;for(const auto &t:states){auto session=StudySession::from_state(s.reader,t.second.first,t.second.second);session->continue_search_serial(*s.tabs.at(t.first));replacement.emplace(t.first,std::move(session));}s.tabs.swap(replacement);},[&]{detail::TransferAccess::commit(*control);});detail::TransferAccess::finish(*control);return result;
+  }catch(...){detail::TransferAccess::fail(*control);throw;}
+ });return {control,std::move(future)};
 }
 std::future<void> StudyWorker::configure_sync_network(SyncSettings settings,SyncConnection connection){
  try{validate_sync_settings(settings);if(connection.application.size()>64||connection.version.size()>32||connection.user.size()>64||connection.passphrase.size()>64)throw std::invalid_argument("Sync connection exceeds bounds");}catch(...){return selected_profile_rejection<void>();}
@@ -784,6 +792,8 @@ std::future<AndBibleImport> StudyWorker::read_andbible_bookmarks(std::string pat
 std::future<BookmarkImportReview> StudyWorker::review_bookmark_import(std::string path,std::optional<std::string> revision,std::string xml){try{selected_profile_path(path);if(revision&&!editable_document_revision(*revision))throw std::invalid_argument("Invalid bookmark revision");if(xml.size()>maximum_bookmark_snapshot_bytes)throw std::invalid_argument("Import XML too large");}catch(...){return selected_profile_rejection<BookmarkImportReview>();}return impl_->submit([path=std::move(path),revision=std::move(revision),xml=std::move(xml)](Impl::State &){return xiphos::core::review_bookmark_import(path,revision,xml);});}
 std::future<BookmarkSnapshot> StudyWorker::merge_bookmark_document(std::string path,std::optional<std::string> revision,std::string xml,std::string folder,BookmarkImportPolicy policy){try{selected_profile_path(path);if(revision&&!editable_document_revision(*revision))throw std::invalid_argument("Invalid bookmark revision");if(xml.size()>maximum_bookmark_snapshot_bytes||folder.empty()||folder.size()>4096)throw std::invalid_argument("Invalid import bounds");}catch(...){return selected_profile_rejection<BookmarkSnapshot>();}return impl_->submit([path=std::move(path),revision=std::move(revision),xml=std::move(xml),folder=std::move(folder),policy](Impl::State &){return xiphos::core::merge_bookmark_document(path,revision,xml,folder,policy);});}
 std::future<BookmarkSnapshot> StudyWorker::append_bookmark_document(std::string path,std::optional<std::string> revision,std::string xml,std::string folder){try{selected_profile_path(path);if(xml.size()>maximum_bookmark_snapshot_bytes||folder.empty()||folder.size()>4096)throw std::invalid_argument("Invalid bookmark import bounds");}catch(...){return selected_profile_rejection<BookmarkSnapshot>();}return impl_->submit([path=std::move(path),revision=std::move(revision),xml=std::move(xml),folder=std::move(folder)](Impl::State &){return xiphos::core::append_bookmark_document(path,revision,xml,folder);});}
+StudyWorker::LegacyAssetsTask StudyWorker::inspect_legacy_assets_task(std::string source){auto control=std::make_shared<TransferControl>();try{selected_profile_path(source);}catch(...){detail::TransferAccess::fail(*control);return {control,selected_profile_rejection<LegacyAssets>()};}auto future=impl_->submit([source=std::move(source),control](Impl::State &){return xiphos::core::inspect_legacy_assets(source,control);});return {control,std::move(future)};}
+StudyWorker::LegacyAssetsTask StudyWorker::copy_legacy_assets_task(std::string source,std::string revision,std::string destination){auto control=std::make_shared<TransferControl>();try{selected_profile_path(source);selected_profile_path(destination);if(!editable_document_revision(revision))throw std::invalid_argument("Invalid asset revision");}catch(...){detail::TransferAccess::fail(*control);return {control,selected_profile_rejection<LegacyAssets>()};}auto future=impl_->submit([source=std::move(source),revision=std::move(revision),destination=std::move(destination),control](Impl::State &){return xiphos::core::copy_legacy_assets(source,revision,destination,control);});return {control,std::move(future)};}
 std::future<LegacyAssets> StudyWorker::inspect_legacy_assets(std::string source){try{selected_profile_path(source);}catch(...){return selected_profile_rejection<LegacyAssets>();}return impl_->submit([source=std::move(source)](Impl::State &){return xiphos::core::inspect_legacy_assets(source);});}
 std::future<LegacyAssets> StudyWorker::copy_legacy_assets(std::string source,std::string revision,std::string destination){try{selected_profile_path(source);selected_profile_path(destination);if(!editable_document_revision(revision))throw std::invalid_argument("Invalid asset revision");}catch(...){return selected_profile_rejection<LegacyAssets>();}return impl_->submit([source=std::move(source),revision=std::move(revision),destination=std::move(destination)](Impl::State &){return xiphos::core::copy_legacy_assets(source,revision,destination);});}
 std::future<LegacyMigration> StudyWorker::prepare_legacy_migration(LegacyMigrationInput input,LegacyModuleMapping mapping){

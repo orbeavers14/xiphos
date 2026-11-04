@@ -2,6 +2,7 @@
 #include "xiphos/core/worker.hpp"
 #include "xiphos/core/c_api.h"
 #include "xiphos/core/repository.hpp"
+#include "xiphos/core/remote_install.hpp"
 #include <rawtext.h>
 #include <rawgenbook.h>
 #include <chrono>
@@ -68,6 +69,7 @@ int main(int argc,char **argv){try{
  {auto unsafe=root/"unsafe";fixture(unsafe,"Unsafe","1");auto config=bytes(unsafe/"mods.d/Unsafe.conf");auto at=config.find("./data/Unsafe/");config.replace(at,14,"../../outside/");{std::ofstream out(unsafe/"mods.d/Unsafe.conf");out<<config;}Reader reader(destination.u8string());rejects([&]{(void)reader.prepare_local_install(unsafe.u8string(),"Unsafe");});check(!fs::exists(root/"outside"),"Rejected module creates no escaped data");}
  // Post-install reload/cache failure must retain the original live Reader and disk.
  fixture(source,"Base","3");{Reader reader(destination.u8string());auto p=reader.prepare_local_install(source.u8string(),"Base");rejects([&]{reader.install_local_module(request(source,p,true),[]{throw std::runtime_error("Injected refresh failure");});});check(reader.prepare_local_install(source.u8string(),"Base").destination_revision==p.destination_revision,"Failed refresh restores full data/config root");}
+ {Reader reader(destination.u8string());auto p=reader.prepare_local_install(source.u8string(),"Base");bool cancelled=false;try{reader.install_local_module(request(source,p,true),[]{},[]{throw TransferCancelled();});}catch(const TransferCancelled &){cancelled=true;}check(cancelled&&reader.prepare_local_install(source.u8string(),"Base").destination_revision==p.destination_revision,"Cancellation after local install staging publishes no library changes");}
  fixture(source,"Third","1");xc_worker *worker=nullptr;check(xc_worker_open(destination.u8string().c_str(),&worker)==XC_OK,"C installer worker");xc_request *r=nullptr;
  check(xc_worker_prepare_local_install(worker,source.u8string().c_str(),"Third",&r)==XC_OK&&wait(r)==XC_OK,"C prepare installation");auto preview=xc_request_take_local_install_preview(r);xc_request_release(r);xc_local_install_info info{};check(xc_local_install_preview_get(preview,&info)==XC_OK,"C preview metadata");const std::string from=info.source_revision,to=info.destination_revision;
  const auto source_text=source.u8string();
@@ -75,5 +77,6 @@ int main(int argc,char **argv){try{
  check(xc_worker_install_local_module(worker,source_text.c_str(),"Third",from.c_str(),to.c_str(),0,&r)==XC_OK,"C install accepted");xc_local_install_preview_release(preview);watching=true;allocations=0;fail_after=0;auto status=wait(r);watching=false;fail_after=-1;check(status==XC_OK&&allocations==0,"Committed install polling does not allocate");auto owned=xc_request_take_local_install_result(r);check(owned&&!xc_request_take_local_install_result(r),"Take installed result once");xc_request_release(r);xc_worker_close(worker);
  xc_local_install_done done{};check(xc_local_install_result_get(owned,&done)==XC_OK&&std::string(done.module)=="Third"&&std::string(done.destination_revision).size()==64,"Installed result survives worker teardown");xc_local_install_result_release(owned);
  for(const auto &entry:fs::directory_iterator(root))check(entry.path().filename().string().rfind(".xiphos-install-",0)!=0,"No successful/rolled-back staging leftovers");
+ {StudyWorker cancellable(destination.u8string());auto p=cancellable.prepare_local_install(source.u8string(),"Base").get();auto task=cancellable.install_local_module_task(request(source,p,true));bool won=task.control->request_cancel(),cancelled=false;try{(void)task.result.get();}catch(const TransferCancelled &){cancelled=true;}check(won?cancelled:!cancelled,"Local install cancellation and commit have one winner");if(won)check(cancellable.prepare_local_install(source.u8string(),"Base").get().destination_revision==p.destination_revision,"Cancelled local task keeps original revision");}
  std::cout<<"Verified staged local installation/replacement, stale rejection, SDK reload, rollback, ownership and HTTPS endpoints passed\n";return 0;
  }catch(const std::exception &e){watching=false;std::cerr<<e.what()<<'\n';return 1;}}

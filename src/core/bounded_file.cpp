@@ -3,17 +3,22 @@
 #include <fstream>
 #include <stdexcept>
 namespace xiphos::core::detail {
-std::string read_bounded_file(const std::filesystem::path &path, std::size_t maximum_bytes, const char *description) {
+std::string read_bounded_file(const std::filesystem::path &path, std::size_t maximum_bytes, const char *description,const std::function<void()> &checkpoint) {
+  if(checkpoint)checkpoint();
   std::ifstream input(path, std::ios::binary);
   if (!input) throw std::invalid_argument(std::string(description) + " cannot be read");
   std::string result;
   char buffer[8192];
   while (input.read(buffer, sizeof buffer) || input.gcount()) {
+    if(checkpoint)checkpoint();
     const auto length = static_cast<std::size_t>(input.gcount());
     if (length > maximum_bytes - result.size()) throw BoundedFileLimitError(std::string(description) + " is too large");
     result.append(buffer, length);
   }
   if (input.bad()) throw std::runtime_error(std::string(description) + " read failed");
+  if(checkpoint)checkpoint();
   return result;
 }
+std::string read_bounded_file(const std::filesystem::path &path,std::size_t maximum_bytes,const char *description){return read_bounded_file(path,maximum_bytes,description,{});}
+
 }

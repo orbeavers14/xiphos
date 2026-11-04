@@ -1771,10 +1771,10 @@ extension CoreWorker {
         var info = xc_local_install_info();guard xc_local_install_preview_get(result,&info) == XC_OK else { throw CoreError(status:XC_ENGINE_ERROR) }
         return CoreLocalInstallOffer(source:source,module:String(cString:info.module!),sourceRevision:String(cString:info.source_revision!),destinationRevision:String(cString:info.destination_revision!),version:String(cString:info.source_version!),installedVersion:String(cString:info.installed_version!),decision:info.decision)
     }
-    func installLocal(_ offer: CoreLocalInstallOffer,replace: Bool) async throws {
+    func installLocal(_ offer: CoreLocalInstallOffer,replace: Bool,progress: (@Sendable (CoreTransferProgress) async -> Void)? = nil) async throws {
         let strings = SessionCStrings();let source = try strings.copy(offer.source), module = try strings.copy(offer.module), from = try strings.copy(offer.sourceRevision), to = try strings.copy(offer.destinationRevision);var request: OpaquePointer?
         let handle = try worker()
-        let status = withExtendedLifetime(strings) { xc_worker_install_local_module(handle,source,module,from,to,replace ? 1 : 0,&request) };xc_request_release(try await wait(status,request))
+        let status = withExtendedLifetime(strings) { xc_worker_install_local_module_task(handle,source,module,from,to,replace ? 1 : 0,&request) };xc_request_release(try await waitTransfer(status,request,progress:progress))
     }
     func maintenanceOffer(module: String) async throws -> CoreMaintenanceOffer {
         guard !module.utf8.contains(0) else { throw CoreError(status:XC_INVALID_ARGUMENT) };var request: OpaquePointer?;let handle = try worker()
@@ -1783,10 +1783,10 @@ extension CoreWorker {
         var info = xc_module_maintenance_info();guard xc_module_maintenance_preview_get(result,&info) == XC_OK else { throw CoreError(status:XC_ENGINE_ERROR) }
         return CoreMaintenanceOffer(module:String(cString:info.module!),revision:String(cString:info.revision!),cipher:info.cipher_declared != 0,indexed:info.indexed != 0)
     }
-    func maintainModule(_ offer: CoreMaintenanceOffer,action: Int32,key: String = "") async throws {
+    func maintainModule(_ offer: CoreMaintenanceOffer,action: Int32,key: String = "",progress: (@Sendable (CoreTransferProgress) async -> Void)? = nil) async throws {
         let strings = SessionCStrings();let name = try strings.copy(offer.module), revision = try strings.copy(offer.revision), cipher = try strings.copy(key);var request: OpaquePointer?
         let handle = try worker()
-        let status = withExtendedLifetime(strings) { xc_worker_maintain_module(handle,name,revision,action,cipher,&request) };xc_request_release(try await wait(status,request))
+        let status = withExtendedLifetime(strings) { xc_worker_maintain_module_task(handle,name,revision,action,cipher,&request) };xc_request_release(try await waitTransfer(status,request,progress:progress))
     }
 }
 
@@ -1977,14 +1977,14 @@ extension CoreWorker {
     }
     func inspectLegacyAssets(_ source: String) async throws -> CoreLegacyAssets {
         let handle = try worker(),strings = SessionCStrings();let selected = try strings.copy(source);var request: OpaquePointer?
-        let status = xc_worker_inspect_legacy_assets(handle,selected,&request)
-        let completed = try await wait(status,request);defer {xc_request_release(completed)}
+        let status = xc_worker_inspect_legacy_assets_task(handle,selected,&request)
+        let completed = try await waitTransfer(status,request,progress:nil);defer {xc_request_release(completed)}
         return try copiedAssets(completed)
     }
     func copyLegacyAssets(_ preview: CoreLegacyAssets,to destination: String) async throws -> CoreLegacyAssets {
         let handle = try worker(),strings = SessionCStrings();let source = try strings.copy(preview.source),revision = try strings.copy(preview.revision),target = try strings.copy(destination);var request: OpaquePointer?
-        let status = xc_worker_copy_legacy_assets(handle,source,revision,target,&request)
-        let completed = try await wait(status,request);defer {xc_request_release(completed)}
+        let status = xc_worker_copy_legacy_assets_task(handle,source,revision,target,&request)
+        let completed = try await waitTransfer(status,request,progress:nil);defer {xc_request_release(completed)}
         return try copiedAssets(completed)
     }
 }

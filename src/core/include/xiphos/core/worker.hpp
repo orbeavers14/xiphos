@@ -81,10 +81,14 @@ public:
   StudyWorker &operator=(const StudyWorker &) = delete;
   std::future<std::vector<Module>> modules();
   struct RemoteCatalogTask {std::shared_ptr<TransferControl> control;std::future<RemoteCatalog> result;};
+  struct ModuleMaintenanceTask {std::shared_ptr<TransferControl> control;std::future<ModuleMaintenanceResult> result;};
   struct RemoteInstallTask {std::shared_ptr<TransferControl> control;std::future<RemoteInstallResult> result;};
   RemoteCatalogTask fetch_remote_catalog(HttpsRepository repository,TransferOptions options);
   RemoteInstallTask install_remote_module(RemoteCatalog catalog,std::string module,TransferOptions options,bool replace=false);
   std::future<LocalInstallPreview> prepare_local_install(std::string source,std::string module);
+  struct LocalInstallTask {std::shared_ptr<TransferControl> control;std::future<LocalInstallResult> result;};
+  LocalInstallTask install_local_module_task(LocalInstallRequest request);
+  ModuleMaintenanceTask maintain_module_task(ModuleMaintenanceRequest request);
   std::future<LocalInstallResult> install_local_module(LocalInstallRequest request);
   std::future<LibraryCatalog> library_catalog();
   std::future<LibraryCatalog> local_library_catalog(std::string root);
@@ -210,6 +214,9 @@ public:
   std::future<BookmarkImportReview> review_bookmark_import(std::string path,std::optional<std::string> revision,std::string xml);
   std::future<BookmarkSnapshot> merge_bookmark_document(std::string path,std::optional<std::string> revision,std::string xml,std::string folder,BookmarkImportPolicy policy);
   std::future<BookmarkSnapshot> append_bookmark_document(std::string path,std::optional<std::string> revision,std::string xml,std::string folder);
+  struct LegacyAssetsTask {std::shared_ptr<TransferControl> control;std::future<LegacyAssets> result;};
+  LegacyAssetsTask inspect_legacy_assets_task(std::string source);
+  LegacyAssetsTask copy_legacy_assets_task(std::string source,std::string revision,std::string destination);
   std::future<LegacyAssets> inspect_legacy_assets(std::string source);
   std::future<LegacyAssets> copy_legacy_assets(std::string source,std::string revision,std::string destination);
   std::future<LegacyMigration> prepare_legacy_migration(LegacyMigrationInput input,LegacyModuleMapping mapping={});

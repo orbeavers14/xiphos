@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 import AppKit
 import SwiftUI
+import XiphosCore
 
 @MainActor final class NativeMigrationModel: ObservableObject {
     let worker: CoreWorker
@@ -15,6 +16,7 @@ import SwiftUI
     @Published var useOnRestart = false
     @Published private(set) var preview: CoreMigrationPreview?
     @Published private(set) var busy = false
+    @Published private(set) var canCancel = false
     @Published private(set) var message = "Select the legacy files to preview. Original files are never changed."
     private var selection: [String] = []
     private var operation: Task<Void,Never>?
@@ -30,13 +32,14 @@ import SwiftUI
             guard !from.isEmpty,!to.isEmpty else { throw SessionHostError(message:"Both module IDs are required.") };return (from,to)
         }
     }
-    func run(_ action: @escaping @MainActor () async throws -> Void) {
-        guard !busy else { return };busy = true
+    func run(cancellable: Bool = false,_ action: @escaping @MainActor () async throws -> Void) {
+        guard !busy else { return };busy = true;canCancel = cancellable
         operation = Task {
-            defer { busy = false;operation = nil }
-            do { try await action() } catch { message = error is CoreError ? "Operation did not complete. Preview again if a source changed, and choose a new output filename or folder. " + error.localizedDescription:error.localizedDescription }
+            defer { busy = false;canCancel = false;operation = nil }
+            do { try await action() } catch { if (error as? CoreError)?.status == XC_CANCELLED {message = "Asset operation cancelled before completion. Originals are unchanged.";return};message = error is CoreError ? "Operation did not complete. Preview again if a source changed, and choose a new output filename or folder. " + error.localizedDescription:error.localizedDescription }
         }
     }
+    func cancelAssetOperation() {if canCancel {operation?.cancel()}}
     func waitUntilIdle() async { await operation?.value }
     func prepare() {
         run {
@@ -73,11 +76,11 @@ import SwiftUI
     }
     var needsAssetReview: Bool { assetPreview?.source != URL(fileURLWithPath:assetFolder).standardizedFileURL.resolvingSymlinksInPath().path }
     func reviewAssets() {
-        run { self.assetPreview = nil;self.copiedAssetFolder = nil;self.assetPreview = try await self.worker.inspectLegacyAssets(self.assetFolder);self.message = "Folder reviewed. Copy into a new folder to preserve all files, hidden files and empty directories." }
+        run(cancellable:true) { self.assetPreview = nil;self.copiedAssetFolder = nil;self.assetPreview = try await self.worker.inspectLegacyAssets(self.assetFolder);self.message = "Folder reviewed. Copy into a new folder to preserve all files, hidden files and empty directories." }
     }
     func copyAssets(to destination: String) {
         guard !needsAssetReview,let preview = assetPreview,!protectsCurrentSession(destination) else {return}
-        run { let copied = try await self.worker.copyLegacyAssets(preview,to:destination);self.copiedAssetFolder = copied.source;self.message = "All reviewed assets copied and verified. Originals are unchanged. Open bookmarks or study pads from the new folder when ready." }
+        run(cancellable:true) { let copied = try await self.worker.copyLegacyAssets(preview,to:destination);self.copiedAssetFolder = copied.source;self.message = "All reviewed assets copied and verified. Originals are unchanged. Open bookmarks or study pads from the new folder when ready." }
     }
     func restoreOriginals(folder: String) {
         guard !needsPreview,let preview,!protectsCurrentSession(folder) else { return }
@@ -141,6 +144,7 @@ struct NativeMigrationView: View {
                     Button("Restore Original Copies…") { destination("Restore into a New Folder","Restored Legacy Settings",model.restoreOriginals) }
                 }.disabled(model.busy || model.needsPreview)
             }
+            if model.canCancel {Button("Cancel Asset Operation") {model.cancelAssetOperation()}}
             Text(model.message).textSelection(.enabled).fixedSize(horizontal:false,vertical:true)
         }.padding(20).frame(minWidth:780,maxWidth:.infinity,minHeight:680,maxHeight:.infinity,alignment:.topLeading).background(Color(nsColor:.windowBackgroundColor))
     }

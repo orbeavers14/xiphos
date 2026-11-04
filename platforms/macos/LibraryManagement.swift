@@ -70,11 +70,11 @@ import XiphosCore
         operation = Task {
             defer { self.isBusy = false;self.transferring = false;self.operation = nil }
             do { try await action() }
-            catch { self.message = (error as? CoreError)?.status == XC_CANCELLED ? "Transfer cancelled before installation commit." : failureHint + " " + error.localizedDescription }
+            catch { self.message = (error as? CoreError)?.status == XC_CANCELLED ? "Operation cancelled before applying changes." : failureHint + " " + error.localizedDescription }
         }
     }
     func waitUntilIdle() async { await operation?.value }
-    func cancel() { if transferring { operation?.cancel() } }
+    func cancel() { if transferring { operation?.cancel();message = "Cancellation requested. Waiting for the current operation to finish safely." } }
     func reload() {
         run { self.installed = try await self.worker.libraryInventory();if let path=self.organizationPath { self.organization=try await self.worker.libraryOrganization(path:path);self.onOrganizationChanged?(self.organization);self.selectInstalled(self.installedID) };self.profile = try await self.worker.readRepositories(path:self.path);self.remote = [];self.offer = nil;self.maintenance = nil;self.message = "Library and sources loaded.";if let id = self.sourceID, self.profile?.rows.contains(where: { $0.id == id }) != true { self.sourceID = nil } }
     }
@@ -134,11 +134,11 @@ import XiphosCore
     }
     func loadLocal(_ path: String) { localPath = path;local = [];localID = nil;offer = nil;run { self.local = try await self.worker.libraryInventory(source:path);self.message = "Choose a module and review installation." } }
     func prepareLocal() { guard allowsChanges, let item = local.first(where: { $0.id == localID }) else { return };run { self.offer = try await self.worker.prepareLocalInstall(source:self.localPath,module:item.module);self.message = "Review the module and version before installation." } }
-    func installLocal() { guard allowsChanges, let offer else { return };run { try await self.worker.installLocal(offer,replace:offer.decision == 1 || offer.decision == 2);self.offer = nil;if let fresh = try? await self.worker.libraryInventory() { self.installed = fresh };self.message = "Local module installed.";self.onModulesChanged?() } }
+    func installLocal() { guard allowsChanges, let offer else { return };run(transferring:true) { try await self.worker.installLocal(offer,replace:offer.decision == 1 || offer.decision == 2,progress:{ [weak self] value in await self?.transferProgress(value) });self.offer = nil;if let fresh = try? await self.worker.libraryInventory() { self.installed = fresh };self.message = "Local module installed.";self.onModulesChanged?() } }
     func inspectModule() { guard allowsChanges, let item = installed.first(where: { $0.id == installedID }) else { return };cipherKey = "";maintenance = nil;run { self.maintenance = try await self.worker.maintenanceOffer(module:item.module);self.message = "Module details loaded." } }
-    func maintain(_ action: Int32) { guard allowsChanges, let maintenance else { return };let key = action == 1 ? cipherKey : "";cipherKey = "";run(failureHint:action == 0 ? "Removal was refused. Close reading and editing windows using this module, including their history, then reload and retry." : "Maintenance did not complete. The engine may not support this operation. Reload the module list before retrying.") { try await self.worker.maintainModule(maintenance,action:action,key:key);self.maintenance = nil;if let fresh = try? await self.worker.libraryInventory() { self.installed = fresh };self.message = action == 1 ? "Cipher configuration saved. Check the module to confirm the key is correct." : "Module maintenance completed.";self.onModulesChanged?() } }
+    func maintain(_ action: Int32) { guard allowsChanges, let maintenance else { return };let key = action == 1 ? cipherKey : "";cipherKey = "";run(transferring:true,failureHint:action == 0 ? "Removal was refused. Close reading and editing windows using this module, including their history, then reload and retry." : "Maintenance did not complete. The engine may not support this operation. Reload the module list before retrying.") { try await self.worker.maintainModule(maintenance,action:action,key:key,progress:{ [weak self] value in await self?.transferProgress(value) });self.maintenance = nil;if let fresh = try? await self.worker.libraryInventory() { self.installed = fresh };self.message = action == 1 ? "Cipher configuration saved. Check the module to confirm the key is correct." : "Module maintenance completed.";self.onModulesChanged?() } }
     var phaseLabel: String {
-        switch progress?.phase {case 1: "Downloading";case 2: "Extracting";case 3: "Verifying";case 4: "Installing";case 5: "Complete";case 6: "Cancelled";default: "Preparing"}
+        switch progress?.phase {case 1: "Downloading";case 2: "Extracting";case 3: "Verifying";case 4: "Applying changes";case 5: "Complete";case 6: "Cancelled";default: "Preparing"}
     }
 }
 
@@ -158,7 +158,7 @@ struct LibraryManagementPane: View {
             HStack {
                 if model.isBusy { ProgressView().controlSize(.small);Text(model.phaseLabel) }
                 if let progress = model.progress, progress.total > 0 { ProgressView(value:Double(progress.downloaded),total:Double(progress.total)).frame(maxWidth:220) }
-                Spacer();if model.transferring { Button("Stop Transfer") { model.cancel() }.disabled((model.progress?.phase ?? 0) >= 4) }
+                Spacer();if model.transferring { Button("Cancel Operation") { model.cancel() }.disabled((model.progress?.phase ?? 0) >= 4) }
             }
             Text(model.message).font(.callout).textSelection(.enabled).frame(maxWidth:.infinity,alignment:.leading)
         }.padding(18).frame(minWidth:920,minHeight:690).background(Color(nsColor:.windowBackgroundColor))

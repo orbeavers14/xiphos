@@ -47,3 +47,16 @@ copy allocation boundary verify that failure never follows publication and that
 staging is rolled back. Result paths allocate before publication; returned values
 then move without allocation. Native model checks exercise review, verified
 copy, stale rejection and selection invalidation. See [Mac evidence](handoff-macos.md).
+
+## Cooperative cancellation
+
+Additive C++ task and C request APIs expose the existing atomic transfer control.
+Review checks cancellation during bounded file reads and tree traversal. Copy also
+checks between64KiB writes and revalidation. Cancellation winning before the
+publication gate discards staging and reports cancellation; it loses once commit
+starts, so a completed copy is not misreported as cancelled. Old entry points and
+C layouts remain available. Native review/copy use these tasks and expose Cancel
+Asset Operation, waiting for the shared request to drain before clearing busy.
+C control/result ownership, nonallocating polling, pre-cancel, active-copy racing,
+late cancellation, in-file checkpoints and the existing allocation-fault matrix
+are exercised. Cancellation is cooperative, not a forced filesystem-thread stop.

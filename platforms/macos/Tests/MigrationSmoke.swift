@@ -26,6 +26,7 @@ import AppKit
         try Data([9]).write(to:assetRoot.appendingPathComponent("original.pad"))
         let staleCopy = root.appendingPathComponent("native-assets-stale")
         model.copyAssets(to:staleCopy.path);await model.waitUntilIdle();check(!FileManager.default.fileExists(atPath:staleCopy.path),"Changed source blocks stale native asset preview")
+        model.assetFolder = assetRoot.path;model.reviewAssets();check(model.canCancel,"Native asset review exposes cancellation");model.cancelAssetOperation();await model.waitUntilIdle();check(!model.busy && !model.canCancel,"Native cancellation drains the shared request before clearing busy state")
         model.assetFolder = root.path;check(model.needsAssetReview,"New asset selection invalidates old review")
         model.settings = root.appendingPathComponent("settings.xml").path;model.tabs = root.appendingPathComponent("tabs.xml").path;model.options = root.appendingPathComponent("modops.conf").path
         model.prepare();await model.waitUntilIdle()
