@@ -346,6 +346,7 @@ BookFollowLink StudySession::follow_book_link(const std::string &uri) {
   switch (xiphos::core::book_link_kind(uri)) {
     case BookLinkKind::note: return book_document_note_link(uri);
     case BookLinkKind::image: return read_book_image_link(uri);
+    case BookLinkKind::reference: throw std::invalid_argument("Book scripture links require main-pane context");
   }
   throw std::invalid_argument("Unsupported book link command");
 }

@@ -208,6 +208,7 @@ BookLinkKind book_link_kind(const std::string &url) {
   const auto action = parameter(command_parameters(url), "action");
   if (action == "showNote") return BookLinkKind::note;
   if (action == "showImage") return BookLinkKind::image;
+  if (action == "showRef") return BookLinkKind::reference;
   throw std::invalid_argument("Unsupported book link command");
 }
 namespace {

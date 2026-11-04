@@ -54,7 +54,7 @@ BookImageLink book_image_link(const std::string &url);
 // decode once; literal '+' stays '+'. Query/fragment are URL components, not
 // filename bytes. Only local relative/file/absolute paths are supported.
 BookImageLink book_inline_image_link(const std::string &source);
-enum class BookLinkKind { note, image };
+enum class BookLinkKind { note, image, reference };
 BookLinkKind book_link_kind(const std::string &url);
 // Scoped single-reference subset of main/url.cc sword_uri + hex_decode.
 // Parsing keeps module tokens literal. Reader resolves catalog aliases for

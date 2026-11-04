@@ -402,6 +402,11 @@ std::future<BookPaneLink> StudyWorker::follow_book_pane_link_at(StudyTab tab, st
       }
       return s.study_link_at(tab, selected->tree.module, main_reference, uri, true, main_module);
     }
+    // ThML/OSIS books also emit scripture-reference commands. Keep captured
+    // book notes/images on their source-bound handlers; reuse shared reference
+    // dispatch for scripture previews with the live main Bible context.
+    if(book_link_kind(uri)==BookLinkKind::reference)
+      return s.study_link_at(tab,selected->tree.module,main_reference,uri,true,main_module);
     return session.follow_book_link(uri);
   });
 }
