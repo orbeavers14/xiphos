@@ -5,6 +5,50 @@ Updated 2026-11-03. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Mac corpus and hardening checkpoint — 2026-11-03
+
+Implementations: `cf8d7fd` (real books/canon/contextual links), `747f086`
+(cooperative cancellation), `d141fa0` (development runtime closure). Owner limited
+this acceptance pass to Mac. No Windows or physical Linux acceptance is implied.
+
+Six reviewed official modules now cover verse text, Hebrew, dictionary, commentary,
+general books and the KJVA canon. Pilgrim traversal checks29 nodes/28 populated
+documents and521 scripture links; mixed export checks1867 rows. A real ThML
+showRef routing defect was fixed without changing source-bound book note/image
+handling. Final live bundled-app verification opens Isaiah64:6 from Pilgrim while
+retaining `/PART I/THE FIRST STAGE`; the isolated app quits normally.
+[Corpus manifest and limits](real-corpus-validation.md) retain provenance.
+
+Asset inspection/copy, local installation and module maintenance now expose owned
+cancellation controls through FIFO/C/Swift. Cancellation before publication
+preserves installed/source data and removes staging; publication wins late races.
+SWORD index creation drains normally before the safe cancellation gate, since the
+SDK call has no supported interruption mechanism. Existing APIs remain available.
+See [asset contract](legacy-assets-migration.md) and
+[library management](native-recovery-management.md).
+
+Final native suite:257 passed,2 expected index skips/259,302.74s
+(`build/step15-library-final-native-tests.log`). Final sanitizer and portable-model
+focused checks:4/4 each (11.83s/7.66s); six-module corpus also passes both.
+Alternate released SWORD proves actual indexed ASV307/StrongsGreek64/Pilgrim22
+hits, without fallback (`build/real-corpus/step15-final-index-check.log`). Source
+tree fingerprints remain unchanged. C11 header syntax passes. Portable models
+ran on this Mac, not Linux hardware; sanitizer SDK dependencies are not fully
+instrumented. Graphify refreshed locally:699 files,13340 nodes,36867 edges,
+404 communities; no paid services or module text committed.
+
+The final isolated development bundle contains17 SDK libraries/18 Mach-O images
+and passes its dependency audit and ad-hoc signature checks. Its explicit copied
+bundle OS floor is27, reflecting installed SDK requirements; project deployment
+settings are unchanged. This is not a distributable release. Older macOS needs
+compatible SDKs and hardware validation. Redistribution notices/relink obligations,
+TLS/locale/plugin resources and signing/notarization remain release gates.
+See [runtime packaging](native-runtime-packaging.md).
+
+Next: continue bounded corpus expansion and core hardening as features change;
+validate native Windows/physical Linux when available, then older macOS SDK and
+release packaging gates. This scoped evidence does not promote whole parity rows.
+
 ## Real-world corpus and legacy asset folders — 2026-11-03
 
 Owner requested broader real-world corpus coverage and complete legacy asset

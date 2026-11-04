@@ -1,5 +1,16 @@
 # Functional, workflow and design parity ledger
 
+Mac-scoped corpus/hardening checkpoint (2026-11-03): six real modules,521 Pilgrim
+scripture links, KJVA Tobit and three actual indexed module families now pass.
+Asset/local-install/maintenance cancellation is wired through core/C/native UI
+with a safe pre-publication gate; uninterruptible SDK indexing drains first.
+Final native257 passes/two expected skips; sanitizer and portable models plus
+real corpus checks pass. A separate development bundle closes17 SDK-library
+references at its actual macOS27 floor. Windows/physical Linux, older macOS and
+redistributable packaging remain open. See [current Mac evidence](handoff-macos.md#mac-corpus-and-hardening-checkpoint--2026-11-03),
+[corpus](real-corpus-validation.md) and [runtime scope](native-runtime-packaging.md).
+
+
 Source inventory, not an assertion of runtime parity. Baseline and seams are in
 [architecture.md](architecture.md). macOS/Windows/Linux refer to NEW frontends;
 the legacy GTK3 application remains the behavioral oracle. **No row is fully

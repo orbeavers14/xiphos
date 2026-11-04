@@ -1,5 +1,16 @@
 # Modernization status and acceptance
 
+Mac-scoped corpus/hardening checkpoint (2026-11-03): six real modules,521 Pilgrim
+scripture links, KJVA Tobit and three actual indexed module families now pass.
+Asset/local-install/maintenance cancellation is wired through core/C/native UI
+with a safe pre-publication gate; uninterruptible SDK indexing drains first.
+Final native257 passes/two expected skips; sanitizer and portable models plus
+real corpus checks pass. A separate development bundle closes17 SDK-library
+references at its actual macOS27 floor. Windows/physical Linux, older macOS and
+redistributable packaging remain open. See [current Mac evidence](handoff-macos.md#mac-corpus-and-hardening-checkpoint--2026-11-03),
+[corpus](real-corpus-validation.md) and [runtime scope](native-runtime-packaging.md).
+
+
 Hardening clarification (2026-11-03): keep shared-core compatibility, ownership,
 cancellation and data-safety checks active during feature work. Final packaging,
 full physical-platform/release and frontend acceptance remain closing gates.
