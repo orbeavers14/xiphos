@@ -27,12 +27,21 @@ std::string read_asset(const fs::path &file,TransferControl *c){return detail::r
 LegacyAssets scan(const fs::path &root,TransferControl *control=nullptr){
  checkpoint(control);
  if(!fs::is_directory(fs::symlink_status(root)))invalid();LegacyAssets out;out.source=fs::canonical(root).u8string();std::set<std::string> aliases;
- for(fs::recursive_directory_iterator it(root),end;it!=end;++it){checkpoint(control);if(it.depth()>=64||out.entries.size()>=10000)invalid();const auto status=it->symlink_status();if(!fs::is_directory(status)&&!fs::is_regular_file(status))invalid();
-  LegacyAsset entry;entry.path=it->path().lexically_relative(root).generic_u8string();path(entry.path);if(!aliases.insert(portable(entry.path)).second)invalid();entry.directory=fs::is_directory(status);
+ // GLib's directory reader lets C++ allocation failures unwind normally.
+ // Some standard-library directory iterators allocate inside a noexcept
+ // advance operation, terminating instead of preserving a staged transaction.
+ const auto walk = [&](const auto &self,const fs::path &folder,unsigned depth)->void {
+  GError *error=nullptr;std::unique_ptr<GDir,decltype(&g_dir_close)> directory(g_dir_open(folder.u8string().c_str(),0,&error),g_dir_close);
+  if(!directory){g_clear_error(&error);throw std::runtime_error("Cannot inspect legacy assets directory");}
+  while(const auto *name=g_dir_read_name(directory.get())){checkpoint(control);if(depth>=64||out.entries.size()>=10000)invalid();const auto file=folder/fs::u8path(name);const auto status=fs::symlink_status(file);if(!fs::is_directory(status)&&!fs::is_regular_file(status))invalid();
+  LegacyAsset entry;entry.path=file.lexically_relative(root).generic_u8string();path(entry.path);if(!aliases.insert(portable(entry.path)).second)invalid();entry.directory=fs::is_directory(status);
   for(const auto &part:fs::u8path(entry.path)){auto name=part.u8string();if(std::any_of(name.begin(),name.end(),[](unsigned char c){return c<32||c==127;})||name.empty()||name=="."||name==".."||name.find_first_of("\\:*?\"<>|")!=name.npos||name.back()=='.'||name.back()==' ')invalid();auto stem=portable(name.substr(0,name.find('.')));if(stem=="con"||stem=="prn"||stem=="aux"||stem=="nul"||(stem.size()==4&&(stem.rfind("com",0)==0||stem.rfind("lpt",0)==0)&&stem[3]>='1'&&stem[3]<='9'))invalid();}
-  if(!entry.directory){auto size=it->file_size();if(size>file_limit||size>tree_limit-out.bytes)invalid();auto bytes=read_asset(it->path(),control);entry.bytes=bytes.size();if(entry.bytes!=size)invalid();entry.revision=hash(bytes);out.bytes+=entry.bytes;}
-  out.entries.push_back(std::move(entry));if(control)detail::TransferAccess::expanded(*control,out.bytes,out.entries.size());
- }
+  if(!entry.directory){auto size=fs::file_size(file);if(size>file_limit||size>tree_limit-out.bytes)invalid();auto bytes=read_asset(file,control);entry.bytes=bytes.size();if(entry.bytes!=size)invalid();entry.revision=hash(bytes);out.bytes+=entry.bytes;}
+  const bool subdirectory=entry.directory;out.entries.push_back(std::move(entry));if(control)detail::TransferAccess::expanded(*control,out.bytes,out.entries.size());
+  if(subdirectory)self(self,file,depth+1);
+  }
+ };
+ walk(walk,root,0);
  std::sort(out.entries.begin(),out.entries.end(),[](const auto &a,const auto &b){return a.path<b.path;});std::string manifest;
  for(const auto &e:out.entries){frame(manifest,e.path);frame(manifest,e.directory?"directory":"file");frame(manifest,std::to_string(e.bytes));frame(manifest,e.revision);}out.revision=hash(manifest);checkpoint(control);return out;
 }

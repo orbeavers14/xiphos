@@ -532,8 +532,7 @@ std::string serialize_saved_search_list(const std::string &source, const SavedSe
     default: throw std::invalid_argument("Unknown saved search list kind");
   }
   for (const auto *text : {&edit.label, &edit.value})
-    if (text->size() > maximum_profile_bytes || text->find('\0') != std::string::npos || !xmlCheckUTF8(BAD_CAST text->c_str()))
-      throw std::invalid_argument("Invalid saved search list text");
+    detail::validate_xml_text(*text, maximum_profile_bytes);
   auto document = parse_document(source);
   auto *root = xmlDocGetRootElement(document.get());
   xmlNode *section = nullptr, *target = nullptr;
