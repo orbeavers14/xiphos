@@ -15,8 +15,8 @@ changed contents are rejected by the shared revision check at copy time.
 
 Copy requires a new destination outside the source. It preserves every reviewed
 relative path and exact file byte, stages in a private sibling directory, verifies
-the destination tree and rechecks the source before publishing. Failure cleans
-only the operation's private staging tree. Existing destinations are never merged;
+the destination tree and rechecks the source before publishing. Failure cleanup is limited to the operation's private staging tree; an interruption
+or cleanup failure can leave unpublished private staging. Existing destinations are never merged;
 originals are never deleted or rewritten. The returned destination manifest has
 the same revision as the reviewed source. File ownership, original access modes,
 timestamps, ACLs, extended attributes and filesystem links are not migrated;
@@ -42,5 +42,8 @@ application of every legacy preference or arbitrary external reference.
 Original-prose tests cover complete binary/Unicode/hidden/empty content, source
 revision drift, source/destination containment, existing/dangling destinations,
 symlink refusal, oversized files, source retention, and C admission-copy/owned
-results after worker teardown. Native model checks exercise review, verified
+results after worker teardown. One-shot allocation failures across every counted
+copy allocation boundary verify that failure never follows publication and that
+staging is rolled back. Result paths allocate before publication; returned values
+then move without allocation. Native model checks exercise review, verified
 copy, stale rejection and selection invalidation. See [Mac evidence](handoff-macos.md).

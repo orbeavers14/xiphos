@@ -5,6 +5,16 @@
 #include <fstream>
 #include <iostream>
 #include <thread>
+#include <new>
+#include <cstdlib>
+// One-shot allocation failures let rollback itself allocate normally.
+static thread_local bool watching=false;
+static thread_local std::size_t allocations=0;
+static thread_local long long fail_after=-1;
+void *operator new(std::size_t n){if(watching){++allocations;if(fail_after==0){fail_after=-1;throw std::bad_alloc();}if(fail_after>0)--fail_after;}if(auto *p=std::malloc(n?n:1))return p;throw std::bad_alloc();}
+void *operator new[](std::size_t n){return ::operator new(n);}
+void operator delete(void *p)noexcept{std::free(p);}void operator delete[](void *p)noexcept{std::free(p);}
+void operator delete(void *p,std::size_t)noexcept{std::free(p);}void operator delete[](void *p,std::size_t)noexcept{std::free(p);}
 using namespace xiphos::core;
 namespace fs=std::filesystem;
 void check(bool v,const char *why){if(!v)throw std::runtime_error(why);}
@@ -22,5 +32,13 @@ int main(int argc,char **argv)try{
  write(source/"oversize","");fs::resize_file(source/"oversize",128ull*1024*1024+1);rejects([&]{inspect_legacy_assets(source.u8string());});fs::remove(source/"oversize");
  xc_worker *cw=nullptr;check(xc_worker_open((root/"library").u8string().c_str(),&cw)==XC_OK,"C worker");xc_request *request=nullptr;std::string selected=source.u8string();check(xc_worker_inspect_legacy_assets(cw,selected.c_str(),&request)==XC_OK,"C review admission");selected.clear();check(wait(request)==XC_OK,"C reviewed");auto owned=xc_request_take_legacy_assets(request);check(owned&&!xc_request_take_legacy_assets(request),"Owned take once");xc_request_release(request);xc_worker_close(cw);check(xc_legacy_assets_count(owned)==7&&std::string(xc_legacy_assets_revision(owned))==plan.revision,"Review survives worker teardown");xc_legacy_asset row{};check(xc_legacy_assets_get(owned,0,&row)==XC_OK&&row.path,"Borrowed entry");check(xc_legacy_assets_get(owned,999,&row)==XC_INVALID_ARGUMENT&&!row.path&&!row.bytes,"Invalid getter clears output");xc_legacy_assets_release(owned);
  check(xc_worker_open((root/"library").u8string().c_str(),&cw)==XC_OK,"C copy worker");std::string copiedSource=source.u8string(),copiedRevision=plan.revision,copiedTarget=(root/"c-copy").u8string();check(xc_worker_copy_legacy_assets(cw,copiedSource.c_str(),copiedRevision.c_str(),copiedTarget.c_str(),&request)==XC_OK,"C copy admission");copiedSource.clear();copiedRevision.clear();copiedTarget.clear();check(wait(request)==XC_OK,"C copy uses admission-time input copies");owned=xc_request_take_legacy_assets(request);xc_request_release(request);xc_worker_close(cw);check(owned&&std::string(xc_legacy_assets_revision(owned))==plan.revision&&read(root/"c-copy/pads/café.pad")==read(source/"pads/café.pad"),"C copy result owns verified tree after teardown");xc_legacy_assets_release(owned);
+ const auto faultSource=source.u8string(),faultDestination=(root/"fault-copy").u8string();
+ allocations=0;watching=true;auto faultBaseline=copy_legacy_assets(faultSource,plan.revision,faultDestination);watching=false;const auto sites=allocations;fs::remove_all(root/"fault-copy");check(sites>0&&sites<10000,"Bounded copy allocation-failure matrix");
+ std::size_t failures=0;
+ for(std::size_t site=0;site<sites;++site){bool failed=false;fail_after=static_cast<long long>(site);watching=true;try{auto result=copy_legacy_assets(faultSource,plan.revision,faultDestination);watching=false;}catch(const std::bad_alloc &){watching=false;failed=true;}catch(...){watching=false;throw;}fail_after=-1;
+  if(failed){++failures;check(!fs::exists(root/"fault-copy"),"An allocation failure never reports failure after publishing a copy");}else fs::remove_all(root/"fault-copy");
+  for(const auto &entry:fs::directory_iterator(root))check(entry.path().filename().u8string().rfind(".xiphos-assets-",0)!=0,"One-shot allocation failure rolls back owned staging");
+ }
+ check(failures>0,"Copy allocation failures were exercised");std::cout<<"Checked "<<sites<<" allocation boundaries\n";
  check(inspect_legacy_assets(source.u8string()).revision==plan.revision,"Source remains unchanged");std::cout<<"Legacy complete-tree asset review/copy checks passed\n";return 0;
 }catch(const std::exception &e){std::cerr<<e.what()<<'\n';return 1;}

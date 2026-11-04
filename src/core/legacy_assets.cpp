@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <type_traits>
 namespace xiphos::core {
 namespace {
 namespace fs=std::filesystem;
@@ -31,14 +32,16 @@ LegacyAssets scan(const fs::path &root){
  std::sort(out.entries.begin(),out.entries.end(),[](const auto &a,const auto &b){return a.path<b.path;});std::string manifest;
  for(const auto &e:out.entries){frame(manifest,e.path);frame(manifest,e.directory?"directory":"file");frame(manifest,std::to_string(e.bytes));frame(manifest,e.revision);}out.revision=hash(manifest);return out;
 }
-struct Staging {fs::path folder;~Staging(){if(!folder.empty()){std::error_code e;fs::remove_all(folder,e);}}};
+struct Staging {fs::path folder;~Staging(){try{if(!folder.empty()){std::error_code e;fs::remove_all(folder,e);}}catch(...){/* Cleanup must not terminate during allocation failure. */}}};
 }
 LegacyAssets inspect_legacy_assets(const std::string &source){path(source);return scan(fs::absolute(fs::u8path(source)).lexically_normal());}
 LegacyAssets copy_legacy_assets(const std::string &source,const std::string &revision,const std::string &destination){
  path(source);path(destination);if(!editable_document_revision(revision))invalid();auto original=inspect_legacy_assets(source);if(original.revision!=revision)throw std::invalid_argument("Legacy assets changed; review again");
  auto requested=fs::absolute(fs::u8path(destination)).lexically_normal();auto target=fs::canonical(requested.parent_path())/requested.filename();auto root=fs::u8path(original.source);if(within(target,root)||within(root,target)||fs::exists(fs::symlink_status(target)))invalid();
- static std::atomic<unsigned long long> sequence{0};Staging stage;for(unsigned n=0;n<64;++n){auto candidate=target.parent_path()/(".xiphos-assets-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())+"-"+std::to_string(sequence++));if(fs::create_directory(candidate)){stage.folder=candidate;break;}}if(stage.folder.empty())throw std::runtime_error("Cannot stage legacy asset migration");fs::permissions(stage.folder,fs::perms::owner_all,fs::perm_options::replace);
+ static std::atomic<unsigned long long> sequence{0};Staging stage;for(unsigned n=0;n<64;++n){auto candidate=target.parent_path()/(".xiphos-assets-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())+"-"+std::to_string(sequence++));if(fs::create_directory(candidate)){stage.folder=std::move(candidate);break;}}if(stage.folder.empty())throw std::runtime_error("Cannot stage legacy asset migration");fs::permissions(stage.folder,fs::perms::owner_all,fs::perm_options::replace);
  for(const auto &entry:original.entries){auto relative=fs::u8path(entry.path),output=stage.folder/relative;if(entry.directory){fs::create_directories(output);fs::permissions(output,fs::perms::owner_all,fs::perm_options::replace);continue;}fs::create_directories(output.parent_path());auto bytes=detail::read_bounded_file(root/relative,file_limit,"Legacy asset");if(bytes.size()!=entry.bytes||hash(bytes)!=entry.revision)throw std::invalid_argument("Legacy assets changed during copy");std::ofstream out(output,std::ios::binary);out.exceptions(std::ios::badbit|std::ios::failbit);out.write(bytes.data(),static_cast<std::streamsize>(bytes.size()));out.close();fs::permissions(output,fs::perms::owner_read|fs::perms::owner_write,fs::perm_options::replace);}
- auto verified=scan(stage.folder);if(verified.revision!=revision||scan(root).revision!=revision)throw std::invalid_argument("Legacy asset verification changed; originals retained");if(fs::exists(fs::symlink_status(target)))invalid();fs::rename(stage.folder,target);stage.folder.clear();verified.source=target.u8string();return verified;
+ auto verified=scan(stage.folder);if(verified.revision!=revision||scan(root).revision!=revision)throw std::invalid_argument("Legacy asset verification changed; originals retained");verified.source=target.u8string(); // Allocate the returned path before publication.
+ static_assert(std::is_nothrow_move_constructible_v<LegacyAssets>);
+ if(fs::exists(fs::symlink_status(target)))invalid();fs::rename(stage.folder,target);stage.folder.clear();return verified;
 }
 }
