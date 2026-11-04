@@ -24,9 +24,16 @@ detect_leaks=0; portable Linux models on this Mac1/1,0.60s
 (`build/legacy-assets-{native,indexed,asan,portable}-final-tests.log`). Native
 migration model/fresh-process and prerequisites5/5,5.33s
 (`build/legacy-assets-native-tests.log`). Final native preview compiles, C11 syntax
-and changed-document link/diff checks pass. A live visual attempt is blocked by
-the locked Mac; no screenshot or current visual acceptance is claimed. A fresh
-isolated profile/library was selected; no original user profile was opened.
+and changed-document link/diff checks pass. After the owner unlocked the Mac,
+live final-build verification passed: the expanded migration screen is readable
+at its default window size; review lists4 files/3 directories/58 bytes including
+hidden/binary/Unicode/empty assets; explicit save-dialog destination selection
+reports a verified copy. Independent on-disk SHA256 comparison confirms every
+copied file and directory matches the original fixture. Changing the source
+selection disables Copy and requests a fresh review. The isolated preview quits
+normally. Only disposable build fixtures/profile were used; no original user
+profile was opened. This resolves the earlier lock blocker for this scoped UI
+flow, not full visual/accessibility/platform acceptance.
 
 Manual `core_real_corpus_check` has no CTest registration or automatic downloads.
 Four official HTTPS archives were license/version-reviewed and unpacked only into

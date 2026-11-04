@@ -7,6 +7,8 @@ selected-folder legacy asset review and verified new-directory copy now share
 the core/FIFO/C/native bridge. See [asset contract](legacy-assets-migration.md),
 [corpus manifest](real-corpus-validation.md) and [Mac evidence](handoff-macos.md#real-world-corpus-and-legacy-asset-folders--2026-11-03).
 External folders require explicit selection; saved absolute paths are not rewritten.
+Scoped live final-build review/copy now passes after the Mac was unlocked; copied
+fixture hashes match and changed selections disable stale copy actions.
 
 Hardening clarification (2026-11-03): keep shared-core compatibility, ownership,
 cancellation and data-safety checks active during feature work. Final packaging,

@@ -718,8 +718,9 @@ local SDKs and the sanitizer build, including unchanged source hashes and mixed
 export. See [Mac evidence](handoff-macos.md#real-world-corpus-and-legacy-asset-folders--2026-11-03),
 [copy scope](legacy-assets-migration.md) and [corpus manifest](real-corpus-validation.md).
 External folders require explicit selection; saved absolute paths are retained.
-Live visual verification is blocked by the locked Mac; real-user/cross-host/full
-workflow acceptance stays open. No whole-parity promotion or GTK3 retirement.
+Live final-build folder review/copy and selection invalidation are now verified
+after the owner unlocked the Mac; independent destination hashes match originals.
+Real-user/cross-host/full workflow acceptance stays open. No whole-parity promotion or GTK3 retirement.
 
 The complete native suite at2b3d108 passes257 with two expected index skips out of
 259 registered. Follow-up `b12f467` verifies allocation-safe publication with a
