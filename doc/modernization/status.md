@@ -709,3 +709,19 @@ and scoped primary/alternate/sanitizer/portable checks are recorded in
 [the Mac handoff](handoff-macos.md#sequential-formatting-migration-and-corpus-follow-through--2026-11-03).
 BZIP2/XZ corpus checks need a capable SDK; broad real-user, complete legacy assets
 migration and physical-platform acceptance remain open. GTK3 is preserved.
+
+## Real-world corpus and complete-folder preservation (2026-11-03)
+
+`2b3d108` adds verified complete selected-directory migration through shared core,
+FIFO/C and native review/copy. Actual ASV/OSHB/MHCC/StrongsGreek checks pass both
+local SDKs and the sanitizer build, including unchanged source hashes and mixed
+export. See [Mac evidence](handoff-macos.md#real-world-corpus-and-legacy-asset-folders--2026-11-03),
+[copy scope](legacy-assets-migration.md) and [corpus manifest](real-corpus-validation.md).
+External folders require explicit selection; saved absolute paths are retained.
+Live visual verification is blocked by the locked Mac; real-user/cross-host/full
+workflow acceptance stays open. No whole-parity promotion or GTK3 retirement.
+
+The complete native suite at2b3d108 passes257 with two expected index skips out of
+259 registered. Follow-up `b12f467` verifies allocation-safe publication with a
+fault matrix across all counted copy allocation boundaries; see the exact scoped
+results in the Mac handoff. These are separate checks from live visual acceptance.

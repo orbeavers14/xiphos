@@ -5,6 +5,63 @@ Updated 2026-11-03. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits
 and pushes are authorized; preserve unrelated changes, never force-push.
 
+## Real-world corpus and legacy asset folders — 2026-11-03
+
+Owner requested broader real-world corpus coverage and complete legacy asset
+migration. Implementation `2b3d108` on sequential authorized `master`. The core
+reviews a complete selected regular-file tree (including hidden/binary/empty
+content), copies into private sibling staging, verifies the copy and rechecks the
+source, then publishes a new separate destination. Existing/contained/stale/
+symlink/nonportable/oversized cases reject without changing originals. Same FIFO,
+preallocated C ownership and copied Swift values; native folder review/copy lives
+in Legacy Migration. This preserves complete selected folder content/relative
+paths, not filesystem ownership/ACLs or automatic activation/absolute-path rewriting.
+External study-pad/module folders require explicit separate selection. Version1
+settings/session packages and GTK3 stay unchanged. See [contract](legacy-assets-migration.md).
+
+Core/C final checks: primary1/1,0.24s; alternate1/1,0.66s; ASan/UBSan1/1,0.84s,
+detect_leaks=0; portable Linux models on this Mac1/1,0.60s
+(`build/legacy-assets-{native,indexed,asan,portable}-final-tests.log`). Native
+migration model/fresh-process and prerequisites5/5,5.33s
+(`build/legacy-assets-native-tests.log`). Final native preview compiles, C11 syntax
+and changed-document link/diff checks pass. A live visual attempt is blocked by
+the locked Mac; no screenshot or current visual acceptance is claimed. A fresh
+isolated profile/library was selected; no original user profile was opened.
+
+Manual `core_real_corpus_check` has no CTest registration or automatic downloads.
+Four official HTTPS archives were license/version-reviewed and unpacked only into
+ignored build/real-corpus: ASV2.0 (zText/OSIS), OSHB2.1.4 (zText/OSIS,CC BY4.0,
+attribution retained), StrongsGreek2.0 (zLD/TEI), MHCC2.0 (zCom/OSIS); the other
+three are listed Public Domain. Archive SHA256s and license-page links are in
+[the reproducible corpus manifest](real-corpus-validation.md). No module bytes or
+text are committed. Actual final primary/alternate/sanitizer runs all pass
+(`build/real-corpus/{primary,alternate,asan}-final-check.log`):36 ASV chapter
+verses,31 OSHB chapter verses,four ASV search modes,unpointed Hebrew search,
+MHCC Genesis1:1 composition,exact dictionary previews and1464-row mixed export.
+Each run verifies complete before/after source-tree SHA256 equality. Real MHCC
+John3:16 is empty in this module/SDK path; the nonempty composition assertion uses
+Genesis1:1, rather than assuming every commentary verse contains an entry.
+No all-reference/actual-real-module-index/general-book/resource/physical-platform
+or full visual acceptance follows. SDK shared libraries are not fully instrumented.
+
+Local code-only Graphify696 files,13278 nodes,36680 edges,384 communities; source
+hashes unchanged during mapping,zero AI provider calls/tokens/cost
+(`build/legacy-assets-final-graph.log`). Generated outputs and unrelated .DS_Store
+remain local/untracked. Full native regression at2b3d108:257 passes,two expected primary-SDK index skips,
+259 registered,300.73s (`build/legacy-assets-full-native-{build,tests}.log`).
+
+Follow-up `b12f467` allocates the returned destination path before publication,
+moves the staging path without allocation and keeps cleanup nonthrowing. One-shot
+allocation failures at every counted boundary assert no failed operation publishes
+a destination and no owned staging remains. Alternate261 boundaries pass1/1,
+0.72s; ASan/UBSan1/1,1.04s; portable-on-Mac1/1,0.79s
+(`build/legacy-assets-publication-{indexed,asan,portable}-tests.log`). Final primary/native integration5/5,4.44s including native migration/fresh-process
+and prerequisites,with the primary allocation matrix passing all counted
+boundaries (`build/legacy-assets-publication-native-tests.log`). This follow-up
+is separate from the earlier complete suite. Next: representative real profiles, broader real general-book/resource/
+canon coverage and physical-platform/UI workflow acceptance. Keep ongoing core
+hardening active; do not convert these scoped results into whole-parity acceptance.
+
 ## Sequential formatting, migration and corpus follow-through — 2026-11-03
 
 Owner requested moving directly from one priority to the next. `0db20c6` adds

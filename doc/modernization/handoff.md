@@ -1,5 +1,13 @@
 # Shared project handoff: start here in every chat
 
+Real corpus/assets checkpoint (2026-11-03, `2b3d108`): actual ASV/OSHB/MHCC/
+StrongsGreek modules now pass scoped read/search/preview/export checks on both
+local SDKs and the sanitizer build, with unchanged source-tree hashes. Complete
+selected-folder legacy asset review and verified new-directory copy now share
+the core/FIFO/C/native bridge. See [asset contract](legacy-assets-migration.md),
+[corpus manifest](real-corpus-validation.md) and [Mac evidence](handoff-macos.md#real-world-corpus-and-legacy-asset-folders--2026-11-03).
+External folders require explicit selection; saved absolute paths are not rewritten.
+
 Hardening clarification (2026-11-03): keep shared-core compatibility, ownership,
 cancellation and data-safety checks active during feature work. Final packaging,
 full physical-platform/release and frontend acceptance remain closing gates.
