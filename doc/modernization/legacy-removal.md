@@ -77,3 +77,15 @@ checks pass. Graphify refreshed locally after deletion; zero paid AI services.
 This pass removes302 tracked paths (35094811 bytes before replacement test
 fixtures/notices), including the entire top-level win32 tree. The immutable
 reference fixture directory is about288KiB. Existing Git history is unchanged.
+
+## Root metadata cleanup
+
+2026-11-04: removed .bzrignore/.bzrrules (retired Bazaar/Waf metadata),
+ChangeLog/RELEASE-NOTES (old GTK release history, preserved in Git), TODO
+(old upstream links; current work uses this checklist and shared-core roadmap),
+and xiphos.doap.rdf (old upstream project metadata). Repository-wide tracked
+reference checks found no live build/runtime consumers. Removed obsolete ignore
+entries for deleted Waf/Windows/GTK build paths. Kept .clang-format,
+.editorconfig, .gitattributes and .gitignore as active development configuration;
+kept AUTHORS/COPYING as credits/license, and current build/installation/readme
+and agent instructions. Diff checks pass; no application code or tests changed.
