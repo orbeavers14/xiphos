@@ -15,6 +15,14 @@ are intermediate; opening a setting should not routinely spawn another window.
   migration and editor flows for platform-native navigation and window behavior.
 - [ ] Verify standard menu shortcuts, keyboard focus/order, VoiceOver names,
   accessible status/error announcements, resizing and localized text expansion.
+- [ ] Add native macOS appearance support: follow system Light/Dark mode by
+  default, with user-selectable System, Light and Dark preferences. Use SwiftUI/
+  AppKit semantic adaptive colors across navigation, controls and settings.
+- [ ] Make Bible reading, commentary, dictionary and other formatted/HTML or
+  WKWebView content theme-aware; ensure verse highlights, search results, links
+  and custom module styles remain legible in both appearances. Consider optional
+  independent reading themes (including Sepia). Keep appearance/presentation
+  decisions in the native UI, not the shared C++ core.
 - [ ] Review the design against current Apple guidance before implementation;
   record scoped screenshots and actual workflow checks, not just build success.
 
