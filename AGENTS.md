@@ -27,12 +27,16 @@ Do not rely on another chat's history or assume your checkout is current.
   Do not create separate navigation, search, history or persistence engines.
 - Native core: C++17. Legacy-linked helpers: C++11. C ABI: C11. Swift: Swift 6.
   A language-standard increase needs a separate compatibility decision.
-- Preserve the existing GTK3 app, unrelated changes, tests, licenses and notices.
-  Delete legacy source only after the documented parity/retirement gates pass.
+- Owner update (2026-11-04): actively remove obsolete legacy code/distribution
+  machinery as dependencies are eliminated. GTK3 is an opt-in reference build,
+  not the default application. Preserve unrelated changes, regression coverage,
+  migration compatibility, translations and required licenses/notices. Record
+  scoped removals and remaining dependencies in doc/modernization/legacy-removal.md;
+  do not mistake removal for replacement feature acceptance.
 - Keep routine builds/tests local. Do not dispatch, enable or add automatic
   GitHub builds without the owner's explicit authorization. `linux-core` is
-  manual-only; older `builds`/`native-core` workflows were paused administratively.
-  Their YAML still contains automatic triggers: do not assume they are safe to enable.
+  manual-only. The old `builds` workflow is removed; `native-core` was paused
+  administratively and still contains automatic triggers: do not enable it.
 - The fork is public. Do not commit private project material, credentials, user
   profiles, installed Bible modules, machine paths or generated build artifacts.
   Use original-prose fixtures and audit provenance/licenses before reusing code.

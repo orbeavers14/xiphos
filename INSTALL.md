@@ -423,9 +423,6 @@ For Win64:
 The resulting EXE (Windows® installer file) will be found in your build directory.
 
 
-Build script for Windows®:
----------------------------
-A script named `xc-xiphos-win.sh` in the win32 directory will run automatically
-all the steps above.
-
-See intructions in the file `win32/WindowsBuildNotes.txt`
+The obsolete Fedora30 Docker/MinGW automation and bundled Festival runtime have
+been removed. These preceding instructions describe the retained legacy build,
+not the new WinUI3 application. See platforms/windows for native Windows work.

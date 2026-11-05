@@ -1,5 +1,16 @@
 # macOS chat handoff
 
+Legacy removal direction (2026-11-04): owner explicitly requests removing old
+code/system where dependencies permit. Root build now selects shared core;
+GTK3 is opt-in. Removed vendored Windows Festival and Fedora30 Docker pipeline,
+including its obsolete hosted build workflow. Required notices are retained.
+Fresh core-only root build passes;184 checks pass in aggregate,1 sync skip.
+The download test required loopback access and passed on rerun. No new native
+UI/Windows/Linux hardware acceptance. See [running removal checklist](legacy-removal.md). This supersedes blanket old
+system preservation, not feature/data compatibility requirements. Core tests
+still extract actual legacy behavior; native Settings/localization remain open.
+
+
 Updated 2026-11-03. Read [AGENTS.md](../../AGENTS.md), [shared handoff](handoff.md),
 [status](status.md), [core scope](shared-core-roadmap.md) and relevant parity rows.
 Integration branch: `master`, fork `orbeavers14/xiphos`. Sequential direct commits

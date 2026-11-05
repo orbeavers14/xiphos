@@ -23,6 +23,21 @@ cmake_policy(VERSION 3.11)
 ### set project name (version set later)
 project (xiphos C CXX)
 
+# Native development does not configure the retired GTK distribution system.
+option(XIPHOS_BUILD_LEGACY_GTK3 "Build the retained GTK3 reference application" OFF)
+if(NOT XIPHOS_BUILD_LEGACY_GTK3)
+  cmake_minimum_required(VERSION 3.16)
+  if(NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 17)
+  endif()
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  include(CTest)
+  option(XIPHOS_BUILD_NATIVE_CORE "Build native Reader, session, worker and C API" ON)
+  add_subdirectory(src/core)
+  return()
+endif()
+
+
 # set commonly used Xiphos variables:
 # Xiphos website
 set (XIPHOS_WEBSITE "http://xiphos.org")

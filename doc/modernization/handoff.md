@@ -1,5 +1,14 @@
 # Shared project handoff: start here in every chat
 
+Legacy removal direction (2026-11-04): owner explicitly requests removing old
+code/system where dependencies permit. Root build now selects shared core;
+GTK3 is opt-in. Removed vendored Windows Festival and Fedora30 Docker pipeline,
+including its obsolete hosted build workflow. Required notices are retained.
+See [running removal checklist](legacy-removal.md). This supersedes blanket old
+system preservation, not feature/data compatibility requirements. Core tests
+still extract actual legacy behavior; native Settings/localization remain open.
+
+
 Mac-scoped corpus/hardening checkpoint (2026-11-03): six real modules,521 Pilgrim
 scripture links, KJVA Tobit and three actual indexed module families now pass.
 Asset/local-install/maintenance cancellation is wired through core/C/native UI

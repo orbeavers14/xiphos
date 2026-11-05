@@ -17,6 +17,22 @@ integration. Shared application behavior belongs in C++; platform adapters
 must not develop independent engines. SwordKit may become a Swift adapter
 through an audited adapter to the shared core.
 
+## Building without the legacy application
+
+The repository-root CMake build now builds the shared core by default, without
+configuring GTK3, the old editor, translations tooling or legacy packaging:
+
+```sh
+cmake -S . -B build/core
+cmake --build build/core
+ctest --test-dir build/core --output-on-failure
+```
+
+Native frontend builds remain in `platforms/macos`, `platforms/linux` and
+`platforms/windows`. The retained GTK3 reference build requires explicit
+`-DXIPHOS_BUILD_LEGACY_GTK3=ON`. Its old Fedora30 Windows automation and bundled
+Festival distribution have been removed. See the [removal checklist](doc/modernization/legacy-removal.md).
+
 ## Status
 
 The shared core and macOS preview now cover module/verse/chapter reading,
