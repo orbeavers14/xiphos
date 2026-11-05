@@ -1,5 +1,11 @@
 # Native Windows chat handoff
 
+Owner UI to-do (2026-11-04): review Windows Settings and management screens for
+platform-native navigation. Related settings should stay within the Settings
+experience rather than open independent screens. Track details and acceptance
+in [native interface to-do](native-ui-todo.md). Functional screens are intermediate.
+
+
 Shared API notice (2026-10-18): complete per-tab last-search scope is now private
 to the shared core (`c1b0a88`); worker/C query/clear and scalar metadata commands
 are in `c38cd8f`. Existing normal/range searches reseed this tab's complete scope,

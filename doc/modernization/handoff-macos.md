@@ -1,5 +1,11 @@
 # macOS chat handoff
 
+Owner UI to-do (2026-11-04): review Mac Settings and management screens for
+platform-native navigation. Related settings should stay within the Settings
+experience rather than open independent screens. Track details and acceptance
+in [native interface to-do](native-ui-todo.md). Functional screens are intermediate.
+
+
 GTK source retirement (2026-11-04): owner requested maximum legacy removal.
 The GTK3 application, old editors/backend, legacy Windows distribution and
 CPack/CMake install machinery are removed. Native core tests use61 immutable

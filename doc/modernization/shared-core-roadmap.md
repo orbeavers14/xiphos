@@ -1,5 +1,7 @@
 # Shared core: remaining scope
 
+Native presentation follow-up: [Mac/Windows Settings and screen review](native-ui-todo.md).
+
 GTK source retirement (2026-11-04): owner requested maximum legacy removal.
 The GTK3 application, old editors/backend, legacy Windows distribution and
 CPack/CMake install machinery are removed. Native core tests use61 immutable
