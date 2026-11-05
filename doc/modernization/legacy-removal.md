@@ -89,3 +89,14 @@ entries for deleted Waf/Windows/GTK build paths. Kept .clang-format,
 .editorconfig, .gitattributes and .gitignore as active development configuration;
 kept AUTHORS/COPYING as credits/license, and current build/installation/readme
 and agent instructions. Diff checks pass; no application code or tests changed.
+
+## Legacy desktop metadata and standalone reproducer
+
+2026-11-04: removed desktop/ (unused GTK launcher/AppStream metadata and GTK/
+xiphos-nav man templates; duplicate SVG exactly matches retained pixmaps/xiphos.svg)
+and poc/ (standalone denylist-bypass demonstration for deleted GTK D-Bus handlers).
+Tracked native build/runtime references contain no consumers of either folder.
+This removes an old demonstration, not any active core regression test or link
+admission validation. History retains the original vulnerability evidence.
+Reusable art/help/translations, dependency patches, platform/core code and
+GitHub configuration remain. No application behavior changed; diff check passes.
