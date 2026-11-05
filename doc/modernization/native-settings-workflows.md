@@ -19,7 +19,7 @@ connecting; saving a preference does not initiate network activity.
 
 ## Localization boundary
 
-Native en/fr lproj resources are copied into the bundle. System/English/French
+Native en/fr lproj resources under localization/macos are copied into the bundle. System/English/French
 interface selection persists; restart is required. French is explicitly a
 partial translation. Common stable core error statuses are mapped through native
 localized strings; arbitrary SDK/internal messages remain fallback detail.

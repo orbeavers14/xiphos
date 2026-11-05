@@ -127,3 +127,5 @@ Xiphos started as the SWORD Project's Cheatah program. Its development includes
 ideas and code from BibleTime and the SWORD Project's BibleCS program. Credit
 remains with the Xiphos Development Team, CrossWire, and all contributors whose
 work this fork builds upon.
+
+Translation sources are organized under [localization/](localization/README.md).

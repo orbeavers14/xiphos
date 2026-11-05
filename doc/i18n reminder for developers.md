@@ -1,3 +1,7 @@
+> Historical GTK translation guide. Catalogs moved from `po/` to
+> `localization/gettext/`; old extraction/build instructions below are not
+> active for the new application. See [current workflow](../localization/README.md).
+
 Xiphos i18n
 ===========
 

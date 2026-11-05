@@ -94,9 +94,10 @@ set(swift_target "${CMAKE_SYSTEM_PROCESSOR}-apple-macosx${CMAKE_OSX_DEPLOYMENT_T
 set(app "${CMAKE_CURRENT_BINARY_DIR}/XiphosNativePreview.app")
 file(MAKE_DIRECTORY "${app}/Contents/MacOS" "${swift_cache}")
 configure_file(Info.plist "${app}/Contents/Info.plist" @ONLY)
-file(GLOB_RECURSE native_localizations CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/Resources/*.strings")
+set(native_localization_source "${CMAKE_CURRENT_SOURCE_DIR}/../../localization/macos")
+file(GLOB_RECURSE native_localizations CONFIGURE_DEPENDS "${native_localization_source}/*.strings")
 foreach(resource IN LISTS native_localizations)
-  file(RELATIVE_PATH resource_path "${CMAKE_CURRENT_SOURCE_DIR}/Resources" "${resource}")
+  file(RELATIVE_PATH resource_path "${native_localization_source}" "${resource}")
   configure_file("${resource}" "${app}/Contents/Resources/${resource_path}" COPYONLY)
 endforeach()
 

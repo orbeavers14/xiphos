@@ -1,5 +1,12 @@
 # Modernization status and acceptance
 
+Localization layout (2026-11-04): lowercase localization/ now contains gettext
+catalogs (moved from po), macos native resources, and Windows resource guidance.
+Mac bundle copy rules use the new path; catalog contents/translation coverage
+are unchanged. See [translation layout](../../localization/README.md). Existing
+gettext catalogs still need a message/import pipeline for the new native UI.
+
+
 Settings/localization/tabs checkpoint (2026-11-04): native Settings now exposes
 core-backed reading/lexicon controls and persistent startup/default-module/
 recovery preferences; successful non-secret sync choices persist without auto
