@@ -51,9 +51,15 @@ struct SessionHostState: Codable, Sendable {
     var dictionaryDisplayModule: String?, dictionaryDisplayKey: String?
     var dictionarySourceModule: String?, dictionarySourceReference: String?
     var search: SessionSearchDraft
+    var tabGroupKey: String?
+    var tabSelected: Bool?
     var frame: SessionWindowFrame?
     var readingSources: CoreReadingSources?
-    @MainActor init(_ model: ReaderModel, frame: NSRect? = nil) {
+    @MainActor init(_ model: ReaderModel, frame: NSRect? = nil, window: NSWindow? = nil) {
+        if let group = window?.tabGroup, group.windows.count > 1 {
+            tabGroupKey = group.windows.first?.identifier?.rawValue
+            tabSelected = group.selectedWindow === window
+        }
         readingSources=model.readingSources
         showingBook = model.showingBook; showChapter = model.showChapter
         verseNumbers = model.verseNumbers; highlightSelected = model.highlightSelected

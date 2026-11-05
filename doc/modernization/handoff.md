@@ -1,5 +1,17 @@
 # Shared project handoff: start here in every chat
 
+Settings/localization/tabs checkpoint (2026-11-04): native Settings now exposes
+core-backed reading/lexicon controls and persistent startup/default-module/
+recovery preferences; successful non-secret sync choices persist without auto
+connection. English/French resource foundation and restart language selection
+are present (French partial). Native reading tabs/detaching and saved groups pass
+fresh-process checks. Full native257 passes/2 expected index skips,142.53s;
+scoped live Settings/save/French/tab/detach checks pass. Localized references,
+complete RTL/translation/workflow acceptance and native Settings navigation
+remain open. See [contract/evidence](native-settings-workflows.md) and
+[Mac/Windows UI to-do](native-ui-todo.md).
+
+
 GTK source retirement (2026-11-04): owner requested maximum legacy removal.
 The GTK3 application, old editors/backend, legacy Windows distribution and
 CPack/CMake install machinery are removed. Native core tests use61 immutable

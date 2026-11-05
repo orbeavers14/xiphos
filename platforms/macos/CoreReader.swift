@@ -387,10 +387,10 @@ struct CoreError: LocalizedError, Sendable {
     let status: xc_status
     var errorDescription: String? {
         switch status {
-        case XC_INVALID_ARGUMENT: return "The request was refused. Check its inputs and whether the source or library has changed."
-        case XC_MODULE_NOT_FOUND: return "The selected module is not installed."
-        case XC_CANCELLED: return "The transfer was cancelled."
-        default: return "The operation could not be completed."
+        case XC_INVALID_ARGUMENT: return NSLocalizedString("The request was refused. Check its inputs and whether the source or library has changed.", comment: "Shared core status presented by the native host")
+        case XC_MODULE_NOT_FOUND: return NSLocalizedString("The selected module is not installed.", comment: "Shared core status presented by the native host")
+        case XC_CANCELLED: return NSLocalizedString("The transfer was cancelled.", comment: "Shared core status presented by the native host")
+        default: return NSLocalizedString("The operation could not be completed.", comment: "Shared core status presented by the native host")
         }
     }
 }

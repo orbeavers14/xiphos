@@ -3,7 +3,7 @@ import Foundation
 import AppKit
 import SwiftUI
 
-@MainActor final class NativeSessionController: NSObject, NSWindowDelegate {
+@MainActor final class NativeSessionController: NSObject, NSWindowDelegate, ObservableObject {
     struct Record {
         let key: String
         let model: ReaderModel
@@ -11,6 +11,7 @@ import SwiftUI
         var window: NSWindow?
         var frame: SessionWindowFrame?
     }
+    var preferredBible = "", preferredCommentary = ""
     var onPassageCommitted: ((PassageTarget,Bool) -> Void)?
     let worker: CoreWorker
     let organizationPath: String?
@@ -25,8 +26,8 @@ import SwiftUI
         libraryOrganization=value;organizationNotice="";records.forEach { $0.model.applyLibraryOrganization(value) }
     }
     private(set) var path: String
-    private(set) var records: [Record] = []
-    private(set) var activeKey: String?
+    @Published private(set) var records: [Record] = []
+    @Published private(set) var activeKey: String?
     private(set) var restoreError: String?
     private var operation = false
     private var quitting = false
@@ -53,12 +54,12 @@ import SwiftUI
         if let selected = UserDefaults.standard.string(forKey:sessionPreferenceKey()), !selected.isEmpty { return selected }
         return try profileFolder().appendingPathComponent("session.xml").path
     }
-    func start(recovered: CoreNativeSessionFile? = nil) async throws {
+    func start(recovered: CoreNativeSessionFile? = nil, restoreSavedSession: Bool = true) async throws {
         guard records.isEmpty, !operation else { return }
         operation = true
         defer { operation = false }
         if let path=organizationPath { do { libraryOrganization=try await worker.libraryOrganization(path:path) } catch { organizationNotice="Library preferences could not be loaded. Open Module Library and reload." } }
-        guard recovered != nil || FileManager.default.fileExists(atPath: path) else { addWindow(); return }
+        guard recovered != nil || (restoreSavedSession && FileManager.default.fileExists(atPath: path)) else { addWindow(); return }
         var stagedIDs: [UInt64] = []
         do {
             let saved: CoreNativeSessionFile
@@ -83,6 +84,16 @@ import SwiftUI
             records = staged; activeKey = saved.activeKey
             let desired = activeKey
             for index in records.indices { showWindow(at: index) }
+            var groups: [String:NSWindow] = [:]
+            for (index, host) in hosts.enumerated() {
+                guard let key = host?.tabGroupKey, !key.isEmpty, key.utf8.count <= 128,
+                      let window = records[index].window else { continue }
+                if let first = groups[key] { first.addTabbedWindow(window, ordered: .above) }
+                else { groups[key] = window }
+            }
+            for (index, host) in hosts.enumerated() where host?.tabSelected == true {
+                if let window = records[index].window { window.tabGroup?.selectedWindow = window }
+            }
             activeKey = desired
             if let desired, let window = records.first(where: { $0.key == desired })?.window { window.makeKeyAndOrderFront(nil) }
         } catch {
@@ -91,15 +102,21 @@ import SwiftUI
             throw error
         }
     }
-    @discardableResult func addWindow() -> ReaderModel {
+    @discardableResult func addWindow(asTab: Bool = false) -> ReaderModel {
+        let parent = asTab ? records.first(where: { $0.key == activeKey })?.window : nil
         let key = UUID().uuidString
-        let model = ReaderModel(worker: worker, startupError: nil)
+        let model = ReaderModel(worker: worker, startupError: nil, preferredBible: preferredBible, preferredCommentary: preferredCommentary)
         model.parallelProfilePath = organizationPath.map { URL(fileURLWithPath:$0).deletingLastPathComponent().appendingPathComponent("parallel-sets.xml").path }
         model.readingSources=records.first(where:{$0.key==activeKey})?.model.readingSources ?? CoreReadingSources()
         model.applyLibraryOrganization(libraryOrganization,notice:organizationNotice)
         model.onPassageCommitted = { [weak self] target,received in self?.onPassageCommitted?(target,received) }
         records.append(Record(key: key, model: model, capture: CoreWindowCapture(tab: 0, key: key)))
-        activeKey = key; showWindow(at: records.count - 1); return model
+        activeKey = key; showWindow(at: records.count - 1)
+        if let parent, let window = records.last?.window {
+            parent.addTabbedWindow(window, ordered: .above)
+            if showsWindows { window.makeKeyAndOrderFront(nil) }
+        }
+        return model
     }
     private func showWindow(at index: Int) {
         guard showsWindows || offscreenWindows else { return }
@@ -109,6 +126,8 @@ import SwiftUI
         window.title = "Xiphos Native Preview"; window.minSize = NSSize(width: 700, height: 450)
         window.isReleasedWhenClosed = false; window.delegate = self
         window.identifier = NSUserInterfaceItemIdentifier(record.key)
+        window.tabbingIdentifier = "NativeReading:" + path
+        window.tabbingMode = .automatic
         window.contentView = NSHostingView(rootView: ReaderWindow(model: record.model))
         if let frame = record.frame, frame.valid {
             window.setFrame(window.constrainFrameRect(frame.rect, to: NSScreen.main), display: false)
@@ -150,7 +169,7 @@ import SwiftUI
         for record in selected {
             guard let tab = record.model.sessionTab else { throw SessionHostError(message: "A reading window could not be saved.") }
             var capture = record.capture; capture.tab = tab; capture.parallelShowing = record.model.showingParallel
-            capture.hostState = try SessionHostState(record.model, frame: record.window?.frame ?? record.frame?.rect).encoded(preserving: record.capture.hostState)
+            capture.hostState = try SessionHostState(record.model, frame: record.window?.frame ?? record.frame?.rect, window: record.window).encoded(preserving: record.capture.hostState)
             captures.append(capture)
         }
         let active = selected.first(where: { $0.key == activeKey })?.key ?? selected.first?.key
@@ -215,8 +234,9 @@ import SwiftUI
     }
 }
 
-@MainActor final class SessionAppDelegate: NSObject, NSApplicationDelegate {
-    private var controller: NativeSessionController?
+@MainActor final class SessionAppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
+    @Published private(set) var controller: NativeSessionController?
+    let preferences = NativeAppPreferences(profile: (try? NativeSessionController.profileFolder().path) ?? "default")
     private var terminating = false
     private var editors: [NativeEditorWindow] = []
     private var sectionCreator: NativeBookSectionWindow?
@@ -238,14 +258,17 @@ import SwiftUI
                 let context = try await NativeLibrarySetup.open(profile:folder,explicit:ProcessInfo.processInfo.environment["XIPHOS_MODULE_ROOT"],stored:UserDefaults.standard.string(forKey:NativeLibrarySetup.preferenceKey(profile:folder)),isolated:ProcessInfo.processInfo.environment["XIPHOS_PROFILE_DIRECTORY"].map { !$0.isEmpty } ?? false)
                 let worker = context.worker;managedRoot = context.managedRoot
                 let owner = NativeSessionController(worker: worker, path: try NativeSessionController.defaultPath(),organizationPath:folder.appendingPathComponent("library-organization.xml").path)
+                owner.preferredBible = preferences.bible; owner.preferredCommentary = preferences.commentary
                 controller = owner
                 let sync = NativeSyncModel(worker:worker);self.sync = sync
+                if let saved = preferences.loadSync() { sync.settings = saved; sync.speakerIDs = saved.speakers.joined(separator: ",") }
+                sync.persistSettings = { [weak self] in self?.preferences.saveSync($0) }
                 sync.current = { [weak owner] in owner?.records.first(where: { $0.key == owner?.activeKey })?.model.syncTarget }
                 sync.receive = { [weak self,weak owner] navigation in guard self?.terminating == false else { return false };return owner?.records.first(where: { $0.key == owner?.activeKey })?.model.receiveSync(navigation) ?? false }
                 sync.review = { [weak self,weak owner] navigation in guard self?.terminating == false else { return false };return owner?.records.first(where: { $0.key == owner?.activeKey })?.model.reviewSync(navigation) ?? false }
                 owner.onPassageCommitted = { [weak self,weak sync] target,received in guard self?.terminating == false else { return };sync?.broadcast(target,received:received) }
                 let key = "NativeRecoveryPath:" + folder.path
-                let recovery = NativeRecoveryController(worker:worker,path:UserDefaults.standard.string(forKey:key) ?? folder.appendingPathComponent("recovery.snapshot").path)
+                let recovery = NativeRecoveryController(worker:worker,path:UserDefaults.standard.string(forKey:key) ?? folder.appendingPathComponent("recovery.snapshot").path, interval: UInt64(preferences.recoverySeconds) * 1_000_000_000)
                 self.recovery = recovery
                 recovery.onPathChanged = { UserDefaults.standard.set($0,forKey:key) }
                 var saved: CoreRecoveryFile?
@@ -258,7 +281,7 @@ import SwiftUI
                     alert.addButton(withTitle:"Recover"); alert.addButton(withTitle:"Discard Recovery")
                     if alert.runModal() != .alertFirstButtonReturn { try await recovery.clear(); saved = nil }
                 }
-                do { try await owner.start(recovered:saved?.session) }
+                do { try await owner.start(recovered:saved?.session, restoreSavedSession: preferences.restoreSession) }
                 catch {
                     owner.addWindow()
                     let alert = NSAlert(); alert.messageText = "Saved session could not be restored"
@@ -394,6 +417,17 @@ import SwiftUI
         if let editor = editors.first(where: { $0.window.isKeyWindow }) { editor.save(); return }
         Task { do { try await controller.save() } catch { controller.showError(error.localizedDescription) } }
     }
+    func openNewTab() {
+        guard !terminating, let controller, controller.canOpenWindow else { return }
+        controller.addWindow(asTab: true)
+    }
+    func detachReadingTab() {
+        guard !terminating, let controller,
+              let window = controller.records.first(where: { $0.key == controller.activeKey })?.window,
+              (window.tabGroup?.windows.count ?? 0) > 1 else { return }
+        window.moveTabToNewWindow(nil)
+    }
+
     func saveSessionAs() {
         guard !terminating, let controller else { return }
         if let editor = editors.first(where: { $0.window.isKeyWindow }) { editor.save(asNew:true); return }

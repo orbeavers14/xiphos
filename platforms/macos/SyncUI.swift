@@ -23,6 +23,7 @@ import SwiftUI
     private var nextSend: CoreSyncNavigation?
     private var generation: UInt64 = 0
     var canSend: Bool { active && !busy && (applied.mode == 1 || applied.mode == 2) }
+    var persistSettings: ((CoreSyncSettings) -> Void)?
     var current: (() -> PassageTarget?)?
     var receive: ((CoreSyncNavigation) -> Bool)?
     var review: ((CoreSyncNavigation) -> Bool)?
@@ -47,6 +48,7 @@ import SwiftUI
             do {
                 guard config.group.isEmpty || (config.group.count == 1 && "123456789".contains(config.group)) else { throw SessionHostError(message:"Use an empty group or one digit from 1 to 9.") }
                 try await worker.configureSync(config,user:identity,phrase:sessionPhrase,acknowledged:consent)
+                persistSettings?(config)
                 applied = config;active = config.mode != 0
                 message = active ? "Connected. Applied mode: \(["Disabled","Personal","Speaker","Audience"][Int(config.mode)])." : "Disconnected."
                 if active { startPolling() }

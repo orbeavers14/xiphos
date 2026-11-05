@@ -1829,7 +1829,7 @@ extension CoreWorker {
     }
 }
 
-struct CoreSyncSettings: Sendable, Equatable {
+struct CoreSyncSettings: Sendable, Equatable, Codable {
     var mode: Int32 = 0, listen: Int32 = 0
     var privatePersonal = true, direct = true
     var group = "", domain = "BIBLE-VERSE"

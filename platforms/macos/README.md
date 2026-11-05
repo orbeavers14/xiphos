@@ -422,3 +422,13 @@ They detect external SDK paths/OS-floor mismatches and can make a separate
 ad-hoc-signed development bundle with a verified Mach-O closure. Current SDKs
 require macOS27; this does not validate the requested13 minimum or produce a
 redistributable release. Ordinary builds do not run the release audit automatically.
+
+## Settings and native reading tabs
+
+Command-comma opens Settings; Command-T creates a reading tab. File > Move
+Reading Tab to New Window detaches it. Startup/default module/recovery choices
+persist per profile; session save retains reading/lexicon/window settings and tab
+groups. Language selection requires restart; French is partial. BibleSync
+remembers successful configuration but never reconnects automatically. See
+[contract and remaining acceptance](../../doc/modernization/native-settings-workflows.md)
+and [native screen/navigation review](../../doc/modernization/native-ui-todo.md).

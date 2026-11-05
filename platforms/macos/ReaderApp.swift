@@ -173,8 +173,11 @@ final class ReaderModel: ObservableObject {
     private var displayedModule: String?
     private var revision: UInt64 = 0
     private var closed = false
-    init(worker: CoreWorker?, startupError: String?, autostart: Bool = true) {
+    private let preferredBible: String
+    private let preferredCommentary: String
+    init(worker: CoreWorker?, startupError: String?, autostart: Bool = true, preferredBible: String = "", preferredCommentary: String = "") {
         self.worker = worker
+        self.preferredBible = preferredBible; self.preferredCommentary = preferredCommentary
         guard worker != nil else {
             message = startupError ?? "Unable to start the reading engine."
             isBusy = false
@@ -222,7 +225,8 @@ final class ReaderModel: ObservableObject {
             lexiconPreferences = lexicons
             crossReferencesInVerseList = previewList
             modules = discovered
-            selection = modules.first(where: { $0.type == "Biblical Texts" })?.id
+            selection = modules.first(where: { $0.type == "Biblical Texts" && $0.id == preferredBible })?.id ?? modules.first(where: { $0.type == "Biblical Texts" })?.id
+            commentarySelection = modules.first(where: { $0.type == "Commentaries" && $0.id == preferredCommentary })?.id ?? ""
             search.configure(worker: worker, tab: opened, modules: discovered, preferred: selection)
             if modules.isEmpty { message = "No installed modules found. Open Module Library from the File menu to install modules." }
             else if let selection {
@@ -1179,7 +1183,7 @@ struct ReferenceMenu: View {
     init(preferences: LexiconPreferences) { self.preferences = preferences }
 }
 
-private struct LexiconPreferencesView: View {
+struct LexiconPreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var model: ReaderModel
     @StateObject private var draft: LexiconDraft
@@ -1627,10 +1631,12 @@ struct ReaderWindow: View {
 struct XiphosNativePreview: App {
     @NSApplicationDelegateAdaptor(SessionAppDelegate.self) private var delegate
     var body: some Scene {
-        Settings { EmptyView() }
+        Settings { NativeSettingsView(delegate: delegate) }
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("New Reading Window") { delegate.openNewWindow() }.keyboardShortcut("n")
+                Button("New Reading Tab") { delegate.openNewTab() }.keyboardShortcut("t")
+                Button("Move Reading Tab to New Window") { delegate.detachReadingTab() }
                 Button("Save") { delegate.saveSession() }.keyboardShortcut("s")
                 Button("Save As…") { delegate.saveSessionAs() }.keyboardShortcut("s",modifiers:[.command,.shift])
                 Divider()

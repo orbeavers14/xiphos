@@ -18,7 +18,7 @@ import AppKit
         guard folder.lastPathComponent == "restart-smoke-fixture" else { fatalError("Only disposable restart output can be removed") }
         let phase = CommandLine.arguments.count == 4 ? CommandLine.arguments[3] : "all"
         if phase == "all" {
-            for step in ["write", "resume", "windows"] {
+            for step in ["write", "resume", "preferences", "windows", "tabs-write", "tabs-resume", "tabs-detached"] {
                 let process = Process(); process.executableURL = URL(fileURLWithPath: CommandLine.arguments[0])
                 process.arguments = [root, folder.path, step]
                 try process.run(); process.waitUntilExit()
@@ -27,7 +27,61 @@ import AppKit
             print("Native session persisted across two fresh processes")
             return
         }
-        guard ["write","resume","windows"].contains(phase) else { fatalError("Unknown restart test phase") }
+        guard ["write","resume","preferences","windows","tabs-write","tabs-resume","tabs-detached"].contains(phase) else { fatalError("Unknown restart test phase") }
+        if phase.hasPrefix("tabs-") {
+            _ = NSApplication.shared; NSApplication.shared.setActivationPolicy(.prohibited)
+            let worker = try CoreWorker(root: root)
+            let owner = NativeSessionController(worker: worker, path: folder.appendingPathComponent("tabs.xml").path,
+                                                showsWindows: false, offscreenWindows: true)
+            try await owner.start()
+            if phase == "tabs-write" { owner.addWindow(asTab: true) }
+            for record in owner.records { try await idle(record.model) }
+            guard owner.records.count == 2, let first = owner.records[0].window,
+                  let second = owner.records[1].window else { fatalError("Two reading records/windows") }
+            if phase == "tabs-detached" {
+                guard (first.tabGroup?.windows.count ?? 1) == 1, (second.tabGroup?.windows.count ?? 1) == 1 else { fatalError("Detached groups stay separate after restart") }
+            } else {
+                guard first.tabGroup?.windows.count == 2, first.tabGroup === second.tabGroup else { fatalError("Native tab group creation/restoration") }
+                if phase == "tabs-resume" {
+                    second.moveTabToNewWindow(nil)
+                    guard (first.tabGroup?.windows.count ?? 1) == 1 else { fatalError("Detached tab becomes a separate window") }
+                }
+            }
+            try await owner.prepareToQuit()
+            let windows = owner.records.compactMap(\.window)
+            windows.forEach { $0.performClose(nil) }
+            await worker.shutdown()
+            print("Native grouped/detached reading restart passed: " + phase)
+            return
+        }
+        if phase == "preferences" {
+            let suite = "xiphos.settings-test." + UUID().uuidString
+            let defaults = UserDefaults(suiteName: suite)!
+            defer { defaults.removePersistentDomain(forName: suite) }
+            let preferences = NativeAppPreferences(store: defaults, profile: "fixture")
+            guard preferences.restoreSession, preferences.recoverySeconds == 5 else { fatalError("Safe startup defaults") }
+            preferences.restoreSession = false; preferences.recoverySeconds = 30
+            preferences.bible = "TextAlt"; preferences.commentary = "Notes"
+            preferences.language = "fr"
+            let sync = CoreSyncSettings(mode:3,listen:1,group:"2")
+            preferences.saveSync(sync)
+            let reloaded = NativeAppPreferences(store: defaults, profile: "fixture")
+            guard !reloaded.restoreSession, reloaded.recoverySeconds == 30,
+                  reloaded.bible == "TextAlt", reloaded.commentary == "Notes",
+                  reloaded.language == "fr", reloaded.loadSync() == sync,
+                  defaults.stringArray(forKey: "AppleLanguages") == ["fr"] else { fatalError("Persisted host preferences") }
+            guard NativeAppPreferences(store: defaults, profile: "other").bible.isEmpty else { fatalError("Profile isolation") }
+            guard !defaults.dictionaryRepresentation().keys.contains(where: { $0.contains("phrase") || $0.contains("acknowledged") }) else { fatalError("No saved connection secrets/consent") }
+            let worker = try CoreWorker(root: root)
+            let owner = NativeSessionController(worker: worker, path: folder.appendingPathComponent("session.xml").path, showsWindows: false)
+            owner.preferredBible = "TextAlt"
+            try await owner.start(restoreSavedSession: false)
+            try await idle(owner.records[0].model)
+            guard owner.records.count == 1, owner.records[0].model.selection == "TextAlt" else { fatalError("Fresh startup/default module") }
+            owner.records[0].model.close(); await worker.shutdown()
+            print("Native preference persistence, profile isolation and fresh startup passed")
+            return
+        }
         if phase == "windows" {
             _ = NSApplication.shared
             NSApplication.shared.setActivationPolicy(.prohibited)
