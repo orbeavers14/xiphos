@@ -1,5 +1,15 @@
 # Shared core: remaining scope
 
+GTK source retirement (2026-11-04): owner requested maximum legacy removal.
+The GTK3 application, old editors/backend, legacy Windows distribution and
+CPack/CMake install machinery are removed. Native core tests use61 immutable
+reference snippets with SHA256/provenance, not source extraction at configure
+time. No legacy build option remains. Translations, reusable assets, help and
+notices remain for native reuse. Windows WinUI3 is still planned; missing
+Settings/localization/frontend parity remains open despite code removal.
+See [removal ledger](legacy-removal.md).
+
+
 Mac-scoped corpus/hardening checkpoint (2026-11-03): six real modules,521 Pilgrim
 scripture links, KJVA Tobit and three actual indexed module families now pass.
 Asset/local-install/maintenance cancellation is wired through core/C/native UI

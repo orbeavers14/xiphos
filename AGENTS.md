@@ -28,8 +28,8 @@ Do not rely on another chat's history or assume your checkout is current.
 - Native core: C++17. Legacy-linked helpers: C++11. C ABI: C11. Swift: Swift 6.
   A language-standard increase needs a separate compatibility decision.
 - Owner update (2026-11-04): actively remove obsolete legacy code/distribution
-  machinery as dependencies are eliminated. GTK3 is an opt-in reference build,
-  not the default application. Preserve unrelated changes, regression coverage,
+  machinery as dependencies are eliminated. The GTK3 application/runtime and
+  old packaging are retired; do not restore them as a build option. Preserve unrelated changes, regression coverage,
   migration compatibility, translations and required licenses/notices. Record
   scoped removals and remaining dependencies in doc/modernization/legacy-removal.md;
   do not mistake removal for replacement feature acceptance.

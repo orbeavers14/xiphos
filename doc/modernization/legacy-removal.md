@@ -18,25 +18,28 @@ feature/data compatibility and regression evidence remain requirements.
   requires explicit XIPHOS_BUILD_LEGACY_GTK3=ON. Native frontend entry points
   remain under platforms. This is not a native Windows acceptance claim.
 
-## Next removal batches
+## Source retirement pass
 
-- [ ] Extract bounded legacy characterization inputs from src/main and src/gtk
-  into provenance-preserving reference fixtures. Direct core CMake references:
-  src/backend/sword_main.cc; src/gtk/bookmarks_treeview.c, export_bookmarks.c,
-  preferences_dialog.c, tabbed_browser.c, utilities.c; src/main/display.cc,
-  global_ops.cc, module_dialogs.cc, parallel_view.cc, search_dialog.cc, settings.c,
-  sword.cc, tab_history.c, url.cc, xml.c. Check transitive includes as well as
-  these16 paths before removing full source files; keep equivalence checks.
-- [ ] Replace remaining direct legacy helper compilation/includes in core tests.
-- [ ] Remove GTK3 runtime/editor/backend sources and build rules once the above
-  dependency graph is clear. Track missing workflows in parity matrix rather
-  than silently treating deleted implementation as completed replacement.
-- [ ] Remove remaining GTK3-specific Windows/CPack/Linux packaging after reference
-  build retirement; keep new WinUI3 and GTK4 frontend projects.
-- [ ] Classify ui/pixmaps/desktop/help assets and translation catalogs; preserve
-  reusable art, user guidance, translator credit and source catalogs for native
-  localization. Native Settings/localization are still incomplete.
-- [ ] Remove obsolete documentation/examples after checking runtime/build callers.
+- [x] Captured61 generated characterization snippets and original history header
+  as immutable test inputs under src/core/tests/legacy-reference. Manifest records
+  fixture hashes, original16 source-file hashes and exact pre-retirement commit.
+  Existing tests, fixture setup and expected behaviors remain; CMake no longer
+  extracts source blocks. These are reference oracles, not an archived application.
+- [x] Removed src/backend, editor, examples, gtk, gui, main, webkit, xiphos_html
+  and the GTKBuilder ui tree.
+- [x] Removed all remaining top-level win32, cmake and cpack files and obsolete
+  resource/install CMake files. Root build is core-only; GTK3 opt-in is retired.
+- [x] Preserved Windows Persian GTK catalog under po/legacy-gtk, Debian package
+  copyright under doc/legacy-notices; retained project licenses/translations/art/help.
+
+## Remaining cleanup/replacement work
+
+- [ ] Classify remaining pixmaps/desktop/help content; keep reusable resources
+  and user guidance, then remove unused legacy-only assets and stale manuals.
+- [ ] Native Settings/localization, missing workflows, complete frontend and
+  physical-platform/release acceptance remain open in the parity matrix.
+- [ ] Reconcile historical source-path evidence links as documentation is touched;
+  references to retired code mean the Git version named by that evidence.
 
 Do not rewrite Git history: removed content remains in historical commits.
 Deleting tracked binaries reduces checkout size, not existing clone history.
@@ -58,3 +61,19 @@ Git history is unchanged. Diff and changed-document local-link checks pass.
 Graphify's smaller-graph guard initially rejected the refresh; inspection showed
 its missing source paths were exactly removed build/Festival scripts, then a
 full local deterministic refresh was explicitly allowed. No paid services used.
+
+## Source-retirement verification
+
+2026-11-04: fresh build/retired-clean configures and compiles without any old
+application directories. Full suite:184 passed/1 expected sync-disabled skip out
+of185,27.08s; loopback download test included. An initial fresh-run failure found
+an accidentally removed parallel test config writer; restored before final run.
+All61 checked-in snippet bytes match fresh-build copies and manifest SHA256s.
+Mac native macos_preview target builds against the retained primary SDK with no
+legacy source tree (build/retired-macos-build.log). No visual behavior or native
+Windows/physical Linux acceptance claimed. Diff and current entry-document link
+checks pass. Graphify refreshed locally after deletion; zero paid AI services.
+
+This pass removes302 tracked paths (35094811 bytes before replacement test
+fixtures/notices), including the entire top-level win32 tree. The immutable
+reference fixture directory is about288KiB. Existing Git history is unchanged.

@@ -6,10 +6,10 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-// Explicit GTK/type/display shims; use the actual history layout/limits header.
+// Explicit GTK/type/display shims; use the frozen legacy history layout/limits header.
 using gchar = char; using gint = int; using gpointer = void *;
 struct GtkMenuItem; struct GtkWidget;
-#include "main/tab_history.h"
+#include "legacy-reference/tab_history.h"
 #define TRUE 1
 struct PASSAGE_TAB_INFO {
   TAB_HISTORY history_list[TABHISTORYLENGTH]{};

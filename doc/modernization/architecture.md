@@ -1,5 +1,15 @@
 # Native Xiphos migration: architecture and baseline
 
+GTK source retirement (2026-11-04): owner requested maximum legacy removal.
+The GTK3 application, old editors/backend, legacy Windows distribution and
+CPack/CMake install machinery are removed. Native core tests use61 immutable
+reference snippets with SHA256/provenance, not source extraction at configure
+time. No legacy build option remains. Translations, reusable assets, help and
+notices remain for native reuse. Windows WinUI3 is still planned; missing
+Settings/localization/frontend parity remains open despite code removal.
+See [removal ledger](legacy-removal.md).
+
+
 Baseline: `orbeavers14/xiphos`, `master` at
 `c9976a873bf77630af67ec8df84642225e33f6b3` (2026-10-10 inspection).
 GitHub metadata confirms parent `crosswire/xiphos`. Initial slices used fork
@@ -198,10 +208,10 @@ frontend/tooling remains pending. None is a complete parity/release replacement.
    service extractions, each with legacy characterization and round-trip tests.
 5. Platform packaging, signing, localization and broad parity acceptance.
 
-The GTK app remains the supported complete implementation during migration.
-No release switch until every matrix row is independently validated on each
-platform, user data is proven compatible and regression checks pass. Build
-success alone never establishes functional, visual or workflow parity.
+The GTK application was retired by owner direction on2026-11-04. Native releases
+still require independent matrix validation, proven user-data compatibility and
+regression checks. Removing the old implementation and building successfully do
+not establish functional, visual or workflow parity.
 
 ## Status and retirement
 

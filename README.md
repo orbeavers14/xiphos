@@ -7,8 +7,8 @@ C++ application core and native frontends:
 | Platform | Target frontend | Current implementation |
 |---|---|---|
 | macOS | SwiftUI / AppKit | Reading/history/options, note/reference previews, lexical/direct dictionary lookup and key steps |
-| Windows | WinUI 3 | Planned; legacy GTK application retained |
-| Linux | GTK4 / WebKitGTK | Reading/commentary/dictionary, books/images, ordered search and text/HTML export adapters, profiles and shared-worker windows; legacy GTK3 retained |
+| Windows | WinUI 3 | Planned; native core validation project |
+| Linux | GTK4 / WebKitGTK | Reading/commentary/dictionary, books/images, ordered search and text/HTML export adapters, profiles and shared-worker windows |
 
 The goal is to preserve all existing Bible-study functionality, pane layout,
 module behavior, data and established workflows while adding appropriate
@@ -19,8 +19,8 @@ through an audited adapter to the shared core.
 
 ## Building without the legacy application
 
-The repository-root CMake build now builds the shared core by default, without
-configuring GTK3, the old editor, translations tooling or legacy packaging:
+The repository-root CMake build builds the shared core. The GTK3 application,
+old editors and legacy packaging have been retired:
 
 ```sh
 cmake -S . -B build/core
@@ -29,9 +29,9 @@ ctest --test-dir build/core --output-on-failure
 ```
 
 Native frontend builds remain in `platforms/macos`, `platforms/linux` and
-`platforms/windows`. The retained GTK3 reference build requires explicit
-`-DXIPHOS_BUILD_LEGACY_GTK3=ON`. Its old Fedora30 Windows automation and bundled
-Festival distribution have been removed. See the [removal checklist](doc/modernization/legacy-removal.md).
+`platforms/windows` (Windows frontend still planned). The old application is
+available in Git history; it is no longer a build option. Retained translations
+and assets are inputs for native work. See the [removal checklist](doc/modernization/legacy-removal.md).
 
 ## Status
 

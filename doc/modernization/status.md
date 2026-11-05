@@ -1,5 +1,15 @@
 # Modernization status and acceptance
 
+GTK source retirement (2026-11-04): owner requested maximum legacy removal.
+The GTK3 application, old editors/backend, legacy Windows distribution and
+CPack/CMake install machinery are removed. Native core tests use61 immutable
+reference snippets with SHA256/provenance, not source extraction at configure
+time. No legacy build option remains. Translations, reusable assets, help and
+notices remain for native reuse. Windows WinUI3 is still planned; missing
+Settings/localization/frontend parity remains open despite code removal.
+See [removal ledger](legacy-removal.md).
+
+
 Legacy removal direction (2026-11-04): owner explicitly requests removing old
 code/system where dependencies permit. Root build now selects shared core;
 GTK3 is opt-in. Removed vendored Windows Festival and Fedora30 Docker pipeline,

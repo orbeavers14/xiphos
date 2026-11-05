@@ -1,5 +1,21 @@
 # macOS chat handoff
 
+GTK source retirement (2026-11-04): owner requested maximum legacy removal.
+The GTK3 application, old editors/backend, legacy Windows distribution and
+CPack/CMake install machinery are removed. Native core tests use61 immutable
+reference snippets with SHA256/provenance, not source extraction at configure
+time. No legacy build option remains. Translations, reusable assets, help and
+notices remain for native reuse. Windows WinUI3 is still planned; missing
+Settings/localization/frontend parity remains open despite code removal.
+See [removal ledger](legacy-removal.md).
+Fresh root build:184 passes/one expected sync-disabled skip out of185,27.08s,
+including loopback download. Native macos_preview builds without legacy sources.
+Manifest/fresh-copy hashes verify61 unchanged reference snippets. Initial missing
+parallel fixture config writer was corrected before final checks. Source commit
+and per-source hashes are in tests/legacy-reference/manifest.json. No physical
+Windows/Linux or full visual acceptance follows.
+
+
 Legacy removal direction (2026-11-04): owner explicitly requests removing old
 code/system where dependencies permit. Root build now selects shared core;
 GTK3 is opt-in. Removed vendored Windows Festival and Fedora30 Docker pipeline,
