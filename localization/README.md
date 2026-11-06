@@ -42,3 +42,9 @@ complete gettext-to-native migration.
 Private SWORD catalogs localize book-selector labels without changing canonical
 navigation targets, saved sessions or the SDK's global locale. Typed localized
 reference parsing remains separate; canonical reference input stays supported.
+
+Official upstream905762a (2026-11-05) is integrated with its original Chinese
+UI/help translations and related corrections. Its PO update lives at
+gettext/zh_CN.po after the directory move. Native Chinese activation and broader
+message coverage remain separate work; retaining a catalog does not make every
+new native screen translated.

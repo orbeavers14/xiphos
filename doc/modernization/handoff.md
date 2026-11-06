@@ -1,5 +1,16 @@
 # Shared project handoff: start here in every chat
 
+Upstream translation update (2026-11-05): requested official commit905762a
+(905762aa1d6fbd8432b540f34fa5cf6eaf86dc57) cherry-picked with provenance as
+ad93feb. All41 changed files match upstream byte-for-byte at adapted paths;
+po/POTFILES.in and po/zh_CN.po followed their rename into localization/gettext.
+No po tree or GTK application sources restored. Chinese UI/help catalogs pass
+msgfmt --check; native catalog importer/checks still pass. This imports translator
+work/help assets, not full native Chinese UI activation. Selected-word Hebrew
+search/comparison is recorded in native-ui-todo.md; selection-to-search is not
+yet exposed in the Mac UI, while the underlying word/lemma search modes exist.
+
+
 Localized reading checkpoint (2026-11-05): private-catalog book labels preserve
 canonical targets; actual module RTL metadata reaches native views. Exact
 gettext import adds partial French/German/Spanish resources. Fixed note-window
