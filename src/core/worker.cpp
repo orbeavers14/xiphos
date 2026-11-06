@@ -758,11 +758,15 @@ std::future<ParallelChapter> StudyWorker::read_decorated_parallel(StudyTab tab,s
   const auto profile=annotations.empty()?AnnotationProfile{}:xiphos::core::read_annotations(annotations);
   for(std::size_t column=0;column<result.columns.size();++column){
    const auto &source=result.columns[column];if(source.status!=ParallelColumnStatus::ready)continue;
-   const auto target=s.reader.annotation_target(source.module,result.reference,true);
+   AnnotationTarget target;
+   try { target=s.reader.annotation_target(source.module,result.reference,true); }
+   catch(const std::invalid_argument &) { result.annotation_incomplete=true;continue; }
    BookmarkTags tags;tags.control_module=target.control_module;if(!bookmarks.empty())tags=s.reader.bookmark_tags(marks,source.module,target.reference,{});
    const auto notes=legacy_annotation_cache(profile,target.control_module,target.address.book);
    for(auto &row:result.rows){auto &cell=row.cells.at(column);if(cell.reference.empty())continue;
-    const auto actual=s.reader.annotation_target(source.module,cell.reference,true);
+    AnnotationTarget actual;
+    try { actual=s.reader.annotation_target(source.module,cell.reference,true); }
+    catch(const std::invalid_argument &) { result.annotation_incomplete=true;continue; }
     const auto plan=compose_verse_decoration(actual,tags,notes,row.ordinal==result.selected_verse,true,true);
     const auto remaining=selected->max_bytes-(result.snapshot_bytes-cell.html.size());
     auto html=display_decorated_verse(cell.html,plan,result.invalid_colors,remaining);
@@ -1242,8 +1246,11 @@ std::future<Chapter> StudyWorker::read_chapter(std::string module, std::string r
   });
 }
 std::future<ReferenceChoices> StudyWorker::reference_choices(std::string module, std::string reference) {
-  return impl_->submit([module = std::move(module), reference = std::move(reference)](Impl::State &s) {
-    return s.reader.reference_choices(module, reference);
+  return reference_choices(std::move(module), std::move(reference), {});
+}
+std::future<ReferenceChoices> StudyWorker::reference_choices(std::string module, std::string reference, std::string locale_file) {
+  return impl_->submit([module = std::move(module), reference = std::move(reference), locale_file = std::move(locale_file)](Impl::State &s) {
+    return s.reader.reference_choices(module, reference, locale_file);
   });
 }
 std::future<PassageLink> StudyWorker::resolve_link(std::string module, std::string uri) {

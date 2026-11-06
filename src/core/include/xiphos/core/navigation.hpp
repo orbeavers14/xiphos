@@ -11,4 +11,5 @@ struct ReferenceChoices {
 };
 // Caller supplies a verse-key module and serializes all accesses.
 ReferenceChoices reference_choices(sword::SWModule &module, const std::string &reference);
+ReferenceChoices reference_choices(sword::SWModule &module, const std::string &reference, const std::string &locale_file);
 }

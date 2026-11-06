@@ -22,6 +22,10 @@ static void write(const fs::path &p,const std::string &s){std::ofstream out(p,st
 int main(int argc,char **argv)try{
  check(argc==3,"Expected scratch and module paths");fs::path root=argv[1];check(root.filename()=="andbible-fixture","Named disposable fixture only");fs::remove_all(root);fs::create_directories(root);
  auto library=root/"library";fs::copy(fs::path(argv[2]),library,fs::copy_options::recursive);auto data=library/"data/RtlOriginal";fs::create_directories(data);check(sword::RawText::createModule(data.string().c_str())==0,"Create original RTL fixture");{sword::RawText writer(data.string().c_str(),nullptr,nullptr,nullptr,sword::ENC_UTF8,sword::DIRECTION_RTL,sword::FMT_PLAIN,"he");writer.setKey("John3:16");writer.setEntry("שלום עולם — نص أصلي Ω");writer.setKey("John3:17");writer.setEntry("שלום שני — نص آخر");}write(library/"mods.d/RtlOriginal.conf","[RtlOriginal]\nDataPath=./data/RtlOriginal/\nModDrv=RawText\nSourceType=Plain\nEncoding=UTF-8\nDirection=RtoL\nLang=he\nDescription=Original RTL fixture\n");
+ auto otdata=library/"data/OriginalOT";fs::create_directories(otdata);check(sword::RawText::createModule(otdata.string().c_str())==0,"Create original OT-only fixture");
+ {sword::RawText writer(otdata.string().c_str());writer.setKey("Genesis1:1");writer.setEntry("Original OT-only canon content.");}
+ write(library/"mods.d/OriginalOT.conf","[OriginalOT]\nDataPath=./data/OriginalOT/\nModDrv=RawText\nSourceType=Plain\nEncoding=UTF-8\nVersification=MT\nLang=he\nDescription=Original OT-only canon fixture\n");
+
  auto dbpath=root/"backup.sqlite";sqlite3 *db=nullptr;check(sqlite3_open(dbpath.string().c_str(),&db)==SQLITE_OK,"Create fixture DB");
  auto sql=[&](const std::string &s){char *error=nullptr;auto result=sqlite3_exec(db,s.c_str(),nullptr,nullptr,&error);std::string message=error?error:"SQL error";sqlite3_free(error);if(result!=SQLITE_OK)throw std::runtime_error(message);};
  sql("CREATE TABLE BibleBookmark(id BLOB,v11n TEXT,ordinalStart INTEGER,ordinalEnd INTEGER,book TEXT); CREATE TABLE Label(id BLOB,name TEXT,color INTEGER); CREATE TABLE BibleBookmarkToLabel(bookmarkId BLOB,labelId BLOB,orderNumber INTEGER); CREATE TABLE BibleBookmarkNotes(bookmarkId BLOB,notes TEXT);");
@@ -79,6 +83,12 @@ int main(int argc,char **argv)try{
  for(size_t column=0;column<3;++column)check(std::string(xc_parallel_cell_html(parallel,15,column)).find("xc-personal-note")!=std::string::npos,"Each ready parallel source uses canonical generic note");
  check(std::string(xc_parallel_cell_html(parallel,15,0)).find("background-color:#ff0000")!=std::string::npos&&xc_parallel_annotations_incomplete(parallel),"Parallel retains first tag priority and incomplete metadata disclosure");
  xc_parallel_chapter_release(parallel);
+ const char *mixed_canon[]={"Text","OriginalOT"};
+ check(xc_worker_visit_parallel(worker,tab,mixed_canon,2,"John3:16",0,1,16*1024*1024,&request)==XC_OK,"Mixed canon parallel selection");wait(request);raw=xc_request_take_parallel_chapter(request);xc_request_release(request);check(raw,"Mixed canon raw result");xc_parallel_chapter_release(raw);
+ check(xc_worker_read_decorated_parallel(worker,tab,file.string().c_str(),annotations.string().c_str(),&request)==XC_OK,"Mixed canon decoration");wait(request);parallel=xc_request_take_parallel_chapter(request);xc_request_release(request);
+ check(parallel&&xc_parallel_annotations_incomplete(parallel)&&std::string(xc_parallel_cell_html(parallel,15,0)).find("xc-personal-note")!=std::string::npos,"Unavailable annotation canon retains valid column notes and reports partial mapping");
+ xc_parallel_chapter_release(parallel);
+
  check(xc_worker_visit_parallel(worker,tab,columns,4,"John3:16",0,1,raw_bytes,&request)==XC_OK,"Exact raw parallel budget admission");wait(request);auto *exact=xc_request_take_parallel_chapter(request);xc_request_release(request);xc_parallel_chapter_release(exact);
  check(xc_worker_read_decorated_parallel(worker,tab,file.string().c_str(),annotations.string().c_str(),&request)==XC_OK,"Bounded decoration admission");check(wait(request,false)!=XC_OK&&!xc_request_take_parallel_chapter(request),"Insufficient decorated budget publishes no partial matrix");xc_request_release(request);
  check(xc_worker_parallel_selection(worker,tab,&request)==XC_OK,"Read preserved selection after decoration failure");wait(request);auto *intent=xc_request_take_parallel_selection(request);xc_request_release(request);check(xc_parallel_selection_max_bytes(intent)==raw_bytes&&xc_parallel_selection_module_count(intent)==4,"Decoration failure preserves committed selection and budget");xc_parallel_selection_release(intent);

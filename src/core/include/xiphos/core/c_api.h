@@ -1728,6 +1728,8 @@ xc_status xc_worker_read_tab_commentary_chapter(xc_worker *worker, uint64_t tab,
 xc_status xc_worker_read_tab_chapter(xc_worker *worker, uint64_t tab, const char *module, const char *reference, unsigned display_flags, xc_request **out);
 xc_status xc_worker_read_chapter(xc_worker *worker, const char *module, const char *reference, unsigned flags, xc_request **out);
 xc_status xc_worker_reference_choices(xc_worker *worker, const char *module, const char *reference, xc_request **out);
+/* Copied UTF-8 locale-file path; labels only. Targets and SDK global locale are unchanged. */
+xc_status xc_worker_reference_choices_localized(xc_worker *worker, const char *module, const char *reference, const char *locale_file, xc_request **out);
 xc_status xc_worker_resolve_link(xc_worker *worker, const char *current_module, const char *uri, xc_request **out);
 xc_status xc_request_poll(xc_request *request);
 void xc_request_release(xc_request *request);
@@ -1811,6 +1813,7 @@ int xc_catalog_has_book_tree(const xc_catalog *catalog, size_t index);
 /* Initial verse-search capability; not full advanced/indexed search acceptance. */
 int xc_catalog_has_verse_search(const xc_catalog *catalog, size_t index);
 int xc_catalog_is_regular_commentary(const xc_catalog *catalog, size_t index);
+int xc_catalog_is_rtl(const xc_catalog *catalog, size_t index);
 unsigned xc_catalog_lexicon_roles(const xc_catalog *catalog, size_t index);
 /* Declared module features using the legacy GlobalOptionFilter checks, not
  * effective SDK/markup support or saved settings. Italic headings also require
@@ -1844,6 +1847,7 @@ int xc_module_is_dictionary(const xc_reader *reader, size_t index);
 int xc_module_has_book_tree(const xc_reader *reader, size_t index);
 int xc_module_has_verse_search(const xc_reader *reader, size_t index);
 int xc_module_is_regular_commentary(const xc_reader *reader, size_t index);
+int xc_module_is_rtl(const xc_reader *reader, size_t index);
 unsigned xc_module_lexicon_roles(const xc_reader *reader, size_t index);
 /* out is NULL on failure. Entry owns copied strings independently of reader;
  * release exactly once. An empty HTML string is a valid missing-text entry.

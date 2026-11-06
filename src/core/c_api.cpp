@@ -2207,6 +2207,12 @@ xc_status xc_worker_reference_choices(xc_worker *w, const char *id, const char *
   if (!id || !*id || !ref || !*ref) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.reference_choices(id, ref); });
 }
+xc_status xc_worker_reference_choices_localized(xc_worker *w, const char *id, const char *ref, const char *locale, xc_request **out) {
+  if (!bounded_image_c_text(id,4096) || !bounded_image_c_text(ref,4096) || !bounded_image_c_text(locale,4096)) {
+    if(out) *out=nullptr; return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w,out,[=](auto &worker) { return worker.reference_choices(id,ref,locale); });
+}
 xc_status xc_worker_resolve_link(xc_worker *w, const char *id, const char *uri, xc_request **out) {
   if (!admitted_link_context(id) || !admitted_link_uri(uri)) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.resolve_link(id ? id : "", uri); });
@@ -2315,6 +2321,7 @@ const char *xc_catalog_id(const xc_catalog *c, size_t i) { auto m = catalog_at(c
 const char *xc_catalog_description(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m ? m->description.c_str() : nullptr; }
 const char *xc_catalog_type(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m ? m->type.c_str() : nullptr; }
 const char *xc_catalog_language(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m ? m->language.c_str() : nullptr; }
+int xc_catalog_is_rtl(const xc_catalog *c, size_t i) { auto m = catalog_at(c,i); return m && m->right_to_left; }
 int xc_catalog_is_regular_commentary(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m && m->regular_commentary ? 1 : 0; }
 int xc_catalog_is_dictionary(const xc_catalog *c, size_t i) { return c && i < c->value.size() && c->value[i].dictionary ? 1 : 0; }
 int xc_catalog_has_book_tree(const xc_catalog *c, size_t i) { return c && i < c->value.size() && c->value[i].indexed_book ? 1 : 0; }
@@ -2374,6 +2381,7 @@ const char *xc_module_id(const xc_reader *r, size_t i) { auto m = module_at(r, i
 const char *xc_module_description(const xc_reader *r, size_t i) { auto m = module_at(r, i); return m ? m->description.c_str() : nullptr; }
 const char *xc_module_type(const xc_reader *r, size_t i) { auto m = module_at(r, i); return m ? m->type.c_str() : nullptr; }
 const char *xc_module_language(const xc_reader *r, size_t i) { auto m = module_at(r, i); return m ? m->language.c_str() : nullptr; }
+int xc_module_is_rtl(const xc_reader *r, size_t i) { auto m = module_at(r,i); return m && m->right_to_left; }
 int xc_module_is_regular_commentary(const xc_reader *r, size_t i) { auto m = module_at(r, i); return m && m->regular_commentary ? 1 : 0; }
 int xc_module_is_dictionary(const xc_reader *r, size_t i) { return r && i < r->value->modules().size() && r->value->modules()[i].dictionary ? 1 : 0; }
 int xc_module_has_book_tree(const xc_reader *r, size_t i) { return r && i < r->value->modules().size() && r->value->modules()[i].indexed_book ? 1 : 0; }

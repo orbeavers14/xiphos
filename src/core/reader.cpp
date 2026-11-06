@@ -122,7 +122,7 @@ Reader::Reader(const std::string &root) : impl_(std::make_unique<Impl>()) {
     impl_->modules.push_back({m.getName(), m.getDescription(), m.getType(),
                              language ? language : "", module_options(m), transliteration_available, dictionary,
                              dictionary ? xiphos_core_lexicon_role(feature) : 0,
-                             regular_commentary(m.getType(), m.getConfigEntry("ModDrv")), detail::indexed_book(m), detail::supports_verse_search(m)});
+                             regular_commentary(m.getType(), m.getConfigEntry("ModDrv")), detail::indexed_book(m), detail::supports_verse_search(m), m.getDirection() == sword::DIRECTION_RTL});
   }
 }
 Reader::~Reader() = default;
@@ -400,8 +400,11 @@ BookEntry Reader::book_impl(const std::string &id, std::uint64_t offset, const E
   return detail::capture_book_entry(*module, offset);
 }
 ReferenceChoices Reader::reference_choices(const std::string &id, const std::string &reference) {
+  return reference_choices(id, reference, {});
+}
+ReferenceChoices Reader::reference_choices(const std::string &id, const std::string &reference, const std::string &locale_file) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
-  return xiphos::core::reference_choices(impl_->verse_module(id, reference), reference);
+  return xiphos::core::reference_choices(impl_->verse_module(id, reference), reference, locale_file);
 }
 PassageLink Reader::resolve_link(const std::string &current_module, const std::string &url) {
   if (!detail::study_link_arguments(current_module, {}, url))

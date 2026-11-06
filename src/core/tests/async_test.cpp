@@ -2,6 +2,7 @@
 #include "xiphos/core/c_api.h"
 #include <chrono>
 #include <cstring>
+#include <fstream>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -58,6 +59,17 @@ int main(int argc, char **argv) {
     auto *choices = xc_request_take_choices(request);
     check(choices && xc_choices_count(choices, XC_VERSE) == 36, "async choices");
     xc_choices_release(choices); xc_request_release(request);
+    const auto localeFile = std::filesystem::path(argv[1]) / "original-reference-locale.conf";
+    {std::ofstream out(localeFile);out << "[Meta]\nName=original-fr\nEncoding=UTF-8\n[Text]\nJohn=Jean\n";}
+    std::string ownedLocale = localeFile.string();
+    check(xc_worker_reference_choices_localized(worker,"ParityTest","John 3:16",ownedLocale.c_str(),&request)==XC_OK,"Queue localized selector");
+    ownedLocale.assign("caller changed input");
+    check(wait(request)==XC_OK,"Owned localized selector request");
+    choices=xc_request_take_choices(request);xc_request_release(request);
+    check(choices && std::string(xc_choices_current_label(choices, XC_BOOK))=="Jean","C copied localized selector labels");
+    xc_choices_release(choices);
+    std::filesystem::remove(localeFile);
+
     check(xc_worker_resolve_link(worker, "ParityTest", "sword:///John+3%3A17", &request) == XC_OK && wait(request) == XC_OK, "link request");
     auto *link = xc_request_take_link(request);
     check(link && std::strcmp(xc_link_reference(link), "John 3:17") == 0, "async link target");

@@ -3,8 +3,31 @@
 #include <swmodule.h>
 #include <versekey.h>
 #include <stdexcept>
+#include <swlocale.h>
+#include <filesystem>
+#include <memory>
+#include <cstring>
 namespace xiphos::core {
 ReferenceChoices reference_choices(sword::SWModule &module, const std::string &reference) {
+  return reference_choices(module, reference, {});
+}
+ReferenceChoices reference_choices(sword::SWModule &module, const std::string &reference, const std::string &locale_file) {
+  std::unique_ptr<sword::SWLocale> locale;
+  if (!locale_file.empty()) {
+    const auto path = std::filesystem::u8path(locale_file);
+    if (locale_file.size() > 4096 || locale_file.find('\0') != std::string::npos ||
+        std::filesystem::is_symlink(path) || !std::filesystem::is_regular_file(path) ||
+        std::filesystem::file_size(path) > 512 * 1024)
+      throw std::invalid_argument("Reference locale must be a bounded regular file");
+    locale = std::make_unique<sword::SWLocale>(locale_file.c_str());
+    if (!locale->getEncoding() || std::strcmp(locale->getEncoding(), "UTF-8"))
+      throw std::invalid_argument("Reference locale must use UTF-8");
+  }
+  auto label = [&](sword::VerseKey key) {
+    key.setLocale("en");
+    const std::string english = key.getBookName();
+    return locale ? std::string(locale->translate(english.c_str())) : std::string(key.getBookName());
+  };
   auto *key = dynamic_cast<sword::VerseKey *>(module.getKey());
   if (!key) throw std::invalid_argument("Selectors require a verse-key module");
   sword::VerseKey current(*key);
@@ -13,7 +36,7 @@ ReferenceChoices reference_choices(sword::SWModule &module, const std::string &r
   if (current.getError() || current.getChapter() < 1 || current.getVerse() < 1)
     throw std::invalid_argument("SWORD could not resolve selector context");
   ReferenceChoices result;
-  result.book_label = current.getBookName();
+  result.book_label = locale ? label(current) : current.getBookName();
   result.chapter_label = std::to_string(current.getChapter());
   result.verse_label = std::to_string(current.getVerse());
   // Match legacy module_has_testament's first/last-entry probe. Restore the
@@ -43,7 +66,7 @@ ReferenceChoices reference_choices(sword::SWModule &module, const std::string &r
       // This order mirrors on_ot/nt_book_menu_select. Preserve SWORD's behavior
       // rather than inventing chapter/verse reset rules in the frontend.
       target.setTestament(testament); target.setBook(book);
-      result.books.push_back({names.getBookName(), target.getText()});
+      result.books.push_back({locale ? label(names) : names.getBookName(), target.getText()});
     }
   }
   for (int chapter = 1; chapter <= current.getChapterMax(); ++chapter) {

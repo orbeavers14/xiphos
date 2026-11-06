@@ -39,6 +39,7 @@ struct Module {
   bool regular_commentary = false;
   bool indexed_book = false;
   bool verse_search = false;
+  bool right_to_left = false;
 };
 
 
@@ -143,6 +144,7 @@ public:
   BookNote book_note(const std::string &module, std::uint64_t offset, const std::string &identifier,
                      bool render_body = true);
   ReferenceChoices reference_choices(const std::string &module, const std::string &reference);
+  ReferenceChoices reference_choices(const std::string &module, const std::string &reference, const std::string &locale_file);
   // Single-passage URI aliases resolve before unknown offered names fall back
   // to the exact installed current/main ID. No navigation or history mutation.
   PassageLink resolve_link(const std::string &current_module, const std::string &url);
