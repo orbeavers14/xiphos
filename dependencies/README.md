@@ -65,6 +65,7 @@ Windows interface dependencies remain planned until its native frontend exists.
 
 | Frontend | Dependency | Minimum version | Installed / observed version | Purpose | Areas of use / location |
 |---|---|---|---|---|---|
+| **macOS resource tooling** | Python3 standard library | 3.8 | 3.9.6; manually selected interpreter inspected 2026-11-05 | Regenerate/check native catalogs and exact gettext import | `localization/tools/`; no Python runtime dependency in the app |
 | **macOS** | Swift compiler | Swift 6 language mode | 6.4.2 | Compile native Apple adapters and UI | `platforms/macos/CMakeLists.txt` |
 | **macOS** | Xcode / Apple SDK | Swift 6-compatible toolchain; no independent Xcode release floor declared | Xcode 27.2; active SDK 27.2 | Apple compiler, framework and platform SDKs | Native Mac build; libxml2 retains cached CLT 26 SDK headers |
 | **macOS** | SwiftUI | macOS 13 project baseline; runtime compatibility still needs target validation | Bundled framework; developer SDK 27.2 | Reader/editor and Module Library presentation | `platforms/macos/ReaderApp.swift`, editor/search panes, `LibraryManagement.swift`, `SyncUI.swift`, `MigrationUI.swift` |

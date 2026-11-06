@@ -73,6 +73,8 @@ struct CoreRecoveryFile: Sendable {
     let previous: Bool
 }
 actor CoreWorker {
+    private var referenceLocaleFile: String?
+    func setReferenceLocaleFile(_ file: String?) { referenceLocaleFile = file }
     private var handle: ShutdownHandle?
     init(root: String? = nil) throws {
         var opened: OpaquePointer?
@@ -175,7 +177,7 @@ actor CoreWorker {
                 isRegularCommentary: xc_catalog_is_regular_commentary(catalog, index) != 0,
                 lexiconRoles: LexiconRoles(rawValue: xc_catalog_lexicon_roles(catalog, index)),
                 hasBookTree: xc_catalog_has_book_tree(catalog, index) != 0,
-                hasVerseSearch: xc_catalog_has_verse_search(catalog, index) != 0)
+                hasVerseSearch: xc_catalog_has_verse_search(catalog, index) != 0, rightToLeft: xc_catalog_is_rtl(catalog,index) != 0)
         }
     }
     func bookTree(module: String, offset: UInt64) async throws -> BookTree {
@@ -1469,8 +1471,12 @@ actor CoreWorker {
     func referenceChoices(module: String, reference: String) async throws -> ReferenceChoices {
         var request: OpaquePointer?
         let handle = try worker()
+        let localeFile = referenceLocaleFile
         let status = module.withCString { id in
-            reference.withCString { xc_worker_reference_choices(handle, id, $0, &request) }
+            reference.withCString { ref in
+                if let locale = localeFile { return locale.withCString { xc_worker_reference_choices_localized(handle, id, ref, $0, &request) } }
+                return xc_worker_reference_choices(handle, id, ref, &request)
+            }
         }
         let completed = try await wait(status, request)
         defer { xc_request_release(completed) }

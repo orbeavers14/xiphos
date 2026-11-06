@@ -170,6 +170,7 @@ final class ReaderModel: ObservableObject {
         };return true
     }
     private var displayedEntry: RenderedEntry?
+    var readingRightToLeft: Bool? { modules.first(where: {$0.id == displayedModule})?.rightToLeft }
     private var displayedModule: String?
     private var revision: UInt64 = 0
     private var closed = false
@@ -1013,6 +1014,7 @@ final class ReaderModel: ObservableObject {
 
 struct PassageView: NSViewRepresentable {
     let html: String
+    var rightToLeft: Bool? = nil
     var css: String = ""
     let anchor: String?
     var anchorRevision: UInt64 = 0
@@ -1025,6 +1027,7 @@ struct PassageView: NSViewRepresentable {
         var loaded: String?
         var loadedCSS: String?
         var loadedInlineImages = false
+        var loadedRightToLeft: Bool?
         var anchor: String?
         var anchorRevision: UInt64 = 0
         var navigation: WKNavigation?
@@ -1120,16 +1123,17 @@ struct PassageView: NSViewRepresentable {
         let changedAnchor = context.coordinator.anchor != anchor || context.coordinator.anchorRevision != anchorRevision
         context.coordinator.anchor = anchor
         context.coordinator.anchorRevision = anchorRevision
-        guard context.coordinator.loaded != html || context.coordinator.loadedCSS != css || context.coordinator.loadedInlineImages != allowsInlineImages else {
+        guard context.coordinator.loaded != html || context.coordinator.loadedCSS != css || context.coordinator.loadedInlineImages != allowsInlineImages || context.coordinator.loadedRightToLeft != rightToLeft else {
             if changedAnchor { context.coordinator.scrollToAnchor(view) }
             return
         }
         context.coordinator.loaded = html
         context.coordinator.loadedCSS = css
         context.coordinator.loadedInlineImages = allowsInlineImages
-        context.coordinator.navigation = view.loadHTMLString(Self.documentHTML(html: html, css: css, allowsInlineImages: allowsInlineImages), baseURL: nil)
+        context.coordinator.loadedRightToLeft = rightToLeft
+        context.coordinator.navigation = view.loadHTMLString(Self.documentHTML(html: html, css: css, allowsInlineImages: allowsInlineImages, rightToLeft: rightToLeft), baseURL: nil)
     }
-    static func documentHTML(html: String, css: String, allowsInlineImages: Bool = false) -> String {
+    static func documentHTML(html: String, css: String, allowsInlineImages: Bool = false, rightToLeft: Bool? = nil) -> String {
         """
             <!doctype html><html><head><meta charset="utf-8">
             <base href="xiphos-preview://study/">
@@ -1150,10 +1154,10 @@ struct PassageView: NSViewRepresentable {
             .xc-verse, .xc-commentary-section { scroll-margin-top: 12px; }
             .xc-verse.xc-current, .xc-commentary-section.xc-current { background: Highlight; color: HighlightText; }
             .xc-current a { color: inherit; }
-            .xc-verse sup { font-size: 0.7em; padding-right: 4px; }
+            .xc-verse sup { font-size: 0.7em; padding-inline-end: 4px; }
             \(css)
             </style>
-            </head><body>\(html)</body></html>
+            </head><body dir="\(rightToLeft.map { $0 ? "rtl" : "ltr" } ?? "auto")">\(html)</body></html>
             """
     }
     static func dismantleNSView(_ view: WKWebView, coordinator: Coordinator) {
@@ -1482,7 +1486,7 @@ struct ReaderWindow: View {
                 if !model.renderedReference.isEmpty {
                     Text(model.renderedReference).font(.headline).padding(12)
                 }
-                PassageView(html: model.html, css: model.lexicalPresentation.css, anchor: model.renderedAnchor, anchorRevision: model.renderedAnchorRevision,
+                PassageView(html: model.html, rightToLeft: model.readingRightToLeft, css: model.lexicalPresentation.css, anchor: model.renderedAnchor, anchorRevision: model.renderedAnchorRevision,
                             onScrollFailure: { model.message = $0 }, onLink: { model.followLink($0) },
                             onLinkHover: { model.previewStudyLink($0) })
                 if !model.readingSourceNotice.isEmpty {Text(model.readingSourceNotice).font(.caption).foregroundStyle(.secondary).padding(8)}
@@ -1541,7 +1545,7 @@ struct ReaderWindow: View {
                             }
                             if let entry = model.commentaryEntry {
                                 Text(model.commentaryChapter?.title ?? entry.reference).font(.caption).padding(8)
-                                PassageView(html: model.commentaryDecoration?.html ?? model.commentaryChapter?.html ?? (entry.headingHTML + entry.html), css: model.commentaryDecoration?.css ?? (model.commentaryChapter?.lexical ?? entry.lexical).css, anchor: model.commentaryRenderedAnchor, anchorRevision: model.commentaryAnchorRevision, onScrollFailure: { model.message = $0 },
+                                PassageView(html: model.commentaryDecoration?.html ?? model.commentaryChapter?.html ?? (entry.headingHTML + entry.html), rightToLeft: model.modules.first(where: {$0.id == model.commentarySelection})?.rightToLeft, css: model.commentaryDecoration?.css ?? (model.commentaryChapter?.lexical ?? entry.lexical).css, anchor: model.commentaryRenderedAnchor, anchorRevision: model.commentaryAnchorRevision, onScrollFailure: { model.message = $0 },
                                     onLink: { model.followCommentaryLink($0) },
                                     onLinkHover: { model.previewStudyLink($0) })
                                 if model.commentaryChapter?.verses.allSatisfy({ $0.html.isEmpty && $0.headingHTML.isEmpty }) ?? (entry.html.isEmpty && entry.headingHTML.isEmpty) {
@@ -1601,7 +1605,7 @@ struct ReaderWindow: View {
                     Divider()
                     if let entry = model.dictionaryEntry {
                         Text("\(entry.module) • \(entry.key)").font(.caption).padding(8)
-                        PassageView(html: entry.html, anchor: entry.anchor, anchorRevision: model.dictionaryAnchorRevision, onScrollFailure: { model.message = $0 },
+                        PassageView(html: entry.html, rightToLeft: model.modules.first(where: {$0.id == entry.module})?.rightToLeft, anchor: entry.anchor, anchorRevision: model.dictionaryAnchorRevision, onScrollFailure: { model.message = $0 },
                                     onLink: { model.followLink($0, currentModule: model.dictionarySource?.module, currentReference: model.dictionarySource?.reference) },
                                     onLinkHover: { model.previewStudyLink($0) })
                     } else {
@@ -1643,8 +1647,8 @@ struct XiphosNativePreview: App {
                 Button("Import Legacy Settings and Session…") { delegate.openLegacyMigration() }
                 Button("BibleSync…") { delegate.openSync() }
                 Button("Bookmarks and Imports…") { delegate.openBookmarks() }
-                Button("Personal Verse Notes…") { delegate.openPersonalNotes() }
-                Button("Saved Parallel Reading Sets…") { delegate.openParallelSets() }
+                Button("Personal Verse Notes…") { delegate.openPersonalNotes() }.keyboardShortcut("n", modifiers: [.command,.shift])
+                Button("Saved Parallel Reading Sets…") { delegate.openParallelSets() }.keyboardShortcut("p", modifiers: [.command,.shift])
                 Button("Module Library…") { delegate.openModuleLibrary() }
                 Button("Choose Module Library Folder…") { delegate.chooseModuleLibrary() }
                 Button("New Module Library…") { delegate.chooseModuleLibrary(create:true) }

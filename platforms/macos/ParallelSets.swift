@@ -107,11 +107,11 @@ struct NativeParallelChapterPane: View {
     let chapter: CoreParallelChapter
     private func escape(_ value: String) -> String { value.replacingOccurrences(of:"&",with:"&amp;").replacingOccurrences(of:"<",with:"&lt;").replacingOccurrences(of:">",with:"&gt;").replacingOccurrences(of:"\"",with:"&quot;") }
     var table: String {
-        var result="<table class=\"xc-parallel\"><thead><tr><th>Reference</th>"
-        for column in chapter.columns { result += "<th>"+escape(column.requested)+(column.ready ? "" : " (unavailable)")+"</th>" }
+        var result="<table class=\"xc-parallel\" aria-label=\""+escape(NSLocalizedString("Parallel reading",comment:"Accessible parallel chapter table"))+"\"><thead><tr><th scope=\"col\">"+escape(NSLocalizedString("Reference",comment:"Parallel table column"))+"</th>"
+        for column in chapter.columns { result += "<th scope=\"col\">"+escape(column.requested)+(column.ready ? "" : " (unavailable)")+"</th>" }
         result += "</tr></thead><tbody>"
         for row in chapter.rows {
-            result += "<tr><th>"+escape(row.reference)+"</th>"
+            result += "<tr><th scope=\"row\">"+escape(row.reference)+"</th>"
             for (index,cell) in row.cells.enumerated() {
                 let column=chapter.columns[index]
                 result += "<td dir=\""+(column.rtl ? "rtl" : "ltr")+"\" data-xc-module=\""+escape(column.module)+"\" data-xc-reference=\""+escape(cell.reference)+"\">"

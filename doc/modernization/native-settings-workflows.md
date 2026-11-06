@@ -1,5 +1,7 @@
 # Native Settings, localization and reading windows
 
+2026-11-05 update: [localized selectors, RTL, keyboard and parallel/annotation checks](localized-reading-verification.md) supersede the initial localization coverage below.
+
 2026-11-04 scoped implementation. Settings is no longer an empty SwiftUI scene.
 It observes the active reader/session, forwards supported reading/display options
 and lexicon choices to existing core-backed model commands, and saves through

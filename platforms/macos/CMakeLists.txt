@@ -89,6 +89,7 @@ set(preview_sources
   "${CMAKE_CURRENT_SOURCE_DIR}/ReaderApp.swift" "${CMAKE_CURRENT_SOURCE_DIR}/BookPane.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/ImagePreview.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SearchModel.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/SearchPane.swift" "${CMAKE_CURRENT_SOURCE_DIR}/SearchExportDestination.swift")
+file(GLOB sword_reference_locales CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../../localization/sword/*.conf")
 set(swift_cache "${CMAKE_CURRENT_BINARY_DIR}/swift-cache")
 set(swift_target "${CMAKE_SYSTEM_PROCESSOR}-apple-macosx${CMAKE_OSX_DEPLOYMENT_TARGET}")
 set(app "${CMAKE_CURRENT_BINARY_DIR}/XiphosNativePreview.app")
@@ -101,6 +102,12 @@ foreach(resource IN LISTS native_localizations)
   configure_file("${resource}" "${app}/Contents/Resources/${resource_path}" COPYONLY)
 endforeach()
 
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../../localization/sword/LICENSE" "${app}/Contents/Resources/sword-locales/LICENSE" COPYONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../../localization/sword/README.md" "${app}/Contents/Resources/sword-locales/README.md" COPYONLY)
+foreach(resource IN LISTS sword_reference_locales)
+  get_filename_component(resource_name "${resource}" NAME)
+  configure_file("${resource}" "${app}/Contents/Resources/sword-locales/${resource_name}" COPYONLY)
+endforeach()
 add_custom_command(OUTPUT "${app}/Contents/MacOS/XiphosNativePreview"
   COMMAND ${SWIFTC} -swift-version 6 -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
     -I "${bridge}" ${adapter} ${preview_sources}
@@ -279,6 +286,8 @@ if(BUILD_TESTING)
   set_tests_properties(reader_model_bookmark_merge PROPERTIES FIXTURES_REQUIRED andbible_fixture TIMEOUT 60)
   add_test(NAME reader_model_asset_formats COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --asset-formats "${CMAKE_CURRENT_BINARY_DIR}/core/mixed-search-fixture")
   set_tests_properties(reader_model_asset_formats PROPERTIES FIXTURES_REQUIRED mixed_asset_fixture TIMEOUT 60)
+  add_test(NAME reader_model_localized_rtl_webview COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --localized-rtl-webview "${CMAKE_CURRENT_BINARY_DIR}/core/parallel-interpolation-fixture" "${CMAKE_CURRENT_SOURCE_DIR}/../../localization/sword/fr.conf")
+  set_tests_properties(reader_model_localized_rtl_webview PROPERTIES FIXTURES_REQUIRED parallel_fixture TIMEOUT 60)
   add_test(NAME reader_model_reading_decorations COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --reading-decorations "${CMAKE_CURRENT_BINARY_DIR}/core/rich-module-fixture")
   set_tests_properties(reader_model_reading_decorations PROPERTIES FIXTURES_REQUIRED rich_module_fixture TIMEOUT 60)
   add_test(NAME reader_model_parallel_reading COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke" --parallel-reading "${CMAKE_CURRENT_BINARY_DIR}/core/rich-module-fixture")

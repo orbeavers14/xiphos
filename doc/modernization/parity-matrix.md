@@ -1,5 +1,16 @@
 # Functional, workflow and design parity ledger
 
+Localized reading checkpoint (2026-11-05): private-catalog book labels preserve
+canonical targets; actual module RTL metadata reaches native views. Exact
+gettext import adds partial French/German/Spanish resources. Fixed note-window
+Command-S routing and mixed-canon parallel annotation failure. Final native258
+passes/2 expected skips out of260,149.12s; focused sanitizer4/4. See
+[contract/evidence/limits](localized-reading-verification.md). Typed localized
+reference input, complete translations/VoiceOver and native screen redesign
+remain open. Selected-word Hebrew search and stacked comparison are recorded
+in [native UI to-do](native-ui-todo.md).
+
+
 Settings/localization/tabs checkpoint (2026-11-04): native Settings now exposes
 core-backed reading/lexicon controls and persistent startup/default-module/
 recovery preferences; successful non-secret sync choices persist without auto

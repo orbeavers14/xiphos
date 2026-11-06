@@ -21,7 +21,7 @@ import SwiftUI
         let seconds = store.integer(forKey: prefix + "recovery")
         recoverySeconds = [5,15,30,60].contains(seconds) ? seconds : 5
         let savedLanguage = store.string(forKey: prefix + "language") ?? "system"
-        language = ["system","en","fr"].contains(savedLanguage) ? savedLanguage : "system"
+        language = ["system","en","fr","de","es"].contains(savedLanguage) ? savedLanguage : "system"
         bible = store.string(forKey: prefix + "bible") ?? ""
         commentary = store.string(forKey: prefix + "commentary") ?? ""
     }
@@ -68,6 +68,8 @@ import SwiftUI
                     Text("System language").tag("system")
                     Text("English").tag("en")
                     Text("Français — partial translation").tag("fr")
+                    Text("Deutsch — partial translation").tag("de")
+                    Text("Español — partial translation").tag("es")
                 }
                 Text("Restart to apply the interface language. Untranslated text uses English.").font(.callout)
                 Picker("Default Bible for new windows", selection: $preferences.bible) {

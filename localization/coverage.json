@@ -1,0 +1,22 @@
+{
+  "en": {
+    "translated_or_fallback_entries": 376,
+    "extracted_literal_keys": 376,
+    "partial": false
+  },
+  "fr": {
+    "translated_or_fallback_entries": 73,
+    "extracted_literal_keys": 376,
+    "partial": true
+  },
+  "de": {
+    "translated_or_fallback_entries": 38,
+    "extracted_literal_keys": 376,
+    "partial": true
+  },
+  "es": {
+    "translated_or_fallback_entries": 37,
+    "extracted_literal_keys": 376,
+    "partial": true
+  }
+}

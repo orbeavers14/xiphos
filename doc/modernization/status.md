@@ -1,5 +1,16 @@
 # Modernization status and acceptance
 
+Localized reading checkpoint (2026-11-05): private-catalog book labels preserve
+canonical targets; actual module RTL metadata reaches native views. Exact
+gettext import adds partial French/German/Spanish resources. Fixed note-window
+Command-S routing and mixed-canon parallel annotation failure. Final native258
+passes/2 expected skips out of260,149.12s; focused sanitizer4/4. See
+[contract/evidence/limits](localized-reading-verification.md). Typed localized
+reference input, complete translations/VoiceOver and native screen redesign
+remain open. Selected-word Hebrew search and stacked comparison are recorded
+in [native UI to-do](native-ui-todo.md).
+
+
 Localization layout (2026-11-04): lowercase localization/ now contains gettext
 catalogs (moved from po), macos native resources, and Windows resource guidance.
 Mac bundle copy rules use the new path; catalog contents/translation coverage

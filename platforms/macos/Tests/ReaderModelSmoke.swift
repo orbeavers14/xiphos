@@ -835,6 +835,39 @@ struct ReaderModelSmoke {
         try await worker.closeTab(tab);await worker.shutdown()
         print("Original PNG/JPEG/GIF/BMP/SVG assets decode through shared keyed previews and production data-only WebKit policy")
     }
+    @MainActor static func localizedRTLWebView(root: String, locale: String) async throws {
+        _ = NSApplication.shared
+        let worker = try CoreWorker(root: root)
+        await worker.setReferenceLocaleFile(locale)
+        let localized = try await worker.referenceChoices(module:"TextA",reference:"John3:16")
+        guard localized.bookLabel == "Jean", localized.books.contains(where: {$0.label == "Genèse" && $0.reference.contains("Genesis")}) else {fatalError("Localized native selectors retain canonical targets")}
+        let modules = try await worker.modules()
+        guard modules.first(where: {$0.id == "RtlText"})?.rightToLeft == true,
+              modules.first(where: {$0.id == "TextA"})?.rightToLeft == false else {fatalError("Owned actual-module direction metadata")}
+        let model = ReaderModel(worker:worker,startupError:nil);try await idle(model)
+        let chapter = CoreParallelChapter(reference:"John 3:16",title:"Original mixed direction",
+            columns:[CoreParallelColumn(requested:"RtlText",module:"RtlText",ready:true,rtl:true),CoreParallelColumn(requested:"TextA",module:"TextA",ready:true,rtl:false)],
+            rows:[CoreParallelRow(reference:"John 3:16",cells:[CoreParallelCell(reference:"John 3:16",html:"<p>שלום עולם — نص أصلي</p><aside class='xc-reading-annotation'>Original note Ω</aside>",headings:[]),CoreParallelCell(reference:"John 3:16",html:"<p>Original Latin text.</p>",headings:[])])])
+        let html = NativeParallelChapterPane(model:model,chapter:chapter).table
+        let host = NSHostingView(rootView:PassageView(html:html,rightToLeft:true,anchor:nil,onScrollFailure:{_ in},onLink:{_ in}))
+        let window=NSWindow(contentRect:NSRect(x:0,y:0,width:700,height:350),styleMask:.borderless,backing:.buffered,defer:false)
+        window.isReleasedWhenClosed=false;window.contentView=host;host.layoutSubtreeIfNeeded();defer {window.close()}
+        func find(_ view:NSView)->WKWebView? {if let web=view as? WKWebView{return web};for child in view.subviews {if let web=find(child){return web}};return nil}
+        let deadline=Date().addingTimeInterval(15);var ready=false
+        while !ready {
+            if let web=find(host) {
+                ready=(try? await withCheckedThrowingContinuation {continuation in
+                    web.evaluateJavaScript("(() => {let cells=document.querySelectorAll('tbody td');return cells.length===2 && document.body.dir==='rtl' && getComputedStyle(cells[0]).direction==='rtl' && getComputedStyle(cells[1]).direction==='ltr' && document.querySelector('.xc-reading-annotation').textContent==='Original note Ω' && !document.body.querySelector('script');})()",in:nil,in:.defaultClient) {result in
+                        switch result {case .success(let value):continuation.resume(returning:value as? Bool == true);case .failure(let error):continuation.resume(throwing:error)}
+                    }
+                }) ?? false
+            }
+            guard Date()<deadline else {fatalError("Production WebKit mixed RTL/LTR/annotation direction")}
+            if !ready {try await Task.sleep(nanoseconds:10_000_000)}
+        }
+        model.close();await worker.shutdown()
+        print("Localized canonical selectors and production WebKit RTL/LTR parallel annotation direction passed")
+    }
     @MainActor static func readingDecorations(root: String) async throws {
         _ = NSApplication.shared
         let worker=try CoreWorker(root:root),folder=FileManager.default.temporaryDirectory.appendingPathComponent("reading-decorations-"+UUID().uuidString)
@@ -2248,6 +2281,9 @@ struct ReaderModelSmoke {
         print("Native main note/reference hover destinations and guarded preference checks passed")
     }
     @MainActor static func main() async throws {
+        if CommandLine.arguments.count == 4, CommandLine.arguments[1] == "--localized-rtl-webview" {
+            try await localizedRTLWebView(root:CommandLine.arguments[2],locale:CommandLine.arguments[3]);return
+        }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--book-uri-activation-webview" {
             try await uriActivationWebView(root: CommandLine.arguments[2], bookOrigin: true); return
         }

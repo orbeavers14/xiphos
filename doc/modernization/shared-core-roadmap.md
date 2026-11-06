@@ -1,5 +1,16 @@
 # Shared core: remaining scope
 
+Localized reading checkpoint (2026-11-05): private-catalog book labels preserve
+canonical targets; actual module RTL metadata reaches native views. Exact
+gettext import adds partial French/German/Spanish resources. Fixed note-window
+Command-S routing and mixed-canon parallel annotation failure. Final native258
+passes/2 expected skips out of260,149.12s; focused sanitizer4/4. See
+[contract/evidence/limits](localized-reading-verification.md). Typed localized
+reference input, complete translations/VoiceOver and native screen redesign
+remain open. Selected-word Hebrew search and stacked comparison are recorded
+in [native UI to-do](native-ui-todo.md).
+
+
 Parallel UI follow-up (2026-11-05): [stacked single-verse comparison and chapter-layout switch](native-ui-todo.md#parallel-comparison-layouts), as illustrated by the owner’s Bible Hub screenshot. Reuse existing shared alignment and installed translations.
 
 Settings/localization/tabs checkpoint (2026-11-04): native Settings now exposes

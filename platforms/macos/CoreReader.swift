@@ -47,12 +47,14 @@ struct InstalledModule: Identifiable, Sendable {
     let language: String
     let options: ModuleOptionInfo
     let isDictionary: Bool
+    let rightToLeft: Bool
     let isRegularCommentary: Bool
     let lexiconRoles: LexiconRoles
     let hasVerseSearch: Bool
     let hasBookTree: Bool
-    init(id: String, description: String, type: String, language: String, options: ModuleOptionInfo = .unknown, isDictionary: Bool = false, isRegularCommentary: Bool = false, lexiconRoles: LexiconRoles = [], hasBookTree: Bool = false, hasVerseSearch: Bool = false) {
+    init(id: String, description: String, type: String, language: String, options: ModuleOptionInfo = .unknown, isDictionary: Bool = false, isRegularCommentary: Bool = false, lexiconRoles: LexiconRoles = [], hasBookTree: Bool = false, hasVerseSearch: Bool = false, rightToLeft: Bool = false) {
         self.id = id; self.description = description; self.type = type; self.language = language; self.options = options
+        self.rightToLeft = rightToLeft
         self.isDictionary = isDictionary; self.isRegularCommentary = isRegularCommentary; self.lexiconRoles = lexiconRoles; self.hasBookTree = hasBookTree; self.hasVerseSearch = hasVerseSearch
     }
 }
@@ -415,7 +417,7 @@ final class CoreReader {
                 isRegularCommentary: xc_module_is_regular_commentary(opened, index) != 0,
                 lexiconRoles: LexiconRoles(rawValue: xc_module_lexicon_roles(opened, index)),
                 hasBookTree: xc_module_has_book_tree(opened, index) != 0,
-                hasVerseSearch: xc_module_has_verse_search(opened, index) != 0)
+                hasVerseSearch: xc_module_has_verse_search(opened, index) != 0, rightToLeft: xc_module_is_rtl(opened,index) != 0)
         }
     }
     deinit { xc_close(handle) }

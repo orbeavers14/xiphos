@@ -257,6 +257,11 @@ import SwiftUI
                 try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
                 let context = try await NativeLibrarySetup.open(profile:folder,explicit:ProcessInfo.processInfo.environment["XIPHOS_MODULE_ROOT"],stored:UserDefaults.standard.string(forKey:NativeLibrarySetup.preferenceKey(profile:folder)),isolated:ProcessInfo.processInfo.environment["XIPHOS_PROFILE_DIRECTORY"].map { !$0.isEmpty } ?? false)
                 let worker = context.worker;managedRoot = context.managedRoot
+                let language = preferences.language == "system" ? (Locale.preferredLanguages.first ?? "en") : preferences.language
+                let referenceLanguage = language.lowercased().split(separator: "-").first.map(String.init) ?? "en"
+                if ["fr","de","es"].contains(referenceLanguage) {
+                    await worker.setReferenceLocaleFile(Bundle.main.path(forResource: referenceLanguage, ofType: "conf", inDirectory: "sword-locales"))
+                }
                 let owner = NativeSessionController(worker: worker, path: try NativeSessionController.defaultPath(),organizationPath:folder.appendingPathComponent("library-organization.xml").path)
                 owner.preferredBible = preferences.bible; owner.preferredCommentary = preferences.commentary
                 controller = owner
@@ -414,6 +419,9 @@ import SwiftUI
     func openNewWindow() { guard !terminating, let controller, controller.canOpenWindow else { return }; controller.addWindow() }
     func saveSession() {
         guard !terminating, let controller else { return }
+        if let note = annotations.first(where: { $0.window.isKeyWindow }) {
+            Task { await note.model.save() }; return
+        }
         if let editor = editors.first(where: { $0.window.isKeyWindow }) { editor.save(); return }
         Task { do { try await controller.save() } catch { controller.showError(error.localizedDescription) } }
     }

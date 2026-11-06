@@ -105,7 +105,7 @@ struct NativeAnnotationText: NSViewRepresentable {
         view.isVerticallyResizable=true;view.isHorizontallyResizable=false
         view.autoresizingMask=[.width];view.textContainer?.widthTracksTextView=true
         view.textContainerInset=NSSize(width:8,height:8)
-        view.setAccessibilityLabel("Verse note")
+        view.setAccessibilityLabel(NSLocalizedString("Verse note", comment: "Personal annotation editor"))
         scroll.documentView=view;return scroll
     }
     func updateNSView(_ scroll: NSScrollView,context: Context) {
@@ -130,7 +130,7 @@ private struct NativeAnnotationPane: View {
     private func choose(_ action: @escaping (String) -> Void) { let panel=NSOpenPanel();panel.canChooseDirectories=false;panel.allowsMultipleSelection=false;if panel.runModal() == .OK,let url=panel.url {action(url.path)} }
     var body: some View {
         VStack(alignment:.leading,spacing:10) {
-            HStack {TextField("Module",text:$model.module);TextField("Verse reference",text:$model.reference);Toggle("All translations",isOn:$model.generic);Button("Load / Reload") {if mayReload() {Task {await model.load()}}}}
+            HStack {TextField("Module",text:$model.module).accessibilityLabel("Annotation module");TextField("Verse reference",text:$model.reference).accessibilityLabel("Annotation verse reference");Toggle("All translations",isOn:$model.generic);Button("Load / Reload") {if mayReload() {Task {await model.load()}}}}
             HStack {Text(model.path).font(.caption).textSelection(.enabled);Spacer();Button("Open Notes File…") {if mayReload() {choose {path in Task {await model.load(path:path)}}}}}
             Text(model.target.map {$0.module+" · "+$0.reference} ?? "No note loaded").font(.headline)
             if model.duplicateCount>1 {Text("Multiple legacy records share this target. Save updates the first; later records remain and may take precedence in the legacy display.").font(.caption)}
