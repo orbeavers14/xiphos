@@ -1,5 +1,10 @@
 # Preverse heading collection: initial seam
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Updated 2026-10-12. This supports the F03/F08 heading work but does not establish
 complete rendering, caching or visual parity. Core commentary snapshots now carry
 headings; typed C/Swift adapters and native verse/chapter controls use the shared

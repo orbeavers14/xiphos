@@ -1,5 +1,10 @@
 # Search workflows and shared contracts
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Updated 2026-10-18. This is scoped F18–F20 implementation evidence, not accepted
 1:1 search parity. Keep the GTK3 interfaces/backend and their licenses. Current
 commands, environment, counts and next work live in the [Mac handoff](handoff-macos.md)
@@ -7,9 +12,9 @@ and [shared handoff](handoff.md). This consolidated contract replaces superseded
 “implementation pending” passages; the full chronological evidence is retained
 [in Git at cf80541](https://github.com/orbeavers14/xiphos/blob/cf80541/doc/modernization/search-workflows.md).
 
-## Source workflows and seams
+## Historical source workflows and extraction checkpoints
 
-| Workflow | Retained source | Shared/native status |
+| Workflow | Retained source | Recorded extraction checkpoint |
 |---|---|---|
 | Sidebar mode/case/bounds/last | src/main/search_sidebar.cc | Shared execution and basic Mac controls checked; full saved/corpus acceptance pending |
 | SDK results/index/scopes/cancel | src/backend/sword_main.cc | Shared capability, owned results/scope and cooperative control checked; actual indexed execution pending |

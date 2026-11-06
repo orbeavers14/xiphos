@@ -1,5 +1,10 @@
 # Search text export: shared core and native Mac actions
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Updated 2026-10-20. Checked selected/complete C++ text services, additive C/Swift
 transport and scoped native Mac text save/copy. Whole export parity remains open. See [retention](search-retention-workflows.md),
 [shared item formatting](export-workflows.md) and [remaining design](search-export-design.md).

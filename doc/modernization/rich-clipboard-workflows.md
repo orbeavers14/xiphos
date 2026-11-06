@@ -1,5 +1,10 @@
 # Shared rich clipboard search export
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Updated 2026-10-21. HTML search Copy can now supply HTML and plain text from one
 FIFO job and one resolved retained selection. This is a bounded addition to the
 [HTML document service](html-export-workflows.md), not full clipboard/export parity.

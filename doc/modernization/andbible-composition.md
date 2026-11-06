@@ -1,5 +1,10 @@
 # AndBible import, bookmark interchange and verse composition
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Checkpoint: 2026-11-03. Shared C++17 core, owned C11/Swift transport, explicit
 native import review and reading composition are implemented in scoped slices.
 Representative real-backup and whole-workflow acceptance remain open.

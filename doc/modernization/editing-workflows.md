@@ -1,5 +1,10 @@
 # Shared rich documents and SWORD module editing
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 The next owner priority after session restoration is editing. The retained
 GtkTextView file path serializes its buffer and calls `g_file_replace_contents`
 (`src/editor/gtktextview_editor.c`, `_save_file`). Module note/book writes take

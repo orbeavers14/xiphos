@@ -1,5 +1,10 @@
 # Passage URI dispatch boundaries
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Current implementation through `5460417` includes ordinary dictionary clicks,
 owned Book/prayer URI targets, native book-origin dispatch and transient pane
 anchors. Full consumer evidence corrected unknown fallback pane visibility and

@@ -1,26 +1,23 @@
-# Xiphos native modernization
+# Xiphos native development
 
-This fork of [CrossWire Xiphos](https://github.com/crosswire/xiphos) is building
-a true 1:1 functional and design adaptation with a shared, platform-independent
-C++ application core and native frontends:
+A Bible-study application in development, based on [CrossWire Xiphos](https://github.com/crosswire/xiphos) and The SWORD Project. One shared C++ core powers native interfaces.
 
-| Platform | Target frontend | Current implementation |
-|---|---|---|
-| macOS | SwiftUI / AppKit | Reading/history/options, note/reference previews, lexical/direct dictionary lookup and key steps |
-| Windows | WinUI 3 | Planned; native core validation project |
-| Linux | GTK4 / WebKitGTK | Reading/commentary/dictionary, books/images, ordered search and text/HTML export adapters, profiles and shared-worker windows |
+| Platform | Current state |
+|---|---|
+| macOS | SwiftUI/AppKit development preview |
+| Linux | GTK4/WebKitGTK frontend in development |
+| Windows | Core validation tooling; WinUI 3 frontend planned |
 
-The goal is to preserve all existing Bible-study functionality, pane layout,
-module behavior, data and established workflows while adding appropriate
-native menus, accessibility, keyboard controls, appearance and platform
-integration. Shared application behavior belongs in C++; platform adapters
-must not develop independent engines. SwordKit may become a Swift adapter
-through an audited adapter to the shared core.
+The core covers reading, search, parallel passages, bookmarks and notes, editing,
+module management, sessions/recovery and passage sync. Native workflows and
+release acceptance remain incomplete. The old GTK3 application has been removed;
+its source remains in Git history. The final product name is undecided.
 
-## Building without the legacy application
+[Current status](doc/modernization/status.md) · [Roadmap](doc/modernization/shared-core-roadmap.md) · [Documentation](doc/README.md)
 
-The repository-root CMake build builds the shared core. The GTK3 application,
-old editors and legacy packaging have been retired:
+## Build
+
+See [installation](INSTALL.md) and [dependencies](dependencies/README.md) for SDK requirements.
 
 ```sh
 cmake -S . -B build/core
@@ -28,104 +25,13 @@ cmake --build build/core
 ctest --test-dir build/core --output-on-failure
 ```
 
-Native frontend builds remain in `platforms/macos`, `platforms/linux` and
-`platforms/windows` (Windows frontend still planned). The old application is
-available in Git history; it is no longer a build option. Retained translations
-and assets are inputs for native work. See the [removal checklist](doc/modernization/legacy-removal.md).
+Native setup: [Mac](platforms/macos/README.md) · [Linux](platforms/linux/README.md) · [Windows](platforms/windows/README.md)
 
-## Status
+For development, start with [AGENTS.md](AGENTS.md). Translation sources and their
+workflow are under [localization/](localization/README.md). Routine checks run locally.
 
-The shared core and macOS preview now cover module/verse/chapter reading,
-Bible history, scoped reading options, engine-preference import/save and
-note/reference-list previews. Dictionary work includes characterized lexical
-selection, native preferences and click results, direct lookup, key steps and
-shared separate history commands, native dictionary Back/Forward/Clear and a
-nearby-key chooser. Main clicks use shared Unicode casing; the macOS host
-initializes its environment locale before engine startup. Strong's/morphology
-hovers and footnote bodies use a separate information sidebar; cross-reference
-hovers follow a core-owned per-window list/information preference. Explicit lexicon XML import/save uses native file pickers. Other hover families,
-complete persistence and established pane composition remain in progress.
-Synchronized commentary now includes paired history, sparse/linked chapter
-reading, shared pane-link routing and per-module chapter defaults/import/save.
-Core commentary snapshots include owned headings and shared display preferences.
-The native commentary pane sits above dictionary content; complete heading transformations, detached
-windows and broader visual/corpus acceptance remain pending.
+## Credits and license
 
-The latest full macOS suite passes 171 tests with one explicit unavailable-index
-skip (172 registered). Shared HTML export now supports explicitly requested,
-bounded static PNG images through the same C++/C/Swift implementation. Native
-Mac HTML save/copy consumes those complete documents; Copy now supplies a shared,
-bounded plain-text companion through the same FIFO job and resolved selection.
-See the [rich clipboard contract](doc/modernization/rich-clipboard-workflows.md).
-Optional search details also use committed core metadata through C/Swift/native
-controls, preserving the default export format. Focused
-export checks pass on normal/sanitizer and portable-core configurations on Mac;
-current Fedora/MSVC and full corpus/visual acceptance remain separate. Detailed
-results, SDK limitations and prior platform evidence live in the status ledger.
-The legacy app retains its existing UI and delegates selected seams to shared
-helpers. Routine development and testing stay local to conserve GitHub builds;
-platform CI and full acceptance are reserved for meaningful checkpoints.
-
-The last weighted modernization estimate was **about 8%** (planning range 6–10%) before the Linux catch-up; it needs reassessment.
-**0/38 feature groups** have accepted parity across all native platforms.
-See the status page for the weighted estimate, ordered next steps and
-[source reuse decisions](doc/modernization/status.md#reuse-from-related-projects).
-No native platform has full functional, visual or workflow parity yet.
-The existing GTK application remains the complete implementation during the
-migration. See the [current status and sign-off rules](doc/modernization/status.md),
-[feature parity matrix](doc/modernization/parity-matrix.md), and
-[architecture and dependency/license audit](doc/modernization/architecture.md).
-
-## Build and development
-
-**Starting a new chat or switching computers?** Read [AGENTS.md](AGENTS.md) and
-the [shared cross-platform handoff](doc/modernization/handoff.md). It contains
-the common goal, coordination rules, current checkpoints, per-OS next tasks and
-a starter message to paste into each chat. Pull the latest repository before
-working, and push updated handoff evidence when finishing.
-
-* Existing GTK application: [INSTALL.md](INSTALL.md).
-* Dependency inventory and local SDK locations: [dependencies/README.md](dependencies/README.md).
-* Shared core and engine tests: [src/core/README.md](src/core/README.md).
-* Linux dependency setup and automated checks: [platforms/linux/README.md](platforms/linux/README.md).
-* Native macOS preview and adapter tests: [platforms/macos/README.md](platforms/macos/README.md).
-* Translations: documentation in [doc](doc).
-
-Initial PRs #1–80 are merged after local review and integration checks; later
-checkpoints include the Linux core setup in PR #82. The existing legacy and
-native-core hosted workflows remain paused to conserve GitHub credits. The Linux
-core workflow is manual-only; routine builds/checks run locally. Keep changes
-small and reviewable. Sequential checked commits to this fork's `master` are
-owner-authorized; use short-lived branches/PRs to coordinate overlapping chats.
-Next are representative module/profile validation, remaining rendering/hover and
-storage behavior, and small equivalent reading panes on GTK4 and WinUI 3 before
-declaring the core complete. See each OS handoff for its bounded next task.
-See [Linux evidence and acceptance limits](doc/modernization/handoff-linux.md).
-Each milestone needs reviewable changes, regression tests and parity evidence
-before the corresponding legacy files can be retired.
-
-Use the repository's `.clang-format` when editing C/C++ source. The upstream
-user manual and screenshots remain reference material until replacement
-behavior and documentation are validated.
-
-## Repository cleanup
-
-Generated inventories and build outputs belong under the ignored `build/`
-directory. Keep their generators, regression tests, current architecture,
-parity requirements and compact acceptance evidence. After an accepted
-replacement has no remaining legacy callers, remove obsolete code and
-associated build/dependency references in the same reviewed cleanup change.
-Git history and PRs retain the detailed implementation record.
-
-## License and acknowledgments
-
-Preserve [COPYING](COPYING), [AUTHORS](AUTHORS) and existing source notices.
-Inspected Xiphos source grants GPL v2 or later; dependency and module licenses
-have their own requirements. See the dependency/license audit before packaging.
-
-Xiphos started as the SWORD Project's Cheatah program. Its development includes
-ideas and code from BibleTime and the SWORD Project's BibleCS program. Credit
-remains with the Xiphos Development Team, CrossWire, and all contributors whose
-work this fork builds upon.
-
-Translation sources are organized under [localization/](localization/README.md).
+Based on work by the Xiphos Development Team, CrossWire and other contributors.
+See [AUTHORS](AUTHORS), [COPYING](COPYING) and [retained notices](doc/legacy-notices/).
+Xiphos code is GPL v2 or later; dependencies and Bible modules retain their own licenses.

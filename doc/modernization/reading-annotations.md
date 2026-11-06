@@ -1,5 +1,10 @@
 # Reading annotations and bookmark styling
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 The shared `read_decorated_reading` FIFO/C service presents a single verse or a
 chapter using the tab's existing render options. Explicit optional bookmark and
 annotation paths enable each source independently; empty paths disable it. No

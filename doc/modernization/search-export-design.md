@@ -1,5 +1,10 @@
 # Remaining search export work
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Updated 2026-10-21. This is the remaining plan, not an implemented API contract.
 Checked behavior is defined by [retention](search-retention-workflows.md),
 [text export](search-text-export-workflows.md) and [shared item formatting](export-workflows.md).

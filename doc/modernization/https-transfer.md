@@ -1,5 +1,10 @@
 # Shared HTTPS transfer and repository extraction
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 ## Service boundary (2026-10-31, af9a859)
 
 The shared C++/FIFO/C service fetches SWORD catalog archives and installs selected

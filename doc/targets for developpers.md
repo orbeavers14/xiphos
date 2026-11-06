@@ -1,3 +1,5 @@
+> Historical GTK development instructions. Current builds and contribution guidance are in [INSTALL.md](../INSTALL.md) and [AGENTS.md](../AGENTS.md).
+
 Useful targets for developpers
 ==============================
 All exemples are shown with `make`, but feel free to use `ninja` which is 20% faster. Obviously, you can also enter `cmake --build . --target <target>`.

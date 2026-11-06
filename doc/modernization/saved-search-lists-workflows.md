@@ -1,5 +1,10 @@
 # Shared legacy named search-list import
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Updated 2026-10-22. Initial C++ implementation `4ca44370` reads explicit selected
 legacy XML profiles. This is a read-only setup service, not automatic profile
 migration or complete advanced-search acceptance.

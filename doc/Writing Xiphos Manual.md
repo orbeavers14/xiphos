@@ -1,3 +1,5 @@
+> Historical guide for writing the original GTK manual. See the [current documentation index](README.md) for native-app guidance.
+
 
 Manual Guidelines
 =================
@@ -7,7 +9,7 @@ This document will contain some guidelines for writing/submitting a good patch
 to the Xiphos Manual project.
 
 Any new features or large scale work should first be discussed on the
-[xiphos-devel](xiphos-users@crosswire.org) mailing-list first.  This will ensure
+[xiphos-devel](mailto:xiphos-users@crosswire.org) mailing-list first.  This will ensure
 the idea fits in the direction we wish to take Xiphos, and also that the effort
 is not duplicated.
 

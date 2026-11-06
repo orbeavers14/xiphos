@@ -1,5 +1,10 @@
 # Native BibleSync integration
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Implementation `526cd1c`, 2026-11-01. File > BibleSync opens the Mac controls.
 The Swift adapter transports owned C/FIFO values. Shared C++ policy remains
 responsible for modes, sender/group/domain filtering, module resolution, direct

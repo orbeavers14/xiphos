@@ -1,5 +1,10 @@
 # Legacy settings and session migration
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Checked workflow, 2026-11-01, implementation `4bfb38c`. The shared core now connects the existing legacy
 readers to a reviewable, reversible native-session conversion. The original GTK3
 app and original user files are not modified. This covers selected settings,

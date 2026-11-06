@@ -1,5 +1,10 @@
 # Native macOS HTML search destinations
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Updated 2026-10-21. Implementation `f89c585`, consuming the shared
 [HTML/image service](html-image-export-workflows.md). This is scoped native
 save/copy support, not full export, print or cross-platform parity.

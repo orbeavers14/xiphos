@@ -1,5 +1,10 @@
 # Library organization metadata
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 The shared C++ organization repository stores favorites, hidden state and one
 optional group for exact provider/item identities. Equal display/module IDs from
 different providers stay separate. It does not change installed modules, catalog

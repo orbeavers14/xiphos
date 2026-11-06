@@ -1,5 +1,10 @@
 # Read-only legacy repository review
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 2026-11-01 checkpoint, implementation `9a78747`. This begins legacy migration with module source entries;
 it is not complete user-profile/settings/session migration.
 

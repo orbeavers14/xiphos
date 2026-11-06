@@ -1,5 +1,10 @@
 # Lexical lookup seams
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Inspected 2026-10-11 against fork source at
 51e01935fc18211cda8199e4fc2c03f0b17c22ca. This is a source inventory and
 implementation contract; source observations are not executable parity proof.

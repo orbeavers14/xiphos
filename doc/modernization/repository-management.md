@@ -1,5 +1,10 @@
 # Repository management, maintenance, sync and recovery
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Native recovery/management checkpoint (2026-11-01, `78d367a`): macOS now
 schedules shared recovery snapshots, offers startup Recover/Discard, reconstructs
 reading windows and unsaved source drafts, and preserves original-file conflict

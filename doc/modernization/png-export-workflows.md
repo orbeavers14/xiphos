@@ -1,5 +1,10 @@
 # Shared static PNG export preparation
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Updated 2026-11-03. This private C++ service prepares owned PNG data URLs for
 the explicit complete-document image export policy. Static PNG behavior is
 described below; optional BMP conversion is documented at the end.

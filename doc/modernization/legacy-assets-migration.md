@@ -1,5 +1,10 @@
 # Complete-folder legacy asset migration
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 The shared core can review and copy a selected legacy directory, including
 bookmarks, annotations, study pads, templates, auxiliary settings, hidden files,
 binary assets and empty directories. Select the legacy application folder first;

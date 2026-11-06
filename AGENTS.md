@@ -56,3 +56,11 @@ status/parity ledger only to the extent supported by evidence. Passing tests are
 not complete feature parity. Distinguish owner-reported results from inspected
 logs and tests you actually ran. Documentation-only changes need link/diff checks,
 not hosted builds. Do not send messages to other chats without user authorization.
+
+## Documentation maintenance
+
+Use doc/README.md and the concise current status/roadmap/handoffs as the entry
+points. doc/modernization/history contains dated evidence, not current build or
+release guidance. Keep summaries current and compact; record detailed scoped
+checks in service contracts/history instead of repeatedly prepending long logs.
+Preserve requirement rows and historical anchors when reorganizing documentation.

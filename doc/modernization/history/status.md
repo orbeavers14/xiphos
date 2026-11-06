@@ -1,0 +1,803 @@
+> Historical evidence through 2026-11-05. Earlier statements and priorities are
+> superseded by the [current documentation index](../README.md). Preserve this
+> record for provenance; it is not current build or release guidance.
+
+# Modernization status and acceptance
+
+Upstream translation update (2026-11-05): requested official commit905762a
+(905762aa1d6fbd8432b540f34fa5cf6eaf86dc57) cherry-picked with provenance as
+ad93feb. All41 changed files match upstream byte-for-byte at adapted paths;
+po/POTFILES.in and po/zh_CN.po followed their rename into localization/gettext.
+No po tree or GTK application sources restored. Chinese UI/help catalogs pass
+msgfmt --check; native catalog importer/checks still pass. This imports translator
+work/help assets, not full native Chinese UI activation. Selected-word Hebrew
+search/comparison is recorded in native-ui-todo.md; selection-to-search is not
+yet exposed in the Mac UI, while the underlying word/lemma search modes exist.
+
+
+Localized reading checkpoint (2026-11-05): private-catalog book labels preserve
+canonical targets; actual module RTL metadata reaches native views. Exact
+gettext import adds partial French/German/Spanish resources. Fixed note-window
+Command-S routing and mixed-canon parallel annotation failure. Final native258
+passes/2 expected skips out of260,149.12s; focused sanitizer4/4. See
+[contract/evidence/limits](../localized-reading-verification.md). Typed localized
+reference input, complete translations/VoiceOver and native screen redesign
+remain open. Selected-word Hebrew search and stacked comparison are recorded
+in [native UI to-do](../native-ui-todo.md).
+
+
+Localization layout (2026-11-04): lowercase localization/ now contains gettext
+catalogs (moved from po), macos native resources, and Windows resource guidance.
+Mac bundle copy rules use the new path; catalog contents/translation coverage
+are unchanged. See [translation layout](../../../localization/README.md). Existing
+gettext catalogs still need a message/import pipeline for the new native UI.
+
+
+Settings/localization/tabs checkpoint (2026-11-04): native Settings now exposes
+core-backed reading/lexicon controls and persistent startup/default-module/
+recovery preferences; successful non-secret sync choices persist without auto
+connection. English/French resource foundation and restart language selection
+are present (French partial). Native reading tabs/detaching and saved groups pass
+fresh-process checks. Full native257 passes/2 expected index skips,142.53s;
+scoped live Settings/save/French/tab/detach checks pass. Localized references,
+complete RTL/translation/workflow acceptance and native Settings navigation
+remain open. See [contract/evidence](../native-settings-workflows.md) and
+[Mac/Windows UI to-do](../native-ui-todo.md).
+
+
+GTK source retirement (2026-11-04): owner requested maximum legacy removal.
+The GTK3 application, old editors/backend, legacy Windows distribution and
+CPack/CMake install machinery are removed. Native core tests use61 immutable
+reference snippets with SHA256/provenance, not source extraction at configure
+time. No legacy build option remains. Translations, reusable assets, help and
+notices remain for native reuse. Windows WinUI3 is still planned; missing
+Settings/localization/frontend parity remains open despite code removal.
+See [removal ledger](../legacy-removal.md).
+
+
+Legacy removal direction (2026-11-04): owner explicitly requests removing old
+code/system where dependencies permit. Root build now selects shared core;
+GTK3 is opt-in. Removed vendored Windows Festival and Fedora30 Docker pipeline,
+including its obsolete hosted build workflow. Required notices are retained.
+See [running removal checklist](../legacy-removal.md). This supersedes blanket old
+system preservation, not feature/data compatibility requirements. Core tests
+still extract actual legacy behavior; native Settings/localization remain open.
+
+
+Mac-scoped corpus/hardening checkpoint (2026-11-03): six real modules,521 Pilgrim
+scripture links, KJVA Tobit and three actual indexed module families now pass.
+Asset/local-install/maintenance cancellation is wired through core/C/native UI
+with a safe pre-publication gate; uninterruptible SDK indexing drains first.
+Final native257 passes/two expected skips; sanitizer and portable models plus
+real corpus checks pass. A separate development bundle closes17 SDK-library
+references at its actual macOS27 floor. Windows/physical Linux, older macOS and
+redistributable packaging remain open. See [current Mac evidence](handoff-macos.md#mac-corpus-and-hardening-checkpoint--2026-11-03),
+[corpus](../real-corpus-validation.md) and [runtime scope](../native-runtime-packaging.md).
+
+
+Hardening clarification (2026-11-03): keep shared-core compatibility, ownership,
+cancellation and data-safety checks active during feature work. Final packaging,
+full physical-platform/release and frontend acceptance remain closing gates.
+This supersedes the earlier blanket deferral; see [current scope](../shared-core-roadmap.md).
+
+Limited-usage checkpoint (2026-11-03, `0e43cae`, `bcb83f6`): explicit BMP-to-PNG
+export and legacy font-color rich editing now pass focused shared/C/Swift/native
+and sanitizer checks. Original PNG-only policy and unsupported-markup Source
+fallback remain. Broad core hardening is deferred until last by owner direction.
+See [Mac evidence](handoff-macos.md#limited-usage-assetsediting-work--2026-11-03).
+
+Intervals/assets/side-styling checkpoint (2026-11-03, `4c63dc9`): inclusive
+exact keyed intervals and native draft controls, original five-format assets
+with15 actual WebKit decodes, and shared commentary/parallel note styling now
+pass local checks. Commentary choice now persists without altering history.
+Full native254 passes/two expected index skips; alternate actual-index,
+sanitizer and portable checks pass. Final compact UI/restart verified separately.
+See [Mac evidence and limits](handoff-macos.md#keyed-intervals-broader-assets-and-sideparallel-annotations--2026-11-03).
+Real corpus/physical-platform/full-workflow acceptance remains open.
+
+Verse-note selection checkpoint (2026-11-03): cursor/selection now survives
+periodic autosave and fresh-process recovery with validated Unicode offsets.
+Native scoped checks4/4 and disposable live note-selection check pass; see
+[Mac evidence](handoff-macos.md#verse-note-cursor-recovery--2026-11-03).
+Broader input-method/workflow acceptance remains.
+
+Keyed-attribute checkpoint (2026-11-03): shared dictionary/tree-book lemma,
+morphology and footnote searches now preserve exact opaque keys and complete
+same-source narrowing. OSIS/ThML fixtures, C ownership and Swift adapters pass
+on both local SDK builds, with sanitizer/portable checks. See
+[Mac evidence](handoff-macos.md#keyed-entry-attribute-search--2026-11-03).
+Keyed intervals, broader corpus/assets and remaining annotation acceptance stay open.
+
+Reading-annotation checkpoint (2026-11-03): shared bounded safe-color rendering
+and native explicit source selection now style saved notes/bookmarks in main
+single-verse/chapter reading and restore those choices with each window. Full
+native251 passes/two expected skips; final palette and live restart checked.
+See [contract and limits](../reading-annotations.md) and [Mac evidence](handoff-macos.md#in-reading-annotation-styling--2026-11-03).
+Side/parallel-pane styling, search compatibility and broader acceptance remain.
+
+Verse-note recovery checkpoint (2026-11-03): explicit annotation recovery now
+preserves canonical target, original revision and draft text through periodic
+autosave and fresh-process/native startup restoration. Stale recovered saves
+reject; older recovery snapshots remain readable. Native6/6, alternate SDK2/2,
+sanitizer2/2. See [Mac evidence and limits](handoff-macos.md#explicit-verse-note-recovery--2026-11-03).
+In-reading highlight styling, caret restoration and broader compatibility remain.
+
+Personal-note checkpoint (2026-11-02): shared exact-source checked annotation
+writes and native plain-text note editing/saved composition now preserve stale
+sources and unsaved drafts on failed save/quit. Final scoped native7/7; sanitizer
+core6/6 and alternate SDK4/4. See [Mac evidence and limits](handoff-macos.md#native-personal-notes-and-saved-composition--2026-11-02).
+Note-form recovery and in-reading styling remain open; no full-parity promotion.
+
+Native parallel checkpoint (2026-11-02, `3d8f57b`): saved sets now apply to the
+active tab's shared chapter matrix, with independent navigation, source-specific
+links and restored visibility/selection. Full native250 passes/two expected index
+skips; final compact layout and real restart checked. Editor writes now use a
+private fixture copy, correcting search-test contamination. See [Mac evidence and
+limits](handoff-macos.md#native-parallel-chaptersession-integration--2026-11-02).
+Annotation conflict/composition and remaining search compatibility continue next.
+
+Section/library checkpoint (2026-11-02): staged RawGenBook section creation and
+search-index invalidation now preserve fresh queries and rollback. Owned library
+organization transport and native favorites/hiding/groups update reading windows
+and persist across restart. Full native249 passes/two expected skips; actual-index
+alternate SDK and sanitizer/portable selected checks pass. See [Mac evidence and
+limits](handoff-macos.md#section-creation-and-library-organization--2026-11-02).
+Native creation controls and saved parallel workflows remain next; no parity promotion.
+
+Active priorities checkpoint (2026-11-02, core `564f9dd`, Mac `7646977`): actual keyed indexes and exact last-key filtering, native AndBible review/conflict/import/export, checked parallel-set edits, internal rich links and library-organization storage now exist. Full native247 passes plus two expected index skips; alternate SDK7/7. See [Mac evidence and limits](handoff-macos.md#active-priorities-checkpoint--2026-11-02). Continuous priorities1–5 remain active; these are scoped advances, not complete workflow acceptance.
+
+Keyed last-results checkpoint (2026-11-02, `30e0baf`): [dictionary/book narrowing](../mixed-search.md) now uses complete same-source retained keys, preserves verse scope and exports, and rejects incomplete/ambiguous prior sources. Final scoped checks12/12; sanitizer and alternate SDK checks3/3 each. Remaining search range/index/attribute policies and priorities2–5 remain active.
+
+Owner priority update (2026-11-02): work through search/content, bookmarks and
+annotations, parallel saved workflows, editing, then library organization. Remaining
+BibleSync networking/group/presence/chat and external IPC/actions are a stretch
+goal; delivery is undecided and they are not a core completion requirement.
+Preserve existing checked implementations without expanding them. Persistence and
+legacy migration remain important compatibility work, separate from this sequence.
+Personal data sync and Apple Handoff retain their separate future-roadmap status.
+
+Keyed image/link checkpoint (2026-11-02, `607b83f`): [native keyed previews and opt-in PNG export](../mixed-search.md) now reuse shared resource/link services. RawLD4 OSIS/ThML Unicode/RTL fixtures, alternate SDK and portable-on-Mac checks pass. Live compact controls, dictionary/book image viewers and real quit/restart draft restoration are verified. Full suite245 passes plus one expected index skip; final relative-link refinement9/9. Broader corpus/physical-platform and complete asset acceptance remain open.
+
+Native mixed-search checkpoint (2026-11-02, `fd08f98`): [macOS mixed controls, typed preview/activation and entry export](../mixed-search.md#macos-integration) now consume the shared engine. Search drafts persist the opt-in flag with older-draft compatibility. Final model checks and desktop restart/clipboard rechecks pass; compact control visual acceptance, keyed scopes/assets and broader corpus/platform acceptance remain open. This supersedes older notes that all native mixed integration is pending.
+
+Mixed-search checkpoint (2026-11-01, `be6def6`): [opt-in mixed-family batches and typed exports](../mixed-search.md) now retain Bible/commentary/dictionary/indexed-tree results in one generation, preserve verse scope/settings across keyed groups and dispatch stale-safe text/passive HTML reads by actual source kind. Existing verse-only consumers remain gated. Native typed controls/activation, keyed scopes/indexed/attribute/assets and broad corpus/physical-host acceptance remain open.
+
+Keyed preview checkpoint (2026-11-01): [exact source-specific previews](../keyed-search.md#exact-keyed-previews) now dispatch dictionary keys/indexed-tree paths through shared Reader/FIFO/C services, reject missing/fuzzy targets and enforce copied HTML limits. Typed batch generations, exports and native presentation remain open.
+
+Typed keyed-search checkpoint (2026-11-01): [dictionary/general-book search](../keyed-search.md) now has a separate cancellable shared C++/FIFO/C service with explicit key kinds and generated-fixture checks. Existing verse-only batches/export retain their safe boundary. Typed mixed-family generations, preview/export dispatch and native controls remain next.
+
+Core priority checkpoint (2026-11-01, `c194ccf`): [AndBible/interchange/composition contract](../andbible-composition.md) records bounded standalone SQLite import, revision-checked XML append/exact export, owned tag/note composition and a KJVA identity fix. Actual index execution/maintenance now passes with a capable alternate SWORD/CLucene SDK; actual encrypted original-prose unlock/clear/reopen checks pass. Native import/composition workflows, generic mixed-family search, broader semantic/RTL/corpus and cross-host acceptance remain open. No whole-feature parity promotion.
+
+Legacy settings/session checkpoint (2026-11-01, `4bfb38c`): shared read-only snapshots,
+strict all-tab conversion, explicit module mapping, exact-original migration
+packages/restore and Mac preview/export/next-launch integration now exist. See
+[the migration contract](../legacy-settings-session-migration.md). Unknown settings,
+comments and encodings remain recoverable; unsupported appearance/locale values
+are disclosed as preserved, not applied. Representative real-user/cross-host and
+whole-parity acceptance remain open. This supersedes the earlier migration TODO.
+
+
+Priority checkpoint (2026-11-01): [native BibleSync controls and two independent
+local clients](../native-sync.md) are checked at `526cd1c`; physical LAN/sleep/interface
+acceptance remains open. [Legacy repository review](../legacy-repository-import.md)
+at `9a78747` begins the next storage-compatibility priority with read-only preview and
+explicit disabled HTTPS-source setup. Full legacy profile migration remains open;
+this supersedes older notes that native sync controls are entirely pending.
+
+
+Platform roadmap expansion (2026-11-01): owner requested
+[phones, tablets and visionOS](shared-core-roadmap.md#phones-tablets-and-visionos).
+iPhone/iPad, Android phones/tablets (planning assumption) and visionOS are future
+shared-core consumers; delivery order/toolkits/minimum OS versions remain open.
+No implementation or acceptance increase is claimed.
+
+
+Roadmap addition (2026-11-01): owner requested future
+[personal data sync](shared-core-roadmap.md#personal-data-sync-across-devices)
+and [Apple native Handoff](shared-core-roadmap.md#apple-native-handoff).
+These are separate from BibleSync passage sharing. No sync backend, Apple mobile
+frontend or Handoff implementation is selected/delivered by this documentation
+change; existing implementation/acceptance counts are unchanged.
+
+
+Native recovery/management checkpoint (2026-11-01, `78d367a`): macOS now
+schedules shared recovery snapshots, offers startup Recover/Discard, reconstructs
+reading windows and unsaved source drafts, and preserves original-file conflict
+checks. Native Module Library screens expose ordered HTTPS sources/cached catalogs,
+explicit transfers, local installation and staged maintenance. First launch creates
+an explicit private module library when discovery is empty; existing discovered
+libraries retain reading access until an explicit managed folder is selected.
+See [native integration and limits](../native-recovery-management.md). Native sync
+controls, legacy source import, capable-SDK positive indexing, encrypted-module
+correctness and physical Windows/Fedora acceptance remain open. No whole-parity
+acceptance increase. This supersedes older statements that Mac presentation is next.
+
+
+Safe sync networking checkpoint (2026-11-01, `04914ca`): an optional shared
+BibleSync adapter now owns network configuration, bounded polling, transmit/echo
+controls and copied C/FIFO event batches. A pinned downstream SDK patch applies
+privacy before initial messages, bounds receive/peer state and rejects truncated
+outbound payloads. Full native230 passes+one index skip (231 registered); scoped
+instrumented SDK+adapter ASan/UBSan5/5 and TSan5/5. Actual UDP fixtures redirect all
+SDK sends to loopback; physical two-device/LAN interoperability and native sync
+controls remain open. Networking is OFF by default and rejects an unpatched SDK.
+See [the SDK contract](../../../dependencies/biblesync/README.md). Recovery/autosave
+integration and native management presentation remain next; no whole-parity claim.
+
+
+Repository/maintenance and recovery/sync checkpoint (2026-11-01): shared ordered
+repository profiles and offline catalog persistence now exist, with owned C/FIFO
+transport and endpoint cache invalidation. Staged remove/cipher configuration/
+index maintenance now reuse verified installation transactions and reject in-use
+removals. Recovery snapshots retain exact editor source and a previous valid
+session/draft snapshot; sync mode/sender/privacy/echo/routing policy is shared.
+These are core services: native management/autosave/recovery presentation, legacy
+source import, positive index creation on a capable SDK, real BibleSync transport
+and physical Windows/Fedora acceptance remain open. See
+[the contracts and limits](../repository-management.md). No whole-parity acceptance.
+
+
+HTTPS checkpoint (2026-10-31, `af9a859`): shared catalog/package download, bounded
+UTF-8 ZIP/tar extraction, atomic cancellation/commit arbitration, metadata/version
+verification and staged remote SWORD installation now exist. Full local Mac223
+passes+one index skip; portable174 passes+one skip. Final Unicode/C cancellation
+checks and dependencies are in the [transfer contract](../https-transfer.md) and Mac
+handoff. Native installer UI, persistent source/catalog settings, maintenance,
+physical Windows/Fedora validation and full F27/F28 remain open.
+
+Local installation checkpoint (2026-10-31, `f660f96`): verified staged local SWORD
+installation/replacement, read-only uncached SDK discovery, preserved session/tab
+state and shared HTTPS endpoint policy. Full Mac222 passes+one index skip;
+portable173 passes+one skip. Final SDK signature/general-book/fingerprint checks
+are in the Mac handoff. Its remote-transfer TODO is superseded by the HTTPS
+checkpoint above; native installer UI, physical Windows/Fedora checks and full
+F27/F28 remain open.
+
+Library checkpoint (2026-10-31, `48467f3`): provider-scoped catalog identities,
+explicit capability/access/permission contracts, installed/local SWORD adapters,
+pure installation decisions and a non-SWORD catalog fixture. Full local Mac221
+passes+one index skip; portable172 passes+one skip. This remains catalog/planning
+scope at that checkpoint. Staged local SWORD execution/read-only reload and HTTPS
+endpoint policy now exist (`f660f96`); remote transfer, licensed-provider reading
+and full F27/F28 remain pending.
+See the [installation contract](../library-installation.md) and Mac handoff.
+
+Core storage checkpoint (2026-10-31): named parallel profile repositories and
+atomic imports (`b9d15e5`, `b7b7d23`, `01a75e4`); compatible tab XML round trips
+and owned transport (`4411783`, `7d5f491`); revision-checked bookmark edits and owned
+annotation maps (`238220f`, `7102d57`, `e4c5333`, `73f88b4`); shared retained
+highlight priority (`23aba44`); [verse-note storage/cache/transport](../personal-annotations.md)
+(`b589779`, `70ffb33`, `f6d9bf4`). These scoped services and native restart checks
+do not establish whole-parity acceptance. Latest full rich-editor checkpoint (`64ab889`, `f25114b`):
+Mac220 passes+one skip; portable171 passes+one skip. Later focused
+checks and limits are in the Mac handoff. SDK-owned note targets now exist (`ad97fba`), and live tab capture exports committed
+reading/dictionary/book selections independently of history. Versioned native core snapshots
+and strict all-tab restoration now exist. Native Mac launch/close/quit integration
+and fresh-process/offscreen window checks now exist; other-host restart/detach and
+visual acceptance remain open. Shared [document editing](../editing-workflows.md) has
+revision-checked exact-source storage, shared rich formatting/undo, staged
+RawFiles/RawGenBook source writes and native Mac editing. Full editor organization,
+draft restart and other-host acceptance remain open. The [provider-neutral library
+boundary](../library-installation.md) now supplies installed/local SWORD catalogs and
+pure permission-aware decisions and staged local execution; remote transfer and
+then sync are next. Devotionals
+remain deferred.
+
+Parallel checkpoint (2026-10-30): complete real-SDK interpolation oracle
+`e046f6a`, cloned row plans `d5018ac`, owned worker/C chapter matrices `4bc24ae`
+and atomic per-tab selection/chapter navigation `bcb159e`. Missing columns retain
+slots; options/history remain independent; failed visits retain prior selection.
+See the [parallel contract](../parallel-reading-workflows.md) for limits, evidence,
+intentional alias-heading correction and native/persistence/compatibility gates.
+Named-set repositories, compatible tab storage and native core state/restoration
+now exist. Full native workflow/detach and other-host restart remain open.
+Devotionals remain deferred. No whole-parity acceptance increase.
+
+## Current owner priorities (2026-10-30)
+
+Defer further devotional work and retain its checked date/read services. Focus
+core work on parallel reading, bookmarks/annotations, editing, module installation,
+sync, complete session persistence and broader compatibility testing. Start with
+parallel reading; develop persistence foundations alongside stateful services,
+and run compatibility checks throughout rather than treating them as a final step.
+Publisher-approved translation providers remain future installation/library scope;
+this priority change does not select a final product name or expand frontend work.
+
+First parallel foundation: [retained contracts and next slice](../parallel-reading-workflows.md).
+Complete detached orchestration and named-set helpers are now characterized;
+shared layout arithmetic is reused by the retained renderer (`ca3a90a`). Native
+aligned snapshots and saved-set repositories now exist; complete native parallel
+workflow remains open.
+This direction supersedes earlier next-step notes that resume devotionals.
+
+Core devotional service (2026-10-30, `941a7de`): exact installed DailyDevotion
+reads now return owned selected-date metadata, SDK matched key and HTML through
+Reader/session/FIFO worker and a distinct take-once C handle. Bounded C scans
+precede copies/observer allocation; rejected worker inputs do not enter the queue.
+No dictionary/Bible history visit or search generation changes. See the
+[devotional contract](../devotional-workflows.md#owned-explicit-devotional-read-service).
+Native selection state, default-module fallback, URI integration and presentation
+remain pending. F11 now records partial core evidence, with no accepted parity.
+
+Core update (2026-10-30, `f0cd37d`): shared C++11 devotional date selection
+now drives retained rendering and replaces unsafe month-name indexing with a
+local-today fallback. All11,536 renderer comparisons and372 bounded date
+combinations are checked. Focused normal/portable/ASan/TSan2/2 each; C++11 all6/6.
+See the [devotional contract](../devotional-workflows.md). Native devotional service
+and presentation remain pending; no whole-parity acceptance increase.
+
+Latest test-only addition: complete devotional rendering now has 1,536
+frozen/current traces across five configurations; strict C++11 all6/6 passes.
+The guarded month lookup exposes retained invalid-month indexing without unsafe
+execution. Resolve that policy before native dated-pane presentation. This adds
+one test after the full checkpoint below; detailed evidence is in the Mac handoff.
+
+Final verified checkpoint (2026-10-22): full Mac **195 passes plus one explicit
+index skip** (196 registered, 137.71s), including actual offscreen WebKit URI
+activation. Full Mac-hosted portable core/Linux models **148 passes plus one
+index skip** (149 registered, 119.47s), followed by the final dictionary identity
+model/preview/fixture checks 7/7 (4.58s). Native-disabled strict C++11 all5/5
+(2.66s); expanded dictionary route ASan/UBSan1/1 (1.16s), TSan1/1 (1.70s).
+GTK compile/runtime remains OFF. See the Mac handoff for the earlier shutdown
+timeout, sandbox-blocked run, repeat evidence and exact scope.
+
+Current URI checkpoint (2026-10-22, through `5460417`): owned Bible/commentary,
+dictionary, Book/prayer targets now flow through the shared FIFO owner and copied
+C/Swift/Linux values. Unknown fallback anchors follow actual commentary visibility;
+dictionary anchors stay separate from lookup/history. Real offscreen Mac WebKit
+activates links through production navigation callbacks, cancels browser navigation
+and automatically scrolls actual shared book/dictionary HTML. Complete retained
+URI/HtmlOutput and dictionary/devotional display oracles guard the extracted
+C++11 policies, including 12,887 full dictionary dispatch comparisons. Dictionary
+presentation comparison now prevents anchor/revision collisions. See the
+[Mac handoff](../handoff-macos.md) and [URI contract](../passage-uri-workflows.md).
+
+Native devotional date/pane state, status/bookmark behavior, physical GUI clicks,
+current Fedora/MSVC, corpus acceptance and retirement gates remain open. GTK
+compile/runtime is OFF on this Mac. No whole-parity acceptance increase. All
+checked commits are published to the authorized fork's `master`; this does not
+claim upstream integration. The chronological sections below retain prior evidence.
+
+Current URI continuation (2026-10-22): pre-copy C/pre-FIFO worker study-link
+admission `69db801`, shared strict C++11 navigation normalization `8fcfa4c`,
+cloned canonical unknown/commentary URI range targets `7c116dc`, and shared
+retained anchor splitting `1ba31d6`. Full checkpoint through `7c116dc`: Mac
+185 passes plus one explicit index skip (186 registered, 162.04s); Mac-hosted
+portable/Linux models 141 passes plus one index skip (142 registered, 107.04s,
+GTK runtime OFF). Dictionary URI hover now has bounded copied keyed parsing,
+actual alias/type dispatch and distinct DictionaryEntry C/Swift/Linux information
+preview consumption. Focused core 3/3, Mac model 2/2, portable 3/3, ASan/UBSan
+and TSan 3/3 each; C++11 complete callback oracle now compares 18,484 traces and
+19,562 anchor splits. Exact details and limits are in the [Mac handoff](../handoff-macos.md)
+and [URI contract](../passage-uri-workflows.md). Ordinary dictionary keyed clicks now consume shared Unicode normalization and
+dictionary history (`498f08e`). Owned verse anchors (`65fa7e4`) now apply through
+shared transient pane snapshots, copied C/Swift/Linux values and native model
+presentation. Offscreen real Mac WebKit verifies literal/named/top/repeated
+scrolling and disabled module scripts. Devotional/book/prayer clicks, status/
+bookmark behavior, physical GUI URI clicks and corpus/platform acceptance remain
+open; Linux GTK host runtime/compile and Windows presentation remain separate. No whole parity score or retirement gate changes.
+
+Earlier URI/reference continuation (2026-10-22): shared retained/native showRef
+fallback `4a71891`, complete URI callback oracle `d82bb6b`, unknown single-passage
+fallback `d4097b5`, aggregate native rendered preview bound `3458b0a`, and shared
+Bible URI range routing `fbfea5b`. Normal6/6, ASan/UBSan11/11, TSan11/11 and
+Mac-hosted portable/Linux12/12 check the range slice, including copied C/Swift
+and native models. Link-only native previews now also cap the aggregate and
+visibly disclose truncation (`9ce2756`); malformed escapes reject before fallback
+(`c70cca9`). Final full Mac181 passes+1 index skip (182 registered,153.04s),
+Mac-hosted portable/Linux137 passes+1 skip (138 registered,106.42s); focused
+ASan/UBSan11/11 (16.98s), TSan11/11 (20.22s). Native-disabled C++11 libraries
+build and registry/URI oracles2/2 pass. Those complete runs preceded the current checkpoint above.
+See [URI contract](../passage-uri-workflows.md) and [Mac handoff](../handoff-macos.md).
+At that earlier checkpoint, unknown/non-Bible ranges and dictionary hover were
+still open; current scoped progress is recorded above. No whole parity
+group or retirement gate changes.
+
+Current alias-search checkpoint (2026-10-22): shared C++11 registry, bounded
+owned SDK catalog resolution and copied C/Swift transport now feed search
+execution. Raw requested tokens and explicit bounds providers remain unchanged;
+actual installed IDs drive retained exports and Mac/Linux hit preview/activation.
+Full Mac179 passes+1 index skip (180 registered,154.45s); full portable/Linux models
+on Mac135 passes+1 skip (136 registered,79.07s, GTK runtime OFF); focused ASan/UBSan
+and TSan11/11 each. Scoped native saved-list/search/preview/activation window
+checked with distinct original prose. See [alias contract](../module-abbreviations-workflows.md)
+and [Mac evidence](handoff-macos.md#alias-search-execution-and-source-provenance-2026-10-22).
+Typed single-passage URI alias resolution additionally passes normal12/12,
+ASan/UBSan10/10, TSan10/10 and Mac-hosted portable/Linux11/11 focused checks.
+Shared retained/native showRef exact-module/main-module fallback now passes
+normal11/11, ASan/UBSan9/9, TSan9/9 and Mac-hosted portable/Linux10/10; full
+Mac181-case full selection plus desktop/heading9/9 recheck covers180 passes
+and1 explicit index skip; portable137-case full selection plus corrected heading
+recheck covers136 passes+1 index skip. See the Mac handoff for initial failures
+and exact scope. Parallel/BibleSync, full mixed-family/corpus/current platform acceptance and
+all whole-parity/retirement gates remain open.
+
+
+Earlier saved-list checkpoint (2026-10-22): `2b2f518`, with shared saved-list
+removal `f0778e0`, owned removal transport `0dbfff9` and native editing `d0b068c`.
+Final full Mac173 passes+1 explicit index skip (174 registered,149.80s); full
+portable core/Linux models on Mac130 passes+1 explicit index skip (131 registered,
+99.11s; GTK runtime OFF). Scoped removal transport: normal8/8; ASan/UBSan,
+TSan and portable6/6 each. Native prefill/editor/chooser cancellation is scoped;
+GUI removal completion, complete advanced setup/corpus/platform acceptance remain
+open. See the [current Mac evidence](handoff-macos.md#native-saved-list-management-2026-10-22).
+No whole parity, legacy retirement or new completion score follows.
+
+
+Linux integration checkpoint (2026-10-22): Linux catch-up branch `linux/native-parity`
+through `f0b6e57` is integrated with saved-list C/Swift write transport
+`c11b15b` on `master`, at the owner's request. It shares existing core services
+for books, images, advanced search and retained exports. The integration corrects
+newer SWORD SDK class-constant initialization. Full local macOS regression:
+**173 passes + 1 explicit index skip** (174 registered, 147.56 s).
+Full portable core/Linux model regression on Mac: **130 passes + 1 explicit
+index skip** (131 registered, 98.12 s; GTK runtime OFF).
+See [integration evidence](handoff-macos.md#linux-parity-integration-2026-10-22).
+Recorded Fedora normal evidence remains **130/130**, including indexed search;
+its installed-SWORD ASan overlap failure and unavailable desktop display remain
+open. No whole-feature acceptance, retirement or completion-percentage increase
+follows, and no hosted build was requested.
+
+Native saved-list editor (2026-10-22): explicit kind/label/value sheet and
+profile destination chooser consume the verified shared C/Swift writer. Successful
+snapshots refresh choices without applying them or changing current search state.
+Full Mac regression173 passes+1 explicit index skip (174 registered,125.66s);
+scoped editor/chooser cancellation/new-file save/menu checked with original fixtures.
+See [saved-list contract](../saved-search-lists-workflows.md#native-explicit-editor-2026-10-22).
+Shared first-label saved-list removal now also has C++ serialization, verified
+staged snapshots and FIFO execution; normal/sanitizer/portable scoped checks4/4
+each. Additive owned C/Swift removal transport passes normal8/8 and ASan/UBSan, TSan
+and portable-on-Mac6/6 each. Native removal consumption remains next. No whole parity acceptance
+follows.
+
+Native loaded-choice management now consumes core effective indices for prefill
+and shared verified removal snapshots. Focused8/8 and full Mac173 passes+1
+explicit index skip (174 registered,149.80s) pass on the combined tree. Scoped
+prefill/removal-chooser cancellation checked; actual GUI removal completion and
+whole advanced-search workflow acceptance remain open. Implementation/evidence:
+[Mac handoff](handoff-macos.md#native-saved-list-management-2026-10-22).
+
+Earlier export checkpoint (2026-10-22): shared retained search generations, selected/all
+text export and initial restricted passive HTML documents are implemented through
+one C++ owner with copied C/Swift values. Native Mac text save/copy at `5d52a11`
+consumes the shared services; native HTML save/copy at `f89c585` now consumes the
+same complete shared documents. Source failure/cancellation, stale IDs, capacity/output caps,
+order/duplicates and state neutrality stay explicit. See [retention](../search-retention-workflows.md),
+[text export](../search-text-export-workflows.md) and [HTML export](../html-export-workflows.md).
+
+Shared verse image source bytes and copied C/Swift values are now checked; actual
+SDK image commands and typed reading-pane dispatch keep URI/native directory
+handling in C++. See [image contract](../verse-image-workflows.md). Native Mac reading
+image preview is now checked in scoped models/window. Shared HTML static PNG
+embedding has explicit C++/C/Swift opt-in. Native Mac HTML destinations have scoped
+model/window checks; inline reading resources remain pending.
+
+Prior full integrated HTML image checkpoint: **164 Mac passes + 1 explicit index
+skip** (165 registered, 137.38 s), through core/C `4fecce8` and Swift `374147d`,
+with desktop access for isolated pasteboard checks. Focused shared HTML/resource
+checks pass **11/11** each normal, ASan/UBSan, TSan and portable core on Mac (GTK
+runtime OFF); Swift image/default HTML checks pass **8/8** including fixtures.
+The earlier full portable/core-model checkpoint remains 121 passes + 1 skip
+(122 registered, 92.46 s at `b335db5`), not a new full portable run. C11 header
+syntax passes. Dependencies are partly instrumented; ASan leaks off.
+Current Fedora/MSVC, actual indexed execution and full corpus acceptance remain open.
+
+Configured HTML sources reuse live rendering without publishing learned display
+choices. The real ThML counted-terminal-NUL convention is handled explicitly.
+Restricted HTML documents share text selection, bound final bytes, scope known
+core styles and reject unsupported assets/markup with no partial document.
+Native HTML destination controls are checked in a scoped Mac slice. Resource/
+style/semantic-action expansion, complete advanced headers and browser/CSP/visual
+acceptance remain pending. The browser
+blocked local-file preview by URL policy; no workaround or visual acceptance.
+
+Shared HTML image export now connects the private cache to actual row-module
+resource loading, an explicit static PNG policy, aggregate budgets, generated
+CSP and successful-only counters. Additive C11 options/getters preserve existing
+layouts; Swift 6 copies options/results with core-supplied defaults. Default
+calls still reject images. See [the scoped contract](../html-image-export-workflows.md).
+
+Native destination checkpoint `f89c585` passes 10/10 focused checks including
+fixtures, isolated HTML/text pasteboards, atomic files and search regression;
+disposable window/save/resource-failure checks passed. See
+[native HTML contract](../native-search-html-export-workflows.md). No new full-suite run.
+
+Rich clipboard implementation `b85c440` now returns optional bounded plain text
+beside complete HTML on one FIFO job/resolved selection. Additive C getters and
+Swift copied values feed both native clipboard types; Save keeps HTML-only
+behavior. Final Mac165 passes +1 index skip (166 registered); ASan/UBSan11/11;
+portable core/GTK models26/26 on Mac. Newer XML2.15.4 full-suite compatibility
+remains open; final Mac uses the documented Apple XML2.9.13 SDK. See [contract/evidence](../rich-clipboard-workflows.md) and latest local
+checks in the [Mac handoff](../handoff-macos.md).
+
+Optional C++ committed search-context headers at `66196e3` preserve first rows,
+duplicate groups, default bytes and existing output caps. Header text comes from
+retained metadata, with escaped HTML and matching rich clipboard companions.
+Additive C/Swift/native options at `5831417` consume the same complete payloads;
+Mac Export now offers Include search details, default off. Scoped native/model/C
+checks pass16/16, ASan/UBSan11/11, portable core/GTK models26/26 on Mac and search
+regressions3/3. See [contract](../export-context-workflows.md).
+
+Mac advanced modes/annotation controls (`d26aa2d`) and ordered multi-module
+selection/grouped preview/export (`c17206e`) now consume the existing shared
+services. Full Mac batch checkpoint:167 passes +1 explicit index skip,168
+registered (142.55 s), with isolated desktop pasteboard access. Each hit retains its original group/row/module and generation for
+export; no native scope chaining or search engine was added. Full advanced
+settings/workflow and target-platform acceptance remain open.
+
+Explicit native partial-source export at `667f9b7` now uses the existing shared
+acceptance flag, requires shared context disclosure and resets on new results.
+Focused native/adapters/destination checks pass11/11; stale and capacity refusal
+remain enforced.
+
+Native per-tab annotation reset at `119e943` now clears only future search
+context/override inputs, preserving scope, reading options, results and historical
+export provenance. Focused search/export regression checks pass11/11.
+
+Native result activation at `3b5ff5c` now passes the actual hit module/reference
+through existing shared pane routing; the prior reference-only callback could
+reuse the wrong translation. Scoped two-Bible/two-commentary model checks pass. Final integrated Mac suite:
+168 passes +1 explicit index skip,169 registered (123.07 s), through `3b5ff5c`.
+
+Next bounded work: saved/advanced settings, remaining
+resource/style/semantic policies and workflow acceptance.
+Keep target-platform validation and other core services in view. No whole parity
+group, release or legacy retirement accepted: **0/38 groups, 0/3 release-ready apps**.
+Planning estimate remains **about 8% (6–10%)**; no reliable core-only percentage
+follows from test counts. No hosted jobs or reset credit used.
+
+## Overall completion estimate
+
+The last weighted engineering estimate remains **about 8% (6–10%)** toward a
+validated native release on all three platforms. It predates Linux catch-up and
+recent search work, and is not a measured parity score. No reliable updated
+core-only percentage is available. Reassess after accepted workflow milestones,
+not by test counts, touched files or inherited GTK3 functionality.
+
+The historical weighting was foundation 10%, shared services 35%, native UIs 30%,
+data compatibility 15% and release acceptance 10%. Its approximate contributions
+were 4.0%, 2.8%, 0.9%, 0.15% and 0%. These within-area estimates are historical,
+not fresh measurements of the current source.
+
+## Parity coverage snapshot
+
+The current matrix has 38 feature groups. Mac/shared-core has 21 partial rows,
+WinUI 3 has no frontend rows implemented, and GTK4 has 23 partial rows. These
+counts overlap, and a partial group can contain substantial pending workflows.
+**No group has complete accepted parity; no native app is release-ready.**
+The matrix and target handoffs retain the actual criteria and independent evidence.
+
+## Current locally checked scope
+
+| Area | Implemented partial scope | Detailed contract / remaining gates |
+|---|---|---|
+| Engine and reading | FIFO SDK owner, copied snapshots, navigation/history, chapter/commentary and options | [Architecture](../architecture.md); full corpus, visual composition, restore and target toolchains |
+| Lexical rendering | Owned word layout/CSS, fallback, shared notes/headings and explicit preferences | [Word layout](../word-block-workflows.md), [numbering](../note-numbering-workflows.md), [spacing](../double-space-workflows.md); arbitrary markup/corpus/visual gates |
+| Dictionary and hover | Owned keys/history, Unicode casing, contextual destinations, explicit scoped profile import/save | [Hover](../hover-workflows.md); complete families, locales, saved startup and pane workflows |
+| General books | Tree/paging/navigation/DisplayLevel, scoped restore, notes, bounded image/style preparation | [Book workflows](../book-tree-workflows.md); complete sizing/assets/formats/corpus and saved windows/tabs |
+| Search | Typed bounds/last scope, attribute and word dialects, ordered batches, retained generations, progress/cancel | [Search](../search-workflows.md), [retention](../search-retention-workflows.md); actual indexed execution, mixed families and advanced native controls/settings |
+| Export | Shared GTK item formatter, selected/all text, native Mac text save/copy, restricted HTML C++/C/Swift values | [Text](../search-text-export-workflows.md), [HTML](../html-export-workflows.md); advanced headers, resources/semantic actions, native HTML, passage, printing and visual workflows |
+| Resource reuse | Shared private filesystem containment/bounded-copy helper extracted from book service | [Reuse audit](../resource-export-design.md); no new search-image support |
+| Linux frontend | Earlier Fedora GTK4/WebKitGTK reading/options/dictionary/preview/profile scope | [Fedora handoff](../handoff-linux.md); current shared additions need target recheck, input/picker/accessibility/corpus/accelerated renderer gates |
+| Windows frontend | Shared source/API available; no native acceptance | [Windows handoff](../handoff-windows.md); native MSVC/dependencies and matching reading slice first |
+
+Parallel reading, complete storage/session migration, bookmarks/annotations,
+editors, installation/index/cipher management, BibleSync, full menus/accessibility,
+translation and release packaging remain substantial work. The existing GTK3 app
+and regression sources remain the behavior/design reference.
+
+## Next steps in order
+
+Owner steering on2026-10-30 supersedes the earlier devotional/resource-export
+sequence. Keep existing implementations and evidence while shifting new work.
+
+1. Parallel reading: characterize actual SDK interpolation, then owned aligned
+   snapshots, navigation/options and named sets on the existing FIFO owner.
+2. Establish lossless session/persistence foundations alongside new state,
+   including restart, unknown-field preservation, backups and round trips.
+3. Bookmarks/annotations, then editing, using compatible shared repositories.
+4. Module sources/installation/maintenance with staged writes, cancellation and
+   safe failure handling; future licensed translation providers remain in scope.
+5. Sync, with shared state and explicit sender/privacy/credential boundaries.
+6. Broader corpus/locale/versification/data compatibility and current Fedora/MSVC
+   checks throughout these slices. Native UI/release acceptance remains separate.
+
+Devotionals are deferred. Existing search/export/resource follow-ups remain in
+their contracts as backlog; this is a priority change, not acceptance or removal.
+
+## Validation evidence and limitations
+
+Current full-suite checkpoints and subsequent focused source checks are recorded
+above and in [the Mac handoff](../handoff-macos.md). Older exact test counts,
+comparisons, dependency assumptions and corrections remain in the linked contracts
+and [the versioned prior ledger](https://github.com/orbeavers14/xiphos/blob/7e9ff93/doc/modernization/status.md).
+This cleanup removes repeated chronological summaries and stale next-task claims;
+it does not erase regression evidence or accept unvalidated functionality.
+
+The local environment is macOS 27.0.1 ARM64, AppleClang 21, Swift 6.4 in Swift 6
+mode, SWORD 1.9.0.3916 and GLib 2.86.5. Configured dependencies/deployment are
+26.0: the requested macOS 13 minimum is unvalidated. Portable-model checks on Mac
+with GTK OFF are not Fedora runtime or Windows/MSVC checks. External SDK/system
+libraries are not fully instrumented; ASan leak checks are disabled. The SDK index
+creation diagnostic did not produce a usable index; optional checks explicitly
+skip and the required-index negative control fails as expected. Neither is an
+indexed-search pass.
+
+The browser blocked local-file HTML preview by URL policy. No workaround, visual
+HTML acceptance or CSP runtime acceptance is claimed. Native text save/copy tests
+used disposable files and an isolated named pasteboard; user clipboard content
+was not read or changed. Full permitted-module/profile, visual/design, keyboard,
+screen-reader, data migration and platform release gates remain pending.
+
+## Development and CI budget policy
+
+Keep routine development and checks local. `builds`/`native-core` workflows remain
+administratively disabled; their YAML still has automatic triggers. `linux-core`
+is active but manual-only. Do not enable or dispatch without owner authorization.
+The latest remote audit still showed October 15 jobs; these checkpoints started
+none. No allowance-reset credit was consumed. Skipped/disabled checks are not
+passes, and current Mac evidence cannot certify another OS or minimum deployment.
+
+## Reuse from related projects
+
+Inspected 2026-10-10: the local SwordKit source at
+`d928c48b37d45502df4466194ab33bdcb1dbd1dd` and its package, bridge,
+engine-access lock, metadata attributes and roadmap; public BibleKit, BibleUI
+and SwordReader README contracts. Public README evidence is a candidate screen,
+not a source/license or integration audit of those three projects. No source
+from another project has been copied or linked into this initial slice.
+
+| Project | Useful reuse | Long-term decision and gate |
+|---|---|---|
+| SwordKit | Swift-owned values, native-handle lifetime patterns, Strong's/morphology attribute types, Apple build/release tooling | Highest-priority implementation reference. Adapt selected Swift presentation/lifetime code to the Xiphos C API; preserve provenance and test behavior. Do not link its existing direct SWORD bridge into the app alongside the Xiphos engine. |
+| [BibleUI](https://github.com/SwordReader/BibleUI) | Reference/catalog/attribution controls, cancellation and stale-load protection patterns | Evaluate individual controls after source/license audit and comparison with Xiphos layout, keyboard and accessibility requirements. Its documented formatter removes links, so the current reader cannot preserve Xiphos study-link behavior unchanged. |
+| [BibleKit](https://github.com/SwordReader/BibleKit) | Provider-neutral presentation contracts | Optional Xiphos-backed provider for Apple presentation; no reference parsing, search, history or persistence policy moves out of C++. Avoid an extra framework dependency until a needed component justifies it. |
+| [SwordReader](https://github.com/SwordReader/SwordReader) | App integration and native platform workflow examples | Inspect focused menu/window/accessibility/test helpers when implementing the corresponding milestone. Its product scope and layout do not replace the Xiphos parity contract. |
+| Separate SWORD engine modernization | Potential future dependency update | Keep this separate from extracting the Xiphos application core. Require explicit pinned source/artifact integration, provenance, baseline output/module tests and API/ABI checks before changing the engine dependency. |
+
+SwordKit's README declares GPL-2.0-only; its LICENSE contains GPL v2. Its
+package uses Swift tools 6.3, macOS 14+, a native XCFramework and direct
+CSwordBridge calls. Xiphos currently targets macOS 13+; adopting that package
+unchanged would alter requirements and introduce a second engine boundary.
+Its roadmap also leaves deterministic native-shutdown and fixture validation
+open. Existing tests/checkmarks do not automatically validate Xiphos.
+
+Expected savings are reduced adapter, UI-control and build-tooling development;
+there is insufficient integration evidence for credible time or cost numbers.
+Search, navigation/versification, annotations, installation policy and session
+state remain shared C++ responsibilities even where Swift implementations exist.
+For each actual import, pin the reviewed revision, retain source notices,
+record modified files, check dependencies/platform minima and run Xiphos
+regressions. Private project code requires a separate publication review before
+inclusion in this public fork.
+
+## Completed default-branch integration
+
+**PRs #1–80 are merged into `master`.** The 77 PRs remaining after #1–3 were
+retargeted and merged in dependency order on 2026-10-12. Each reviewed head/base
+was verified before merging. A clean local projection established the combined
+source; actual master trees were compared with it at batch boundaries and after
+#80. The final #80 integration commit is
+`00dd335d95354dcc97bbd84dc50c8891e03bd918`; its executable/configuration source is
+identical to the checked final snapshot. Subsequent status reconciliation changes
+only documentation. PR discussions retain scoped original evidence and the
+local-only integration review; Git history retains all implementation commits.
+
+| Integration checkpoint | Fresh local evidence |
+|---|---|
+| [#1 foundation](https://github.com/orbeavers14/xiphos/pull/1), [#2 async UI](https://github.com/orbeavers14/xiphos/pull/2), [#3 options](https://github.com/orbeavers14/xiphos/pull/3) | Exact native snapshots passed 6/6, 8/8 and 8/8; combined #2/#3 passed 10/10 and native-disabled seams |
+| [#13 preferences/reading controls](https://github.com/orbeavers14/xiphos/pull/13) | Combined native build and 16/16 tests |
+| [#30 study links/rendering controls](https://github.com/orbeavers14/xiphos/pull/30) | Combined native build and 21/21 tests |
+| [#57 dictionaries/locale](https://github.com/orbeavers14/xiphos/pull/57) | Combined native build and 32/32 tests |
+| [#80 final stack](https://github.com/orbeavers14/xiphos/pull/80) | Combined native build and 49/49 tests; core address/undefined 35/35 and thread 35/35; native-disabled rendering/history/options seams |
+
+Later reading/search/resource milestones are sequential checked master commits.
+The [shared handoff](../handoff.md) links current contracts and implementation hashes.
+Historic integration/conflict details remain in Git; no source/asset retirement
+is accepted by a documentation cleanup.
+
+## Official sign-off and file retirement
+
+A scoped milestone is accepted when its specified implementation, regression
+checks, relevant validation and evidence have been reviewed and integrated at a
+recorded commit (with a PR when used). The owner
+explicitly authorized local-only integration for #1–80 with hosted/platform checks
+deferred; record that limitation rather than treating skipped CI as a pass.
+Record the accepted commit/PR and evidence here, and update only the parity
+rows/platforms that were actually validated. A passing test alone does not
+make every file associated with a milestone obsolete.
+
+After acceptance, remove disposable plans, superseded notes and generated
+reports once useful decisions/evidence are captured in this status page or
+architecture. Generated build/test fixtures and inventories stay under ignored
+`build/`; keep the code that regenerates them. Detailed historical evidence
+remains in Git history and linked PRs; the current
+page retains the compact evidence and acceptance contract.
+
+Retire legacy source, assets, build rules or dependencies only when:
+
+1. The replacement covers each affected parity requirement on the platforms
+   still using that code, including data compatibility and workflow checks.
+2. No supported caller, build, test, documentation or packaging path needs it.
+3. The cleanup removes stale references and relevant checks pass afterward.
+4. The removal and acceptance evidence are recorded in the reviewed changeset.
+
+Keep regression tests after features are checked off. Keep current parity
+requirements, architecture, supported user documentation and required license/
+attribution files. Git history and linked PRs preserve removed implementation
+and detailed review history; avoid a growing archive of duplicate work notes.
+
+
+## Saved advanced-search choices checkpoint (2026-10-22)
+
+Shared read-only named module-list/range import at `4ca44370`, copied C/Swift
+transport/shared tokenization at `80e8a3c4`, and explicit native picker/application
+at `8f6bacc1` preserve first-section/first-label semantics, missing/empty values,
+ordered duplicate/unavailable modules and selected bounds providers. See the
+[contract and remaining setup gates](../saved-search-lists-workflows.md).
+Latest complete Mac suite171 passes +1 explicit index skip,172 registered,
+145.28 s, plus scoped fixture-only menu/picker/action checks. Core initial
+profile/search checks9/9 each normal/sanitized/portable-on-Mac; adapter checks4/4
+normal and2/2 each sanitized/portable are independently scoped. No new current
+Fedora/MSVC, real index, broad corpus, full physical/visual/accessibility or whole
+parity acceptance. Explicit saved-list editing/atomic persistence, remaining
+advanced setup and resource/semantic policy remain pending. GTK3 stays intact.
+
+
+## Local Linux catch-up checkpoint (2026-10-22)
+
+Linux implementation `3f9a068a` on `linux/native-parity` adds general-book,
+typed image, ordered advanced search, saved-list import/application and retained
+text/HTML destination adapters through existing shared services. Private SDK
+compatibility covers released search constants and counted strip-filter bytes;
+standalone libxml test includes are explicit. The default Linux helper now uses
+one compiler job following an overlapping-build memory exhaustion.
+
+Fedora 44/aarch64 normal checks pass **130/130**, including indexed search;
+the expanded Linux model check passes **4/4** with prerequisites. GTK frontend
+and the opt-in new desktop smoke compile. Display access is unavailable (smoke
+exit77), so no new desktop/clipboard/picker/visual acceptance follows. Focused
+ASan/UBSan records4 passes,1 installed-SWORD overlap failure and2 blocked tests;
+direct model/generation runs reproduce the SWORD search diagnostic. It is not
+suppressed. See the [exact environment, commands and limits](../handoff-linux.md).
+The owner subsequently approved publication; the identical tested code tree is
+published on `linux/native-parity` as `3f9a068a`. No hosted workflow was dispatched
+or enabled; no whole-feature acceptance or retirement changes.
+
+## Import/markup compatibility checkpoint (2026-11-03)
+
+`668652e`, `b9eef8c`, `b186d33`: reviewed non-destructive bookmark merge policies,
+legacy root metadata preservation and inline CSS font traits share the existing
+core/worker/native bridge. Full merge native256 passes plus two expected skips;
+subsequent focused metadata/rich native, alternate SDK and sanitizer checks pass.
+Disposable native collision/repeat workflows verified. See [exact evidence and
+remaining limits](handoff-macos.md#import-review-metadata-and-inline-rich-styles--2026-11-03).
+This does not close broad corpus, physical-platform or complete feature parity.
+
+## Sequential compatibility follow-through (2026-11-03)
+
+CSS underline/strike-through, sparse and encoded legacy migration regression
+coverage, Latin-1 keyed content/actual indexing, and LZSS compressed dictionary
+coverage are checked at `0db20c6`, `eae356b`, `45483a5`, `78fd573`, `2af1887`.
+Combined native256 passes/two expected index skips; final corpus-target compile
+and scoped primary/alternate/sanitizer/portable checks are recorded in
+[the Mac handoff](handoff-macos.md#sequential-formatting-migration-and-corpus-follow-through--2026-11-03).
+BZIP2/XZ corpus checks need a capable SDK; broad real-user, complete legacy assets
+migration and physical-platform acceptance remain open. GTK3 is preserved.
+
+## Real-world corpus and complete-folder preservation (2026-11-03)
+
+`2b3d108` adds verified complete selected-directory migration through shared core,
+FIFO/C and native review/copy. Actual ASV/OSHB/MHCC/StrongsGreek checks pass both
+local SDKs and the sanitizer build, including unchanged source hashes and mixed
+export. See [Mac evidence](handoff-macos.md#real-world-corpus-and-legacy-asset-folders--2026-11-03),
+[copy scope](../legacy-assets-migration.md) and [corpus manifest](../real-corpus-validation.md).
+External folders require explicit selection; saved absolute paths are retained.
+Live final-build folder review/copy and selection invalidation are now verified
+after the owner unlocked the Mac; independent destination hashes match originals.
+Real-user/cross-host/full workflow acceptance stays open. No whole-parity promotion or GTK3 retirement.
+
+The complete native suite at2b3d108 passes257 with two expected index skips out of
+259 registered. Follow-up `b12f467` verifies allocation-safe publication with a
+fault matrix across all counted copy allocation boundaries; see the exact scoped
+results in the Mac handoff. These are separate checks from live visual acceptance.

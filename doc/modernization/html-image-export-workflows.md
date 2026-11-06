@@ -1,5 +1,10 @@
 # Shared static PNG images in HTML search export
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Updated 2026-10-21. This is a scoped shared-core document feature with copied
 C/Swift adapters, not full Xiphos export parity or a native HTML save/print UI.
 See [HTML documents](html-export-workflows.md), [source image ownership](verse-image-workflows.md),

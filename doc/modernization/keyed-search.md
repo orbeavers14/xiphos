@@ -1,5 +1,10 @@
 # Typed dictionary and general-book search
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Checkpoint:2026-11-01. This is a shared service boundary, not complete advanced
 multi-family search or native UI acceptance.
 

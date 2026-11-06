@@ -1,5 +1,10 @@
 # Owned Bible and commentary image resources
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Updated 2026-10-20. This checked C++ source service reads copied bytes; it does not
 embed images in HTML or decode pixels. Native controls consume it separately below.
 

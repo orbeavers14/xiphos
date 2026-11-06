@@ -1,5 +1,10 @@
 # Verse annotation storage and retained cache contracts
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 These are the main-profile `Xiphos/osisrefmarkedverses` plain-text verse notes,
 separate from RawFiles personal-commentary modules and their rich editor. The
 owner prioritized bookmarks/annotations, editing and persistence while deferring

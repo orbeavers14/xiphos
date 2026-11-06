@@ -1,5 +1,10 @@
 # Shared double-spacing workflow
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Goal: preserve the legacy per-module preference and style precedence through one
 C++ policy. This is a scoped presentation milestone, not whole-feature parity.
 

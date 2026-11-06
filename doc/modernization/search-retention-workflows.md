@@ -1,5 +1,10 @@
 # Retained search-result generations
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Updated 2026-10-20. Checked C++ session/worker service and additive C transport;
 Swift transport is checked below; complete export is the next boundary. No whole F18–F20/F32 parity
 or legacy source retirement is accepted. See [search](search-workflows.md),

@@ -1,5 +1,10 @@
 # Native recovery and management integration
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Checked macOS integration, 2026-11-01, implementation `78d367a`. SwiftUI/AppKit
 present shared C++ services through the owned C/FIFO bridge; there is no second
 navigation, persistence or installation engine. GTK3 remains untouched.

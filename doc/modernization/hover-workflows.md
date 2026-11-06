@@ -1,5 +1,10 @@
 # Click, hover and lexicon-profile contracts
 
+> Service contract and scoped evidence. Use [current status](status.md) and the
+> [roadmap](shared-core-roadmap.md) for present priorities. Retired GTK paths and
+> dated “pending/next” statements below describe historical baselines/checkpoints.
+
+
 Current scoped implementation and evidence, 2026-10-22. Frozen legacy handlers
 come from CrossWire `c9976a8`; executable callback comparisons are distinct from
 complete GTK/native runtime acceptance. No feature group is officially accepted.
@@ -196,7 +201,7 @@ module IDs win. Other note/lexical/image source policies are unchanged. The olde
 single-reference resolver keeps its two-kind transport; contextual calls return
 owned reference lists and do not record Bible navigation. This supersedes the
 prior exact-only rejection guard introduced with typed URI aliases. See
-[the Mac evidence](handoff-macos.md#shared-showref-module-dispatch-2026-10-22)
+[the Mac evidence](history/handoff-macos.md#shared-showref-module-dispatch-2026-10-22)
 for actual checks and limitations.
 
 The [complete URI callback contract](passage-uri-workflows.md) now records the
