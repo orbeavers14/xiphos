@@ -1,5 +1,7 @@
 # Shared core: remaining scope
 
+Parallel UI follow-up (2026-11-05): [stacked single-verse comparison and chapter-layout switch](native-ui-todo.md#parallel-comparison-layouts), as illustrated by the owner’s Bible Hub screenshot. Reuse existing shared alignment and installed translations.
+
 Settings/localization/tabs checkpoint (2026-11-04): native Settings now exposes
 core-backed reading/lexicon controls and persistent startup/default-module/
 recovery preferences; successful non-secret sync choices persist without auto

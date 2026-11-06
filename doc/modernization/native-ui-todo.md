@@ -32,3 +32,21 @@ are intermediate; opening a setting should not routinely spawn another window.
 
 Keep application behavior in the shared core. This work concerns native
 presentation and navigation, not a second settings or study engine.
+
+## Parallel comparison layouts
+
+Owner request,2026-11-05, illustrated by Bible Hub's stacked Genesis1:1 view:
+
+- [ ] Add a focused single-verse comparison with each translation's name above
+  its verse text in a vertical list. This complements the current chapter matrix.
+- [ ] Offer stacked verse and side-by-side chapter layouts, saved module ordering,
+  module visibility and previous/next verse navigation.
+- [ ] Keep optional context, commentary, cross-reference and lexical actions
+  accessible alongside the comparison without duplicating the shared engine.
+- [ ] Adapt the presentation to native Mac/Windows navigation, narrow windows,
+  RTL/mixed direction, keyboard focus and accessibility; extend to GTK4 as used.
+
+Reuse the current shared parallel alignment/results and installed module catalog.
+The screenshot is a behavior/layout reference, not a request to copy the website
+or its text library. Licensed/provider translations remain the existing separate
+roadmap work. No new comparison view is implemented by this planning entry.
