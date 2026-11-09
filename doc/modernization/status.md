@@ -1,6 +1,6 @@
 # Current development status
 
-Updated 2026-11-05. This page supersedes earlier progress estimates and checkpoint summaries.
+Updated 2026-11-09. This page supersedes earlier progress estimates and checkpoint summaries.
 
 The project is a shared C++/SWORD core with native frontend development. GTK3
 application/editor/backend code and its old packaging are retired. Frozen behavior
@@ -21,8 +21,10 @@ These are scoped implementations, not complete functionality or release sign-off
 
 ## Latest verification
 
-The most recent inspected full Mac suite passed **258 checks with two expected
-indexing skips out of 260**,149.12s. Focused sanitizer checks passed4/4. A separate
+The macOS 27.2 Release build at the new 27.0 deployment floor passed **259 of 260
+checks**, with the optional BibleSync network pair skipped and zero failures.
+See the [Mac handoff](handoff-macos.md) for deployment, launch and bundling checks.
+Earlier focused sanitizer checks passed 4/4. A separate
 capable SWORD build proved real indexed verse/dictionary/book searches. See
 [localized reading evidence](localized-reading-verification.md),
 [corpus manifest](real-corpus-validation.md) and [runtime packaging limits](native-runtime-packaging.md).
@@ -33,7 +35,7 @@ No fresh Windows or physical Linux acceptance is implied by Mac-hosted checks.
 - Native Settings/navigation redesign, selected-word Hebrew search and stacked verse comparisons.
 - Complete translations, typed localized-reference input, broader RTL and accessibility acceptance.
 - Broader module/canon/profile coverage, remaining reading/export/editor workflows and data compatibility.
-- Windows frontend/native validation, current physical Linux verification and older macOS compatibility.
+- Windows frontend/native validation, current physical Linux verification and macOS 27.0 deployment acceptance.
 - Dependency resources/notices, signing/notarization, installers and upgrade validation.
 
 There is no current, auditable completion percentage. Earlier weighted estimates

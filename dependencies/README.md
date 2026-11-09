@@ -68,10 +68,10 @@ Windows interface dependencies remain planned until its native frontend exists.
 | **macOS resource tooling** | Python3 standard library | 3.8 | 3.9.6; manually selected interpreter inspected 2026-11-05 | Regenerate/check native catalogs and exact gettext import | `localization/tools/`; no Python runtime dependency in the app |
 | **macOS** | Swift compiler | Swift 6 language mode | 6.4.2 | Compile native Apple adapters and UI | `platforms/macos/CMakeLists.txt` |
 | **macOS** | Xcode / Apple SDK | Swift 6-compatible toolchain; no independent Xcode release floor declared | Xcode 27.2; active SDK 27.2 | Apple compiler, framework and platform SDKs | Native Mac build; libxml2 retains cached CLT 26 SDK headers |
-| **macOS** | SwiftUI | macOS 13 project baseline; runtime compatibility still needs target validation | Bundled framework; developer SDK 27.2 | Reader/editor and Module Library presentation | `platforms/macos/ReaderApp.swift`, editor/search panes, `LibraryManagement.swift`, `SyncUI.swift`, `MigrationUI.swift` |
-| **macOS** | AppKit | macOS 13 project baseline | Bundled framework; developer SDK 27.2 | Windows, text editing, panels, clipboard and lifecycle | `SessionApp.swift`, `EditorWindow.swift`, `LibrarySetup.swift`, native adapters |
+| **macOS** | SwiftUI | macOS 27.0 preview deployment floor | Bundled framework; developer SDK 27.2 | Reader/editor and Module Library presentation | `platforms/macos/ReaderApp.swift`, editor/search panes, `LibraryManagement.swift`, `SyncUI.swift`, `MigrationUI.swift` |
+| **macOS** | AppKit | macOS 27.0 preview deployment floor | Bundled framework; developer SDK 27.2 | Windows, text editing, panels, clipboard and lifecycle | `SessionApp.swift`, `EditorWindow.swift`, `LibrarySetup.swift`, native adapters |
 | **macOS** | Foundation / Combine / Darwin runtime | Target Apple SDK; no independent library floor declared | Bundled SDK/runtime; developer SDK/host 27.2 | Files/URLs, observation, Task-based autosave/sync scheduling and system facilities | `platforms/macos/*.swift` |
-| **macOS** | WebKit | Target Apple SDK; macOS 13 project baseline | Bundled framework; developer SDK 27.2 | Native HTML reading view | macOS reading/study presentation |
+| **macOS** | WebKit | Target Apple SDK; macOS 27.0 preview deployment floor | Bundled framework; developer SDK 27.2 | Native HTML reading view | macOS reading/study presentation |
 | **macOS** | ImageIO / CoreGraphics | Target Apple SDK; no independent floor declared | Bundled SDK/runtime; developer SDK 27.2 | Images and native graphics | Image/clipboard adapters; CoreGraphics supplied through Apple UI frameworks |
 | **macOS** | UniformTypeIdentifiers | Target Apple SDK; no independent floor declared | Bundled framework; developer SDK 27.2 | File/export type descriptions | Native export/save adapters |
 | **Windows** | MSVC C++ Build Tools / runtime | C++17-capable native MSVC toolchain; no numeric toolset floor declared | Requires Windows-host inspection | Compile the core and future native frontend | `platforms/windows/core.ps1`; matching target architecture/runtime required |
@@ -127,6 +127,7 @@ For future source builds, prefer ignored `build/dependencies/<name>-<version>` a
 architecture, configuration and deployment target. Use a fresh build directory
 when changing SDKs; do not move working installations to match a convention.
 
-Current checks run on macOS27.2 with configured deployment target26; some selected
-dylibs require27. The requested macOS13 baseline, macOS26 runtime, physical Windows/
-Fedora validation and release bundling remain open. Preserve dependency notices.
+The inventory above was collected on macOS 27.2 with deployment target 26.0.
+Some selected dylibs required 27.0, which is now the native preview floor.
+Validation on macOS 27.0, native Windows and physical Linux and release bundling
+remain open. Preserve dependency notices.

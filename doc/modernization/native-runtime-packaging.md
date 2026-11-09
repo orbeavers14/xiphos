@@ -30,10 +30,10 @@ Static SDK provenance and API availability still require their own validation.
 The inspected development app declares26.0 but16 of its17 external libraries
 require27.0. Those current bottles do not establish macOS26 or the project's
 requested13.0 floor. The tools report this instead of silently accepting it.
-The project's configured support policy is unchanged.
+This is historical evidence from before the project raised the preview floor to 27.0.
 
 `bundle-runtime.py` produces a NEW development-only app. It copies the selected
-app and17 current non-Apple dependencies into private staging, uses short
+app and its non-Apple dependencies into private staging, uses short
 content-hash filenames to avoid SDK basename collisions/header-size problems,
 rewrites references and IDs, applies local ad-hoc signatures, verifies signatures
 and re-audits the complete closure before publication. Original app/SDK binaries
@@ -45,13 +45,13 @@ from the source. Bounds are256 images/1GiB; audit traversal is also bounded.
 ```sh
 python3 -B platforms/macos/bundle-runtime.py \
   build/macos/XiphosNativePreview.app build/RuntimeClosureCheck.app \
-  --development-only --allow-development-os-floor
+  --development-only
 python3 -B platforms/macos/runtime-audit.py build/RuntimeClosureCheck.app
 ```
 
-The second flag explicitly permits only the new development artifact's plist to
-state the actual observed floor27.0. Without it, the current source/SDK mismatch
-rejects before publication. It does not raise the source project's minimum.
+The bundler rejects a dependency that requires a higher OS than the source app
+declares. For a development-only experiment, `--allow-development-os-floor`
+allows the new artifact to declare the observed floor.
 `Contents/Resources/DevelopmentRuntime.json` marks the artifact development-only
 and not redistribution-ready, with remaining release gates. No module content is
 bundled. It is not a signed/notarized release or an older-macOS compatibility claim.
@@ -61,4 +61,4 @@ checks. A private-profile live launch discovers the six test modules; dyld logs
 show17 bundled SDK loads and zero Homebrew/MacPorts/usr-local library loads.
 Existing-destination and unacknowledged-floor refusal checks pass. Final artifact
 and complete regression evidence are recorded in [the Mac handoff](handoff-macos.md).
-Native Windows/Linux packaging and physical older-OS execution remain open.
+Native Windows/Linux packaging and execution on macOS 27.0 remain open.

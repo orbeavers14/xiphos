@@ -16,10 +16,11 @@ cmake --build build/macos --parallel
 ctest --test-dir build/macos --output-on-failure
 ```
 
-The project baseline is macOS13.0. It is unvalidated: your linked SDKs may require
-a newer target. The most recent development dependency closure requires macOS27;
-do not interpret build success as older-OS compatibility. Set
-CMAKE_OSX_DEPLOYMENT_TARGET to match a compatible SDK set. See
+The preview targets macOS 27.0 by default. For an existing build directory
+configured below that floor, use a fresh directory or pass
+`-DCMAKE_OSX_DEPLOYMENT_TARGET=27.0` when reconfiguring. Choose a higher target
+if required by your linked SDKs. Audit the dependency closure before distributing
+a bundle. See
 [runtime audit/bundling](../../doc/modernization/native-runtime-packaging.md).
 
 Static SDKs can specify SWORD_INCLUDE_DIR/SWORD_LIBRARY,
@@ -35,9 +36,9 @@ cmake --build build/macos --target preview_fixture
 sh platforms/macos/launch-fixture.sh build/macos reader
 ```
 
-The launcher copies the app and fixture to a temporary location. Inspect the
-actual window; launch success is not a workflow check. Normal launch discovers
-installed modules and uses the native profile. Development overrides are
+The launcher copies the app and fixture to a temporary location and uses a
+separate profile there. Inspect the actual window to verify the workflow. Normal
+launch discovers installed modules and uses the native profile. Development overrides are
 XIPHOS_MODULE_ROOT, XIPHOS_PROFILE_DIRECTORY and XIPHOS_SESSION_PATH. Give GUI
 test copies unique bundle identifiers to prevent tools selecting the wrong profile.
 

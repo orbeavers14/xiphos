@@ -48,6 +48,9 @@ else
   /usr/bin/ditto "$fixture" "$preview_dir/fixture"
   rm -f "$preview_dir/fixture/mods.d/modules-conf.cache"
 fi
-/usr/bin/open -n -F --env "XIPHOS_MODULE_ROOT=$preview_dir/fixture" "$preview_dir/XiphosNativePreview.app"
+/usr/bin/open -n -F \
+  --env "XIPHOS_MODULE_ROOT=$preview_dir/fixture" \
+  --env "XIPHOS_PROFILE_DIRECTORY=$preview_dir/profile" \
+  "$preview_dir/XiphosNativePreview.app"
 printf 'Fixture preview launched from %s\n' "$preview_dir"
 printf '%s\n' 'Verify the window; launch success alone is not a GUI check. Quit before removing this temporary copy.'

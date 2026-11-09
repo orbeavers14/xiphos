@@ -10,7 +10,7 @@ name. Earlier percentage estimates are historical, not current completion claims
 3. Stacked single-verse comparisons alongside the current parallel chapter matrix.
 4. Broader translations, typed localized-reference input, RTL/VoiceOver/keyboard acceptance.
 5. Remaining reading/editor/export/migration workflows and broader real-world module/profile coverage.
-6. Native Windows/frontend work, physical Linux validation and older macOS compatibility.
+6. Native Windows/frontend work, physical Linux validation and macOS 27.0 deployment acceptance.
 7. Release dependency resources/notices, signing/installers and upgrade testing.
 
 The detailed [native UI checklist](native-ui-todo.md) records owner requests and
