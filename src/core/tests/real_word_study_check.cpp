@@ -168,6 +168,20 @@ int main(int argc, char **argv) try {
   } catch (const std::invalid_argument &) { unmapped = true; }
   check(unmapped && worker.parallel_selection(tab).get()->reference == numbered.reference,
         "SDK systems without mapping tables must not silently fall back to textual alignment");
+  (void)worker.edit_parallel_profile(tab,argv[2],
+    {ParallelProfileAction::save,"RTL","",{"OSHB","ASV","OSHB"},false}).get();
+  const auto rtl = worker.visit_parallel_profile(tab,argv[2],"RTL","Genesis 1:1",{},
+      false,maximum_parallel_snapshot_bytes,"OSHB").get();
+  const auto &rtl_row = rtl.rows.at(rtl.selected_verse - 1);
+  check(rtl.control_module == "OSHB" && rtl.reference == "Genesis 1:1" &&
+        rtl.columns.at(0).right_to_left && !rtl.columns.at(1).right_to_left &&
+        rtl.columns.at(2).right_to_left &&
+        rtl_row.cells.at(0).reference == "Genesis 1:1" &&
+        !rtl_row.cells.at(0).html.empty() &&
+        rtl_row.cells.at(1).reference.empty() && rtl_row.cells.at(1).html.empty() &&
+        rtl_row.cells.at(2).html == rtl_row.cells.at(0).html,
+        "Real RTL control and duplicate column render while the unsupported KJV mapping stays empty");
+
   const std::vector<std::pair<std::string,std::string>> export_sources{
       {"OSHB","Genesis 1:1"}, {"MorphGNT","John 1:1"}, {"Peshitta","John 1:1"}};
   for (const auto &source : export_sources) {

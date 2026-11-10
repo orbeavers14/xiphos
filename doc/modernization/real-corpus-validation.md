@@ -115,7 +115,10 @@ verse numbers. A split opens at its first numbered control verse, and a split
 cell carries separate HTML and source references for every numbered part.
 Merged mappings retain the same actual source verse in each corresponding
 control row. Real tests cover Leviticus 14:55–56 in Synodal/KJV, a Psalm mapping
-starting at verse zero, and an unsupported MT-to-KJV comparison.
+starting at verse zero, and an unsupported MT-to-KJV comparison. With OSHB
+controlling Genesis 1:1, both Hebrew columns retain RTL direction and render
+the same verse while the installed ASV column has no mapped verse. This
+covers mixed-direction data at the shared boundary.
 
 
 The same runner checks complete plain-text and passive HTML passage export
