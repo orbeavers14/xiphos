@@ -85,6 +85,18 @@ int main(){try{
  auto cancelled=std::make_shared<SearchControl>();cancelled->request_cancel();
  empty_failure(prepare_export_png({"Original","original.png","image/png",png},png.size(),1024,64,cancelled),ExportPngStatus::cancelled);
  empty_failure(prepare_export_png({"Original","original.jpg","image/jpeg",png},png.size(),1024,64),ExportPngStatus::unsupported);
+#ifdef XIPHOS_HAVE_JPEG
+ const auto jpeg=image_test::preview_assets().at(2).second;
+ VerseImageResource photo{"Original","original.jpg","image/jpeg",jpeg};
+ const auto decoded=prepare_export_jpeg(photo,jpeg.size(),4096,4,{});
+ check(decoded.status==ExportPngStatus::ok&&decoded.width==2&&decoded.height==2&&
+       decoded.data_url.find("data:image/png;base64,")==0,"JPEG converts to static PNG");
+ empty_failure(prepare_export_jpeg(photo,jpeg.size(),4096,3,{}),ExportPngStatus::output_limit);
+ empty_failure(prepare_export_jpeg(photo,jpeg.size(),decoded.data_url.size()-1,4,{}),ExportPngStatus::output_limit);
+ empty_failure(prepare_export_jpeg(photo,jpeg.size(),4096,4,cancelled),ExportPngStatus::cancelled);
+ photo.data.insert(photo.data.size()-2,"bad");
+ empty_failure(prepare_export_jpeg(photo,photo.data.size(),4096,4,{}),ExportPngStatus::unsupported);
+#endif
  for(unsigned field=0;field<3;++field)for(auto budget:{std::size_t{0},(field==2?maximum_export_image_pixels:maximum_search_export_bytes)+1}){
   std::size_t limits[]={maximum_search_export_bytes,maximum_search_export_bytes,maximum_export_image_pixels};limits[field]=budget;
   bool rejected=false;try{prepare(png,limits[0],limits[1],limits[2]);}catch(const std::invalid_argument &){rejected=true;}check(rejected,"Invalid PNG byte/encoded/pixel budget");

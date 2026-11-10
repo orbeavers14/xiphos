@@ -814,7 +814,7 @@ xc_status xc_worker_export_search_html(xc_worker *worker,uint64_t tab,const xc_s
  * from each row's actual module; no network or frontend paths.
  * All limits positive: <=64 occurrences, <=8MiB unique original bytes,
  * <=16Mi unique pixels; final HTML bytes retain the existing max_bytes cap. */
-typedef enum {XC_HTML_IMAGES_REJECT=0,XC_HTML_IMAGES_EMBEDDED_STATIC_PNG=1,XC_HTML_IMAGES_EMBEDDED_STATIC_PNG_BMP=2} xc_html_image_policy;
+typedef enum {XC_HTML_IMAGES_REJECT=0,XC_HTML_IMAGES_EMBEDDED_STATIC_PNG=1,XC_HTML_IMAGES_EMBEDDED_STATIC_PNG_BMP=2,XC_HTML_IMAGES_EMBEDDED_STATIC_RASTER=3} xc_html_image_policy;
 typedef struct {int policy;size_t max_images,max_original_bytes,max_pixels;} xc_search_html_image_options;
 void xc_search_html_image_options_default(xc_search_html_image_options *out);
 /* images is required, including an explicit reject policy if desired. */

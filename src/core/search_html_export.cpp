@@ -65,12 +65,14 @@ PassageHtmlExport StudySession::export_passage_html(const std::string &module, c
 SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest request,std::shared_ptr<SearchControl> control){
   detail::SearchControlScope progress(control);detail::validate_search_export_output(request.title,request.max_bytes);
   if(request.plain_text_max_bytes)detail::validate_search_export_output(request.title,*request.plain_text_max_bytes);
-  if(request.images.policy!=SearchHtmlImagePolicy::reject&&request.images.policy!=SearchHtmlImagePolicy::embedded_static_png&&request.images.policy!=SearchHtmlImagePolicy::embedded_static_png_bmp)
+  if(request.images.policy!=SearchHtmlImagePolicy::reject&&request.images.policy!=SearchHtmlImagePolicy::embedded_static_png&&request.images.policy!=SearchHtmlImagePolicy::embedded_static_png_bmp&&request.images.policy!=SearchHtmlImagePolicy::embedded_static_raster)
     throw std::invalid_argument("Invalid HTML image export policy");
   // One cache for the entire job, tied to the row's actual module. The loader
   // runs on the existing SWORD owner and never accepts a frontend data directory.
   detail::ExportImages images({request.images.max_images,request.images.max_original_bytes,
-    request.images.max_pixels,request.max_bytes,request.images.policy==SearchHtmlImagePolicy::embedded_static_png_bmp},
+    request.images.max_pixels,request.max_bytes,request.images.policy==SearchHtmlImagePolicy::embedded_static_png_bmp ||
+      request.images.policy==SearchHtmlImagePolicy::embedded_static_raster,
+    request.images.policy==SearchHtmlImagePolicy::embedded_static_raster},
     [this](const std::string &module,const std::string &source,std::size_t maximum){
       return reader_.read_search_inline_image(module,source,maximum);
     },control);

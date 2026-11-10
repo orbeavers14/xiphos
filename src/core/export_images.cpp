@@ -28,7 +28,8 @@ ExportPng ExportImages::resolve(const std::string &module,const std::string &sou
   catch(const std::invalid_argument &){return fail(stopped()?ExportPngStatus::cancelled:ExportPngStatus::unsupported);}
   catch(const std::runtime_error &){return fail(stopped()?ExportPngStatus::cancelled:ExportPngStatus::unsupported);}
   if(stopped())return fail(ExportPngStatus::cancelled);
-  auto image=limits_.allow_bitmap?prepare_export_bitmap(resource,bytes,encoded,pixels,control_):prepare_export_png(resource,bytes,encoded,pixels,control_);
+  auto image=limits_.allow_jpeg&&resource.media_type=="image/jpeg"?prepare_export_jpeg(resource,bytes,encoded,pixels,control_):
+      limits_.allow_bitmap?prepare_export_bitmap(resource,bytes,encoded,pixels,control_):prepare_export_png(resource,bytes,encoded,pixels,control_);
   if(image.status!=ExportPngStatus::ok)return image;
   cache_.emplace(key,image);++statistics_.count;++statistics_.unique_count;
   statistics_.original_bytes+=image.original_bytes;statistics_.pixels+=image.pixels;encoded_bytes_+=image.data_url.size();

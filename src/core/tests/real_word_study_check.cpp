@@ -4,6 +4,7 @@
 #include "xiphos/core/c_api.h"
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <memory>
 #include <thread>
 #include <filesystem>
@@ -95,6 +96,14 @@ static void check_real_export_resources(const char *root) {
   check(result.status == SearchExportStatus::unsupported_html &&
         result.issue == HtmlExportIssue::resources && result.html.empty(),
         "Real FreChry JPEG must produce an explicit resource error and no partial HTML");
+  if (std::getenv("XIPHOS_REQUIRE_JPEG_EXPORT")) {
+    request.images.policy = SearchHtmlImagePolicy::embedded_static_raster;
+    const auto embedded = worker.export_search_html(tab,request).get();
+
+    check(embedded.status == SearchExportStatus::ok && embedded.images.count > 0 &&
+          embedded.html.find("src=\"data:image/png;base64,") != std::string::npos,
+          "Real FreChry JPEG exports as a self-contained PNG");
+  }
   worker.set_image_content(tab,"FreChry",false).get();
   const auto passive = worker.export_search_html(tab,request).get();
   check(passive.status == SearchExportStatus::ok && passive.row_count == 1 &&

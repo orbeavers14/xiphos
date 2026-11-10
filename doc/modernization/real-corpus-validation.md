@@ -147,4 +147,7 @@ Genesis 1:1 search result returns an explicit unsupported-resource error
 when exporting with image embedding enabled. With images disabled for the
 module, the same result exports as passive HTML without an image or an
 external stylesheet reference. The corpus is checked for byte changes.
-Embedding JPEGs and importing arbitrary module CSS remain outside this check.
+With a libjpeg-enabled build, set `XIPHOS_REQUIRE_JPEG_EXPORT=1` to also
+verify the explicit raster policy decodes the JPEG and embeds it as PNG.
+The earlier PNG/BMP policy continues to reject JPEGs. Module CSS import
+remains outside this export path.

@@ -39,7 +39,7 @@ struct SearchTextExport:SearchExportMetadata {std::string text;};
 enum class HtmlExportIssue {none=0,resources=1,markup=2,styles=3,links=4};
 inline constexpr std::size_t maximum_search_export_images=64;
 inline constexpr std::size_t maximum_search_export_image_pixels=16*1024*1024;
-enum class SearchHtmlImagePolicy {reject=0,embedded_static_png=1,embedded_static_png_bmp=2};
+enum class SearchHtmlImagePolicy {reject=0,embedded_static_png=1,embedded_static_png_bmp=2,embedded_static_raster=3};
 struct SearchHtmlImageOptions {
   SearchHtmlImagePolicy policy=SearchHtmlImagePolicy::reject;
   std::size_t max_images=maximum_search_export_images;
