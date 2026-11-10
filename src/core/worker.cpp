@@ -707,9 +707,12 @@ std::future<ModuleEditEntry> StudyWorker::save_module_edit(StudyTab tab,ModuleEd
    const auto renamed = target.reference.substr(0,target.reference.rfind('/')+1) + target.rename_book_leaf;
    for (auto &item : states) {
     auto &book = item.second.first.book;
-    if (!book || book->requested.module != target.module || book->path != target.reference) continue;
-    book->path = renamed;
-    if (std::holds_alternative<std::string>(book->requested.address)) book->requested.address = renamed;
+    if (!book || book->requested.module != target.module) continue;
+    const bool descendant = target.rename_book_subtree &&
+        book->path.compare(0,target.reference.size()+1,target.reference+"/") == 0;
+    if (book->path != target.reference && !descendant) continue;
+    book->path = renamed + book->path.substr(target.reference.size());
+    if (std::holds_alternative<std::string>(book->requested.address)) book->requested.address = book->path;
    }
   }
   return s.reader.save_module_edit(target,expected,text,erase,[&]{

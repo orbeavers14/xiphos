@@ -51,6 +51,14 @@ int main(int argc,char **argv)try{
         worker.book_document_selection(other).get()->tree.node.path==renamed.reference,
         "Leaf rename preserves source, offset and sibling selection");
   rejects([&]{(void)worker.read_module_edit(tab,{target.module,target.reference}).get();});
+  const auto parent=worker.read_module_edit(tab,{target.module,"/Journals"}).get();
+  rejects([&]{(void)worker.save_module_edit(tab,{target.module,"/Journals",false,"Archive"},parent.revision,"").get();});
+  const auto subtree=worker.save_module_edit(tab,{target.module,"/Journals",false,"Archive",true},parent.revision,"").get();
+  const auto child=worker.read_module_edit(tab,{target.module,"/Archive/Renamed Ω"}).get();
+  check(subtree.reference=="/Archive" && subtree.offset==parent.offset &&
+        child.offset==renamed.offset && child.text==renamed.text &&
+        worker.book_document_selection(other).get()->tree.node.path==child.reference,
+        "Subtree rename preserves descendant data, offsets and open selections");
   rejects([&]{(void)worker.read_module_edit(tab,{"Personal","John3:16",true}).get();});
  }
  {EngineManager manager(root.string().c_str(),true,new sword::MarkupFilterMgr(sword::FMT_XHTML),false,false);auto *module=manager.getModule("CaptureBook");module->createSearchFramework();if(required)check(supports_indexed_search(*module),"Rollback fixture needs an actual existing index");}

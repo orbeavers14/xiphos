@@ -108,7 +108,7 @@ ModuleEditEntry ModuleEditStorage::stage(const std::string &expected,const std::
  if (!impl_->target.rename_book_leaf.empty()) {
   if (erase || !text.empty()) throw std::invalid_argument("Rename takes no replacement text");
   auto *tree = dynamic_cast<sword::TreeKeyIdx *>(module->getKey());
-  if (!tree || tree->hasChildren()) throw std::invalid_argument("Only leaf sections can be renamed");
+  if (!tree || (!impl_->target.rename_book_subtree && tree->hasChildren())) throw std::invalid_argument("Only leaf sections can be renamed");
   const auto destination = current.reference.substr(0,current.reference.rfind('/')+1) +
                            impl_->target.rename_book_leaf;
   std::unique_ptr<sword::SWKey> candidate(module->createKey());

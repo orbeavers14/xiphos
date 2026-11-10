@@ -210,4 +210,7 @@ rejecting rich conversion. No new flags, dependency or frontend formatter.
 `xc_worker_rename_book_leaf` renames an existing RawGenBook leaf under its
 current parent. The staged save verifies the original content and tree offset
 before publication. Open tabs pointing to that leaf follow the new path.
-Move, subtree rename, and node deletion are separate operations.
+`xc_worker_rename_book_subtree` also accepts a parent section. Descendants
+retain their offsets and content, and open descendant tabs follow the new path.
+Existing session files are not rewritten. Move and node deletion are separate
+operations.
