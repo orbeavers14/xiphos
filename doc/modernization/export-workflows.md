@@ -146,6 +146,6 @@ or oracle is eligible for retirement on the strength of these partial services.
 
 The reader's Passage menu accepts a verse or range in the committed module.
 It prepares plain text or passive HTML through the shared core before offering
-a save destination. Print uses the plain-text result with the system print
-panel. Preparation leaves reading history unchanged. Physical printer output
+a save destination. Print uses the formatted HTML result with WebKit and the system print
+panel. Print as Plain Text uses the text result. Preparation leaves reading history unchanged. Physical printer output
 and pagination still need manual acceptance.

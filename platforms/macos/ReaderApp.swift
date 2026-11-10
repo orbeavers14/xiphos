@@ -1579,6 +1579,51 @@ private struct DevotionalView: View {
     }
 }
 
+@MainActor private final class FormattedPassagePrint: NSObject, WKNavigationDelegate {
+    private let web: WKWebView
+    private let info: NSPrintInfo
+    private let finished: (String?) -> Void
+
+    init(finished: @escaping (String?) -> Void) {
+        self.finished = finished
+        info = NSPrintInfo.shared.copy() as! NSPrintInfo
+        let config = WKWebViewConfiguration()
+        config.websiteDataStore = .nonPersistent()
+        config.defaultWebpagePreferences.allowsContentJavaScript = false
+        let width = max(1, info.paperSize.width - info.leftMargin - info.rightMargin)
+        web = WKWebView(frame: NSRect(x: 0, y: 0, width: width, height: info.paperSize.height),
+                        configuration: config)
+        super.init()
+        web.navigationDelegate = self
+    }
+
+    func start(_ html: String) { web.loadHTMLString(html, baseURL: nil) }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        let operation = webView.printOperation(with: info)
+        operation.showsPrintPanel = true
+        if let window = NSApp.keyWindow {
+            operation.runModal(for: window, delegate: self,
+                didRun: #selector(printFinished(_:success:contextInfo:)), contextInfo: nil)
+        } else {
+            operation.run()
+            finished(nil)
+        }
+    }
+
+    @objc private func printFinished(_ operation: NSPrintOperation, success: Bool, contextInfo: UnsafeMutableRawPointer?) {
+        finished(nil)
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        finished(error.localizedDescription)
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        finished(error.localizedDescription)
+    }
+}
+
 struct ReaderWindow: View {
     @StateObject private var model: ReaderModel
     @State private var sidebar = "modules"
@@ -1587,18 +1632,20 @@ struct ReaderWindow: View {
         if model.search.searchSelectedWord(word, lemma: lemma, ignoreMarks: ignoreMarks) { sidebar = "search" }
     }
     private enum PassageDestination: String, Identifiable {
-        case text, html, print
+        case text, html, print, printPlain
         var id: Self { self }
         var title: String {
             switch self {
             case .text: "Export Passage as Text"
             case .html: "Export Passage as HTML"
-            case .print: "Print Passage"
+            case .print: "Print Formatted Passage"
+            case .printPlain: "Print Passage as Plain Text"
             }
         }
     }
     @State private var showDevotional = false
     @State private var passageDestination: PassageDestination?
+    @State private var formattedPrint: FormattedPassagePrint?
     @State private var passageSource: PassageTarget?
     @State private var passageExpression = ""
 
@@ -1610,6 +1657,15 @@ struct ReaderWindow: View {
     }
     private func deliverPassage(_ content: String, to destination: PassageDestination) {
         if destination == .print {
+            let job = FormattedPassagePrint { failure in
+                formattedPrint = nil
+                if let failure { model.message = failure }
+            }
+            formattedPrint = job
+            job.start(content)
+            return
+        }
+        if destination == .printPlain {
             let info = NSPrintInfo.shared.copy() as! NSPrintInfo
             let width = max(1, info.paperSize.width - info.leftMargin - info.rightMargin)
             let view = NSTextView(frame: NSRect(x: 0, y: 0, width: width, height: 1))
@@ -1837,7 +1893,8 @@ struct ReaderWindow: View {
                         Divider()
                         Button("Export as Text…") { choosePassageDestination(.text) }
                         Button("Export as HTML…") { choosePassageDestination(.html) }
-                        Button("Print…") { choosePassageDestination(.print) }
+                        Button("Print…") { choosePassageDestination(.print) }.disabled(formattedPrint != nil)
+                        Button("Print as Plain Text…") { choosePassageDestination(.printPlain) }
                         Button("Read Verse Aloud") {
                             if let source = model.syncTarget {
                                 model.preparePassageExport(target: source, expression: source.reference, html: false) {
@@ -2076,7 +2133,7 @@ struct ReaderWindow: View {
                             guard let source = passageSource else { return }
                             passageDestination = nil
                             model.preparePassageExport(target: source, expression: passageExpression,
-                                                       html: destination == .html) {
+                                                       html: destination == .html || destination == .print) {
                                 deliverPassage($0, to: destination)
                             }
                         }.keyboardShortcut(.defaultAction).disabled(passageExpression.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
