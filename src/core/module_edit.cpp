@@ -24,6 +24,14 @@ Files scan(const std::filesystem::path &dir){Files files;files.emplace(".",hash(
  if((item.is_regular_file()&&std::filesystem::hard_link_count(item.path())>1)||item.is_symlink()||(!item.is_regular_file()&&!item.is_directory()))throw std::invalid_argument("Editable module data contains unsupported files");if(files.size()>=4096)throw std::invalid_argument("Editable module has too many entries");if(item.is_directory()){files.emplace(item.path().lexically_relative(dir).generic_u8string()+"/",hash("directory:"+std::to_string(static_cast<unsigned>(item.status().permissions()))));continue;}if(files.size()>=4096)throw std::invalid_argument("Editable module has too many files");auto text=read_bounded_file(item.path(),64*1024*1024-bytes,"Editable module data");bytes+=text.size();files.emplace(item.path().lexically_relative(dir).generic_u8string(),hash(text)+":"+std::to_string(static_cast<unsigned>(item.status().permissions())));}return files;}
 std::string digest(const Files &files){std::string value;for(const auto &f:files){value+=std::to_string(f.first.size())+":"+f.first+f.second;}return hash(value);}
 bool contains(const std::filesystem::path &root,const std::filesystem::path &p){auto relative=p.lexically_relative(root);return !relative.empty()&&*relative.begin()!="..";}
+template<class Tree>
+auto reparent_book(Tree &tree, unsigned long offset, int) -> decltype(tree.reparent(offset)) {
+  return tree.reparent(offset);
+}
+template<class Tree>
+bool reparent_book(Tree &, unsigned long, long) {
+  throw std::invalid_argument("This SWORD SDK does not support moving general-book sections");
+}
 bool full_verse(const std::string &text){
  // VerseKey accepts context-relative input ("3:16" becomes Genesis 3:16).
  // An editing target must name one book, chapter and verse explicitly.
@@ -50,6 +58,11 @@ struct ModuleEditStorage::Impl {
       std::any_of(t.rename_book_leaf.begin(),t.rename_book_leaf.end(),
                   [](unsigned char c){return c=='/' || c<32 || c==127;})))
     throw std::invalid_argument("Invalid general-book leaf name");
+  if (!t.move_book_parent.empty() &&
+      (driver!="RawGenBook" || t.create_book_entry || !t.rename_book_leaf.empty() ||
+       t.move_book_parent.front()!='/' || t.move_book_parent.size()>4096 ||
+       !editable_document_text(t.move_book_parent)))
+    throw std::invalid_argument("Invalid general-book move target");
   if(t.create_book_entry){
    if(driver!="RawGenBook"||t.reference.size()<2||t.reference.size()>4096||t.reference.front()!='/'||t.reference.back()=='/')throw std::invalid_argument("Book creation requires an absolute new tree path");
    for(unsigned char c:t.reference)if(c<32||c==127)throw std::invalid_argument("Invalid new book path");
@@ -105,18 +118,32 @@ ModuleEditEntry ModuleEditStorage::stage(const std::string &expected,const std::
  }
  (void)impl_->entry(*module,before);if(!module->isWritable())throw std::invalid_argument("Module data is read-only");module->popError();
  if(impl_->target.create_book_entry){auto *tree=dynamic_cast<sword::TreeKeyIdx *>(module->getKey());if(!tree)throw std::runtime_error("Missing staged tree key");tree->popError();tree->assureKeyPath(impl_->target.reference.c_str());tree->save();if(tree->getError()||tree->getOffset()==0||std::string(tree->getText())!=impl_->target.reference)throw std::runtime_error("Staged book path creation did not verify");}
- if (!impl_->target.rename_book_leaf.empty()) {
+ if (!impl_->target.rename_book_leaf.empty() || !impl_->target.move_book_parent.empty()) {
   if (erase || !text.empty()) throw std::invalid_argument("Rename takes no replacement text");
   auto *tree = dynamic_cast<sword::TreeKeyIdx *>(module->getKey());
-  if (!tree || (!impl_->target.rename_book_subtree && tree->hasChildren())) throw std::invalid_argument("Only leaf sections can be renamed");
-  const auto destination = current.reference.substr(0,current.reference.rfind('/')+1) +
-                           impl_->target.rename_book_leaf;
+  const auto &parent = impl_->target.move_book_parent;
+  if (!tree || (parent.empty() && !impl_->target.rename_book_subtree && tree->hasChildren())) throw std::invalid_argument("Only leaf sections can be renamed");
+  const auto separator = current.reference.rfind('/');
+  const auto destination = parent.empty() ?
+      current.reference.substr(0,separator+1) + impl_->target.rename_book_leaf :
+      (parent == "/" ? "" : parent) + current.reference.substr(separator);
   std::unique_ptr<sword::SWKey> candidate(module->createKey());
   candidate->setText(destination.c_str());
   if (!candidate->getError() && std::string(candidate->getText()) == destination)
     throw std::invalid_argument("Book rename destination already exists");
-  tree->setLocalName(impl_->target.rename_book_leaf.c_str());
-  tree->save();
+  if (parent.empty()) {
+    tree->setLocalName(impl_->target.rename_book_leaf.c_str());
+    tree->save();
+  } else {
+    auto *parent_key = dynamic_cast<sword::TreeKeyIdx *>(candidate.get());
+    if (!parent_key) throw std::runtime_error("Missing destination tree key");
+    parent_key->popError();
+    if (parent == "/") parent_key->root();
+    else parent_key->setText(parent.c_str());
+    if (parent_key->getError() || (parent != "/" && std::string(parent_key->getText()) != parent) ||
+        !reparent_book(*tree,parent_key->getOffset(),0))
+      throw std::invalid_argument("General-book move destination is unavailable");
+  }
   module->flush();
   if (tree->getError() || module->popError()) throw std::runtime_error("SWORD book rename failed");
   module.reset();

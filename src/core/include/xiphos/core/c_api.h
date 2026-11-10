@@ -1355,6 +1355,9 @@ xc_status xc_worker_rename_book_leaf(xc_worker *worker,uint64_t tab,const char *
 /* Rename a section and retain its descendants under the new path. */
 xc_status xc_worker_rename_book_subtree(xc_worker *worker,uint64_t tab,const char *module,const char *path,
     const char *name,const char *revision,xc_request **out);
+/* Move a subtree with an SDK that supports offset-preserving reparenting. */
+xc_status xc_worker_move_book_subtree(xc_worker *worker,uint64_t tab,const char *module,const char *path,
+    const char *parent,const char *revision,xc_request **out);
 xc_status xc_worker_prepare_book_entry(xc_worker *worker,uint64_t tab,const char *module,const char *path,xc_request **out);
 xc_status xc_worker_create_book_entry(xc_worker *worker,uint64_t tab,const char *module,const char *path,const char *revision,const char *text,xc_request **out);
 xc_status xc_worker_save_module_edit(xc_worker *worker,uint64_t tab,const char *module,const char *reference,const char *revision,const char *text,int erase,xc_request **out);

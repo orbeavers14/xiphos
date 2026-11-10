@@ -17,7 +17,7 @@ template<class F>static void rejects(F call){try{call();}catch(const std::invali
 static auto bytes(const fs::path &root){std::map<std::string,std::string> result;for(const auto &file:fs::recursive_directory_iterator(root))if(file.is_regular_file()){std::ifstream in(file.path(),std::ios::binary);result.emplace(fs::relative(file.path(),root).generic_string(),std::string(std::istreambuf_iterator<char>(in),{}));}return result;}
 static xc_status wait(xc_request *r){const auto until=std::chrono::steady_clock::now()+std::chrono::seconds(30);xc_status s;while((s=xc_request_poll(r))==XC_PENDING){check(std::chrono::steady_clock::now()<until,"Creation request deadline");std::this_thread::sleep_for(std::chrono::milliseconds(1));}return s;}
 int main(int argc,char **argv)try{
- check(argc==3||(argc==4&&std::string(argv[3])=="--require-index"),"Named scratch, generated library and optional required index gate");const bool required=argc==4;fs::path root=argv[1];check(root.filename()=="book-creation-fixture","Named disposable root only");fs::remove_all(root);fs::copy(fs::path(argv[2]),root,fs::copy_options::recursive);fs::remove(root/"mods.d/modules-conf.cache");
+ check(argc==3||(argc==4&&(std::string(argv[3])=="--require-index"||std::string(argv[3])=="--require-move")),"Named scratch, generated library and optional required index gate");const bool required=argc==4;const bool move_required=required&&std::string(argv[3])=="--require-move";fs::path root=argv[1];check(root.filename()=="book-creation-fixture","Named disposable root only");fs::remove_all(root);fs::copy(fs::path(argv[2]),root,fs::copy_options::recursive);fs::remove(root/"mods.d/modules-conf.cache");
  {sword::RawGenBook writer((root/"data/CaptureBook/entries").string().c_str());writer.setKey("/Original");writer.setEntry("Original index seed");}
  bool indexed=false;
  {EngineManager manager(root.string().c_str(),true,new sword::MarkupFilterMgr(sword::FMT_XHTML),false,false);auto *module=manager.getModule("CaptureBook");check(module,"Indexed editable fixture");auto status=module->createSearchFramework();indexed=supports_indexed_search(*module);std::cout<<"Editable index create status="<<int(status)<<" usable="<<indexed<<"\n";}
@@ -59,9 +59,23 @@ int main(int argc,char **argv)try{
         child.offset==renamed.offset && child.text==renamed.text &&
         worker.book_document_selection(other).get()->tree.node.path==child.reference,
         "Subtree rename preserves descendant data, offsets and open selections");
+  const ModuleEditTarget move{target.module,subtree.reference,false,{},false,"/Prayers"};
+  if(move_required){
+   const auto moved=worker.save_module_edit(tab,move,subtree.revision,"").get();
+   const auto descendant=worker.read_module_edit(tab,{target.module,"/Prayers/Archive/Renamed Ω"}).get();
+   check(moved.reference=="/Prayers/Archive" && moved.offset==subtree.offset &&
+         descendant.offset==child.offset && descendant.text==child.text &&
+         worker.book_document_selection(other).get()->tree.node.path==descendant.reference,
+         "Staged move preserves descendant identity and follows open selections");
+  }
   rejects([&]{(void)worker.read_module_edit(tab,{"Personal","John3:16",true}).get();});
  }
- {EngineManager manager(root.string().c_str(),true,new sword::MarkupFilterMgr(sword::FMT_XHTML),false,false);auto *module=manager.getModule("CaptureBook");module->createSearchFramework();if(required)check(supports_indexed_search(*module),"Rollback fixture needs an actual existing index");}
+ {EngineManager manager(root.string().c_str(),true,new sword::MarkupFilterMgr(sword::FMT_XHTML),false,false);auto *module=manager.getModule("CaptureBook");module->createSearchFramework();if(required)check(supports_indexed_search(*module),"Rollback fixture needs an actual existing index");
+  if(move_required){
+   auto &hits=module->search("External",-4);
+   check(hits.getCount()==1 && std::string(hits.getElement(0)->getText())=="/Prayers/Archive/Renamed Ω",
+         "Rebuilt index returns the moved descendant at its new path");
+  }}
  {
   Reader reader(root.string());ModuleEditTarget pending{"CaptureBook","/Rollback/New",true};auto before=bytes(root/"data");auto prepared=reader.read_module_edit(pending);
   bool failed=false;try{reader.save_module_edit(pending,prepared.revision,"not committed",false,[]{throw std::runtime_error("Injected refresh failure");});}catch(const std::runtime_error &){failed=true;}check(failed,"Injected refresh must fail");check(bytes(root/"data")==before,"Failed post-install refresh rolls back created tree and content");

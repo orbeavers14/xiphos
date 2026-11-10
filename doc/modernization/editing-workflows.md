@@ -251,4 +251,8 @@ existing child, and reopened it by its original offset. The descendant kept
 its offset and text, an existing linked entry still resolved, and CLucene
 returned the descendant under its new path. The old path failed lookup.
 The build also included the [index cursor fix](rawgenbook-index-hang.md).
-The prototype is intended for staged copies. Xiphos integration remains open.
+Xiphos exposes the staged operation through `xc_worker_move_book_subtree`
+when built with the candidate SWORD headers and library. The macOS integration
+test verifies that a moved descendant keeps its offset and text, an open tab
+follows the move, and a rebuilt CLucene index returns the new path. Stock
+SWORD builds reject move requests.

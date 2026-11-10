@@ -703,12 +703,15 @@ std::future<ModuleEditEntry> StudyWorker::save_module_edit(StudyTab tab,ModuleEd
  return impl_->submit([tab,target=std::move(target),expected=std::move(expected),text=std::move(text),erase](Impl::State &s){
   (void)s.tab(tab);s.editor_modules[tab]=target.module;std::map<StudyTab,std::pair<StudySessionState,SessionCapabilities>> states;
   for(const auto &t:s.tabs)states.emplace(t.first,std::make_pair(t.second->capture_state(),t.second->capabilities()));
-  if (!target.rename_book_leaf.empty()) {
-   const auto renamed = target.reference.substr(0,target.reference.rfind('/')+1) + target.rename_book_leaf;
+  if (!target.rename_book_leaf.empty() || !target.move_book_parent.empty()) {
+   const auto separator = target.reference.rfind('/');
+   const auto renamed = target.move_book_parent.empty() ?
+       target.reference.substr(0,separator+1) + target.rename_book_leaf :
+       (target.move_book_parent == "/" ? "" : target.move_book_parent) + target.reference.substr(separator);
    for (auto &item : states) {
     auto &book = item.second.first.book;
     if (!book || book->requested.module != target.module) continue;
-    const bool descendant = target.rename_book_subtree &&
+    const bool descendant = (target.rename_book_subtree || !target.move_book_parent.empty()) &&
         book->path.compare(0,target.reference.size()+1,target.reference+"/") == 0;
     if (book->path != target.reference && !descendant) continue;
     book->path = renamed + book->path.substr(target.reference.size());
