@@ -74,7 +74,7 @@ std::vector<std::string> parallel_mapped_references(sword::SWModule &from,
     const std::string book = source.getOSISBookName();
     const int verse = source.getVerse();
     int mapped = 0;
-    if (book == "Gen" && source.getChapter() == 1 && verse == 1) mapped = 1;
+    if (book == "Gen" && source.getChapter() == 1 && verse <= 31) mapped = verse;
     if (book == "Ps" && source.getChapter() == 3 &&
         verse >= (from_mt ? 2 : 1) && verse <= (from_mt ? 9 : 8))
       mapped = verse + (from_mt ? -1 : 1);

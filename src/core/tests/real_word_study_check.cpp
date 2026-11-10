@@ -51,7 +51,7 @@ static void check_c_split(const char *root, const char *profile) {
       link(xc_request_take_link(request.get()), xc_link_release);
   check(link && !xc_request_take_link(request.get()), "Take standalone mapping once");
   request.reset();
-  check(xc_worker_map_reference(worker.get(), "OSHB", "ASV", "Genesis 1:2",
+  check(xc_worker_map_reference(worker.get(), "OSHB", "ASV", "Genesis 2:1",
       &raw_request) == XC_OK, "Admit an unavailable mapping");
   request.reset(raw_request);
   wait_for(request.get(), XC_INVALID_ARGUMENT);
@@ -187,7 +187,7 @@ int main(int argc, char **argv) try {
   check(numbered.reference == "Psalms 11:1", "A split starting at verse zero opens at the first numbered verse");
   bool unmapped = false;
   try {
-    (void)worker.visit_parallel_profile(tab,argv[2],"Study","Genesis 1:2",{},
+    (void)worker.visit_parallel_profile(tab,argv[2],"Study","Genesis 2:1",{},
       false,maximum_parallel_snapshot_bytes,"OSHB").get();
   } catch (const std::invalid_argument &) { unmapped = true; }
   check(unmapped && worker.parallel_selection(tab).get()->reference == numbered.reference,
@@ -236,6 +236,12 @@ int main(int argc, char **argv) try {
   const auto switched = worker.map_reference("ASV", "OSHB", "Psalms 3:1").get();
   check(switched.module == "OSHB" && switched.reference == "Psalms 3:2",
         "Standalone resolver works without a comparison profile");
+  for (int verse = 1; verse <= 31; ++verse) {
+    const auto reference = "Genesis 1:" + std::to_string(verse);
+    check(worker.map_reference("OSHB", "ASV", reference).get().reference == reference &&
+          worker.map_reference("ASV", "OSHB", reference).get().reference == reference,
+          "All Genesis 1 verses map directly in both directions");
+  }
   const auto apocrypha_anchor = worker.map_reference("OSHB", "KJVA", "Psalms 3:9").get();
   check(apocrypha_anchor.module == "KJVA" && apocrypha_anchor.reference == "Psalms 3:8",
         "KJVA uses the same verified Psalm numbering as KJV");
@@ -252,7 +258,7 @@ int main(int argc, char **argv) try {
   check(title_unmapped, "The Hebrew Psalm title must not open the first English body verse");
   bool outside_coverage = false;
   try {
-    (void)worker.map_reference("OSHB", "ASV", "Genesis 1:2").get();
+    (void)worker.map_reference("OSHB", "ASV", "Genesis 2:1").get();
   } catch (const std::invalid_argument &) { outside_coverage = true; }
   check(outside_coverage, "Standalone resolver refuses unverified references");
   bool embedded_nul = false;

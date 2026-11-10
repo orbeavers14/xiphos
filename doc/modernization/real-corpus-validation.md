@@ -116,7 +116,7 @@ cell carries separate HTML and source references for every numbered part.
 Merged mappings retain the same actual source verse in each corresponding
 control row. Real tests cover Leviticus 14:55–56 in Synodal/KJV, a Psalm mapping
 starting at verse zero, and rejection outside verified MT coverage. The MT
-slice covers Genesis 1:1 and MT Psalm 3:2–9 ↔ KJV/KJVA Psalm 3:1–8.
+slice covers Genesis 1:1–31 and MT Psalm 3:2–9 ↔ KJV/KJVA Psalm 3:1–8.
 MT Psalm 3:1 is the title and has no numbered KJV/KJVA row. The corpus checks
 both directions and mixed RTL/LTR columns using OSHB and ASV. The numbering
 can also be checked against [Sefaria’s Psalm 3](https://www.sefaria.org/Psalms.3)
@@ -135,3 +135,5 @@ comparison mapping, returns the first numbered verse for splits, and leaves
 history untouched. On an unavailable mapping it returns no link, so the caller
 can keep the current passage open. The corpus runner checks OSHB ↔ ASV through
 the standalone resolver, including C result ownership after worker shutdown.
+
+Genesis 1 numbering was checked against [Mechon Mamre](https://mechon-mamre.org/p/pt/pt0101.htm) and the [ASV](https://ebible.org/asv/GEN01.htm).
