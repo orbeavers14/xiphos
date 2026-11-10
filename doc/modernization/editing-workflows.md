@@ -263,3 +263,10 @@ SWORD builds reject move requests.
 empty `/Notes` section. It stages the module through the local installer
 with replacement disabled. The macOS test covers editing, restart, and
 duplicate-ID rejection.
+
+`xc_worker_delete_book_leaf` is available in builds configured with
+`XIPHOS_SWORD_SAFE_BOOK_DELETE=ON` and the
+[reviewed SWORD patches](../../dependencies/sword/README.md). It checks the
+revision, removes the staged leaf, and clears open selections on that leaf.
+The macOS patched-SDK test rebuilt CLucene and found the retained entry but
+no hit for the deleted leaf. Sections with children are rejected.

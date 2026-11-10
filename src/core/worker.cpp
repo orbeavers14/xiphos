@@ -719,6 +719,12 @@ std::future<ModuleEditEntry> StudyWorker::save_module_edit(StudyTab tab,ModuleEd
  return impl_->submit([tab,target=std::move(target),expected=std::move(expected),text=std::move(text),erase](Impl::State &s){
   (void)s.tab(tab);s.editor_modules[tab]=target.module;std::map<StudyTab,std::pair<StudySessionState,SessionCapabilities>> states;
   for(const auto &t:s.tabs)states.emplace(t.first,std::make_pair(t.second->capture_state(),t.second->capabilities()));
+  if (target.delete_book_leaf) {
+   for (auto &item : states) {
+    auto &book = item.second.first.book;
+    if (book && book->requested.module == target.module && book->path == target.reference) book.reset();
+   }
+  }
   if (!target.rename_book_leaf.empty() || !target.move_book_parent.empty()) {
    const auto separator = target.reference.rfind('/');
    const auto renamed = target.move_book_parent.empty() ?

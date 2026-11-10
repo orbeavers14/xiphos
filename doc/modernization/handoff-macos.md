@@ -137,3 +137,8 @@ is updated. A documentation index, preview guide and explicit historical-help
 boundary replace the old GTK release framing.95 Markdown files pass local-target
 and heading-anchor checks; no application code changed and no new runtime/test
 acceptance is claimed. GitHub About is aligned with the native development fork.
+
+The [carried SWORD SDK procedure](../../dependencies/sword/README.md) supports
+staged general-book moves and opt-in leaf deletion. On macOS 27.2 the patched
+SWORD 1.9.0/CLucene build passed the focused move, deletion and rebuilt-index
+checks. Keep deletion disabled for stock SWORD.

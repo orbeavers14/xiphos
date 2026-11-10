@@ -1364,6 +1364,9 @@ xc_status xc_worker_rename_book_subtree(xc_worker *worker,uint64_t tab,const cha
 /* Move a subtree with an SDK that supports offset-preserving reparenting. */
 xc_status xc_worker_move_book_subtree(xc_worker *worker,uint64_t tab,const char *module,const char *path,
     const char *parent,const char *revision,xc_request **out);
+/* Delete a leaf with an SDK carrying the reviewed indexing patch. */
+xc_status xc_worker_delete_book_leaf(xc_worker *worker,uint64_t tab,const char *module,const char *path,
+    const char *revision,xc_request **out);
 xc_status xc_worker_prepare_book_entry(xc_worker *worker,uint64_t tab,const char *module,const char *path,xc_request **out);
 xc_status xc_worker_create_book_entry(xc_worker *worker,uint64_t tab,const char *module,const char *path,const char *revision,const char *text,xc_request **out);
 xc_status xc_worker_save_module_edit(xc_worker *worker,uint64_t tab,const char *module,const char *reference,const char *revision,const char *text,int erase,xc_request **out);

@@ -68,9 +68,25 @@ int main(int argc,char **argv)try{
          worker.book_document_selection(other).get()->tree.node.path==descendant.reference,
          "Staged move preserves descendant identity and follows open selections");
   }
+#ifdef XIPHOS_SWORD_SAFE_BOOK_DELETE
+  const ModuleEditTarget pending_delete{target.module,"/Prayers/Disposable",true};
+  const auto pending_leaf=worker.read_module_edit(tab,pending_delete).get();
+  const auto leaf=worker.save_module_edit(tab,pending_delete,pending_leaf.revision,"uniquedeletedword").get();
+  (void)worker.select_book_document(other,{target.module,leaf.reference}).get();
+  const ModuleEditTarget deletion{target.module,leaf.reference,false,{},false,{},true};
+  rejects([&]{(void)worker.save_module_edit(tab,deletion,pending_leaf.revision,"").get();});
+  const auto deleted=worker.save_module_edit(tab,deletion,leaf.revision,"").get();
+  check(!deleted.offset && deleted.text.empty() && !worker.book_document_selection(other).get(),
+        "Staged deletion removes the leaf and clears its open selection");
+  rejects([&]{(void)worker.read_module_edit(tab,{target.module,leaf.reference}).get();});
+#endif
   rejects([&]{(void)worker.read_module_edit(tab,{"Personal","John3:16",true}).get();});
  }
  {EngineManager manager(root.string().c_str(),true,new sword::MarkupFilterMgr(sword::FMT_XHTML),false,false);auto *module=manager.getModule("CaptureBook");module->createSearchFramework();if(required)check(supports_indexed_search(*module),"Rollback fixture needs an actual existing index");
+#ifdef XIPHOS_SWORD_SAFE_BOOK_DELETE
+  check(supports_indexed_search(*module)&&module->search("uniquedeletedword",-4).getCount()==0&&
+        module->search("seed",-4).getCount()==1,"Rebuilt index omits deleted leaf and retains original");
+#endif
   if(move_required){
    auto &hits=module->search("External",-4);
    check(hits.getCount()==1 && std::string(hits.getElement(0)->getText())=="/Prayers/Archive/Renamed Ω",
