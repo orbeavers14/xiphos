@@ -236,6 +236,20 @@ int main(int argc, char **argv) try {
   const auto switched = worker.map_reference("ASV", "OSHB", "Psalms 3:1").get();
   check(switched.module == "OSHB" && switched.reference == "Psalms 3:2",
         "Standalone resolver works without a comparison profile");
+  const auto apocrypha_anchor = worker.map_reference("OSHB", "KJVA", "Psalms 3:9").get();
+  check(apocrypha_anchor.module == "KJVA" && apocrypha_anchor.reference == "Psalms 3:8",
+        "KJVA uses the same verified Psalm numbering as KJV");
+  const auto split_target = worker.map_reference("RusSynodal", "ASV", "Leviticus 14:55").get();
+  check(split_target.reference == "Leviticus 14:55",
+        "Standalone resolver selects the first numbered destination of a split");
+  const auto numbered_target = worker.map_reference("RusSynodal", "ASV", "Psalms 10:1").get();
+  check(numbered_target.reference == "Psalms 11:1",
+        "Standalone resolver skips a verse-zero destination in a split");
+  bool title_unmapped = false;
+  try {
+    (void)worker.map_reference("OSHB", "ASV", "Psalms 3:1").get();
+  } catch (const std::invalid_argument &) { title_unmapped = true; }
+  check(title_unmapped, "The Hebrew Psalm title must not open the first English body verse");
   bool outside_coverage = false;
   try {
     (void)worker.map_reference("OSHB", "ASV", "Genesis 1:2").get();
