@@ -22,6 +22,18 @@ are intermediate; opening a setting should not routinely spawn another window.
 - [ ] Review the design against current Apple guidance before implementation;
   record scoped screenshots and actual workflow checks, not just build success.
 
+### Mac follow-up
+
+| Area | Implemented or verified | Remaining |
+| --- | --- | --- |
+| Passage find | Command-F and wrapping forward/backward search in the Bible pane. Offscreen WebKit match and miss checks passed. | Check shortcut routing, focus and VoiceOver. |
+| Biblical map | Bundled MapLibre and session-only PMTiles import. Offline Eastern Mediterranean water features and corrupt-archive fallback verified. | Add sourced biblical places, validate vector labels and icons, and implement pack installation, removal and optional download. See [map design](biblical-maps.md). |
+| Study and comparison | Literal selected-word shortcut, translation visibility in both layouts, and saved translation ordering. Native comparison and saved-profile checks passed. | Persist visibility across restart and verify keyboard routing with selections in both panes. |
+| Printing | Formatted HTML is the default. Plain text remains a separate action. The unattended PDF attempt stalled in AppKit. | Verify PDF or paper pagination and styling, the native print dialog, and plain-text output. |
+| Packaging | JPEG and patched SWORD rebuilt targeting 27.0 with ICU and CLucene retained. The ad-hoc-signed development bundle passed dependency audit at a 27.0 floor and launched on 27.2. | Run on 27.0, then complete release signing, notarization and upgrade testing. |
+
+See the [Mac handoff](handoff-macos.md) for validation details.
+
 ## Windows
 
 - [ ] Design Settings as a coherent WinUI3 navigation/settings experience with
