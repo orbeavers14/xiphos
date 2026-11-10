@@ -233,6 +233,10 @@ int main(int argc, char **argv) try {
       throw std::runtime_error("Real passage HTML failed for " + source.first + ": " + error.what());
     }
   }
+  const auto rtl_export = worker.export_passage_html(tab,"OSHB","Genesis 1:1","Genesis 1:1").get();
+  check(rtl_export.html.find("dir=\"auto\"") != std::string::npos &&
+        rtl_export.html.find(u8"ב") != std::string::npos,
+        "Real Hebrew HTML export preserves automatic direction and Hebrew verse text");
   const auto switched = worker.map_reference("ASV", "OSHB", "Psalms 3:1").get();
   check(switched.module == "OSHB" && switched.reference == "Psalms 3:2",
         "Standalone resolver works without a comparison profile");
