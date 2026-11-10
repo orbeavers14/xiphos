@@ -1241,9 +1241,10 @@ struct PassageView: NSViewRepresentable {
             <!doctype html><html><head><meta charset="utf-8">
             <base href="xiphos-preview://study/">
             <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src \(allowsInlineImages ? "data:" : "'none'")">
-            <style>:root { color-scheme: light dark; } body { font: 18px Georgia, serif; line-height: 1.55; margin: 24px; }
+            <style>:root { color-scheme: light dark; } body { font: 18px Georgia, serif; line-height: 1.55; margin: 24px; background: Canvas; color: CanvasText; }
             /* Existing Xiphos editor/template.h styles this SWORD class red. */
-            span.wordsOfJesus { color: red; }
+            span.wordsOfJesus { color: #a82121; }
+            @media (prefers-color-scheme: dark) { span.wordsOfJesus { color: #ff8a80; } }
             :root { --xc-highlight-fg:#ffffff; --xc-highlight-bg:#174ea6; --xc-current-verse:LinkText; }
             .xc-reading-annotation {color:var(--xc-highlight-bg);background-color:var(--xc-highlight-fg);}
             .xc-reading-current-highlight {color:var(--xc-highlight-fg);background-color:var(--xc-highlight-bg);}
@@ -1296,8 +1297,9 @@ struct LexiconPreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var model: ReaderModel
     @StateObject private var draft: LexiconDraft
-    init(model: ReaderModel, preferences: LexiconPreferences) {
-        self.model = model; _draft = StateObject(wrappedValue: LexiconDraft(preferences: preferences))
+    let inline: Bool
+    init(model: ReaderModel, preferences: LexiconPreferences, inline: Bool = false) {
+        self.model = model; self.inline = inline; _draft = StateObject(wrappedValue: LexiconDraft(preferences: preferences))
     }
     private func picker(_ title: String, selection: Binding<String?>, role: LexiconRoles) -> some View {
         let choices = model.modules.filter { $0.isDictionary && $0.lexiconRoles.contains(role) }
@@ -1322,10 +1324,10 @@ struct LexiconPreferencesView: View {
             }
             HStack {
                 Spacer()
-                Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
-                Button("Apply") { model.applyLexiconPreferences(draft.preferences); dismiss() }.keyboardShortcut(.defaultAction)
+                if !inline { Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction) }
+                Button("Apply") { model.applyLexiconPreferences(draft.preferences); if !inline { dismiss() } }.keyboardShortcut(.defaultAction)
             }
-        }.padding(24).frame(width: 560).disabled(model.isBusy)
+        }.padding(inline ? 0 : 24).frame(width: inline ? nil : 560).disabled(model.isBusy)
     }
 }
 

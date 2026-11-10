@@ -243,13 +243,15 @@ import SwiftUI
     private var parallelSets: NativeParallelSetsWindow?
     private var recovery: NativeRecoveryController?
     private var migration: NativeMigrationWindow?
-    private var sync: NativeSyncModel?
+    @Published private(set) var sync: NativeSyncModel?
     private var syncWindow: NativeSyncWindow?
     private var library: NativeLibraryWindow?
     private var bookmarks: NativeBookmarkWindow?
     private var annotations: [NativeAnnotationWindow] = []
     private var managedRoot: String?
     func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.appearance = preferences.appearance.appKitAppearance
+        preferences.onAppearanceChanged = { NSApp.appearance = $0.appKitAppearance }
         _ = initializePreviewLocale()
         Task {
             do {

@@ -145,6 +145,7 @@ import SwiftUI
 
 struct NativeSyncView: View {
     @ObservedObject var model: NativeSyncModel
+    var inline = false
     var body: some View {
         VStack(alignment:.leading,spacing:12) {
             Text("BibleSync Passage Sharing").font(.title2)
@@ -173,7 +174,7 @@ struct NativeSyncView: View {
             ScrollView { Text(model.peers.isEmpty ? "No peers observed.":model.peers.joined(separator:"\n")).textSelection(.enabled).frame(maxWidth:.infinity,alignment:.leading) }.frame(height:65)
             HStack { Text("Received passages for review").font(.headline);Spacer();Button("Clear") { model.clearPending() } }
             List(Array(model.pending.enumerated()),id:\.offset) { _,row in HStack { Text("\(row.module) · \(row.reference) · sender \(row.speaker)").textSelection(.enabled);Spacer();Button("Review") { model.reviewPending(row) } } }
-        }.padding(20).frame(minWidth:640,minHeight:680).background(Color(nsColor:.windowBackgroundColor))
+        }.padding(inline ? 0 : 20).frame(minWidth:inline ? nil : 640,minHeight:inline ? 550 : 680).background(Color(nsColor:.windowBackgroundColor))
     }
 }
 @MainActor final class NativeSyncWindow {

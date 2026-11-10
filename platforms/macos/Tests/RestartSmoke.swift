@@ -59,18 +59,20 @@ import AppKit
             let defaults = UserDefaults(suiteName: suite)!
             defer { defaults.removePersistentDomain(forName: suite) }
             let preferences = NativeAppPreferences(store: defaults, profile: "fixture")
-            guard preferences.restoreSession, preferences.recoverySeconds == 5 else { fatalError("Safe startup defaults") }
+            guard preferences.restoreSession, preferences.recoverySeconds == 5, preferences.appearance == .system else { fatalError("Safe startup defaults") }
             preferences.restoreSession = false; preferences.recoverySeconds = 30
             preferences.bible = "TextAlt"; preferences.commentary = "Notes"
             preferences.language = "fr"
+            preferences.appearance = .dark
             let sync = CoreSyncSettings(mode:3,listen:1,group:"2")
             preferences.saveSync(sync)
             let reloaded = NativeAppPreferences(store: defaults, profile: "fixture")
             guard !reloaded.restoreSession, reloaded.recoverySeconds == 30,
                   reloaded.bible == "TextAlt", reloaded.commentary == "Notes",
-                  reloaded.language == "fr", reloaded.loadSync() == sync,
+                  reloaded.language == "fr", reloaded.appearance == .dark, reloaded.loadSync() == sync,
                   defaults.stringArray(forKey: "AppleLanguages") == ["fr"] else { fatalError("Persisted host preferences") }
-            guard NativeAppPreferences(store: defaults, profile: "other").bible.isEmpty else { fatalError("Profile isolation") }
+            let other = NativeAppPreferences(store: defaults, profile: "other")
+            guard other.bible.isEmpty, other.appearance == .system else { fatalError("Profile isolation") }
             guard !defaults.dictionaryRepresentation().keys.contains(where: { $0.contains("phrase") || $0.contains("acknowledged") }) else { fatalError("No saved connection secrets/consent") }
             let worker = try CoreWorker(root: root)
             let owner = NativeSessionController(worker: worker, path: folder.appendingPathComponent("session.xml").path, showsWindows: false)

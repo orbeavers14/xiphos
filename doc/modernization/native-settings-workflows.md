@@ -62,11 +62,23 @@ fallback, without changing the system language. The isolated app quits normally.
 No real user profile opened and no live sync connected. Graphify refreshed from
 local code only:585 files/10141 nodes/27745 edges/364 communities, zero paid calls.
 
+## Current Mac Settings layout
+
+One Settings window presents General, Appearance, Reading, Lexicons and
+BibleSync in a sidebar. Reading and lexicon changes target the active reader.
+BibleSync uses the same connection model as the File menu and still requires
+explicit connection consent. Library management, imports, bookmarks, notes,
+parallel-set management and document editors remain available from the File
+menu as task windows.
+
+Appearance is saved per profile. System follows macOS, while Light and Dark
+apply immediately to the app. Reading WebKit pages use system canvas and text
+colors with separate Words of Christ colors for light and dark. Module-supplied
+styling is still subject to the existing content preferences.
+
 ## Remaining acceptance
 
-- Native in-window Settings navigation and other screen review are explicitly
-  tracked for Mac/Windows in native-ui-todo.md. Current management launch buttons
-  and lexicon sheet are functional intermediate UI, not the final native design.
+- Review remaining management and editor task windows in native-ui-todo.md.
 - Complete translation coverage, localized references, RTL visual checks and
   broader keyboard/VoiceOver/workflow acceptance remain open. Existing scoped
   tests do not establish entire feature parity or physical-platform acceptance.

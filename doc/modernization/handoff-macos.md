@@ -163,3 +163,9 @@ verses. The selected-word menu offers surface search and resolved lemma choices.
 
 The native development package was audited on macOS 27.2. Physical macOS 27.0
 execution and a manual keyboard/VoiceOver pass remain separate acceptance gates.
+
+The Settings sidebar now includes General, Appearance, Reading, Lexicons and
+BibleSync. Profile-specific System, Light and Dark settings apply immediately.
+On macOS 27.2, the native preference smoke verified persistence and profile
+isolation, and the WebKit smoke verified live appearance changes in a mixed
+RTL/LTR comparison. Manual keyboard and VoiceOver checks remain deferred.

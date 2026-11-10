@@ -853,7 +853,7 @@ struct ReaderModelSmoke {
         else { fatalError("Typed localized reference did not open the canonical verse") }
         let chapter = CoreParallelChapter(reference:"John 3:16",title:"Original mixed direction",
             columns:[CoreParallelColumn(requested:"RtlText",module:"RtlText",ready:true,rtl:true),CoreParallelColumn(requested:"TextA",module:"TextA",ready:true,rtl:false)],
-            rows:[CoreParallelRow(reference:"John 3:16",cells:[CoreParallelCell(reference:"John 3:16",html:"<p>שלום עולם — نص أصلي</p><aside class='xc-reading-annotation'>Original note Ω</aside>",headings:[]),CoreParallelCell(reference:"John 3:16",html:"<p>Original Latin text.</p>",headings:[],additional:[CoreParallelVerse(reference:"John 3:17",html:"<p>Second original segment.</p>",headings:[])])])])
+            rows:[CoreParallelRow(reference:"John 3:16",cells:[CoreParallelCell(reference:"John 3:16",html:"<p>שלום עולם — نص أصلي</p><aside class='xc-reading-annotation'>Original note Ω</aside>",headings:[]),CoreParallelCell(reference:"John 3:16",html:"<p><span class=\"wordsOfJesus\">Original Latin text.</span></p>",headings:[],additional:[CoreParallelVerse(reference:"John 3:17",html:"<p>Second original segment.</p>",headings:[])])])])
         let stacked = NativeParallelChapterPane(model:model,chapter:chapter).stackedVerse(at: 0)
         guard stacked.contains("<h3>RtlText</h3>"), stacked.contains("<h3>TextA</h3>"),
               stacked.contains("dir=\"rtl\" data-xc-module=\"RtlText\""),
@@ -876,6 +876,25 @@ struct ReaderModelSmoke {
             }
             guard Date()<deadline else {fatalError("Production WebKit mixed RTL/LTR/annotation direction")}
             if !ready {try await Task.sleep(nanoseconds:10_000_000)}
+        }
+        guard let web = find(host) else { fatalError("Reading WebKit view missing") }
+        for (appearance, expected) in [(NativeAppearance.light, "rgb(168, 33, 33)"),
+                                       (NativeAppearance.dark, "rgb(255, 138, 128)")] {
+            window.appearance = appearance.appKitAppearance
+            let deadline = Date().addingTimeInterval(10)
+            var matched = false
+            while !matched && Date() < deadline {
+                matched = (try? await withCheckedThrowingContinuation { continuation in
+                    web.evaluateJavaScript("getComputedStyle(document.querySelector('.wordsOfJesus')).color", in:nil, in:.defaultClient) {
+                        switch $0 {
+                        case .success(let value): continuation.resume(returning: (value as? String) == expected)
+                        case .failure(let error): continuation.resume(throwing: error)
+                        }
+                    }
+                }) ?? false
+                if !matched { try await Task.sleep(nanoseconds: 10_000_000) }
+            }
+            guard matched else { fatalError("Reading web content did not follow window appearance") }
         }
         model.close();await worker.shutdown()
         print("Localized canonical selectors and production WebKit RTL/LTR parallel annotation direction passed")

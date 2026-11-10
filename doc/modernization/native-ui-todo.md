@@ -6,18 +6,14 @@ are intermediate; opening a setting should not routinely spawn another window.
 
 ## Mac
 
-- [ ] Replace Settings launch buttons/separate preference screens with one native
-  Settings window using coherent sections/sidebar navigation and inline detail.
-  Keep reading/display, default modules, lexicons, startup/recovery, language and
-  sync preferences in that navigation. Use sheets only for bounded modal tasks;
-  separate document/study windows remain appropriate when explicitly requested.
+- [x] Provide one native Settings window with inline General, Appearance,
+  Reading, Lexicons and BibleSync panels.
 - [ ] Review Module Library, bookmarks/import, annotations, parallel-set management,
   migration and editor flows for platform-native navigation and window behavior.
 - [ ] Verify standard menu shortcuts, keyboard focus/order, VoiceOver names,
   accessible status/error announcements, resizing and localized text expansion.
-- [ ] Add native macOS appearance support: follow system Light/Dark mode by
-  default, with user-selectable System, Light and Dark preferences. Use SwiftUI/
-  AppKit semantic adaptive colors across navigation, controls and settings.
+- [x] Add profile-scoped System, Light and Dark appearance preferences with
+  immediate AppKit application and adaptive reading WebKit defaults.
 - [ ] Make Bible reading, commentary, dictionary and other formatted/HTML or
   WKWebView content theme-aware; ensure verse highlights, search results, links
   and custom module styles remain legible in both appearances. Consider optional
