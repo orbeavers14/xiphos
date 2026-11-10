@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "module_edit_internal.hpp"
 #include "bounded_file.hpp"
+#include "publication.hpp"
 #include "sdk_text.hpp"
 #include "xiphos/core/search_policy.hpp"
 #include <rawfiles.h>
@@ -101,8 +102,25 @@ ModuleEditEntry ModuleEditStorage::stage(const std::string &expected,const std::
  if(erase&&impl_->driver=="RawGenBook")module->setEntry("",0);else if(erase)module->deleteEntry();else module->setEntry(text.c_str(),static_cast<long>(text.size()));module->flush();if(module->popError())throw std::runtime_error("SWORD module edit failed");module.reset();
  auto after=scan(impl_->staged);module=impl_->open(impl_->staged);auto result=impl_->entry(*module,after,true);if(result.reference!=current.reference||(!impl_->target.create_book_entry&&result.offset!=current.offset)||result.text!=(erase?std::string{}:text))throw std::runtime_error("Staged module edit did not verify");return result;
 }
-void ModuleEditStorage::install(){if(digest(scan(impl_->dir))!=impl_->original_digest)throw std::invalid_argument("Module changed during save");std::filesystem::rename(impl_->dir,impl_->backup);try{std::filesystem::rename(impl_->staged,impl_->dir);impl_->installed=true;}catch(...){std::filesystem::rename(impl_->backup,impl_->dir);throw;}}
-void ModuleEditStorage::rollback(){if(!impl_->installed)return;std::filesystem::rename(impl_->dir,impl_->staged);std::filesystem::rename(impl_->backup,impl_->dir);impl_->installed=false;}
+void ModuleEditStorage::install() {
+  if (digest(scan(impl_->dir)) != impl_->original_digest)
+    throw std::invalid_argument("Module changed during save");
+  publish_new_path(impl_->dir, impl_->backup);
+  try {
+    publish_new_path(impl_->staged, impl_->dir);
+    impl_->installed = true;
+  } catch (...) {
+    // Preserve the original in the backup if another writer now owns the live path.
+    publish_new_path(impl_->backup, impl_->dir);
+    throw;
+  }
+}
+void ModuleEditStorage::rollback() {
+  if (!impl_->installed) return;
+  publish_new_path(impl_->dir, impl_->staged);
+  publish_new_path(impl_->backup, impl_->dir);
+  impl_->installed = false;
+}
 void ModuleEditStorage::finish() noexcept {impl_->finished=true;}
 }
 }
