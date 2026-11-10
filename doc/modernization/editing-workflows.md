@@ -228,3 +228,17 @@ remap stored offsets and links. Both operations need a successful index rebuild
 and a search check before they can ship.
 
 See the [upstream bug report draft](rawgenbook-index-hang.md) for reproduction steps and the candidate cursor fix.
+
+#### Move contract
+
+A section move changes its parent and keeps its local name, tree offset, raw
+body, and descendant offsets. The destination must be an existing section
+outside the source subtree. Reject a same-name child, the root as a source,
+and a stale revision before publishing any changes.
+
+A copy followed by deletion allocates a different offset. Existing offset
+links would still address the old slot, so that sequence cannot implement
+this contract. A SWORD reparent operation would need to update the old and
+new child chains and the source node's parent in the staged module. Before
+publication, verify both paths, the unchanged offsets and bodies, and index
+rebuild and search. Open tabs should follow the moved paths.
