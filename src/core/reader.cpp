@@ -18,6 +18,10 @@
 #include "sdk_text.hpp"
 #include "module_edit_internal.hpp"
 #include "sword_library.hpp"
+#include "publication.hpp"
+#include <rawgenbook.h>
+#include <treekeyidx.h>
+#include <fstream>
 #include "local_install_internal.hpp"
 #include "uncached_manager.hpp"
 #include "xml_document.hpp"
@@ -1090,6 +1094,41 @@ ModuleEditEntry Reader::save_module_edit(const ModuleEditTarget &target,const st
 
 namespace xiphos::core {
 std::string Reader::transfer_destination_revision(const std::string &workspace){return detail::local_library_revision(impl_->root,workspace);}
+LocalInstallResult Reader::create_general_book(const std::string &module, const std::function<void()> &refresh) {
+  if (impl_->root.empty() || module.empty() || module.size()>64 ||
+      module.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")!=std::string::npos)
+    throw std::invalid_argument("Book creation requires a local library and a simple module ID");
+  namespace fs = std::filesystem;
+  const auto root=fs::canonical(fs::u8path(impl_->root));
+  detail::PrivateStagingDirectory stage(root.parent_path(),".xiphos-new-book-");
+  const auto folder=stage.path()/"data"/module;
+  fs::create_directories(folder);
+  fs::create_directory(stage.path()/"mods.d");
+  const auto prefix=(folder/"entries").u8string();
+  if (sword::RawGenBook::createModule(prefix.c_str()))
+    throw std::runtime_error("SWORD could not create the new book");
+  {
+    sword::RawGenBook book(prefix.c_str());
+    auto *tree=dynamic_cast<sword::TreeKeyIdx *>(book.getKey());
+    if (!tree || !book.isWritable()) throw std::runtime_error("New book is not writable");
+    tree->assureKeyPath("/Notes");
+    tree->save();
+    book.setEntry("",0);
+    book.flush();
+    if (tree->getError() || book.popError() || std::string(tree->getText())!="/Notes")
+      throw std::runtime_error("SWORD could not create the first section");
+  }
+  {
+    std::ofstream config(stage.path()/"mods.d"/(module+".conf"),std::ios::binary);
+    config.exceptions(std::ios::badbit|std::ios::failbit);
+    config << '[' << module << "]\nDataPath=./data/" << module
+           << "/entries\nModDrv=RawGenBook\nEncoding=UTF-8\nSourceType=HTML\nVersion=1.0\n";
+    config.close();
+  }
+  const auto source=stage.path().u8string();
+  const auto preview=prepare_local_install(source,module);
+  return install_local_module({source,module,preview.source_revision,preview.destination_revision,false},refresh,{});
+}
 LocalInstallPreview Reader::prepare_local_install(const std::string &source,const std::string &module){std::lock_guard<std::mutex> lock(impl_->mutex);return detail::LocalInstallStorage(source,impl_->root,module).preview();}
 LocalInstallResult Reader::install_local_module(const LocalInstallRequest &request,const std::function<void()> &refresh,const std::function<void()> &before_commit){
  detail::LocalInstallStorage transaction(request.source,impl_->root,request.module);auto prepared=transaction.stage(request);const auto root=impl_->root;

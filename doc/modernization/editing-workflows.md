@@ -256,3 +256,10 @@ when built with the candidate SWORD headers and library. The macOS integration
 test verifies that a moved descendant keeps its offset and text, an open tab
 follows the move, and a rebuilt CLucene index returns the new path. Stock
 SWORD builds reject move requests.
+
+### New general books
+
+`xc_worker_create_general_book` creates a writable UTF-8 RawGenBook with an
+empty `/Notes` section. It stages the module through the local installer
+with replacement disabled. The macOS test covers editing, restart, and
+duplicate-ID rejection.

@@ -76,6 +76,25 @@ int main(int argc,char **argv){try{
  for(int fail:{0,1}){watching=true;fail_after=fail;auto s=xc_worker_install_local_module(worker,source_text.c_str(),"Third",from.c_str(),to.c_str(),0,&r);watching=false;fail_after=-1;check(s!=XC_OK&&!r,"Observer/result allocation precedes installation acceptance");}
  check(xc_worker_install_local_module(worker,source_text.c_str(),"Third",from.c_str(),to.c_str(),0,&r)==XC_OK,"C install accepted");xc_local_install_preview_release(preview);watching=true;allocations=0;fail_after=0;auto status=wait(r);watching=false;fail_after=-1;check(status==XC_OK&&allocations==0,"Committed install polling does not allocate");auto owned=xc_request_take_local_install_result(r);check(owned&&!xc_request_take_local_install_result(r),"Take installed result once");xc_request_release(r);xc_worker_close(worker);
  xc_local_install_done done{};check(xc_local_install_result_get(owned,&done)==XC_OK&&std::string(done.module)=="Third"&&std::string(done.destination_revision).size()==64,"Installed result survives worker teardown");xc_local_install_result_release(owned);
+ {
+  StudyWorker books(destination.u8string());
+  const auto tab=books.create_tab().get();
+  (void)books.visit(tab,"Base","John 3:16").get();
+  const auto created=books.create_general_book("MyNotes").get();
+  check(created.module=="MyNotes"&&!created.replaced,"Create a new general book");
+  const auto notes=books.read_module_edit(tab,{"MyNotes","/Notes"}).get();
+  check(notes.offset>0&&notes.text.empty(),"New general book opens with an empty Notes section");
+  (void)books.save_module_edit(tab,{"MyNotes","/Notes"},notes.revision,"<p>Original Ω note</p>").get();
+  rejects([&]{(void)books.create_general_book("MyNotes").get();});
+  rejects([&]{(void)books.create_general_book("../Bad").get();});
+  check(books.reading_selection(tab).get()->module=="Base","Book creation preserves open reading state");
+ }
+ {
+  StudyWorker restarted(destination.u8string());
+  const auto tab=restarted.create_tab().get();
+  check(restarted.read_module_edit(tab,{"MyNotes","/Notes"}).get().text=="<p>Original Ω note</p>",
+        "Created book survives restart with edits intact after duplicate creation was rejected");
+ }
  for(const auto &entry:fs::directory_iterator(root))check(entry.path().filename().string().rfind(".xiphos-install-",0)!=0,"No successful/rolled-back staging leftovers");
  {StudyWorker cancellable(destination.u8string());auto p=cancellable.prepare_local_install(source.u8string(),"Base").get();auto task=cancellable.install_local_module_task(request(source,p,true));bool won=task.control->request_cancel(),cancelled=false;try{(void)task.result.get();}catch(const TransferCancelled &){cancelled=true;}check(won?cancelled:!cancelled,"Local install cancellation and commit have one winner");if(won)check(cancellable.prepare_local_install(source.u8string(),"Base").get().destination_revision==p.destination_revision,"Cancelled local task keeps original revision");}
  std::cout<<"Verified staged local installation/replacement, stale rejection, SDK reload, rollback, ownership and HTTPS endpoints passed\n";return 0;

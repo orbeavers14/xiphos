@@ -1075,6 +1075,11 @@ xc_status xc_module_maintenance_preview_get(const xc_module_maintenance_preview 
 xc_status xc_module_maintenance_result_get(const xc_module_maintenance_result *p,xc_module_maintenance_done *out){if(out)*out={};if(!p||!out)return XC_INVALID_ARGUMENT;const auto &v=p->value;*out={v.module.c_str(),v.revision.c_str(),static_cast<int>(v.action),v.indexed?1:0};return XC_OK;}
 void xc_module_maintenance_preview_release(xc_module_maintenance_preview *p){delete p;}
 void xc_module_maintenance_result_release(xc_module_maintenance_result *p){delete p;}
+xc_status xc_worker_create_general_book(xc_worker *w,const char *module,xc_request **out) {
+  if (out) *out=nullptr;
+  if (!bounded_image_c_text(module,64)) return XC_INVALID_ARGUMENT;
+  return queue_request(w,out,[=](auto &worker){return worker.create_general_book(module);});
+}
 xc_status xc_worker_prepare_local_install(xc_worker *w,const char *source,const char *module,xc_request **out){if(!bounded_image_c_text(source,4096)||!bounded_image_c_text(module,4096)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}return queue_request(w,out,[=](auto &worker){return worker.prepare_local_install(source,module);});}
 xc_status xc_worker_install_local_module_task(xc_worker *w,const char *source,const char *module,const char *from,const char *to,int replace,xc_request **out){
  if(out)*out=nullptr;if(!w||!out||!bounded_image_c_text(source,4096)||!bounded_image_c_text(module,4096)||!bounded_image_c_text(from,64)||!bounded_image_c_text(to,64)||!xiphos::core::editable_document_revision(from)||!xiphos::core::editable_document_revision(to)||(replace!=0&&replace!=1))return XC_INVALID_ARGUMENT;
