@@ -105,6 +105,31 @@ private struct NativeParallelSetsPane: View {
 struct NativeParallelChapterPane: View {
     @ObservedObject var model: ReaderModel
     let chapter: CoreParallelChapter
+    var onSearchWord: ((ReadingWordSelection, String?) -> Void)? = nil
+    @State private var verseOffset: Int?
+    @State private var selectedWord: ReadingWordSelection?
+
+    private var verseIndex: Int {
+        min(max(0, verseOffset ?? (chapter.selectedVerse - 1)), max(0, chapter.rows.count - 1))
+    }
+    func stackedVerse(at index: Int) -> String {
+        guard chapter.rows.indices.contains(index) else { return "" }
+        let row = chapter.rows[index]
+        var result = "<h2>" + escape(row.reference) + "</h2>"
+        for (column, cell) in zip(chapter.columns, row.cells) {
+            result += "<article><h3>" + escape(column.requested) + "</h3>"
+            if !column.ready || cell.reference.isEmpty || cell.html.isEmpty {
+                result += "<p>" + (column.ready ? "Verse unavailable" : "Module unavailable") + "</p>"
+            } else {
+                result += "<div dir=\"" + (column.rtl ? "rtl" : "ltr") + "\" data-xc-module=\"" +
+                    escape(column.module) + "\" data-xc-reference=\"" + escape(cell.reference) + "\">"
+                for heading in cell.headings { result += "<div class=\"xc-parallel-heading\">" + heading + "</div>" }
+                result += cell.html + "</div>"
+            }
+            result += "</article>"
+        }
+        return result
+    }
     private func escape(_ value: String) -> String { value.replacingOccurrences(of:"&",with:"&amp;").replacingOccurrences(of:"<",with:"&lt;").replacingOccurrences(of:">",with:"&gt;").replacingOccurrences(of:"\"",with:"&quot;") }
     var table: String {
         var result="<table class=\"xc-parallel\" aria-label=\""+escape(NSLocalizedString("Parallel reading",comment:"Accessible parallel chapter table"))+"\"><thead><tr><th scope=\"col\">"+escape(NSLocalizedString("Reference",comment:"Parallel table column"))+"</th>"
@@ -126,10 +151,26 @@ struct NativeParallelChapterPane: View {
         VStack(alignment:.leading,spacing:8) {
             VStack(alignment:.leading,spacing:6) {
                 Text("Parallel Reading — "+chapter.title).font(.headline).lineLimit(2)
-                HStack { Button("Previous") { model.navigateParallel(-1) };Button("Next") { model.navigateParallel(1) };Spacer(minLength:0);Button("Close") { model.closeParallel() } }
+                Toggle("Stacked verse", isOn: $model.stackedParallel)
+                if model.stackedParallel {
+                    HStack {
+                        Button("Previous verse") { verseOffset = verseIndex - 1 }.disabled(verseIndex == 0)
+                        Button("Next verse") { verseOffset = verseIndex + 1 }.disabled(verseIndex + 1 >= chapter.rows.count)
+                    }
+                }
+                HStack { Button("Previous chapter") { model.navigateParallel(-1) };Button("Next chapter") { model.navigateParallel(1) };Spacer(minLength:0);Button("Close") { model.closeParallel() } }
             }.padding(8)
             if !model.parallelSourceNotice.isEmpty {Text(model.parallelSourceNotice).font(.caption).foregroundStyle(.secondary)}
-            PassageView(html:table,css:".xc-parallel {border-collapse:collapse;min-width:100%;} .xc-parallel td,.xc-parallel th {vertical-align:top;padding:8px;border:1px solid GrayText;min-width:160px;} .xc-parallel thead th {position:sticky;top:0;background:Canvas;} .xc-parallel-heading {font-weight:bold;}",anchor:nil,onScrollFailure:{model.message=$0},onLink:{model.followLink($0)},onContextLink:{ uri,module,reference in model.followLink(uri,currentModule:module,currentReference:reference) })
+            PassageView(html:model.stackedParallel ? stackedVerse(at: verseIndex) : table,css:".xc-parallel {border-collapse:collapse;min-width:100%;} .xc-parallel td,.xc-parallel th {vertical-align:top;padding:8px;border:1px solid GrayText;min-width:160px;} .xc-parallel thead th {position:sticky;top:0;background:Canvas;} .xc-parallel-heading {font-weight:bold;}",anchor:nil,onScrollFailure:{model.message=$0},onLink:{model.followLink($0)},onContextLink:{ uri,module,reference in model.followLink(uri,currentModule:module,currentReference:reference) },
+                onSelection: { text, module, reference, links in
+                    selectedWord = ReadingWordSelection(text: text, module: module, reference: reference, links: links)
+                })
+            if let word = selectedWord, let onSearchWord {
+                ReadingWordSearchMenu(word: word, search: onSearchWord).padding(.horizontal, 8)
+            }
         }.frame(minWidth:230,minHeight:220).disabled(model.isBusy)
+            .onChange(of: chapter.reference) { verseOffset = nil; selectedWord = nil }
+            .onChange(of: model.stackedParallel) { selectedWord = nil }
+            .onChange(of: verseIndex) { selectedWord = nil }
     }
 }

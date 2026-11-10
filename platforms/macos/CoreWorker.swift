@@ -2163,6 +2163,7 @@ struct CoreParallelChapter: Sendable {
     let columns: [CoreParallelColumn], rows: [CoreParallelRow]
     var annotationIncomplete=false
     var invalidColors=0
+    var selectedVerse: Int = 1
 }
 extension CoreWorker {
     private func parallelChapterValue(_ status: xc_status,_ request: OpaquePointer?) async throws -> CoreParallelChapter {
@@ -2171,7 +2172,7 @@ extension CoreWorker {
         defer { xc_parallel_chapter_release(value) }
         let columns=(0..<xc_parallel_column_count(value)).map { c in CoreParallelColumn(requested:String(cString:xc_parallel_column_requested(value,c)!),module:xc_parallel_column_module(value,c).map { String(cString:$0) } ?? "",ready:xc_parallel_column_state(value,c)==XC_PARALLEL_READY,rtl:xc_parallel_column_is_rtl(value,c) != 0) }
         let rows=(0..<xc_parallel_row_count(value)).map { r in CoreParallelRow(reference:String(cString:xc_parallel_row_reference(value,r)!),cells:columns.indices.map { c in CoreParallelCell(reference:xc_parallel_cell_reference(value,r,c).map { String(cString:$0) } ?? "",html:xc_parallel_cell_html(value,r,c).map { String(cString:$0) } ?? "",headings:(0..<xc_parallel_cell_heading_count(value,r,c)).map { String(cString:xc_parallel_cell_heading(value,r,c,$0)!) }) }) }
-        return CoreParallelChapter(reference:String(cString:xc_parallel_reference(value)!),title:String(cString:xc_parallel_title(value)!),columns:columns,rows:rows,annotationIncomplete:xc_parallel_annotations_incomplete(value) != 0,invalidColors:xc_parallel_invalid_colors(value))
+        return CoreParallelChapter(reference:String(cString:xc_parallel_reference(value)!),title:String(cString:xc_parallel_title(value)!),columns:columns,rows:rows,annotationIncomplete:xc_parallel_annotations_incomplete(value) != 0,invalidColors:xc_parallel_invalid_colors(value),selectedVerse:Int(xc_parallel_selected_verse(value)))
     }
     func decoratedParallel(tab: UInt64,sources: CoreReadingSources) async throws -> CoreParallelChapter {
         let strings=SessionCStrings(),marks=try sources.bookmarks.map {try strings.copy($0)},notes=try sources.annotations.map {try strings.copy($0)}

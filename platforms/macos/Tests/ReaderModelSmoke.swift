@@ -848,6 +848,11 @@ struct ReaderModelSmoke {
         let chapter = CoreParallelChapter(reference:"John 3:16",title:"Original mixed direction",
             columns:[CoreParallelColumn(requested:"RtlText",module:"RtlText",ready:true,rtl:true),CoreParallelColumn(requested:"TextA",module:"TextA",ready:true,rtl:false)],
             rows:[CoreParallelRow(reference:"John 3:16",cells:[CoreParallelCell(reference:"John 3:16",html:"<p>שלום עולם — نص أصلي</p><aside class='xc-reading-annotation'>Original note Ω</aside>",headings:[]),CoreParallelCell(reference:"John 3:16",html:"<p>Original Latin text.</p>",headings:[])])])
+        let stacked = NativeParallelChapterPane(model:model,chapter:chapter).stackedVerse(at: 0)
+        guard stacked.contains("<h3>RtlText</h3>"), stacked.contains("<h3>TextA</h3>"),
+              stacked.contains("dir=\"rtl\" data-xc-module=\"RtlText\""),
+              stacked.contains("data-xc-reference=\"John 3:16\""), stacked.contains("Original note Ω")
+        else { fatalError("Stacked verse lost order, direction or source metadata") }
         let html = NativeParallelChapterPane(model:model,chapter:chapter).table
         let host = NSHostingView(rootView:PassageView(html:html,rightToLeft:true,anchor:nil,onScrollFailure:{_ in},onLink:{_ in}))
         let window=NSWindow(contentRect:NSRect(x:0,y:0,width:700,height:350),styleMask:.borderless,backing:.buffered,defer:false)
@@ -919,8 +924,18 @@ struct ReaderModelSmoke {
         let profile=folder.appendingPathComponent("parallel-sets.xml").path,session=folder.appendingPathComponent("session.xml").path
         let owner=NativeSessionController(worker:worker,path:session,showsWindows:false,organizationPath:folder.appendingPathComponent("library.xml").path)
         try await owner.start();guard let model=owner.records.first?.model else { fatalError("Parallel reading host") };try await idle(model)
+        let surface = "שָׁלוֹם"
+        let word = ReadingWordSelection(text:surface,module:"TextAlt",reference:"John 3:16",links:[
+            "passagestudy.jsp?action=showStrongs&type=Hebrew&value=07965",
+            "passagestudy.jsp?action=showStrongs&type=Hebrew&value=H7965",
+            "passagestudy.jsp?action=showStrongs&type=Greek&value=140",
+            "passagestudy.jsp?action=showMorph&type=Greek&value=140"])
+        guard word?.text == surface, word?.strongs == ["H7965","G140"],
+              ReadingWordSelection(text:"two words",module:"TextAlt",reference:"John 3:16") == nil
+        else { fatalError("Unicode surface or explicit Strong’s choices") }
+        var selectedText: ReadingWordSelection?
         var contextLink: (String,String,String)?
-        let probe=NSHostingView(rootView:PassageView(html:"<table><tr><td data-xc-module=\"TextAlt\" data-xc-reference=\"John 3:16\"><a id=\"parallel-link\" href=\"sword:///17\">Original contextual link</a></td></tr></table><script>document.body.dataset.moduleRan='yes'</script>",anchor:nil,onScrollFailure:{_ in},onLink:{_ in fatalError("Context click escaped into generic navigation")},onContextLink:{contextLink=($0,$1,$2)}))
+        let probe=NSHostingView(rootView:PassageView(html:"<table><tr><td data-xc-module=\"TextAlt\" data-xc-reference=\"John 3:16\"><span class=\"word\"><a id=\"parallel-link\" href=\"sword:///17\">Original</a><span class=\"strongs\"><a href=\"passagestudy.jsp?action=showStrongs&amp;type=Hebrew&amp;value=07965\">7965</a></span></span> contextual link</td></tr></table><script>document.body.dataset.moduleRan='yes'</script>",anchor:nil,onScrollFailure:{_ in},onLink:{_ in fatalError("Context click escaped into generic navigation")},onContextLink:{contextLink=($0,$1,$2)},onSelection:{selectedText=ReadingWordSelection(text:$0,module:$1,reference:$2,links:$3)}))
         let probeWindow=NSWindow(contentRect:NSRect(x:0,y:0,width:600,height:240),styleMask:.borderless,backing:.buffered,defer:false)
         probeWindow.isReleasedWhenClosed=false;probeWindow.contentView=probe;probe.layoutSubtreeIfNeeded()
         defer { probeWindow.close() }
@@ -934,12 +949,32 @@ struct ReaderModelSmoke {
         _ = try await evaluate("document.getElementById('parallel-link').click();true")
         while contextLink==nil { guard Date()<deadline else { fatalError("Parallel contextual click callback") };try await Task.sleep(nanoseconds:1_000_000) }
         guard contextLink?.0=="sword:///17",contextLink?.1=="TextAlt",contextLink?.2=="John 3:16" else { fatalError("Parallel link lost source module/reference") }
+        _ = try await evaluate("(() => {const r=document.createRange();const node=document.getElementById('parallel-link').firstChild;r.setStart(node,0);r.setEnd(node,8);getSelection().removeAllRanges();getSelection().addRange(r);return true;})()")
+        while selectedText == nil {
+            guard Date()<deadline else { fatalError("Selected-word transport") }
+            try await Task.sleep(nanoseconds:1_000_000)
+        }
+        guard let selectedText, selectedText.text == "Original", selectedText.module == "TextAlt",
+              selectedText.reference == "John 3:16", selectedText.strongs == ["H7965"], model.search.searchSelectedWord(selectedText,lemma:nil)
+        else { fatalError("Selected-word search lost source context") }
+        while model.search.isSearching {
+            guard Date()<deadline else { fatalError("Selected-word search completion") }
+            try await Task.sleep(nanoseconds:1_000_000)
+        }
+        guard model.search.result?.expression == "Original", model.search.readingWordSource?.reference == "John 3:16"
+        else { fatalError("Selected word did not enter the shared search") }
         let tab=model.sessionTab!,main=model.html,reference=model.reference,back=model.canBack
         _ = try await worker.editParallelProfile(tab:tab,path:profile,revision:nil,action:4,key:"Study",modules:["Text","Missing<&","TextAlt","Text"],makeCurrent:true)
         model.reference="Unsubmitted reference draft"
         model.openParallel();try await idle(model)
         guard model.showingParallel,let chapter=model.parallelChapter,chapter.columns.map(\.requested)==["Text","Missing<&","TextAlt","Text"],!chapter.columns[1].ready,!chapter.rows.isEmpty else { fatalError("Native matrix preserves ordered missing/duplicate slots") }
+        let stacked = NativeParallelChapterPane(model:model,chapter:chapter).stackedVerse(at:chapter.selectedVerse - 1)
+        guard stacked.contains("<h3>Missing&lt;&amp;</h3>"), stacked.contains("Module unavailable")
+        else { fatalError("Stacked comparison lost an unavailable slot") }
         guard model.html==main,model.canBack==back,model.reference=="Unsubmitted reference draft" else { fatalError("Parallel open changed main reading/history/draft") }
+        model.openParallel(comparisonReference:"John 3:17");try await idle(model)
+        guard model.stackedParallel,model.parallelChapter?.reference=="John 3:17",model.parallelChapter?.selectedVerse==17
+        else { fatalError("Comparison did not open at the requested verse") }
         model.navigateParallel(1);try await idle(model)
         guard model.parallelChapter?.reference != chapter.reference,model.html==main,model.canBack==back else { fatalError("Parallel navigation isolation") }
         let navigated=model.parallelChapter!.reference

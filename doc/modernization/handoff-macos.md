@@ -57,6 +57,21 @@ as did standalone core configuration with pkg-config disabled and explicit SDK
 paths. Native Windows validation remains open before removing the shared
 libarchive compatibility shim.
 
+## Selected-word study and stacked comparisons
+
+The Mac reader and parallel panes send one selected token through the existing
+shared search modes. Explicit Greek/Hebrew Strong’s links attached to the
+selected rendered word block provide optional lemma terms through the C ABI.
+Surface-form search retains the selected Unicode and source module/reference.
+The parallel pane stacks one aligned core row at a time and retains the chapter
+matrix. Verse search results can open the startup comparison set directly.
+
+On macOS 27.2 the native preview built and all five focused CTest checks passed:
+mixed-canon alignment, RTL WebKit presentation, rich module fixture,
+parallel/selected-word reader flow and shared attribute search. The WebKit
+test uses generated markup. Broader real-module lexical coverage, keyboard and
+VoiceOver checks, and native Linux/Windows presentation remain open.
+
 ## Current next steps
 
 - Follow the [native interface list](native-ui-todo.md): coherent Settings navigation,

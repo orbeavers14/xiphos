@@ -1,6 +1,31 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 import Foundation
 import Combine
+import XiphosCore
+
+struct ReadingWordSelection {
+    let text: String, module: String, reference: String
+    let strongs: [String]
+
+    init?(text: String, module: String, reference: String, links: [String] = []) {
+        guard !text.isEmpty, text.utf8.count <= 1024,
+              !text.contains(where: \.isWhitespace),
+              text.unicodeScalars.contains(where: { CharacterSet.letters.contains($0) }),
+              !module.isEmpty, !reference.isEmpty else { return nil }
+        self.text = text
+        self.module = module
+        self.reference = reference
+        var terms: [String] = []
+        for link in links.prefix(8) where link.utf8.count <= 32768 {
+            var buffer = [CChar](repeating: 0, count: 10)
+            if xc_strongs_search_term(link, &buffer, buffer.count) == XC_OK {
+                let term = String(decoding: buffer.prefix { $0 != 0 }.map(UInt8.init(bitPattern:)), as: UTF8.self)
+                if !terms.contains(term) { terms.append(term) }
+            }
+        }
+        strongs = terms
+    }
+}
 
 enum SearchScopeChoice: String, CaseIterable, Identifiable {
     case all = "All text", bounds = "Bounds", last = "Last results", keyed = "Entry interval"
@@ -214,8 +239,25 @@ struct SearchHit: Identifiable, Sendable, Equatable {
         bounds = text; scopeChoice = .bounds
         message = "Saved range applied. Check the bounds module before searching."
     }
+    func searchSelectedWord(_ word: ReadingWordSelection, lemma: String?) -> Bool {
+        guard !closed, !isBusy, lemma.map(word.strongs.contains) ?? true,
+              allModules.contains(where: { $0.id == word.module && $0.hasVerseSearch })
+        else { return false }
+        setMixedContent(false)
+        searchMultipleModules = false
+        module = word.module
+        expression = lemma ?? word.text
+        mode = lemma == nil ? .phrase : .lemma
+        caseSensitive = true
+        scopeChoice = .all
+        setAnnotationOptions = false
+        search(from: word)
+        return true
+    }
+
     func stop() { if isSearching || isExporting { task?.cancel() } }
-    func search() {
+    @Published private(set) var readingWordSource: ReadingWordSelection?
+    func search(from word: ReadingWordSelection? = nil) {
         guard !closed, canSearch, let worker, let tab else { return }
         let submittedModule = module, submittedExpression = expression, submittedMode = mode
         let submittedMixed = mixedContent
@@ -226,6 +268,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
         let range = scopeChoice == .bounds ? CoreSearchRange(module: boundsModule, expression: bounds) : nil
         let interval = scopeChoice == .keyed ? CoreKeyedSearchInterval(first:firstKey,last:lastKey) : nil
         if interval != nil && (!submittedMixed || submittedModules?.count != 1 || boundsModules.contains(where: {$0.id==submittedModules?.first})) {message="Choose one dictionary or general book and enable keyed content for an entry interval.";return}
+        readingWordSource = word
         revision &+= 1; let token = revision
         isSearching = true; progress = nil; message = "Searching…"
         task = Task { [weak self] in

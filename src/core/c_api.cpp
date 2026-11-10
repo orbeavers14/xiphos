@@ -2008,6 +2008,28 @@ xc_status xc_worker_save_lexicon_profile(xc_worker *w, uint64_t tab, const char 
   if (!path || !*path) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.save_lexicon_profile(tab, path); });
 }
+xc_status xc_strongs_search_term(const char *uri, char *buffer, size_t capacity) {
+  if (!buffer || capacity == 0) return XC_INVALID_ARGUMENT;
+  buffer[0] = '\0';
+  if (!uri || std::strlen(uri) > 32768) return XC_INVALID_ARGUMENT;
+  try {
+    const auto link = xiphos::core::lexical_link(uri, "");
+    if (link.kind != xiphos::core::LexicalLinkKind::strongs ||
+        (link.type != "Greek" && link.type != "Hebrew")) return XC_INVALID_ARGUMENT;
+    const char prefix = link.type == "Greek" ? 'G' : 'H';
+    std::string digits = link.value;
+    if (!digits.empty() && digits.front() == prefix) digits.erase(0, 1);
+    const auto first = digits.find_first_not_of('0');
+    if (first == std::string::npos || digits.find_first_not_of("0123456789") != std::string::npos ||
+        digits.size() - first > 8) return XC_INVALID_ARGUMENT;
+    const auto term = prefix + digits.substr(first);
+    if (term.size() >= capacity) return XC_INVALID_ARGUMENT;
+    std::memcpy(buffer, term.c_str(), term.size() + 1);
+    return XC_OK;
+  } catch (const std::invalid_argument &) { return XC_INVALID_ARGUMENT; }
+  catch (...) { return XC_ENGINE_ERROR; }
+}
+
 xc_status xc_worker_visit_lexical(xc_worker *w, uint64_t tab, const char *module, const char *reference,
                                const char *uri, int origin, xc_request **out) {
   if (!uri || !*uri || (origin != XIPHOS_LEXICON_MAIN && origin != XIPHOS_LEXICON_DIALOG)) {

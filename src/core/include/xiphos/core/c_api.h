@@ -1588,6 +1588,9 @@ xc_search_module_names *xc_request_take_search_module_names(xc_request *request)
 size_t xc_search_module_names_count(const xc_search_module_names *names);
 const char *xc_search_module_names_at(const xc_search_module_names *names, size_t row);
 void xc_search_module_names_release(xc_search_module_names *names);
+/* Convert an explicit Greek/Hebrew Strong's link to a lemma search term.
+ * Returns XC_INVALID_ARGUMENT for other lexical links or insufficient capacity. */
+xc_status xc_strongs_search_term(const char *uri, char *buffer, size_t capacity);
 /* URI must be nonempty; origin is XIPHOS_LEXICON_MAIN/DIALOG. Nullable source
  * module/reference become empty (valid for source-independent Strong's).
  * Greek morphology validates source on the worker. No Bible history visit.

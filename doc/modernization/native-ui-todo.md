@@ -45,7 +45,7 @@ presentation and navigation, not a second settings or study engine.
 
 Owner request,2026-11-05, illustrated by Bible Hub's stacked Genesis1:1 view:
 
-- [ ] Add a focused single-verse comparison with each translation's name above
+- [x] Add a focused Mac single-verse comparison with each translation's name above
   its verse text in a vertical list. This complements the current chapter matrix.
 - [ ] Offer stacked verse and side-by-side chapter layouts, saved module ordering,
   module visibility and previous/next verse navigation.
@@ -56,8 +56,10 @@ Owner request,2026-11-05, illustrated by Bible Hub's stacked Genesis1:1 view:
 
 Reuse the current shared parallel alignment/results and installed module catalog.
 The screenshot is a behavior/layout reference, not a request to copy the website
-or its text library. Licensed/provider translations remain the existing separate
-roadmap work. No new comparison view is implemented by this planning entry.
+or its text library. Licensed/provider translations remain separate roadmap work.
+The Mac preview can switch between the chapter matrix and stacked verses and
+can open a verse search result using the active startup comparison profile.
+Verse steps stay within the displayed chapter; chapter controls remain available.
 
 ## Selected-word Hebrew, Greek and Aramaic study
 
@@ -77,5 +79,10 @@ Owner request from 2026-11-05, expanded to Greek and Aramaic on 2026-11-09:
 - [ ] Verify RTL Hebrew and Aramaic, LTR Greek, combining marks, source identity,
   keyboard and VoiceOver operation, and modules without lexical metadata.
 
-Core word/lemma search exists. The native selected-text-to-search action is not
-implemented by this planning entry; existing lexical links are separate input.
+The Mac reader and both Mac comparison layouts offer a Search Selected Word
+menu for one visible token. Surface-form search passes the selected Unicode to
+the existing phrase mode. Explicit Greek/Hebrew Strong’s links within the
+selected rendered word block become separate lemma choices. Modules without a
+matching rendered word block still offer surface search. Accent-insensitive
+matching, unlinked lemma extraction, keyboard shortcuts and native Linux
+integration remain open.

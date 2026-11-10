@@ -44,6 +44,7 @@ final class ReaderModel: ObservableObject {
     let search = SearchModel()
     @Published private(set) var parallelChapter: CoreParallelChapter?
     @Published private(set) var showingParallel = false
+    @Published var stackedParallel = false
     var parallelProfilePath: String?
     @Published private(set) var parallelSourceNotice=""
     @Published private(set) var commentaryDecoration: CoreDecoratedReading?
@@ -54,15 +55,16 @@ final class ReaderModel: ObservableObject {
             if value.invalidColors>0 {parallelSourceNotice += " Invalid colors were omitted."};return value
         } catch {parallelSourceNotice="Parallel notes or bookmarks could not be loaded. Reading remains available.";return raw}
     }
-    func openParallel(path: String? = nil,key: String? = nil) {
+    func openParallel(path: String? = nil,key: String? = nil,comparisonReference: String? = nil) {
         guard !closed,!isBusy else { return }
-        if path == nil,key == nil,parallelChapter != nil { showingParallel=true;return }
+        if path == nil,key == nil,comparisonReference == nil,parallelChapter != nil { showingParallel=true;return }
         guard let worker,let tab,let path=path ?? parallelProfilePath else { return }
-        let reference=displayedEntry?.reference ?? self.reference
+        let reference=comparisonReference ?? displayedEntry?.reference ?? self.reference
         run { token in
             var chapter=try await worker.visitParallelProfile(tab:tab,path:path,key:key,reference:reference,flags:self.engineOptions?.rawValue ?? 0)
             chapter=await self.prepareParallel(chapter)
             guard token==self.revision,!self.closed else { return };self.parallelChapter=chapter;self.showingParallel=true
+            if comparisonReference != nil { self.stackedParallel = true }
         }
     }
     func navigateParallel(_ direction: Int32) {
@@ -1023,6 +1025,7 @@ struct PassageView: NSViewRepresentable {
     var onLinkHover: ((String) -> Void)? = nil
     var allowsInlineImages = false
     var onContextLink: ((String,String,String) -> Void)? = nil
+    var onSelection: ((String, String, String, [String]) -> Void)? = nil
     @MainActor final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var loaded: String?
         var loadedCSS: String?
@@ -1035,7 +1038,16 @@ struct PassageView: NSViewRepresentable {
         var onLink: ((String) -> Void)?
         var onLinkHover: ((String) -> Void)?
         var onContextLink: ((String,String,String) -> Void)?
+        var onSelection: ((String, String, String, [String]) -> Void)?
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+            if message.name == "xiphosSelection", message.frameInfo.isMainFrame,
+               let fields = message.body as? [String: Any],
+               let text = fields["text"] as? String, let module = fields["module"] as? String,
+               let reference = fields["reference"] as? String, let links = fields["links"] as? [String],
+               text.utf8.count <= 1024, module.utf8.count <= 4096, reference.utf8.count <= 32768 {
+                onSelection?(text, module, reference, links)
+                return
+            }
             if message.name == "xiphosContextLink",message.frameInfo.isMainFrame,
                let fields=message.body as? [String:String],let uri=fields["uri"],let module=fields["module"],let reference=fields["reference"],
                uri.utf8.count<=32768,module.utf8.count<=4096,reference.utf8.count<=32768 {
@@ -1087,12 +1099,40 @@ struct PassageView: NSViewRepresentable {
         // disabled. The core interprets the URI, never this event script.
         config.userContentController.add(context.coordinator, contentWorld: .defaultClient, name: "xiphosHover")
         config.userContentController.add(context.coordinator, contentWorld: .defaultClient, name: "xiphosContextLink")
+        if onSelection != nil {
+            config.userContentController.add(context.coordinator, contentWorld: .defaultClient, name: "xiphosSelection")
+            config.userContentController.addUserScript(WKUserScript(source: """
+                document.addEventListener('selectionchange', () => {
+                    const selection = window.getSelection();
+                    const context = node => node?.parentElement?.closest('[data-xc-module][data-xc-reference], section.xc-verse');
+                    const start = context(selection?.anchorNode);
+                    const end = context(selection?.focusNode);
+                    const text = selection && start === end && !selection.isCollapsed ? selection.toString().trim() : '';
+                    const wordAt = node => node?.parentElement?.closest('span.word');
+                    const word = wordAt(selection?.anchorNode);
+                    let links = [];
+                    if (text && word && word === wordAt(selection.focusNode)) {
+                        const surface = word.cloneNode(true);
+                        surface.querySelectorAll('.strongs, .morph').forEach(node => node.remove());
+                        if (surface.textContent.trim() === text)
+                            links = Array.from(word.querySelectorAll('.strongs a[href]'), link => link.href)
+                                .filter(uri => uri.length <= 32768).slice(0, 8);
+                    }
+                    window.webkit.messageHandlers.xiphosSelection.postMessage({
+                        links,
+                        text: text.length <= 1024 ? text : '',
+                        module: start?.dataset.xcModule ?? '',
+                        reference: start?.dataset.xcReference ?? start?.getAttribute('aria-label') ?? ''
+                    });
+                });
+                """, injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: .defaultClient))
+        }
         config.userContentController.addUserScript(WKUserScript(source: """
             (() => {
                 let previous = null;
                 document.addEventListener('click', event => {
                     const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
-                    const cell = link ? link.closest('td[data-xc-module][data-xc-reference]') : null;
+                    const cell = link ? link.closest('[data-xc-module][data-xc-reference]') : null;
                     if (!cell || !cell.dataset.xcModule) return;
                     if (link.href.length > 32768 || cell.dataset.xcModule.length > 4096 || cell.dataset.xcReference.length > 32768) { event.preventDefault(); return; }
                     event.preventDefault();
@@ -1120,6 +1160,7 @@ struct PassageView: NSViewRepresentable {
         context.coordinator.onLink = onLink
         context.coordinator.onLinkHover = onLinkHover
         context.coordinator.onContextLink = onContextLink
+        context.coordinator.onSelection = onSelection
         let changedAnchor = context.coordinator.anchor != anchor || context.coordinator.anchorRevision != anchorRevision
         context.coordinator.anchor = anchor
         context.coordinator.anchorRevision = anchorRevision
@@ -1163,6 +1204,8 @@ struct PassageView: NSViewRepresentable {
     static func dismantleNSView(_ view: WKWebView, coordinator: Coordinator) {
         view.configuration.userContentController.removeScriptMessageHandler(forName: "xiphosHover", contentWorld: .defaultClient)
         view.navigationDelegate = nil
+        view.configuration.userContentController.removeScriptMessageHandler(forName: "xiphosSelection", contentWorld: .defaultClient)
+        coordinator.onSelection = nil
         view.configuration.userContentController.removeScriptMessageHandler(forName: "xiphosContextLink", contentWorld: .defaultClient)
         coordinator.onLink = nil; coordinator.onLinkHover = nil; coordinator.onContextLink = nil
     }
@@ -1224,8 +1267,27 @@ struct LexiconPreferencesView: View {
     }
 }
 
+struct ReadingWordSearchMenu: View {
+    let word: ReadingWordSelection
+    let search: (ReadingWordSelection, String?) -> Void
+
+    var body: some View {
+        Menu("Search Selected Word") {
+            Button("Surface form: " + word.text) { search(word, nil) }
+            ForEach(word.strongs, id: \.self) { term in
+                Button("Strong’s: " + term) { search(word, term) }
+            }
+        }
+    }
+}
+
 struct ReaderWindow: View {
     @StateObject private var model: ReaderModel
+    @State private var sidebar = "modules"
+    @State private var selectedWord: ReadingWordSelection?
+    private func searchWord(_ word: ReadingWordSelection, lemma: String?) {
+        if model.search.searchSelectedWord(word, lemma: lemma) { sidebar = "search" }
+    }
     private var closeOnDisappear = true
     init(model: ReaderModel) {
         _model = StateObject(wrappedValue: model); closeOnDisappear = false
@@ -1295,7 +1357,7 @@ struct ReaderWindow: View {
     var body: some View {
         HSplitView {
             VSplitView {
-                TabView {
+                TabView(selection: $sidebar) {
                 List(selection: $model.selection) {
                     ForEach(model.sidebarGroups) { group in
                         Section(group.id) {
@@ -1311,11 +1373,12 @@ struct ReaderWindow: View {
                     .disabled(model.isBusy)
                     .accessibilityLabel("Installed SWORD modules")
                     .safeAreaInset(edge:.bottom) { if !model.libraryOrganizationNotice.isEmpty { Text(model.libraryOrganizationNotice).font(.caption).padding(6) } }
-                    .tabItem { Text("Modules") }
+                    .tabItem { Text("Modules") }.tag("modules")
                     SearchPane(model: model.search, hostBusy: model.isBusy, canRead: model.canOpenSearchResult,
                         onRead: model.openSearchResult,
+                        onCompare: model.parallelProfilePath == nil ? nil : { model.openParallel(comparisonReference: $0.reference) },
                         onLink: { uri, hit in model.followSearchLink(uri, hit: hit) })
-                        .tabItem { Text("Search") }
+                        .tabItem { Text("Search") }.tag("search")
                 }
                 if model.studyNote != nil || model.referencePreview != nil || model.bookNote != nil {
                     VStack(alignment: .leading, spacing: 0) {
@@ -1488,7 +1551,16 @@ struct ReaderWindow: View {
                 }
                 PassageView(html: model.html, rightToLeft: model.readingRightToLeft, css: model.lexicalPresentation.css, anchor: model.renderedAnchor, anchorRevision: model.renderedAnchorRevision,
                             onScrollFailure: { model.message = $0 }, onLink: { model.followLink($0) },
-                            onLinkHover: { model.previewStudyLink($0) })
+                            onLinkHover: { model.previewStudyLink($0) },
+                            onSelection: { text, _, reference, links in
+                                guard let source = model.annotationEditingTarget else { selectedWord = nil; return }
+                                selectedWord = ReadingWordSelection(text: text, module: source.module,
+                                    reference: reference.isEmpty ? source.reference : reference, links: links)
+                            })
+                if let word = selectedWord {
+                    ReadingWordSearchMenu(word: word, search: searchWord)
+                        .padding(.horizontal, 12).disabled(model.isBusy)
+                }
                 if !model.readingSourceNotice.isEmpty {Text(model.readingSourceNotice).font(.caption).foregroundStyle(.secondary).padding(8)}
                 if !model.message.isEmpty {
                     Text(model.message).foregroundStyle(.secondary).padding(12)
@@ -1502,7 +1574,7 @@ struct ReaderWindow: View {
             }.frame(minWidth: 450)
             if model.modules.contains(where: { $0.type == "Commentaries" }) || model.dictionarySelection != nil || model.showingBook || model.showingParallel {
                 VSplitView {
-                    if model.showingParallel,let chapter=model.parallelChapter { NativeParallelChapterPane(model:model,chapter:chapter) }
+                    if model.showingParallel,let chapter=model.parallelChapter { NativeParallelChapterPane(model:model,chapter:chapter,onSearchWord:searchWord) }
                     if model.modules.contains(where: { $0.type == "Commentaries" }) {
                         VStack(alignment: .leading, spacing: 0) {
                             HStack {
@@ -1617,7 +1689,8 @@ struct ReaderWindow: View {
                 }.frame(minWidth: 230, idealWidth: 300)
             }
         }.frame(minWidth: 700, minHeight: 450)
-            .onChange(of: model.selection) { model.selectionChanged() }
+            .onChange(of: model.selection) { selectedWord = nil; model.selectionChanged() }
+            .onChange(of: model.html) { selectedWord = nil }
             .onChange(of: model.verseNumbers) { model.refreshDisplay() }
             .onChange(of: model.highlightSelected) { model.refreshDisplay() }
             .sheet(item: Binding(get: { model.verseImage }, set: { if $0 == nil { model.closeVerseImage() } })) { image in

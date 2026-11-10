@@ -10,6 +10,7 @@ struct SearchPane: View {
     let hostBusy: Bool
     let canRead: Bool
     let onRead: (SearchHit) -> Void
+    let onCompare: ((SearchHit) -> Void)?
     let onLink: (String, SearchHit) -> Void
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -155,6 +156,9 @@ struct SearchPane: View {
                 ProgressView(value: Double(model.progress?.percent ?? 0), total: 100)
                     .accessibilityLabel(model.isExporting ? "Export progress" : "Search progress")
             }
+            if let source = model.readingWordSource {
+                Text("Selected in " + source.module + " • " + source.reference).font(.caption)
+            }
             Text(model.message).font(.caption).foregroundStyle(.secondary).accessibilityLabel("Search status: \(model.message)")
             VSplitView {
                 VStack(spacing: 4) {
@@ -176,6 +180,9 @@ struct SearchPane: View {
                     Button(model.previewSource?.keyKind == .verse ? "Read in main pane" : "Open result") {
                         if let hit = model.hits.first(where: { $0.id == model.selection }) { onRead(hit) }
                     }.disabled(model.isBusy || hostBusy || !canRead || model.selection == nil)
+                    if let onCompare, let hit = model.previewSource, hit.keyKind == .verse {
+                        Button("Compare verse") { onCompare(hit) }.disabled(model.isBusy || hostBusy)
+                    }
                 }.frame(minHeight: 90)
                 if let entry = model.preview, let source = model.previewSource {
                     VStack(alignment: .leading, spacing: 3) {
