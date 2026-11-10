@@ -49,7 +49,7 @@ shared toolchain validation that remains.
 ## Current next steps
 
 - Follow the [native interface list](native-ui-todo.md): coherent Settings navigation,
-  appearance/themes, stacked comparisons and selected-word Hebrew study.
+  appearance/themes, stacked comparisons and selected-word Hebrew, Greek and Aramaic study.
 - Complete broader workflow/VoiceOver/RTL/localization and compatibility acceptance.
 - Validate execution on macOS 27.0 and release resources/signing before distribution.
 

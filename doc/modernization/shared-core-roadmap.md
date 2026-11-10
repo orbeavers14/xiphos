@@ -6,7 +6,8 @@ name. Earlier percentage estimates are historical, not current completion claims
 ## Current work queue
 
 1. Native Mac Settings/navigation and other-screen review; appearance and reading themes.
-2. Selected-word Hebrew search, word/lemma choices and reference-to-comparison workflows.
+2. Selected-word Hebrew, Greek and Aramaic search, word/lemma choices and
+   reference-to-comparison workflows.
 3. Stacked single-verse comparisons alongside the current parallel chapter matrix.
 4. Broader translations, typed localized-reference input, RTL/VoiceOver/keyboard acceptance.
 5. Remaining reading/editor/export/migration workflows and broader real-world module/profile coverage.

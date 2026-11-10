@@ -32,7 +32,7 @@ No fresh Windows or physical Linux acceptance is implied by Mac-hosted checks.
 
 ## Remaining gates
 
-- Native Settings/navigation redesign, selected-word Hebrew search and stacked verse comparisons.
+- Native Settings/navigation redesign, selected-word Hebrew, Greek and Aramaic search, and stacked verse comparisons.
 - Complete translations, typed localized-reference input, broader RTL and accessibility acceptance.
 - Broader module/canon/profile coverage, remaining reading/export/editor workflows and data compatibility.
 - Windows frontend/native validation, current physical Linux verification and macOS 27.0 deployment acceptance.

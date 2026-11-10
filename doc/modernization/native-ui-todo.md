@@ -59,21 +59,23 @@ The screenshot is a behavior/layout reference, not a request to copy the website
 or its text library. Licensed/provider translations remain the existing separate
 roadmap work. No new comparison view is implemented by this planning entry.
 
-## Selected-word Hebrew study
+## Selected-word Hebrew, Greek and Aramaic study
 
-Owner request,2026-11-05:
+Owner request from 2026-11-05, expanded to Greek and Aramaic on 2026-11-09:
 
 - [ ] Offer Search Selected Word from reading/parallel text selection through a
   native context menu and keyboard command, preserving the originating module,
   passage and Unicode text.
-- [ ] For Hebrew, expose exact surface-form search and deliberate handling of
-  vowel/cantillation marks. Offer lemma/Strong's search when module metadata is
-  available; label these choices clearly rather than assuming selected text is
-  a lemma. Reuse shared search modes, bounds, cancellation and copied results.
+- [ ] Offer exact surface-form search in all three languages. Define how vowel
+  points and cantillation marks are handled for Hebrew and Aramaic when
+  present, and how accents and breathings are handled for Greek. Offer
+  lemma or Strong’s search when the module supplies the relevant metadata.
+  Label surface-form and lexical searches separately and reuse shared search
+  modes, bounds, cancellation and copied results.
 - [ ] Show references with contextual previews and open results in verse-by-verse
   comparisons, including the stacked single-verse view planned above.
-- [ ] Verify RTL selection, combining marks, source identity, keyboard/VoiceOver
-  operation and cases where lexical metadata is unavailable.
+- [ ] Verify RTL Hebrew and Aramaic, LTR Greek, combining marks, source identity,
+  keyboard and VoiceOver operation, and modules without lexical metadata.
 
 Core word/lemma search exists. The native selected-text-to-search action is not
 implemented by this planning entry; existing lexical links are separate input.
