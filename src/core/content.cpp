@@ -20,14 +20,17 @@ std::string attribute(const std::string &value) {
   return result;
 }
 }
+std::string display_reference_list_entry(const Entry &entry, std::size_t ordinal) {
+  std::string html;
+  html += "<section id=\"reference-" + std::to_string(ordinal) + "\" class=\"xc-reference\" aria-label=\"" + attribute(entry.reference) + "\">";
+  html += "<header><a href=\"" + attribute(passage_uri(entry.reference)) + "\">" + attribute(entry.reference) + "</a></header>";
+  html += entry.html + "</section>\n";
+  return html;
+}
 std::string display_reference_list(const ReferenceList &references) {
   std::string html;
-  for (std::size_t i = 0; i < references.entries.size(); ++i) {
-    const auto &entry = references.entries[i];
-    html += "<section id=\"reference-" + std::to_string(i + 1) + "\" class=\"xc-reference\" aria-label=\"" + attribute(entry.reference) + "\">";
-    html += "<header><a href=\"" + attribute(passage_uri(entry.reference)) + "\">" + attribute(entry.reference) + "</a></header>";
-    html += entry.html + "</section>\n";
-  }
+  for (std::size_t i = 0; i < references.entries.size(); ++i)
+    html += display_reference_list_entry(references.entries[i], i + 1);
   return html;
 }
 std::string display_reference_links(const ParsedReferenceList &references) {

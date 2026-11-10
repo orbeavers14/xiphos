@@ -2006,6 +2006,7 @@ const char *xc_reference_list_expression(const xc_reference_list *references);
 const char *xc_reference_list_html(const xc_reference_list *references);
 const char *xc_reference_list_entry_reference(const xc_reference_list *references, size_t index);
 const char *xc_reference_list_entry_html(const xc_reference_list *references, size_t index);
+/* True when the preview reaches its reference-count or rendered-byte limit. */
 int xc_reference_list_limited(const xc_reference_list *references);
 unsigned xc_reference_list_skipped(const xc_reference_list *references);
 void xc_reference_list_release(xc_reference_list *references);

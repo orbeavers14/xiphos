@@ -536,9 +536,20 @@ ReferenceList Reader::reference_list_impl(const std::string &id, const std::stri
   for (const auto &reference : parsed.references) {
     auto html = render_entry(module, reference.c_str());
     if (module.getKey()->getError()) throw std::invalid_argument("SWORD could not render a reference-list entry");
-    result.entries.push_back({module.getKeyText(), std::move(html)});
+    const auto remaining = maximum_native_reference_list_html_bytes - result.html.size();
+    if (html.size() > remaining) {
+      result.limited = true;
+      break;
+    }
+    Entry entry{module.getKeyText(), std::move(html)};
+    auto section = display_reference_list_entry(entry, result.entries.size() + 1);
+    if (section.size() > remaining) {
+      result.limited = true;
+      break;
+    }
+    result.html += section;
+    result.entries.push_back(std::move(entry));
   }
-  result.html = display_reference_list(result);
   return result;
 }
 HeadingNoteSource Reader::heading_notes(const std::string &id, const std::string &reference,

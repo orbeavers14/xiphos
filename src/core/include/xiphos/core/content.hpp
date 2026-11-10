@@ -48,6 +48,7 @@ struct ReferenceList {
   bool limited = false;
   unsigned skipped = 0;
 };
+std::string display_reference_list_entry(const Entry &entry, std::size_t ordinal);
 std::string display_reference_list(const ReferenceList &references);
 // Link-only information preview plus a return link to the committed context.
 // Native hosts provide theme CSS; the initial label is the English baseline.

@@ -7,6 +7,7 @@ namespace sword { class SWModule; }
 namespace xiphos { namespace core {
 // Native previews bound the entire list, including repeated ranges/singles.
 constexpr std::size_t maximum_native_reference_list_entries = 2000;
+constexpr std::size_t maximum_native_reference_list_html_bytes = 16 * 1024 * 1024;
 constexpr std::size_t maximum_passage_text_export_bytes = 8 * 1024 * 1024;
 struct PassageTextExport {
   std::string module, context, expression, text;

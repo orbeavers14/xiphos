@@ -6,6 +6,9 @@
 #include "xiphos/core/engine_manager.hpp"
 #include <markupfiltmgr.h>
 #include <array>
+#include <filesystem>
+#include <fstream>
+#include <rawtext.h>
 #include <iostream>
 #include <stdexcept>
 using namespace xiphos::core;
@@ -19,6 +22,34 @@ xc_status wait(xc_request *request) {
   }
   return status;
 }
+static void check_byte_limit(const std::string &fixture) {
+  const auto root = std::filesystem::u8path(fixture) / "reference-preview-budget";
+  const auto data = root / "data";
+  std::filesystem::create_directories(data);
+  std::filesystem::create_directories(root / "mods.d");
+  const auto path = data.u8string();
+  check(sword::RawText::createModule(path.c_str()) == 0, "Create preview budget module");
+  {
+    sword::RawText module(path.c_str());
+    module.setKey("John 3:16");
+    module.setEntry(std::string(60000, 'a').c_str());
+    std::ofstream conf(root / "mods.d" / "budget.conf");
+    conf << "[Budget]\nDataPath=./data\nModDrv=RawText\nEncoding=UTF-8\n";
+    check(bool(conf), "Write preview budget module config");
+  }
+  Reader reader(root.u8string());
+  std::string expression = "16";
+  for (int i = 1; i < 300; ++i) expression += ";16";
+  const auto targets = reader.reference_targets("Budget", expression, "John 3:16");
+  const auto preview = reader.read_reference_list("Budget", expression, "John 3:16");
+  check(targets.references.size() == 300 && !targets.limited &&
+        preview.limited && preview.entries.size() > 0 && preview.entries.size() < 300 &&
+        preview.html.size() <= maximum_native_reference_list_html_bytes &&
+        preview.html == display_reference_list(preview) &&
+        preview.entries.back().reference == "John 3:16",
+        "Byte limit keeps a complete ordered prefix while target-only lookup stays complete");
+}
+
 int main(int argc, char **argv) {
   try {
     check(argc == 2, "fixture root required"); const std::string root = argv[1];
@@ -153,6 +184,7 @@ int main(int argc, char **argv) {
             !xc_reference_list_count(nullptr) && !xc_reference_list_limited(nullptr) && !xc_reference_list_skipped(nullptr) &&
             !xc_reference_list_entry_reference(nullptr, 0) && !xc_reference_list_entry_html(nullptr, 0) && !xc_request_take_reference_list(nullptr), "C null reference-list access");
     }
+    check_byte_limit(root);
     std::cout << "Rendered reference-list legacy output/settings/history/lifetime checks passed\n";
   } catch (const std::exception &error) { std::cerr << error.what() << '\n'; return 1; }
 }
