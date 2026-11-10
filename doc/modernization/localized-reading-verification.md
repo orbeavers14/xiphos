@@ -14,7 +14,8 @@ Completed scoped batch,2026-11-05. Core implementation e2ef279.
   module/global locale remain unchanged. French/German/Spanish catalog sources
   and GPL notices are recorded in localization/sword. The Mac selects a bundled
   catalog at startup. Canonical reference input and persisted references remain
-  unchanged; full typed-localized-reference parsing is still open.
+  unchanged. A private-locale typed-reference resolver now accepts a leading
+  localized book name or abbreviation and returns the canonical verse.
 - Exact-match gettext import plus reviewed native overrides generates Mac string
   resources. It excludes fuzzy/plural/ambiguous entries.376 literal keys extracted:
   English376, French73, German38, Spanish37; all non-English choices are explicitly
@@ -56,8 +57,25 @@ the UI tool switched to a normal-profile window; no edits were made there.
 
 ## Remaining scope
 
-Full translated surfaces, plural/formatting review, typed localized reference
+Full translated surfaces, plural/formatting review, localized multi-book expressions
 input, additional book/preview RTL cases and complete VoiceOver acceptance are
 still open. Mac/Windows native screen navigation and stacked verse comparison
 are in native-ui-todo.md, along with the new selected-word Hebrew search flow.
 These checks are scoped acceptance, not complete platform/feature parity.
+
+
+## Typed localized book names
+
+The Mac reference field uses `xc_worker_resolve_localized_reference` when a
+private SWORD locale is configured. The shared worker rewrites a recognized
+leading book name or abbreviation using Unicode case folding and canonical
+normalization. SWORD resolves the verse in the selected module's canon.
+A known book outside that canon is refused. Canonical input and numeric
+shorthand continue through the existing parser. Locale tables remain private
+to the request, and resolution itself does not visit history.
+
+The standalone reader and navigation tests passed on macOS 27.2, including a
+decomposed accent, a compact alias and an unavailable book. The Mac preview
+built and the existing localized WebKit smoke passed after submitting
+`Jean 3:16` through the reader model. This covers a leading book name;
+localized names in multiple independent range endpoints remain open.

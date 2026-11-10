@@ -63,7 +63,9 @@ GTK can pass a selected surface, actual module and verse to
 and reference for cross-canon comparisons. Empty cell references represent
 unavailable mappings. Split cells expose additional verse references and HTML
 through the `xc_parallel_cell_additional_*` accessors. See [the real corpus checks](real-corpus-validation.md#selected-word-metadata-and-comparison)
-for tested cases. GTK selection and stacked presentation remain to be wired.
+for tested cases. GTK selection and stacked presentation remain to be wired. The optional
+`xc_worker_resolve_localized_reference` API can canonicalize a typed leading book
+name from a private UTF-8 SWORD locale before a normal visit.
 
 ## Next validation
 

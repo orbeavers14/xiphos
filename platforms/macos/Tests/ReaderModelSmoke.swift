@@ -845,6 +845,12 @@ struct ReaderModelSmoke {
         guard modules.first(where: {$0.id == "RtlText"})?.rightToLeft == true,
               modules.first(where: {$0.id == "TextA"})?.rightToLeft == false else {fatalError("Owned actual-module direction metadata")}
         let model = ReaderModel(worker:worker,startupError:nil);try await idle(model)
+        model.selection = "TextA"
+        model.reference = "Jean 3:16"
+        model.read()
+        try await idle(model)
+        guard model.renderedReference == "John 3:16", model.reference == "John 3:16"
+        else { fatalError("Typed localized reference did not open the canonical verse") }
         let chapter = CoreParallelChapter(reference:"John 3:16",title:"Original mixed direction",
             columns:[CoreParallelColumn(requested:"RtlText",module:"RtlText",ready:true,rtl:true),CoreParallelColumn(requested:"TextA",module:"TextA",ready:true,rtl:false)],
             rows:[CoreParallelRow(reference:"John 3:16",cells:[CoreParallelCell(reference:"John 3:16",html:"<p>שלום עולם — نص أصلي</p><aside class='xc-reading-annotation'>Original note Ω</aside>",headings:[]),CoreParallelCell(reference:"John 3:16",html:"<p>Original Latin text.</p>",headings:[],additional:[CoreParallelVerse(reference:"John 3:17",html:"<p>Second original segment.</p>",headings:[])])])])

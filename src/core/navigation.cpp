@@ -4,14 +4,14 @@
 #include <versekey.h>
 #include <stdexcept>
 #include <swlocale.h>
+#include <versificationmgr.h>
+#include <glib.h>
 #include <filesystem>
 #include <memory>
 #include <cstring>
 namespace xiphos::core {
-ReferenceChoices reference_choices(sword::SWModule &module, const std::string &reference) {
-  return reference_choices(module, reference, {});
-}
-ReferenceChoices reference_choices(sword::SWModule &module, const std::string &reference, const std::string &locale_file) {
+namespace {
+std::unique_ptr<sword::SWLocale> reference_locale(const std::string &locale_file) {
   std::unique_ptr<sword::SWLocale> locale;
   if (!locale_file.empty()) {
     const auto path = std::filesystem::u8path(locale_file);
@@ -23,6 +23,66 @@ ReferenceChoices reference_choices(sword::SWModule &module, const std::string &r
     if (!locale->getEncoding() || std::strcmp(locale->getEncoding(), "UTF-8"))
       throw std::invalid_argument("Reference locale must use UTF-8");
   }
+  return locale;
+}
+std::string folded_reference(const char *text) {
+  if (!text || !g_utf8_validate(text,-1,nullptr)) return {};
+  using Buffer = std::unique_ptr<char,decltype(&g_free)>;
+  Buffer folded(g_utf8_casefold(text,-1), &g_free);
+  if (!folded) throw std::bad_alloc();
+  Buffer normalized(g_utf8_normalize(folded.get(),-1,G_NORMALIZE_NFC), &g_free);
+  if (!normalized) throw std::bad_alloc();
+  return normalized.get();
+}
+}
+
+std::string localized_reference_expression(sword::VerseKey &key, const std::string &reference,
+                                           const std::string &locale_file) {
+  const auto locale = reference_locale(locale_file);
+  if (!locale) return reference;
+  const auto input = folded_reference(reference.c_str());
+  if (input.empty()) return reference;
+  const auto *canon = sword::VersificationMgr::getSystemVersificationMgr()
+      ->getVersificationSystem(key.getVersificationSystem());
+  if (!canon) throw std::invalid_argument("Unknown reference versification");
+  std::size_t longest = 0;
+  std::string book;
+  bool ambiguous = false;
+  auto consider = [&](const char *label, const char *osis) {
+    const auto candidate = folded_reference(label);
+    if (candidate.empty() || candidate.size() < longest ||
+        input.compare(0,candidate.size(),candidate) != 0) return;
+    if (input.size() > candidate.size()) {
+      const auto next = g_utf8_get_char(input.data() + candidate.size());
+      if (!g_unichar_isspace(next) && (next < '0' || next > '9')) return;
+    }
+    if (candidate.size() > longest) {
+      longest = candidate.size();
+      book = osis;
+      ambiguous = false;
+    } else if (book != osis) ambiguous = true;
+  };
+  int count = 0;
+  const auto *aliases = locale->getBookAbbrevs(&count);
+  if (count < 0 || count > 16384) throw std::invalid_argument("Reference alias limit exceeded");
+  for (int i = 0; i < count; ++i) consider(aliases[i].ab, aliases[i].osis);
+  for (int i = 0; i < canon->getBookCount(); ++i) {
+    const auto *entry = canon->getBook(i);
+    consider(locale->translate(entry->getLongName()), entry->getOSISName());
+  }
+  if (!longest) return reference;
+  if (ambiguous) throw std::invalid_argument("Localized book name is ambiguous");
+  if (canon->getBookNumberByOSISName(book.c_str()) < 1)
+    throw std::invalid_argument("Localized book is absent from this module's canon");
+  const char *suffix = input.c_str() + longest;
+  while (*suffix && g_unichar_isspace(g_utf8_get_char(suffix))) suffix = g_utf8_next_char(suffix);
+  return *suffix ? book + " " + suffix : book;
+}
+ReferenceChoices reference_choices(sword::SWModule &module, const std::string &reference) {
+  return reference_choices(module, reference, {});
+}
+ReferenceChoices reference_choices(sword::SWModule &module, const std::string &reference, const std::string &locale_file) {
+  const auto locale = reference_locale(locale_file);
   auto label = [&](sword::VerseKey key) {
     key.setLocale("en");
     const std::string english = key.getBookName();

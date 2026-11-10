@@ -709,10 +709,11 @@ final class ReaderModel: ObservableObject {
         }
     }
     func read() {
-        guard worker != nil, tab != nil, let selection else { return }
+        guard let worker, tab != nil, let selection else { return }
         let submitted = reference
         run { token in
-            try await self.visitAndPresent(module: selection, reference: submitted, token: token)
+            let canonical = try await worker.localizedReference(module: selection, expression: submitted)
+            try await self.visitAndPresent(module: selection, reference: canonical, token: token)
         }
     }
     private func present(_ entry: RenderedEntry, module: String, token: UInt64, updateInput: Bool = true, passage: RenderedStudyPassage? = nil, received: Bool = false) async throws {

@@ -1468,6 +1468,16 @@ actor CoreWorker {
         }
         return try await chapter(status, request)
     }
+    func localizedReference(module: String, expression: String) async throws -> String {
+        guard let locale = referenceLocaleFile else { return expression }
+        var request: OpaquePointer?
+        let status = xc_worker_resolve_localized_reference(try worker(),module,expression,locale,&request)
+        let completed = try await wait(status,request)
+        defer { xc_request_release(completed) }
+        guard let target = xc_request_take_link(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_link_release(target) }
+        return String(cString: xc_link_reference(target))
+    }
     func referenceChoices(module: String, reference: String) async throws -> ReferenceChoices {
         var request: OpaquePointer?
         let handle = try worker()

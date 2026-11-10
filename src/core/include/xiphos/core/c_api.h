@@ -1758,6 +1758,10 @@ xc_status xc_worker_read_tab_chapter(xc_worker *worker, uint64_t tab, const char
 xc_status xc_worker_read_chapter(xc_worker *worker, const char *module, const char *reference, unsigned flags, xc_request **out);
 xc_status xc_worker_reference_choices(xc_worker *worker, const char *module, const char *reference, xc_request **out);
 /* Copied UTF-8 locale-file path; labels only. Targets and SDK global locale are unchanged. */
+/* Resolve typed input using a private SWORD UTF-8 locale. Owned xc_link
+ * result contains a canonical verse target. No history or locale changes. */
+xc_status xc_worker_resolve_localized_reference(xc_worker *worker,const char *module,
+    const char *expression,const char *locale_file,xc_request **out);
 xc_status xc_worker_reference_choices_localized(xc_worker *worker, const char *module, const char *reference, const char *locale_file, xc_request **out);
 xc_status xc_worker_resolve_link(xc_worker *worker, const char *current_module, const char *uri, xc_request **out);
 xc_status xc_request_poll(xc_request *request);

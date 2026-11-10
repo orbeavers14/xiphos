@@ -1278,6 +1278,13 @@ std::future<ReferenceChoices> StudyWorker::reference_choices(std::string module,
     return s.reader.reference_choices(module, reference, locale_file);
   });
 }
+std::future<PassageLink> StudyWorker::resolve_localized_reference(std::string module,
+    std::string expression, std::string locale_file) {
+  return impl_->submit([module = std::move(module), expression = std::move(expression),
+                        locale_file = std::move(locale_file)](Impl::State &s) {
+    return s.reader.navigation_target(module, expression, locale_file);
+  });
+}
 std::future<PassageLink> StudyWorker::resolve_link(std::string module, std::string uri) {
   if (!detail::study_link_arguments(module, {}, uri)) return rejected_study_link<PassageLink>();
   return impl_->submit([module = std::move(module), uri = std::move(uri)](Impl::State &s) {

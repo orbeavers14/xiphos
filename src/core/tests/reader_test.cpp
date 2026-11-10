@@ -141,7 +141,7 @@ int main(int argc, char **argv) {
       xiphos::core::Reader corpus(menuroot.string());
       check(corpus.reference_choices("SelectorCorpus", "John 3:16").books.size() == 66, "mixed corpus includes both testaments");
       const auto file = menuroot / "original-reference-locale.conf";
-      { std::ofstream out(file); out << "[Meta]\nName=original-fr\nEncoding=UTF-8\n[Text]\nGenesis=Genèse\nJohn=Jean\n"; }
+      { std::ofstream out(file); out << "[Meta]\nName=original-fr\nEncoding=UTF-8\n[Text]\nGenesis=Genèse\nJohn=Jean\n[Book Abbrevs]\nJNLOCAL=John\nTOBIE=Tob\n"; }
       const auto plain = corpus.reference_choices("SelectorCorpus", "John 3:16");
       const auto localized = corpus.reference_choices("SelectorCorpus", "John 3:16", file.string());
       check(localized.book_label == "Jean" && localized.books.front().label == "Genèse", "Private locale translates selector labels");
@@ -149,6 +149,14 @@ int main(int argc, char **argv) {
       for (std::size_t i=0;i<plain.books.size();++i)
         check(localized.books[i].reference == plain.books[i].reference, "Localized labels retain exact canonical navigation targets");
       check(corpus.reference_choices("SelectorCorpus", "John 3:16").book_label == "John", "Private locale never changes default/global keys");
+      check(corpus.navigation_target("SelectorCorpus","jean 3:16",file.string()).reference == "John 3:16" &&
+            corpus.navigation_target("SelectorCorpus","JnLocal3:16",file.string()).reference == "John 3:16" &&
+            corpus.navigation_target("SelectorCorpus",u8"Gene\u0300se 1:1",file.string()).reference == "Genesis 1:1",
+            "Private localized names, aliases and Unicode equivalence resolve canonical verses");
+      bool absent=false;
+      try { (void)corpus.navigation_target("SelectorCorpus","Tobie 1:1",file.string()); }
+      catch (const std::invalid_argument &) { absent=true; }
+      check(absent,"Localized book outside selected canon rejects");
       bool refused=false;try {corpus.reference_choices("SelectorCorpus","John 3:16",(menuroot/"missing-locale").string());}catch(const std::exception&){refused=true;}
       check(refused,"Missing locale rejects without changing reader");
     }
