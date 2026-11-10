@@ -2,11 +2,13 @@
 
 A Bible-study application in development, based on [CrossWire Xiphos](https://github.com/crosswire/xiphos) and The SWORD Project. One shared C++ core powers native interfaces.
 
-| Platform | Current state |
-|---|---|
-| macOS | SwiftUI/AppKit development preview |
-| Linux | GTK4/WebKitGTK frontend in development |
-| Windows | Core validation tooling; WinUI 3 frontend planned |
+| Platform | Target OS baseline | Current state |
+|---|---|---|
+| macOS | macOS 27.0 preview minimum. macOS 26.7 is a candidate pending dependency and launch validation. | SwiftUI/AppKit development preview, tested on macOS 27.2 |
+| Linux | Fedora 45 (ARM64) is the primary Fedora target. Fedora 44, Ubuntu 24.04 LTS (x86-64), and Debian 13 (x86-64) are validation targets. | GTK4/WebKitGTK frontend in development. Fedora 45 passed a build and desktop smoke test. |
+| Windows | Windows 11 25H2 minimum target, with a 26H2 compatibility check planned. | Core validation tooling. Native MSVC validation and the WinUI 3 frontend are pending. |
+
+See the [2026 native baseline](doc/modernization/2026-native-baseline.md) for platform validation and release gates.
 
 The core covers reading, search, parallel passages, bookmarks and notes, editing,
 module management, sessions/recovery and passage sync. Native workflows and

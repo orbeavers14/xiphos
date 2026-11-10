@@ -46,6 +46,17 @@ The Mac preview requires CMake 3.20 because its fixture targets use
 See the [Linux handoff](handoff-linux.md#maintenance-baseline-on-master) for the
 shared toolchain validation that remains.
 
+## Shared core maintenance
+
+After the Fedora integration, shared core CMake now discovers pkg-config once
+for SWORD and GLib and retains explicit SDK discovery. On macOS 27.2 with
+CMake 4.4.5, the standalone Release suite had 184 passes and one optional
+BibleSync skip after the local HTTPS fixture was rerun with loopback access.
+Root, Mac preview and Linux portable-model configurations passed on the Mac,
+as did standalone core configuration with pkg-config disabled and explicit SDK
+paths. Native Windows validation remains open before removing the shared
+libarchive compatibility shim.
+
 ## Current next steps
 
 - Follow the [native interface list](native-ui-todo.md): coherent Settings navigation,

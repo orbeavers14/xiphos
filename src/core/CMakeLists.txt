@@ -16,11 +16,9 @@ endif()
 
 # Reuse the legacy dependency when built inside Xiphos. Standalone builds
 # also accept a prebuilt SWORD SDK on platforms without pkg-config.
-if(NOT TARGET PkgConfig::Sword)
-  find_package(PkgConfig QUIET)
-  if(PkgConfig_FOUND)
-    pkg_check_modules(Sword QUIET IMPORTED_TARGET GLOBAL "sword>=1.8.1")
-  endif()
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND AND NOT TARGET PkgConfig::Sword)
+  pkg_check_modules(Sword QUIET IMPORTED_TARGET GLOBAL "sword>=1.8.1")
 endif()
 if(TARGET PkgConfig::Sword)
   set(XIPHOS_SWORD_TARGET PkgConfig::Sword)
@@ -36,8 +34,7 @@ else()
   set(XIPHOS_SWORD_TARGET xiphos_sword)
 endif()
 set(XIPHOS_SWORD_EXTRA_LIBRARIES "" CACHE STRING "Extra libraries required by a static SWORD SDK (semicolon-separated)")
-# GLib is already a legacy dependency. Reuse its Unicode casing without GTK.
-find_package(PkgConfig QUIET)
+# GLib supplies Unicode casing without GTK.
 if(PkgConfig_FOUND)
   pkg_check_modules(Glib QUIET IMPORTED_TARGET GLOBAL "glib-2.0>=2.32")
 endif()
