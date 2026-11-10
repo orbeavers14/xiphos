@@ -226,3 +226,5 @@ The public tree API can append and remove nodes but has no reparent operation
 that preserves an existing node offset. A move needs to preserve or explicitly
 remap stored offsets and links. Both operations need a successful index rebuild
 and a search check before they can ship.
+
+See the [upstream bug report draft](sword-rawgenbook-index-hang.md) for reproduction steps and the candidate cursor fix.
