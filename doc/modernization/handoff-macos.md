@@ -102,6 +102,14 @@ serialization. The Mac preview built and four focused native/fixture checks
 passed, including mapped comparison restoration. These checks used disposable
 module data and profiles.
 
+## Surface search modes
+
+The Mac selected-word menu offers literal Unicode surface search and a mode
+that ignores Greek, Hebrew and Syriac combining marks. Both use the shared
+verse search pipeline and preserve existing phrase and lemma modes. The
+disposable real corpus passed on macOS 27.2 with the ICU/CLucene SWORD build.
+The Mac preview and focused reader workflow built and passed locally.
+
 ## Current next steps
 
 - Follow the [native interface list](native-ui-todo.md): coherent Settings navigation,

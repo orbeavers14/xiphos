@@ -59,7 +59,7 @@ SearchBatchResult StudySession::search_batch_impl(std::vector<SearchQuery> queri
       catch(const std::runtime_error &){group.failure=SearchBatchFailure::engine_error;}
     if(group.result){
       auto &result=*group.result;any_executed|=result.executed;
-      if(result.key_kind==SearchKeyKind::verse&&result.effective_text_options&&result.requested.text_options&&result.requested.mode!=SearchMode::phrase){
+      if(result.key_kind==SearchKeyKind::verse&&result.effective_text_options&&result.requested.text_options&&result.requested.mode!=SearchMode::phrase&&!surface_search_mode(result.requested.mode)){
         text=result.requested.text_options;result.text_options_updated=true;
       }
       output.scope_updated|=result.scope_updated;output.text_options_updated|=result.text_options_updated;

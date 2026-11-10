@@ -63,7 +63,7 @@ int main(int argc,char **argv){try{
  const auto before=session.last_search_scope().element_count;
  rejects<std::invalid_argument>([&]{session.search_batch({first,invalid});});
  check(session.last_search_scope().element_count==before,"Malformed later input is rejected before any scope publication");
- invalid=first;invalid.mode=static_cast<SearchMode>(8);rejects<std::invalid_argument>([&]{session.search_batch({invalid});});
+ invalid=first;invalid.mode=static_cast<SearchMode>(static_cast<int>(SearchMode::surface_unmarked)+1);rejects<std::invalid_argument>([&]{session.search_batch({invalid});});
  invalid=first;invalid.range=SearchRange{"Text","John1:1"};invalid.within_last_results=true;rejects<std::invalid_argument>([&]{session.search_batch({invalid});});
  invalid=first;invalid.module=std::string(4097,'x');rejects<std::invalid_argument>([&]{session.search_batch({invalid});});
  rejects<std::invalid_argument>([&]{session.search_batch({});});rejects<std::invalid_argument>([&]{session.search_batch(std::vector<SearchQuery>(33,first));});

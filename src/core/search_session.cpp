@@ -10,7 +10,7 @@ SearchResult StudySession::search_module(SearchQuery query,const SearchLimits &l
   detail::SearchGenerationBuilder generation(detail::next_search_generation_id(search_generation_serial_),{query},search_retention_limits_);
   auto scope=search_scope_;auto text=search_text_options_;detail::SearchRetainedKeys retained;
   auto result=reader_.search_impl(std::move(query),limits,control,&scope,text,true,0,100,false,&retained,generation.remaining());
-  if(result.effective_text_options&&result.requested.text_options&&result.requested.mode!=SearchMode::phrase){
+  if(result.effective_text_options&&result.requested.text_options&&result.requested.mode!=SearchMode::phrase&&!surface_search_mode(result.requested.mode)){
     text=result.requested.text_options;result.text_options_updated=true;
   }
   std::shared_ptr<const detail::SearchGeneration> staged;

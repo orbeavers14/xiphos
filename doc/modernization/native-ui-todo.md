@@ -82,10 +82,8 @@ Owner request from 2026-11-05, expanded to Greek and Aramaic on 2026-11-09:
   keyboard and VoiceOver operation, and modules without lexical metadata.
 
 The Mac reader and both Mac comparison layouts offer a Search Selected Word
-menu for one visible token. Surface-form search passes the selected Unicode to
-the existing phrase mode. The shared worker reads SWORD's verse word attributes
+menu for one visible token, with literal and mark-insensitive surface choices. The shared worker reads SWORD's verse word attributes
 and returns source-bound lemma choices, preserving literal SDK search terms.
 Modules without reliable metadata still offer surface search. The lookup can
 match unmarked selections to marked SDK words when the matching records agree.
-Accent-insensitive surface search, keyboard shortcuts and native Linux
-integration remain open.
+Keyboard shortcuts and native Linux integration remain open.

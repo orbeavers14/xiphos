@@ -527,7 +527,8 @@ void xc_library_install_plan_release(xc_library_install_plan *plan);
  * return; accepted failures surface on polling without publishing partial data. */
 typedef enum xc_search_mode { XC_SEARCH_REGEX=0, XC_SEARCH_PHRASE=1, XC_SEARCH_WORDS=2,
   XC_SEARCH_LEMMA=3, XC_SEARCH_MORPHOLOGY=4, XC_SEARCH_FOOTNOTE=5,
-  XC_SEARCH_MULTIWORD=6, XC_SEARCH_INDEXED=7 } xc_search_mode;
+  XC_SEARCH_MULTIWORD=6, XC_SEARCH_INDEXED=7,
+  XC_SEARCH_SURFACE_LITERAL=8, XC_SEARCH_SURFACE_UNMARKED=9 } xc_search_mode;
 typedef struct { int mode, case_sensitive; size_t max_results, max_reference_bytes; } xc_search_options;
 void xc_search_options_default(xc_search_options *out);
 /* Optional advanced annotation choices; strict 0/1. Exact phrase preserves prior

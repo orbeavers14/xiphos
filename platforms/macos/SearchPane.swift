@@ -85,6 +85,8 @@ struct SearchPane: View {
                     Text("Footnote text").tag(CoreSearchMode.footnote)
                     Text("Multiword").tag(CoreSearchMode.multiword)
                     Text("Indexed query").tag(CoreSearchMode.indexed)
+                    Text("Literal surface").tag(CoreSearchMode.surfaceLiteral)
+                    Text("Surface ignoring Greek, Hebrew and Syriac marks").tag(CoreSearchMode.surfaceUnmarked)
                 }.accessibilityLabel("Search match mode")
                 Picker("Scope", selection: $model.scopeChoice) {
                     ForEach(SearchScopeChoice.allCases) { Text($0.rawValue).tag($0) }

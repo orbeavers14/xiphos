@@ -44,6 +44,24 @@ int main(int argc, char **argv) try {
   syriac.range = SearchRange{"Peshitta","John 1:1"};
   check(worker.search_module(tab,syriac).get().references == std::vector<std::string>{"John 1:1"},
         "Untagged Syriac still supports surface search");
+  auto surface = [&](const char *module, const char *reference, const char *text, SearchMode mode) {
+    SearchQuery query{module,text,mode,true};
+    query.range = SearchRange{module,reference};
+    return worker.search_module(tab,query).get().references;
+  };
+  check(surface("OSHB","Genesis 1:1",u8"בְּרֵאשִׁ֖ית",SearchMode::surface_literal).size() == 1 &&
+        surface("OSHB","Genesis 1:1",u8"בראשית",SearchMode::surface_literal).empty() &&
+        surface("OSHB","Genesis 1:1",u8"בראשית",SearchMode::surface_unmarked).size() == 1,
+        "Literal and mark-insensitive Hebrew surface search");
+  check(surface("OSHB","Daniel 2:4",u8"מלכא",SearchMode::surface_literal).empty() &&
+        surface("OSHB","Daniel 2:4",u8"מלכא",SearchMode::surface_unmarked).size() == 1,
+        "Mark-insensitive Biblical Aramaic surface search");
+  check(surface("MorphGNT","John 1:1",u8"Ἐν",SearchMode::surface_literal).size() == 1 &&
+        surface("MorphGNT","John 1:1",u8"Εν",SearchMode::surface_literal).empty() &&
+        surface("MorphGNT","John 1:1",u8"Εν",SearchMode::surface_unmarked).size() == 1,
+        "Literal and mark-insensitive Greek surface search");
+  check(surface("Peshitta","John 1:1",u8"ܒܪܫܝܬ",SearchMode::surface_unmarked).size() == 1,
+        "Untagged Syriac participates in Unicode surface search");
   for (const auto &term : accented) {
     SearchQuery query{"MorphGNT",term,SearchMode::lemma};
     query.range = SearchRange{"MorphGNT","John 1:1"};

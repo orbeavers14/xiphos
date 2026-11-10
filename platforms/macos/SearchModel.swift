@@ -230,7 +230,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
         bounds = text; scopeChoice = .bounds
         message = "Saved range applied. Check the bounds module before searching."
     }
-    func searchSelectedWord(_ word: ReadingWordSelection, lemma: String?) -> Bool {
+    func searchSelectedWord(_ word: ReadingWordSelection, lemma: String?, ignoreMarks: Bool = false) -> Bool {
         guard !closed, !isBusy, lemma.map(word.lemmas.contains) ?? true,
               allModules.contains(where: { $0.id == word.module && $0.hasVerseSearch })
         else { return false }
@@ -238,7 +238,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
         searchMultipleModules = false
         module = word.module
         expression = lemma ?? word.text
-        mode = lemma == nil ? .phrase : .lemma
+        mode = lemma == nil ? (ignoreMarks ? .surfaceUnmarked : .surfaceLiteral) : .lemma
         caseSensitive = true
         scopeChoice = .all
         setAnnotationOptions = false

@@ -1262,15 +1262,16 @@ struct LexiconPreferencesView: View {
 struct ReadingWordSearchMenu: View {
     let model: ReaderModel
     let word: ReadingWordSelection
-    let search: (ReadingWordSelection, String?) -> Void
+    let search: (ReadingWordSelection, String?, Bool) -> Void
     @State private var resolved: ReadingWordSelection?
 
     var body: some View {
         let choices = resolved ?? word
         Menu("Search Selected Word") {
-            Button("Surface form: " + choices.text) { search(choices, nil) }
+            Button("Literal surface: " + choices.text) { search(choices, nil, false) }
+            Button("Surface without Greek, Hebrew or Syriac marks") { search(choices, nil, true) }
             ForEach(choices.lemmas, id: \.self) { term in
-                Button("Lemma: " + term) { search(choices, term) }
+                Button("Lemma: " + term) { search(choices, term, false) }
             }
         }.task(id: word) {
             resolved = nil
@@ -1284,8 +1285,8 @@ struct ReaderWindow: View {
     @StateObject private var model: ReaderModel
     @State private var sidebar = "modules"
     @State private var selectedWord: ReadingWordSelection?
-    private func searchWord(_ word: ReadingWordSelection, lemma: String?) {
-        if model.search.searchSelectedWord(word, lemma: lemma) { sidebar = "search" }
+    private func searchWord(_ word: ReadingWordSelection, lemma: String?, ignoreMarks: Bool) {
+        if model.search.searchSelectedWord(word, lemma: lemma, ignoreMarks: ignoreMarks) { sidebar = "search" }
     }
     private var closeOnDisappear = true
     init(model: ReaderModel) {

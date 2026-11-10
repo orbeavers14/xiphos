@@ -23,6 +23,10 @@ const char *mode_name(SearchMode mode)
 		return "Footnote";
 	case SearchMode::multiword:
 		return "Multiword";
+	case SearchMode::surface_literal:
+		return "Literal surface";
+	case SearchMode::surface_unmarked:
+		return "Surface ignoring Greek, Hebrew and Syriac marks";
 	case SearchMode::indexed:
 		return "Raw indexed query";
 	}

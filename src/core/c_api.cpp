@@ -549,7 +549,7 @@ struct CopiedSearch {xiphos::core::SearchQuery query;xiphos::core::SearchLimits 
 CopiedSearch copy_search_inputs(const char *module,const char *expression,const xc_search_options *options,
   const char *range_module,const char *range_expression,bool within_last,const xc_search_text_options *text){
   xc_search_options copy;xc_search_options_default(&copy);if(options)copy=*options;
-  if(!module||!expression||copy.mode<XC_SEARCH_REGEX||copy.mode>XC_SEARCH_INDEXED||
+  if(!module||!expression||copy.mode<XC_SEARCH_REGEX||copy.mode>XC_SEARCH_SURFACE_UNMARKED||
      (copy.case_sensitive!=0&&copy.case_sensitive!=1)||!copy.max_results||copy.max_results>xiphos::core::maximum_search_results||
      !copy.max_reference_bytes||copy.max_reference_bytes>xiphos::core::maximum_search_reference_bytes)
     throw std::invalid_argument("Invalid search inputs");

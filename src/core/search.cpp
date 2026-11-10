@@ -26,10 +26,12 @@ class ScopedSearchFilters {
   struct Setting {sword::SWOptionFilter *filter;std::string prior,desired;};
   std::vector<Setting> saved_;
 public:
-  explicit ScopedSearchFilters(EngineManager &manager,const std::optional<SearchTextOptions> &text) {
+  explicit ScopedSearchFilters(EngineManager &manager,const std::optional<SearchTextOptions> &text, bool surface) {
     for(auto *filter:manager.option_filters()) {
       const std::string name=filter->getOptionName();const char *desired=nullptr;
-      if(name=="Greek Accents"||name=="Hebrew Vowel Points"||name=="Arabic Vowel Points")desired="Off";
+      if(name=="Greek Accents"||name=="Hebrew Vowel Points"||name=="Arabic Vowel Points")
+        desired=surface?"On":"Off";
+      else if(surface&&name=="Hebrew Cantillation")desired="On";
       else if(text){for(const auto &setting:search_text_settings(*text))if(name==setting.name)desired=setting.enabled?"On":"Off";}
       if(!desired)continue;
       const auto *value=filter->getOptionValue();
@@ -47,6 +49,82 @@ struct ScopedSearchModule {
   explicit ScopedSearchModule(sword::SWModule &m):module(m),attributes(m.isProcessEntryAttributes()),skip_links(m.isSkipConsecutiveLinks()){}
   ~ScopedSearchModule(){module.setProcessEntryAttributes(attributes);module.setSkipConsecutiveLinks(skip_links);module.terminateSearch=false;}
 };
+std::string surface_key(const std::string &text, bool unmarked, bool sensitive) {
+  using OwnedText = std::unique_ptr<char, decltype(&g_free)>;
+  OwnedText folded(sensitive ? g_strdup(text.c_str()) : g_utf8_casefold(text.data(),text.size()), &g_free);
+  if (!folded) throw std::runtime_error("Unable to case-fold surface text");
+  OwnedText normalized(g_utf8_normalize(folded.get(),-1,G_NORMALIZE_NFD), &g_free);
+  if (!normalized) throw std::runtime_error("Unable to normalize surface text");
+  if (!unmarked) return normalized.get();
+  std::string result;
+  GUnicodeScript base = G_UNICODE_SCRIPT_UNKNOWN;
+  for (const char *at = normalized.get(); *at; at = g_utf8_next_char(at)) {
+    const auto scalar = g_utf8_get_char(at);
+    if (g_unichar_ismark(scalar)) {
+      if (base == G_UNICODE_SCRIPT_GREEK || base == G_UNICODE_SCRIPT_HEBREW ||
+          base == G_UNICODE_SCRIPT_SYRIAC) continue;
+    } else {
+      base = g_unichar_get_script(scalar);
+    }
+    result.append(at,g_utf8_next_char(at));
+  }
+  return result;
+}
+bool contains_surface(const std::string &text,const std::string &needle) {
+  for (auto at = text.find(needle); at != std::string::npos; at = text.find(needle,at+1)) {
+    const auto end = at + needle.size();
+    // A literal query ending in a base letter cannot match a prefix of a
+    // marked grapheme, including Hebrew marks without precomposed forms.
+    if (end == text.size() || !g_unichar_ismark(g_utf8_get_char(text.data()+end))) return true;
+  }
+  return false;
+}
+sword::ListKey scan_surface(sword::SWModule &module, const sword::ListKey *range,
+    const std::string &needle, bool unmarked, bool sensitive,
+    const std::shared_ptr<SearchControl> &control, unsigned begin, unsigned end) {
+  sword::ListKey matches;
+  std::unique_ptr<sword::SWKey> scope(range ? range->clone() : nullptr);
+  auto *original = module.getKey();
+  std::unique_ptr<sword::SWKey> saved(original->isPersist() ? nullptr : original->clone());
+  struct Restore {
+    sword::SWModule &module;
+    const sword::SWKey &key;
+    ~Restore() { module.setKey(key); }
+  } restore{module, saved ? *saved : *original};
+  if (scope) {
+    scope->setPersist(true);
+    module.setKey(*scope);
+  } else if (original->isPersist()) {
+    scope.reset(original->clone());
+    scope->setPersist(true);
+    module.setKey(*scope);
+  }
+  module.setProcessEntryAttributes(false);
+  module.setPosition(sword::BOTTOM);
+  const auto last = module.getKey()->getIndex();
+  module.setPosition(sword::TOP);
+  std::unique_ptr<sword::SWKey> match(module.createKey());
+  auto *verse = dynamic_cast<sword::VerseKey *>(match.get());
+  if (!verse) throw std::runtime_error("Surface search requires a verse key");
+  std::size_t count = 0, bytes = 0;
+  while (!module.popError() && !(control && control->cancel_requested())) {
+    if (++count > maximum_search_retained_elements) throw std::length_error("Surface verse traversal limit");
+    auto plain = copy_sdk_text(strip_sdk_buffer(module,nullptr),1024*1024);
+    if (plain.size() > 128*1024*1024 - bytes) throw std::length_error("Surface text traversal limit");
+    bytes += plain.size();
+    if (contains_surface(surface_key(plain,unmarked,sensitive),needle)) {
+      verse->positionFrom(*module.getKey());
+      verse->clearBounds();
+      matches.add(*verse);
+    }
+    if (control && last > 0) {
+      const auto index = std::max(0L,std::min(last,module.getKey()->getIndex()));
+      SearchControlAccess::progress(*control,begin + static_cast<unsigned>(index*(end-begin)/last));
+    }
+    module++;
+  }
+  return matches;
+}
 struct ProgressContext {sword::SWModule *module;SearchControl *control;std::thread::id owner;unsigned begin,end;};
 void search_percent(char percent,void *user) noexcept {
   auto &context=*static_cast<ProgressContext *>(user);
@@ -89,6 +167,8 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   std::optional<AttributeSearch> attribute;
   switch(query.mode){
     case SearchMode::regular_expression:engine_type=xiphos::core::detail::sdk_search_regex;break;
+    case SearchMode::surface_literal:
+    case SearchMode::surface_unmarked:
     case SearchMode::phrase:engine_type=xiphos::core::detail::sdk_search_phrase;break;
     case SearchMode::words:
     case SearchMode::multiword:
@@ -114,8 +194,10 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   if(control&&control->cancel_requested()) {
     SearchResult result{std::move(query),{},engine_type,0,{},false};result.cancelled=true;return result;
   }
-  const auto effective_text=query.mode!=SearchMode::phrase&&query.text_options?query.text_options:previous_text;
-  ScopedSearchFilters filters(manager,effective_text);ScopedSearchModule state(module);
+  const bool surface = surface_search_mode(query.mode);
+  const bool unmarked = query.mode == SearchMode::surface_unmarked;
+  const auto effective_text=query.mode!=SearchMode::phrase&&!surface&&query.text_options?query.text_options:previous_text;
+  ScopedSearchFilters filters(manager,effective_text,surface);ScopedSearchModule state(module);
   std::optional<sword::ListKey> interval;
   if(query.keyed_interval){
     // Enumerate real SDK order, not lexical/verse guesses. Never fuzzy-resolve
@@ -146,6 +228,8 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   if(attribute){auto value=attribute_search_text(query.expression,*attribute);prepared=std::move(value.expression);whole_entry=value.whole_entry;}
   const auto stripped_buffer=strip_sdk_buffer(module,prepared.c_str());
   const auto stripped=copy_sdk_text(stripped_buffer,maximum_search_effective_bytes);
+  const auto needle = surface ? surface_key(stripped,unmarked,query.case_sensitive) : std::string{};
+  if (surface && needle.empty()) throw std::invalid_argument("Surface search has no searchable text");
   if(control&&control->cancel_requested()) {
     SearchResult result{std::move(query),stripped,engine_type,0,{},false};result.cancelled=true;result.effective_text_options=effective_text;result.index_fallback=index_fallback;return result;
   }
@@ -154,7 +238,10 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   }
   ProgressContext context{&module,control.get(),std::this_thread::get_id(),progress_begin,progress_end};
   const int flags=(query.case_sensitive?0:XIPHOS_SWORD_SEARCH_ICASE_FLAG)|(whole_entry?xiphos::core::detail::sdk_search_whole_entry:0);
-  auto &sdk_list=module.search(stripped.c_str(),engine_type,flags,
+  sword::ListKey surface_matches;
+  if (surface) surface_matches = scan_surface(module,range?&*range:nullptr,needle,unmarked,
+      query.case_sensitive,control,progress_begin,progress_end);
+  auto &sdk_list=surface ? surface_matches : module.search(stripped.c_str(),engine_type,flags,
                            range?&*range:nullptr,nullptr,search_percent,&context);
   // Some SDK indexed tree searches ignore arbitrary-key ranges. Enforce the
   // authoritative same-source scope before counts, sorting, retention or export.

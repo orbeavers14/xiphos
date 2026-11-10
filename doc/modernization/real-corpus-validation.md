@@ -96,8 +96,11 @@ downloads and prints no module text. It checks that corpus bytes remain unchange
 
 The SDK lookup first uses canonically equivalent surface text. When no exact
 match exists, a mark-folded lookup returns lemma terms only if the candidates
-agree. This matching applies to metadata lookup. Surface searches still use
-the module's current phrase search behavior. The returned C snapshot owns the
+agree. This matching applies to metadata lookup. Explicit literal and mark-insensitive
+surface modes share the same bounded verse-search pipeline. Literal matches
+preserve marks and accept canonical Unicode equivalents. The mark-insensitive
+mode removes combining marks attached to Greek, Hebrew and Syriac characters.
+Legacy phrase searches retain their existing behavior. The returned C snapshot owns the
 actual module, canonical reference, original surface and ordered terms.
 
 The SDK does not supply shifted mappings for every pair of canons. The test

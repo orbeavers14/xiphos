@@ -45,7 +45,7 @@ int main(int argc,char **argv){try{
  const char *missing[]={"Text",nullptr};rejects(missing,2,&query,nullptr);
  query.module="Text";rejects(pair,2,&query,nullptr);query.module=nullptr;query.scope=static_cast<xc_search_scope_kind>(3);rejects(pair,2,&query,nullptr);
  query.scope=XC_SEARCH_SCOPE_BOUNDS;rejects(pair,2,&query,nullptr);query.scope=XC_SEARCH_SCOPE_ALL;query.range_module="Text";rejects(pair,2,&query,nullptr);query.range_module=nullptr;
- options.mode=8;rejects(pair,2,&query,nullptr);options.mode=XC_SEARCH_PHRASE;options.case_sensitive=2;rejects(pair,2,&query,nullptr);options.case_sensitive=0;
+ options.mode=XC_SEARCH_SURFACE_UNMARKED+1;rejects(pair,2,&query,nullptr);options.mode=XC_SEARCH_PHRASE;options.case_sensitive=2;rejects(pair,2,&query,nullptr);options.case_sensitive=0;
  text={2,0,0};query.text_options=&text;rejects(pair,2,&query,nullptr);query.text_options=nullptr;
  budget={0,1024};rejects(pair,2,&query,&budget);budget={1,8*1024*1024+1};rejects(pair,2,&query,&budget);
  check(xc_worker_search_modules(nullptr,a,pair,2,&query,nullptr,&request)==XC_INVALID_ARGUMENT&&!request&&xc_worker_search_modules(worker,a,pair,2,&query,nullptr,nullptr)==XC_INVALID_ARGUMENT,"NULL worker/output contracts");

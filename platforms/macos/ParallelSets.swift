@@ -105,7 +105,7 @@ private struct NativeParallelSetsPane: View {
 struct NativeParallelChapterPane: View {
     @ObservedObject var model: ReaderModel
     let chapter: CoreParallelChapter
-    var onSearchWord: ((ReadingWordSelection, String?) -> Void)? = nil
+    var onSearchWord: ((ReadingWordSelection, String?, Bool) -> Void)? = nil
     @State private var verseOffset: Int?
     @State private var selectedWord: ReadingWordSelection?
 
