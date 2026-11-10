@@ -276,3 +276,11 @@ a writable book with separate `/Journal` and `/Prayers` sections. Each accepts
 the shared section creation and editing operations. The core test creates
 entries in both and reopens them after restarting the worker. Native organizer
 controls and journal-specific presentation are separate frontend work.
+
+`xc_worker_delete_book_subtree` explicitly removes a section and its
+descendants with the same revision and patched-SWORD requirements. It clears
+descendant tab selections, rejects detached offset links, and removes
+detached text from both sequential and rebuilt indexed search. The staged
+operation preserves the rest of the book and restores the original files
+and index if session refresh fails. This is logical deletion, with no
+compaction of the underlying RawGenBook files.

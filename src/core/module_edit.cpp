@@ -13,6 +13,7 @@
 #include <atomic>
 #include <chrono>
 #include <map>
+#include <set>
 #include <stdexcept>
 namespace xiphos::core {
 bool module_edit_arguments(const ModuleEditTarget &t) noexcept {return !t.module.empty()&&t.module.size()<=4096&&t.module.find('\0')==t.module.npos&&!t.reference.empty()&&t.reference.size()<=32768&&t.reference.find('\0')==t.reference.npos&&editable_document_text(t.module)&&editable_document_text(t.reference);}
@@ -63,12 +64,12 @@ struct ModuleEditStorage::Impl {
        t.move_book_parent.front()!='/' || t.move_book_parent.size()>4096 ||
        !editable_document_text(t.move_book_parent)))
     throw std::invalid_argument("Invalid general-book move target");
-  if (t.delete_book_leaf) {
+  if (t.delete_book_leaf || t.delete_book_subtree) {
 #ifndef XIPHOS_SWORD_SAFE_BOOK_DELETE
     throw std::invalid_argument("Book deletion requires the reviewed SWORD indexing patch");
 #endif
     if (driver!="RawGenBook" || t.create_book_entry || !t.rename_book_leaf.empty() || !t.move_book_parent.empty())
-      throw std::invalid_argument("Deletion requires an existing general-book leaf");
+      throw std::invalid_argument("Deletion requires an existing general-book section");
   }
   if(t.create_book_entry){
    if(driver!="RawGenBook"||t.reference.size()<2||t.reference.size()>4096||t.reference.front()!='/'||t.reference.back()=='/')throw std::invalid_argument("Book creation requires an absolute new tree path");
@@ -125,10 +126,35 @@ ModuleEditEntry ModuleEditStorage::stage(const std::string &expected,const std::
  }
  (void)impl_->entry(*module,before);if(!module->isWritable())throw std::invalid_argument("Module data is read-only");module->popError();
  if(impl_->target.create_book_entry){auto *tree=dynamic_cast<sword::TreeKeyIdx *>(module->getKey());if(!tree)throw std::runtime_error("Missing staged tree key");tree->popError();tree->assureKeyPath(impl_->target.reference.c_str());tree->save();if(tree->getError()||tree->getOffset()==0||std::string(tree->getText())!=impl_->target.reference)throw std::runtime_error("Staged book path creation did not verify");}
- if (impl_->target.delete_book_leaf) {
-  if (erase || !text.empty()) throw std::invalid_argument("Leaf deletion takes no replacement text");
+ if (impl_->target.delete_book_leaf || impl_->target.delete_book_subtree) {
+  if (erase || !text.empty()) throw std::invalid_argument("Book deletion takes no replacement text");
   auto *tree = dynamic_cast<sword::TreeKeyIdx *>(module->getKey());
-  if (!tree || tree->hasChildren()) throw std::invalid_argument("Only leaf sections can be deleted");
+  if (!tree || (!impl_->target.delete_book_subtree && tree->hasChildren()))
+    throw std::invalid_argument("Only leaf sections can be deleted by this operation");
+  const auto root=tree->getOffset();
+  std::vector<unsigned long> pending{root};
+  std::set<unsigned long> visited{root};
+  // RawGenBook unlinks the root but keeps the slots. Clear the data pointers
+  // in the private copy so sequential SDK scans cannot return deleted prose.
+  while (!pending.empty()) {
+    const auto offset=pending.back();
+    pending.pop_back();
+    tree->setOffset(offset);
+    if (tree->getError()) throw std::runtime_error("Invalid staged book subtree");
+    sword::TreeKeyIdx child(*tree);
+    if (child.firstChild()) {
+      do {
+        const auto address=child.getOffset();
+        if (child.getError() || visited.size()>=65536 || !visited.insert(address).second)
+          throw std::runtime_error("Book subtree is cyclic or exceeds its deletion limit");
+        pending.push_back(address);
+      } while (child.nextSibling());
+    }
+    module->setEntry("",0);
+    if (tree->getError() || module->popError()) throw std::runtime_error("Cannot clear staged book entry");
+  }
+  tree->setOffset(root);
+  if (tree->getError()) throw std::runtime_error("Cannot position staged book subtree");
   tree->remove();
   module->flush();
   if (tree->getError() || module->popError()) throw std::runtime_error("SWORD book deletion failed");

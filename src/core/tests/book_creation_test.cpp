@@ -79,13 +79,30 @@ int main(int argc,char **argv)try{
   check(!deleted.offset && deleted.text.empty() && !worker.book_document_selection(other).get(),
         "Staged deletion removes the leaf and clears its open selection");
   rejects([&]{(void)worker.read_module_edit(tab,{target.module,leaf.reference}).get();});
+  const ModuleEditTarget trash{target.module,"/Prayers/Trash/Child",true};
+  const auto pending_child=worker.read_module_edit(tab,trash).get();
+  const auto trash_child=worker.save_module_edit(tab,trash,pending_child.revision,"uniquedeletedbranch").get();
+  const auto trash_root=worker.read_module_edit(tab,{target.module,"/Prayers/Trash"}).get();
+  (void)worker.select_book_document(other,{target.module,trash_child.offset}).get();
+  rejects([&]{(void)worker.save_module_edit(tab,{target.module,trash_root.reference,false,{},false,{},true},trash_root.revision,"").get();});
+  const auto removed=worker.save_module_edit(tab,{target.module,trash_root.reference,false,{},false,{},false,true},trash_root.revision,"").get();
+  check(!removed.offset&&!worker.book_document_selection(other).get(),"Subtree deletion clears descendant selection");
+  const auto gone=worker.search_mixed_batch_task(tab,{{target.module,"uniquedeletedbranch",SearchMode::phrase}}).result.get();
+  check(!gone.failures&&!gone.copied_results,"Sequential search omits deleted subtree prose before reindexing");
+  for(const auto &entry:{trash_root,trash_child}) {
+    rejects([&]{(void)worker.read_module_edit(tab,{target.module,entry.reference}).get();});
+    bool detached=false;
+    try{(void)worker.book_tree(target.module,entry.offset).get();}
+    catch(const std::out_of_range &){detached=true;}
+    check(detached,"Removed subtree no longer resolves by legacy offset");
+  }
 #endif
   rejects([&]{(void)worker.read_module_edit(tab,{"Personal","John3:16",true}).get();});
  }
  {EngineManager manager(root.string().c_str(),true,new sword::MarkupFilterMgr(sword::FMT_XHTML),false,false);auto *module=manager.getModule("CaptureBook");module->createSearchFramework();if(required)check(supports_indexed_search(*module),"Rollback fixture needs an actual existing index");
 #ifdef XIPHOS_SWORD_SAFE_BOOK_DELETE
   check(supports_indexed_search(*module)&&module->search("uniquedeletedword",-4).getCount()==0&&
-        module->search("seed",-4).getCount()==1,"Rebuilt index omits deleted leaf and retains original");
+        module->search("uniquedeletedbranch",-4).getCount()==0&&module->search("seed",-4).getCount()==1,"Rebuilt index omits deleted leaf and retains original");
 #endif
   if(move_required){
    auto &hits=module->search("External",-4);
@@ -102,11 +119,12 @@ int main(int argc,char **argv)try{
   const auto original=reader.read_module_edit({"CaptureBook","/Original"});
   const auto before=bytes(root/"data");
   std::vector<ModuleEditTarget> operations{{"CaptureBook","/Original",false,{},false,{},true}};
+  operations.push_back({"CaptureBook","/Prayers",false,{},false,{},false,true});
   if(move_required) operations.push_back({"CaptureBook","/Original",false,{},false,"/Prayers"});
   for(const auto &operation:operations){
    bool refreshed=false, failed=false;
    try{
-    reader.save_module_edit(operation,original.revision,"",false,[&]{
+    reader.save_module_edit(operation,reader.read_module_edit({operation.module,operation.reference}).revision,"",false,[&]{
      refreshed=true;
      throw std::runtime_error("Injected refresh failure");
     });

@@ -24,6 +24,22 @@ void position(sword::TreeKeyIdx &key, std::uint64_t offset) {
   if (key.popError() || key.getOffset() != offset)
     throw std::out_of_range("General-book node does not exist");
 }
+void require_reachable(sword::TreeKeyIdx &key) {
+  sword::TreeKeyIdx ancestor(key);
+  std::size_t traversed=0, depth=0;
+  while (ancestor.getOffset()) {
+    const auto child=ancestor.getOffset();
+    if (++depth>256) throw std::runtime_error("General-book ancestry is cyclic or too deep");
+    if (!ancestor.parent() || ancestor.popError())
+      throw std::out_of_range("General-book node is detached");
+    sword::TreeKeyIdx sibling(ancestor);
+    if (!sibling.firstChild()) throw std::out_of_range("General-book node is detached");
+    while (sibling.getOffset()!=child) {
+      if (++traversed>65536 || !sibling.nextSibling() || sibling.popError())
+        throw std::out_of_range("General-book node is detached or exceeds the lookup limit");
+    }
+  }
+}
 std::unique_ptr<sword::TreeKeyIdx> source_key(sword::SWModule &module) {
   if (!indexed_book(module))
     throw std::invalid_argument("Module has no supported general-book indexed key");
@@ -83,6 +99,7 @@ bool indexed_book(const sword::SWModule &module) {
 BookTree capture_book_tree(sword::SWModule &module, std::uint64_t offset) {
   auto key = source_key(module);
   position(*key, offset);
+  require_reachable(*key);
   return snapshot(*key, module.getName());
 }
 namespace {
@@ -193,6 +210,7 @@ BookChildren capture_book_children(sword::SWModule &module, std::uint64_t parent
   if (!limit || limit > 256) throw std::invalid_argument("Book child page limit must be 1 through 256");
   auto key = source_key(module);
   position(*key, parent);
+  require_reachable(*key);
   BookChildren result;
   result.module = module.getName();
   result.parent = node(*key, result.module);
@@ -205,6 +223,7 @@ BookChildren capture_book_children(sword::SWModule &module, std::uint64_t parent
   if (after) {
     position(*key, *after);
     direct_child();
+    require_reachable(*key);
     visited.insert(key->getOffset());
     if (!key->nextSibling()) return result;
   } else if (!key->firstChild()) return result;
