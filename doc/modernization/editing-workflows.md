@@ -214,3 +214,15 @@ before publication. Open tabs pointing to that leaf follow the new path.
 retain their offsets and content, and open descendant tabs follow the new path.
 Existing session files are not rewritten. Move and node deletion are separate
 operations.
+
+### Move and deletion
+
+SWORD's RawGenBook deletion unlinks the tree node but leaves its index slot.
+SWORD's index builder walks those slots and also follows sibling links. In the
+macOS test, the leaf disappeared from path lookup and its parent survived, but
+the subsequent index rebuild hung even when the leaf body was cleared first.
+
+The public tree API can append and remove nodes but has no reparent operation
+that preserves an existing node offset. A move needs to preserve or explicitly
+remap stored offsets and links. Both operations need a successful index rebuild
+and a search check before they can ship.
