@@ -21,8 +21,17 @@ and omits the deleted child.
 **Observed in Xiphos:** The child disappeared from path lookup and the parent
 survived. The subsequent index rebuild exceeded a 60-second test timeout.
 Clearing the child body before unlinking did not prevent the hang. This
-sequence was reproduced in Xiphos's general-book fixture. The shorter
-SDK-only sequence above still needs independent confirmation.
+sequence was reproduced in Xiphos's general-book fixture and independently
+with the [SDK-only reproducer](rawgenbook-index-reproducer.cpp). The stock
+SDK printed `Rebuilding after deletion` and reached a six-second alarm.
+
+Compile against an installed CLucene-enabled SWORD, then pass a fresh
+directory. The alarm prevents the reproduction from running indefinitely.
+
+```sh
+c++ -std=c++17 rawgenbook-index-reproducer.cpp $(pkg-config --cflags --libs sword) -o reproduce
+perl -e 'alarm 6; exec @ARGV' ./reproduce "$(mktemp -d)/library"
+```
 
 ## Candidate fix
 
