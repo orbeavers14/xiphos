@@ -10,8 +10,9 @@ platforms/linux/core.sh --install-deps
 platforms/linux/core.sh --sanitize
 ```
 
-The first command installs the compiler, CMake, Ninja, pkg-config, SWORD,
-GLib, libxml2, SQLite3 >=3.31, libpng >=1.6 and zlib development packages using sudo when necessary. Installation
+The first command installs the compiler, CMake, Ninja, pkg-config, Python 3, OpenSSL, SWORD,
+GLib, libxml2, SQLite3 >=3.31, libpng >=1.6, zlib, curl >=7.62 and libarchive >=3.6
+development packages using sudo when necessary. Installation
 requires administrator privileges and network access. Omit `--install-deps`
 when the dependencies are already installed. No GTK packages are needed.
 

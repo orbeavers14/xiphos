@@ -1,5 +1,21 @@
 # Linux / Fedora / WSL2 chat handoff
 
+## Parallel link desktop check (2026-11-09)
+
+On `linux/november-mac-parity` at `050fdf91` with local changes, the parallel
+WebKit view now executes the isolated host click listener while disabling
+page-authored JavaScript through WebKit settings and the existing document CSP.
+The desktop smoke waits for the matching populated view, uses the generated
+John 1 fixture, verifies an inline module handler stays disabled, and follows
+the link inside nested markup through the host cell.
+
+Fedora 45 ARM64, GTK 4.24.1 and WebKitGTK 2.54.2: the GTK4 preview and smoke
+executable built. The generated-fixture desktop smoke passed. CTest recorded
+203 passes and one optional BibleSync skip in 34.50 seconds with local loopback
+available. These checks cover the Linux parity checkout. Integrate the branch
+with current master and repeat its desktop and sanitizer checks before release.
+
+
 Active 2026-11-03: `linux/november-mac-parity`, based on `23d0142f`.
 Owner requests catch-up to current Mac. Start with typed mixed search, exact
 keyed activation/preview/links, intervals, BMP export and saved-list editing,

@@ -98,6 +98,11 @@ GtkWidget *StudyUI::parallel_pane()
 	parallel_confirm_ = gtk_check_button_new_with_label("Confirm replacement or removal of selected set");
 	gtk_box_append(GTK_BOX(parallel_box_), parallel_confirm_);
 	gtk_box_append(GTK_BOX(parallel_box_), view(&parallel_view_, false));
+	// The isolated host world's click listeners need script execution. Keep
+	// page-authored scripts disabled here and through the document's CSP.
+	auto *settings = webkit_web_view_get_settings(parallel_view_);
+	webkit_settings_set_enable_javascript_markup(settings, FALSE);
+	webkit_settings_set_enable_javascript(settings, TRUE);
 	g_object_set_data(G_OBJECT(parallel_view_), "parallel", GINT_TO_POINTER(1));
 	auto *manager = webkit_web_view_get_user_content_manager(parallel_view_);
 	webkit_user_content_manager_register_script_message_handler(manager, "xiphosParallel", "xiphos-host");
@@ -124,7 +129,13 @@ GtkWidget *StudyUI::parallel_pane()
 					 return;
 				 auto *script = static_cast<const char *>(g_object_get_data(G_OBJECT(view), "parallel-populate"));
 				 if (script)
-					 webkit_web_view_evaluate_javascript(view, script, -1, "xiphos-host", nullptr, nullptr, nullptr, nullptr);
+                     webkit_web_view_evaluate_javascript(view, script, -1, "xiphos-host", nullptr, nullptr,
+                       +[](GObject *source, GAsyncResult *result, gpointer) {
+                         GError *error=nullptr;auto *value=webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(source),result,&error);
+                         if(error)g_warning("Parallel presentation: %s",error->message);
+                         if(value&&jsc_value_is_number(value))g_object_set_data(source,"parallel-ready",GINT_TO_POINTER(jsc_value_to_int32(value)));
+                         g_clear_object(&value);g_clear_error(&error);
+                       }, nullptr);
 			 })),
 			 nullptr);
 	return parallel_box_;
@@ -161,7 +172,7 @@ void StudyUI::update_parallel()
 			for (size_t c = 0; c < p.columns.size(); ++c) {
 				script += "{const cell=cells[" + std::to_string(r) + "][" + std::to_string(c) + "];cell.innerHTML=" + javascript_string(p.rows[r].cells[c].html) + ";cell.addEventListener('click',e=>{const a=e.target.closest('a[href]');if(!a||!cell.contains(a))return;e.preventDefault();e.stopPropagation();window.webkit.messageHandlers.xiphosParallel.postMessage({row:" + std::to_string(r) + ",column:" + std::to_string(c) + ",revision,uri:a.getAttribute('href')});},true);}";
 			}
-		script += "})();";
+		script += "return revision;})();";
 		g_object_set_data_full(G_OBJECT(parallel_view_), "parallel-populate", g_strdup(script.c_str()), g_free);
 		webkit_web_view_load_html(parallel_view_, page.c_str(), "xiphos-preview://study/");
 		gtk_editable_set_text(GTK_EDITABLE(parallel_reference_), p.reference.c_str());

@@ -62,26 +62,41 @@ struct StudyUISmoke {
         check(model->passage().bible == "Commentary", "Activated row uses actual module");
         check(gtk_widget_get_sensitive(ui->search_start_), "Search controls recover after reading");
 	gtk_editable_set_text(GTK_EDITABLE(ui->parallel_modules_), "Text,Commentary,Text");
-	gtk_editable_set_text(GTK_EDITABLE(ui->parallel_reference_), "John3:16");
+	gtk_editable_set_text(GTK_EDITABLE(ui->parallel_reference_), "John1:1");
 	click(ui->parallel_box_, "Read");
 	++stage;
 	break;
       case 7:
-	      if (!model->parallel().revision || webkit_web_view_is_loading(ui->parallel_view_))
+	      if (!model->parallel().revision || webkit_web_view_is_loading(ui->parallel_view_) || GPOINTER_TO_INT(g_object_get_data(G_OBJECT(ui->parallel_view_), "parallel-ready")) != int(model->parallel().revision))
 		      break;
 	      check(model->parallel().columns.size() == 3 && model->parallel().columns[0].module == "Text", "Native parallel control keeps ordered duplicates");
 	      if (!dom_pending) {
 		      dom_pending = true;
-		      const char *script = R"JS((()=>{const table=document.querySelector('body > table'),cell=table?.tBodies[0]?.rows[0]?.cells[1];if(!cell||!cell.textContent.includes('Original'))return false;cell.innerHTML='<table><tr><td data-row="0" data-column="1"><a href="sword://Text/John3:17">Original injected nested cell</a></td></tr></table>';cell.querySelector('a').click();return table.tBodies[0].rows[0].cells.length===4;})())JS";
-		      webkit_web_view_evaluate_javascript(ui->parallel_view_, script, -1, "xiphos-host", nullptr, nullptr, +[](GObject *view, GAsyncResult *result, gpointer data) {auto*s=static_cast<StudyUISmoke*>(data);GError*error=nullptr;auto*value=webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(view),result,&error);s->dom_ok=value&&!error&&jsc_value_to_boolean(value);s->dom_done=true;g_clear_object(&value);g_clear_error(&error); }, this);
+		      const char *script = R"JS(
+(() => {
+  const table = document.querySelector('body > table');
+  const cell = Array.from(table?.tBodies[0]?.rows || [])
+    .map(row => row.cells[1]).find(cell => cell.textContent.trim().length > 0);
+  if (!cell) return false;
+  cell.innerHTML = `<span onclick="this.dataset.executed='yes'">Original inline handler</span>
+    <table><tr><td data-row="0" data-column="1">
+    <a href="sword://Text/John1:2">Original nested cell</a></td></tr></table>`;
+  const span = cell.querySelector('span');
+  span.click();
+  if (span.dataset.executed) return false;
+  cell.querySelector('a').click();
+  return table.tBodies[0].rows[0].cells.length === 4;
+})()
+)JS";
+		      webkit_web_view_evaluate_javascript(ui->parallel_view_, script, -1, "xiphos-host", nullptr, nullptr, +[](GObject *view, GAsyncResult *result, gpointer data) {auto*s=static_cast<StudyUISmoke*>(data);GError*error=nullptr;auto*value=webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(view),result,&error);if(error)std::cerr<<"Parallel script: "<<error->message<<"\n";s->dom_ok=value&&!error&&jsc_value_to_boolean(value);s->dom_done=true;g_clear_object(&value);g_clear_error(&error); }, this);
 	      }
 	      if (!dom_done)
 		      break;
-	      check(dom_ok, "Trusted parallel population confines module markup to its cell");
+	      check(dom_ok, "Parallel markup stays inside its cell and inline scripts stay disabled");
 	      ++stage;
 	      break;
       case 8:
-	      if (model->passage().bible != "Text" || model->passage().reference != "John 3:17")
+	      if (model->passage().bible != "Text" || model->passage().reference != "John 1:2")
 		      break;
 	      check(model->open_editor(scratch + "/source.html", true), "New native editor source");
 	      ++stage;
@@ -112,7 +127,7 @@ struct StudyUISmoke {
 	      ++stage;
 	      break;
       case 12:
-	      check(model->note_draft().reference == "John 3:17", "Native note captures current reference");
+	      check(model->note_draft().reference == "John 1:2", "Native note captures current reference");
 	      gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(ui->note_text_)), "Original note Ω <plain>", -1);
 	      click(ui->notes_box_, "Save verse note");
 	      ++stage;

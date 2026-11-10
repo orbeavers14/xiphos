@@ -37,16 +37,16 @@ if $install; then
   case "$distro" in
     ubuntu|debian)
       "${elevate[@]}" apt-get update
-      "${elevate[@]}" apt-get install -y build-essential cmake ninja-build pkg-config libsword-dev libglib2.0-dev libxml2-dev libsqlite3-dev libpng-dev zlib1g-dev ;;
+      "${elevate[@]}" apt-get install -y build-essential cmake ninja-build pkg-config python3 openssl libsword-dev libglib2.0-dev libxml2-dev libsqlite3-dev libpng-dev zlib1g-dev libcurl4-openssl-dev libarchive-dev ;;
     fedora)
-      "${elevate[@]}" dnf install -y gcc gcc-c++ cmake ninja-build pkgconf-pkg-config sword-devel glib2-devel libxml2-devel sqlite-devel libpng-devel zlib-devel ;;
-    *) echo "Install CMake >=3.16, Ninja, a C++17 compiler, pkg-config, SWORD >=1.8.1, GLib >=2.32, libxml2, libpng >=1.6 and zlib development packages for $distro." >&2; exit 2 ;;
+      "${elevate[@]}" dnf install -y gcc gcc-c++ cmake ninja-build pkgconf-pkg-config python3 openssl sword-devel glib2-devel libxml2-devel sqlite-devel libpng-devel zlib-devel libcurl-devel libarchive-devel ;;
+    *) echo "Install CMake >=3.16, Ninja, a C++17 compiler, pkg-config, Python 3, OpenSSL, SWORD >=1.8.1, GLib >=2.32, libxml2, SQLite >=3.31, libpng >=1.6, zlib, curl >=7.62 and libarchive >=3.6 development packages for $distro." >&2; exit 2 ;;
   esac
 fi
-for tool in cmake ctest ninja pkg-config; do
+for tool in cmake ctest ninja pkg-config python3 openssl; do
   command -v "$tool" >/dev/null || { echo "Missing $tool; run with --install-deps." >&2; exit 1; }
 done
-pkg-config --exists 'sword >= 1.8.1' 'glib-2.0 >= 2.32' libxml-2.0 'libpng >= 1.6' zlib || {
+pkg-config --print-errors --exists 'sword >= 1.8.1' 'glib-2.0 >= 2.32' libxml-2.0 'sqlite3 >= 3.31' 'libpng >= 1.6' zlib 'libcurl >= 7.62' 'libarchive >= 3.6' || {
   echo 'Missing core development dependencies; run with --install-deps.' >&2; exit 1;
 }
 flags=()
