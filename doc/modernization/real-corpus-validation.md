@@ -127,3 +127,11 @@ The same runner checks complete plain-text and passive HTML passage export
 from OSHB, MorphGNT and Peshitta, preserving the module and duplicate verse
 order. It uses the ICU/CLucene-enabled SWORD build, compares the source tree
 before and after, and emits no copied passage text.
+
+Native readers can call `xc_worker_map_reference` with the installed source
+module, destination module and current reference before switching translations.
+Take the owned destination with `xc_request_take_link`. The resolver uses the
+comparison mapping, returns the first numbered verse for splits, and leaves
+history untouched. On an unavailable mapping it returns no link, so the caller
+can keep the current passage open. The corpus runner checks OSHB ↔ ASV through
+the standalone resolver, including C result ownership after worker shutdown.

@@ -2341,6 +2341,15 @@ xc_status xc_worker_reference_choices(xc_worker *w, const char *id, const char *
   if (!id || !*id || !ref || !*ref) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.reference_choices(id, ref); });
 }
+xc_status xc_worker_map_reference(xc_worker *w, const char *source, const char *destination,
+                                  const char *reference, xc_request **out) {
+  if (!bounded_image_c_text(source,4096) || !bounded_image_c_text(destination,4096) ||
+      !bounded_image_c_text(reference,4096)) {
+    if (out) *out = nullptr;
+    return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w,out,[=](auto &worker){return worker.map_reference(source,destination,reference);});
+}
 xc_status xc_worker_resolve_localized_reference(xc_worker *w,const char *id,const char *text,
     const char *locale,xc_request **out) {
   if (!bounded_image_c_text(id,4096) || !bounded_image_c_text(text,32768) || !bounded_image_c_text(locale,4096)) {

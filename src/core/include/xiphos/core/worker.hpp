@@ -335,6 +335,7 @@ public:
   std::future<Chapter> read_chapter(std::string module, std::string reference, DisplayOptions options = {});
   std::future<ReferenceChoices> reference_choices(std::string module, std::string reference);
   std::future<ReferenceChoices> reference_choices(std::string module, std::string reference, std::string locale_file);
+  std::future<PassageLink> map_reference(std::string source, std::string destination, std::string reference);
   std::future<PassageLink> resolve_localized_reference(std::string module, std::string expression, std::string locale_file);
   std::future<PassageLink> resolve_link(std::string module, std::string uri);
 private:

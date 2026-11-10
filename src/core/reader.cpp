@@ -437,6 +437,15 @@ PassageLink Reader::resolve_link(const std::string &current_module, const std::s
   impl_->verse_module(target.module, target.reference);
   return target;
 }
+PassageLink Reader::map_reference(const std::string &source, const std::string &destination,
+                                  const std::string &reference) {
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto &from = impl_->verse_module(source, reference);
+  auto &to = impl_->verse_module(destination, reference);
+  auto mapped = parallel_mapped_references(from, to, reference);
+  if (mapped.empty()) throw std::invalid_argument("No verified destination verse");
+  return {destination, std::move(mapped.front())};
+}
 PassageLink Reader::navigation_target(const std::string &id, const std::string &expression,
                                       const std::string &locale_file) {
   if (expression.empty() || !detail::study_link_arguments(id, {}, expression))

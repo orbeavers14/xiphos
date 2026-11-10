@@ -1791,6 +1791,11 @@ xc_status xc_worker_reference_choices(xc_worker *worker, const char *module, con
 /* Copied UTF-8 locale-file path; labels only. Targets and SDK global locale are unchanged. */
 /* Resolve typed input using a private SWORD UTF-8 locale. Owned xc_link
  * result contains a canonical verse target. No history or locale changes. */
+/* Read-only translation switch target. Take the owned result with
+ * xc_request_take_link. A split returns the first numbered destination verse.
+ * An unavailable mapping completes with XC_INVALID_ARGUMENT and no link. */
+xc_status xc_worker_map_reference(xc_worker *worker, const char *source, const char *destination,
+                                  const char *reference, xc_request **out);
 xc_status xc_worker_resolve_localized_reference(xc_worker *worker,const char *module,
     const char *expression,const char *locale_file,xc_request **out);
 xc_status xc_worker_reference_choices_localized(xc_worker *worker, const char *module, const char *reference, const char *locale_file, xc_request **out);

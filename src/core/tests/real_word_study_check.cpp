@@ -43,7 +43,18 @@ static void check_c_split(const char *root, const char *profile) {
   std::unique_ptr<xc_parallel_chapter, decltype(&xc_parallel_chapter_release)>
       chapter(xc_request_take_parallel_chapter(request.get()), xc_parallel_chapter_release);
   request.reset();
+  check(xc_worker_map_reference(worker.get(), "OSHB", "ASV", "Psalms 3:2",
+      &raw_request) == XC_OK, "Submit standalone C translation mapping");
+  request.reset(raw_request);
+  wait_for(request.get());
+  std::unique_ptr<xc_link, decltype(&xc_link_release)>
+      link(xc_request_take_link(request.get()), xc_link_release);
+  check(link && !xc_request_take_link(request.get()), "Take standalone mapping once");
+  request.reset();
   worker.reset();
+  check(std::string(xc_link_module(link.get())) == "ASV" &&
+        std::string(xc_link_reference(link.get())) == "Psalms 3:1",
+        "Mapped destination survives C worker shutdown");
   check(chapter && xc_parallel_selected_verse(chapter.get()) == 55, "C split control verse");
   const auto *reference = xc_parallel_cell_additional_reference(chapter.get(), 54, 1, 0);
   const auto *html = xc_parallel_cell_additional_html(chapter.get(), 54, 1, 0);
@@ -209,6 +220,14 @@ int main(int argc, char **argv) try {
       throw std::runtime_error("Real passage HTML failed for " + source.first + ": " + error.what());
     }
   }
+  const auto switched = worker.map_reference("ASV", "OSHB", "Psalms 3:1").get();
+  check(switched.module == "OSHB" && switched.reference == "Psalms 3:2",
+        "Standalone resolver works without a comparison profile");
+  bool outside_coverage = false;
+  try {
+    (void)worker.map_reference("OSHB", "ASV", "Genesis 1:2").get();
+  } catch (const std::invalid_argument &) { outside_coverage = true; }
+  check(outside_coverage, "Standalone resolver refuses unverified references");
   const auto after = worker.history(tab).get();
   check(after.cursor == history.cursor && after.entries.size() == history.entries.size() &&
         after.can_back == history.can_back && after.can_forward == history.can_forward &&

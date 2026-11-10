@@ -1299,6 +1299,13 @@ std::future<ReferenceChoices> StudyWorker::reference_choices(std::string module,
     return s.reader.reference_choices(module, reference, locale_file);
   });
 }
+std::future<PassageLink> StudyWorker::map_reference(std::string source, std::string destination,
+                                                     std::string reference) {
+  return impl_->submit([source = std::move(source), destination = std::move(destination),
+                        reference = std::move(reference)](Impl::State &s) {
+    return s.reader.map_reference(source, destination, reference);
+  });
+}
 std::future<PassageLink> StudyWorker::resolve_localized_reference(std::string module,
     std::string expression, std::string locale_file) {
   return impl_->submit([module = std::move(module), expression = std::move(expression),
