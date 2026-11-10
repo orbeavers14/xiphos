@@ -142,3 +142,12 @@ The [carried SWORD SDK procedure](../../dependencies/sword/README.md) supports
 staged general-book moves and opt-in leaf deletion. On macOS 27.2 the patched
 SWORD 1.9.0/CLucene build passed the focused move, deletion and rebuilt-index
 checks. Keep deletion disabled for stock SWORD.
+
+Patched-core verification on macOS 27.2 passed 184 checks with one optional
+BibleSync skip. Focused fault injection restored the original book bytes,
+index, and section offset after failed move and deletion refreshes. The
+patched preview linked libjpeg, passed strict ad-hoc signature and runtime
+closure checks, and smoke-launched with a disposable profile. Its loader
+used the bundled patched SWORD. This development bundle contains 28 SDK
+libraries and has a measured 27.2 floor. It does not establish acceptance
+on macOS 27.0 or redistribution readiness.

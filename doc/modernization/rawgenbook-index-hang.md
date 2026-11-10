@@ -50,8 +50,8 @@ The Xiphos deletion prototype also passed its general-book regression with
 the patched library loaded and a usable CLucene index required. It verified
 that the parent and open-tab state were consistent, the retained entry was
 searchable, and the detached leaf was absent from rebuilt search results.
-Shipping deletion still requires a supported SDK fix. Broader indexing
-checks remain pending.
+Xiphos integrates deletion as an opt-in for builds using the
+[carried SDK patches](../../dependencies/sword/README.md).
 
 [TreeKeyIdx source](https://crosswire.org/svn/sword/tags/sword-1-9-0/src/keys/treekeyidx.cpp) ·
 [SWModule source](https://crosswire.org/svn/sword/tags/sword-1-9-0/src/modules/swmodule.cpp)

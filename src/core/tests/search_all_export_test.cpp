@@ -55,7 +55,7 @@ int main(int argc,char **argv){try{
  request.include_search_context=true;
  const auto empty_group=session.export_search_all_text(request);
  check(empty_group.status==SearchExportStatus::ok&&empty_group.row_count==4&&
-  empty_group.text.find("Group 2\nModule: Commentary\nQuery: NoMatchOriginalFixture\nStatus: completed\nSDK result elements: 0")!=std::string::npos,
+  empty_group.text.find("Group 2\nModule: Commentary\nQuery: NoMatchOriginalFixture\nStatus: completed (no matches)\nCase sensitive: off\nScope: entire module\nSDK result elements: 0")!=std::string::npos,
   "Successful zero-match source groups survive export independently of result rows");
  auto empty=session.search_module({"Text","NoMatchOriginalFixture"});request.generation=empty.generation.id;
  check(session.export_search_all_text(request).status==SearchExportStatus::ok&&session.export_search_all_text(request).row_count==0,"Successfully empty search has complete empty export");

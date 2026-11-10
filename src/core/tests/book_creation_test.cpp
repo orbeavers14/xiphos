@@ -96,6 +96,27 @@ int main(int argc,char **argv)try{
   Reader reader(root.string());ModuleEditTarget pending{"CaptureBook","/Rollback/New",true};auto before=bytes(root/"data");auto prepared=reader.read_module_edit(pending);
   bool failed=false;try{reader.save_module_edit(pending,prepared.revision,"not committed",false,[]{throw std::runtime_error("Injected refresh failure");});}catch(const std::runtime_error &){failed=true;}check(failed,"Injected refresh must fail");check(bytes(root/"data")==before,"Failed post-install refresh rolls back created tree and content");
  }
+#ifdef XIPHOS_SWORD_SAFE_BOOK_DELETE
+ {
+  Reader reader(root.string());
+  const auto original=reader.read_module_edit({"CaptureBook","/Original"});
+  const auto before=bytes(root/"data");
+  std::vector<ModuleEditTarget> operations{{"CaptureBook","/Original",false,{},false,{},true}};
+  if(move_required) operations.push_back({"CaptureBook","/Original",false,{},false,"/Prayers"});
+  for(const auto &operation:operations){
+   bool refreshed=false, failed=false;
+   try{
+    reader.save_module_edit(operation,original.revision,"",false,[&]{
+     refreshed=true;
+     throw std::runtime_error("Injected refresh failure");
+    });
+   }catch(const std::runtime_error &){failed=true;}
+   check(refreshed&&failed&&bytes(root/"data")==before&&
+         reader.read_module_edit({"CaptureBook","/Original"}).offset==original.offset,
+         "Failed tree edit refresh restores original data, index, and section offset");
+  }
+ }
+#endif
  xc_worker *worker=nullptr;xc_request *request=nullptr;check(xc_worker_open(root.string().c_str(),&worker)==XC_OK&&xc_worker_create_tab(worker,&request)==XC_OK&&wait(request)==XC_OK,"C creation worker/tab");auto tab=xc_request_tab(request);xc_request_release(request);
  check(xc_worker_prepare_book_entry(worker,tab,"CaptureBook","/Prayers/Copied",&request)==XC_OK&&wait(request)==XC_OK,"C creation prepare");auto *prepared=xc_request_take_module_edit(request);xc_request_release(request);std::string revision=xc_module_edit_revision(prepared);xc_module_edit_release(prepared);
  check(xc_worker_create_book_entry(worker,tab,"CaptureBook","/Prayers/Copied",revision.c_str(),"Original prayer",&request)==XC_OK,"C explicit creation accepted");revision.clear();check(wait(request)==XC_OK,"Copied revision survives caller mutation");auto *owned=xc_request_take_module_edit(request);xc_request_release(request);xc_worker_close(worker);check(owned&&std::string(xc_module_edit_text(owned))=="Original prayer"&&xc_module_edit_offset(owned)>0,"Owned created result survives worker teardown");xc_module_edit_release(owned);
