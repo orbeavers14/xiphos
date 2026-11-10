@@ -72,6 +72,24 @@ parallel/selected-word reader flow and shared attribute search. The WebKit
 test uses generated markup. Broader real-module lexical coverage, keyboard and
 VoiceOver checks, and native Linux/Windows presentation remain open.
 
+## macOS 26.7 candidate
+
+A separate ARM64 development bundle from `5567843` passed the Mach-O closure
+audit at 26.7 and strict ad-hoc signature verification. The core was built with
+the macOS 26.5 SDK, and the final app link records SDK 27.2 and minimum OS 26.7.
+The candidate used checksum-verified Homebrew macOS 26 builds of SWORD 1.9.0,
+GLib 2.90.1, gettext 1.0, PCRE2 10.49 and libpng 1.6.59, plus libarchive 3.8.6
+built at 26.7 against Apple system libraries and the Apple SDK's curl.
+All six non-system libraries were bundled and the strict audit found no issues
+across seven Mach-O images.
+
+On macOS 27.2 the bundle launched with a generated module fixture and disposable
+profile. Eight focused tests passed, covering core reading, mixed-canon alignment,
+RTL WebKit, selected-word search, stacked comparison, attribute search and local
+and HTTPS module installation. The Homebrew SWORD build omits ICU and CLucene.
+An actual 26.7 launch and workflow smoke remain required before changing the
+main preview deployment floor of 27.0.
+
 ## Current next steps
 
 - Follow the [native interface list](native-ui-todo.md): coherent Settings navigation,
