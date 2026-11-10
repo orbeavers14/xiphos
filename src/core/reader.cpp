@@ -439,6 +439,9 @@ PassageLink Reader::resolve_link(const std::string &current_module, const std::s
 }
 PassageLink Reader::map_reference(const std::string &source, const std::string &destination,
                                   const std::string &reference) {
+  if (source.empty() || destination.empty() || reference.empty() ||
+      !detail::study_link_arguments(source, reference, {}, destination))
+    throw std::invalid_argument("Invalid translation mapping arguments");
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto &from = impl_->verse_module(source, reference);
   auto &to = impl_->verse_module(destination, reference);

@@ -1301,6 +1301,8 @@ std::future<ReferenceChoices> StudyWorker::reference_choices(std::string module,
 }
 std::future<PassageLink> StudyWorker::map_reference(std::string source, std::string destination,
                                                      std::string reference) {
+  if (!detail::study_link_arguments(source, reference, {}, destination))
+    return rejected_study_link<PassageLink>();
   return impl_->submit([source = std::move(source), destination = std::move(destination),
                         reference = std::move(reference)](Impl::State &s) {
     return s.reader.map_reference(source, destination, reference);

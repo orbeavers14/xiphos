@@ -16,14 +16,14 @@ static void check(bool ok, const char *message) {
   if (!ok) throw std::runtime_error(message);
 }
 
-static void wait_for(xc_request *request) {
+static void wait_for(xc_request *request, xc_status expected = XC_OK) {
   const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
   auto status = xc_request_poll(request);
   while (status == XC_PENDING && std::chrono::steady_clock::now() < deadline) {
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     status = xc_request_poll(request);
   }
-  check(status == XC_OK, "C comparison request must complete successfully");
+  check(status == expected, "C corpus request returned an unexpected status");
 }
 
 static void check_c_split(const char *root, const char *profile) {
@@ -50,6 +50,19 @@ static void check_c_split(const char *root, const char *profile) {
   std::unique_ptr<xc_link, decltype(&xc_link_release)>
       link(xc_request_take_link(request.get()), xc_link_release);
   check(link && !xc_request_take_link(request.get()), "Take standalone mapping once");
+  request.reset();
+  check(xc_worker_map_reference(worker.get(), "OSHB", "ASV", "Genesis 1:2",
+      &raw_request) == XC_OK, "Admit an unavailable mapping");
+  request.reset(raw_request);
+  wait_for(request.get(), XC_INVALID_ARGUMENT);
+  check(!xc_request_take_link(request.get()), "Unavailable mapping returns no C link");
+  check(xc_worker_map_reference(worker.get(), "OSHB", "Missing", "Genesis 1:1",
+      &raw_request) == XC_OK, "Admit a request with an uninstalled destination");
+  request.reset(raw_request);
+  wait_for(request.get(), XC_MODULE_NOT_FOUND);
+  check(!xc_request_take_link(request.get()), "Missing destination returns no C link");
+  check(xc_worker_map_reference(worker.get(), "OSHB", "", "Genesis 1:1",
+      &raw_request) == XC_INVALID_ARGUMENT && !raw_request, "Empty destination rejects at admission");
   request.reset();
   worker.reset();
   check(std::string(xc_link_module(link.get())) == "ASV" &&
@@ -228,6 +241,11 @@ int main(int argc, char **argv) try {
     (void)worker.map_reference("OSHB", "ASV", "Genesis 1:2").get();
   } catch (const std::invalid_argument &) { outside_coverage = true; }
   check(outside_coverage, "Standalone resolver refuses unverified references");
+  bool embedded_nul = false;
+  try {
+    (void)worker.map_reference(std::string("OSHB\0extra", 10), "ASV", "Genesis 1:1").get();
+  } catch (const std::invalid_argument &) { embedded_nul = true; }
+  check(embedded_nul, "C++ resolver rejects embedded NUL instead of truncating the module ID");
   const auto after = worker.history(tab).get();
   check(after.cursor == history.cursor && after.entries.size() == history.entries.size() &&
         after.can_back == history.can_back && after.can_forward == history.can_forward &&
