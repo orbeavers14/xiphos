@@ -667,9 +667,37 @@ WordStudy Reader::word_study(const std::string &id, const std::string &reference
   for (const auto &word : words->second) {
     const auto text = word.second.find("Text");
     if (text == word.second.end() || text->second.size() > 1024) continue;
-    const std::string token(text->second.c_str(), text->second.size());
-    if (!g_utf8_validate(token.data(), token.size(), nullptr) ||
-        detail::surface_key(token,true,true) != folded) continue;
+    std::string token(text->second.c_str(), text->second.size());
+    if (!g_utf8_validate(token.data(), token.size(), nullptr)) continue;
+    if (token.find_first_of("<&") != std::string::npos) {
+      // The SDK's strip filters can add visible punctuation for styled
+      // words. Decode only simple inline XML as the reading selection sees it.
+      try {
+        const auto document = detail::parse_xml_document("<w>" + token + "</w>","w");
+        const auto *root = xmlDocGetRootElement(document.get());
+        std::vector<const xmlNode *> pending{root->children};
+        bool inline_only = true;
+        while (!pending.empty()) {
+          const auto *node = pending.back(); pending.pop_back();
+          if (!node) continue;
+          if (node->type == XML_ELEMENT_NODE &&
+              xmlStrcmp(node->name,BAD_CAST "hi") && xmlStrcmp(node->name,BAD_CAST "seg") &&
+              xmlStrcmp(node->name,BAD_CAST "divineName") && xmlStrcmp(node->name,BAD_CAST "foreign")) {
+            inline_only = false;
+            break;
+          }
+          pending.push_back(node->next);
+          pending.push_back(node->children);
+        }
+        if (!inline_only) continue;
+        const std::unique_ptr<xmlChar,decltype(xmlFree)> content(xmlNodeGetContent(root),xmlFree);
+        if (!content) throw std::bad_alloc();
+        token = reinterpret_cast<const char *>(content.get());
+      } catch (const std::invalid_argument &) {
+        continue; // Unusable token metadata cannot identify a selected word.
+      }
+    }
+    if (detail::surface_key(token,true,true) != folded) continue;
     std::vector<std::string> lemmas;
     for (unsigned i = 1; i <= 32; ++i) {
       const auto suffix = "." + std::to_string(i);

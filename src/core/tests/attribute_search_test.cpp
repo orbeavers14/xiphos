@@ -39,7 +39,7 @@ int main(int argc,char **argv){try{
   "Original <w lemma=\"strong:G140\" morph=\"robinson:N-ASF\">alpha</w><note type=\"study\" n=\"a\">Original café Alpha note.</note>",
   "Original <w lemma=\"strong:G1401\" morph=\"robinson:N-ASF1\">beta</w><note type=\"study\" n=\"b\">Original alpha note.</note>",
   "Original <w lemma=\"strong:G1404\" morph=\"robinson:N-ASF\">gamma</w><note type=\"study\" n=\"c\">Original continuation.</note>",
-  "Original <w lemma=\"strong:G141 strong:G140\" morph=\"robinson:V-PAP\">delta</w>"};
+  "Original <w lemma=\"strong:G141 strong:G140\" morph=\"robinson:V-PAP\">delta</w> <w lemma=\"strong:G499\">dé<hi type=\"italic\">cor</hi></w> <w lemma=\"strong:G497\">ambiguous</w> <w lemma=\"strong:G498\">ambiguous</w> <w lemma=\"strong:G496\">rock&amp;roll</w>"};
  for(bool commentary:{false,true}){
   const std::string id=commentary?"Commentary":"Text",driver=commentary?"RawCom":"RawText",path=commentary?"commentary":"text";
   std::unique_ptr<SWModule> writer=commentary?std::unique_ptr<SWModule>(new RawCom((root/"data/commentary").string().c_str())):std::unique_ptr<SWModule>(new RawText((root/"data/text").string().c_str()));
@@ -62,6 +62,13 @@ int main(int argc,char **argv){try{
   if(result.references!=expected){std::cerr<<"attribute mode="<<static_cast<int>(mode)<<" source="<<module<<" case="<<sensitive<<" query="<<result.effective_expression<<" flags="<<flags<<" actual=";for(const auto &key:result.references)std::cerr<<key<<';';std::cerr<<'\n';}
   check(result.references==expected,"Exact lemma/morph identifiers exclude longer prefixes; component lemma and note case behavior are present");
  }
+ check(reader.word_study("Text","John 1:4","décor").lemmas==std::vector<std::string>{"G499"} &&
+       reader.word_study("Text","John 1:4","decor").lemmas.empty(),
+       "Inline word markup is flattened while Latin accents remain significant");
+ check(reader.word_study("Text","John 1:4","rock&roll").lemmas==std::vector<std::string>{"G496"},
+       "Built-in XML entities match visible selected words");
+ check(reader.word_study("Text","John 1:4","ambiguous").lemmas.empty(),
+       "Identical surface words with conflicting lemma sets offer no guess");
  StudySession session(reader);session.visit("Text","John1:2");
  const auto seed=session.search_module({"Text","N-ASF",SearchMode::morphology},{1,1024});
  check(seed.limited&&seed.references.size()==1&&seed.scope.element_count==2,"Attribute execution retains complete last scope despite display limits");

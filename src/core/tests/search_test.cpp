@@ -39,7 +39,7 @@ int main(int argc,char **argv){try{
  for(bool commentary:{false,true}){
   const std::string id=commentary?"Commentary":"Text",driver=commentary?"RawCom":"RawText",path=commentary?"commentary":"text";
   std::unique_ptr<SWModule> writer=commentary?std::unique_ptr<SWModule>(new RawCom((root/"data/commentary").string().c_str())):std::unique_ptr<SWModule>(new RawText((root/"data/text").string().c_str()));
-  writer->setKey("John 1:1");writer->setEntry("Original Alpha beta café.");writer->setKey("John 1:2");writer->setEntry("Original alpha gamma.");writer->setKey("John 1:3");writer->setEntry("Original omega beta.");
+  writer->setKey("John 1:1");writer->setEntry("Original Alpha beta café. ܫܠܵܡܵܐ.");writer->setKey("John 1:2");writer->setEntry("Original alpha gamma.");writer->setKey("John 1:3");writer->setEntry("Original omega beta.");
   std::ofstream conf(root/"mods.d"/(id+".conf"));conf<<'['<<id<<"]\nDataPath=./data/"<<path<<"/\nModDrv="<<driver<<"\nSourceType=OSIS\nEncoding=UTF-8\nGlobalOptionFilter=UTF8GreekAccents\nGlobalOptionFilter=UTF8HebrewPoints\nGlobalOptionFilter=UTF8ArabicPoints\n";
  }
  check(RawLD::createModule((root/"data/dictionary").string().c_str())==0,"Create excluded search module family");{std::ofstream conf(root/"mods.d/Dictionary.conf");conf<<"[Dictionary]\nDataPath=./data/dictionary\nModDrv=RawLD\n";}
@@ -59,6 +59,11 @@ int main(int argc,char **argv){try{
   if(mode==SearchMode::phrase)check(result.references.size()==(sensitive?1:2),"Case flag matches linked SDK ABI and expected upper/lower phrase hits");held=std::move(result);
  }
  check(updates>0,"Actual SDK progress callback path exercised by oracle");
+ check(reader.search_module({"Text",u8"ܫܠܡܐ",SearchMode::surface_literal,true}).references.empty() &&
+       reader.search_module({"Text",u8"ܫܠܡܐ",SearchMode::surface_unmarked,true}).references==std::vector<std::string>{"John 1:1"} &&
+       reader.search_module({"Text","cafe",SearchMode::surface_unmarked,true}).references.empty() &&
+       reader.search_module({"Text",u8"cafe\u0301",SearchMode::surface_literal,true}).references==std::vector<std::string>{"John 1:1"},
+       "Syriac mark folding, Latin mark preservation and canonical literal equivalence");
  auto stripped_markup=reader.search_module({"Text","<w>Alpha</w>",SearchMode::phrase,false});check(stripped_markup.effective_expression==sword::SWBuf(legacy.getModule("Text")->stripText("<w>Alpha</w>")).c_str()&&stripped_markup.requested.expression=="<w>Alpha</w>","Engine query uses exact SDK stripText output while original request stays unchanged");
  auto all=reader.search_module({"Text","Original",SearchMode::phrase,false});SearchLimits one;one.max_results=1;auto prefix=reader.search_module({"Text","Original",SearchMode::phrase,false},one);
  check(all.references.size()==3&&prefix.references.size()==1&&prefix.limited&&prefix.total_results==3&&prefix.references.front()==all.references.front(),"Result limit copies complete SDK prefix and retains total count");
