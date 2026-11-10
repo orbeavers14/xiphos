@@ -161,3 +161,9 @@ The verified MT table also covers Genesis 2:1–25 directly and Psalm 4:2–9
 were [Hebrew Genesis 2](https://mechon-mamre.org/p/pt/pt0102.htm),
 [ASV Genesis 2](https://ebible.org/asv/GEN02.htm), [Hebrew Psalm 4](https://mechon-mamre.org/p/pt/pt2604.htm),
 and Psalm 4 in the installed ASV 2.0 corpus.
+
+The Genesis 32 mapping crosses a chapter boundary. MT Genesis 32:1 maps to
+ASV Genesis 31:55, and MT Genesis 32:2–33 maps to ASV Genesis 32:1–32.
+The runner verifies both directions and checks adjacent comparison rows on
+opposite sides of the boundary. See [Hebrew Genesis 32](https://mechon-mamre.org/p/pt/pt0132.htm).
+The English side was checked in the installed ASV 2.0 module.

@@ -72,26 +72,28 @@ std::vector<std::string> parallel_mapped_references(sword::SWModule &from,
   if ((from_mt && kjv_anchor(to_canon)) || (to_mt && kjv_anchor(from_canon))) {
     struct VerseRun {
       const char *book;
-      int chapter, mt_first, kjv_first, count;
+      int mt_chapter, kjv_chapter, mt_first, kjv_first, count;
     };
     // Sources and verification scope: doc/modernization/real-corpus-validation.md.
     // The numbered Psalm body starts after the MT title.
-    static constexpr VerseRun runs[] = {{"Gen", 1, 1, 1, 31}, {"Gen", 2, 1, 1, 25},
-                                        {"Ps", 3, 2, 1, 8}, {"Ps", 4, 2, 1, 8}};
+    static constexpr VerseRun runs[] = {{"Gen", 1, 1, 1, 1, 31}, {"Gen", 2, 2, 1, 1, 25},
+                                        {"Gen", 32, 31, 1, 55, 1}, {"Gen", 32, 32, 2, 1, 32},
+                                        {"Ps", 3, 3, 2, 1, 8}, {"Ps", 4, 4, 2, 1, 8}};
     const std::string book = source.getOSISBookName();
-    int mapped = 0;
+    int mapped = 0, chapter = 0;
     for (const auto &run : runs) {
       const int offset = source.getVerse() - (from_mt ? run.mt_first : run.kjv_first);
-      if (book == run.book && source.getChapter() == run.chapter &&
+      if (book == run.book && source.getChapter() == (from_mt ? run.mt_chapter : run.kjv_chapter) &&
           offset >= 0 && offset < run.count) {
         mapped = (from_mt ? run.kjv_first : run.mt_first) + offset;
+        chapter = from_mt ? run.kjv_chapter : run.mt_chapter;
         break;
       }
     }
     if (!mapped) return {};
     target.setAutoNormalize(false);
-    target.setText((book + " " + std::to_string(source.getChapter()) + ":" + std::to_string(mapped)).c_str());
-    if (target.getError() || target.getVerse() != mapped || mapped > target.getVerseMax()) return {};
+    target.setText((book + " " + std::to_string(chapter) + ":" + std::to_string(mapped)).c_str());
+    if (target.getError() || target.getChapter() != chapter || target.getVerse() != mapped || mapped > target.getVerseMax()) return {};
     return {target.getText()};
   }
   if (from_canon != to_canon && (!verified(from_canon) || !verified(to_canon))) return {};

@@ -316,6 +316,6 @@ retains the documented control-module limitations; it is not cross-canon mapping
 SWORD can return the original verse number when it has no mapping between two
 numbering systems. That can pair different passages. The shared core uses
 verified SWORD mappings plus an explicit Hebrew MT ↔ KJV/KJVA table for
-Genesis 1–2 and Psalms 3–4. It retains split verses and leaves a cell empty when
+Genesis 1–2, the Genesis 31–32 boundary, and Psalms 3–4. It retains split verses and leaves a cell empty when
 there is no verified match. The same resolver serves translation switching.
 See [verified coverage](real-corpus-validation.md).

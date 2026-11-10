@@ -304,6 +304,22 @@ int main(int argc, char **argv) try {
           worker.map_reference("ASV", "OSHB", english).get().reference == hebrew,
           "Psalm 4 maps the numbered body in both directions");
   }
+  check(worker.map_reference("OSHB","ASV","Genesis 32:1").get().reference=="Genesis 31:55" &&
+        worker.map_reference("ASV","OSHB","Genesis 31:55").get().reference=="Genesis 32:1",
+        "Laban's departure crosses the English chapter boundary in both directions");
+  for (int verse=1; verse<=32; ++verse) {
+    const auto english="Genesis 32:"+std::to_string(verse);
+    const auto hebrew="Genesis 32:"+std::to_string(verse+1);
+    check(worker.map_reference("OSHB","ASV",hebrew).get().reference==english &&
+          worker.map_reference("ASV","OSHB",english).get().reference==hebrew,
+          "Genesis 32 retains the one-verse numbering shift");
+  }
+  const auto boundary=worker.visit_parallel_profile(tab,argv[2],"RTL","Genesis 31:55",{},
+      false,maximum_parallel_snapshot_bytes,"ASV").get();
+  check(boundary.reference=="Genesis 32:1" &&
+        boundary.rows.front().cells.at(1).reference=="Genesis 31:55" &&
+        boundary.rows.at(1).cells.at(1).reference=="Genesis 32:1",
+        "Comparison rows can cross a chapter boundary in the translated column");
   const auto apocrypha_anchor = worker.map_reference("OSHB", "KJVA", "Psalms 3:9").get();
   check(apocrypha_anchor.module == "KJVA" && apocrypha_anchor.reference == "Psalms 3:8",
         "KJVA uses the same verified Psalm numbering as KJV");
