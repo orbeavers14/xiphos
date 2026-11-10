@@ -3,7 +3,7 @@
 Updated 2026-11-09. Read [shared instructions](handoff.md) and
 [Windows inventory/build tooling](../../platforms/windows/README.md).
 
-Target Windows 11 version 25H2 or later. The repository has an MSVC build
+Target Windows 11 version 25H2 and check compatibility on 26H2. The repository has an MSVC build
 helper. Native Windows core validation and WinUI 3 implementation are pending.
 The old GTK/MinGW win32 distribution is removed. WSL and Mac-hosted portable
 checks are not MSVC or native Windows desktop validation.

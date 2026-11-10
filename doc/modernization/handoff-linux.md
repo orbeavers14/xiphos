@@ -42,8 +42,9 @@ the installed runtime. No system packages were installed.
 The separate `linux/november-mac-parity` checkout at `050fdf91` with local edits
 rebuilt the GTK4 preview and passed its basic graphical smoke. Its CTest suite
 had 203 passes and one optional BibleSync skip after rerunning two HTTPS fixtures
-with loopback access. These test results cover that branch. Validate the complete
-suite on master and a maintained Debian/Ubuntu target before finalizing the matrix.
+with loopback access. These test results cover that branch. The merged master build subsequently passed 203 CTest checks and the GTK study
+smoke, with one optional BibleSync skip. The remaining matrix checks are Fedora
+44 compatibility and native Ubuntu 24.04 LTS and Debian 13 on x86-64.
 
 ## Linux parity integration
 

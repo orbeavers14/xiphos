@@ -52,6 +52,8 @@ shared toolchain validation that remains.
   appearance/themes, stacked comparisons and selected-word Hebrew, Greek and Aramaic study.
 - Complete broader workflow/VoiceOver/RTL/localization and compatibility acceptance.
 - Validate execution on macOS 27.0 and release resources/signing before distribution.
+- Evaluate macOS 26.7 as a lower floor after rebuilding or replacing the
+  dependencies that require 27.0. Audit the full bundle and launch it on 26.7.
 
 Use disposable profiles/module fixtures for GUI checks. Give each test bundle a
 unique identifier and verify the target process: copies sharing a bundle identifier
