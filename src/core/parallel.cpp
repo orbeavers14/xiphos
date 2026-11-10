@@ -59,7 +59,6 @@ std::vector<std::string> parallel_mapped_references(sword::SWModule &from,
     const char *const systems[] = {"KJV","KJVA","NRSV","Synodal","Vulg","Calvin","DarbyFr","Segond"};
     return std::find(std::begin(systems),std::end(systems),canon) != std::end(systems);
   };
-  if (from_canon != to_canon && (!verified(from_canon) || !verified(to_canon))) return {};
   sword::VerseKey source(*from_key), target(*to_key);
   source.clearBounds();
   source.setAutoNormalize(false);
@@ -67,6 +66,25 @@ std::vector<std::string> parallel_mapped_references(sword::SWModule &from,
   if (source.getError() || source.getChapter() < 1 || source.getVerse() < 1 ||
       source.getVerse() > source.getVerseMax()) return {};
   target.clearBounds();
+  const bool from_mt = from_canon == "MT";
+  const bool to_mt = to_canon == "MT";
+  const auto kjv_anchor = [](const std::string &canon) { return canon == "KJV" || canon == "KJVA"; };
+  if ((from_mt && kjv_anchor(to_canon)) || (to_mt && kjv_anchor(from_canon))) {
+    // Verified anchors only. MT Psalm 3:1 is the title, outside the numbered KJV rows.
+    const std::string book = source.getOSISBookName();
+    const int verse = source.getVerse();
+    int mapped = 0;
+    if (book == "Gen" && source.getChapter() == 1 && verse == 1) mapped = 1;
+    if (book == "Ps" && source.getChapter() == 3 &&
+        verse >= (from_mt ? 2 : 1) && verse <= (from_mt ? 9 : 8))
+      mapped = verse + (from_mt ? -1 : 1);
+    if (!mapped) return {};
+    target.setAutoNormalize(false);
+    target.setText((book + " " + std::to_string(source.getChapter()) + ":" + std::to_string(mapped)).c_str());
+    if (target.getError() || target.getVerse() != mapped || mapped > target.getVerseMax()) return {};
+    return {target.getText()};
+  }
+  if (from_canon != to_canon && (!verified(from_canon) || !verified(to_canon))) return {};
   target.positionFrom(source);
   if (target.getError() || target.getChapter() < 1) return {};
   const int first = target.getVerse();

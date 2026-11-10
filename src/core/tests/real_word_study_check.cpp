@@ -163,7 +163,7 @@ int main(int argc, char **argv) try {
   check(numbered.reference == "Psalms 11:1", "A split starting at verse zero opens at the first numbered verse");
   bool unmapped = false;
   try {
-    (void)worker.visit_parallel_profile(tab,argv[2],"Study","Genesis 1:1",{},
+    (void)worker.visit_parallel_profile(tab,argv[2],"Study","Genesis 1:2",{},
       false,maximum_parallel_snapshot_bytes,"OSHB").get();
   } catch (const std::invalid_argument &) { unmapped = true; }
   check(unmapped && worker.parallel_selection(tab).get()->reference == numbered.reference,
@@ -178,10 +178,20 @@ int main(int argc, char **argv) try {
         rtl.columns.at(2).right_to_left &&
         rtl_row.cells.at(0).reference == "Genesis 1:1" &&
         !rtl_row.cells.at(0).html.empty() &&
-        rtl_row.cells.at(1).reference.empty() && rtl_row.cells.at(1).html.empty() &&
+        rtl_row.cells.at(1).reference == "Genesis 1:1" && !rtl_row.cells.at(1).html.empty() &&
         rtl_row.cells.at(2).html == rtl_row.cells.at(0).html,
-        "Real RTL control and duplicate column render while the unsupported KJV mapping stays empty");
+        "Real RTL control and duplicate column render alongside the verified KJV anchor");
 
+  const auto mt_to_kjv = worker.visit_parallel_profile(tab,argv[2],"Study","Psalms 3:2",{},
+      false,maximum_parallel_snapshot_bytes,"OSHB").get();
+  check(mt_to_kjv.reference == "Psalms 3:1", "MT Psalm body maps to KJV verse one");
+  const auto kjv_to_mt = worker.visit_parallel_profile(tab,argv[2],"RTL","Psalms 3:1",{},
+      false,maximum_parallel_snapshot_bytes,"ASV").get();
+  check(kjv_to_mt.reference == "Psalms 3:2" &&
+        kjv_to_mt.rows.at(0).cells.at(1).reference.empty() &&
+        kjv_to_mt.rows.at(8).cells.at(1).reference == "Psalms 3:8" &&
+        !kjv_to_mt.rows.at(8).cells.at(1).html.empty(),
+        "Reverse mapping preserves the title gap and aligns the last verse");
   const std::vector<std::pair<std::string,std::string>> export_sources{
       {"OSHB","Genesis 1:1"}, {"MorphGNT","John 1:1"}, {"Peshitta","John 1:1"}};
   for (const auto &source : export_sources) {

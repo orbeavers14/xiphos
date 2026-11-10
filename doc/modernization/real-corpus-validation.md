@@ -109,16 +109,18 @@ actual module, canonical reference, original surface and ordered terms.
 
 The ordinary chapter matrix keeps its characterized textual behavior.
 Search-opened comparisons retain SDK mapping during navigation and restoration.
-Cross-canon mapping is limited to systems with known SWORD mapping tables or
-KJV/KJVA anchors. An unsupported pair never silently falls back to matching
+Cross-canon mapping uses known SWORD tables and a small explicit MT mapping
+against the KJV/KJVA anchors. An unsupported pair never silently falls back to matching
 verse numbers. A split opens at its first numbered control verse, and a split
 cell carries separate HTML and source references for every numbered part.
 Merged mappings retain the same actual source verse in each corresponding
 control row. Real tests cover Leviticus 14:55–56 in Synodal/KJV, a Psalm mapping
-starting at verse zero, and an unsupported MT-to-KJV comparison. With OSHB
-controlling Genesis 1:1, both Hebrew columns retain RTL direction and render
-the same verse while the installed ASV column has no mapped verse. This
-covers mixed-direction data at the shared boundary.
+starting at verse zero, and rejection outside verified MT coverage. The MT
+slice covers Genesis 1:1 and MT Psalm 3:2–9 ↔ KJV/KJVA Psalm 3:1–8.
+MT Psalm 3:1 is the title and has no numbered KJV/KJVA row. The corpus checks
+both directions and mixed RTL/LTR columns using OSHB and ASV. The numbering
+can also be checked against [Sefaria’s Psalm 3](https://www.sefaria.org/Psalms.3)
+and the [eBible KJV Psalms](https://ebible.org/pdf/eng-kjv2006/eng-kjv2006_PSA.pdf).
 
 
 The same runner checks complete plain-text and passive HTML passage export
