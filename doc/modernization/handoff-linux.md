@@ -27,6 +27,24 @@ raising the shared CMake minimum and removing the CMake 3.16 libarchive shim.
 Keep SWORD discovery and SDK-specific handling, module and profile migration,
 and regression fixtures during this pass. Keep hosted Actions disabled.
 
+## Fedora maintenance check
+
+The Linux helper now installs curl and libarchive development packages and the
+Python 3 and OpenSSL fixture tools. Preflight checks SQLite, curl and libarchive
+alongside the existing dependencies.
+
+On Fedora 45 ARM64, standalone core and GTK4 preview configuration passed at
+master baseline `ac325ed4` using CMake 4.3.0, GCC 16.2.1, SWORD 1.9.0, GLib
+2.90.1, GTK 4.24.1, WebKitGTK 2.54.2, curl 8.21.0 and libarchive 3.8.9. The
+libarchive headers came from a locally extracted Fedora development RPM matching
+the installed runtime. No system packages were installed.
+
+The separate `linux/november-mac-parity` checkout at `050fdf91` with local edits
+rebuilt the GTK4 preview and passed its basic graphical smoke. Its CTest suite
+had 203 passes and one optional BibleSync skip after rerunning two HTTPS fixtures
+with loopback access. These test results cover that branch. Validate the complete
+suite on master and a maintained Debian/Ubuntu target before finalizing the matrix.
+
 ## Next validation
 
 Consume current shared APIs, run the local portable/desktop checks in the

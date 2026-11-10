@@ -16,7 +16,8 @@ platforms/linux/core.sh --sanitize
 Dependency installation requires administrator/network access; omit
 --install-deps when already configured. The full native core needs the libraries
 in the [dependency inventory](../../dependencies/README.md), including curl,
-libarchive and SQLite. No GTK dependency is required for the standalone core.
+libarchive and SQLite. Its test fixtures also require Python 3 and the OpenSSL
+command-line tool. No GTK dependency is required for the standalone core.
 core.sh performs local setup/build/test; see --help for flags.
 
 ## GTK4 frontend and portable models
