@@ -2436,7 +2436,32 @@ struct ReaderModelSmoke {
         guard model.readingZoom > 1 else { fatalError("Zoom did not increase") }
         model.adjustReadingZoom(nil)
         guard model.readingZoom == 1 else { fatalError("Zoom did not reset") }
-        print("Native passage export and devotional leap-day checks passed")
+        let linkHistory = try await worker.history(tab)
+        model.openExternalStudyLink("sword://Text/John%203:18")
+        try await idle(model)
+        guard model.reference == "John 3:18", try await worker.history(tab).count == linkHistory.count + 1
+        else { fatalError("External study link did not open its installed module and reference") }
+        model.openExternalStudyLink("sword://Missing/John%203:17")
+        try await idle(model)
+        guard model.reference == "John 3:18", try await worker.history(tab).count == linkHistory.count + 1
+        else { fatalError("Unknown external module silently changed the reader") }
+        let selection = "Bethany & Café?"
+        let map = MacStudyActions.selectionURL(selection, translating: false)
+        let translation = MacStudyActions.selectionURL(selection, translating: true)
+        guard map.flatMap({ URLComponents(url: $0, resolvingAgainstBaseURL: false)?.queryItems?.first?.value }) == selection,
+              translation.flatMap({ URLComponents(url: $0, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "text" })?.value }) == selection
+        else { fatalError("Selection URL changed Unicode or query delimiters") }
+        let styles = try JSONEncoder().encode([
+            "": ReadingStyle(font: .serif, size: 17),
+            "Text": ReadingStyle(font: .monospace, size: 99, customColors: true,
+                                 foreground: "#112233", background: "#FFEEDD"),
+            "Invalid": ReadingStyle(font: .sansSerif, customColors: true, foreground: "</style>")
+        ])
+        guard ReadingStyle.css(from: styles, module: "Text").contains("font-size:36px;color:#112233;"),
+              ReadingStyle.css(from: styles, module: "ASV").contains("font-size:17px;"),
+              !ReadingStyle.css(from: styles, module: "Invalid").contains("</style>")
+        else { fatalError("Reading style selection, bounds or color validation failed") }
+        print("Native passage, devotional, detached navigation, external link and reading style checks passed")
     }
     @MainActor static func main() async throws {
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--passage-and-devotional" {

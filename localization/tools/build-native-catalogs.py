@@ -29,8 +29,10 @@ def outputs():
     for path in sorted((root/'platforms/macos').glob('*.swift')):
         keys.update(re.findall(pattern, path.read_text()))
     result = {}; coverage = {}
-    for lang in ['en','fr','de','es']:
-        imported = {} if lang == 'en' else catalog(base/'gettext'/f'{lang}.po')
+    languages = {'en':'en','fr':'fr','de':'de','es':'es','it':'it','pt-BR':'pt_BR',
+                 'zh-Hans':'zh_CN','ar':'ar','he':'he'}
+    for lang, gettext_lang in languages.items():
+        imported = {} if lang == 'en' else catalog(base/'gettext'/f'{gettext_lang}.po')
         override = base/'overrides'/f'{lang}.json'
         if override.exists(): imported.update(json.loads(override.read_text()))
         translated = {key: (key if lang == 'en' else imported[key]) for key in sorted(keys) if lang == 'en' or key in imported}

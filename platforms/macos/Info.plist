@@ -6,6 +6,11 @@
 <key>CFBundleIdentifier</key><string>org.xiphos.native-preview</string>
 <key>CFBundleName</key><string>Xiphos Native Preview</string>
 <key>CFBundlePackageType</key><string>APPL</string>
+<key>CFBundleURLTypes</key><array><dict>
+<key>CFBundleURLName</key><string>org.xiphos.study-link</string>
+<key>CFBundleTypeRole</key><string>Viewer</string>
+<key>CFBundleURLSchemes</key><array><string>sword</string></array>
+</dict></array>
 <key>CFBundleVersion</key><string>1</string>
 <key>LSMinimumSystemVersion</key><string>@CMAKE_OSX_DEPLOYMENT_TARGET@</string>
 <key>NSHighResolutionCapable</key><true/>

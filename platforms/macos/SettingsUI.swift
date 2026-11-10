@@ -43,7 +43,7 @@ enum NativeAppearance: String, CaseIterable {
         let seconds = store.integer(forKey: prefix + "recovery")
         recoverySeconds = [5,15,30,60].contains(seconds) ? seconds : 5
         let savedLanguage = store.string(forKey: prefix + "language") ?? "system"
-        language = ["system","en","fr","de","es"].contains(savedLanguage) ? savedLanguage : "system"
+        language = ["system","en","fr","de","es","it","pt-BR","zh-Hans","ar","he"].contains(savedLanguage) ? savedLanguage : "system"
         bible = store.string(forKey: prefix + "bible") ?? ""
         devotional = store.string(forKey: prefix + "devotional") ?? ""
         commentary = store.string(forKey: prefix + "commentary") ?? ""
@@ -59,13 +59,14 @@ enum NativeAppearance: String, CaseIterable {
 }
 
 private enum SettingsSection: String, CaseIterable, Identifiable {
-    case general, appearance, reading, lexicons, sync
+    case general, appearance, reading, readingStyle, lexicons, sync
     var id: Self { self }
     var title: LocalizedStringKey {
         switch self {
         case .general: "General"
         case .appearance: "Appearance"
         case .reading: "Reading"
+        case .readingStyle: "Reading Style"
         case .lexicons: "Lexicons"
         case .sync: "BibleSync"
         }
@@ -75,6 +76,7 @@ private enum SettingsSection: String, CaseIterable, Identifiable {
         case .general: "gearshape"
         case .appearance: "circle.lefthalf.filled"
         case .reading: "book"
+        case .readingStyle: "textformat.size"
         case .lexicons: "character.book.closed"
         case .sync: "antenna.radiowaves.left.and.right"
         }
@@ -116,6 +118,7 @@ private enum SettingsSection: String, CaseIterable, Identifiable {
                     case .reading:
                         if let model { ReadingSettingsView(model: model, controller: controller).id(controller.activeKey) }
                         else { requiresWindow }
+                    case .readingStyle: ReadingStyleSettings(modules: model?.modules ?? [])
                     case .lexicons:
                         if let model, let choices = model.lexiconPreferences {
                             LexiconPreferencesView(model: model, preferences: choices, inline: true)
@@ -160,6 +163,11 @@ private enum SettingsSection: String, CaseIterable, Identifiable {
                 Text("Français — partial translation").tag("fr")
                 Text("Deutsch — partial translation").tag("de")
                 Text("Español — partial translation").tag("es")
+                Text("Italiano — partial translation").tag("it")
+                Text("Português (Brasil) — partial translation").tag("pt-BR")
+                Text("简体中文 — partial translation").tag("zh-Hans")
+                Text("العربية — partial translation").tag("ar")
+                Text("עברית — partial translation").tag("he")
             }
             Text("Restart to apply the interface language. Untranslated text uses English.").font(.callout)
             Picker("Default Bible for new windows", selection: $preferences.bible) {

@@ -195,7 +195,7 @@ struct SearchPane: View {
                 if let entry = model.preview, let source = model.previewSource {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("\(source.module) • \(entry.reference)").font(.caption)
-                        PassageView(html: entry.headingHTML + entry.html, css: entry.lexical.css, anchor: nil,
+                        PassageView(html: entry.headingHTML + entry.html, css: entry.lexical.css, styleModule: model.previewSource?.module, anchor: nil,
                             onScrollFailure: { _ in }, onLink: { onLink($0, source) }, allowsInlineImages: source.keyKind != .verse)
                             .accessibilityLabel("Search result preview")
                     }.frame(minHeight: 100)

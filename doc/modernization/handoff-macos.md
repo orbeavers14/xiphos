@@ -169,3 +169,16 @@ BibleSync. Profile-specific System, Light and Dark settings apply immediately.
 On macOS 27.2, the native preference smoke verified persistence and profile
 isolation, and the WebKit smoke verified live appearance changes in a mixed
 RTL/LTR comparison. Manual keyboard and VoiceOver checks remain deferred.
+
+The upstream parity pass added native passage text/HTML export and AppKit
+printing, a date-based daily devotional reader, personal commentary creation
+and verified ZIP backup, separate synchronized Bible/commentary views, and
+reader zoom. ZIP restoration uses the existing local installer after extraction.
+
+Reading Style settings provide a default and per-module font, size and color
+overrides. Selected text can be spoken, opened in Apple Maps or submitted to
+Google Translate by explicit action. The app accepts external single-passage
+`sword://` links with an installed module. Help and About expose local
+workflow guidance, contributors and the license. Additional interface catalogs
+are partial exact imports. Physical printing, screen reader/keyboard review
+and macOS 27.0 acceptance remain open.

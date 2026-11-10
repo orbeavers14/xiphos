@@ -838,6 +838,14 @@ final class ReaderModel: ObservableObject {
             try await self.presentDictionary(entry, source: source, token: token)
         }
     }
+    func openExternalStudyLink(_ uri: String) {
+        guard let worker, uri.hasPrefix("sword://") else { return }
+        run { token in
+            let target = try await worker.resolveLink(uri, currentModule: "")
+            guard token == self.revision && !self.closed else { return }
+            try await self.visitAndPresent(module: target.module, reference: target.reference, token: token)
+        }
+    }
     func preparePassageExport(target: PassageTarget, expression: String, html: Bool,
                               deliver: @escaping @MainActor (String) -> Void) {
         guard let worker, let tab else { return }
@@ -1170,9 +1178,11 @@ private extension EnvironmentValues {
 }
 struct PassageView: NSViewRepresentable {
     @Environment(\.readingZoom) private var readingZoom
+    @AppStorage(ReadingStyle.storageKey) private var readingStyles = Data()
     let html: String
     var rightToLeft: Bool? = nil
     var css: String = ""
+    var styleModule: String? = nil
     let anchor: String?
     var anchorRevision: UInt64 = 0
     var onScrollFailure: (String) -> Void
@@ -1308,15 +1318,16 @@ struct PassageView: NSViewRepresentable {
         let changedAnchor = context.coordinator.anchor != anchor || context.coordinator.anchorRevision != anchorRevision
         context.coordinator.anchor = anchor
         context.coordinator.anchorRevision = anchorRevision
-        guard context.coordinator.loaded != html || context.coordinator.loadedCSS != css || context.coordinator.loadedInlineImages != allowsInlineImages || context.coordinator.loadedRightToLeft != rightToLeft else {
+        let effectiveCSS = css + "\n" + ReadingStyle.css(from: readingStyles, module: styleModule)
+        guard context.coordinator.loaded != html || context.coordinator.loadedCSS != effectiveCSS || context.coordinator.loadedInlineImages != allowsInlineImages || context.coordinator.loadedRightToLeft != rightToLeft else {
             if changedAnchor { context.coordinator.scrollToAnchor(view) }
             return
         }
         context.coordinator.loaded = html
-        context.coordinator.loadedCSS = css
+        context.coordinator.loadedCSS = effectiveCSS
         context.coordinator.loadedInlineImages = allowsInlineImages
         context.coordinator.loadedRightToLeft = rightToLeft
-        context.coordinator.navigation = view.loadHTMLString(Self.documentHTML(html: html, css: css, allowsInlineImages: allowsInlineImages, rightToLeft: rightToLeft), baseURL: nil)
+        context.coordinator.navigation = view.loadHTMLString(Self.documentHTML(html: html, css: effectiveCSS, allowsInlineImages: allowsInlineImages, rightToLeft: rightToLeft), baseURL: nil)
     }
     static func documentHTML(html: String, css: String, allowsInlineImages: Bool = false, rightToLeft: Bool? = nil) -> String {
         """
@@ -1423,6 +1434,10 @@ struct ReadingWordSearchMenu: View {
     var body: some View {
         let choices = resolved ?? word
         Menu("Search Selected Word") {
+            Button("Read Selection Aloud") { MacStudyActions.speak(choices.text) }
+            Button("Look Up Selection in Maps…") { MacStudyActions.openSelection(choices.text, translating: false) }
+            Button("Translate Selection on Google…") { MacStudyActions.openSelection(choices.text, translating: true) }
+            Divider()
             Button("Literal surface: " + choices.text) { search(choices, nil, false) }
             Button("Surface without Greek, Hebrew or Syriac marks") { search(choices, nil, true) }
             if !lookupFinished {
@@ -1475,7 +1490,7 @@ private struct DetachedReadingPane: View {
             }
             if let passage {
                 Text(passage.module + " · " + passage.reference).font(.headline)
-                PassageView(html:passage.html,rightToLeft:passage.rtl,css:passage.css,anchor:nil,
+                PassageView(html:passage.html,rightToLeft:passage.rtl,css:passage.css,styleModule:passage.module,anchor:nil,
                     onScrollFailure:{ message = $0 },onLink:{ uri in
                         if synchronized {
                             if commentary { model.followCommentaryLink(uri) } else { model.followLink(uri) }
@@ -1539,7 +1554,7 @@ private struct DevotionalView: View {
             if loading { ProgressView().controlSize(.small) }
             if !message.isEmpty { Text(message).foregroundStyle(.secondary) }
             PassageView(html: html, rightToLeft: modules.first(where: { $0.id == selection.module })?.rightToLeft,
-                        anchor: nil, onScrollFailure: { _ in }, onLink: { model.followLink($0) })
+                        styleModule: selection.module, anchor: nil, onScrollFailure: { _ in }, onLink: { model.followLink($0) })
         }
         .padding(16).frame(minWidth: 620, minHeight: 460)
         .task(id: selection) {
@@ -1823,6 +1838,14 @@ struct ReaderWindow: View {
                         Button("Export as Text…") { choosePassageDestination(.text) }
                         Button("Export as HTML…") { choosePassageDestination(.html) }
                         Button("Print…") { choosePassageDestination(.print) }
+                        Button("Read Verse Aloud") {
+                            if let source = model.syncTarget {
+                                model.preparePassageExport(target: source, expression: source.reference, html: false) {
+                                    MacStudyActions.speak($0)
+                                }
+                            }
+                        }
+                        Button("Stop Reading Aloud") { MacStudyActions.stopSpeech() }
                     }.disabled(model.syncTarget == nil)
                     if model.modules.contains(where: \.isDevotional) {
                         Button("Devotional…") { showDevotional = true }
@@ -1900,7 +1923,7 @@ struct ReaderWindow: View {
                 if !model.renderedReference.isEmpty {
                     Text(model.renderedReference).font(.headline).padding(12)
                 }
-                PassageView(html: model.html, rightToLeft: model.readingRightToLeft, css: model.lexicalPresentation.css, anchor: model.renderedAnchor, anchorRevision: model.renderedAnchorRevision,
+                PassageView(html: model.html, rightToLeft: model.readingRightToLeft, css: model.lexicalPresentation.css, styleModule: model.annotationEditingTarget?.module, anchor: model.renderedAnchor, anchorRevision: model.renderedAnchorRevision,
                             onScrollFailure: { model.message = $0 }, onLink: { model.followLink($0) },
                             onLinkHover: { model.previewStudyLink($0) },
                             onSelection: { text, _, reference in
@@ -1968,7 +1991,7 @@ struct ReaderWindow: View {
                             }
                             if let entry = model.commentaryEntry {
                                 Text(model.commentaryChapter?.title ?? entry.reference).font(.caption).padding(8)
-                                PassageView(html: model.commentaryDecoration?.html ?? model.commentaryChapter?.html ?? (entry.headingHTML + entry.html), rightToLeft: model.modules.first(where: {$0.id == model.commentarySelection})?.rightToLeft, css: model.commentaryDecoration?.css ?? (model.commentaryChapter?.lexical ?? entry.lexical).css, anchor: model.commentaryRenderedAnchor, anchorRevision: model.commentaryAnchorRevision, onScrollFailure: { model.message = $0 },
+                                PassageView(html: model.commentaryDecoration?.html ?? model.commentaryChapter?.html ?? (entry.headingHTML + entry.html), rightToLeft: model.modules.first(where: {$0.id == model.commentarySelection})?.rightToLeft, css: model.commentaryDecoration?.css ?? (model.commentaryChapter?.lexical ?? entry.lexical).css, styleModule: model.commentarySelection, anchor: model.commentaryRenderedAnchor, anchorRevision: model.commentaryAnchorRevision, onScrollFailure: { model.message = $0 },
                                     onLink: { model.followCommentaryLink($0) },
                                     onLinkHover: { model.previewStudyLink($0) })
                                 if model.commentaryChapter?.verses.allSatisfy({ $0.html.isEmpty && $0.headingHTML.isEmpty }) ?? (entry.html.isEmpty && entry.headingHTML.isEmpty) {
@@ -2028,7 +2051,7 @@ struct ReaderWindow: View {
                     Divider()
                     if let entry = model.dictionaryEntry {
                         Text("\(entry.module) • \(entry.key)").font(.caption).padding(8)
-                        PassageView(html: entry.html, rightToLeft: model.modules.first(where: {$0.id == entry.module})?.rightToLeft, anchor: entry.anchor, anchorRevision: model.dictionaryAnchorRevision, onScrollFailure: { model.message = $0 },
+                        PassageView(html: entry.html, rightToLeft: model.modules.first(where: {$0.id == entry.module})?.rightToLeft, styleModule: entry.module, anchor: entry.anchor, anchorRevision: model.dictionaryAnchorRevision, onScrollFailure: { model.message = $0 },
                                     onLink: { model.followLink($0, currentModule: model.dictionarySource?.module, currentReference: model.dictionarySource?.reference) },
                                     onLinkHover: { model.previewStudyLink($0) })
                     } else {
@@ -2081,6 +2104,8 @@ struct XiphosNativePreview: App {
     var body: some Scene {
         Settings { NativeSettingsView(delegate: delegate) }
         .commands {
+            CommandGroup(replacing: .appInfo) { Button("About Xiphos") { MacStudyActions.about() } }
+            CommandGroup(replacing: .help) { Button("Xiphos Help") { delegate.openHelp() } }
             CommandGroup(replacing: .newItem) {
                 Button("New Reading Window") { delegate.openNewWindow() }.keyboardShortcut("n")
                 Button("New Reading Tab") { delegate.openNewTab() }.keyboardShortcut("t")

@@ -84,6 +84,8 @@ foreach(library IN LISTS sword_link_flags)
 endforeach()
 set(adapter "${CMAKE_CURRENT_SOURCE_DIR}/EditorCore.swift" "${CMAKE_CURRENT_SOURCE_DIR}/CoreReader.swift" "${CMAKE_CURRENT_SOURCE_DIR}/CoreWorker.swift")
 set(preview_sources
+  "${CMAKE_CURRENT_SOURCE_DIR}/MacStudyActions.swift"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ReadingStyleUI.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/SettingsUI.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/MigrationUI.swift" "${CMAKE_CURRENT_SOURCE_DIR}/BookmarkManagement.swift"
   "${CMAKE_CURRENT_SOURCE_DIR}/SyncUI.swift"
@@ -100,6 +102,8 @@ set(swift_target "${CMAKE_SYSTEM_PROCESSOR}-apple-macosx${CMAKE_OSX_DEPLOYMENT_T
 set(app "${CMAKE_CURRENT_BINARY_DIR}/XiphosNativePreview.app")
 file(MAKE_DIRECTORY "${app}/Contents/MacOS" "${swift_cache}")
 configure_file(Info.plist "${app}/Contents/Info.plist" @ONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../../AUTHORS" "${app}/Contents/Resources/AUTHORS" COPYONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../../COPYING" "${app}/Contents/Resources/COPYING" COPYONLY)
 set(native_localization_source "${CMAKE_CURRENT_SOURCE_DIR}/../../localization/macos")
 file(GLOB_RECURSE native_localizations CONFIGURE_DEPENDS "${native_localization_source}/*.strings")
 foreach(resource IN LISTS native_localizations)
@@ -274,6 +278,9 @@ if(BUILD_TESTING)
       Bridge/module.modulemap ../../src/core/include/xiphos/core/c_api.h
     VERBATIM)
   add_custom_target(macos_reader_model_test ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke")
+  add_test(NAME reader_model_passage_and_devotional COMMAND "${CMAKE_CURRENT_BINARY_DIR}/reader_model_smoke"
+    --passage-and-devotional "${CMAKE_CURRENT_BINARY_DIR}/core/navigation-target-fixture")
+  set_tests_properties(reader_model_passage_and_devotional PROPERTIES FIXTURES_REQUIRED navigation_target_fixture TIMEOUT 60)
   add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/search_export_smoke"
     COMMAND ${SWIFTC} -swift-version 6 -D XIPHOS_PREVIEW_TEST -parse-as-library -target "${swift_target}" -module-cache-path "${swift_cache}"
       -I "${bridge}" ${adapter} ${preview_sources} "${CMAKE_CURRENT_SOURCE_DIR}/Tests/SearchExportSmoke.swift"

@@ -254,6 +254,43 @@ import SwiftUI
     private var bookmarks: NativeBookmarkWindow?
     private var annotations: [NativeAnnotationWindow] = []
     private var managedRoot: String?
+    private var helpWindow: NSWindow?
+    private var pendingStudyLink: String?
+    private var sessionStarted = false
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        guard !terminating, let url = urls.last(where: {
+            $0.scheme?.lowercased() == "sword" && $0.absoluteString.utf8.count <= 32_768
+        }) else { return }
+        pendingStudyLink = url.absoluteString
+        openPendingStudyLink()
+    }
+
+    private func openPendingStudyLink() {
+        guard sessionStarted, let controller, let uri = pendingStudyLink else { return }
+        pendingStudyLink = nil
+        let model = controller.records.first(where: { $0.key == controller.activeKey })?.model ?? controller.addWindow()
+        Task {
+            let deadline = Date().addingTimeInterval(10)
+            while model.isBusy && Date() < deadline {
+                try? await Task.sleep(nanoseconds: 10_000_000)
+            }
+            if model.isBusy { model.message = "Reading is busy. Open the study link again."; return }
+            model.openExternalStudyLink(uri)
+        }
+    }
+
+    func openHelp() {
+        if let helpWindow { helpWindow.makeKeyAndOrderFront(nil); return }
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 650, height: 520),
+                              styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
+        window.title = "Xiphos Help"
+        window.isReleasedWhenClosed = false
+        window.contentView = NSHostingView(rootView: NativeHelpView())
+        helpWindow = window
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+    }
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.appearance = preferences.appearance.appKitAppearance
         preferences.onAppearanceChanged = { NSApp.appearance = $0.appKitAppearance }
@@ -309,6 +346,8 @@ import SwiftUI
                 }
                 recovery.onError = { message in let alert = NSAlert(); alert.messageText = "Autosave paused"; alert.informativeText = "Save documents normally or use Save As. Your original documents and modules are unchanged. " + message; alert.runModal() }
                 recovery.start()
+                sessionStarted = true
+                openPendingStudyLink()
                 NSApplication.shared.activate(ignoringOtherApps: true)
             } catch {
                 let alert = NSAlert(); alert.messageText = "Unable to start the reading engine"

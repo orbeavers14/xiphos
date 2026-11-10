@@ -7,7 +7,7 @@ or compile resources into the layout required by their platform frameworks.
 |---|---|
 | gettext | Preserved .po catalogs and original translator credits; exact-message import source |
 | overrides | Reviewed translations for new native wording not covered by old catalogs |
-| macos | Generated .lproj/Localizable.strings resources; English plus partial French/German/Spanish |
+| macos | Generated .lproj/Localizable.strings resources; English plus partial French, German, Spanish, Italian, Brazilian Portuguese, Simplified Chinese, Arabic and Hebrew |
 | sword | GPL SWORD scripture-name catalogs and original credits/license |
 | tools | Deterministic native catalog generator, validation and importer tests |
 | windows | Future Windows .resw resource guidance |
