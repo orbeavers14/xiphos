@@ -21,7 +21,7 @@ changed contents are rejected by the shared revision check at copy time.
 Copy requires a new destination outside the source. It preserves every reviewed
 relative path and exact file byte, stages in a private sibling directory, verifies
 the destination tree and rechecks the source before publishing. Failure cleanup is limited to the operation's private staging tree; an interruption
-or cleanup failure can leave unpublished private staging. Existing destinations are never merged;
+or cleanup failure can leave unpublished private staging. Exclusive publication refuses destinations created during the copy. Existing destinations are never merged;
 originals are never deleted or rewritten. The returned destination manifest has
 the same revision as the reviewed source. File ownership, original access modes,
 timestamps, ACLs, extended attributes and filesystem links are not migrated;
@@ -46,6 +46,7 @@ application of every legacy preference or arbitrary external reference.
 
 Original-prose tests cover complete binary/Unicode/hidden/empty content, source
 revision drift, source/destination containment, existing/dangling destinations,
+concurrent creation of an empty destination,
 symlink refusal, oversized files, source retention, and C admission-copy/owned
 results after worker teardown. One-shot allocation failures across every counted
 copy allocation boundary verify that failure never follows publication and that

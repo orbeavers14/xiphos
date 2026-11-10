@@ -40,7 +40,19 @@ int main(int argc,char **argv)try{
  auto completed=std::make_shared<TransferControl>();auto completedCopy=copy_legacy_assets(source.u8string(),plan.revision,(root/"controlled-copy").u8string(),completed);check(completedCopy.revision==plan.revision&&completed->progress().phase==TransferPhase::complete&&!completed->request_cancel(),"Cancellation after commit loses and completed copy remains successful");
  write(source/"large.bin",std::string(32*1024*1024,'x'));auto largePlan=inspect_legacy_assets(source.u8string());auto active=worker.copy_legacy_assets_task(source.u8string(),largePlan.revision,(root/"active-copy").u8string());const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(30);bool accepted=false;
  while(active.result.wait_for(std::chrono::seconds(0))!=std::future_status::ready){check(std::chrono::steady_clock::now()<deadline,"Active copy cancellation deadline");auto progress=active.control->progress();if(progress.phase==TransferPhase::extracting&&progress.expanded){accepted=active.control->request_cancel();break;}std::this_thread::yield();}
- sawCancel=false;try{(void)active.result.get();}catch(const TransferCancelled &){sawCancel=true;}check(accepted?sawCancel&&!fs::exists(root/"active-copy"):!sawCancel,"Active cancellation and commit have one atomic winner");fs::remove(source/"large.bin");
+ sawCancel=false;try{(void)active.result.get();}catch(const TransferCancelled &){sawCancel=true;}check(accepted?sawCancel&&!fs::exists(root/"active-copy"):!sawCancel,"Active cancellation and commit have one atomic winner");
+ const auto concurrent = root/"concurrent-copy";
+ auto competing = worker.copy_legacy_assets_task(source.u8string(),largePlan.revision,concurrent.u8string());
+ const auto raceDeadline=std::chrono::steady_clock::now()+std::chrono::seconds(30);
+ while(competing.control->progress().phase!=TransferPhase::extracting){
+  check(competing.result.wait_for(std::chrono::seconds(0))!=std::future_status::ready &&
+        std::chrono::steady_clock::now()<raceDeadline,"Reach private staging before concurrent destination creation");
+  std::this_thread::yield();
+ }
+ check(fs::create_directory(concurrent),"Create competing empty directory after copy starts");
+ rejects([&]{(void)competing.result.get();});
+ check(fs::is_directory(concurrent)&&fs::is_empty(concurrent),"Publication preserves a competing empty directory");
+ fs::remove(source/"large.bin");
  check(xc_worker_open((root/"library").u8string().c_str(),&cw)==XC_OK,"C cancellable worker");check(xc_worker_copy_legacy_assets_task(cw,source.u8string().c_str(),plan.revision.c_str(),(root/"c-cancel").u8string().c_str(),&request)==XC_OK,"C cancellable admission");auto ccontrol=xc_request_take_transfer_control(request);check(ccontrol&&!xc_request_take_transfer_control(request),"C control take once before completion");auto caccepted=xc_transfer_control_cancel(ccontrol);allocations=0;watching=true;auto cstatus=wait(request);watching=false;check(!allocations,"C cancellable result polling allocates nothing");check(caccepted?cstatus==XC_CANCELLED&&!fs::exists(root/"c-cancel"):cstatus==XC_OK,"C cancellation maps to the actual publication winner");xc_transfer_control_release(ccontrol);xc_request_release(request);xc_worker_close(cw);
  const auto faultSource=source.u8string(),faultDestination=(root/"fault-copy").u8string();
  allocations=0;watching=true;auto faultBaseline=copy_legacy_assets(faultSource,plan.revision,faultDestination);watching=false;const auto sites=allocations;fs::remove_all(root/"fault-copy");check(sites>0&&sites<10000,"Bounded copy allocation-failure matrix");

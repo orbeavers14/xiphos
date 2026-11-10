@@ -12,11 +12,43 @@
 #include <atomic>
 #include <chrono>
 #include <type_traits>
+#include <cerrno>
+#include <system_error>
+#if defined(__APPLE__)
+#include <stdio.h>
+#elif defined(__linux__)
+#include <fcntl.h>
+#include <linux/fs.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+#elif defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#endif
 namespace xiphos::core {
 namespace {
 namespace fs=std::filesystem;
 constexpr std::uint64_t file_limit=128*1024*1024,tree_limit=1024*1024*1024;
 void invalid(){throw std::invalid_argument("Legacy assets require a bounded regular-file tree, portable unique names and a new separate destination");}
+// An existence check followed by ordinary rename can replace a directory
+// created between the two operations. Stage and destination are siblings.
+void publish_new_directory(const fs::path &stage, const fs::path &target) {
+#if defined(__APPLE__)
+  if (renamex_np(stage.c_str(), target.c_str(), RENAME_EXCL) == 0) return;
+  const std::error_code error(errno, std::generic_category());
+#elif defined(__linux__) && defined(SYS_renameat2)
+  if (syscall(SYS_renameat2, AT_FDCWD, stage.c_str(), AT_FDCWD, target.c_str(), RENAME_NOREPLACE) == 0) return;
+  const std::error_code error(errno, std::generic_category());
+#elif defined(_WIN32)
+  if (MoveFileW(stage.c_str(), target.c_str())) return;
+  const std::error_code error(static_cast<int>(GetLastError()), std::system_category());
+#else
+  const auto error = std::make_error_code(std::errc::operation_not_supported);
+#endif
+  if (error == std::errc::file_exists || error == std::errc::directory_not_empty) invalid();
+  throw fs::filesystem_error("Cannot publish a new legacy asset directory", stage, target, error);
+}
 void path(const std::string &p){if(p.empty()||p.size()>4096||!editable_document_text(p))invalid();}
 std::string hash(const std::string &bytes){std::unique_ptr<gchar,decltype(&g_free)> h(g_compute_checksum_for_data(G_CHECKSUM_SHA256,reinterpret_cast<const guchar *>(bytes.data()),bytes.size()),g_free);if(!h)throw std::bad_alloc();return h.get();}
 std::string portable(const std::string &p){std::unique_ptr<gchar,decltype(&g_free)> folded(g_utf8_casefold(p.data(),p.size()),g_free);if(!folded)throw std::bad_alloc();std::unique_ptr<gchar,decltype(&g_free)> normalized(g_utf8_normalize(folded.get(),-1,G_NORMALIZE_NFC),g_free);if(!normalized)throw std::bad_alloc();return normalized.get();}
@@ -61,7 +93,7 @@ LegacyAssets copy_legacy_assets(const std::string &source,const std::string &rev
  if(control)detail::TransferAccess::phase(*control,TransferPhase::validating);
  auto verified=scan(stage.folder,control.get());if(verified.revision!=revision||scan(root,control.get()).revision!=revision)throw std::invalid_argument("Legacy asset verification changed; originals retained");verified.source=target.u8string(); // Allocate the returned path before publication.
  static_assert(std::is_nothrow_move_constructible_v<LegacyAssets>);
- if(fs::exists(fs::symlink_status(target)))invalid();if(control)detail::TransferAccess::commit(*control);fs::rename(stage.folder,target);stage.folder.clear();if(control)detail::TransferAccess::finish(*control);return verified;
+ if(control)detail::TransferAccess::commit(*control);publish_new_directory(stage.folder,target);stage.folder.clear();if(control)detail::TransferAccess::finish(*control);return verified;
  }catch(...){if(control)detail::TransferAccess::fail(*control);throw;}
 }
 }
