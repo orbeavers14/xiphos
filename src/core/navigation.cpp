@@ -32,7 +32,21 @@ std::string folded_reference(const char *text) {
   if (!folded) throw std::bad_alloc();
   Buffer normalized(g_utf8_normalize(folded.get(),-1,G_NORMALIZE_NFC), &g_free);
   if (!normalized) throw std::bad_alloc();
-  return normalized.get();
+  std::string result;
+  bool space = false;
+  for (const char *at = normalized.get(); *at; at = g_utf8_next_char(at)) {
+    const auto scalar = g_utf8_get_char(at);
+    if (g_unichar_isspace(scalar)) {
+      space = !result.empty();
+      continue;
+    }
+    if (space) result += ' ';
+    space = false;
+    const auto digit = g_unichar_digit_value(scalar);
+    if (digit >= 0) result += static_cast<char>('0' + digit);
+    else result.append(at,g_utf8_next_char(at));
+  }
+  return result;
 }
 }
 
@@ -70,7 +84,11 @@ std::string localized_reference_expression(sword::VerseKey &key, const std::stri
     const auto *entry = canon->getBook(i);
     consider(locale->translate(entry->getLongName()), entry->getOSISName());
   }
-  if (!longest) return reference;
+  if (!longest) {
+    // A locale can normalize a numeric shorthand without introducing a book.
+    // Unknown book text still goes through the existing SDK parser unchanged.
+    return input.find_first_not_of("0123456789:.,;- ") == std::string::npos ? input : reference;
+  }
   if (ambiguous) throw std::invalid_argument("Localized book name is ambiguous");
   if (canon->getBookNumberByOSISName(book.c_str()) < 1)
     throw std::invalid_argument("Localized book is absent from this module's canon");

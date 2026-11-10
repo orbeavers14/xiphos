@@ -69,7 +69,8 @@ These checks are scoped acceptance, not complete platform/feature parity.
 The Mac reference field uses `xc_worker_resolve_localized_reference` when a
 private SWORD locale is configured. The shared worker rewrites a recognized
 leading book name or abbreviation using Unicode case folding and canonical
-normalization. SWORD resolves the verse in the selected module's canon.
+normalization. It accepts Unicode whitespace and decimal digits, including
+numeric shorthand interpreted by the existing SDK parser. SWORD resolves the verse in the selected module's canon.
 A known book outside that canon is refused. Canonical input and numeric
 shorthand continue through the existing parser. Locale tables remain private
 to the request, and resolution itself does not visit history.

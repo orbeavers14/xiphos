@@ -153,6 +153,12 @@ int main(int argc, char **argv) {
             corpus.navigation_target("SelectorCorpus","JnLocal3:16",file.string()).reference == "John 3:16" &&
             corpus.navigation_target("SelectorCorpus",u8"Gene\u0300se 1:1",file.string()).reference == "Genesis 1:1",
             "Private localized names, aliases and Unicode equivalence resolve canonical verses");
+      check(corpus.navigation_target("SelectorCorpus",u8"\u00a0Jean\u00a0 ٣:١٦  ",file.string()).reference=="John 3:16",
+            "Localized input accepts Unicode spacing and decimal digits");
+      (void)corpus.read("SelectorCorpus","John 3:16");
+      check(corpus.navigation_target("SelectorCorpus",u8"١٧",file.string()).reference==
+            corpus.navigation_target("SelectorCorpus","17").reference,
+            "Localized decimal shorthand keeps existing SDK interpretation");
       bool absent=false;
       try { (void)corpus.navigation_target("SelectorCorpus","Tobie 1:1",file.string()); }
       catch (const std::invalid_argument &) { absent=true; }
