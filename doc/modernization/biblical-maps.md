@@ -1,5 +1,11 @@
 # Biblical maps
 
+The Mac reader has a prototype under **Preferences → Biblical Map…**.
+It shows three illustrative place markers and opens a local raster or
+Protomaps-style PMTiles archive for the current session. The vector preview
+draws water and roads. Raster archives can include labels and icons in their
+tile images. The map panel bundles its scripts and blocks network requests.
+
 Use MapLibre GL JS in the Mac reader's map panel. Bundle the renderer and style
 locally so the same map page can later run in the Linux frontend. Keep place
 records separate from the basemap. Store names, aliases, coordinates, sources,

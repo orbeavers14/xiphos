@@ -1624,6 +1624,20 @@ private struct DevotionalView: View {
     }
 }
 
+private struct BiblicalMapPanel: NSViewRepresentable {
+    func makeNSView(context: Context) -> WKWebView {
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = .nonPersistent()
+        let view = WKWebView(frame: .zero, configuration: configuration)
+        if let page = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "Maps") {
+            view.loadFileURL(page, allowingReadAccessTo: page.deletingLastPathComponent())
+        }
+        return view
+    }
+
+    func updateNSView(_ view: WKWebView, context: Context) {}
+}
+
 struct ReaderWindow: View {
     @StateObject private var model: ReaderModel
     @State private var sidebar = "modules"
@@ -1644,6 +1658,7 @@ struct ReaderWindow: View {
         }
     }
     @State private var showDevotional = false
+    @State private var showBiblicalMap = false
     @State private var passageDestination: PassageDestination?
     @State private var formattedPrint: FormattedPassagePrint?
     @State private var passageSource: PassageTarget?
@@ -1959,6 +1974,7 @@ struct ReaderWindow: View {
                 }.padding(.horizontal, 12).padding(.bottom, 8).disabled(model.isBusy)
                 HStack {
                     Menu("Preferences") {
+                        Button("Biblical Map…") { showBiblicalMap = true }
                         Button("Reload Reading Notes") {model.refreshDisplay()}.disabled(!model.readingSources.enabled)
                         Button("Clear Reading Notes") {model.applyReadingSources(CoreReadingSources())}.disabled(!model.readingSources.enabled)
                         Button("Parallel Reading") { model.openParallel() }.disabled(model.parallelProfilePath == nil)
@@ -2146,6 +2162,14 @@ struct ReaderWindow: View {
             .onChange(of: model.highlightSelected) { model.refreshDisplay() }
             .sheet(item: Binding(get: { model.verseImage }, set: { if $0 == nil { model.closeVerseImage() } })) { image in
                 VerseImagePreviewView(image: image, close: model.closeVerseImage)
+            }
+            .sheet(isPresented: $showBiblicalMap) {
+                VStack {
+                    BiblicalMapPanel()
+                    Button("Done") { showBiblicalMap = false }.keyboardShortcut(.cancelAction)
+                }
+                .padding()
+                .frame(minWidth: 720, minHeight: 500)
             }
             .sheet(isPresented: $model.showLexiconPreferences) {
                 if let preferences = model.lexiconPreferences { LexiconPreferencesView(model: model, preferences: preferences) }

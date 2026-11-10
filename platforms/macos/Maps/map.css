@@ -1,0 +1,4 @@
+body { margin: 0; height: 100vh; display: flex; flex-direction: column; font: menu; }
+header { padding: 10px; }
+output { display: block; margin-top: 6px; }
+#map { flex: 1; }

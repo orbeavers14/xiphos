@@ -182,3 +182,8 @@ Google Translate by explicit action. The app accepts external single-passage
 workflow guidance, contributors and the license. Additional interface catalogs
 are partial exact imports. Physical printing, screen reader/keyboard review
 and macOS 27.0 acceptance remain open.
+
+The Mac reader's **Preferences → Biblical Map…** opens the bundled MapLibre
+prototype with illustrative markers and session-only PMTiles import. See
+[the map design](biblical-maps.md) for supported preview layers and the remaining
+offline rendering and download work.

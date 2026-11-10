@@ -1,47 +1,47 @@
 {
   "en": {
-    "translated_or_fallback_entries": 454,
-    "extracted_literal_keys": 454,
+    "translated_or_fallback_entries": 455,
+    "extracted_literal_keys": 455,
     "partial": false
   },
   "fr": {
     "translated_or_fallback_entries": 78,
-    "extracted_literal_keys": 454,
+    "extracted_literal_keys": 455,
     "partial": true
   },
   "de": {
     "translated_or_fallback_entries": 44,
-    "extracted_literal_keys": 454,
+    "extracted_literal_keys": 455,
     "partial": true
   },
   "es": {
     "translated_or_fallback_entries": 43,
-    "extracted_literal_keys": 454,
+    "extracted_literal_keys": 455,
     "partial": true
   },
   "it": {
     "translated_or_fallback_entries": 50,
-    "extracted_literal_keys": 454,
+    "extracted_literal_keys": 455,
     "partial": true
   },
   "pt-BR": {
     "translated_or_fallback_entries": 11,
-    "extracted_literal_keys": 454,
+    "extracted_literal_keys": 455,
     "partial": true
   },
   "zh-Hans": {
     "translated_or_fallback_entries": 50,
-    "extracted_literal_keys": 454,
+    "extracted_literal_keys": 455,
     "partial": true
   },
   "ar": {
     "translated_or_fallback_entries": 36,
-    "extracted_literal_keys": 454,
+    "extracted_literal_keys": 455,
     "partial": true
   },
   "he": {
     "translated_or_fallback_entries": 34,
-    "extracted_literal_keys": 454,
+    "extracted_literal_keys": 455,
     "partial": true
   }
 }
