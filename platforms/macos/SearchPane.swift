@@ -104,19 +104,21 @@ struct SearchPane: View {
                 }
                 Toggle("Case sensitive", isOn: $model.caseSensitive)
                 Toggle("Set annotation options", isOn: $model.setAnnotationOptions)
-                    .disabled(model.mode == .phrase)
+                    .disabled(model.mode == .phrase || model.mode.usesOnlySurfaceText)
                     .help("Otherwise retain the previous search annotation settings. Phrase searches always retain prior settings.")
                 if model.setAnnotationOptions {
                     VStack(alignment: .leading) {
                         Toggle("Include Strong’s annotations", isOn: $model.searchStrongs)
                         Toggle("Include morphology annotations", isOn: $model.searchMorphology)
                         Toggle("Include footnotes", isOn: $model.searchFootnotes)
-                    }.disabled(model.mode == .phrase)
+                    }.disabled(model.mode == .phrase || model.mode.usesOnlySurfaceText)
                 }
                 Button("Reset search annotations") { model.resetSearchAnnotations() }
                     .help("Clear retained search-only settings without changing reading preferences or previous results.")
                 if model.mode == .phrase {
                     Text("Phrase search keeps prior annotation settings.").font(.caption).foregroundStyle(.secondary)
+                } else if model.mode.usesOnlySurfaceText {
+                    Text("Surface search excludes annotations.").font(.caption).foregroundStyle(.secondary)
                 }
             }.disabled(model.isBusy || hostBusy)
             HStack {

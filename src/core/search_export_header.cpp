@@ -115,7 +115,8 @@ std::string SearchGeneration::export_header(std::size_t index) const
 		text += std::string("Search annotation policy: Strong's ") + flag(options.strongs) + ", morphology " + flag(options.morphology) + ", footnotes " + flag(options.footnotes) + "\n";
 	} else
 		text += "Search annotation policy: unchanged SDK state\n";
-	text += std::string("Backend: ") + backend_name(result.engine_type) + "\n";
+	text += std::string("Backend: ") +
+		(surface_search_mode(result.requested.mode) ? "Unicode verse scan" : backend_name(result.engine_type)) + "\n";
 	if (result.index_fallback)
 		text += "Indexed backend unavailable; used multiword fallback.\n";
 	if (result.cancelled)

@@ -72,6 +72,15 @@ int main(int argc,char **argv){try{
  SearchQuery empty{"Text","Original",SearchMode::words};empty.within_last_results=true;empty.text_options=wanted;
  const auto skipped=first.search_module(empty);
  check(!skipped.executed&&skipped.text_options_updated&&same(skipped.effective_text_options,wanted)&&same(first.search_text_options().options,wanted),"Empty last scope still commits successfully prepared search options, as legacy setup precedes scope short-circuit");
+ SearchQuery surface{"Text","G140",SearchMode::surface_literal};surface.text_options=wanted;
+ const auto literal=first.search_module(surface);
+ check(literal.executed&&literal.references.empty()&&same(literal.effective_text_options,{false,false,false})&&
+       !literal.text_options_updated&&same(first.search_text_options().options,wanted),
+       "Surface searches exclude annotations and preserve retained options");
+ surface.expression="Original";
+ const auto surfaceText=first.search_module(surface);
+ check(!surfaceText.references.empty(),"Surface search still reads visible module text");
+ first.clear_search_scope();
  auto cancelled=std::make_shared<SearchControl>();cancelled->request_cancel();empty.text_options=SearchTextOptions(false,true,false);
  const auto stopped=first.search_module(empty,{},cancelled);
  check(stopped.cancelled&&!stopped.executed&&!stopped.effective_text_options&&!stopped.text_options_updated&&same(first.search_text_options().options,wanted),"Pre-preparation cancellation cannot change logical search options");

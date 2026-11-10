@@ -632,18 +632,8 @@ WordStudy Reader::word_study(const std::string &id, const std::string &reference
   detail::validate_xml_text(reference,32768);
   detail::validate_xml_text(surface,1024);
   if (id.empty() || surface.empty()) throw std::invalid_argument("Missing selected word source");
-  auto key_text = [](const std::string &value, bool fold_marks) {
-    std::unique_ptr<char, decltype(&g_free)> normalized(
-        g_utf8_normalize(value.data(), value.size(), G_NORMALIZE_NFD), &g_free);
-    if (!normalized) return std::string{};
-    if (!fold_marks) return std::string(normalized.get());
-    std::string key;
-    for (const char *at = normalized.get(); *at; at = g_utf8_next_char(at)) {
-      if (!g_unichar_ismark(g_utf8_get_char(at))) key.append(at, g_utf8_next_char(at));
-    }
-    return key;
-  };
-  const auto exact = key_text(surface, false), folded = key_text(surface, true);
+  const auto exact = detail::surface_key(surface,false,true);
+  const auto folded = detail::surface_key(surface,true,true);
   if (folded.empty()) throw std::invalid_argument("Selected word has no base characters");
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto &module = impl_->verse_module(id, reference);
@@ -679,7 +669,7 @@ WordStudy Reader::word_study(const std::string &id, const std::string &reference
     if (text == word.second.end() || text->second.size() > 1024) continue;
     const std::string token(text->second.c_str(), text->second.size());
     if (!g_utf8_validate(token.data(), token.size(), nullptr) ||
-        key_text(token, true) != folded) continue;
+        detail::surface_key(token,true,true) != folded) continue;
     std::vector<std::string> lemmas;
     for (unsigned i = 1; i <= 32; ++i) {
       const auto suffix = "." + std::to_string(i);
@@ -695,7 +685,7 @@ WordStudy Reader::word_study(const std::string &id, const std::string &reference
       if (!prior) prior = lemmas;
       else if (*prior != lemmas) conflict = true;
     };
-    if (key_text(token, false) == exact) agree(exact_lemmas, exact_conflict);
+    if (detail::surface_key(token,false,true) == exact) agree(exact_lemmas, exact_conflict);
     agree(folded_lemmas, folded_conflict);
   }
   if (exact_lemmas && !exact_conflict) result.lemmas = std::move(*exact_lemmas);

@@ -148,7 +148,10 @@ struct RenderedBookDocument: Sendable, Equatable {
     var resourceCSS: String { lexical.css + "\n" + (presentation?.stylesheet?.inlineCSS ?? "") }
 }
 enum CoreSearchKeyKind: Int32, Sendable { case verse=0, dictionary=1, generalBook=2 }
-enum CoreSearchMode: Int32, Sendable { case regularExpression=0, phrase=1, words=2, lemma=3, morphology=4, footnote=5, multiword=6, indexed=7, surfaceLiteral=8, surfaceUnmarked=9 }
+enum CoreSearchMode: Int32, Sendable {
+    case regularExpression=0, phrase=1, words=2, lemma=3, morphology=4, footnote=5, multiword=6, indexed=7, surfaceLiteral=8, surfaceUnmarked=9
+    var usesOnlySurfaceText: Bool { self == .surfaceLiteral || self == .surfaceUnmarked }
+}
 enum CoreSearchPhase: Int32, Sendable { case queued = 0, running, complete, cancelled, failed }
 struct CoreSearchProgress: Sendable, Equatable { let phase: CoreSearchPhase; let percent: UInt32; let cancelRequested: Bool }
 struct CoreSearchTextOptions: Sendable, Equatable { var strongs = false; var morphology = false; var footnotes = false }

@@ -49,27 +49,6 @@ struct ScopedSearchModule {
   explicit ScopedSearchModule(sword::SWModule &m):module(m),attributes(m.isProcessEntryAttributes()),skip_links(m.isSkipConsecutiveLinks()){}
   ~ScopedSearchModule(){module.setProcessEntryAttributes(attributes);module.setSkipConsecutiveLinks(skip_links);module.terminateSearch=false;}
 };
-std::string surface_key(const std::string &text, bool unmarked, bool sensitive) {
-  using OwnedText = std::unique_ptr<char, decltype(&g_free)>;
-  OwnedText folded(sensitive ? g_strdup(text.c_str()) : g_utf8_casefold(text.data(),text.size()), &g_free);
-  if (!folded) throw std::runtime_error("Unable to case-fold surface text");
-  OwnedText normalized(g_utf8_normalize(folded.get(),-1,G_NORMALIZE_NFD), &g_free);
-  if (!normalized) throw std::runtime_error("Unable to normalize surface text");
-  if (!unmarked) return normalized.get();
-  std::string result;
-  GUnicodeScript base = G_UNICODE_SCRIPT_UNKNOWN;
-  for (const char *at = normalized.get(); *at; at = g_utf8_next_char(at)) {
-    const auto scalar = g_utf8_get_char(at);
-    if (g_unichar_ismark(scalar)) {
-      if (base == G_UNICODE_SCRIPT_GREEK || base == G_UNICODE_SCRIPT_HEBREW ||
-          base == G_UNICODE_SCRIPT_SYRIAC) continue;
-    } else {
-      base = g_unichar_get_script(scalar);
-    }
-    result.append(at,g_utf8_next_char(at));
-  }
-  return result;
-}
 bool contains_surface(const std::string &text,const std::string &needle) {
   for (auto at = text.find(needle); at != std::string::npos; at = text.find(needle,at+1)) {
     const auto end = at + needle.size();
@@ -196,7 +175,8 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   }
   const bool surface = surface_search_mode(query.mode);
   const bool unmarked = query.mode == SearchMode::surface_unmarked;
-  const auto effective_text=query.mode!=SearchMode::phrase&&!surface&&query.text_options?query.text_options:previous_text;
+  const auto effective_text = surface ? std::make_optional(SearchTextOptions{}) :
+      query.mode != SearchMode::phrase && query.text_options ? query.text_options : previous_text;
   ScopedSearchFilters filters(manager,effective_text,surface);ScopedSearchModule state(module);
   std::optional<sword::ListKey> interval;
   if(query.keyed_interval){

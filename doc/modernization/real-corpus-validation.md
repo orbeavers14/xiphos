@@ -100,6 +100,8 @@ agree. This matching applies to metadata lookup. Explicit literal and mark-insen
 surface modes share the same bounded verse-search pipeline. Literal matches
 preserve marks and accept canonical Unicode equivalents. The mark-insensitive
 mode removes combining marks attached to Greek, Hebrew and Syriac characters.
+Word metadata lookup uses the same script-specific normalization. Both surface
+modes exclude annotations without changing retained settings for other searches.
 Legacy phrase searches retain their existing behavior. The returned C snapshot owns the
 actual module, canonical reference, original surface and ordered terms.
 
