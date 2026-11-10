@@ -13,7 +13,17 @@ std::string bytes(const std::string &file){std::ifstream in(fs::u8path(file),std
 void write(const std::string &file,const std::string &s){std::ofstream out(fs::u8path(file),std::ios::binary);out<<s;}
 int main(int argc,char **argv){try{
  check(argc==2||argc==3,"Fixture path required");auto root=fs::u8path(argv[1]);check(root.filename()=="recovery-fixture","Named fixture only");auto file=(root/"recovery").u8string();
- if(argc==3){auto loaded=read_recovery_snapshot(file);check(!loaded.recovered_from_previous&&loaded.drafts.size()==1&&loaded.drafts[0].text=="Changed Ω draft","Fresh process restores exact draft source");check(loaded.session.tabs.empty(),"Session round trip");fs::remove_all(root);return 0;}
+ if(argc==3){auto loaded=read_recovery_snapshot(file);check(!loaded.recovered_from_previous&&loaded.drafts.size()==1&&loaded.drafts[0].text=="Changed Ω draft","Fresh process restores exact draft source");check(loaded.session.tabs.empty(),"Session round trip");
+  const auto module = read_recovery_snapshot((root/"module-recovery").u8string());
+  check(module.recovered_from_previous && module.drafts.size()==1,
+        "Fresh process falls back after an interrupted module draft write");
+  const auto &draft = module.drafts.front();
+  check(draft.target==RecoveryTarget::module && draft.module.module=="Personal" &&
+        draft.module.reference=="John 3:16" && draft.saved_text=="<p>Saved Ω</p>" &&
+        draft.text=="<p>Unsaved Ω</p>" && draft.selection_end==draft.text.size() &&
+        recovery_draft_source_matches(draft,std::string(64,'c')) &&
+        !recovery_draft_source_matches(draft,std::string(64,'d')),
+        "Module fallback retains source identity, revision, rich text and selection");fs::remove_all(root);return 0;}
  fs::remove_all(root);fs::create_directories(root/"library/mods.d");RecoverySnapshot s;RecoveryDraft draft;draft.id="original";draft.title="Original draft";draft.target=RecoveryTarget::file;draft.path=(root/"document").u8string();draft.origin_revision=std::string(64,'a');draft.saved_text="Original saved prose";draft.text="Changed Ω draft";draft.selection_end=draft.text.size();s.drafts.push_back(draft);
  auto encoded=serialize_recovery_snapshot(s);check(serialize_recovery_snapshot(parse_recovery_snapshot(encoded))==encoded,"Exact source/session round trip");for(std::size_t n=0;n<encoded.size();++n)rejects([&]{parse_recovery_snapshot(encoded.substr(0,n));});auto altered=encoded;altered.back()^=1;rejects([&]{parse_recovery_snapshot(altered);});
  auto bad=s;bad.drafts.push_back(draft);rejects([&]{serialize_recovery_snapshot(bad);});bad=s;bad.drafts[0].selection_start=9;bad.drafts[0].selection_end=9;rejects([&]{serialize_recovery_snapshot(bad);});bad=s;bad.drafts[0].target=RecoveryTarget::module;rejects([&]{serialize_recovery_snapshot(bad);});
@@ -32,5 +42,23 @@ int main(int argc,char **argv){try{
  write(file,"Corrupt primary");auto recovered=read_recovery_snapshot(file);check(recovered.recovered_from_previous&&recovered.drafts[0].text==draft.text,"Corrupt primary offers last good draft");rejects([&]{save_recovery_snapshot(file,recovered.revision,recovered);});check(bytes(file)=="Corrupt primary"&&bytes(file+".previous")==backup,"Recovery never overwrites damaged primary");auto exported=save_recovery_snapshot((root/"recovered-copy").u8string(),std::nullopt,recovered);check(!exported.recovered_from_previous&&exported.drafts[0].text==draft.text,"Explicit recovery Save As preserves draft");fs::remove(file);check(read_recovery_snapshot(file).recovered_from_previous,"Missing primary fallback");
  write(file,serialize_recovery_snapshot(next));write(file+".previous","Unrelated future backup");rejects([&]{save_recovery_snapshot(file,saved.revision,s);});check(bytes(file)==serialize_recovery_snapshot(next)&&bytes(file+".previous")=="Unrelated future backup","Unknown backup preserved");fs::remove(file+".previous");
  {StudyWorker worker((root/"library").u8string());auto loaded=worker.read_recovery(file).get();auto done=worker.save_recovery(file,loaded.revision,s).get();check(done.drafts[0].saved_text==draft.saved_text&&worker.modules().get().empty(),"FIFO recovery storage does not mutate source modules");}
+ {
+  const auto path=(root/"module-recovery").u8string();
+  RecoverySnapshot module;
+  RecoveryDraft entry;
+  entry.id="personal-entry";
+  entry.target=RecoveryTarget::module;
+  entry.module={"Personal","John 3:16"};
+  entry.origin_revision=std::string(64,'c');
+  entry.saved_text="<p>Saved Ω</p>";
+  entry.text="<p>Unsaved Ω</p>";
+  entry.selection_end=entry.text.size();
+  module.drafts.push_back(entry);
+  const auto previous=save_recovery_snapshot(path,std::nullopt,module);
+  module.drafts.front().text+="<p>Later edit</p>";
+  (void)save_recovery_snapshot(path,previous.revision,module);
+  const auto committed=bytes(path);
+  write(path,committed.substr(0,committed.size()/2));
+ }
  check(!fs::exists(fs::u8path(draft.path)),"Recovered file source never written");std::cout<<"Recovery checks passed\n";return 0;
  }catch(const std::exception &e){std::cerr<<e.what()<<'\n';return 1;}}
