@@ -154,3 +154,10 @@ The earlier PNG/BMP policy continues to reject JPEGs. The opt-in
 shipped FreChry stylesheet contributes scoped text alignment. Export imports
 a limited set of text formatting rules from the declared local stylesheet.
 External URLs, fonts, at-rules and inline styles are outside that subset.
+
+
+The verified MT table also covers Genesis 2:1–25 directly and Psalm 4:2–9
+↔ ASV Psalm 4:1–8. The Hebrew title has no numbered English row. Sources
+were [Hebrew Genesis 2](https://mechon-mamre.org/p/pt/pt0102.htm),
+[ASV Genesis 2](https://ebible.org/asv/GEN02.htm), [Hebrew Psalm 4](https://mechon-mamre.org/p/pt/pt2604.htm),
+and Psalm 4 in the installed ASV 2.0 corpus.

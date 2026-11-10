@@ -76,7 +76,8 @@ std::vector<std::string> parallel_mapped_references(sword::SWModule &from,
     };
     // Sources and verification scope: doc/modernization/real-corpus-validation.md.
     // The numbered Psalm body starts after the MT title.
-    static constexpr VerseRun runs[] = {{"Gen", 1, 1, 1, 31}, {"Ps", 3, 2, 1, 8}};
+    static constexpr VerseRun runs[] = {{"Gen", 1, 1, 1, 31}, {"Gen", 2, 1, 1, 25},
+                                        {"Ps", 3, 2, 1, 8}, {"Ps", 4, 2, 1, 8}};
     const std::string book = source.getOSISBookName();
     int mapped = 0;
     for (const auto &run : runs) {
