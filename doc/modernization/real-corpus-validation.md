@@ -103,7 +103,12 @@ mode removes combining marks attached to Greek, Hebrew and Syriac characters.
 Legacy phrase searches retain their existing behavior. The returned C snapshot owns the
 actual module, canonical reference, original surface and ordered terms.
 
-The SDK does not supply shifted mappings for every pair of canons. The test
-uses the supported Synodal mapping. The ordinary chapter matrix keeps its
-characterized textual behavior. Search-opened comparisons use SDK mappings
-and retain that mode during navigation and session restoration.
+The ordinary chapter matrix keeps its characterized textual behavior.
+Search-opened comparisons retain SDK mapping during navigation and restoration.
+Cross-canon mapping is limited to systems with known SWORD mapping tables or
+KJV/KJVA anchors. An unsupported pair never silently falls back to matching
+verse numbers. A split opens at its first numbered control verse, and a split
+cell carries separate HTML and source references for every numbered part.
+Merged mappings retain the same actual source verse in each corresponding
+control row. Real tests cover Leviticus 14:55–56 in Synodal/KJV, a Psalm mapping
+starting at verse zero, and an unsupported MT-to-KJV comparison.

@@ -676,26 +676,12 @@ ParallelChapter Reader::read_parallel(const std::vector<std::string> &requested,
       throw std::out_of_range("First parallel control is not installed: " + requested.front());
     throw std::invalid_argument("First parallel control is not a supported verse module");
   }
-  auto map_reference = [](sword::SWModule &from, sword::SWModule &to, const std::string &text)
-      -> std::optional<std::string> {
-    sword::VerseKey source(*static_cast<sword::VerseKey *>(from.getKey()));
-    source.setAutoNormalize(false);
-    source.setText(text.c_str());
-    if (source.getError() || source.getChapter() < 1 || source.getVerse() < 1 ||
-        source.getVerse() > source.getVerseMax()) return std::nullopt;
-    sword::VerseKey target(*static_cast<sword::VerseKey *>(to.getKey()));
-    target.clearBounds();
-    target.positionFrom(source);
-    if (target.getError() || target.getChapter() < 1 || target.getVerse() < 1 ||
-        target.getVerse() > target.getVerseMax()) return std::nullopt;
-    return target.getText();
-  };
   std::string control_reference = reference;
   if (!source_module.empty()) {
     auto &source = impl_->verse_module(source_module, reference);
-    auto mapped = map_reference(source, *modules.front(), reference);
-    if (!mapped) throw std::invalid_argument("Search result has no verse in the comparison control canon");
-    control_reference = std::move(*mapped);
+    auto mapped = parallel_mapped_references(source, *modules.front(), reference);
+    if (mapped.empty()) throw std::invalid_argument("Search result has no verified mapping in the comparison control canon");
+    control_reference = std::move(mapped.front());
   }
   auto plan = parallel_references(*modules.front(), control_reference);
   result.control_module = result.columns.front().module;result.reference = std::move(plan.reference);
@@ -722,14 +708,19 @@ ParallelChapter Reader::read_parallel(const std::vector<std::string> &requested,
     row.cells.reserve(modules.size());
     for (auto *module : modules) {
       ParallelCell cell;
-      const auto cell_reference = !module ? std::nullopt :
-          source_module.empty() ? std::make_optional(row.reference) :
-          map_reference(*modules.front(), *module, row.reference);
-      if (cell_reference) {
-        module->setKey(cell_reference->c_str());
-        if (headings) cell.headings = render_preverse_headings(*module);
-        cell.html = render_entry(*module, cell_reference->c_str());cell.reference = module->getKeyText();
-        account(cell.reference);account(cell.html);for (const auto &heading : cell.headings) account(heading);
+      if (module) {
+        const auto references = source_module.empty() ? std::vector<std::string>{row.reference} :
+            parallel_mapped_references(*modules.front(), *module, row.reference);
+        for (const auto &reference : references) {
+          auto &part = cell.reference.empty() ? static_cast<ParallelVerse &>(cell) : cell.additional.emplace_back();
+          module->setKey(reference.c_str());
+          if (headings) part.headings = render_preverse_headings(*module);
+          part.html = render_entry(*module, reference.c_str());
+          part.reference = module->getKeyText();
+          account(part.reference);
+          account(part.html);
+          for (const auto &heading : part.headings) account(heading);
+        }
       }
       row.cells.push_back(std::move(cell));
     }

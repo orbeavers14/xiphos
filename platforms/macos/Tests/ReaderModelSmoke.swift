@@ -847,11 +847,12 @@ struct ReaderModelSmoke {
         let model = ReaderModel(worker:worker,startupError:nil);try await idle(model)
         let chapter = CoreParallelChapter(reference:"John 3:16",title:"Original mixed direction",
             columns:[CoreParallelColumn(requested:"RtlText",module:"RtlText",ready:true,rtl:true),CoreParallelColumn(requested:"TextA",module:"TextA",ready:true,rtl:false)],
-            rows:[CoreParallelRow(reference:"John 3:16",cells:[CoreParallelCell(reference:"John 3:16",html:"<p>שלום עולם — نص أصلي</p><aside class='xc-reading-annotation'>Original note Ω</aside>",headings:[]),CoreParallelCell(reference:"John 3:16",html:"<p>Original Latin text.</p>",headings:[])])])
+            rows:[CoreParallelRow(reference:"John 3:16",cells:[CoreParallelCell(reference:"John 3:16",html:"<p>שלום עולם — نص أصلي</p><aside class='xc-reading-annotation'>Original note Ω</aside>",headings:[]),CoreParallelCell(reference:"John 3:16",html:"<p>Original Latin text.</p>",headings:[],additional:[CoreParallelVerse(reference:"John 3:17",html:"<p>Second original segment.</p>",headings:[])])])])
         let stacked = NativeParallelChapterPane(model:model,chapter:chapter).stackedVerse(at: 0)
         guard stacked.contains("<h3>RtlText</h3>"), stacked.contains("<h3>TextA</h3>"),
               stacked.contains("dir=\"rtl\" data-xc-module=\"RtlText\""),
-              stacked.contains("data-xc-reference=\"John 3:16\""), stacked.contains("Original note Ω")
+              stacked.contains("data-xc-reference=\"John 3:16\""), stacked.contains("Original note Ω"),
+              stacked.contains("data-xc-reference=\"John 3:17\""), stacked.contains("Second original segment.")
         else { fatalError("Stacked verse lost order, direction or source metadata") }
         let html = NativeParallelChapterPane(model:model,chapter:chapter).table
         let host = NSHostingView(rootView:PassageView(html:html,rightToLeft:true,anchor:nil,onScrollFailure:{_ in},onLink:{_ in}))

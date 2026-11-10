@@ -2156,7 +2156,11 @@ struct CoreParallelColumn: Sendable {
     let requested: String, module: String
     let ready: Bool, rtl: Bool
 }
-struct CoreParallelCell: Sendable { let reference: String, html: String, headings: [String] }
+struct CoreParallelVerse: Sendable { let reference: String, html: String, headings: [String] }
+struct CoreParallelCell: Sendable {
+    let reference: String, html: String, headings: [String]
+    var additional: [CoreParallelVerse] = []
+}
 struct CoreParallelRow: Sendable { let reference: String; let cells: [CoreParallelCell] }
 struct CoreParallelChapter: Sendable {
     let reference: String, title: String
@@ -2171,7 +2175,25 @@ extension CoreWorker {
         guard let value=xc_request_take_parallel_chapter(completed) else { throw CoreError(status:XC_ENGINE_ERROR) }
         defer { xc_parallel_chapter_release(value) }
         let columns=(0..<xc_parallel_column_count(value)).map { c in CoreParallelColumn(requested:String(cString:xc_parallel_column_requested(value,c)!),module:xc_parallel_column_module(value,c).map { String(cString:$0) } ?? "",ready:xc_parallel_column_state(value,c)==XC_PARALLEL_READY,rtl:xc_parallel_column_is_rtl(value,c) != 0) }
-        let rows=(0..<xc_parallel_row_count(value)).map { r in CoreParallelRow(reference:String(cString:xc_parallel_row_reference(value,r)!),cells:columns.indices.map { c in CoreParallelCell(reference:xc_parallel_cell_reference(value,r,c).map { String(cString:$0) } ?? "",html:xc_parallel_cell_html(value,r,c).map { String(cString:$0) } ?? "",headings:(0..<xc_parallel_cell_heading_count(value,r,c)).map { String(cString:xc_parallel_cell_heading(value,r,c,$0)!) }) }) }
+        let rows = (0..<xc_parallel_row_count(value)).map { row in
+            let cells = columns.indices.map { column in
+                let additional = (0..<xc_parallel_cell_additional_count(value,row,column)).map { part in
+                    CoreParallelVerse(
+                        reference: String(cString: xc_parallel_cell_additional_reference(value,row,column,part)),
+                        html: String(cString: xc_parallel_cell_additional_html(value,row,column,part)),
+                        headings: (0..<xc_parallel_cell_additional_heading_count(value,row,column,part)).map {
+                            String(cString: xc_parallel_cell_additional_heading(value,row,column,part,$0))
+                        })
+                }
+                return CoreParallelCell(
+                    reference: xc_parallel_cell_reference(value,row,column).map { String(cString: $0) } ?? "",
+                    html: xc_parallel_cell_html(value,row,column).map { String(cString: $0) } ?? "",
+                    headings: (0..<xc_parallel_cell_heading_count(value,row,column)).map {
+                        String(cString: xc_parallel_cell_heading(value,row,column,$0))
+                    }, additional: additional)
+            }
+            return CoreParallelRow(reference: String(cString: xc_parallel_row_reference(value,row)), cells: cells)
+        }
         return CoreParallelChapter(reference:String(cString:xc_parallel_reference(value)!),title:String(cString:xc_parallel_title(value)!),columns:columns,rows:rows,annotationIncomplete:xc_parallel_annotations_incomplete(value) != 0,invalidColors:xc_parallel_invalid_colors(value),selectedVerse:Int(xc_parallel_selected_verse(value)))
     }
     func decoratedParallel(tab: UInt64,sources: CoreReadingSources) async throws -> CoreParallelChapter {

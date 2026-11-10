@@ -102,6 +102,31 @@ int main(int argc, char **argv) try {
   const auto &absent = extended.rows.at(extended.selected_verse - 1).cells.at(1);
   check(extended.columns.at(1).status == ParallelColumnStatus::ready &&
         absent.reference.empty() && absent.html.empty(), "Installed KJV module has no mapped Tobit verse");
+  (void)worker.edit_parallel_profile(tab,argv[2],
+    {ParallelProfileAction::save,"Split","",{"RusSynodal","ASV"},false}).get();
+  const auto split = worker.visit_parallel_profile(tab,argv[2],"Split","Leviticus 14:55",{},
+      false,maximum_parallel_snapshot_bytes,"RusSynodal").get();
+  const auto &parts = split.rows.at(split.selected_verse - 1).cells.at(1);
+
+  check(parts.reference == "Leviticus 14:55" && parts.additional.size() == 1 &&
+        parts.additional.front().reference == "Leviticus 14:56" && !parts.additional.front().html.empty(),
+        "Split mapping retains both actual KJV verses");
+  const auto merged = worker.visit_parallel_profile(tab,argv[2],"Study","Leviticus 14:55",{},
+      false,maximum_parallel_snapshot_bytes,"RusSynodal").get();
+  check(merged.reference == "Leviticus 14:55" &&
+        merged.rows.at(54).cells.at(1).reference == "Leviticus 14:55" &&
+        merged.rows.at(55).cells.at(1).reference == "Leviticus 14:55",
+        "Merged mapping repeats the same actual Synodal verse for both control rows");
+  const auto numbered = worker.visit_parallel_profile(tab,argv[2],"Study","Psalms 10:1",{},
+      false,maximum_parallel_snapshot_bytes,"RusSynodal").get();
+  check(numbered.reference == "Psalms 11:1", "A split starting at verse zero opens at the first numbered verse");
+  bool unmapped = false;
+  try {
+    (void)worker.visit_parallel_profile(tab,argv[2],"Study","Genesis 1:1",{},
+      false,maximum_parallel_snapshot_bytes,"OSHB").get();
+  } catch (const std::invalid_argument &) { unmapped = true; }
+  check(unmapped && worker.parallel_selection(tab).get()->reference == numbered.reference,
+        "SDK systems without mapping tables must not silently fall back to textual alignment");
   const auto after = worker.history(tab).get();
   check(after.cursor == history.cursor && after.entries.size() == history.entries.size() &&
         after.can_back == history.can_back && after.can_forward == history.can_forward &&

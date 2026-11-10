@@ -1718,6 +1718,12 @@ const char *xc_parallel_cell_reference(const xc_parallel_chapter *chapter, size_
 const char *xc_parallel_cell_html(const xc_parallel_chapter *chapter, size_t row, size_t column);
 size_t xc_parallel_cell_heading_count(const xc_parallel_chapter *chapter, size_t row, size_t column);
 const char *xc_parallel_cell_heading(const xc_parallel_chapter *chapter, size_t row, size_t column, size_t heading);
+/* Additional numbered verses in a split mapping, after the primary cell. */
+size_t xc_parallel_cell_additional_count(const xc_parallel_chapter *chapter,size_t row,size_t column);
+const char *xc_parallel_cell_additional_reference(const xc_parallel_chapter *chapter,size_t row,size_t column,size_t part);
+const char *xc_parallel_cell_additional_html(const xc_parallel_chapter *chapter,size_t row,size_t column,size_t part);
+size_t xc_parallel_cell_additional_heading_count(const xc_parallel_chapter *chapter,size_t row,size_t column,size_t part);
+const char *xc_parallel_cell_additional_heading(const xc_parallel_chapter *chapter,size_t row,size_t column,size_t part,size_t heading);
 void xc_parallel_chapter_release(xc_parallel_chapter *chapter);
 /* Exact installed DailyDevotion module; no alias/first-module fallback or history
  * visit. Host supplies local today (month1..12, day1..31); date NULL/empty uses

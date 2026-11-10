@@ -772,15 +772,21 @@ std::future<ParallelChapter> StudyWorker::read_decorated_parallel(StudyTab tab,s
    catch(const std::invalid_argument &) { result.annotation_incomplete=true;continue; }
    BookmarkTags tags;tags.control_module=target.control_module;if(!bookmarks.empty())tags=s.reader.bookmark_tags(marks,source.module,target.reference,{});
    const auto notes=legacy_annotation_cache(profile,target.control_module,target.address.book);
-   for(auto &row:result.rows){auto &cell=row.cells.at(column);if(cell.reference.empty())continue;
+   for(auto &row:result.rows){
+    auto decorate = [&](ParallelVerse &cell) {
+    if(cell.reference.empty())return;
     AnnotationTarget actual;
     try { actual=s.reader.annotation_target(source.module,cell.reference,true); }
-    catch(const std::invalid_argument &) { result.annotation_incomplete=true;continue; }
+    catch(const std::invalid_argument &) { result.annotation_incomplete=true;return; }
     const auto plan=compose_verse_decoration(actual,tags,notes,row.ordinal==result.selected_verse,true,true);
     const auto remaining=selected->max_bytes-(result.snapshot_bytes-cell.html.size());
     auto html=display_decorated_verse(cell.html,plan,result.invalid_colors,remaining);
     result.snapshot_bytes=result.snapshot_bytes-cell.html.size()+html.size();cell.html=std::move(html);
     result.annotation_incomplete=result.annotation_incomplete||plan.incomplete;
+    };
+    auto &cell = row.cells.at(column);
+    decorate(cell);
+    for (auto &part : cell.additional) decorate(part);
    }
   }
   result.annotation_incomplete=result.annotation_incomplete||result.invalid_colors!=0;return result;

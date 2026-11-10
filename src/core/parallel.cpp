@@ -3,6 +3,7 @@
 #include "xiphos/core/navigation_key.hpp"
 #include <swmodule.h>
 #include <versekey.h>
+#include <algorithm>
 #include <memory>
 #include <stdexcept>
 namespace xiphos { namespace core {
@@ -42,6 +43,48 @@ ParallelReferences parallel_references(sword::SWModule &control,
     const auto row = book + " " + std::to_string(chapter) + ":" + std::to_string(verse);
     result.rows.push_back(navigation_key_text(navigation, row.c_str(), true, locale));
     if (navigation.getError()) throw std::invalid_argument("SWORD could not resolve a parallel row");
+  }
+  return result;
+}
+std::vector<std::string> parallel_mapped_references(sword::SWModule &from,
+    sword::SWModule &to, const std::string &reference) {
+  auto *from_key = dynamic_cast<sword::VerseKey *>(from.getKey());
+  auto *to_key = dynamic_cast<sword::VerseKey *>(to.getKey());
+  if (!from_key || !to_key) return {};
+  const std::string from_canon = from_key->getVersificationSystem();
+  const std::string to_canon = to_key->getVersificationSystem();
+  // The public SDK returns an unchanged reference even for systems with no
+  // mapping table. Only admit known table-backed systems and the KJV anchors.
+  const auto verified = [](const std::string &canon) {
+    const char *const systems[] = {"KJV","KJVA","NRSV","Synodal","Vulg","Calvin","DarbyFr","Segond"};
+    return std::find(std::begin(systems),std::end(systems),canon) != std::end(systems);
+  };
+  if (from_canon != to_canon && (!verified(from_canon) || !verified(to_canon))) return {};
+  sword::VerseKey source(*from_key), target(*to_key);
+  source.clearBounds();
+  source.setAutoNormalize(false);
+  source.setText(reference.c_str());
+  if (source.getError() || source.getChapter() < 1 || source.getVerse() < 1 ||
+      source.getVerse() > source.getVerseMax()) return {};
+  target.clearBounds();
+  target.positionFrom(source);
+  if (target.getError() || target.getChapter() < 1) return {};
+  const int first = target.getVerse();
+  const auto index = target.getIndex();
+  const sword::VerseKey upper(target.getUpperBound());
+  const bool bounded = target.getLowerBound().getIndex() == index;
+  const bool range = bounded && upper.getIndex() > index;
+  constexpr long maximum_split_verses = 16;
+  if (range && (upper.getIndex() - index >= maximum_split_verses ||
+      upper.getChapter() != target.getChapter() || upper.getBook() != target.getBook() ||
+      upper.getTestament() != target.getTestament())) return {};
+  const int last = range ? upper.getVerse() : first;
+  if (last < 1 || last > target.getVerseMax()) return {};
+  target.clearBounds();
+  std::vector<std::string> result;
+  for (int verse = std::max(1,first); verse <= last; ++verse) {
+    target.setVerse(verse);
+    result.emplace_back(target.getText());
   }
   return result;
 }

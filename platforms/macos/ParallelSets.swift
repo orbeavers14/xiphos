@@ -118,17 +118,28 @@ struct NativeParallelChapterPane: View {
         var result = "<h2>" + escape(row.reference) + "</h2>"
         for (column, cell) in zip(chapter.columns, row.cells) {
             result += "<article><h3>" + escape(column.requested) + "</h3>"
-            if !column.ready || cell.reference.isEmpty || cell.html.isEmpty {
+            if !column.ready || cell.reference.isEmpty || (cell.html.isEmpty && cell.additional.allSatisfy { $0.html.isEmpty }) {
                 result += "<p>" + (column.ready ? "Verse unavailable" : "Module unavailable") + "</p>"
             } else {
                 result += "<div dir=\"" + (column.rtl ? "rtl" : "ltr") + "\" data-xc-module=\"" +
                     escape(column.module) + "\" data-xc-reference=\"" + escape(cell.reference) + "\">"
-                for heading in cell.headings { result += "<div class=\"xc-parallel-heading\">" + heading + "</div>" }
-                result += cell.html + "</div>"
+                result += cellContents(cell, module: column.module) + "</div>"
             }
             result += "</article>"
         }
         return result
+    }
+    private func cellContents(_ cell: CoreParallelCell, module: String) -> String {
+        func body(_ html: String, headings: [String]) -> String {
+            headings.map { "<div class=\"xc-parallel-heading\">" + $0 + "</div>" }.joined() + html
+        }
+        guard !cell.additional.isEmpty else { return body(cell.html, headings: cell.headings) }
+        let verses = [CoreParallelVerse(reference: cell.reference, html: cell.html, headings: cell.headings)] + cell.additional
+        return verses.map { verse in
+            "<section data-xc-module=\"" + escape(module) + "\" data-xc-reference=\"" +
+                escape(verse.reference) + "\"><h4>" + escape(verse.reference) + "</h4>" +
+                (verse.html.isEmpty ? "<p>Verse unavailable</p>" : body(verse.html, headings: verse.headings)) + "</section>"
+        }.joined()
     }
     private func escape(_ value: String) -> String { value.replacingOccurrences(of:"&",with:"&amp;").replacingOccurrences(of:"<",with:"&lt;").replacingOccurrences(of:">",with:"&gt;").replacingOccurrences(of:"\"",with:"&quot;") }
     var table: String {
@@ -140,8 +151,7 @@ struct NativeParallelChapterPane: View {
             for (index,cell) in row.cells.enumerated() {
                 let column=chapter.columns[index]
                 result += "<td dir=\""+(column.rtl ? "rtl" : "ltr")+"\" data-xc-module=\""+escape(column.module)+"\" data-xc-reference=\""+escape(cell.reference)+"\">"
-                for heading in cell.headings { result += "<div class=\"xc-parallel-heading\">"+heading+"</div>" }
-                result += cell.html+"</td>"
+                result += cellContents(cell, module: column.module) + "</td>"
             }
             result += "</tr>"
         }

@@ -2179,6 +2179,27 @@ const char *xc_parallel_cell_reference(const xc_parallel_chapter *p,size_t row,s
 const char *xc_parallel_cell_html(const xc_parallel_chapter *p,size_t row,size_t column) { const auto *cell=parallel_cell(p,row,column);return cell?cell->html.c_str():nullptr; }
 size_t xc_parallel_cell_heading_count(const xc_parallel_chapter *p,size_t row,size_t column) { const auto *cell=parallel_cell(p,row,column);return cell?cell->headings.size():0; }
 const char *xc_parallel_cell_heading(const xc_parallel_chapter *p,size_t row,size_t column,size_t heading) { const auto *cell=parallel_cell(p,row,column);return cell&&heading<cell->headings.size()?cell->headings[heading].c_str():nullptr; }
+static const xiphos::core::ParallelVerse *parallel_additional(const xc_parallel_chapter *chapter,
+    size_t row,size_t column,size_t part) {
+  const auto *cell = parallel_cell(chapter,row,column);
+  return cell && part < cell->additional.size() ? &cell->additional[part] : nullptr;
+}
+size_t xc_parallel_cell_additional_count(const xc_parallel_chapter *p,size_t row,size_t column) {
+  const auto *cell = parallel_cell(p,row,column); return cell ? cell->additional.size() : 0;
+}
+const char *xc_parallel_cell_additional_reference(const xc_parallel_chapter *p,size_t row,size_t column,size_t part) {
+  const auto *value = parallel_additional(p,row,column,part); return value ? value->reference.c_str() : nullptr;
+}
+const char *xc_parallel_cell_additional_html(const xc_parallel_chapter *p,size_t row,size_t column,size_t part) {
+  const auto *value = parallel_additional(p,row,column,part); return value ? value->html.c_str() : nullptr;
+}
+size_t xc_parallel_cell_additional_heading_count(const xc_parallel_chapter *p,size_t row,size_t column,size_t part) {
+  const auto *value = parallel_additional(p,row,column,part); return value ? value->headings.size() : 0;
+}
+const char *xc_parallel_cell_additional_heading(const xc_parallel_chapter *p,size_t row,size_t column,size_t part,size_t heading) {
+  const auto *value = parallel_additional(p,row,column,part);
+  return value && heading < value->headings.size() ? value->headings[heading].c_str() : nullptr;
+}
 void xc_parallel_chapter_release(xc_parallel_chapter *p) { delete p; }
 xc_status xc_worker_read_devotional(xc_worker *w, uint64_t tab, const char *id, const char *date,
     int month, int day, xc_request **out) {

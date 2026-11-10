@@ -18,7 +18,11 @@ struct ParallelColumn {
   ParallelColumnStatus status;
   bool via_abbreviation, bible, right_to_left;
 };
-struct ParallelCell { std::string reference, html; std::vector<std::string> headings; };
+struct ParallelVerse { std::string reference, html; std::vector<std::string> headings; };
+struct ParallelCell : ParallelVerse {
+  // For an SDK split mapping, keep every numbered verse after the primary.
+  std::vector<ParallelVerse> additional;
+};
 struct ParallelRow { std::string reference; unsigned ordinal; std::vector<ParallelCell> cells; };
 struct ParallelChapter {
   std::string control_module, reference, title;
@@ -51,6 +55,10 @@ struct ParallelReferences {
 // use SDK control-key interpretation before counting the canonical chapter.
 ParallelReferences parallel_references(sword::SWModule &control,
     const std::string &reference, const char *locale = nullptr);
+// Same-canon references and SDK systems with a verified mapping table.
+// Returns no numbered verse for unsupported or unavailable mappings.
+std::vector<std::string> parallel_mapped_references(sword::SWModule &source,
+    sword::SWModule &target, const std::string &reference);
 struct ParallelLayout {
   unsigned column_percent;
   std::size_t image_scale;
