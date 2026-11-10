@@ -813,6 +813,9 @@ if(BUILD_TESTING)
   add_test(NAME core_mixed_search COMMAND core_mixed_search_test "${CMAKE_CURRENT_BINARY_DIR}/mixed-search-fixture" "${CMAKE_CURRENT_BINARY_DIR}/keyed-search-fixture")
   set_tests_properties(core_mixed_search PROPERTIES FIXTURES_REQUIRED keyed_search_fixture FIXTURES_SETUP mixed_asset_fixture TIMEOUT 60)
   # Explicit manual corpus runner; no automatic downloads or CTest registration.
+  add_executable(core_real_word_study_check tests/real_word_study_check.cpp)
+  target_link_libraries(core_real_word_study_check PRIVATE Xiphos::Core)
+
   add_executable(core_real_corpus_check tests/real_corpus_check.cpp)
   target_link_libraries(core_real_corpus_check PRIVATE Xiphos::Core)
   target_include_directories(core_real_corpus_check PRIVATE ${LIBXML2_INCLUDE_DIRS})

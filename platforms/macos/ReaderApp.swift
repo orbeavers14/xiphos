@@ -55,13 +55,13 @@ final class ReaderModel: ObservableObject {
             if value.invalidColors>0 {parallelSourceNotice += " Invalid colors were omitted."};return value
         } catch {parallelSourceNotice="Parallel notes or bookmarks could not be loaded. Reading remains available.";return raw}
     }
-    func openParallel(path: String? = nil,key: String? = nil,comparisonReference: String? = nil) {
+    func openParallel(path: String? = nil,key: String? = nil,comparisonReference: String? = nil,sourceModule: String? = nil) {
         guard !closed,!isBusy else { return }
         if path == nil,key == nil,comparisonReference == nil,parallelChapter != nil { showingParallel=true;return }
         guard let worker,let tab,let path=path ?? parallelProfilePath else { return }
         let reference=comparisonReference ?? displayedEntry?.reference ?? self.reference
         run { token in
-            var chapter=try await worker.visitParallelProfile(tab:tab,path:path,key:key,reference:reference,flags:self.engineOptions?.rawValue ?? 0)
+            var chapter=try await worker.visitParallelProfile(tab:tab,path:path,key:key,reference:reference,flags:self.engineOptions?.rawValue ?? 0,sourceModule:sourceModule)
             chapter=await self.prepareParallel(chapter)
             guard token==self.revision,!self.closed else { return };self.parallelChapter=chapter;self.showingParallel=true
             if comparisonReference != nil { self.stackedParallel = true }
@@ -70,6 +70,10 @@ final class ReaderModel: ObservableObject {
     func navigateParallel(_ direction: Int32) {
         guard let worker,let tab else { return }
         run { token in let raw=try await worker.navigateParallel(tab:tab,direction:direction);let chapter=await self.prepareParallel(raw);guard token==self.revision,!self.closed else { return };self.parallelChapter=chapter }
+    }
+    func wordStudy(_ selection: ReadingWordSelection) async -> ReadingWordSelection? {
+        guard !closed, let worker, let tab else { return nil }
+        return try? await worker.wordStudy(tab: tab, selection: selection)
     }
     func closeParallel() { guard !isBusy else { return };showingParallel=false }
     @Published var readingSources = CoreReadingSources()
@@ -1025,7 +1029,7 @@ struct PassageView: NSViewRepresentable {
     var onLinkHover: ((String) -> Void)? = nil
     var allowsInlineImages = false
     var onContextLink: ((String,String,String) -> Void)? = nil
-    var onSelection: ((String, String, String, [String]) -> Void)? = nil
+    var onSelection: ((String, String, String) -> Void)? = nil
     @MainActor final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var loaded: String?
         var loadedCSS: String?
@@ -1038,14 +1042,13 @@ struct PassageView: NSViewRepresentable {
         var onLink: ((String) -> Void)?
         var onLinkHover: ((String) -> Void)?
         var onContextLink: ((String,String,String) -> Void)?
-        var onSelection: ((String, String, String, [String]) -> Void)?
+        var onSelection: ((String, String, String) -> Void)?
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             if message.name == "xiphosSelection", message.frameInfo.isMainFrame,
-               let fields = message.body as? [String: Any],
-               let text = fields["text"] as? String, let module = fields["module"] as? String,
-               let reference = fields["reference"] as? String, let links = fields["links"] as? [String],
+               let fields = message.body as? [String: String],
+               let text = fields["text"], let module = fields["module"], let reference = fields["reference"],
                text.utf8.count <= 1024, module.utf8.count <= 4096, reference.utf8.count <= 32768 {
-                onSelection?(text, module, reference, links)
+                onSelection?(text, module, reference)
                 return
             }
             if message.name == "xiphosContextLink",message.frameInfo.isMainFrame,
@@ -1108,18 +1111,7 @@ struct PassageView: NSViewRepresentable {
                     const start = context(selection?.anchorNode);
                     const end = context(selection?.focusNode);
                     const text = selection && start === end && !selection.isCollapsed ? selection.toString().trim() : '';
-                    const wordAt = node => node?.parentElement?.closest('span.word');
-                    const word = wordAt(selection?.anchorNode);
-                    let links = [];
-                    if (text && word && word === wordAt(selection.focusNode)) {
-                        const surface = word.cloneNode(true);
-                        surface.querySelectorAll('.strongs, .morph').forEach(node => node.remove());
-                        if (surface.textContent.trim() === text)
-                            links = Array.from(word.querySelectorAll('.strongs a[href]'), link => link.href)
-                                .filter(uri => uri.length <= 32768).slice(0, 8);
-                    }
                     window.webkit.messageHandlers.xiphosSelection.postMessage({
-                        links,
                         text: text.length <= 1024 ? text : '',
                         module: start?.dataset.xcModule ?? '',
                         reference: start?.dataset.xcReference ?? start?.getAttribute('aria-label') ?? ''
@@ -1268,15 +1260,22 @@ struct LexiconPreferencesView: View {
 }
 
 struct ReadingWordSearchMenu: View {
+    let model: ReaderModel
     let word: ReadingWordSelection
     let search: (ReadingWordSelection, String?) -> Void
+    @State private var resolved: ReadingWordSelection?
 
     var body: some View {
+        let choices = resolved ?? word
         Menu("Search Selected Word") {
-            Button("Surface form: " + word.text) { search(word, nil) }
-            ForEach(word.strongs, id: \.self) { term in
-                Button("Strong’s: " + term) { search(word, term) }
+            Button("Surface form: " + choices.text) { search(choices, nil) }
+            ForEach(choices.lemmas, id: \.self) { term in
+                Button("Lemma: " + term) { search(choices, term) }
             }
+        }.task(id: word) {
+            resolved = nil
+            let result = await model.wordStudy(word)
+            if !Task.isCancelled { resolved = result }
         }
     }
 }
@@ -1376,7 +1375,7 @@ struct ReaderWindow: View {
                     .tabItem { Text("Modules") }.tag("modules")
                     SearchPane(model: model.search, hostBusy: model.isBusy, canRead: model.canOpenSearchResult,
                         onRead: model.openSearchResult,
-                        onCompare: model.parallelProfilePath == nil ? nil : { model.openParallel(comparisonReference: $0.reference) },
+                        onCompare: model.parallelProfilePath == nil ? nil : { model.openParallel(comparisonReference: $0.reference, sourceModule: $0.module) },
                         onLink: { uri, hit in model.followSearchLink(uri, hit: hit) })
                         .tabItem { Text("Search") }.tag("search")
                 }
@@ -1552,13 +1551,13 @@ struct ReaderWindow: View {
                 PassageView(html: model.html, rightToLeft: model.readingRightToLeft, css: model.lexicalPresentation.css, anchor: model.renderedAnchor, anchorRevision: model.renderedAnchorRevision,
                             onScrollFailure: { model.message = $0 }, onLink: { model.followLink($0) },
                             onLinkHover: { model.previewStudyLink($0) },
-                            onSelection: { text, _, reference, links in
+                            onSelection: { text, _, reference in
                                 guard let source = model.annotationEditingTarget else { selectedWord = nil; return }
                                 selectedWord = ReadingWordSelection(text: text, module: source.module,
-                                    reference: reference.isEmpty ? source.reference : reference, links: links)
+                                    reference: reference.isEmpty ? source.reference : reference)
                             })
                 if let word = selectedWord {
-                    ReadingWordSearchMenu(word: word, search: searchWord)
+                    ReadingWordSearchMenu(model: model, word: word, search: searchWord).id(word)
                         .padding(.horizontal, 12).disabled(model.isBusy)
                 }
                 if !model.readingSourceNotice.isEmpty {Text(model.readingSourceNotice).font(.caption).foregroundStyle(.secondary).padding(8)}

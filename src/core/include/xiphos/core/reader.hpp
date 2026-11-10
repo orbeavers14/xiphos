@@ -29,6 +29,10 @@
 #include <string>
 #include <vector>
 namespace xiphos::core {
+struct WordStudy {
+  std::string module, reference, surface;
+  std::vector<std::string> lemmas;
+};
 namespace detail { class SearchScope; }
 struct Module {
   std::string id, description, type, language;
@@ -182,9 +186,11 @@ public:
   // Read-only owned textual chapter matrix. First resolved Bible/regular
   // commentary drives rows; missing/unsupported later columns keep their slots.
   // Explicit parallel options are scoped independently from ordinary tab reads.
+  WordStudy word_study(const std::string &module, const std::string &reference,
+                       const std::string &surface);
   ParallelChapter read_parallel(const std::vector<std::string> &modules,
       const std::string &reference, const EngineOptions &options, bool headings,
-      std::size_t max_bytes = maximum_parallel_snapshot_bytes);
+      std::size_t max_bytes = maximum_parallel_snapshot_bytes, const std::string &source_module = {});
   // Exact installed DailyDevotion SWLD only; copied date/matched key/HTML.
   // Read-only session semantics; no dictionary casing/history or module fallback.
   DevotionalEntry read_devotional(const std::string &module, const std::string &entered,

@@ -37,6 +37,7 @@ struct ParallelSelection {
   EngineOptions options;
   bool headings;
   std::size_t max_bytes;
+  bool map_versification = false;
 };
 struct ParallelReferences {
   std::string reference, title;

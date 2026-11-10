@@ -139,7 +139,9 @@ static xiphos::core::RemoteCatalog copy_remote_catalog(const xc_remote_catalog &
 struct xc_library_install_plan {xiphos::core::LibraryInstallPlan value;};
 struct xc_catalog { std::vector<xiphos::core::Module> value; };
 struct xc_history { xiphos::core::HistorySnapshot value; };
+struct xc_word_study { xiphos::core::WordStudy value; };
 struct xc_request {
+  std::unique_ptr<xc_word_study> word_study;
   xc_status status = XC_PENDING;
   uint64_t tab = 0;
   bool options_result = false;
@@ -316,6 +318,7 @@ struct xc_request {
   void store(xiphos::core::DictionaryChoices v) { dictionary_choices = std::make_unique<xc_dictionary_choices>(xc_dictionary_choices{std::move(v)}); }
   void store(xiphos::core::DictionaryHistorySnapshot v) { dictionary_history = std::make_unique<xc_dictionary_history>(xc_dictionary_history{std::move(v)}); }
   void store(std::optional<xiphos::core::ParallelSelection> v) { static_assert(std::is_nothrow_move_assignable<decltype(v)>::value, "Parallel selection publication must not allocate"); parallel_selection->value = std::move(v); }
+  void store(xiphos::core::WordStudy value) { word_study->value = std::move(value); }
   void store(xiphos::core::ParallelChapter v) { static_assert(std::is_nothrow_move_assignable<xiphos::core::ParallelChapter>::value, "Parallel publication must not allocate"); parallel->value = std::move(v); }
   void store(xiphos::core::DevotionalEntry v) { devotional = std::make_unique<xc_devotional_entry>(xc_devotional_entry{std::move(v)}); }
   void store(xiphos::core::DictionaryUriEntry v) {
@@ -465,6 +468,7 @@ template<class T> struct Request final : xc_request {
     if constexpr (std::is_same_v<T,xiphos::core::EditableDocument>) editable_document=std::make_unique<xc_editable_document>();
     if constexpr (std::is_same_v<T,xiphos::core::NativeSessionSnapshot>) native_session=std::make_unique<xc_native_session>();
     if constexpr (std::is_same_v<T,xiphos::core::RestoredSession>) restored_session=std::make_unique<xc_restored_session>();
+    if constexpr (std::is_same_v<T,xiphos::core::WordStudy>) word_study=std::make_unique<xc_word_study>();
     if constexpr (std::is_same_v<T,xiphos::core::Entry>) prepared_entry=std::make_unique<xc_entry>();
     if constexpr (std::is_same_v<T,xiphos::core::StudyPassage>) prepared_passage=std::make_unique<xc_passage>();
     if constexpr (std::is_same_v<T,xiphos::core::DictionaryEntry>||std::is_same_v<T,xiphos::core::DictionaryUriEntry>||std::is_same_v<T,xiphos::core::ContextualStudyLink>||std::is_same_v<T,xiphos::core::BookPaneLink>) prepared_dictionary=std::make_unique<xc_dictionary_entry>();
@@ -2112,13 +2116,21 @@ xc_status xc_worker_visit_parallel(xc_worker *w,uint64_t tab,const char *const *
 }
 xc_status xc_worker_visit_parallel_profile(xc_worker *w,uint64_t tab,const char *path,const char *key,
     const char *reference,unsigned flags,int headings,size_t max_bytes,xc_request **out) {
-  if (!bounded_image_c_text(path,4096) || (key && !bounded_image_c_text(key,4096)) ||
+  return xc_worker_visit_parallel_profile_from(w,tab,path,key,nullptr,reference,flags,headings,max_bytes,out);
+}
+xc_status xc_worker_visit_parallel_profile_from(xc_worker *w,uint64_t tab,const char *path,const char *key,
+    const char *source_module,const char *reference,unsigned flags,int headings,size_t max_bytes,xc_request **out) {
+  if ((source_module && !bounded_image_c_text(source_module,4096)) || !bounded_image_c_text(path,4096) || (key && !bounded_image_c_text(key,4096)) ||
       (flags & ~((1u<<18)-1)) || (headings!=0 && headings!=1) || !max_bytes || max_bytes>XC_PARALLEL_MAX_SNAPSHOT_BYTES ||
       !xiphos::core::detail::study_link_c_text(reference,XC_PARALLEL_MAX_REFERENCE_BYTES,true)) {
     if(out)*out=nullptr;return XC_INVALID_ARGUMENT;
   }
   return queue_request(w,out,[=](auto &worker){return worker.visit_parallel_profile(tab,path,
-    key?std::make_optional(std::string(key)):std::nullopt,reference,options_from_flags(flags),headings!=0,max_bytes);});
+    key?std::make_optional(std::string(key)):std::nullopt,reference,options_from_flags(flags),headings!=0,max_bytes,
+    source_module ? source_module : "");});
+}
+xc_status xc_worker_read_committed_parallel(xc_worker *w,uint64_t tab,xc_request **out) {
+  return queue_request(w,out,[=](auto &worker){return worker.read_committed_parallel(tab);});
 }
 xc_status xc_worker_navigate_parallel_chapter(xc_worker *w,uint64_t tab,int direction,xc_request **out) {
   if(direction!=-1&&direction!=1){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
@@ -2201,6 +2213,23 @@ xc_status xc_worker_study_note(xc_worker *w, uint64_t tab, const char *id, const
   }
   return queue_request(w, out, [=](auto &worker) { return worker.study_note(tab, id, ref, identifier); });
 }
+xc_status xc_worker_word_study(xc_worker *w, uint64_t tab, const char *id, const char *ref, const char *surface, xc_request **out) {
+  using xiphos::core::detail::study_link_c_text;
+  if (!study_link_c_text(id,4096,true) || !study_link_c_text(ref,32768,true) || !study_link_c_text(surface,1024,true)) {
+    if (out) *out = nullptr;
+    return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w,out,[=](auto &worker){return worker.word_study(tab,id,ref,surface);});
+}
+xc_word_study *xc_request_take_word_study(xc_request *r) { return r && r->status == XC_OK ? r->word_study.release() : nullptr; }
+const char *xc_word_study_module(const xc_word_study *r) { return r ? r->value.module.c_str() : nullptr; }
+const char *xc_word_study_reference(const xc_word_study *r) { return r ? r->value.reference.c_str() : nullptr; }
+const char *xc_word_study_surface(const xc_word_study *r) { return r ? r->value.surface.c_str() : nullptr; }
+size_t xc_word_study_lemma_count(const xc_word_study *r) { return r ? r->value.lemmas.size() : 0; }
+const char *xc_word_study_lemma(const xc_word_study *r,size_t i) {
+  return r && i < r->value.lemmas.size() ? r->value.lemmas[i].c_str() : nullptr;
+}
+void xc_word_study_release(xc_word_study *r) { delete r; }
 xc_status xc_worker_read_tab_entry(xc_worker *w, uint64_t tab, const char *id, const char *ref, xc_request **out) {
   if (!id || !*id || !ref || !*ref) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.read_entry(tab, id, ref); });

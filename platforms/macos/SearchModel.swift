@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 import Foundation
 import Combine
-import XiphosCore
 
-struct ReadingWordSelection {
+struct ReadingWordSelection: Hashable, Sendable {
     let text: String, module: String, reference: String
-    let strongs: [String]
+    let lemmas: [String]
 
-    init?(text: String, module: String, reference: String, links: [String] = []) {
+    init?(text: String, module: String, reference: String, lemmas: [String] = []) {
         guard !text.isEmpty, text.utf8.count <= 1024,
               !text.contains(where: \.isWhitespace),
               text.unicodeScalars.contains(where: { CharacterSet.letters.contains($0) }),
@@ -15,15 +14,7 @@ struct ReadingWordSelection {
         self.text = text
         self.module = module
         self.reference = reference
-        var terms: [String] = []
-        for link in links.prefix(8) where link.utf8.count <= 32768 {
-            var buffer = [CChar](repeating: 0, count: 10)
-            if xc_strongs_search_term(link, &buffer, buffer.count) == XC_OK {
-                let term = String(decoding: buffer.prefix { $0 != 0 }.map(UInt8.init(bitPattern:)), as: UTF8.self)
-                if !terms.contains(term) { terms.append(term) }
-            }
-        }
-        strongs = terms
+        self.lemmas = lemmas
     }
 }
 
@@ -240,7 +231,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
         message = "Saved range applied. Check the bounds module before searching."
     }
     func searchSelectedWord(_ word: ReadingWordSelection, lemma: String?) -> Bool {
-        guard !closed, !isBusy, lemma.map(word.strongs.contains) ?? true,
+        guard !closed, !isBusy, lemma.map(word.lemmas.contains) ?? true,
               allModules.contains(where: { $0.id == word.module && $0.hasVerseSearch })
         else { return false }
         setMixedContent(false)

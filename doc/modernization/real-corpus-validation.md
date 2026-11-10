@@ -78,3 +78,29 @@ Inspected raw ZIP SHA256 fingerprints (data remains under ignored `build/`):
 | MHCC.zip | `5599108faf01753864d51136a87f120d022e70867cc9df70206a0af3c3a5ef7d` |
 | Pilgrim.zip | `3a3b5c246f36754d3da81aee6685f0c28b91a54173ac97a9c6a07a716c077a93` |
 | KJVA.zip | `48483b1e7f6e27f3def800941d6c1593877eeb70ce406a11f193d302cbcd2238` |
+
+
+## Selected-word metadata and comparison
+
+Build and run `core_real_word_study_check` with a disposable module library and
+a new comparison profile path outside that library. The runner performs no
+downloads and prints no module text. It checks that corpus bytes remain unchanged.
+
+| Module | Tested version | Coverage |
+| --- | --- | --- |
+| [OSHB](https://www.crosswire.org/sword/modules/ModInfo.jsp?modName=OSHB) | 2.1.4 | Pointed and unpointed Hebrew and Biblical Aramaic selections; literal zero-padded Strong's terms |
+| [MorphGNT](https://www.crosswire.org/sword/modules/ModInfo.jsp?modName=MorphGNT) | 2.0.1 | Greek accents and breathings; word lemma plus Strong's; both terms find the source |
+| [Peshitta](https://www.crosswire.org/sword/modules/ModInfo.jsp?modName=Peshitta) | 2.0 | Syriac surface search and a clean empty lemma result |
+| [RusSynodal](https://www.crosswire.org/sword/modules/ModInfo.jsp?modName=RusSynodal) | 1.9.1 | Real Psalm 3:2 search result maps to KJV Psalm 3:1 |
+| [ASV](https://www.crosswire.org/sword/modules/ModInfo.jsp?modName=ASV) and [KJVA](https://www.crosswire.org/sword/modules/ModInfo.jsp?modName=KJVA) | 2.0 and 3.1 | An installed ASV column has no Tobit verse; a missing control verse leaves prior comparison and main history intact |
+
+The SDK lookup first uses canonically equivalent surface text. When no exact
+match exists, a mark-folded lookup returns lemma terms only if the candidates
+agree. This matching applies to metadata lookup. Surface searches still use
+the module's current phrase search behavior. The returned C snapshot owns the
+actual module, canonical reference, original surface and ordered terms.
+
+The SDK does not supply shifted mappings for every pair of canons. The test
+uses the supported Synodal mapping. The ordinary chapter matrix keeps its
+characterized textual behavior. Search-opened comparisons use SDK mappings
+and retain that mode during navigation and session restoration.

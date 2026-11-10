@@ -48,7 +48,7 @@ static NativeSessionSnapshot example(){
  v.module_engine["not-installed"]=*v.engine;v.module_engine["Text"]=EngineOptions{};v.module_defaults=true;
  ModulePresentationOptions presentation;presentation.headings=false;presentation.double_space=true;presentation.image_content=ContentPreference::off;presentation.respect_font_faces=ContentPreference::on;presentation.note_numbers=false;v.presentation["Text"]=presentation;
  v.lexicons=LexiconPreferences{};v.lexicons->greek="Dictionary";v.lexicons->hebrew.reset();v.lexicons->greek_morph_nt="";v.cross_reference_preview_list=false;
- v.search_text=SearchTextOptions{true,false,true};v.search_retention={17,8192};v.parallel=ParallelSelection{{"Text","Missing","TextAlt"},"Text","John 3:17",*v.engine,false,1024*1024};
+ v.search_text=SearchTextOptions{true,false,true};v.search_retention={17,8192};v.parallel=ParallelSelection{{"Text","Missing","TextAlt"},"Text","John 3:17",*v.engine,false,1024*1024,true};
  tab.visibility={true,false,true,false};tab.commentary_showing=true;s.tabs.push_back(tab);NativeSessionTab empty;empty.key="empty";s.tabs.push_back(empty);return s;
 }
 static void codec(){

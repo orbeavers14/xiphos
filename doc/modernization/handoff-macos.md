@@ -90,6 +90,18 @@ and HTTPS module installation. The Homebrew SWORD build omits ICU and CLucene.
 An actual 26.7 launch and workflow smoke remain required before changing the
 main preview deployment floor of 27.0.
 
+## Real word-study corpus and search-to-comparison
+
+The Mac selection menu now reads word metadata through the shared worker and
+C ABI. The comparison action passes the actual hit module for SDK versification
+mapping. The [real corpus check](real-corpus-validation.md#selected-word-metadata-and-comparison)
+passed on macOS 27.2 with MacPorts SWORD 1.9.0 linked to ICU 78.3 and CLucene
+2.3.3.4. The separate required-index run passed with a real generated index.
+Five focused core checks passed, including C ownership and native session
+serialization. The Mac preview built and four focused native/fixture checks
+passed, including mapped comparison restoration. These checks used disposable
+module data and profiles.
+
 ## Current next steps
 
 - Follow the [native interface list](native-ui-todo.md): coherent Settings navigation,

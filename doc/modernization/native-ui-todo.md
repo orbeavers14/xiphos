@@ -59,6 +59,8 @@ The screenshot is a behavior/layout reference, not a request to copy the website
 or its text library. Licensed/provider translations remain separate roadmap work.
 The Mac preview can switch between the chapter matrix and stacked verses and
 can open a verse search result using the active startup comparison profile.
+Search hits and comparison cells use SWORD versification mapping. A result
+without a verse in the control canon leaves the prior comparison intact.
 Verse steps stay within the displayed chapter; chapter controls remain available.
 
 ## Selected-word Hebrew, Greek and Aramaic study
@@ -81,8 +83,9 @@ Owner request from 2026-11-05, expanded to Greek and Aramaic on 2026-11-09:
 
 The Mac reader and both Mac comparison layouts offer a Search Selected Word
 menu for one visible token. Surface-form search passes the selected Unicode to
-the existing phrase mode. Explicit Greek/Hebrew Strong’s links within the
-selected rendered word block become separate lemma choices. Modules without a
-matching rendered word block still offer surface search. Accent-insensitive
-matching, unlinked lemma extraction, keyboard shortcuts and native Linux
+the existing phrase mode. The shared worker reads SWORD's verse word attributes
+and returns source-bound lemma choices, preserving literal SDK search terms.
+Modules without reliable metadata still offer surface search. The lookup can
+match unmarked selections to marked SDK words when the matching records agree.
+Accent-insensitive surface search, keyboard shortcuts and native Linux
 integration remain open.

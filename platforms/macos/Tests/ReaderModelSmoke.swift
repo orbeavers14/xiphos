@@ -925,17 +925,13 @@ struct ReaderModelSmoke {
         let owner=NativeSessionController(worker:worker,path:session,showsWindows:false,organizationPath:folder.appendingPathComponent("library.xml").path)
         try await owner.start();guard let model=owner.records.first?.model else { fatalError("Parallel reading host") };try await idle(model)
         let surface = "שָׁלוֹם"
-        let word = ReadingWordSelection(text:surface,module:"TextAlt",reference:"John 3:16",links:[
-            "passagestudy.jsp?action=showStrongs&type=Hebrew&value=07965",
-            "passagestudy.jsp?action=showStrongs&type=Hebrew&value=H7965",
-            "passagestudy.jsp?action=showStrongs&type=Greek&value=140",
-            "passagestudy.jsp?action=showMorph&type=Greek&value=140"])
-        guard word?.text == surface, word?.strongs == ["H7965","G140"],
+        let word = ReadingWordSelection(text:surface,module:"TextAlt",reference:"John 3:16")
+        guard word?.text == surface,
               ReadingWordSelection(text:"two words",module:"TextAlt",reference:"John 3:16") == nil
-        else { fatalError("Unicode surface or explicit Strong’s choices") }
+        else { fatalError("Unicode surface validation") }
         var selectedText: ReadingWordSelection?
         var contextLink: (String,String,String)?
-        let probe=NSHostingView(rootView:PassageView(html:"<table><tr><td data-xc-module=\"TextAlt\" data-xc-reference=\"John 3:16\"><span class=\"word\"><a id=\"parallel-link\" href=\"sword:///17\">Original</a><span class=\"strongs\"><a href=\"passagestudy.jsp?action=showStrongs&amp;type=Hebrew&amp;value=07965\">7965</a></span></span> contextual link</td></tr></table><script>document.body.dataset.moduleRan='yes'</script>",anchor:nil,onScrollFailure:{_ in},onLink:{_ in fatalError("Context click escaped into generic navigation")},onContextLink:{contextLink=($0,$1,$2)},onSelection:{selectedText=ReadingWordSelection(text:$0,module:$1,reference:$2,links:$3)}))
+        let probe=NSHostingView(rootView:PassageView(html:"<table><tr><td data-xc-module=\"TextAlt\" data-xc-reference=\"John 3:16\"><span class=\"word\"><a id=\"parallel-link\" href=\"sword:///17\">Original</a><span class=\"strongs\"><a href=\"passagestudy.jsp?action=showStrongs&amp;type=Hebrew&amp;value=07965\">7965</a></span></span> contextual link</td></tr></table><script>document.body.dataset.moduleRan='yes'</script>",anchor:nil,onScrollFailure:{_ in},onLink:{_ in fatalError("Context click escaped into generic navigation")},onContextLink:{contextLink=($0,$1,$2)},onSelection:{selectedText=ReadingWordSelection(text:$0,module:$1,reference:$2)}))
         let probeWindow=NSWindow(contentRect:NSRect(x:0,y:0,width:600,height:240),styleMask:.borderless,backing:.buffered,defer:false)
         probeWindow.isReleasedWhenClosed=false;probeWindow.contentView=probe;probe.layoutSubtreeIfNeeded()
         defer { probeWindow.close() }
@@ -955,7 +951,7 @@ struct ReaderModelSmoke {
             try await Task.sleep(nanoseconds:1_000_000)
         }
         guard let selectedText, selectedText.text == "Original", selectedText.module == "TextAlt",
-              selectedText.reference == "John 3:16", selectedText.strongs == ["H7965"], model.search.searchSelectedWord(selectedText,lemma:nil)
+              selectedText.reference == "John 3:16", model.search.searchSelectedWord(selectedText,lemma:nil)
         else { fatalError("Selected-word search lost source context") }
         while model.search.isSearching {
             guard Date()<deadline else { fatalError("Selected-word search completion") }
@@ -972,7 +968,7 @@ struct ReaderModelSmoke {
         guard stacked.contains("<h3>Missing&lt;&amp;</h3>"), stacked.contains("Module unavailable")
         else { fatalError("Stacked comparison lost an unavailable slot") }
         guard model.html==main,model.canBack==back,model.reference=="Unsubmitted reference draft" else { fatalError("Parallel open changed main reading/history/draft") }
-        model.openParallel(comparisonReference:"John 3:17");try await idle(model)
+        model.openParallel(comparisonReference:"John 3:17",sourceModule:"TextAlt");try await idle(model)
         guard model.stackedParallel,model.parallelChapter?.reference=="John 3:17",model.parallelChapter?.selectedVerse==17
         else { fatalError("Comparison did not open at the requested verse") }
         model.navigateParallel(1);try await idle(model)

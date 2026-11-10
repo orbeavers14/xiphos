@@ -87,6 +87,13 @@ int main(int argc,char **argv){try{
  }
  xc_worker *worker=nullptr;xc_request *request=nullptr;check(xc_worker_open(root.string().c_str(),&worker)==XC_OK,"Open C attribute worker");
  check(xc_worker_create_tab(worker,&request)==XC_OK&&wait(request)==XC_OK,"Create attribute tab");const auto tab=xc_request_tab(request);xc_request_release(request);
+ std::string selected="delta";
+ check(xc_worker_word_study(worker,tab,"Text","John 1:4",selected.c_str(),&request)==XC_OK,"Queue selected word");
+ selected.clear();
+ check(wait(request)==XC_OK,"Complete selected-word lookup");
+ auto *word=xc_request_take_word_study(request);
+ check(word&&!xc_request_take_word_study(request),"Selected-word envelope is take-once");
+ xc_request_release(request);
  xc_search *held=nullptr;
  for(int mode:{XC_SEARCH_LEMMA,XC_SEARCH_MORPHOLOGY,XC_SEARCH_FOOTNOTE}){
   xc_search_options options;xc_search_options_default(&options);options.mode=mode;std::string input=mode==XC_SEARCH_LEMMA?"G140":mode==XC_SEARCH_MORPHOLOGY?"N-ASF":"Alpha";
@@ -99,6 +106,11 @@ int main(int argc,char **argv){try{
  check(xc_worker_search_module_in_last_results(worker,tab,"Commentary","G140",&options,&request)==XC_OK&&wait(request)==XC_OK,"Attribute C last-scope query");auto *last=xc_request_take_search(request);xc_request_release(request);xc_search_info info{};
  check(xc_search_get_info(last,&info)==XC_OK&&info.result_count==1&&std::string(xc_search_reference(last,0))=="John 1:1","Attribute C query narrows copied prior footnote scope");xc_search_release(last);
  xc_worker_close(worker);check(std::string(xc_search_expression(held))=="Alpha"&&xc_search_get_info(held,&info)==XC_OK&&info.mode==XC_SEARCH_FOOTNOTE,"Owned C attribute result survives worker shutdown");xc_search_release(held);
+ check(std::string(xc_word_study_module(word))=="Text"&&std::string(xc_word_study_reference(word))=="John 1:4"&&
+       std::string(xc_word_study_surface(word))=="delta"&&xc_word_study_lemma_count(word)==2&&
+       std::string(xc_word_study_lemma(word,0))=="G141"&&std::string(xc_word_study_lemma(word,1))=="G140"&&
+       !xc_word_study_lemma(word,2),"Owned source and ordered lemmas survive worker shutdown");
+ xc_word_study_release(word);
  check(data_bytes(root/"data")==before,"Attribute searches preserve all source module bytes");
  std::cout<<"Owned lemma/morph/footnote search matches legacy exact identifiers, case, bounds and complete scopes passed\n";return 0;
  }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}

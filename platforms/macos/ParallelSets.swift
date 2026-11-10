@@ -162,11 +162,11 @@ struct NativeParallelChapterPane: View {
             }.padding(8)
             if !model.parallelSourceNotice.isEmpty {Text(model.parallelSourceNotice).font(.caption).foregroundStyle(.secondary)}
             PassageView(html:model.stackedParallel ? stackedVerse(at: verseIndex) : table,css:".xc-parallel {border-collapse:collapse;min-width:100%;} .xc-parallel td,.xc-parallel th {vertical-align:top;padding:8px;border:1px solid GrayText;min-width:160px;} .xc-parallel thead th {position:sticky;top:0;background:Canvas;} .xc-parallel-heading {font-weight:bold;}",anchor:nil,onScrollFailure:{model.message=$0},onLink:{model.followLink($0)},onContextLink:{ uri,module,reference in model.followLink(uri,currentModule:module,currentReference:reference) },
-                onSelection: { text, module, reference, links in
-                    selectedWord = ReadingWordSelection(text: text, module: module, reference: reference, links: links)
+                onSelection: { text, module, reference in
+                    selectedWord = ReadingWordSelection(text: text, module: module, reference: reference)
                 })
             if let word = selectedWord, let onSearchWord {
-                ReadingWordSearchMenu(word: word, search: onSearchWord).padding(.horizontal, 8)
+                ReadingWordSearchMenu(model: model, word: word, search: onSearchWord).id(word).padding(.horizontal, 8)
             }
         }.frame(minWidth:230,minHeight:220).disabled(model.isBusy)
             .onChange(of: chapter.reference) { verseOffset = nil; selectedWord = nil }

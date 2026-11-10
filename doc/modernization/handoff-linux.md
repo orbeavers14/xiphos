@@ -54,6 +54,16 @@ parallel link navigation from nested markup with module inline handlers
 disabled. The pre-merge branch recorded 203 CTest passes and one optional
 BibleSync skip.
 
+## Shared word study and comparison
+
+GTK can pass a selected surface, actual module and verse to
+`xc_worker_word_study`, then use the returned ordered terms with
+`XC_SEARCH_LEMMA`. The owned result can contain zero terms. Use
+`xc_worker_visit_parallel_profile_from` with the search hit's source module
+and reference for cross-canon comparisons. Empty cell references represent
+unavailable mappings. See [the real corpus checks](real-corpus-validation.md#selected-word-metadata-and-comparison)
+for tested cases. GTK selection and stacked presentation remain to be wired.
+
 ## Next validation
 
 Consume current shared APIs, run the local portable/desktop checks in the

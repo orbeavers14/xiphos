@@ -69,7 +69,8 @@ std::unique_ptr<StudySession> StudySession::from_state(Reader &reader,const Stud
   for(const auto &l:s.history)reading(l);for(const auto &l:s.dictionary_history)dictionary(l);
   if(s.reading){reading(*s.reading);if(s.reading->commentary.empty())(void)result->read_entry(s.reading->module,s.reading->reference);else (void)result->read_passage(s.reading->module,s.reading->commentary,s.reading->reference);}
   if(s.dictionary){dictionary(*s.dictionary);(void)result->read_dictionary(s.dictionary->module,s.dictionary->key);}
-  if(s.parallel){auto chapter=result->read_parallel(s.parallel->modules,s.parallel->reference,s.parallel->options,s.parallel->headings,s.parallel->max_bytes);if(chapter.control_module!=s.parallel->control_module||chapter.reference!=s.parallel->reference)throw std::invalid_argument("Saved parallel control/reference no longer resolves identically");}
+  if(s.parallel){auto chapter=result->read_parallel(s.parallel->modules,s.parallel->reference,s.parallel->options,s.parallel->headings,s.parallel->max_bytes,
+    s.parallel->map_versification?s.parallel->control_module:std::string{});if(chapter.control_module!=s.parallel->control_module||chapter.reference!=s.parallel->reference)throw std::invalid_argument("Saved parallel control/reference no longer resolves identically");}
   if(s.book){const auto resolved=reader.resolve_book_target(book_reading_target(s.book->requested));if(resolved.node.offset!=s.book->offset||resolved.node.path!=s.book->path)throw std::invalid_argument("Saved book address no longer resolves identically");if(s.book->document)(void)result->select_book_document(s.book->requested);else (void)result->select_book(s.book->requested);}
   // Render validation may discover presentation hints. Persisted explicit state
   // wins, and histories/current intent are published without replay/dedup.

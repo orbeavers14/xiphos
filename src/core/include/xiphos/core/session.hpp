@@ -82,12 +82,13 @@ public:
   void clear_dictionary_history() { dictionary_history_.clear(); }
   DictionaryEntry navigate_dictionary(const std::string &module, const std::string &key, int direction);
   ParallelChapter visit_parallel(const std::vector<std::string> &modules, const std::string &reference,
-      const EngineOptions &options, bool headings, std::size_t max_bytes = maximum_parallel_snapshot_bytes);
+      const EngineOptions &options, bool headings, std::size_t max_bytes = maximum_parallel_snapshot_bytes, const std::string &source_module = {});
+  ParallelChapter read_committed_parallel();
   ParallelChapter navigate_parallel_chapter(int direction);
   std::optional<ParallelSelection> parallel_selection() const { return parallel_selection_; }
   void clear_parallel_selection() { parallel_selection_.reset(); }
   ParallelChapter read_parallel(const std::vector<std::string> &modules, const std::string &reference,
-      const EngineOptions &options, bool headings, std::size_t max_bytes = maximum_parallel_snapshot_bytes);
+      const EngineOptions &options, bool headings, std::size_t max_bytes = maximum_parallel_snapshot_bytes, const std::string &source_module = {});
   DevotionalEntry read_devotional(const std::string &module, const std::string &entered,
                                   int today_month, int today_day);
   DictionaryEntry read_dictionary(const std::string &module, const std::string &key);
@@ -122,6 +123,7 @@ public:
   StudyNote study_note_metadata(const std::string &module, const std::string &reference,
                                  const std::string &identifier);
   Entry read_commentary_entry(const std::string &module, const std::string &reference);
+  WordStudy word_study(const std::string &module, const std::string &reference, const std::string &surface);
   Entry read_entry(const std::string &module, const std::string &reference);
   // Configured HTML/CSS source without publishing automatic image/font choices.
   // Same renderer/cleanup/notes as live reads, no history or selection changes.

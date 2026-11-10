@@ -31,6 +31,8 @@
 #include <swoptfilter.h>
 #include <swld.h>
 #include <versekey.h>
+#include <glib.h>
+#include <algorithm>
 #include <filesystem>
 #include <mutex>
 #include <cstring>
@@ -574,8 +576,85 @@ std::string Reader::select_lexicon(const LexicalLink &command, const std::string
   if (!selected || !*selected) throw std::invalid_argument("No lexicon selected for this command");
   return selected;
 }
+WordStudy Reader::word_study(const std::string &id, const std::string &reference,
+                            const std::string &surface) {
+  detail::validate_xml_text(id,4096);
+  detail::validate_xml_text(reference,32768);
+  detail::validate_xml_text(surface,1024);
+  if (id.empty() || surface.empty()) throw std::invalid_argument("Missing selected word source");
+  auto key_text = [](const std::string &value, bool fold_marks) {
+    std::unique_ptr<char, decltype(&g_free)> normalized(
+        g_utf8_normalize(value.data(), value.size(), G_NORMALIZE_NFD), &g_free);
+    if (!normalized) return std::string{};
+    if (!fold_marks) return std::string(normalized.get());
+    std::string key;
+    for (const char *at = normalized.get(); *at; at = g_utf8_next_char(at)) {
+      if (!g_unichar_ismark(g_utf8_get_char(at))) key.append(at, g_utf8_next_char(at));
+    }
+    return key;
+  };
+  const auto exact = key_text(surface, false), folded = key_text(surface, true);
+  if (folded.empty()) throw std::invalid_argument("Selected word has no base characters");
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto &module = impl_->verse_module(id, reference);
+  auto &live = *static_cast<sword::VerseKey *>(module.getKey());
+  struct Restore {
+    sword::SWModule &module;
+    sword::VerseKey &live;
+    sword::VerseKey saved;
+    bool attributes;
+    ~Restore() { live = saved; module.setProcessEntryAttributes(attributes); }
+  } restore{module, live, live, module.isProcessEntryAttributes()};
+  sword::VerseKey target(live);
+  target.setAutoNormalize(false);
+  target.setText(reference.c_str());
+  if (target.getError() || target.getChapter() < 1 || target.getVerse() < 1 ||
+      target.getVerse() > target.getVerseMax())
+    throw std::invalid_argument("Invalid selected word verse");
+  live = target;
+  const WordStudy empty{module.getName(), live.getText(), surface, {}};
+  auto result = empty;
+  EngineOptions options{};
+  options.strongs = options.lemmas = options.greekaccents = options.hebrewpoints = options.hebrewcant = true;
+  ScopedEngineOptions scope(*impl_->manager, options);
+  module.setProcessEntryAttributes(true);
+  (void)detail::render_sdk_entry(module);
+  const auto &attributes = module.getEntryAttributes();
+  const auto words = attributes.find("Word");
+  if (words == attributes.end() || words->second.size() > 4096) return result;
+  std::optional<std::vector<std::string>> exact_lemmas, folded_lemmas;
+  bool exact_conflict = false, folded_conflict = false;
+  for (const auto &word : words->second) {
+    const auto text = word.second.find("Text");
+    if (text == word.second.end() || text->second.size() > 1024) continue;
+    const std::string token(text->second.c_str(), text->second.size());
+    if (!g_utf8_validate(token.data(), token.size(), nullptr) ||
+        key_text(token, true) != folded) continue;
+    std::vector<std::string> lemmas;
+    for (unsigned i = 1; i <= 32; ++i) {
+      const auto suffix = "." + std::to_string(i);
+      const auto lemma = word.second.find(("Lemma" + suffix).c_str());
+      if (lemma == word.second.end()) break;
+      const std::string value(lemma->second.c_str(), lemma->second.size());
+      if (!value.empty() && value.size() <= 256 &&
+          g_utf8_validate(value.data(), value.size(), nullptr) &&
+          value.find_first_of("/\r\n\t ") == std::string::npos &&
+          std::find(lemmas.begin(), lemmas.end(), value) == lemmas.end()) lemmas.push_back(value);
+    }
+    auto agree = [&](auto &prior, bool &conflict) {
+      if (!prior) prior = lemmas;
+      else if (*prior != lemmas) conflict = true;
+    };
+    if (key_text(token, false) == exact) agree(exact_lemmas, exact_conflict);
+    agree(folded_lemmas, folded_conflict);
+  }
+  if (exact_lemmas && !exact_conflict) result.lemmas = std::move(*exact_lemmas);
+  else if (!exact_lemmas && folded_lemmas && !folded_conflict) result.lemmas = std::move(*folded_lemmas);
+  return result;
+}
 ParallelChapter Reader::read_parallel(const std::vector<std::string> &requested,
-    const std::string &reference, const EngineOptions &options, bool headings, std::size_t max_bytes) {
+    const std::string &reference, const EngineOptions &options, bool headings, std::size_t max_bytes,
+    const std::string &source_module) {
   if (!parallel_read_arguments(requested, reference, max_bytes))
     throw std::invalid_argument("Invalid bounded parallel request");
   std::lock_guard<std::mutex> lock(impl_->mutex);
@@ -597,7 +676,28 @@ ParallelChapter Reader::read_parallel(const std::vector<std::string> &requested,
       throw std::out_of_range("First parallel control is not installed: " + requested.front());
     throw std::invalid_argument("First parallel control is not a supported verse module");
   }
-  auto plan = parallel_references(*modules.front(), reference);
+  auto map_reference = [](sword::SWModule &from, sword::SWModule &to, const std::string &text)
+      -> std::optional<std::string> {
+    sword::VerseKey source(*static_cast<sword::VerseKey *>(from.getKey()));
+    source.setAutoNormalize(false);
+    source.setText(text.c_str());
+    if (source.getError() || source.getChapter() < 1 || source.getVerse() < 1 ||
+        source.getVerse() > source.getVerseMax()) return std::nullopt;
+    sword::VerseKey target(*static_cast<sword::VerseKey *>(to.getKey()));
+    target.clearBounds();
+    target.positionFrom(source);
+    if (target.getError() || target.getChapter() < 1 || target.getVerse() < 1 ||
+        target.getVerse() > target.getVerseMax()) return std::nullopt;
+    return target.getText();
+  };
+  std::string control_reference = reference;
+  if (!source_module.empty()) {
+    auto &source = impl_->verse_module(source_module, reference);
+    auto mapped = map_reference(source, *modules.front(), reference);
+    if (!mapped) throw std::invalid_argument("Search result has no verse in the comparison control canon");
+    control_reference = std::move(*mapped);
+  }
+  auto plan = parallel_references(*modules.front(), control_reference);
   result.control_module = result.columns.front().module;result.reference = std::move(plan.reference);
   result.title = std::move(plan.title);result.selected_verse = plan.selected_verse;
   auto account = [&](const std::string &text) {
@@ -622,10 +722,13 @@ ParallelChapter Reader::read_parallel(const std::vector<std::string> &requested,
     row.cells.reserve(modules.size());
     for (auto *module : modules) {
       ParallelCell cell;
-      if (module) {
-        module->setKey(row.reference.c_str());
+      const auto cell_reference = !module ? std::nullopt :
+          source_module.empty() ? std::make_optional(row.reference) :
+          map_reference(*modules.front(), *module, row.reference);
+      if (cell_reference) {
+        module->setKey(cell_reference->c_str());
         if (headings) cell.headings = render_preverse_headings(*module);
-        cell.html = render_entry(*module, row.reference.c_str());cell.reference = module->getKeyText();
+        cell.html = render_entry(*module, cell_reference->c_str());cell.reference = module->getKeyText();
         account(cell.reference);account(cell.html);for (const auto &heading : cell.headings) account(heading);
       }
       row.cells.push_back(std::move(cell));

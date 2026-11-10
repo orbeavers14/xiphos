@@ -755,13 +755,20 @@ std::future<ParallelChapter> StudyWorker::read_decorated_parallel(StudyTab tab,s
  try{if(!bookmarks.empty())selected_profile_path(bookmarks);if(!annotations.empty())selected_profile_path(annotations);}catch(...){return selected_profile_rejection<ParallelChapter>();}
  return impl_->submit([tab,bookmarks=std::move(bookmarks),annotations=std::move(annotations)](Impl::State &s){
   auto &session=s.tab(tab);const auto selected=session.parallel_selection();if(!selected)throw std::invalid_argument("No parallel selection");
-  auto result=session.read_parallel(selected->modules,selected->reference,selected->options,selected->headings,selected->max_bytes);
+  auto result=session.read_committed_parallel();
   const auto marks=bookmarks.empty()?BookmarkSnapshot{}:xiphos::core::read_bookmarks(bookmarks);
   const auto profile=annotations.empty()?AnnotationProfile{}:xiphos::core::read_annotations(annotations);
   for(std::size_t column=0;column<result.columns.size();++column){
    const auto &source=result.columns[column];if(source.status!=ParallelColumnStatus::ready)continue;
    AnnotationTarget target;
-   try { target=s.reader.annotation_target(source.module,result.reference,true); }
+   std::string context = result.reference;
+   if (selected->map_versification) {
+    const auto first = std::find_if(result.rows.begin(),result.rows.end(),
+        [column](const auto &row){return !row.cells[column].reference.empty();});
+    if (first == result.rows.end()) continue;
+    context = first->cells[column].reference;
+   }
+   try { target=s.reader.annotation_target(source.module,context,true); }
    catch(const std::invalid_argument &) { result.annotation_incomplete=true;continue; }
    BookmarkTags tags;tags.control_module=target.control_module;if(!bookmarks.empty())tags=s.reader.bookmark_tags(marks,source.module,target.reference,{});
    const auto notes=legacy_annotation_cache(profile,target.control_module,target.address.book);
@@ -963,7 +970,8 @@ std::future<ParallelChapter> StudyWorker::visit_parallel(StudyTab tab, std::vect
   });
 }
 std::future<ParallelChapter> StudyWorker::visit_parallel_profile(StudyTab tab, std::string path,
-    std::optional<std::string> key, std::string reference, EngineOptions options, bool headings, std::size_t max_bytes) {
+    std::optional<std::string> key, std::string reference, EngineOptions options, bool headings, std::size_t max_bytes,
+    std::string source_module) {
   try {
     selected_profile_path(path);
     if (key && (key->empty() || key->size() > maximum_saved_parallel_key_bytes || key->find('\0') != std::string::npos))
@@ -973,7 +981,7 @@ std::future<ParallelChapter> StudyWorker::visit_parallel_profile(StudyTab tab, s
     if (!parallel_read_arguments({""}, reference, max_bytes))
       throw std::invalid_argument("Invalid saved parallel visit arguments");
   } catch (...) { return selected_profile_rejection<ParallelChapter>(); }
-  return impl_->submit([tab, path = std::move(path), key = std::move(key), reference = std::move(reference), options, headings, max_bytes](Impl::State &s) {
+  return impl_->submit([tab, path = std::move(path), key = std::move(key), reference = std::move(reference), options, headings, max_bytes, source_module = std::move(source_module)](Impl::State &s) {
     auto &session = s.tab(tab);
     const auto profile = read_saved_parallel_profile(path);
     const auto *modules = profile.startup_modules ? &*profile.startup_modules : nullptr;
@@ -984,8 +992,11 @@ std::future<ParallelChapter> StudyWorker::visit_parallel_profile(StudyTab tab, s
     }
     if (!modules || !parallel_read_arguments(*modules, reference, max_bytes))
       throw std::invalid_argument("Saved parallel selection is absent or exceeds rendering bounds");
-    return session.visit_parallel(*modules, reference, options, headings, max_bytes);
+    return session.visit_parallel(*modules, reference, options, headings, max_bytes, source_module);
   });
+}
+std::future<ParallelChapter> StudyWorker::read_committed_parallel(StudyTab tab) {
+  return impl_->submit([tab](Impl::State &s) { return s.tab(tab).read_committed_parallel(); });
 }
 std::future<ParallelChapter> StudyWorker::navigate_parallel_chapter(StudyTab tab, int direction) {
   if (direction != -1 && direction != 1) {
@@ -1116,6 +1127,12 @@ std::future<Entry> StudyWorker::read_entry_snapshot(StudyTab tab,std::string mod
 std::future<Entry> StudyWorker::read_commentary_entry_snapshot(StudyTab tab,std::string module,std::string reference){
   return impl_->submit([tab,module=std::move(module),reference=std::move(reference)](Impl::State &s){
     return s.tab(tab).read_commentary_entry_snapshot(module,reference);
+  });
+}
+std::future<WordStudy> StudyWorker::word_study(StudyTab tab, std::string module, std::string reference, std::string surface) {
+  return impl_->submit([tab, module = std::move(module), reference = std::move(reference),
+                        surface = std::move(surface)](Impl::State &s) {
+    return s.tab(tab).word_study(module, reference, surface);
   });
 }
 std::future<Entry> StudyWorker::read_entry(StudyTab tab, std::string module, std::string reference) {

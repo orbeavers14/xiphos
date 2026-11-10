@@ -221,23 +221,30 @@ DictionaryEntry StudySession::navigate_dictionary(const std::string &module, con
                  : reader_.navigate_dictionary(module, key, direction);
 }
 ParallelChapter StudySession::visit_parallel(const std::vector<std::string> &modules, const std::string &reference,
-    const EngineOptions &options, bool headings, std::size_t max_bytes) {
-  ParallelSelection staged{modules, {}, {}, options, headings, max_bytes};
-  auto result = reader_.read_parallel(modules, reference, options, headings, max_bytes);
+    const EngineOptions &options, bool headings, std::size_t max_bytes, const std::string &source_module) {
+  ParallelSelection staged{modules, {}, {}, options, headings, max_bytes, !source_module.empty()};
+  auto result = reader_.read_parallel(modules, reference, options, headings, max_bytes, source_module);
   staged.control_module = result.control_module;staged.reference = result.reference;
   static_assert(std::is_nothrow_move_assignable<ParallelSelection>::value && std::is_nothrow_move_constructible<ParallelSelection>::value, "Parallel selection publication must not allocate");
   parallel_selection_ = std::move(staged);
   return result;
 }
+ParallelChapter StudySession::read_committed_parallel() {
+  if (!parallel_selection_) throw std::invalid_argument("No committed parallel selection");
+  const auto &selected = *parallel_selection_;
+  return read_parallel(selected.modules, selected.reference, selected.options, selected.headings,
+      selected.max_bytes, selected.map_versification ? selected.control_module : std::string{});
+}
 ParallelChapter StudySession::navigate_parallel_chapter(int direction) {
   if (!parallel_selection_) throw std::invalid_argument("No committed parallel selection");
   const auto &selected = *parallel_selection_;
   const auto reference = reader_.adjacent_chapter(selected.control_module, selected.reference, direction);
-  return visit_parallel(selected.modules, reference, selected.options, selected.headings, selected.max_bytes);
+  return visit_parallel(selected.modules, reference, selected.options, selected.headings, selected.max_bytes,
+      selected.map_versification ? selected.control_module : std::string{});
 }
 ParallelChapter StudySession::read_parallel(const std::vector<std::string> &modules, const std::string &reference,
-    const EngineOptions &options, bool headings, std::size_t max_bytes) {
-  return reader_.read_parallel(modules, reference, options, headings, max_bytes);
+    const EngineOptions &options, bool headings, std::size_t max_bytes, const std::string &source_module) {
+  return reader_.read_parallel(modules, reference, options, headings, max_bytes, source_module);
 }
 DevotionalEntry StudySession::read_devotional(const std::string &module, const std::string &entered, int month, int day) {
   const auto options = module_engine_options(module);
@@ -420,6 +427,9 @@ StudyNote StudySession::study_note_metadata(const std::string &module, const std
 }
 Entry StudySession::read_commentary_entry(const std::string &module, const std::string &reference) {
   return read_entry_impl(module,reference,true,true);
+}
+WordStudy StudySession::word_study(const std::string &module, const std::string &reference, const std::string &surface) {
+  return reader_.word_study(module, reference, surface);
 }
 Entry StudySession::read_entry(const std::string &module, const std::string &reference) {
   return read_entry_impl(module,reference,false,true);

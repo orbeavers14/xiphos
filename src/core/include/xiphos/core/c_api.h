@@ -1588,6 +1588,18 @@ xc_search_module_names *xc_request_take_search_module_names(xc_request *request)
 size_t xc_search_module_names_count(const xc_search_module_names *names);
 const char *xc_search_module_names_at(const xc_search_module_names *names, size_t row);
 void xc_search_module_names_release(xc_search_module_names *names);
+/* Read-only selected word metadata. The result owns canonical source and the
+ * submitted surface. Zero terms means missing or ambiguous SDK metadata. */
+typedef struct xc_word_study xc_word_study;
+xc_status xc_worker_word_study(xc_worker *worker,uint64_t tab,const char *module,
+    const char *reference,const char *surface,xc_request **out);
+xc_word_study *xc_request_take_word_study(xc_request *request);
+const char *xc_word_study_module(const xc_word_study *result);
+const char *xc_word_study_reference(const xc_word_study *result);
+const char *xc_word_study_surface(const xc_word_study *result);
+size_t xc_word_study_lemma_count(const xc_word_study *result);
+const char *xc_word_study_lemma(const xc_word_study *result,size_t index);
+void xc_word_study_release(xc_word_study *result);
 /* Convert an explicit Greek/Hebrew Strong's link to a lemma search term.
  * Returns XC_INVALID_ARGUMENT for other lexical links or insufficient capacity. */
 xc_status xc_strongs_search_term(const char *uri, char *buffer, size_t capacity);
@@ -1665,6 +1677,13 @@ xc_status xc_worker_visit_parallel(xc_worker *worker, uint64_t tab,
 xc_status xc_worker_visit_parallel_profile(xc_worker *worker,uint64_t tab,
   const char *path,const char *key,const char *reference,unsigned option_flags,
   int headings,size_t max_snapshot_bytes,xc_request **out);
+/* Interpret reference in the source module's canon and map through SWORD.
+ * A verse absent from the control canon fails without changing tab history
+ * or the prior comparison. Missing mapped cells have empty references. */
+xc_status xc_worker_visit_parallel_profile_from(xc_worker *worker,uint64_t tab,
+  const char *path,const char *key,const char *source_module,const char *reference,
+  unsigned option_flags,int headings,size_t max_snapshot_bytes,xc_request **out);
+xc_status xc_worker_read_committed_parallel(xc_worker *worker,uint64_t tab,xc_request **out);
 xc_status xc_worker_navigate_parallel_chapter(xc_worker *worker, uint64_t tab, int direction, xc_request **out);
 xc_status xc_worker_parallel_selection(xc_worker *worker, uint64_t tab, xc_request **out);
 xc_status xc_worker_clear_parallel_selection(xc_worker *worker, uint64_t tab, xc_request **out);

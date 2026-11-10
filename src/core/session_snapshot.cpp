@@ -79,7 +79,7 @@ void write_state(Node *n,const StudySessionState &s){
  if(s.search_text){auto *p=child(n,"search-text");flag(p,"strongs",s.search_text->strongs);flag(p,"morphology",s.search_text->morphology);flag(p,"footnotes",s.search_text->footnotes);}
  if(s.book){auto *p=child(n,"book");attr(p,"module",s.book->requested.module);flag(p,"document",s.book->document);number(p,"offset",s.book->offset);attr(p,"path",s.book->path);
   if(const auto *v=std::get_if<std::string>(&s.book->requested.address)){attr(p,"address_kind","path");attr(p,"address",*v);}else{attr(p,"address_kind","offset");number(p,"address",std::get<std::uint64_t>(s.book->requested.address));}}
- if(s.parallel){auto *p=child(n,"parallel");attr(p,"control",s.parallel->control_module);attr(p,"reference",s.parallel->reference);flag(p,"headings",s.parallel->headings);number(p,"max_bytes",s.parallel->max_bytes);write_engine(child(p,"engine"),s.parallel->options);for(const auto &m:s.parallel->modules)attr(child(p,"column"),"module",m);}
+ if(s.parallel){auto *p=child(n,"parallel");attr(p,"control",s.parallel->control_module);attr(p,"reference",s.parallel->reference);flag(p,"headings",s.parallel->headings);if(s.parallel->map_versification)flag(p,"mapped",true);number(p,"max_bytes",s.parallel->max_bytes);write_engine(child(p,"engine"),s.parallel->options);for(const auto &m:s.parallel->modules)attr(child(p,"column"),"module",m);}
 }
 StudySessionState read_state(Node *n){
  attributes(n,{"module_defaults","xref_list","retained_elements","retained_bytes"});StudySessionState s;
@@ -102,7 +102,8 @@ StudySessionState read_state(Node *n){
   else if(tag=="book"){
    attributes(p,{"module","document","offset","path","address_kind","address"});leaf(p);SessionBookState b;b.requested.module=required(p,"module");b.offset=integer(p,"offset",UINT64_MAX);b.path=required(p,"path");b.document=boolean(p,"document");auto kind=required(p,"address_kind");if(kind=="path")b.requested.address=required(p,"address");else if(kind=="offset")b.requested.address=integer(p,"address",UINT64_MAX);else invalid();s.book=std::move(b);
   }else if(tag=="parallel"){
-   attributes(p,{"control","reference","headings","max_bytes"});ParallelSelection parallel;
+   attributes(p,{"control","reference","headings","max_bytes","mapped"});ParallelSelection parallel;
+   if(optional(p,"mapped"))parallel.map_versification=boolean(p,"mapped");
    parallel.control_module=required(p,"control");parallel.reference=required(p,"reference");parallel.headings=boolean(p,"headings");parallel.max_bytes=integer(p,"max_bytes",maximum_parallel_snapshot_bytes);bool engine=false;
    for(auto *q:children(p,{"engine","column"}))if(name(q)=="engine"){if(engine)invalid();engine=true;parallel.options=read_engine(q);}else{attributes(q,{"module"});leaf(q);if(parallel.modules.size()>=maximum_parallel_columns)invalid();parallel.modules.push_back(required(q,"module"));}
    if(!engine)invalid();s.parallel=std::move(parallel);

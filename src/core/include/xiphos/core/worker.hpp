@@ -265,7 +265,8 @@ public:
   // Never edits profile metadata; storage-only activation is a separate command.
   std::future<ParallelChapter> visit_parallel_profile(StudyTab tab, std::string path,
       std::optional<std::string> key, std::string reference, EngineOptions options,
-      bool headings, std::size_t max_bytes = maximum_parallel_snapshot_bytes);
+      bool headings, std::size_t max_bytes = maximum_parallel_snapshot_bytes, std::string source_module = {});
+  std::future<ParallelChapter> read_committed_parallel(StudyTab tab);
   std::future<ParallelChapter> navigate_parallel_chapter(StudyTab tab, int direction);
   std::future<std::optional<ParallelSelection>> parallel_selection(StudyTab tab);
   std::future<void> clear_parallel_selection(StudyTab tab);
@@ -291,6 +292,7 @@ public:
   std::future<ResolvedStudyLink> resolve_study_link(StudyTab tab, std::string current_module, std::string uri);
   std::future<StudyNote> study_note_link(StudyTab tab, std::string current_module, std::string uri);
   std::future<StudyNote> study_note(StudyTab tab, std::string module, std::string reference, std::string identifier);
+  std::future<WordStudy> word_study(StudyTab tab, std::string module, std::string reference, std::string surface);
   std::future<Entry> read_entry(StudyTab tab, std::string module, std::string reference);
   std::future<EntryHtmlSource> capture_entry_html(StudyTab tab,std::string module,std::string reference,HtmlSourceLimits limits = {});
   std::future<Entry> read_entry_snapshot(StudyTab tab,std::string module,std::string reference);
