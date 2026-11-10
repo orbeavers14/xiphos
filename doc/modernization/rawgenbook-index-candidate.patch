@@ -1,0 +1,21 @@
+--- a/src/modules/swmodule.cpp
++++ b/src/modules/swmodule.cpp
+@@ -7 +7 @@
+- * $Id$
++ * $Id: swmodule.cpp 3755 2020-07-19 18:43:07Z scribe $
+@@ -1295,0 +1296,10 @@
++		if (tkcheck && tkcheck->getOffset()) {
++			TreeKeyIdx reachable(*tkcheck);
++			const SWBuf path = tkcheck->getText();
++			reachable.setText(path.c_str());
++			if (reachable.getError() || reachable.getOffset() != tkcheck->getOffset()) {
++				(*this)++;
++				err = popError();
++				continue;
++			}
++		}
+@@ -1475,0 +1486 @@
++				const auto originalOffset = tkcheck->getOffset();
+@@ -1535 +1546 @@
+-				else tkcheck->nextSibling();	// reposition from our previousSibling test
++				else tkcheck->setOffset(originalOffset);

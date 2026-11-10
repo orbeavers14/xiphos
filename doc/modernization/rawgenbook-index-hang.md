@@ -1,7 +1,7 @@
 # SWORD 1.9.0 hangs rebuilding a RawGenBook index after leaf deletion
 
-**Status:** Reproduced locally. Candidate fix applies to the release source.
-Build and end-to-end validation are pending. No upstream report has been filed.
+**Status:** Reproduced locally. A candidate fix passed the SDK-only reproducer in an
+isolated build. No upstream report has been filed.
 
 **Environment:** macOS 27.2, arm64, SWORD 1.9.0 with CLucene 2.3.3.4 and ICU
 78.3. The test used a disposable UTF-8 RawGenBook with generated text.
@@ -37,14 +37,16 @@ perl -e 'alarm 6; exec @ARGV' ./reproduce "$(mktemp -d)/library"
 
 `TreeKeyIdx::remove()` detaches the child from its parent but leaves the
 physical index slot. `SWModule::createSearchFramework()` traverses those
-slots and temporarily walks siblings to build proximity text. Its
-parent/first-child reset can reposition the cursor before a detached slot,
-causing the next increment to revisit that slot. Save the original
-`TreeKeyIdx` offset before the sibling walk and restore it directly with
-`setOffset()` before advancing.
+slots and temporarily walks siblings to build proximity text. Restoring the saved cursor offset after the sibling walk was insufficient.
+The indexer can already stall when it attempts sibling navigation on the
+detached slot. The [candidate patch](rawgenbook-index-candidate.patch)
+checks that each tree slot still resolves to the same offset by path before
+indexing it, and restores the original offset after a sibling walk.
 
-Validation must also confirm that a successful rebuild does not index the
-detached entry. The cursor fix alone does not establish that property.
+Built from the SWORD 1.9.0 release tag with CLucene 2.3.3.4 and ICU 78.3.
+On the same macOS machine, the patched SDK rebuilt the index and returned
+one indexed hit for the retained entry and zero hits for the deleted entry.
+Broader indexing checks and integration into Xiphos remain pending.
 
 [TreeKeyIdx source](https://crosswire.org/svn/sword/tags/sword-1-9-0/src/keys/treekeyidx.cpp) ·
 [SWModule source](https://crosswire.org/svn/sword/tags/sword-1-9-0/src/modules/swmodule.cpp)
