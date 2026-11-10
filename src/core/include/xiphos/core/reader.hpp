@@ -141,6 +141,7 @@ public:
   // PreferredCSSXHTML exactly (including empty), otherwise style.css. Local
   // regular files are bounded to the module data directory; no global CSS or
   // recursive CSS imports/assets are discovered by this read-only operation.
+  std::string read_export_module_stylesheet(const std::string &id);
   std::optional<BookStylesheetResource> read_book_stylesheet(const std::string &module,
       std::size_t maximum_bytes = maximum_book_stylesheet_bytes);
   // Owned ordinary book-note source; does not parse a verse URI or heading ID.

@@ -856,6 +856,10 @@ xc_status xc_worker_export_search_visible_text_with_context(xc_worker *worker,ui
   const xc_search_text_export_request *input,int include_search_context,xc_request **out);
 xc_status xc_worker_export_search_all_text_with_context(xc_worker *worker,uint64_t tab,
   const xc_search_all_text_export_request *input,int include_search_context,xc_request **out);
+/* Opt in to scoped, passive formatting from the module's declared stylesheet. */
+xc_status xc_worker_export_search_rich_html_with_styles(xc_worker *worker,uint64_t tab,
+    const xc_search_html_export_request *input,const xc_search_html_image_options *images,
+    size_t plain_text_max_bytes,int include_search_context,int include_module_styles,xc_request **out);
 xc_status xc_worker_export_search_rich_html_with_context(xc_worker *worker,uint64_t tab,
   const xc_search_html_export_request *input,const xc_search_html_image_options *images,
   size_t plain_text_max_bytes,int include_search_context,xc_request **out);

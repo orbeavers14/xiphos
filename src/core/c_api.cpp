@@ -1199,6 +1199,12 @@ xc_status xc_worker_export_search_rich_html(xc_worker *w,uint64_t tab,const xc_s
 }
 xc_status xc_worker_export_search_rich_html_with_context(xc_worker *w,uint64_t tab,const xc_search_html_export_request *input,
     const xc_search_html_image_options *images,size_t plain_text_max_bytes,int include_search_context,xc_request **out){
+  return xc_worker_export_search_rich_html_with_styles(w,tab,input,images,plain_text_max_bytes,include_search_context,0,out);
+}
+xc_status xc_worker_export_search_rich_html_with_styles(xc_worker *w,uint64_t tab,const xc_search_html_export_request *input,
+    const xc_search_html_image_options *images,size_t plain_text_max_bytes,int include_search_context,
+    int include_module_styles,xc_request **out){
+  if(include_module_styles!=0&&include_module_styles!=1){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}
   if(!out)return XC_INVALID_ARGUMENT;*out=nullptr;
   if(include_search_context!=0&&include_search_context!=1)return XC_INVALID_ARGUMENT;
   if(plain_text_max_bytes>xiphos::core::maximum_search_export_bytes)return XC_INVALID_ARGUMENT;
@@ -1213,6 +1219,7 @@ xc_status xc_worker_export_search_rich_html_with_context(xc_worker *w,uint64_t t
      !input->max_bytes||input->max_bytes>xiphos::core::maximum_search_export_bytes||!input->max_rows||input->max_rows>xiphos::core::maximum_search_export_rows)return XC_INVALID_ARGUMENT;
   try{
     xiphos::core::SearchHtmlExportRequest copied;
+    copied.include_module_styles=include_module_styles!=0;
     copied.include_search_context=include_search_context!=0;
     if(plain_text_max_bytes)copied.plain_text_max_bytes=plain_text_max_bytes;
     copied.images={static_cast<xiphos::core::SearchHtmlImagePolicy>(images->policy),images->max_images,images->max_original_bytes,images->max_pixels};

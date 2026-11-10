@@ -65,6 +65,7 @@ struct SearchHtmlExportRequest {
   bool include_scripture=false;
   std::size_t max_bytes=1024*1024,max_rows=maximum_search_export_rows;
   bool allow_partial_source=false; // Applies only to all_retained.
+  bool include_module_styles=false; // Import a scoped subset of declared CSS.
   SearchHtmlImageOptions images; // Explicit opt-in; existing callers reject resources.
   std::optional<std::size_t> plain_text_max_bytes; // Independent UTF-8 cap; no fallback by default.
   bool include_search_context=false;

@@ -31,6 +31,68 @@ std::string scope_css(const std::string &css,unsigned style){
   return result;
 }
 }
+std::string scoped_module_export_css(std::string_view source, std::size_t scope) {
+  std::string css;
+  while (!source.empty()) {
+    const auto comment=source.find("/*");
+    css.append(source.substr(0,comment));
+    if (comment==source.npos) break;
+    const auto end=source.find("*/",comment+2);
+    if (end==source.npos) break;
+    css+=' ';
+    source.remove_prefix(end+2);
+  }
+  const auto root=".xiphos-export-module-"+std::to_string(scope);
+  const auto letters=[](unsigned char c){return (c>='a'&&c<='z')||(c>='A'&&c<='Z');};
+  const auto token=[&](std::string_view value) {
+    return !value.empty() && letters(value.front()) &&
+        std::all_of(value.begin(),value.end(),[&](unsigned char c){
+          return letters(c)||(c>='0'&&c<='9')||c=='-'||c=='_';
+        });
+  };
+  std::string out;
+  for (std::size_t position=0;position<css.size();) {
+    const auto open=css.find('{',position);
+    if (open==css.npos) break;
+    auto close=open+1;
+    unsigned depth=1;
+    while (close<css.size() && depth) {
+      if (css[close]=='{') ++depth;
+      if (css[close]=='}') --depth;
+      ++close;
+    }
+    if (depth) break;
+    const auto selector=trim(css.substr(position,open-position));
+    position=close;
+    if (css.find('{',open+1)<close-1) continue;
+    const auto dot=selector.find('.');
+    const auto tag=std::string_view(selector).substr(0,dot);
+    if ((dot==selector.npos && !token(tag)) ||
+        (dot!=selector.npos && ((!tag.empty()&&!token(tag)) ||
+            !token(std::string_view(selector).substr(dot+1))))) continue;
+    std::string declarations;
+    for (auto start=open+1;start<close-1;) {
+      const auto semicolon=css.find(';',start);
+      const auto end=std::min(semicolon,close-1);
+      const auto rule=css.substr(start,end-start);
+      start=end+1;
+      const auto colon=rule.find(':');
+      if (colon==rule.npos) continue;
+      const auto property=lower(trim(rule.substr(0,colon)));
+      const auto value=lower(trim(rule.substr(colon+1)));
+      const bool safe=
+        (property=="text-align"&&(value=="left"||value=="right"||value=="center"||value=="justify"||value=="start"||value=="end")) ||
+        (property=="font-weight"&&(value=="normal"||value=="bold")) ||
+        (property=="font-style"&&(value=="normal"||value=="italic"||value=="oblique")) ||
+        (property=="font-variant"&&(value=="normal"||value=="small-caps")) ||
+        (property=="color"&&value.size()<=24&&!value.empty()&&std::all_of(value.begin(),value.end(),letters));
+      if (safe) declarations+=property+":"+value+";";
+    }
+    if (!declarations.empty())
+      out+=(lower(selector)=="body"?root:root+" "+selector)+"{"+declarations+"}\n";
+  }
+  return out;
+}
 PreparedExportHtml prepare_export_html(const EntryHtmlSource &source,std::size_t max_bytes,const ExportImageResolver &images){
   if(!max_bytes||max_bytes>maximum_html_source_bytes)throw std::invalid_argument("Invalid HTML preparation budget");
   PreparedExportHtml out;

@@ -9,6 +9,7 @@
 #include <glib.h>
 #include <array>
 #include <memory>
+#include <map>
 #include <stdexcept>
 namespace xiphos::core {
 PassageHtmlExport StudySession::export_passage_html(const std::string &module, const std::string &expression,
@@ -104,6 +105,7 @@ SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest reques
     if(header.size()>request.max_bytes-used)return finish(SearchExportStatus::output_limit);
     used+=header.size();body+=header;
   }
+  std::map<std::string,std::size_t> module_styles;
   std::optional<std::size_t> previous_group;
   for(std::size_t i=0;i<rows.size();++i){
     if(control&&control->cancel_requested())return finish(SearchExportStatus::cancelled,i);
@@ -137,7 +139,25 @@ SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest reques
         if(extra>request.max_bytes-used)return finish(SearchExportStatus::output_limit,i);
         used+=extra;css+=prepared.css;styles[prepared.style]=true;
       }
-      scripture="<div class=\"xiphos-export-style-"+std::to_string(prepared.style)+"\">"+prepared.html+"</div>";
+      std::size_t module_scope=0;
+      if(request.include_module_styles){
+        auto [entry,inserted]=module_styles.try_emplace(row.first,0);
+        if(inserted){
+          try{
+            const auto imported=detail::scoped_module_export_css(
+                reader_.read_export_module_stylesheet(row.first),module_styles.size());
+            if(!imported.empty()){
+              const auto extra=imported.size()+(css.empty()?15:0);
+              if(extra>request.max_bytes-used)return finish(SearchExportStatus::output_limit,i);
+              used+=extra;css+=imported;entry->second=module_styles.size();
+            }
+          }catch(const std::invalid_argument &){out.issue=HtmlExportIssue::styles;return finish(SearchExportStatus::unsupported_html,i);}
+           catch(const std::runtime_error &){out.issue=HtmlExportIssue::styles;return finish(SearchExportStatus::unsupported_html,i);}
+        }
+        module_scope=entry->second;
+      }
+      const auto module_class=module_scope?" xiphos-export-module-"+std::to_string(module_scope):"";
+      scripture="<div class=\"xiphos-export-style-"+std::to_string(prepared.style)+module_class+"\">"+prepared.html+"</div>";
     }
     if(control&&control->cancel_requested())return finish(SearchExportStatus::cancelled,i);
     const auto item=format_export_item(description,row.first,row.second,scripture,true,out.includes_scripture);

@@ -19,6 +19,7 @@
 #include "module_edit_internal.hpp"
 #include "sword_library.hpp"
 #include "publication.hpp"
+#include "module_resource.hpp"
 #include <rawgenbook.h>
 #include <treekeyidx.h>
 #include <fstream>
@@ -381,6 +382,16 @@ VerseImageResource Reader::verse_image_impl(const std::string &id,const std::str
   auto *module=impl_->manager->getModule(id.c_str());
   if(!module)throw std::out_of_range("Module is not installed");
   return detail::capture_verse_image_resource(*module,source,maximum_bytes,command?detail::VerseImageSourceKind::study_command:detail::VerseImageSourceKind::inline_source);
+}
+std::string Reader::read_export_module_stylesheet(const std::string &id) {
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto *module=impl_->manager->getModule(id.c_str());
+  if (!module) throw std::out_of_range("Module is not installed");
+  const auto *name=module->getConfigEntry("PreferredCSSXHTML");
+  if (!name || !*name) return {};
+  const auto *directory=module->getConfigEntry("AbsoluteDataPath");
+  const auto path=detail::module_resource_path(directory ? std::optional<std::string>(directory) : std::nullopt,name,false);
+  return detail::read_module_resource_bytes(path,maximum_book_stylesheet_bytes,"Module export stylesheet");
 }
 std::optional<BookStylesheetResource> Reader::read_book_stylesheet(const std::string &id, std::size_t maximum_bytes) {
   if (id.empty() || id.find('\0') != std::string::npos) throw std::invalid_argument("Invalid general-book module ID");

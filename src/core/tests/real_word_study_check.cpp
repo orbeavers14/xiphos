@@ -110,6 +110,13 @@ static void check_real_export_resources(const char *root) {
         passive.html.find("style.css") == std::string::npos &&
         passive.html.find("<img") == std::string::npos,
         "Text export with images disabled stays self-contained");
+  request.include_module_styles = true;
+  const auto styled = worker.export_search_html(tab,request).get();
+  check(styled.status == SearchExportStatus::ok &&
+        styled.html.find(".xiphos-export-module-1{text-align:justify;}") != std::string::npos &&
+        styled.html.find("style.css") == std::string::npos &&
+        styled.html.find("font-family:") == std::string::npos,
+        "FreChry stylesheet contributes scoped formatting without external CSS or fonts");
   const auto stylesheet = std::filesystem::u8path(root) / "modules/comments/zcom4/frechry/style.css";
   check(std::filesystem::is_regular_file(stylesheet) && std::filesystem::file_size(stylesheet) > 0,
         "Resource corpus must contain FreChry's shipped stylesheet");

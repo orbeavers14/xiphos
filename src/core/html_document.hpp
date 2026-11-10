@@ -4,6 +4,7 @@
 #include "xiphos/core/search_export.hpp"
 #include "export_png.hpp"
 #include <functional>
+#include <string_view>
 namespace xiphos::core::detail {
 struct PreparedExportHtml {
   std::string html,css;
@@ -16,6 +17,7 @@ struct PreparedExportHtml {
 using ExportImageResolver=std::function<ExportPng(const std::string &)>;
 // Empty resolver preserves the original resource-rejecting policy. Unsupported
 // material rejects the whole fragment; there is no partially prepared HTML.
+std::string scoped_module_export_css(std::string_view css, std::size_t scope);
 PreparedExportHtml prepare_export_html(const EntryHtmlSource &source,std::size_t max_bytes,
                                        const ExportImageResolver &images={});
 }

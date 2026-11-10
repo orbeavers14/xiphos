@@ -8,6 +8,13 @@ using namespace xiphos::core;
 using namespace xiphos::core::detail;
 void check(bool ok,const char *message){if(!ok)throw std::runtime_error(message);}
 int main(){try{
+ const auto module_css=scoped_module_export_css(
+   "/* comment */ body{text-align:justify;background:url(https://example.invalid/a)}"
+   "@media print{body{color:red}} .word{font-weight:bold;color:blue;position:fixed;}"
+   "div,.word{color:red} .escape{color:</style>}",7);
+ check(module_css==".xiphos-export-module-7{text-align:justify;}\n"
+                   ".xiphos-export-module-7 .word{font-weight:bold;color:blue;}\n",
+       "Module CSS keeps only passive declarations under a generated scope");
  for(const auto &css:{std::string{},lexical_block_style(false,false,false,true),lexical_block_style(true,false,false,false),lexical_block_style(true,false,true,false)}){
   EntryHtmlSource source;source.html="<span class=\"word\">Original café <b>word</b></span>";source.css=css;
   auto output=prepare_export_html(source,8192);

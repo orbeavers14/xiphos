@@ -149,5 +149,8 @@ module, the same result exports as passive HTML without an image or an
 external stylesheet reference. The corpus is checked for byte changes.
 With a libjpeg-enabled build, set `XIPHOS_REQUIRE_JPEG_EXPORT=1` to also
 verify the explicit raster policy decodes the JPEG and embeds it as PNG.
-The earlier PNG/BMP policy continues to reject JPEGs. Module CSS import
-remains outside this export path.
+The earlier PNG/BMP policy continues to reject JPEGs. The opt-in
+`xc_worker_export_search_rich_html_with_styles` path also verifies that the
+shipped FreChry stylesheet contributes scoped text alignment. Export imports
+a limited set of text formatting rules from the declared local stylesheet.
+External URLs, fonts, at-rules and inline styles are outside that subset.
