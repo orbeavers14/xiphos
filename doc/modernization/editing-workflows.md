@@ -227,4 +227,4 @@ that preserves an existing node offset. A move needs to preserve or explicitly
 remap stored offsets and links. Both operations need a successful index rebuild
 and a search check before they can ship.
 
-See the [upstream bug report draft](sword-rawgenbook-index-hang.md) for reproduction steps and the candidate cursor fix.
+See the [upstream bug report draft](rawgenbook-index-hang.md) for reproduction steps and the candidate cursor fix.
