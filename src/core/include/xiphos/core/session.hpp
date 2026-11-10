@@ -116,6 +116,8 @@ public:
   BookNote book_note_link_at(const std::string &module, std::uint64_t offset, const std::string &uri, bool render_body = true);
   ReferenceList read_reference_list(const std::string &module, const std::string &expression,
                                     const std::string &context);
+  PassageTextExport export_passage_text(const std::string &module, const std::string &expression,
+      const std::string &context, std::size_t max_bytes = maximum_passage_text_export_bytes);
   ParsedReferenceList reference_targets(const std::string &module, const std::string &expression,
                                          const std::string &context);
   StudyNote study_note(const std::string &module, const std::string &reference,

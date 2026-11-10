@@ -161,6 +161,9 @@ public:
   // Owned targets/guard metadata, capped at 2000 total references with limited
   // disclosure. Shared link-only HTML presents that flag. Does not render
   // verse bodies or change the module key/filter state.
+  PassageTextExport export_passage_text(const std::string &module, const std::string &expression,
+      const std::string &context, const std::optional<EngineOptions> &options,
+      std::size_t max_bytes = maximum_passage_text_export_bytes);
   ParsedReferenceList reference_targets(const std::string &module, const std::string &expression,
                                          const std::string &context);
   ReferenceList read_reference_list(const std::string &module, const std::string &expression,

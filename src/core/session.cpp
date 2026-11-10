@@ -408,6 +408,10 @@ ReferenceList StudySession::read_reference_list(const std::string &module, const
   return options ? reader_.read_reference_list(module, expression, context, *options)
                  : reader_.read_reference_list(module, expression, context);
 }
+PassageTextExport StudySession::export_passage_text(const std::string &module, const std::string &expression,
+    const std::string &context, std::size_t max_bytes) {
+  return reader_.export_passage_text(module,expression,context,module_engine_options(module),max_bytes);
+}
 ParsedReferenceList StudySession::reference_targets(const std::string &module, const std::string &expression,
                                                     const std::string &context) {
   // Parsing depends on module versification/context, not rendering options.

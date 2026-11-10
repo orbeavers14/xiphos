@@ -455,6 +455,48 @@ ReferenceList Reader::read_reference_list(const std::string &id, const std::stri
                                          const std::string &context, const EngineOptions &options) {
   return reference_list_impl(id, expression, context, &options);
 }
+PassageTextExport Reader::export_passage_text(const std::string &id, const std::string &expression,
+    const std::string &context, const std::optional<EngineOptions> &options, std::size_t max_bytes) {
+  detail::validate_xml_text(id,4096);
+  detail::validate_xml_text(expression,32768);
+  detail::validate_xml_text(context,32768);
+  if (id.empty() || expression.empty() || !max_bytes || max_bytes > maximum_passage_text_export_bytes)
+    throw std::invalid_argument("Invalid passage text export request");
+  std::lock_guard<std::mutex> lock(impl_->mutex);
+  auto &module = impl_->verse_module(id, context);
+  if (!detail::supports_verse_search(module))
+    throw std::invalid_argument("Passage export requires a supported verse module");
+  const auto targets = parse_reference_list(module, expression, context, maximum_native_reference_list_entries);
+  if (targets.limited) throw std::length_error("Passage export exceeds its verse limit");
+  if (targets.skipped || targets.references.empty())
+    throw std::invalid_argument("Passage export requires a complete reference list");
+  auto &live = *static_cast<sword::VerseKey *>(module.getKey());
+  struct Restore {
+    sword::VerseKey &live;
+    sword::VerseKey saved;
+    ~Restore() { live = saved; }
+  } restore{live,live};
+  std::unique_ptr<ScopedEngineOptions> scope;
+  if (options) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager,*options);
+  PassageTextExport result{id,targets.context,expression,{},targets.references.size()};
+  auto append = [&](const std::string &value) {
+    if (value.size() > max_bytes - result.text.size())
+      throw std::length_error("Passage export exceeds its byte limit");
+    result.text += value;
+  };
+  append(id);
+  append("\n\n");
+  for (const auto &reference : targets.references) {
+    live.setText(reference.c_str());
+    if (live.getError() || reference != live.getText())
+      throw std::invalid_argument("Passage export reference no longer resolves exactly");
+    append(reference);
+    append("\t");
+    append(detail::copy_sdk_text(detail::strip_sdk_buffer(module,nullptr),max_bytes-result.text.size()));
+    append("\n");
+  }
+  return result;
+}
 ParsedReferenceList Reader::reference_targets(const std::string &id, const std::string &expression,
                                                const std::string &context) {
   if (id.find('\0') != std::string::npos || expression.find('\0') != std::string::npos || context.find('\0') != std::string::npos)

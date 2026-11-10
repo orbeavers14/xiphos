@@ -277,6 +277,8 @@ public:
   std::future<DevotionalEntry> read_devotional(StudyTab tab, std::string module,
       std::string entered, int today_month, int today_day);
   std::future<DictionaryEntry> read_dictionary(StudyTab tab, std::string module, std::string key);
+  std::future<PassageTextExport> export_passage_text(StudyTab tab, std::string module,
+      std::string expression, std::string context, std::size_t max_bytes = maximum_passage_text_export_bytes);
   std::future<ReferenceList> read_reference_list(StudyTab tab, std::string module, std::string expression, std::string context);
   // Study-link inputs use study_link_admission.hpp byte bounds; oversized/NUL
   // caller-owned values produce ready exceptional futures before queueing.

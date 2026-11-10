@@ -11,8 +11,23 @@ The shared item formatter below retains GTK3 operation. A separate checked C++
 retained identities, reads configured SDK scripture and enforces aggregate output
 caps. Selected/all retained text, C/Swift transport, scoped native Mac save/copy
 and restricted HTML now consume these shared services. HTML Copy also has a
-[bounded shared text companion](rich-clipboard-workflows.md). Passage export,
-printing and full export parity remain pending.
+[bounded shared text companion](rich-clipboard-workflows.md). A standalone
+plain-text passage export is available through the core worker. Native
+passage export destinations, printing and full export parity remain pending.
+
+## Plain-text passage export
+
+`xc_worker_export_passage_text` accepts a module, a passage expression, a
+canonical context, and an output byte cap. It resolves the range or list in the
+module's canon, preserves order and duplicates, and copies SDK-stripped text
+using the tab's effective module options. The returned UTF-8 starts with the
+module ID, followed by reference and text on tab-separated lines. The owned
+result also carries source, context, original expression and verse count.
+
+The worker refuses empty, unresolved or truncated reference lists and applies
+the existing 2,000-verse cap and an 8 MiB maximum output size. An error publishes
+no partial document. The export preserves the live SDK key, reading history and
+search state. Native callers own their eventual file or clipboard destination.
 
 ## Shared item contract
 

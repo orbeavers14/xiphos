@@ -1748,6 +1748,20 @@ void xc_devotional_entry_release(xc_devotional_entry *entry);
 /* Explicit dictionary preview with tab settings; module/key nonempty. No visit. */
 xc_status xc_worker_read_dictionary(xc_worker *worker, uint64_t tab, const char *module, const char *key, xc_request **out);
 /* Expression may be empty; context/module must be nonempty. No history visit. */
+/* Export a complete ordered passage as plain UTF-8. The result owns its bytes
+ * and provenance. Empty, partial and over-limit references publish no result. */
+#define XC_PASSAGE_TEXT_EXPORT_MAX_BYTES (8u * 1024u * 1024u)
+typedef struct xc_passage_text_export xc_passage_text_export;
+xc_status xc_worker_export_passage_text(xc_worker *worker,uint64_t tab,const char *module,
+    const char *expression,const char *context,size_t max_bytes,xc_request **out);
+xc_passage_text_export *xc_request_take_passage_text_export(xc_request *request);
+const char *xc_passage_text_export_module(const xc_passage_text_export *result);
+const char *xc_passage_text_export_context(const xc_passage_text_export *result);
+const char *xc_passage_text_export_expression(const xc_passage_text_export *result);
+const char *xc_passage_text_export_text(const xc_passage_text_export *result);
+size_t xc_passage_text_export_size(const xc_passage_text_export *result);
+size_t xc_passage_text_export_verse_count(const xc_passage_text_export *result);
+void xc_passage_text_export_release(xc_passage_text_export *result);
 xc_status xc_worker_read_reference_list(xc_worker *worker, uint64_t tab, const char *module, const char *expression, const char *context, xc_request **out);
 xc_status xc_worker_study_note(xc_worker *worker, uint64_t tab, const char *module, const char *reference, const char *identifier, xc_request **out);
 xc_status xc_worker_read_tab_entry(xc_worker *worker, uint64_t tab, const char *module, const char *reference, xc_request **out);

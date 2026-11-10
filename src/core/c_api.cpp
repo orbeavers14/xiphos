@@ -32,6 +32,7 @@ struct xc_search_batch {
     }
   }
 };
+struct xc_passage_text_export { xiphos::core::PassageTextExport value; };
 struct xc_reference_list { xiphos::core::ReferenceList value; };
 struct xc_annotation_target { xiphos::core::AnnotationTarget value; };
 struct xc_annotations { xiphos::core::AnnotationProfile value; };
@@ -142,6 +143,7 @@ struct xc_history { xiphos::core::HistorySnapshot value; };
 struct xc_word_study { xiphos::core::WordStudy value; };
 struct xc_request {
   std::unique_ptr<xc_word_study> word_study;
+  std::unique_ptr<xc_passage_text_export> passage_text_export;
   xc_status status = XC_PENDING;
   uint64_t tab = 0;
   bool options_result = false;
@@ -318,6 +320,9 @@ struct xc_request {
   void store(xiphos::core::DictionaryChoices v) { dictionary_choices = std::make_unique<xc_dictionary_choices>(xc_dictionary_choices{std::move(v)}); }
   void store(xiphos::core::DictionaryHistorySnapshot v) { dictionary_history = std::make_unique<xc_dictionary_history>(xc_dictionary_history{std::move(v)}); }
   void store(std::optional<xiphos::core::ParallelSelection> v) { static_assert(std::is_nothrow_move_assignable<decltype(v)>::value, "Parallel selection publication must not allocate"); parallel_selection->value = std::move(v); }
+  void store(xiphos::core::PassageTextExport value) {
+    passage_text_export = std::make_unique<xc_passage_text_export>(xc_passage_text_export{std::move(value)});
+  }
   void store(xiphos::core::WordStudy value) { word_study->value = std::move(value); }
   void store(xiphos::core::ParallelChapter v) { static_assert(std::is_nothrow_move_assignable<xiphos::core::ParallelChapter>::value, "Parallel publication must not allocate"); parallel->value = std::move(v); }
   void store(xiphos::core::DevotionalEntry v) { devotional = std::make_unique<xc_devotional_entry>(xc_devotional_entry{std::move(v)}); }
@@ -2224,6 +2229,27 @@ xc_status xc_worker_read_dictionary(xc_worker *w, uint64_t tab, const char *id, 
   if (!id || !*id || !key || !*key) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.read_dictionary(tab, id, key); });
 }
+xc_status xc_worker_export_passage_text(xc_worker *w,uint64_t tab,const char *id,const char *expression,
+    const char *context,size_t max_bytes,xc_request **out) {
+  using xiphos::core::detail::study_link_c_text;
+  static_assert(XC_PASSAGE_TEXT_EXPORT_MAX_BYTES == xiphos::core::maximum_passage_text_export_bytes);
+  if (!study_link_c_text(id,4096,true) || !study_link_c_text(expression,32768,true) ||
+      !study_link_c_text(context,32768,true) || !max_bytes || max_bytes > XC_PASSAGE_TEXT_EXPORT_MAX_BYTES) {
+    if (out) *out = nullptr;
+    return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w,out,[=](auto &worker){return worker.export_passage_text(tab,id,expression,context,max_bytes);});
+}
+xc_passage_text_export *xc_request_take_passage_text_export(xc_request *r) {
+  return r && r->status == XC_OK ? r->passage_text_export.release() : nullptr;
+}
+const char *xc_passage_text_export_module(const xc_passage_text_export *r) { return r ? r->value.module.c_str() : nullptr; }
+const char *xc_passage_text_export_context(const xc_passage_text_export *r) { return r ? r->value.context.c_str() : nullptr; }
+const char *xc_passage_text_export_expression(const xc_passage_text_export *r) { return r ? r->value.expression.c_str() : nullptr; }
+const char *xc_passage_text_export_text(const xc_passage_text_export *r) { return r ? r->value.text.c_str() : nullptr; }
+size_t xc_passage_text_export_size(const xc_passage_text_export *r) { return r ? r->value.text.size() : 0; }
+size_t xc_passage_text_export_verse_count(const xc_passage_text_export *r) { return r ? r->value.verse_count : 0; }
+void xc_passage_text_export_release(xc_passage_text_export *r) { delete r; }
 xc_status xc_worker_read_reference_list(xc_worker *w, uint64_t tab, const char *id, const char *expression, const char *context, xc_request **out) {
   if (!id || !*id || !expression || !context || !*context) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.read_reference_list(tab, id, expression, context); });
