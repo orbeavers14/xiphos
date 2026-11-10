@@ -71,6 +71,65 @@ struct ReaderModelSmoke {
         second.close(); await worker.shutdown()
         print("Native shared search, scopes, result preview, navigation, stop and closure passed")
     }
+    @MainActor static func runMapSmoke(page: URL) -> Never {
+        let app = NSApplication.shared
+        app.setActivationPolicy(.accessory)
+        Task {
+            do {
+                try await offlineMapWebView(page: page)
+                exit(0)
+            } catch {
+                print(error)
+                exit(1)
+            }
+        }
+        app.run()
+        fatalError("AppKit event loop stopped before the map check completed")
+    }
+
+    @MainActor static func offlineMapWebView(page: URL) async throws {
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = .nonPersistent()
+        let view = WKWebView(frame: NSRect(x: 0, y: 0, width: 720, height: 500), configuration: configuration)
+        let window = NSWindow(contentRect: view.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = view
+        window.alphaValue = 0.01
+        window.orderFrontRegardless()
+        defer { window.close() }
+        view.loadFileURL(page, allowingReadAccessTo: page.deletingLastPathComponent())
+
+        func waitFor(_ expression: String) async throws {
+            let deadline = Date().addingTimeInterval(15)
+            while Date() < deadline {
+                if let result = try? await view.evaluateJavaScript(expression), (result as? Bool) == true { return }
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            let status = try? await view.evaluateJavaScript("document.getElementById('status')?.textContent")
+            fatalError("Map condition failed: \(expression). Status: \(String(describing: status))")
+        }
+
+        func pick(_ base64: String) async throws {
+            _ = try await view.evaluateJavaScript("""
+                (() => {
+                    const bytes = Uint8Array.from(atob('\(base64)'), byte => byte.charCodeAt(0));
+                    const selection = new DataTransfer();
+                    selection.items.add(new File([bytes], 'fixture.pmtiles'));
+                    const picker = document.getElementById('archive');
+                    picker.files = selection.files;
+                    picker.dispatchEvent(new Event('change'));
+                })()
+                """)
+        }
+
+        try await waitFor("map.loaded() && document.querySelectorAll('.maplibregl-marker').length === 3")
+        // PMTiles v3 with one original 1×1 PNG at z0/x0/y0.
+        try await pick("UE1UaWxlcwN/AAAAAAAAAAUAAAAAAAAAhAAAAAAAAAACAAAAAAAAAIYAAAAAAAAAAAAAAAAAAACGAAAAAAAAAEUAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQEBAgAAAC62lIAHVs0A0klrgPipMgAAAAAAAAAAAAEAAUUBe32JUE5HDQoaCgAAAA1JSERSAAAAAQAAAAEIAgAAAJB3U94AAAAMSURBVHicYxBcZQwAAb4A78brgbIAAAAASUVORK5CYII=")
+        try await waitFor("Boolean(map.getLayer('archive-raster')) && map.areTilesLoaded() && statusLine.textContent.startsWith('Local raster archive')")
+        try await pick("YmFk")
+        try await waitFor("statusLine.textContent.startsWith('Could not open') && Boolean(map.getLayer('archive-raster')) && document.querySelectorAll('.maplibregl-marker').length === 3")
+    }
+
     @MainActor static func uriAnchorWebView() async throws {
         let application = NSApplication.shared
         application.setActivationPolicy(.prohibited)
@@ -2488,6 +2547,9 @@ struct ReaderModelSmoke {
         }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--book-uri-navigation" {
             try await bookUriNavigation(root: CommandLine.arguments[2]); return
+        }
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--offline-map-webview" {
+            runMapSmoke(page: URL(fileURLWithPath: CommandLine.arguments[2]))
         }
         if CommandLine.arguments.count == 2, CommandLine.arguments[1] == "--uri-anchor-webview" {
             try await uriAnchorWebView(); return

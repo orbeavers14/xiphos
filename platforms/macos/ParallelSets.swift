@@ -107,6 +107,11 @@ struct NativeParallelChapterPane: View {
     let chapter: CoreParallelChapter
     var onSearchWord: ((ReadingWordSelection, String?, Bool) -> Void)? = nil
     @State private var verseOffset: Int?
+    @State private var hiddenColumns: Set<Int> = []
+
+    private var visibleColumns: [Int] {
+        chapter.columns.indices.filter { !hiddenColumns.contains($0) }
+    }
     @State private var selectedWord: ReadingWordSelection?
 
     private var verseIndex: Int {
@@ -116,7 +121,9 @@ struct NativeParallelChapterPane: View {
         guard chapter.rows.indices.contains(index) else { return "" }
         let row = chapter.rows[index]
         var result = "<h2>" + escape(row.reference) + "</h2>"
-        for (column, cell) in zip(chapter.columns, row.cells) {
+        for index in visibleColumns where row.cells.indices.contains(index) {
+            let column = chapter.columns[index]
+            let cell = row.cells[index]
             result += "<article><h3>" + escape(column.requested) + "</h3>"
             if let status = unavailable(column, cell) {
                 result += "<p>" + escape(status) + "</p>"
@@ -154,11 +161,14 @@ struct NativeParallelChapterPane: View {
     private func escape(_ value: String) -> String { value.replacingOccurrences(of:"&",with:"&amp;").replacingOccurrences(of:"<",with:"&lt;").replacingOccurrences(of:">",with:"&gt;").replacingOccurrences(of:"\"",with:"&quot;") }
     var table: String {
         var result="<table class=\"xc-parallel\" aria-label=\""+escape(NSLocalizedString("Parallel reading",comment:"Accessible parallel chapter table"))+"\"><thead><tr><th scope=\"col\">"+escape(NSLocalizedString("Reference",comment:"Parallel table column"))+"</th>"
-        for column in chapter.columns { result += "<th scope=\"col\">"+escape(column.requested)+(column.ready ? "" : " (unavailable)")+"</th>" }
+        for index in visibleColumns {
+            let column = chapter.columns[index]
+            result += "<th scope=\"col\">"+escape(column.requested)+(column.ready ? "" : " (unavailable)")+"</th>" }
         result += "</tr></thead><tbody>"
         for row in chapter.rows {
             result += "<tr><th scope=\"row\">"+escape(row.reference)+"</th>"
-            for (index,cell) in row.cells.enumerated() {
+            for index in visibleColumns where row.cells.indices.contains(index) {
+                let cell = row.cells[index]
                 let column=chapter.columns[index]
                 result += "<td dir=\""+(column.rtl ? "rtl" : "ltr")+"\" data-xc-module=\""+escape(column.module)+"\" data-xc-reference=\""+escape(cell.reference)+"\">"
                 if let status = unavailable(column, cell) {
@@ -180,6 +190,21 @@ struct NativeParallelChapterPane: View {
             VStack(alignment:.leading,spacing:6) {
                 Text("Parallel Reading — "+chapter.title).font(.headline).lineLimit(2)
                 Toggle("Stacked verse", isOn: $model.stackedParallel)
+                Menu("Visible translations") {
+                    ForEach(chapter.columns.indices, id: \.self) { index in
+                        Toggle(chapter.columns[index].requested, isOn: Binding(
+                            get: { !hiddenColumns.contains(index) },
+                            set: { visible in
+                                if visible {
+                                    hiddenColumns.remove(index)
+                                } else {
+                                    hiddenColumns.insert(index)
+                                }
+                                selectedWord = nil
+                            }
+                        )).disabled(visibleColumns.count == 1 && !hiddenColumns.contains(index))
+                    }
+                }
                 if model.stackedParallel {
                     HStack {
                         Button("Previous verse") { verseOffset = verseIndex - 1 }.disabled(verseIndex == 0)
@@ -198,6 +223,7 @@ struct NativeParallelChapterPane: View {
             }
         }.frame(minWidth:230,minHeight:220).disabled(model.isBusy)
             .onChange(of: chapter.reference) { verseOffset = nil; selectedWord = nil }
+            .onChange(of: chapter.columns.map(\.requested)) { hiddenColumns = [] }
             .onChange(of: model.stackedParallel) { selectedWord = nil }
             .onChange(of: verseIndex) { selectedWord = nil }
     }

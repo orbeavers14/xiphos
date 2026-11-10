@@ -1454,6 +1454,7 @@ struct ReadingWordSearchMenu: View {
             Button("Translate Selection on Google…") { MacStudyActions.openSelection(choices.text, translating: true) }
             Divider()
             Button("Literal surface: " + choices.text) { search(choices, nil, false) }
+                .keyboardShortcut("f", modifiers: [.command, .option])
             Button("Surface without Greek, Hebrew or Syriac marks") { search(choices, nil, true) }
             if !lookupFinished {
                 Text("Looking up lemmas…")

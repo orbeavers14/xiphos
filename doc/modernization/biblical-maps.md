@@ -6,6 +6,13 @@ Protomaps-style PMTiles archive for the current session. The vector preview
 draws water and roads. Raster archives can include labels and icons in their
 tile images. The map panel bundles its scripts and blocks network requests.
 
+On macOS 27.2, a low-zoom Eastern Mediterranean extract of the 2026-11-10
+Protomaps build rendered vector water features in the native WebKit panel.
+Selecting a corrupt archive kept the preceding map and its place markers.
+The automated raster fixture exercises local archive import and the same
+fallback. Vector labels and icons, pack installation and downloads are
+still pending.
+
 Use MapLibre GL JS in the Mac reader's map panel. Bundle the renderer and style
 locally so the same map page can later run in the Linux frontend. Keep place
 records separate from the basemap. Store names, aliases, coordinates, sources,

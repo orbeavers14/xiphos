@@ -195,3 +195,16 @@ The native keyboard and VoiceOver workflow still needs hands-on review.
 On macOS 27.2, the preview build and offscreen WebKit smoke passed, including
 forward and backward matches and an absent phrase. The development bundle
 audit measured a 27.2 floor and found SDK dependencies outside the bundle.
+
+The comparison pane now toggles individual translation slots in both layouts.
+Visibility lasts while the pane is open. The saved set still controls module
+order and versification. Option-Command-F invokes literal selected-word search
+through the shared menu in the reader and comparison. Verify keyboard routing
+manually, especially when both panes have selected text.
+
+On macOS 27.2, JPEG and the carried SWORD SDK were rebuilt targeting 27.0.
+The SWORD rebuild retained ICU and CLucene. The resulting development bundle
+passed strict ad-hoc signature verification and the Mach-O closure audit with
+28 bundled SDK libraries and a measured 27.0 floor. Actual execution on 27.0
+and release signing remain open. An unattended AppKit PDF print stalled, so
+formatted pagination and the native print dialog still need validation.
