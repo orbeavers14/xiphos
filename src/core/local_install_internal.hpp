@@ -4,6 +4,7 @@
 #include "xiphos/core/module_maintenance.hpp"
 #include <memory>
 namespace xiphos::core::detail {
+void archive_local_module(const std::string &root,const std::string &module,const std::string &destination);
 std::string local_library_revision(const std::string &root,const std::string &workspace_parent);
 // Entire explicit library root swaps as one staged unit. Two renames, with
 // rollback/backup preservation; not crash-atomic or interprocess locked.

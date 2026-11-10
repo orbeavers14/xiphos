@@ -2,6 +2,7 @@
 #pragma once
 #include "library.hpp"
 namespace xiphos::core {
+enum class LocalModuleTemplate { book, organizer, personal_commentary };
 struct LocalInstallPreview {
  std::string module,source_revision,destination_revision,source_version,installed_version;
  LibraryInstallDecision decision=LibraryInstallDecision::unsupported;

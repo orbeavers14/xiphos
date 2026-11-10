@@ -284,3 +284,10 @@ detached text from both sequential and rebuilt indexed search. The staged
 operation preserves the rest of the book and restores the original files
 and index if session refresh fails. This is logical deletion, with no
 compaction of the underlying RawGenBook files.
+
+The Mac **New study module** menu creates a writable KJV personal commentary
+through the staged installer. The existing editor can open and save its verse
+entries. Module Library can archive an installed module to a new ZIP. The
+core verifies the ZIP by extracting and comparing its contents before
+publication. Unzip it and choose the extracted folder in the local installer
+to restore it. A disposable commentary round trip preserved the exact note.

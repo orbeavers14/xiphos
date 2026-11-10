@@ -1589,11 +1589,19 @@ extension CoreWorker {
         let status = module.withCString { module in reference.withCString { reference in revision.withCString { revision in text.withCString { xc_worker_save_module_edit(handle, tab, module, reference, revision, $0, erase ? 1 : 0, &request) } } } }
         return try await moduleEditorValue(status, request)
     }
-    func createStudyBook(module: String, organizer: Bool) async throws {
+    func archiveModule(_ module: String, destination: String) async throws {
+        guard ![module,destination].contains(where: { $0.utf8.contains(0) }) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let status = xc_worker_archive_module(try worker(),module,destination,&request)
+        let completed = try await wait(status, request)
+        xc_request_release(completed)
+    }
+    func createStudyBook(module: String, organizer: Bool, commentary: Bool = false) async throws {
         guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
         var request: OpaquePointer?
         let handle = try worker()
-        let status = organizer ? xc_worker_create_study_organizer(handle, module, &request) :
+        let status = commentary ? xc_worker_create_personal_commentary(handle, module, &request) :
+                     organizer ? xc_worker_create_study_organizer(handle, module, &request) :
                                  xc_worker_create_general_book(handle, module, &request)
         let completed = try await wait(status, request)
         defer { xc_request_release(completed) }

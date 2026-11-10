@@ -680,12 +680,20 @@ std::future<LocalInstallPreview> StudyWorker::prepare_local_install(std::string 
  try{selected_profile_path(source);if(module.empty()||module.size()>4096||!editable_document_text(module)||!editable_document_text(source))throw std::invalid_argument("Invalid installation source/module");}catch(...){return selected_profile_rejection<LocalInstallPreview>();}
  return impl_->submit([source=std::move(source),module=std::move(module)](Impl::State &s){return s.reader.prepare_local_install(source,module);});
 }
+std::future<void> StudyWorker::archive_module(std::string module,std::string destination) {
+  return impl_->submit([module=std::move(module),destination=std::move(destination)](Impl::State &s){
+    s.reader.archive_module(module,destination);
+  });
+}
 std::future<LocalInstallResult> StudyWorker::create_general_book(std::string module,bool organizer) {
-  return impl_->submit([module=std::move(module),organizer](Impl::State &s){
+  return create_local_module(std::move(module),organizer ? LocalModuleTemplate::organizer : LocalModuleTemplate::book);
+}
+std::future<LocalInstallResult> StudyWorker::create_local_module(std::string module, LocalModuleTemplate kind) {
+  return impl_->submit([module=std::move(module),kind](Impl::State &s){
     std::map<StudyTab,std::pair<StudySessionState,SessionCapabilities>> states;
     for (const auto &tab:s.tabs)
       states.emplace(tab.first,std::make_pair(tab.second->capture_state(),tab.second->capabilities()));
-    return s.reader.create_general_book(module,[&]{
+    return s.reader.create_local_module(module,kind,[&]{
       std::map<StudyTab,std::unique_ptr<StudySession>> replacement;
       for (const auto &tab:states) {
         auto session=StudySession::from_state(s.reader,tab.second.first,tab.second.second);
@@ -693,7 +701,7 @@ std::future<LocalInstallResult> StudyWorker::create_general_book(std::string mod
         replacement.emplace(tab.first,std::move(session));
       }
       s.tabs.swap(replacement);
-    },organizer);
+    });
   });
 }
 std::future<LocalInstallResult> StudyWorker::install_local_module(LocalInstallRequest request){return install_local_module_task(std::move(request)).result;}

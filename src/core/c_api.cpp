@@ -1080,10 +1080,22 @@ xc_status xc_worker_create_general_book(xc_worker *w,const char *module,xc_reque
   if (!bounded_image_c_text(module,64)) return XC_INVALID_ARGUMENT;
   return queue_request(w,out,[=](auto &worker){return worker.create_general_book(module);});
 }
+xc_status xc_worker_create_personal_commentary(xc_worker *w,const char *module,xc_request **out) {
+  if (out) *out=nullptr;
+  if (!bounded_image_c_text(module,64)) return XC_INVALID_ARGUMENT;
+  return queue_request(w,out,[=](auto &worker){
+    return worker.create_local_module(module,xiphos::core::LocalModuleTemplate::personal_commentary);
+  });
+}
 xc_status xc_worker_create_study_organizer(xc_worker *w,const char *module,xc_request **out) {
   if (out) *out=nullptr;
   if (!bounded_image_c_text(module,64)) return XC_INVALID_ARGUMENT;
   return queue_request(w,out,[=](auto &worker){return worker.create_general_book(module,true);});
+}
+xc_status xc_worker_archive_module(xc_worker *w,const char *module,const char *destination,xc_request **out) {
+  if (out) *out=nullptr;
+  if (!bounded_image_c_text(module,4096) || !bounded_image_c_text(destination,4096)) return XC_INVALID_ARGUMENT;
+  return queue_request(w,out,[=](auto &worker){return worker.archive_module(module,destination);});
 }
 xc_status xc_worker_prepare_local_install(xc_worker *w,const char *source,const char *module,xc_request **out){if(!bounded_image_c_text(source,4096)||!bounded_image_c_text(module,4096)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}return queue_request(w,out,[=](auto &worker){return worker.prepare_local_install(source,module);});}
 xc_status xc_worker_install_local_module_task(xc_worker *w,const char *source,const char *module,const char *from,const char *to,int replace,xc_request **out){

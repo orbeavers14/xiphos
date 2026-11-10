@@ -62,7 +62,9 @@ public:
   ModuleMaintenancePreview preview_module_maintenance(const std::string &module);
   ModuleMaintenanceResult maintain_module(const ModuleMaintenanceRequest &request,const std::function<void()> &refresh);
   ModuleMaintenanceResult maintain_module(const ModuleMaintenanceRequest &request,const std::function<void()> &refresh,const std::function<void()> &before_commit);
+  LocalInstallResult create_local_module(const std::string &module, LocalModuleTemplate kind, const std::function<void()> &refresh);
   LocalInstallResult create_general_book(const std::string &module, const std::function<void()> &refresh, bool organizer=false);
+  void archive_module(const std::string &module,const std::string &destination);
   LocalInstallPreview prepare_local_install(const std::string &source,const std::string &module);
   // Serialized SDK owner; refresh must stage/publish all tab caches or throw.
   LocalInstallResult install_local_module(const LocalInstallRequest &request,const std::function<void()> &refresh,const std::function<void()> &before_commit = {});

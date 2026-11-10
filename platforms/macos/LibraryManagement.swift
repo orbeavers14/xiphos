@@ -2,6 +2,7 @@
 import Foundation
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 import XiphosCore
 
 @MainActor final class LibraryManagementModel: ObservableObject {
@@ -135,6 +136,19 @@ import XiphosCore
     func loadLocal(_ path: String) { localPath = path;local = [];localID = nil;offer = nil;run { self.local = try await self.worker.libraryInventory(source:path);self.message = "Choose a module and review installation." } }
     func prepareLocal() { guard allowsChanges, let item = local.first(where: { $0.id == localID }) else { return };run { self.offer = try await self.worker.prepareLocalInstall(source:self.localPath,module:item.module);self.message = "Review the module and version before installation." } }
     func installLocal() { guard allowsChanges, let offer else { return };run(transferring:true) { try await self.worker.installLocal(offer,replace:offer.decision == 1 || offer.decision == 2,progress:{ [weak self] value in await self?.transferProgress(value) });self.offer = nil;if let fresh = try? await self.worker.libraryInventory() { self.installed = fresh };self.message = "Local module installed.";self.onModulesChanged?() } }
+    func archiveSelectedModule() {
+        guard let item = installed.first(where: { $0.id == installedID }) else { return }
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.zip]
+        panel.nameFieldStringValue = item.module + ".zip"
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            self.run(failureHint: "Choose a new ZIP outside the module library.") {
+                try await self.worker.archiveModule(item.module, destination: url.path)
+                self.message = "Module archived. Unzip the archive and use local installation to restore it."
+            }
+        }
+    }
     func inspectModule() { guard allowsChanges, let item = installed.first(where: { $0.id == installedID }) else { return };cipherKey = "";maintenance = nil;run { self.maintenance = try await self.worker.maintenanceOffer(module:item.module);self.message = "Module details loaded." } }
     func maintain(_ action: Int32) { guard allowsChanges, let maintenance else { return };let key = action == 1 ? cipherKey : "";cipherKey = "";run(transferring:true,failureHint:action == 0 ? "Removal was refused. Close reading and editing windows using this module, including their history, then reload and retry." : "Maintenance did not complete. The engine may not support this operation. Reload the module list before retrying.") { try await self.worker.maintainModule(maintenance,action:action,key:key,progress:{ [weak self] value in await self?.transferProgress(value) });self.maintenance = nil;if let fresh = try? await self.worker.libraryInventory() { self.installed = fresh };self.message = action == 1 ? "Cipher configuration saved. Check the module to confirm the key is correct." : "Module maintenance completed.";self.onModulesChanged?() } }
     var phaseLabel: String {
@@ -218,6 +232,7 @@ struct LibraryManagementPane: View {
             if model.organizationPath != nil,model.installedID != nil {
                 HStack { Toggle("Favorite",isOn:$model.favorite);Toggle("Hide in module list",isOn:$model.hidden);TextField("Group (optional)",text:$model.organizationGroup);Button("Save Organization") { model.saveOrganization() } }.disabled(model.isBusy)
             }
+            Button("Archive Selected Module…") { model.archiveSelectedModule() }.disabled(model.installedID == nil)
             Button("Manage Selected Module") { model.inspectModule() }.disabled(!model.allowsChanges || model.installedID == nil)
             if let offer = model.maintenance {
                 Text(offer.module).font(.headline)

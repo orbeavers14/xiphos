@@ -3,6 +3,10 @@
 #include "sword_library.hpp"
 #include "uncached_manager.hpp"
 #include "bounded_file.hpp"
+#include "publication.hpp"
+#include "remote_io.hpp"
+#include <archive.h>
+#include <archive_entry.h>
 #include "xiphos/core/editable_document.hpp"
 #include "xiphos/core/search_policy.hpp"
 #include <swmodule.h>
@@ -76,6 +80,89 @@ Layout layout(sword::SWMgr &manager,const fs::path &root,const std::string &id){
  }
  if(result.config.empty())throw std::invalid_argument("Module configuration file is unavailable");return result;
 }
+}
+void archive_local_module(const std::string &root, const std::string &id, const std::string &destination) {
+  if (id.empty() || id.size()>4096 || !editable_document_text(id) ||
+      destination.empty() || destination.size()>4096 || !editable_document_text(destination))
+    throw std::invalid_argument("Invalid module archive request");
+  const auto source=root_path(root);
+  const auto requested=fs::absolute(fs::u8path(destination));
+  const auto parent=fs::canonical(requested.parent_path());
+  const auto target=parent/requested.filename();
+  if (inside(source,parent) || target.extension()!=".zip" || fs::exists(fs::symlink_status(target)))
+    throw std::invalid_argument("Choose a new ZIP archive outside the module library");
+  const auto before=scan(source);
+  UncachedEngineManager manager(source.u8string().c_str(),true,nullptr,false,false,true);
+  const auto selected=layout(manager,source,id);
+  if (*selected.data.begin()!="data" && *selected.data.begin()!="modules")
+    throw std::invalid_argument("Module data is outside the portable ZIP layout");
+  PrivateStagingDirectory staging(parent,".xiphos-module-archive-");
+  const auto temporary=staging.path()/"module.zip";
+  std::unique_ptr<archive,decltype(&archive_write_free)> writer(archive_write_new(),archive_write_free);
+  const auto require=[](int result) {
+    if(result!=ARCHIVE_OK) throw std::runtime_error("Could not write module ZIP");
+  };
+  if(!writer) throw std::bad_alloc();
+  require(archive_write_set_format_zip(writer.get()));
+  require(archive_write_open_filename(writer.get(),temporary.u8string().c_str()));
+  auto append=[&](const fs::path &relative, bool directory) {
+    std::unique_ptr<archive_entry,decltype(&archive_entry_free)> entry(archive_entry_new(),archive_entry_free);
+    if(!entry) throw std::bad_alloc();
+    const auto name=relative.generic_u8string();
+    const auto input_path=source/relative;
+    if(fs::is_symlink(input_path) || (!directory && (!fs::is_regular_file(input_path) || fs::hard_link_count(input_path)!=1)))
+      throw std::invalid_argument("Module archive contains an unsupported entry");
+    const auto size=directory?0:fs::file_size(input_path);
+    if(size>512*1024*1024) throw std::invalid_argument("Module archive member exceeds capacity");
+    archive_entry_set_pathname_utf8(entry.get(),name.c_str());
+    archive_entry_set_filetype(entry.get(),directory?AE_IFDIR:AE_IFREG);
+    archive_entry_set_perm(entry.get(),directory?0700:0600);
+    archive_entry_set_size(entry.get(),static_cast<la_int64_t>(size));
+    require(archive_write_header(writer.get(),entry.get()));
+    if(!directory){
+      std::ifstream input(input_path,std::ios::binary);
+      if(!input) throw std::runtime_error("Cannot read module archive member");
+      std::array<char,65536> buffer{};
+      std::uintmax_t total=0;
+      while(input){
+        input.read(buffer.data(),buffer.size());
+        const auto count=static_cast<std::size_t>(input.gcount());
+        if(count>size-total || (count && archive_write_data(writer.get(),buffer.data(),count)!=static_cast<la_ssize_t>(count)))
+          throw std::runtime_error("Module archive member changed or could not be written");
+        total+=count;
+      }
+      if(!input.eof() || input.bad() || total!=size) throw std::runtime_error("Module archive member changed");
+    }
+    require(archive_write_finish_entry(writer.get()));
+  };
+  append("mods.d",true);
+  append(fs::path("mods.d")/selected.config,false);
+  append(selected.data,true);
+  for(const auto &member:fs::recursive_directory_iterator(source/selected.data))
+    append(member.path().lexically_relative(source),member.is_directory());
+  require(archive_write_close(writer.get()));
+  TransferOptions verification;
+  verification.workspace=staging.path().u8string();
+  verification.maximum_download_bytes=512*1024*1024;
+  verification.remote_access_acknowledged=true; // Local extraction only.
+  TransferControl control;
+  const auto extracted=staging.path()/"verified";
+  extract_repository_archive(temporary,extracted,RepositoryArchive::module,verification,control);
+  // The extractor intentionally normalizes file permissions. Compare payload
+  // digests independently of permissions, which are not part of a ZIP restore.
+  const auto contents=[](Manifest files) {
+    for(auto &item:files) {
+      const auto colon=item.second.find(':');
+      item.second=colon==std::string::npos?"":item.second.substr(colon+1);
+    }
+    return files;
+  };
+  if(contents(scan(source/selected.data))!=contents(scan(extracted/selected.data)) ||
+     read_bounded_file(extracted/"mods.d"/selected.config,4*1024*1024,"Archived configuration")!=selected.config_bytes)
+    throw std::runtime_error("Module archive verification did not match source");
+  if(scan(source)!=before) throw std::invalid_argument("Module library changed during archiving");
+  fs::permissions(temporary,fs::perms::owner_read|fs::perms::owner_write,fs::perm_options::replace);
+  publish_new_path(temporary,target);
 }
 std::string local_library_revision(const std::string &root,const std::string &workspace_parent){
  auto destination=root_path(root);auto parent=fs::canonical(fs::u8path(workspace_parent));

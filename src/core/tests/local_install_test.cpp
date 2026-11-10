@@ -3,6 +3,7 @@
 #include "xiphos/core/c_api.h"
 #include "xiphos/core/repository.hpp"
 #include "xiphos/core/remote_install.hpp"
+#include "../remote_io.hpp"
 #include <rawtext.h>
 #include <rawgenbook.h>
 #include <chrono>
@@ -105,6 +106,34 @@ int main(int argc,char **argv){try{
           "Organizer entries survive restart in their own sections");
   check(restarted.read_module_edit(tab,{"MyNotes","/Notes"}).get().text=="<p>Original Ω note</p>",
         "Created book survives restart with edits intact after duplicate creation was rejected");
+ }
+ {
+  StudyWorker library(destination.u8string());
+  const auto tab=library.create_tab().get();
+  const auto personal=library.create_local_module("ArchivedNotes",LocalModuleTemplate::personal_commentary).get();
+  check(!personal.replaced,"Create writable personal commentary");
+  const ModuleEditTarget target{"ArchivedNotes","John 3:16"};
+  const auto opened=library.read_module_edit(tab,target).get();
+  check(opened.driver=="RawFiles"&&opened.text.empty(),"New commentary has no notes");
+  (void)library.save_module_edit(tab,target,opened.revision,"<p>Archive note Ω</p>").get();
+  const auto file=root/"notes.zip";
+  library.archive_module("ArchivedNotes",file.u8string()).get();
+  const auto original=bytes(file);
+  rejects([&]{library.archive_module("ArchivedNotes",file.u8string()).get();});
+  check(bytes(file)==original,"Archive refuses to overwrite an existing destination");
+ }
+ const auto unpacked=root/"archived-source", restored=root/"archive-restored";
+ TransferControl archive_control;
+ TransferOptions archive_options;archive_options.workspace=root.u8string();archive_options.remote_access_acknowledged=true;
+ detail::extract_repository_archive(root/"notes.zip",unpacked,detail::RepositoryArchive::module,archive_options,archive_control);
+ fs::create_directories(restored/"mods.d");
+ {
+  StudyWorker library(restored.u8string());
+  const auto preview=library.prepare_local_install(unpacked.u8string(),"ArchivedNotes").get();
+  (void)library.install_local_module(request(unpacked,preview,false)).get();
+  const auto tab=library.create_tab().get();
+  check(library.read_module_edit(tab,{"ArchivedNotes","John 3:16"}).get().text=="<p>Archive note Ω</p>",
+        "Archived personal commentary reinstalls with its exact source text");
  }
  for(const auto &entry:fs::directory_iterator(root))check(entry.path().filename().string().rfind(".xiphos-install-",0)!=0,"No successful/rolled-back staging leftovers");
  {StudyWorker cancellable(destination.u8string());auto p=cancellable.prepare_local_install(source.u8string(),"Base").get();auto task=cancellable.install_local_module_task(request(source,p,true));bool won=task.control->request_cancel(),cancelled=false;try{(void)task.result.get();}catch(const TransferCancelled &){cancelled=true;}check(won?cancelled:!cancelled,"Local install cancellation and commit have one winner");if(won)check(cancellable.prepare_local_install(source.u8string(),"Base").get().destination_revision==p.destination_revision,"Cancelled local task keeps original revision");}

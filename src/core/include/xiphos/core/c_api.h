@@ -502,7 +502,10 @@ typedef struct {const char *module,*version,*source_revision,*destination_revisi
 /* Create a writable general book with an initial Notes section. */
 xc_status xc_worker_create_general_book(xc_worker *worker,const char *module,xc_request **out);
 /* Create a writable study book with separate Journal and Prayers sections. */
+xc_status xc_worker_create_personal_commentary(xc_worker *worker,const char *module,xc_request **out);
 xc_status xc_worker_create_study_organizer(xc_worker *worker,const char *module,xc_request **out);
+/* Archive a single installed module to a new ZIP outside the library. */
+xc_status xc_worker_archive_module(xc_worker *worker,const char *module,const char *destination,xc_request **out);
 xc_status xc_worker_prepare_local_install(xc_worker *worker,const char *source,const char *module,xc_request **out);
 xc_status xc_worker_install_local_module(xc_worker *worker,const char *source,const char *module,const char *source_revision,const char *destination_revision,int replace,xc_request **out);
 /* Cancellable staged install; take the transfer control before polling. */

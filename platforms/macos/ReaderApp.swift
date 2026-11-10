@@ -559,6 +559,21 @@ final class ReaderModel: ObservableObject {
         if let history { dictionaryHistory = history }
         message = ""
     }
+    func createPersonalCommentary(_ module: String) {
+        guard let worker, let tab else { return }
+        run { token in
+            try await worker.createStudyBook(module: module, organizer: false, commentary: true)
+            let discovered = try await worker.modules()
+            guard token == self.revision && !self.closed else { return }
+            self.modules = discovered
+            self.search.configure(worker: worker, tab: tab, modules: discovered, preferred: self.selection)
+            if let main = self.displayedModule, discovered.contains(where: { $0.id == main && $0.type == "Biblical Texts" }) {
+                let pair = try await worker.selectCommentary(tab: tab, module: module)
+                try await self.present(pair.text, module: main, token: token, updateInput: false, passage: pair)
+            }
+            self.message = "Personal commentary created."
+        }
+    }
     func createStudyBook(_ module: String, organizer: Bool) {
         guard let worker, let tab else { return }
         run { token in

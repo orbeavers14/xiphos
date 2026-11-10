@@ -5,25 +5,30 @@ struct BookCreationMenu: View {
     @ObservedObject var model: ReaderModel
     @State private var showing = false
     @State private var organizer = false
+    @State private var commentary = false
     @State private var module = ""
 
     var body: some View {
-        Menu("New book") {
+        Menu("New study module") {
             Button("General Book…") { begin(organizer: false) }
             Button("Journal and Prayers…") { begin(organizer: true) }
+            Button("Personal Commentary…") { begin(organizer: false, commentary: true) }
         }
         .disabled(model.isBusy)
-        .alert(organizer ? "New Journal and Prayers Book" : "New General Book", isPresented: $showing) {
+        .alert(commentary ? "New Personal Commentary" : organizer ? "New Journal and Prayers Book" : "New General Book", isPresented: $showing) {
             TextField("Module ID", text: $module)
             Button("Cancel", role: .cancel) {}
-            Button("Create") { model.createStudyBook(module, organizer: organizer) }.disabled(module.isEmpty)
+            Button("Create") {
+                if commentary { model.createPersonalCommentary(module) }
+                else { model.createStudyBook(module, organizer: organizer) }
+            }.disabled(module.isEmpty)
         } message: {
             Text("Choose a unique ID using letters, numbers, or underscores.")
         }
     }
 
-    private func begin(organizer: Bool) {
-        self.organizer = organizer
+    private func begin(organizer: Bool, commentary: Bool = false) {
+        self.organizer = organizer; self.commentary = commentary
         module = ""
         showing = true
     }
