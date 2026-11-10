@@ -85,7 +85,7 @@ public:
   struct RemoteInstallTask {std::shared_ptr<TransferControl> control;std::future<RemoteInstallResult> result;};
   RemoteCatalogTask fetch_remote_catalog(HttpsRepository repository,TransferOptions options);
   RemoteInstallTask install_remote_module(RemoteCatalog catalog,std::string module,TransferOptions options,bool replace=false);
-  std::future<LocalInstallResult> create_general_book(std::string module);
+  std::future<LocalInstallResult> create_general_book(std::string module,bool organizer=false);
   std::future<LocalInstallPreview> prepare_local_install(std::string source,std::string module);
   struct LocalInstallTask {std::shared_ptr<TransferControl> control;std::future<LocalInstallResult> result;};
   LocalInstallTask install_local_module_task(LocalInstallRequest request);

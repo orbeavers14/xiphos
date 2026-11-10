@@ -87,11 +87,22 @@ int main(int argc,char **argv){try{
   (void)books.save_module_edit(tab,{"MyNotes","/Notes"},notes.revision,"<p>Original Ω note</p>").get();
   rejects([&]{(void)books.create_general_book("MyNotes").get();});
   rejects([&]{(void)books.create_general_book("../Bad").get();});
+  const auto organizer=books.create_general_book("StudyOrganizer",true).get();
+  check(!organizer.replaced,"Create journal and prayer organizer as a new module");
+  for (const auto *path:{"/Journal/First","/Prayers/First"}) {
+    const ModuleEditTarget entry{"StudyOrganizer",path,true};
+    const auto pending=books.read_module_edit(tab,entry).get();
+    check(books.save_module_edit(tab,entry,pending.revision,path).get().offset>0,
+          "Journal and prayer sections accept independent entries");
+  }
   check(books.reading_selection(tab).get()->module=="Base","Book creation preserves open reading state");
  }
  {
   StudyWorker restarted(destination.u8string());
   const auto tab=restarted.create_tab().get();
+  for (const auto *path:{"/Journal/First","/Prayers/First"})
+    check(restarted.read_module_edit(tab,{"StudyOrganizer",path}).get().text==path,
+          "Organizer entries survive restart in their own sections");
   check(restarted.read_module_edit(tab,{"MyNotes","/Notes"}).get().text=="<p>Original Ω note</p>",
         "Created book survives restart with edits intact after duplicate creation was rejected");
  }

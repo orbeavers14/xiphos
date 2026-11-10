@@ -1105,7 +1105,7 @@ ModuleEditEntry Reader::save_module_edit(const ModuleEditTarget &target,const st
 
 namespace xiphos::core {
 std::string Reader::transfer_destination_revision(const std::string &workspace){return detail::local_library_revision(impl_->root,workspace);}
-LocalInstallResult Reader::create_general_book(const std::string &module, const std::function<void()> &refresh) {
+LocalInstallResult Reader::create_general_book(const std::string &module, const std::function<void()> &refresh, bool organizer) {
   if (impl_->root.empty() || module.empty() || module.size()>64 ||
       module.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")!=std::string::npos)
     throw std::invalid_argument("Book creation requires a local library and a simple module ID");
@@ -1122,12 +1122,16 @@ LocalInstallResult Reader::create_general_book(const std::string &module, const 
     sword::RawGenBook book(prefix.c_str());
     auto *tree=dynamic_cast<sword::TreeKeyIdx *>(book.getKey());
     if (!tree || !book.isWritable()) throw std::runtime_error("New book is not writable");
-    tree->assureKeyPath("/Notes");
-    tree->save();
-    book.setEntry("",0);
-    book.flush();
-    if (tree->getError() || book.popError() || std::string(tree->getText())!="/Notes")
-      throw std::runtime_error("SWORD could not create the first section");
+    const auto sections=organizer ? std::vector<const char *>{"/Journal","/Prayers"} :
+                                     std::vector<const char *>{"/Notes"};
+    for (const auto *section:sections) {
+      tree->assureKeyPath(section);
+      tree->save();
+      book.setEntry("",0);
+      book.flush();
+      if (tree->getError() || book.popError() || std::string(tree->getText())!=section)
+        throw std::runtime_error("SWORD could not create an initial book section");
+    }
   }
   {
     std::ofstream config(stage.path()/"mods.d"/(module+".conf"),std::ios::binary);

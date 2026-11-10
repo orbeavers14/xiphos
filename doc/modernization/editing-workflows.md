@@ -270,3 +270,9 @@ duplicate-ID rejection.
 revision, removes the staged leaf, and clears open selections on that leaf.
 The macOS patched-SDK test rebuilt CLucene and found the retained entry but
 no hit for the deleted leaf. Sections with children are rejected.
+
+`xc_worker_create_study_organizer` uses the same staged installer to create
+a writable book with separate `/Journal` and `/Prayers` sections. Each accepts
+the shared section creation and editing operations. The core test creates
+entries in both and reopens them after restarting the worker. Native organizer
+controls and journal-specific presentation are separate frontend work.

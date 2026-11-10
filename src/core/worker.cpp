@@ -680,8 +680,8 @@ std::future<LocalInstallPreview> StudyWorker::prepare_local_install(std::string 
  try{selected_profile_path(source);if(module.empty()||module.size()>4096||!editable_document_text(module)||!editable_document_text(source))throw std::invalid_argument("Invalid installation source/module");}catch(...){return selected_profile_rejection<LocalInstallPreview>();}
  return impl_->submit([source=std::move(source),module=std::move(module)](Impl::State &s){return s.reader.prepare_local_install(source,module);});
 }
-std::future<LocalInstallResult> StudyWorker::create_general_book(std::string module) {
-  return impl_->submit([module=std::move(module)](Impl::State &s){
+std::future<LocalInstallResult> StudyWorker::create_general_book(std::string module,bool organizer) {
+  return impl_->submit([module=std::move(module),organizer](Impl::State &s){
     std::map<StudyTab,std::pair<StudySessionState,SessionCapabilities>> states;
     for (const auto &tab:s.tabs)
       states.emplace(tab.first,std::make_pair(tab.second->capture_state(),tab.second->capabilities()));
@@ -693,7 +693,7 @@ std::future<LocalInstallResult> StudyWorker::create_general_book(std::string mod
         replacement.emplace(tab.first,std::move(session));
       }
       s.tabs.swap(replacement);
-    });
+    },organizer);
   });
 }
 std::future<LocalInstallResult> StudyWorker::install_local_module(LocalInstallRequest request){return install_local_module_task(std::move(request)).result;}
