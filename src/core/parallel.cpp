@@ -70,14 +70,23 @@ std::vector<std::string> parallel_mapped_references(sword::SWModule &from,
   const bool to_mt = to_canon == "MT";
   const auto kjv_anchor = [](const std::string &canon) { return canon == "KJV" || canon == "KJVA"; };
   if ((from_mt && kjv_anchor(to_canon)) || (to_mt && kjv_anchor(from_canon))) {
-    // Verified anchors only. MT Psalm 3:1 is the title, outside the numbered KJV rows.
+    struct VerseRun {
+      const char *book;
+      int chapter, mt_first, kjv_first, count;
+    };
+    // Sources and verification scope: doc/modernization/real-corpus-validation.md.
+    // The numbered Psalm body starts after the MT title.
+    static constexpr VerseRun runs[] = {{"Gen", 1, 1, 1, 31}, {"Ps", 3, 2, 1, 8}};
     const std::string book = source.getOSISBookName();
-    const int verse = source.getVerse();
     int mapped = 0;
-    if (book == "Gen" && source.getChapter() == 1 && verse <= 31) mapped = verse;
-    if (book == "Ps" && source.getChapter() == 3 &&
-        verse >= (from_mt ? 2 : 1) && verse <= (from_mt ? 9 : 8))
-      mapped = verse + (from_mt ? -1 : 1);
+    for (const auto &run : runs) {
+      const int offset = source.getVerse() - (from_mt ? run.mt_first : run.kjv_first);
+      if (book == run.book && source.getChapter() == run.chapter &&
+          offset >= 0 && offset < run.count) {
+        mapped = (from_mt ? run.kjv_first : run.mt_first) + offset;
+        break;
+      }
+    }
     if (!mapped) return {};
     target.setAutoNormalize(false);
     target.setText((book + " " + std::to_string(source.getChapter()) + ":" + std::to_string(mapped)).c_str());
