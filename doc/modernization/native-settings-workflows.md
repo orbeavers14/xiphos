@@ -82,3 +82,10 @@ styling is still subject to the existing content preferences.
 - Complete translation coverage, localized references, RTL visual checks and
   broader keyboard/VoiceOver/workflow acceptance remain open. Existing scoped
   tests do not establish entire feature parity or physical-platform acceptance.
+
+The Mac Passage menu opens a separate Bible or commentary window. Its
+synchronization toggle follows the source reader and sends explicit reference
+changes back to it. Turning synchronization off uses history-neutral previews.
+Reader zoom is per window and applies to its attached and detached WebKit panes.
+The macOS smoke exercised independent reading, synchronized references and
+zoom reset. Detached panes are recreated on demand.

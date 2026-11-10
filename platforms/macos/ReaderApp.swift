@@ -201,9 +201,49 @@ final class ReaderModel: ObservableObject {
     deinit {
         if let worker, let tab { Task { try? await worker.closeTab(tab) } }
     }
+    private var detachedWindows: [Bool:NSWindow] = [:]
+    @Published var readingZoom = 1.0
+    func adjustReadingZoom(_ change: Double?) {
+        readingZoom = change.map { min(2.5,max(0.6,readingZoom+$0)) } ?? 1
+    }
+    func detachReadingPane(commentary: Bool) {
+        guard let pane = detachedSnapshot(commentary: commentary) else { return }
+        if let window = detachedWindows[commentary] { window.makeKeyAndOrderFront(nil); return }
+        let window = NSWindow(contentRect: NSRect(x: 0,y: 0,width: 620,height: 540),
+                              styleMask: [.titled,.closable,.miniaturizable,.resizable],
+                              backing: .buffered, defer: false)
+        window.title = commentary ? "Commentary — " + pane.module : "Bible — " + pane.module
+        window.isReleasedWhenClosed = false
+        window.contentView = NSHostingView(rootView: DetachedReadingPane(model: self, commentary: commentary))
+        detachedWindows[commentary] = window
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+    }
+    func detachedSnapshot(commentary: Bool) -> DetachedPassage? {
+        if commentary {
+            guard let entry = commentaryEntry, !commentarySelection.isEmpty else { return nil }
+            return DetachedPassage(module: commentarySelection, reference: entry.reference,
+                html: commentaryDecoration?.html ?? commentaryChapter?.html ?? (entry.headingHTML + entry.html),
+                css: commentaryDecoration?.css ?? (commentaryChapter?.lexical ?? entry.lexical).css,
+                rtl: modules.first(where: { $0.id == commentarySelection })?.rightToLeft)
+        }
+        guard let module = displayedModule, let entry = displayedEntry else { return nil }
+        return DetachedPassage(module: module, reference: entry.reference, html: html,
+                               css: lexicalPresentation.css, rtl: readingRightToLeft)
+    }
+    func previewDetached(module: String, reference: String, uri: String? = nil) async throws -> DetachedPassage {
+        guard let worker, let tab else { throw SessionHostError(message: "This reader has closed.") }
+        let target: PassageTarget
+        if let uri { target = try await worker.resolveLink(uri,currentModule:module) }
+        else { target = PassageTarget(module:module,reference:try await worker.localizedReference(module:module,expression:reference)) }
+        let entry = try await worker.readTabEntry(tab: tab,module:target.module,reference:target.reference)
+        return DetachedPassage(module:target.module,reference:entry.reference,html:entry.headingHTML+entry.html,
+            css:entry.lexical.css,rtl:modules.first(where:{$0.id==target.module})?.rightToLeft)
+    }
     func close() {
         guard !closed else { return }
         closed = true
+        detachedWindows.values.forEach { $0.close() }; detachedWindows.removeAll()
         search.close()
         revision &+= 1
         hoverRevision &+= 1
@@ -1119,7 +1159,17 @@ final class ReaderModel: ObservableObject {
     }
 }
 
+private struct ReadingZoomKey: EnvironmentKey {
+    static let defaultValue = 1.0
+}
+private extension EnvironmentValues {
+    var readingZoom: Double {
+        get { self[ReadingZoomKey.self] }
+        set { self[ReadingZoomKey.self] = newValue }
+    }
+}
 struct PassageView: NSViewRepresentable {
+    @Environment(\.readingZoom) private var readingZoom
     let html: String
     var rightToLeft: Bool? = nil
     var css: String = ""
@@ -1249,6 +1299,7 @@ struct PassageView: NSViewRepresentable {
         return view
     }
     func updateNSView(_ view: WKWebView, context: Context) {
+        if view.pageZoom != readingZoom { view.pageZoom = readingZoom }
         context.coordinator.onScrollFailure = onScrollFailure
         context.coordinator.onLink = onLink
         context.coordinator.onLinkHover = onLinkHover
@@ -1391,6 +1442,65 @@ struct ReadingWordSearchMenu: View {
     }
 }
 
+struct DetachedPassage {
+    let module: String
+    let reference: String
+    let html: String
+    let css: String
+    let rtl: Bool?
+}
+private struct DetachedReadingPane: View {
+    @ObservedObject var model: ReaderModel
+    let commentary: Bool
+    @State private var synchronized = true
+    @State private var independent: DetachedPassage?
+    @State private var draft = ""
+    @State private var message = ""
+    @State private var loading = false
+    private var passage: DetachedPassage? {
+        synchronized ? model.detachedSnapshot(commentary: commentary) : independent
+    }
+
+    var body: some View {
+        VStack(alignment:.leading,spacing:8) {
+            Toggle("Synchronize with reading window",isOn:Binding(get:{ synchronized },set:{ value in
+                if !value { independent = model.detachedSnapshot(commentary: commentary) }
+                synchronized = value
+                draft = passage?.reference ?? ""
+                message = ""
+            }))
+            HStack {
+                TextField("Passage reference",text:$draft).onSubmit { navigate() }
+                Button("Read") { navigate() }.disabled(loading || model.isBusy || draft.isEmpty)
+            }
+            if let passage {
+                Text(passage.module + " · " + passage.reference).font(.headline)
+                PassageView(html:passage.html,rightToLeft:passage.rtl,css:passage.css,anchor:nil,
+                    onScrollFailure:{ message = $0 },onLink:{ uri in
+                        if synchronized {
+                            if commentary { model.followCommentaryLink(uri) } else { model.followLink(uri) }
+                        } else { navigate(uri:uri) }
+                    })
+            }
+            if !message.isEmpty { Text(message).foregroundStyle(.secondary) }
+        }.padding(12).frame(minWidth:360,minHeight:300)
+            .environment(\.readingZoom,model.readingZoom)
+            .onAppear { draft = passage?.reference ?? "" }
+            .onChange(of:passage?.reference) { _, reference in draft = reference ?? "" }
+    }
+
+    private func navigate(uri: String? = nil) {
+        guard !loading, let passage else { return }
+        if synchronized { model.chooseReference(draft); return }
+        loading = true
+        let reference = draft
+        Task {
+            defer { loading = false }
+            do { independent = try await model.previewDetached(module:passage.module,reference:reference,uri:uri);message = "" }
+            catch { message = error.localizedDescription }
+        }
+    }
+}
 private struct DevotionalView: View {
     @ObservedObject var model: ReaderModel
     @Environment(\.dismiss) private var dismiss
@@ -1694,6 +1804,11 @@ struct ReaderWindow: View {
                 HStack {
                     Button("Back") { model.navigate(-1) }.disabled(!model.canBack)
                     Button("Forward") { model.navigate(1) }.disabled(!model.canForward)
+                    Menu("Zoom") {
+                        Button("Zoom In") { model.adjustReadingZoom(0.1) }.keyboardShortcut("+", modifiers: .command)
+                        Button("Zoom Out") { model.adjustReadingZoom(-0.1) }.keyboardShortcut("-", modifiers: .command)
+                        Button("Actual Size") { model.adjustReadingZoom(nil) }.keyboardShortcut("0", modifiers: .command)
+                    }
                     Menu("History") {
                         Button("Clear History") { model.clearHistory() }
                     }
@@ -1701,6 +1816,10 @@ struct ReaderWindow: View {
                         .accessibilityLabel("Passage reference")
                     Button("Read") { model.read() }.disabled(model.selection == nil)
                     Menu("Passage") {
+                        Button("Open Bible in Separate Window") { model.detachReadingPane(commentary: false) }
+                        Button("Open Commentary in Separate Window") { model.detachReadingPane(commentary: true) }
+                            .disabled(model.commentaryEntry == nil)
+                        Divider()
                         Button("Export as Text…") { choosePassageDestination(.text) }
                         Button("Export as HTML…") { choosePassageDestination(.html) }
                         Button("Print…") { choosePassageDestination(.print) }
@@ -1921,6 +2040,7 @@ struct ReaderWindow: View {
                 }.frame(minWidth: 230, idealWidth: 300)
             }
         }.frame(minWidth: 700, minHeight: 450)
+            .environment(\.readingZoom,model.readingZoom)
             .sheet(isPresented: $showDevotional) { DevotionalView(model: model) }
             .sheet(item: $passageDestination) { destination in
                 VStack(alignment: .leading, spacing: 12) {

@@ -2425,6 +2425,17 @@ struct ReaderModelSmoke {
         guard plain.components(separatedBy: "John 3:16").count == 3, html.contains("default-src 'none'"),
               try await worker.history(tab).count == history.count
         else { fatalError("Native passage export lost duplicate entries, passive policy or history") }
+        guard let main = model.detachedSnapshot(commentary: false) else { fatalError("Detached Bible source missing") }
+        let preview = try await model.previewDetached(module: main.module, reference: "John 3:17")
+        guard preview.reference == "John 3:17", model.detachedSnapshot(commentary: false)?.reference == main.reference,
+              try await worker.history(tab).count == history.count else { fatalError("Independent reading changed the main reader") }
+        model.chooseReference("John 3:17")
+        try await idle(model)
+        guard model.detachedSnapshot(commentary: false)?.reference == "John 3:17" else { fatalError("Synchronized reader did not follow") }
+        model.adjustReadingZoom(0.1)
+        guard model.readingZoom > 1 else { fatalError("Zoom did not increase") }
+        model.adjustReadingZoom(nil)
+        guard model.readingZoom == 1 else { fatalError("Zoom did not reset") }
         print("Native passage export and devotional leap-day checks passed")
     }
     @MainActor static func main() async throws {
