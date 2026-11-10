@@ -46,17 +46,32 @@ const char *backend_name(int type)
 		return "external index";
 	throw std::logic_error("Unknown committed search backend");
 }
+std::string scope_name(const SearchQuery &query)
+{
+	if (query.keyed_interval)
+		return "keyed interval: " + query.keyed_interval->first + " through " + query.keyed_interval->last;
+	if (query.range)
+		return "range (" + query.range->module + "): " + query.range->expression;
+	if (query.within_last_results)
+		return "previous results";
+	return "entire module";
+}
 const char *flag(bool enabled) { return enabled ? "on" : "off"; }
 } // namespace
 std::string SearchGeneration::export_source_summary() const
 {
 	std::string text = "Source search groups\n";
+	auto append_scope = [&](const SearchQuery &query) {
+		text += std::string("Case sensitive: ") + flag(query.case_sensitive) +
+			"\nScope: " + scope_name(query) + "\n";
+	};
 	for (std::size_t index = 0; index < requested_.size(); ++index) {
 		const auto &query = requested_[index];
 		text += "Group " + std::to_string(index + 1) + "\nModule: " + query.module +
 			"\nQuery: " + query.expression + "\nStatus: ";
 		if (index >= groups_.size()) {
 			text += "not attempted\n";
+			append_scope(query);
 			continue;
 		}
 		const auto &group = groups_[index];
@@ -74,11 +89,17 @@ std::string SearchGeneration::export_source_summary() const
 			case SearchBatchFailure::none:
 				throw std::logic_error("Missing successful search result");
 			}
+			append_scope(query);
 			continue;
 		}
 		const auto &result = *group.result;
-		text += result.cancelled ? "stopped\n" : result.executed ? "completed\n"
-									 : "not executed (empty scope)\n";
+		if (result.cancelled)
+			text += "stopped\n";
+		else if (!result.executed)
+			text += "not executed (empty scope)\n";
+		else
+			text += result.total_results ? "completed\n" : "completed (no matches)\n";
+		if (!result.total_results) append_scope(query);
 		text += "SDK result elements: " + std::to_string(result.total_results) + "\n";
 		if (result.source_module() != query.module)
 			text += "Resolved module: " + result.source_module() + "\n";
@@ -95,15 +116,7 @@ std::string SearchGeneration::export_header(std::size_t index) const
 	if (result.source_module() != query.module) text += "\nResolved module: " + result.source_module();
 	if(result.key_kind!=SearchKeyKind::verse)text+=result.key_kind==SearchKeyKind::dictionary?"\nResult keys: dictionary entries":"\nResult keys: general-book paths";
 	text += "\nQuery: " + query.expression + "\nMode: " + mode_name(query.mode) +
-			   "\nCase sensitive: " + flag(query.case_sensitive) + "\nScope: ";
-	if (query.keyed_interval)
-		text += "keyed interval: " + query.keyed_interval->first + " through " + query.keyed_interval->last;
-	else if (query.range)
-		text += "range (" + query.range->module + "): " + query.range->expression;
-	else if (query.within_last_results)
-		text += "previous results";
-	else
-		text += "entire module";
+			    "\nCase sensitive: " + flag(query.case_sensitive) + "\nScope: " + scope_name(query);
 	text += "\nSource SDK result elements: " + std::to_string(result.total_results) +
 		"\nSource visible references: " + std::to_string(result.references.size()) + "\n";
 	if (result.limited)

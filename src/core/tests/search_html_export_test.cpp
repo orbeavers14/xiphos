@@ -90,7 +90,9 @@ int main(int argc,char **argv){try{
   auto empty_details=session.export_search_html(request);
   check(empty_details.status==SearchExportStatus::ok&&!empty_details.row_count&&
     empty_details.html.find("Query: &lt;script&gt;original&lt;/script&gt;")!=std::string::npos&&empty_details.html.find("<script>")==std::string::npos&&
-    empty_details.plain_text->find("Query: <script>original</script>")!=std::string::npos&&empty_details.plain_text->find("SDK result elements: 0")!=std::string::npos,
+    empty_details.plain_text->find("Query: <script>original</script>")!=std::string::npos&&empty_details.plain_text->find("SDK result elements: 0")!=std::string::npos&&
+    empty_details.html.find("Status: completed (no matches)\nCase sensitive: off\nScope: entire module")!=std::string::npos&&
+    empty_details.plain_text->find("Status: failed (module not found)\nCase sensitive: off\nScope: entire module")!=std::string::npos,
     "Zero-row rich documents preserve escaped failed-query and successful-empty source provenance");
   request.max_bytes=empty_details.html.size();request.plain_text_max_bytes=empty_details.plain_text->size();
   check(session.export_search_html(request).html==empty_details.html,"Exact zero-row summary budgets succeed");
