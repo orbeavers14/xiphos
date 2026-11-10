@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Opt-in validation against a disposable, separately acquired SWORD corpus.
 #include "xiphos/core/worker.hpp"
+#include "xiphos/core/c_api.h"
 #include <algorithm>
+#include <chrono>
+#include <memory>
+#include <thread>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -10,6 +14,43 @@ using namespace xiphos::core;
 
 static void check(bool ok, const char *message) {
   if (!ok) throw std::runtime_error(message);
+}
+
+static void wait_for(xc_request *request) {
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+  auto status = xc_request_poll(request);
+  while (status == XC_PENDING && std::chrono::steady_clock::now() < deadline) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    status = xc_request_poll(request);
+  }
+  check(status == XC_OK, "C comparison request must complete successfully");
+}
+
+static void check_c_split(const char *root, const char *profile) {
+  xc_worker *raw_worker = nullptr;
+  check(xc_worker_open(root, &raw_worker) == XC_OK, "Open C corpus worker");
+  std::unique_ptr<xc_worker, decltype(&xc_worker_close)> worker(raw_worker, xc_worker_close);
+  xc_request *raw_request = nullptr;
+  check(xc_worker_create_tab(worker.get(), &raw_request) == XC_OK, "Create C corpus tab");
+  std::unique_ptr<xc_request, decltype(&xc_request_release)> request(raw_request, xc_request_release);
+  wait_for(request.get());
+  const auto tab = xc_request_tab(request.get());
+  check(xc_worker_visit_parallel_profile_from(worker.get(), tab, profile, "Split",
+      "RusSynodal", "Leviticus 14:55", 0, 0, XC_PARALLEL_MAX_SNAPSHOT_BYTES,
+      &raw_request) == XC_OK, "Submit C split comparison");
+  request.reset(raw_request);
+  wait_for(request.get());
+  std::unique_ptr<xc_parallel_chapter, decltype(&xc_parallel_chapter_release)>
+      chapter(xc_request_take_parallel_chapter(request.get()), xc_parallel_chapter_release);
+  request.reset();
+  worker.reset();
+  check(chapter && xc_parallel_selected_verse(chapter.get()) == 55, "C split control verse");
+  const auto *reference = xc_parallel_cell_additional_reference(chapter.get(), 54, 1, 0);
+  const auto *html = xc_parallel_cell_additional_html(chapter.get(), 54, 1, 0);
+  check(xc_parallel_cell_additional_count(chapter.get(), 54, 1) == 1 &&
+        reference && std::string(reference) == "Leviticus 14:56" && html && *html &&
+        !xc_parallel_cell_additional_reference(chapter.get(), 54, 1, 1),
+        "C result retains exactly one additional verse after worker shutdown");
 }
 
 int main(int argc, char **argv) try {
@@ -150,6 +191,7 @@ int main(int argc, char **argv) try {
         std::equal(after.entries.begin(),after.entries.end(),history.entries.begin(),
           [](const auto &a, const auto &b) { return a.module == b.module && a.reference == b.reference; }),
         "Word study and comparison changed main reading history");
+  check_c_split(argv[1], argv[2]);
   check(inspect_legacy_assets(argv[1]).revision == before, "Real corpus was changed");
   std::cout << "Real Hebrew, Greek, Aramaic and cross-canon comparison checks passed\n";
   return 0;
