@@ -1,6 +1,6 @@
 # Native Windows core validation
 
-This directory prepares the native MSVC validation lane. No WinUI frontend or
+Use Windows 11 version 25H2 or later for native MSVC validation. No WinUI frontend or
 passing Windows core suite is claimed yet. Read the
 [Windows handoff](../../doc/modernization/handoff-windows.md) before working.
 The MinGW/GTK application and WSL builds do not satisfy this lane.

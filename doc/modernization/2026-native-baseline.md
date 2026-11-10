@@ -5,7 +5,7 @@ Owner direction (2026-11-09): reduce the maintenance cost of the native Xiphos a
 ## Target policy
 
 - **macOS:** use SwiftUI/AppKit, Swift 6 and the current supported Xcode/Apple SDK. The native preview defaults to macOS 27.0 and rejects lower targets. The development host runs macOS 27.2. Audit the complete dependency closure and validate the minimum OS on an actual target before claiming release support.
-- **Windows:** Windows 11 only, supported Windows SDK/MSVC, WinUI 3 and WebView2; no Windows 10, MinGW/GTK desktop or old installer compatibility requirement. Validate native MSVC builds before frontend acceptance.
+- **Windows:** Windows 11 version 25H2 as the minimum development and runtime baseline, supported Windows SDK/MSVC, WinUI 3 and WebView2; no earlier Windows releases, MinGW/GTK desktop or old installer compatibility requirement. Validate native MSVC builds before frontend acceptance.
 - **Linux:** maintained 2026 distributions and SDKs, GTK4/WebKitGTK. Define a small explicit distro/test matrix when native Linux validation resumes; do not spend work keeping legacy GTK3/distribution targets alive.
 - **Core C++:** retain C++17 for the shared core, C++11 for retained policy helpers and C11 for the C ABI. Consider a language upgrade when it solves a specific maintenance or portability problem and can be validated on Apple Clang, GCC and MSVC.
 - **Build tooling/dependencies:** raise outdated minimum versions in coordinated changes, remove obsolete fallback branches only after checking all supported platforms, and pin/record reproducible SDK versions, architectures and licenses. Do not make a blanket mass-update without successful builds.
