@@ -69,19 +69,17 @@ payloads reject. SHA256 detects corruption; it is not a signature or encryption.
 
 ## Saving, restoration and native use
 
-Package/native-session output filenames must be new. Shared same-directory staged
-write/read-back verification precedes replacement, with observed destination-change
-checks. A live preview rechecks every selected source revision before output; a
-changed file requires a new preview. A loaded package is independent of old machine
-paths and replans from its own original copies. Existing originals, packages and
-native session files are not overwritten by migration operations.
+Package and native-session output filenames must be new. The core verifies
+staged bytes and publishes new files atomically without replacing a destination
+created during staging. A live preview rechecks every selected source revision
+before output. A changed file requires a new preview. A loaded package is
+independent of old machine paths and replans from its own original copies.
 
-Restore Original Copies writes the exact selected originals as settings.xml,
-tabs.xml and modops.conf into a newly created private folder. Existing directories
-are refused. A failure rolls back files created by this operation; it never merges
-with or resets an old profile. This multi-file export is not an atomic directory
-transaction or a power-loss guarantee. Output staging and revision checks are not
-interprocess locks/fsync guarantees.
+Restore Original Copies writes settings.xml, tabs.xml and modops.conf into a
+private sibling directory, verifies their exact bytes, then publishes the
+complete folder. A competing destination causes the operation to fail. Staging
+is cleaned up on failure. These checks protect publication from overwriting
+another writer's destination. They provide no power-loss guarantee.
 
 Mac File > Import Legacy Settings and Session provides explicit file selection,
 package reopening, optional module mappings, a source/converted-window summary,

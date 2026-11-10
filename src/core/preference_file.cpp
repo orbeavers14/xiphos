@@ -1,36 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "preference_file.hpp"
 #include "bounded_file.hpp"
-#include <atomic>
-#include <chrono>
+#include "publication.hpp"
 #include <stdexcept>
 namespace xiphos::core::detail {
 std::string read_preference_file(const std::filesystem::path &path, std::size_t maximum_bytes) {
   return read_bounded_file(path, maximum_bytes, "Preference file");
-}
-namespace {
-struct TemporaryPreferenceFile {
-  std::filesystem::path directory, file;
-  explicit TemporaryPreferenceFile(const std::filesystem::path &parent) {
-    static std::atomic<unsigned long long> sequence{0};
-    const auto stamp = std::chrono::steady_clock::now().time_since_epoch().count();
-    for (unsigned attempt = 0; attempt < 64; ++attempt) {
-      auto candidate = parent / (".xiphos-preferences-" + std::to_string(stamp) + "-" + std::to_string(sequence++));
-      if (!std::filesystem::create_directory(candidate)) continue;
-      directory = std::move(candidate);
-      file = directory / "preferences.tmp";
-      return;
-    }
-    throw std::runtime_error("Cannot create temporary preference file");
-  }
-  ~TemporaryPreferenceFile() {
-    std::error_code ignored;
-    std::filesystem::remove(file, ignored);
-    std::filesystem::remove(directory, ignored);
-  }
-  TemporaryPreferenceFile(const TemporaryPreferenceFile &) = delete;
-  TemporaryPreferenceFile &operator=(const TemporaryPreferenceFile &) = delete;
-};
 }
 void replace_preference_file(const std::string &path,
     const std::function<void(const std::filesystem::path &, const std::string &, bool)> &prepare,
@@ -52,12 +27,16 @@ void replace_preference_file(const std::string &path,
   const auto write_bits = std::filesystem::perms::owner_write | std::filesystem::perms::group_write | std::filesystem::perms::others_write;
   if (existed && (permissions & write_bits) == std::filesystem::perms::none)
     throw std::runtime_error("Preference destination is read-only");
-  TemporaryPreferenceFile temporary(destination.parent_path());
-  std::filesystem::permissions(temporary.directory, std::filesystem::perms::owner_all);
-  prepare(temporary.file, original, existed);
-  std::filesystem::permissions(temporary.file, permissions);
-  if (std::filesystem::exists(destination) != existed || (existed && read_preference_file(destination, maximum_bytes) != original))
+  PrivateStagingDirectory temporary(destination.parent_path(), ".xiphos-preferences-");
+  const auto file = temporary.path() / "preferences.tmp";
+  prepare(file, original, existed);
+  std::filesystem::permissions(file, permissions);
+  if (!existed) {
+    publish_new_path(file, destination);
+    return;
+  }
+  if (!std::filesystem::exists(destination) || read_preference_file(destination, maximum_bytes) != original)
     throw std::runtime_error("Preference destination changed during save");
-  std::filesystem::rename(temporary.file, destination);
+  std::filesystem::rename(file, destination);
 }
 }

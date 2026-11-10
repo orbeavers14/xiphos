@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+#include "../preference_file.hpp"
 #include "xiphos/core/worker.hpp"
 #include "xiphos/core/c_api.h"
 #include <filesystem>
@@ -44,6 +45,13 @@ int main(int argc,char **argv){try{
  auto saved=worker.export_legacy_migration_session((root/"converted.xml").u8string(),m).get();check(saved.tabs.size()==2,"New native session exported");
  worker.restore_legacy_migration_sources((root/"restored-originals").u8string(),archive).get();check(bytes(root/"restored-originals/settings.xml")==settings()&&bytes(root/"restored-originals/tabs.xml")==tabs()&&bytes(root/"restored-originals/modops.conf")==ini,"Original settings including comments/unknown fields restore byte-for-byte");
  rejects([&]{(void)worker.save_legacy_migration(config.u8string(),m).get();});rejects([&]{(void)worker.save_legacy_migration((root/"migration.bundle").u8string(),m).get();});rejects([&]{(void)worker.export_legacy_migration_session((root/"converted.xml").u8string(),m).get();});rejects([&]{worker.restore_legacy_migration_sources((root/"restored-originals").u8string(),m).get();});
+ const auto racingExport=root/"racing-export.xml";
+ rejects([&]{detail::replace_preference_file(racingExport.u8string(),[&](const auto &staged,const auto &,bool existed){
+   check(!existed,"Export initially sees an absent destination");
+   write(staged,"Proposed export");
+   write(racingExport,"Concurrent original");
+ });});
+ check(bytes(racingExport)=="Concurrent original","A new export never replaces a file created during staging");
  auto damaged=bytes(root/"migration.bundle");damaged.back()^=1;rejects([&]{parse_legacy_migration(damaged);});rejects([&]{parse_legacy_migration("XiphosMigration:2\n");});
  auto changed=settings();changed+="\n";write(config,changed);rejects([&]{(void)worker.save_legacy_migration((root/"stale.bundle").u8string(),m).get();});check(!fs::exists(root/"stale.bundle"),"Stale source refuses output");write(config,settings());
  auto missing=tabs();missing.replace(missing.find("text_mod=\"Text\""),15,"text_mod=\"Absent\"");write(tabfile,missing);auto blocked=worker.prepare_legacy_migration(input).get();check(!blocked.session&&!blocked.issues.empty(),"Missing module blocks entire session, no partial publish");

@@ -6,6 +6,7 @@
 #include "xml_document.hpp"
 #include "bounded_file.hpp"
 #include "preference_file.hpp"
+#include "publication.hpp"
 #include <glib.h>
 #include <libxml/tree.h>
 #include <filesystem>
@@ -130,5 +131,16 @@ LegacyMigration parse_legacy_migration(const std::string &bytes){const std::stri
 LegacyMigration read_legacy_migration(const std::string &file){return parse_legacy_migration(read(file,maximum_legacy_migration_bytes));}
 LegacyMigration save_legacy_migration(const std::string &file,const LegacyMigration &m){path(file);auto bytes=serialize_legacy_migration(m);auto result=parse_legacy_migration(bytes);for(const auto &s:m.sources)if(!s.path.empty()&&hash(read(s.path))!=s.revision)throw std::invalid_argument("A migration source changed; preview again");detail::replace_preference_file(file,[&](const fs::path &temp,const std::string &,bool existed){if(existed)throw std::invalid_argument("Choose a new migration package filename");write(temp,bytes);},maximum_legacy_migration_bytes);return result;}
 NativeSessionSnapshot export_legacy_migration_session(const std::string &file,const LegacyMigration &m){path(file);validate_sources(m);if(!m.session)throw std::invalid_argument("Resolve migration issues before exporting a session");for(const auto &s:m.sources)if(!s.path.empty()&&hash(read(s.path))!=s.revision)throw std::invalid_argument("A migration source changed; preview again");auto bytes=serialize_native_session(*m.session);auto result=parse_native_session(bytes);detail::replace_preference_file(file,[&](const fs::path &temp,const std::string &,bool existed){if(existed)throw std::invalid_argument("Choose a new migrated session filename");write(temp,bytes);},maximum_session_bytes);return result;}
-void restore_legacy_migration_sources(const std::string &folder,const LegacyMigration &m){path(folder);validate_sources(m);auto destination=fs::u8path(folder);if(!fs::create_directory(destination))throw std::invalid_argument("Choose a new empty backup folder name");std::vector<fs::path> created;try{fs::permissions(destination,fs::perms::owner_all,fs::perm_options::replace);for(const auto &s:m.sources){const char *names[]={"settings.xml","tabs.xml","modops.conf"};auto target=destination/names[s.kind];created.push_back(target);write(target,s.bytes);}}catch(...){std::error_code error;for(const auto &f:created)fs::remove(f,error);fs::remove(destination,error);throw;}}
+void restore_legacy_migration_sources(const std::string &folder,const LegacyMigration &m) {
+  path(folder);
+  validate_sources(m);
+  auto destination = fs::absolute(fs::u8path(folder));
+  if (!destination.has_filename()) destination = destination.parent_path();
+  if (fs::exists(fs::symlink_status(destination)))
+    throw std::invalid_argument("Choose a new backup folder name");
+  detail::PrivateStagingDirectory stage(destination.parent_path(), ".xiphos-migration-");
+  const char *const names[] = {"settings.xml","tabs.xml","modops.conf"};
+  for (const auto &source : m.sources) write(stage.path() / names[source.kind], source.bytes);
+  stage.publish(destination);
+}
 }
