@@ -3,6 +3,7 @@ import AppKit
 import SwiftUI
 import WebKit
 import Darwin
+import UniformTypeIdentifiers
 
 // Match legacy main.c before starting SWORD workers. Locale stays host-owned;
 // changing it while engines run is unsupported. Invalid environment retains
@@ -777,6 +778,16 @@ final class ReaderModel: ObservableObject {
             try await self.presentDictionary(entry, source: source, token: token)
         }
     }
+    func preparePassageExport(target: PassageTarget, expression: String, html: Bool,
+                              deliver: @escaping @MainActor (String) -> Void) {
+        guard let worker, let tab else { return }
+        run { token in
+            let content = try await worker.exportPassage(tab: tab, module: target.module,
+                expression: expression, context: target.reference, html: html)
+            guard token == self.revision && !self.closed else { return }
+            deliver(content)
+        }
+    }
     func read() {
         guard let worker, tab != nil, let selection else { return }
         let submitted = reference
@@ -1367,6 +1378,51 @@ struct ReaderWindow: View {
     private func searchWord(_ word: ReadingWordSelection, lemma: String?, ignoreMarks: Bool) {
         if model.search.searchSelectedWord(word, lemma: lemma, ignoreMarks: ignoreMarks) { sidebar = "search" }
     }
+    private enum PassageDestination: String, Identifiable {
+        case text, html, print
+        var id: Self { self }
+        var title: String {
+            switch self {
+            case .text: "Export Passage as Text"
+            case .html: "Export Passage as HTML"
+            case .print: "Print Passage"
+            }
+        }
+    }
+    @State private var passageDestination: PassageDestination?
+    @State private var passageSource: PassageTarget?
+    @State private var passageExpression = ""
+
+    private func choosePassageDestination(_ destination: PassageDestination) {
+        guard let source = model.syncTarget else { return }
+        passageSource = source
+        passageExpression = source.reference
+        passageDestination = destination
+    }
+    private func deliverPassage(_ content: String, to destination: PassageDestination) {
+        if destination == .print {
+            let info = NSPrintInfo.shared.copy() as! NSPrintInfo
+            let width = max(1, info.paperSize.width - info.leftMargin - info.rightMargin)
+            let view = NSTextView(frame: NSRect(x: 0, y: 0, width: width, height: 1))
+            view.string = content
+            view.font = .systemFont(ofSize: 11)
+            view.textContainer?.containerSize = NSSize(width: width, height: CGFloat.greatestFiniteMagnitude)
+            if let container = view.textContainer, let layout = view.layoutManager {
+                layout.ensureLayout(for: container)
+                view.setFrameSize(NSSize(width: width, height: max(1, layout.usedRect(for: container).height + 12)))
+            }
+            NSPrintOperation(view: view, printInfo: info).run()
+            return
+        }
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [destination == .html ? .html : .plainText]
+        panel.nameFieldStringValue = destination == .html ? "Passage.html" : "Passage.txt"
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            do { try Data(content.utf8).write(to: url, options: .atomic) }
+            catch { model.message = error.localizedDescription }
+        }
+    }
     private var closeOnDisappear = true
     init(model: ReaderModel) {
         _model = StateObject(wrappedValue: model); closeOnDisappear = false
@@ -1560,6 +1616,11 @@ struct ReaderWindow: View {
                     TextField("Passage reference", text: $model.reference).onSubmit { model.read() }
                         .accessibilityLabel("Passage reference")
                     Button("Read") { model.read() }.disabled(model.selection == nil)
+                    Menu("Passage") {
+                        Button("Export as Text…") { choosePassageDestination(.text) }
+                        Button("Export as HTML…") { choosePassageDestination(.html) }
+                        Button("Print…") { choosePassageDestination(.print) }
+                    }.disabled(model.syncTarget == nil)
                 }.padding(12).disabled(model.isBusy)
                 if let choices = model.choices {
                     HStack {
@@ -1773,6 +1834,24 @@ struct ReaderWindow: View {
                 }.frame(minWidth: 230, idealWidth: 300)
             }
         }.frame(minWidth: 700, minHeight: 450)
+            .sheet(item: $passageDestination) { destination in
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(destination.title).font(.headline)
+                    TextField("Passage or range", text: $passageExpression)
+                    HStack {
+                        Button("Cancel") { passageDestination = nil }.keyboardShortcut(.cancelAction)
+                        Spacer()
+                        Button("Continue") {
+                            guard let source = passageSource else { return }
+                            passageDestination = nil
+                            model.preparePassageExport(target: source, expression: passageExpression,
+                                                       html: destination == .html) {
+                                deliverPassage($0, to: destination)
+                            }
+                        }.keyboardShortcut(.defaultAction).disabled(passageExpression.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                }.padding(20).frame(width: 360)
+            }
             .onChange(of: model.selection) { selectedWord = nil; model.selectionChanged() }
             .onChange(of: model.html) { selectedWord = nil }
             .onChange(of: model.verseNumbers) { model.refreshDisplay() }

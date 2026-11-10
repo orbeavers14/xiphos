@@ -141,3 +141,11 @@ original fixtures and representative permitted modules/profiles. Complete passag
 export, verse lists, bookmark hierarchy/import, printing/pagination, saved choices
 and visual/keyboard/round-trip evidence remain open. No reference implementation
 or oracle is eligible for retirement on the strength of these partial services.
+
+### Mac passage destinations
+
+The reader's Passage menu accepts a verse or range in the committed module.
+It prepares plain text or passive HTML through the shared core before offering
+a save destination. Print uses the plain-text result with the system print
+panel. Preparation leaves reading history unchanged. Physical printer output
+and pagination still need manual acceptance.

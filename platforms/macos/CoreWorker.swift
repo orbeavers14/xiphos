@@ -1468,6 +1468,27 @@ actor CoreWorker {
         }
         return try await chapter(status, request)
     }
+    func exportPassage(tab: UInt64, module: String, expression: String, context: String, html: Bool) async throws -> String {
+        guard [module, expression, context].allSatisfy({ !$0.utf8.contains(0) }) else {
+            throw CoreError(status: XC_INVALID_ARGUMENT)
+        }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let limit = 1024 * 1024
+        let status = html ? xc_worker_export_passage_html(handle, tab, module, expression, context, limit, &request) :
+                            xc_worker_export_passage_text(handle, tab, module, expression, context, limit, &request)
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        if html, let result = xc_request_take_passage_html_export(completed) {
+            defer { xc_passage_html_export_release(result) }
+            return String(cString: xc_passage_html_export_html(result))
+        }
+        if !html, let result = xc_request_take_passage_text_export(completed) {
+            defer { xc_passage_text_export_release(result) }
+            return String(cString: xc_passage_text_export_text(result))
+        }
+        throw CoreError(status: XC_ENGINE_ERROR)
+    }
     func mappedReference(from source: String, to destination: String, reference: String) async throws -> String {
         var request: OpaquePointer?
         let status = xc_worker_map_reference(try worker(), source, destination, reference, &request)
