@@ -552,7 +552,9 @@ void selected_profile_path(const std::string &path) {
 }
 template<class T> std::future<T> selected_profile_rejection() {
   std::promise<T> result;auto future = result.get_future();
-  result.set_exception(std::current_exception());return future;
+  auto error = std::current_exception();
+  if (!error) error = std::make_exception_ptr(std::invalid_argument("Invalid selected profile or module operation"));
+  result.set_exception(error);return future;
 }
 }
 std::future<AnnotationTarget> StudyWorker::annotation_target(StudyTab tab,std::string module,std::string reference,bool generic) {

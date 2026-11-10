@@ -2,6 +2,7 @@
 #include "xiphos/core/c_api.h"
 #include "xiphos/core/reader.hpp"
 #include <stdexcept>
+#include <cstring>
 #include <chrono>
 #include <type_traits>
 #include "xiphos/core/worker.hpp"

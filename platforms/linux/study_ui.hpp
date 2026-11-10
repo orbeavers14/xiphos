@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 #include "reader_model.hpp"
+#include "recovery_model.hpp"
+#include "rich_editor.hpp"
 #include <gtk/gtk.h>
+#include <memory>
 #include <webkit/webkit.h>
 namespace xiphos::linux_preview {
 // Presentation-only host. ReaderModel owns submissions, copied results and tab state.
@@ -11,15 +14,49 @@ public:
   StudyUI(GtkWindow *parent, bool software);
   ~StudyUI();
   GtkWidget *book_pane();
+  GtkWidget *parallel_pane();
+  GtkWidget *notes_pane();
+  GtkWidget *editor_pane();
+  bool confirm_close();
+  std::vector<RecoveryDraft> recovery_drafts(const std::string &key) const;
+  bool recover_draft(const RecoveryDraft &draft);
+  void cancel_close() { discard_on_close_ = false; }
+  std::function<void(bool)> on_close_decision;
+  std::string capture_state(const std::string &reference_draft = "") const;
+  static std::optional<std::string> reference_draft(const std::string &state);
+  static bool validate_state(const std::string &state);
+  bool restore_state(const std::string &state);
   GtkWidget *search_pane();
   void tick(ReaderModel &model);
   void close();
 private:
+  std::vector<std::pair<int, std::string>> restore_sources_;
   GtkWindow *parent_;
   ReaderModel *model_ = nullptr;
   bool software_, updating_ = false, closed_ = false, populated_ = false;
+  GtkWidget *notes_box_ = nullptr, *editor_box_ = nullptr, *bookmark_rows_ = nullptr, *bookmark_fields_[6] = {}, *bookmark_unset_[6] = {}, *bookmark_parent_ = nullptr, *bookmark_position_ = nullptr;
+  GtkWidget *import_folder_ = nullptr, *import_policy_ = nullptr, *import_review_ = nullptr, *note_remove_ = nullptr;
+  GtkWidget *note_text_ = nullptr, *note_generic_ = nullptr, *note_label_ = nullptr, *repository_status_ = nullptr, *remove_confirm_ = nullptr;
+  std::unique_ptr<RichEditor> rich_editor_;
+  GtkWidget *editor_stack_ = nullptr, *format_value_ = nullptr;
+  bool rich_mode_ = false;
+  GtkWidget *editor_text_ = nullptr, *editor_module_ = nullptr, *editor_reference_ = nullptr, *editor_label_ = nullptr, *editor_preview_box_ = nullptr;
+  WebKitWebView *editor_preview_ = nullptr;
+  GtkWidget *close_dialog_ = nullptr;
+  bool discard_on_close_ = false;
+  unsigned catalog_version_ = 0;
+  unsigned bookmarks_version_ = 0, note_version_ = 0, editor_version_ = 0;
+  std::string decoration_identity_[3];
+  void update_repositories();
+  void select_bookmark();
+  GtkWidget *parallel_box_ = nullptr, *parallel_modules_ = nullptr, *parallel_reference_ = nullptr, *parallel_sets_ = nullptr, *parallel_name_ = nullptr, *parallel_confirm_ = nullptr, *parallel_default_ = nullptr;
+  WebKitWebView *parallel_view_ = nullptr;
+  unsigned parallel_revision_ = 0;
+  std::string parallel_profile_identity_;
+  void update_parallel();
   GtkWidget *book_box_ = nullptr, *search_box_ = nullptr;
   GtkWidget *book_module_, *book_key_, *book_read_, *book_contents_, *book_more_, *book_label_, *book_status_, *book_buttons_[4], *book_options_[4];
+  GtkWidget *mixed_, *first_key_, *last_key_, *list_label_;
   GtkWidget *search_modules_, *search_text_, *search_mode_, *search_scope_, *range_module_, *range_, *case_, *annotations_, *annotation_[3];
   GtkWidget *search_start_, *search_stop_, *search_clear_, *search_reset_, *search_import_, *saved_modules_, *saved_ranges_, *apply_modules_, *apply_range_;
   GtkWidget *results_, *search_status_, *progress_, *export_html_, *export_all_, *export_scripture_, *export_context_, *export_images_, *export_partial_, *copy_, *save_, *open_;

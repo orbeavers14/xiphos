@@ -45,8 +45,24 @@ void choices(GtkWidget *w, const std::vector<std::string> &names) {
 StudyUI::StudyUI(GtkWindow *parent, bool software) : parent_(parent), software_(software) {}
 StudyUI::~StudyUI() { close(); }
 void StudyUI::close() {
-  closed_ = true; model_ = nullptr;
-  if (dialog_) { g_signal_handlers_disconnect_by_data(dialog_, this); gtk_native_dialog_hide(dialog_); g_object_unref(dialog_); dialog_ = nullptr; }
+	if (closed_)
+		return;
+	closed_ = true;
+	model_ = nullptr;
+	rich_editor_.reset();
+	if (close_dialog_) {
+		g_signal_handlers_disconnect_by_data(close_dialog_, this);
+		gtk_window_destroy(GTK_WINDOW(close_dialog_));
+		close_dialog_ = nullptr;
+	}
+	if (parallel_view_)
+		g_signal_handlers_disconnect_by_data(webkit_web_view_get_user_content_manager(parallel_view_), this);
+	if (dialog_) {
+		g_signal_handlers_disconnect_by_data(dialog_, this);
+		gtk_native_dialog_hide(dialog_);
+		g_object_unref(dialog_);
+		dialog_ = nullptr;
+	}
   if (image_window_) { gtk_window_destroy(image_window_); image_window_ = nullptr; }
 }
 GtkWidget *StudyUI::view(WebKitWebView **out, bool book) {
@@ -62,10 +78,13 @@ GtkWidget *StudyUI::view(WebKitWebView **out, bool book) {
       const char *uri = webkit_uri_request_get_uri(webkit_navigation_action_get_request(action));
       if (webkit_navigation_action_get_navigation_type(action) == WEBKIT_NAVIGATION_TYPE_LINK_CLICKED) {
         webkit_policy_decision_ignore(decision);
-        if (!self->closed_ && self->model_ && uri) {
+	if (g_object_get_data(G_OBJECT(view), "parallel"))
+		return TRUE;
+	if (!self->closed_ && self->model_ && uri) {
           if (GPOINTER_TO_INT(g_object_get_data(G_OBJECT(view), "book"))) self->model_->follow_book(uri);
-          else { const auto &p = self->model_->search_preview(); self->model_->follow(p.module, uri, p.reference); }
-        }
+	  else
+		  self->model_->follow_search_link(uri);
+	}
         return TRUE;
       }
       if (!uri || (std::string(uri) != "xiphos-preview://study/" && std::string(uri) != "about:blank")) { webkit_policy_decision_ignore(decision); return TRUE; }
@@ -79,7 +98,8 @@ GtkWidget *StudyUI::book_pane() {
   book_box_ = box(nullptr); book_module_ = choice(book_box_, "General book module");
   g_signal_connect(book_module_, "notify::selected", G_CALLBACK((+[](GObject *w, GParamSpec *, gpointer data) {
     auto *s = static_cast<StudyUI *>(data); auto i = gtk_drop_down_get_selected(GTK_DROP_DOWN(w));
-    if (!s->updating_ && s->model_ && i < s->books_.size()) s->model_->choose_book(s->books_[i]);
+    if (!s->updating_ && s->model_ && i > 0 && i <= s->books_.size())
+	    s->model_->choose_book(s->books_[i - 1]);
   })), this);
   auto *bar = box(book_box_, true); book_key_ = entry(bar, "Book key or path"); gtk_widget_set_hexpand(book_key_, TRUE);
   book_read_ = button(bar, "Read", G_CALLBACK((+[](GtkButton *, gpointer data) { auto *s = static_cast<StudyUI *>(data); if (s->model_) s->model_->read_book_key(text(s->book_key_)); })), this);
@@ -160,11 +180,27 @@ GtkWidget *StudyUI::search_pane() {
     auto *s = static_cast<StudyUI *>(data); if (!s->model_) return; auto i = gtk_drop_down_get_selected(GTK_DROP_DOWN(s->saved_ranges_)); const auto &l = s->model_->saved_lists(true);
     if (i < l.size() && l[i].label && l[i].effective < l.size() && l[l[i].effective].value) { gtk_editable_set_text(GTK_EDITABLE(s->range_), l[l[i].effective].value->c_str()); gtk_drop_down_set_selected(GTK_DROP_DOWN(s->search_scope_), XC_SEARCH_SCOPE_BOUNDS); }
   })), this);
+  list_label_ = entry(search_box_, "Saved choice name");
+  bar = box(search_box_, true);
+  const char *list_actions[] = {"Save modules…", "Save range…", "Remove modules…", "Remove range…"};
+  for (int i = 0; i < 4; ++i) {
+	  if (i == 2)
+		  bar = box(search_box_, true);
+	  auto *w = button(bar, list_actions[i], G_CALLBACK((+[](GtkButton *w, gpointer data) {
+				   static_cast<StudyUI *>(data)->pick(GPOINTER_TO_INT(g_object_get_data(G_OBJECT(w), "kind")));
+			   })),
+			   this);
+	  g_object_set_data(G_OBJECT(w), "kind", GINT_TO_POINTER(i + 3));
+  }
+  mixed_ = check(search_box_, "Include dictionaries and books");
   search_text_ = entry(search_box_, "Search text");
   const char *modes[] = {"Regular expression", "Phrase", "Words (automatic)", "Lemma", "Morphology", "Footnote text", "Multiword", "Indexed query", nullptr};
   search_mode_ = choice(search_box_, "Search match mode", modes); gtk_drop_down_set_selected(GTK_DROP_DOWN(search_mode_), XC_SEARCH_PHRASE);
-  const char *scopes[] = {"All", "Bounds", "Within last results", nullptr}; search_scope_ = choice(search_box_, "Search scope", scopes);
+  const char *scopes[] = {"All", "Bounds", "Within last results", "Entry interval", nullptr};
+  search_scope_ = choice(search_box_, "Search scope", scopes);
   range_module_ = choice(search_box_, "Bounds provider module"); range_ = entry(search_box_, "Search bounds, e.g. John 1:1 - John 3:16");
+  first_key_ = entry(search_box_, "First exact entry key/path");
+  last_key_ = entry(search_box_, "Last exact entry key/path");
   case_ = check(search_box_, "Case sensitive"); annotations_ = check(search_box_, "Set annotation options");
   bar = box(search_box_, true); annotation_[0] = check(bar, "Strong’s"); annotation_[1] = check(bar, "Morphology"); annotation_[2] = check(bar, "Footnotes");
   search_reset_ = button(search_box_, "Reset search annotations", G_CALLBACK((+[](GtkButton *, gpointer data) { auto *s = static_cast<StudyUI *>(data); if (s->model_ && s->model_->reset_search_annotations()) gtk_check_button_set_active(GTK_CHECK_BUTTON(s->annotations_), FALSE); })), this);
@@ -182,8 +218,12 @@ GtkWidget *StudyUI::search_pane() {
   g_signal_connect(results_, "row-activated", G_CALLBACK((+[](GtkListBox *, GtkListBoxRow *row, gpointer data) { auto *s = static_cast<StudyUI *>(data); if (s->model_) s->model_->activate_search_hit(gtk_list_box_row_get_index(row)); })), this);
   open_ = button(search_box_, "Read selected passage", G_CALLBACK((+[](GtkButton *, gpointer data) { auto *s = static_cast<StudyUI *>(data); auto rows = s->selection(); if (s->model_ && !rows.empty()) s->model_->activate_search_hit(rows.front()); })), this);
   gtk_box_append(GTK_BOX(search_box_), view(&preview_view_, false));
-  export_html_ = check(search_box_, "HTML export"); export_all_ = check(search_box_, "Export all retained matches"); export_scripture_ = check(search_box_, "Include scripture", true);
-  export_context_ = check(search_box_, "Include search details"); export_images_ = check(search_box_, "Embed PNG images"); export_partial_ = check(search_box_, "Export returned matches from incomplete search");
+  export_html_ = check(search_box_, "HTML export");
+  export_all_ = check(search_box_, "Export all retained matches");
+  export_scripture_ = check(search_box_, "Include entry text", true);
+  export_context_ = check(search_box_, "Include search details");
+  export_images_ = check(search_box_, "Embed PNG/BMP images");
+  export_partial_ = check(search_box_, "Export returned matches from incomplete search");
   bar = box(search_box_, true); copy_ = button(bar, "Copy", G_CALLBACK((+[](GtkButton *, gpointer data) { static_cast<StudyUI *>(data)->export_results(false); })), this);
   save_ = button(bar, "Save…", G_CALLBACK((+[](GtkButton *, gpointer data) { static_cast<StudyUI *>(data)->export_results(true); })), this);
   return outer;
@@ -207,9 +247,18 @@ void StudyUI::export_results(bool save) {
 }
 void StudyUI::pick(int kind) {
   if (closed_ || dialog_ || !model_ || model_->busy()) return;
-  dialog_ = GTK_NATIVE_DIALOG(gtk_file_chooser_native_new(kind == 0 ? "Import saved search lists" : kind == 1 ? "Restore book selection" : "Save search results", parent_,
-    kind == 2 ? GTK_FILE_CHOOSER_ACTION_SAVE : GTK_FILE_CHOOSER_ACTION_OPEN, kind == 2 ? "Save" : "Import", "Cancel"));
+  dialog_ = GTK_NATIVE_DIALOG(gtk_file_chooser_native_new(kind == 0 ? "Import saved search lists" : kind == 1 ? "Restore book selection"
+												: kind >= 9   ? "Choose data file"
+												: kind >= 7   ? "Parallel reading profile"
+												: kind >= 3   ? "Edit saved search choices"
+													      : "Save search results",
+							  parent_,
+							  (kind >= 2 && kind <= 4) || kind == 8 || kind == 10 || kind == 12 || kind == 14 || kind == 16 || kind == 17 ? GTK_FILE_CHOOSER_ACTION_SAVE : GTK_FILE_CHOOSER_ACTION_OPEN, (kind >= 2 && kind <= 4) || kind == 8 || kind == 10 || kind == 12 || kind == 14 || kind == 16 || kind == 17 ? "Save" : "Select", "Cancel"));
   g_object_set_data(G_OBJECT(dialog_), "kind", GINT_TO_POINTER(kind));
+  if (kind >= 3 && kind <= 6) {
+	  g_object_set_data_full(G_OBJECT(dialog_), "choice-label", g_strdup(text(list_label_).c_str()), g_free);
+	  g_object_set_data_full(G_OBJECT(dialog_), "choice-value", g_strdup(text(kind == 4 || kind == 6 ? range_ : search_modules_).c_str()), g_free);
+  }
   if (kind == 2) gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog_), pending_export_html_ ? "search.html" : "search.txt");
   g_signal_connect(dialog_, "response", G_CALLBACK((+[](GtkNativeDialog *dialog, int response, gpointer data) {
     auto *s = static_cast<StudyUI *>(data); int kind = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(dialog), "kind"));
@@ -217,6 +266,26 @@ void StudyUI::pick(int kind) {
       auto *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog)); char *path = file ? g_file_get_path(file) : nullptr;
       if (kind == 0 && path) s->model_->import_search_lists(path);
       else if (kind == 1 && path) s->model_->restore_book(path);
+      else if (kind == 7 && path)
+	      s->model_->load_parallel_profile(path);
+      else if (kind == 8 && path)
+	      s->model_->new_parallel_profile(path);
+      else if ((kind == 9 || kind == 10) && path)
+	      s->model_->open_bookmarks(path, kind == 10);
+      else if ((kind == 11 || kind == 12) && path)
+	      s->model_->open_annotations(path, kind == 12);
+      else if (kind == 15 && path)
+	      s->model_->preview_andbible(path);
+      else if (kind == 16 && path)
+	      s->model_->export_bookmarks(path);
+      else if (kind == 17 && path)
+	      s->model_->save_editor_as(path);
+      else if ((kind == 13 || kind == 14) && path)
+	      s->model_->open_editor(path, kind == 14);
+      else if (kind >= 3 && kind <= 6 && path)
+	      s->model_->edit_search_list(path, kind == 4 || kind == 6,
+					  static_cast<const char *>(g_object_get_data(G_OBJECT(dialog), "choice-label")),
+					  static_cast<const char *>(g_object_get_data(G_OBJECT(dialog), "choice-value")), kind >= 5);
       else if (kind == 2 && file) {
         // Async native replacement owns its payload and application hold. The
         // originating window may close before completion.
@@ -259,11 +328,25 @@ void StudyUI::show_image(const Image &image) {
 void StudyUI::tick(ReaderModel &model) {
   if (closed_) return; model_ = &model; updating_ = true;
   bool enabled = model.ready() && !model.busy();
-  if (model.ready() && !populated_) {
-    for (const auto &m : model.modules()) { if (m.book) books_.push_back(m.id); if (m.search) search_ids_.push_back(m.id); }
-    choices(book_module_, books_); gtk_drop_down_set_selected(GTK_DROP_DOWN(book_module_), GTK_INVALID_LIST_POSITION);
-    choices(range_module_, search_ids_); if (!search_ids_.empty()) gtk_editable_set_text(GTK_EDITABLE(search_modules_), search_ids_.front().c_str());
-    populated_ = true;
+  if (model.ready() && (!populated_ || catalog_version_ != model.catalog_version())) {
+	  catalog_version_ = model.catalog_version();
+	  book_identity_.clear();
+	  books_.clear();
+	  search_ids_.clear();
+	  for (const auto &m : model.modules()) {
+		  if (m.book)
+			  books_.push_back(m.id);
+		  if (m.search)
+			  search_ids_.push_back(m.id);
+	  }
+	  auto book_choices = books_;
+	  book_choices.insert(book_choices.begin(), "Select a general book");
+	  choices(book_module_, book_choices);
+	  gtk_drop_down_set_selected(GTK_DROP_DOWN(book_module_), 0);
+	  choices(range_module_, search_ids_);
+	  if (!populated_ && !search_ids_.empty())
+		  gtk_editable_set_text(GTK_EDITABLE(search_modules_), search_ids_.front().c_str());
+	  populated_ = true;
   }
   const auto &book = model.book();
   const auto identity = book.module + book.nodes[0].path + book.html + book.css + (book.anchor ? *book.anchor : "") + std::to_string(book.anchor_revision);
@@ -274,7 +357,9 @@ void StudyUI::tick(ReaderModel &model) {
     book_identity_ = identity; gtk_editable_set_text(GTK_EDITABLE(book_key_), book.nodes[0].path.c_str()); gtk_label_set_text(GTK_LABEL(book_label_), book.nodes[0].path.c_str());
     webkit_web_view_load_html(book_view_, document(book.html, book.css, true).c_str(), "xiphos-preview://study/");
     gtk_label_set_text(GTK_LABEL(book_status_), book.issue.c_str());
-    for (size_t i = 0; i < books_.size(); ++i) if (books_[i] == book.module) gtk_drop_down_set_selected(GTK_DROP_DOWN(book_module_), i);
+    for (size_t i = 0; i < books_.size(); ++i)
+	    if (books_[i] == book.module)
+		    gtk_drop_down_set_selected(GTK_DROP_DOWN(book_module_), i + 1);
   }
   std::string contents_identity; const auto &contents = model.book_contents();
   for (const auto &n : contents.nodes) contents_identity += std::to_string(n.offset) + n.title;
@@ -299,20 +384,55 @@ void StudyUI::tick(ReaderModel &model) {
     gtk_label_set_text(GTK_LABEL(search_status_), status.c_str());
   }
   const auto &preview = model.search_preview(); auto preview_id = preview.module + preview.reference + preview.html;
-  if (preview_identity_ != preview_id) { preview_identity_ = preview_id; webkit_web_view_load_html(preview_view_, document(preview.html).c_str(), "xiphos-preview://study/"); }
+  if (preview_identity_ != preview_id) {
+	  preview_identity_ = preview_id;
+	  webkit_web_view_load_html(preview_view_, document(preview.html, "", model.search_preview_kind() != 0).c_str(), "xiphos-preview://study/");
+  }
   std::string lists_id; for (int k = 0; k < 2; ++k) for (const auto &v : model.saved_lists(k)) lists_id += (v.label ? "label:" + *v.label : "absent") + (v.value ? "value:" + *v.value : "absent");
   if (lists_id != lists_identity_) { lists_identity_ = lists_id; for (int k = 0; k < 2; ++k) { std::vector<std::string> names; for (const auto &v : model.saved_lists(k)) names.push_back(v.label ? (v.label->empty() ? "(Empty label)" : *v.label) : "(Unlabelled)"); choices(k ? saved_ranges_ : saved_modules_, names); } }
   if (model.parsed_search_revision() != parsed_revision_) {
     parsed_revision_ = model.parsed_search_revision();
-    if (GPOINTER_TO_INT(g_object_get_data(G_OBJECT(search_text_), "start-after-parse"))) {
-      g_object_set_data(G_OBJECT(search_text_), "start-after-parse", nullptr);
-      SearchInput input; input.modules = model.parsed_search_modules(); input.expression = text(search_text_); input.mode = gtk_drop_down_get_selected(GTK_DROP_DOWN(search_mode_));
-      input.scope = static_cast<xc_search_scope_kind>(gtk_drop_down_get_selected(GTK_DROP_DOWN(search_scope_))); input.range = text(range_);
-      auto i = gtk_drop_down_get_selected(GTK_DROP_DOWN(range_module_)); if (i < search_ids_.size()) input.range_module = search_ids_[i];
-      input.case_sensitive = active(case_); if (active(annotations_) && input.mode != XC_SEARCH_PHRASE) input.annotations = xc_search_text_options{active(annotation_[0]), active(annotation_[1]), active(annotation_[2])};
-      if (!model.search(input)) gtk_label_set_text(GTK_LABEL(search_status_), model.error().empty() ? "Choose at least one module and enter a search expression." : model.error().c_str());
+    if (parallel_modules_ && GPOINTER_TO_INT(g_object_get_data(G_OBJECT(parallel_modules_), "pending-action"))) {
+	    const int action = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(parallel_modules_), "pending-action"));
+	    g_object_set_data(G_OBJECT(parallel_modules_), "pending-action", nullptr);
+	    if (action == 1)
+		    model.visit_parallel(model.parsed_search_modules(), text(parallel_reference_));
+	    else if (action == 2)
+		    model.edit_parallel_set(XC_PARALLEL_PROFILE_CREATE, text(parallel_name_), "", model.parsed_search_modules(), active(parallel_default_));
+	    else {
+		    const auto i = gtk_drop_down_get_selected(GTK_DROP_DOWN(parallel_sets_));
+		    const auto &sets = model.parallel_profile().sets;
+		    if (i < sets.size())
+			    model.edit_parallel_set(XC_PARALLEL_PROFILE_SAVE, sets[i].key, "", model.parsed_search_modules(), active(parallel_default_));
+	    }
+    } else if (GPOINTER_TO_INT(g_object_get_data(G_OBJECT(search_text_), "start-after-parse"))) {
+	    g_object_set_data(G_OBJECT(search_text_), "start-after-parse", nullptr);
+	    SearchInput input;
+	    input.modules = model.parsed_search_modules();
+	    input.expression = text(search_text_);
+	    input.mode = gtk_drop_down_get_selected(GTK_DROP_DOWN(search_mode_));
+	    const auto scope = gtk_drop_down_get_selected(GTK_DROP_DOWN(search_scope_));
+	    input.scope = scope == 3 ? XC_SEARCH_SCOPE_ALL : static_cast<xc_search_scope_kind>(scope);
+	    input.range = text(range_);
+	    input.mixed = active(mixed_);
+	    if (scope == 3)
+		    input.interval = std::make_pair(text(first_key_), text(last_key_));
+	    auto i = gtk_drop_down_get_selected(GTK_DROP_DOWN(range_module_));
+	    if (i < search_ids_.size())
+		    input.range_module = search_ids_[i];
+	    input.case_sensitive = active(case_);
+	    if (active(annotations_) && input.mode != XC_SEARCH_PHRASE)
+		    input.annotations = xc_search_text_options{active(annotation_[0]), active(annotation_[1]), active(annotation_[2])};
+	    if (!model.search(input))
+		    gtk_label_set_text(GTK_LABEL(search_status_), model.error().empty() ? "Choose at least one module and enter a search expression." : model.error().c_str());
     } else {
-      std::string names; for (const auto &m : model.parsed_search_modules()) { if (!names.empty()) names += ","; names += m; } gtk_editable_set_text(GTK_EDITABLE(search_modules_), names.c_str());
+	    std::string names;
+	    for (const auto &m : model.parsed_search_modules()) {
+		    if (!names.empty())
+			    names += ",";
+		    names += m;
+	    }
+	    gtk_editable_set_text(GTK_EDITABLE(search_modules_), names.c_str());
     }
   }
   const auto &output = model.search_export();
@@ -338,15 +458,31 @@ void StudyUI::tick(ReaderModel &model) {
   enabled = model.ready() && !model.busy();
   const auto progress = model.search_progress(); gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress_), progress.percent / 100.0);
   // Keep Stop reachable while the shared operation is running.
-  for (auto *w : {search_modules_, search_text_, search_mode_, search_scope_, range_module_, range_, case_, annotations_, search_start_, search_import_, search_reset_, saved_modules_, saved_ranges_, apply_modules_, apply_range_}) gtk_widget_set_sensitive(w, enabled);
+  for (auto *w : {mixed_, first_key_, last_key_, list_label_, search_modules_, search_text_, search_mode_, search_scope_, range_module_, range_, case_, annotations_, search_start_, search_import_, search_reset_, saved_modules_, saved_ranges_, apply_modules_, apply_range_})
+	  gtk_widget_set_sensitive(w, enabled);
   for (auto *w : annotation_) gtk_widget_set_sensitive(w, enabled && active(annotations_) && gtk_drop_down_get_selected(GTK_DROP_DOWN(search_mode_)) != XC_SEARCH_PHRASE);
   gtk_widget_set_sensitive(search_start_, enabled && !text(search_modules_).empty() && !text(search_text_).empty());
-  gtk_widget_set_sensitive(search_stop_, model.busy()); gtk_widget_set_sensitive(search_clear_, enabled && result.scope.present);
+  gtk_widget_set_sensitive(search_stop_, model.busy());
+  gtk_widget_set_sensitive(search_clear_, enabled && (result.scope.present || result.generation.id));
   gtk_widget_set_sensitive(open_, enabled && !selection().empty());
   for (auto *w : {copy_, save_}) gtk_widget_set_sensitive(w, enabled && !dialog_ && result.generation.id && (active(export_all_) || !selection().empty()));
   gtk_widget_set_sensitive(export_images_, enabled && active(export_html_) && active(export_scripture_));
   gtk_widget_set_sensitive(export_partial_, enabled && active(export_context_) && (result.generation.cancelled || result.generation.failed_groups || result.generation.group_count < result.generation.requested_count));
   if (enabled && !model.error().empty()) g_object_set_data(G_OBJECT(search_text_), "start-after-parse", nullptr);
+  if (parallel_box_)
+	  update_parallel();
+  if (notes_box_ || editor_box_)
+	  update_repositories();
+  if (!model.busy() && !restore_sources_.empty()) {
+	  const auto source = restore_sources_.front();
+	  restore_sources_.erase(restore_sources_.begin());
+	  if (source.first == 0)
+		  model.open_bookmarks(source.second);
+	  else if (source.first == 1)
+		  model.open_annotations(source.second);
+	  else
+		  model.load_parallel_profile(source.second);
+  }
   updating_ = false;
 }
 }

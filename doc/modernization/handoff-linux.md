@@ -45,6 +45,14 @@ had 203 passes and one optional BibleSync skip after rerunning two HTTPS fixture
 with loopback access. These test results cover that branch. Validate the complete
 suite on master and a maintained Debian/Ubuntu target before finalizing the matrix.
 
+## Linux parity integration
+
+The Linux parity branch adds native library, repository, session, recovery,
+parallel reading and study UI adapters. Its Fedora desktop smoke verified
+parallel link navigation from nested markup with module inline handlers
+disabled. The pre-merge branch recorded 203 CTest passes and one optional
+BibleSync skip.
+
 ## Next validation
 
 Consume current shared APIs, run the local portable/desktop checks in the

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-#include "reader_model.hpp"
+#include "library_ui.hpp"
 #include "reader_document.hpp"
+#include "reader_model.hpp"
+#include "session_model.hpp"
 #include "study_ui.hpp"
 using xiphos::linux_preview::document;
 #include <gtk/gtk.h>
@@ -19,45 +21,56 @@ const unsigned reading_flags[] = {XC_ENGINE_WORDS_IN_RED, XC_ENGINE_STRONGS, XC_
   XC_ENGINE_LEMMAS, XC_ENGINE_TRANSLITERATED_FORMS, XC_ENGINE_GLOSSES, XC_ENGINE_MORPHEME_SEGMENTATION};
 const char *reading_names[] = {"Words of Christ in Red", "Strong's Numbers", "Morphological Tags", "Footnotes",
   "Cross-references", "Greek Accents", "Hebrew Vowel Points", "Hebrew Cantillation", "Lemmas", "Transliterated Forms", "Glosses", "Morpheme Segmentation"};
+struct Process;
 struct App {
-  xc_worker *shared_worker = nullptr;
-  GtkApplication *application = nullptr;
-  GtkWidget *window = nullptr, *reference = nullptr, *bible = nullptr, *commentary = nullptr;
-  GtkWidget *module_description = nullptr, *commentary_description = nullptr, *dictionary_description = nullptr;
-  GtkWidget *back = nullptr, *forward = nullptr, *go = nullptr, *status = nullptr;
-  GtkWidget *chapter_mode = nullptr, *commentary_mode = nullptr, *numbers = nullptr, *highlight = nullptr;
-  GtkWidget *selectors[3] = {}, *previous_chapter = nullptr, *next_chapter = nullptr, *clear_history = nullptr;
-  bool updating = false;
-  std::string selector_identity;
-  GtkWidget *dictionary_module = nullptr, *dictionary_key = nullptr, *dictionary_lookup = nullptr;
-  GtkWidget *dictionary_previous = nullptr, *dictionary_next = nullptr, *dictionary_back = nullptr, *dictionary_forward = nullptr;
-  GtkWidget *dictionary_nearby = nullptr, *dictionary_clear = nullptr, *dictionary_close = nullptr;
-  GtkWidget *reading_checks[12] = {}, *variants = nullptr, *headings = nullptr;
-  GtkWidget *number_checks[2] = {}, *spacing_checks[2] = {};
-  GtkWidget *content_checks[4] = {}, *profile_import = nullptr, *profile_save = nullptr;
-  GtkNativeDialog *file_dialog = nullptr;
-  WebKitWebView *sidebar_view = nullptr, *information_view = nullptr;
-  GtkWidget *reference_list = nullptr, *preview_close = nullptr, *show_references = nullptr, *show_note = nullptr, *preview_metadata = nullptr;
-  GtkWidget *lexicon_entries[5] = {}, *lexicon_unset[5] = {}, *lexicon_apply = nullptr, *lexicon_import = nullptr, *lexicon_save = nullptr;
-  GtkWidget *lexicon_candidates[5] = {}; std::vector<std::string> lexicon_candidate_ids[5];
-  std::string sidebar_identity, information_identity, hover_uri;
-  WebKitWebView *dictionary_view = nullptr;
-  std::vector<std::string> dictionaries;
-  xiphos::linux_preview::Dictionary rendered_dictionary;
-  bool dictionary_loaded = false;
-  std::string dictionary_choices_identity, dictionary_submitted;
-  WebKitWebView *bible_view = nullptr, *commentary_view = nullptr;
-  std::unique_ptr<ReaderModel> model;
-  std::unique_ptr<xiphos::linux_preview::StudyUI> study_ui;
-  std::vector<std::string> bibles, commentaries{""};
-  std::string root, rendered, submitted_draft, bible_anchor, commentary_anchor, dictionary_anchor;
-  bool bible_uri_anchor = false, commentary_uri_anchor = false, dictionary_uri_anchor = false;
-  unsigned scroll_jobs = 0, scroll_successes = 0, bible_scroll_successes = 0;
-  guint timer = 0;
-  bool automatic_start = true, startup_read_started = false, startup_smoke = false;
-  bool options_smoke = false, preview_smoke = false, lexical_smoke = false, window_smoke = false; unsigned initial_flags = 0; std::string initial_html;
-  bool populated = false, closing = false, smoke = false, smoke_failed = false, software = false;
-  unsigned smoke_stage = 0, loaded = 0;
+	Process *process = nullptr;
+	std::string session_path, session_key, session_notice;
+	bool no_session = false, approved_session_close = false, restored_host_applied = false, preserve_restored_draft = false;
+	std::optional<xiphos::linux_preview::RestoredWindow> restored;
+	std::vector<xiphos::linux_preview::RecoveryDraft> recovered_drafts;
+	GtkWidget *reading_tabs = nullptr;
+	xc_worker *shared_worker = nullptr;
+	GtkApplication *application = nullptr;
+	GtkWidget *window = nullptr, *reference = nullptr, *bible = nullptr, *commentary = nullptr;
+	GtkWidget *module_description = nullptr, *commentary_description = nullptr, *dictionary_description = nullptr;
+	GtkWidget *back = nullptr, *forward = nullptr, *go = nullptr, *status = nullptr;
+	GtkWidget *chapter_mode = nullptr, *commentary_mode = nullptr, *numbers = nullptr, *highlight = nullptr;
+	GtkWidget *selectors[3] = {}, *previous_chapter = nullptr, *next_chapter = nullptr, *clear_history = nullptr;
+	bool updating = false;
+	unsigned catalog_version = 0, library_version = 0;
+	std::string selector_identity;
+	GtkWidget *dictionary_module = nullptr, *dictionary_key = nullptr, *dictionary_lookup = nullptr;
+	GtkWidget *dictionary_previous = nullptr, *dictionary_next = nullptr, *dictionary_back = nullptr, *dictionary_forward = nullptr;
+	GtkWidget *dictionary_nearby = nullptr, *dictionary_clear = nullptr, *dictionary_close = nullptr;
+	GtkWidget *reading_checks[12] = {}, *variants = nullptr, *headings = nullptr;
+	GtkWidget *number_checks[2] = {}, *spacing_checks[2] = {};
+	GtkWidget *content_checks[4] = {}, *profile_import = nullptr, *profile_save = nullptr;
+	GtkNativeDialog *file_dialog = nullptr;
+	WebKitWebView *sidebar_view = nullptr, *information_view = nullptr;
+	GtkWidget *reference_list = nullptr, *preview_close = nullptr, *show_references = nullptr, *show_note = nullptr, *preview_metadata = nullptr;
+	GtkWidget *lexicon_entries[5] = {}, *lexicon_unset[5] = {}, *lexicon_apply = nullptr, *lexicon_import = nullptr, *lexicon_save = nullptr;
+	GtkWidget *lexicon_candidates[5] = {};
+	std::vector<std::string> lexicon_candidate_ids[5];
+	std::string sidebar_identity, information_identity, hover_uri;
+	WebKitWebView *dictionary_view = nullptr;
+	std::vector<std::string> dictionaries;
+	xiphos::linux_preview::Dictionary rendered_dictionary;
+	bool dictionary_loaded = false;
+	std::string dictionary_choices_identity, dictionary_submitted;
+	WebKitWebView *bible_view = nullptr, *commentary_view = nullptr;
+	std::unique_ptr<ReaderModel> model;
+	std::unique_ptr<xiphos::linux_preview::StudyUI> study_ui;
+	std::vector<std::string> bibles, commentaries{""};
+	std::string root, rendered, submitted_draft, bible_anchor, commentary_anchor, dictionary_anchor;
+	bool bible_uri_anchor = false, commentary_uri_anchor = false, dictionary_uri_anchor = false;
+	unsigned scroll_jobs = 0, scroll_successes = 0, bible_scroll_successes = 0;
+	guint timer = 0;
+	bool automatic_start = true, startup_read_started = false, startup_smoke = false;
+	bool options_smoke = false, preview_smoke = false, lexical_smoke = false, window_smoke = false;
+	unsigned initial_flags = 0;
+	std::string initial_html;
+	bool populated = false, closing = false, smoke = false, smoke_failed = false, software = false;
+	unsigned smoke_stage = 0, loaded = 0;
 };
 std::string selected(GtkWidget *dropdown, const std::vector<std::string> &ids) {
   const auto index = gtk_drop_down_get_selected(GTK_DROP_DOWN(dropdown));
@@ -67,7 +80,10 @@ void select(GtkWidget *dropdown, const std::vector<std::string> &ids, const std:
   for (size_t i = 0; i < ids.size(); ++i)
     if (ids[i] == id) { gtk_drop_down_set_selected(GTK_DROP_DOWN(dropdown), i); return; }
 }
+unsigned library_changed(Process *p);
 void shutdown(App *app);
+bool request_close(App *app);
+void cancel_quit(Process *process, bool accepted);
 void choose_profile(App *app, bool save, bool lexicon = false) {
   if (app->closing || app->file_dialog || !app->model || app->model->busy()) return;
   auto *dialog = gtk_file_chooser_native_new(lexicon ? (save ? "Save lexicon choices" : "Import lexicon choices") : (save ? "Save reading options" : "Import reading options"), GTK_WINDOW(app->window),
@@ -92,8 +108,9 @@ void choose_profile(App *app, bool save, bool lexicon = false) {
   gtk_native_dialog_show(app->file_dialog);
 }
 void go(App *app) {
-  app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference));
-  app->model->visit(selected(app->bible, app->bibles), selected(app->commentary, app->commentaries), gtk_editable_get_text(GTK_EDITABLE(app->reference)));
+	app->preserve_restored_draft = false;
+	app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference));
+	app->model->visit(selected(app->bible, app->bibles), selected(app->commentary, app->commentaries), gtk_editable_get_text(GTK_EDITABLE(app->reference)));
 }
 
 gboolean policy(WebKitWebView *view, WebKitPolicyDecision *decision, WebKitPolicyDecisionType type, gpointer data) {
@@ -106,8 +123,9 @@ gboolean policy(WebKitWebView *view, WebKitPolicyDecision *decision, WebKitPolic
         auto *request = webkit_navigation_action_get_request(action);
         const char *uri = webkit_uri_request_get_uri(request);
         const auto &passage = app->model->passage();
-        app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference));
-        std::string module = view == app->commentary_view ? passage.commentary : passage.bible, context = passage.reference;
+	app->preserve_restored_draft = false;
+	app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference));
+	std::string module = view == app->commentary_view ? passage.commentary : passage.bible, context = passage.reference;
         if (view == app->sidebar_view) {
           const auto &preview = app->model->showing_references() ? app->model->references() : app->model->note();
           module = preview.module; context = preview.reference;
@@ -174,36 +192,88 @@ gboolean tick(gpointer data) {
   auto *app = static_cast<App *>(data);
   if (app->closing) return G_SOURCE_REMOVE;
   app->model->tick();
+  if (app->process && app->model->ready() && !app->model->busy() && app->library_version != library_changed(app->process)) {
+	  app->library_version = library_changed(app->process);
+	  app->model->reload_modules();
+	  app->rendered.clear();
+  }
   if (app->study_ui) app->study_ui->tick(*app->model);
+  if (app->restored && !app->restored_host_applied && app->model->ready() && !app->model->busy()) {
+	  app->restored_host_applied = true;
+	  app->study_ui->restore_state(app->restored->host);
+	  if (auto draft = xiphos::linux_preview::StudyUI::reference_draft(app->restored->host))
+		  gtk_editable_set_text(GTK_EDITABLE(app->reference), draft->c_str());
+	  app->preserve_restored_draft = true;
+	  gtk_notebook_set_current_page(GTK_NOTEBOOK(app->reading_tabs), app->restored->parallel_showing ? 1 : 0);
+  }
+  if (!app->recovered_drafts.empty() && app->model->ready() && !app->model->busy()) {
+	  if (app->study_ui->recover_draft(app->recovered_drafts.front())) {
+		  app->session_notice = "Recovered draft. Save checks the original source revision.";
+		  app->recovered_drafts.erase(app->recovered_drafts.begin());
+	  }
+  }
   app->updating = true;
-  if (app->model->ready() && !app->populated) {
-    auto *bibles = gtk_string_list_new(nullptr), *commentaries = gtk_string_list_new(nullptr), *dictionaries = gtk_string_list_new(nullptr);
-    gtk_string_list_append(commentaries, "No commentary");
-    for (const auto &module : app->model->modules()) {
-      const auto label = module.id;
-      if (module.type == "Biblical Texts" || module.type == "Commentaries") { app->bibles.push_back(module.id); gtk_string_list_append(bibles, label.c_str()); }
-      if (module.dictionary) { app->dictionaries.push_back(module.id); gtk_string_list_append(dictionaries, label.c_str()); }
-      if (module.type == "Commentaries") { app->commentaries.push_back(module.id); gtk_string_list_append(commentaries, label.c_str()); }
-    }
-    gtk_drop_down_set_model(GTK_DROP_DOWN(app->bible), G_LIST_MODEL(bibles));
-    gtk_drop_down_set_model(GTK_DROP_DOWN(app->commentary), G_LIST_MODEL(commentaries));
-    const unsigned roles[] = {XIPHOS_LEXICON_GREEK_DEF, XIPHOS_LEXICON_HEBREW_DEF, XIPHOS_LEXICON_GREEK_PARSE, XIPHOS_LEXICON_GREEK_PARSE, XIPHOS_LEXICON_HEBREW_PARSE};
-    for (int i = 0; i < 5; ++i) {
-      auto *choices = gtk_string_list_new(nullptr);
-      for (const auto &module : app->model->modules()) if (module.dictionary && (module.lexicon_roles & roles[i])) {
-        app->lexicon_candidate_ids[i].push_back(module.id); gtk_string_list_append(choices, module.id.c_str());
-      }
-      gtk_drop_down_set_model(GTK_DROP_DOWN(app->lexicon_candidates[i]), G_LIST_MODEL(choices)); g_object_unref(choices);
-      gtk_drop_down_set_selected(GTK_DROP_DOWN(app->lexicon_candidates[i]), GTK_INVALID_LIST_POSITION);
-    }
-    gtk_drop_down_set_model(GTK_DROP_DOWN(app->dictionary_module), G_LIST_MODEL(dictionaries)); g_object_unref(dictionaries);
-    g_object_unref(bibles); g_object_unref(commentaries); app->populated = true;
+  if (app->model->ready() && (!app->populated || app->catalog_version != app->model->catalog_version())) {
+	  app->catalog_version = app->model->catalog_version();
+	  app->bibles.clear();
+	  app->commentaries.assign(1, "");
+	  app->dictionaries.clear();
+	  for (auto &ids : app->lexicon_candidate_ids)
+		  ids.clear();
+	  auto *bibles = gtk_string_list_new(nullptr), *commentaries = gtk_string_list_new(nullptr), *dictionaries = gtk_string_list_new(nullptr);
+	  gtk_string_list_append(commentaries, "No commentary");
+	  for (const auto &module : app->model->modules()) {
+		  const auto label = module.id;
+		  if (module.type == "Biblical Texts" || module.type == "Commentaries") {
+			  app->bibles.push_back(module.id);
+			  gtk_string_list_append(bibles, label.c_str());
+		  }
+		  if (module.dictionary) {
+			  app->dictionaries.push_back(module.id);
+			  gtk_string_list_append(dictionaries, label.c_str());
+		  }
+		  if (module.type == "Commentaries") {
+			  app->commentaries.push_back(module.id);
+			  gtk_string_list_append(commentaries, label.c_str());
+		  }
+	  }
+	  gtk_drop_down_set_model(GTK_DROP_DOWN(app->bible), G_LIST_MODEL(bibles));
+	  gtk_drop_down_set_model(GTK_DROP_DOWN(app->commentary), G_LIST_MODEL(commentaries));
+	  const unsigned roles[] = {XIPHOS_LEXICON_GREEK_DEF, XIPHOS_LEXICON_HEBREW_DEF, XIPHOS_LEXICON_GREEK_PARSE, XIPHOS_LEXICON_GREEK_PARSE, XIPHOS_LEXICON_HEBREW_PARSE};
+	  for (int i = 0; i < 5; ++i) {
+		  auto *choices = gtk_string_list_new(nullptr);
+		  for (const auto &module : app->model->modules())
+			  if (module.dictionary && (module.lexicon_roles & roles[i])) {
+				  app->lexicon_candidate_ids[i].push_back(module.id);
+				  gtk_string_list_append(choices, module.id.c_str());
+			  }
+		  gtk_drop_down_set_model(GTK_DROP_DOWN(app->lexicon_candidates[i]), G_LIST_MODEL(choices));
+		  g_object_unref(choices);
+		  gtk_drop_down_set_selected(GTK_DROP_DOWN(app->lexicon_candidates[i]), GTK_INVALID_LIST_POSITION);
+	  }
+	  gtk_drop_down_set_model(GTK_DROP_DOWN(app->dictionary_module), G_LIST_MODEL(dictionaries));
+	  g_object_unref(dictionaries);
+	  g_object_unref(bibles);
+	  g_object_unref(commentaries);
+	  app->populated = true;
   }
   const auto &passage = app->model->passage();
-  const auto bible_html = app->model->show_chapter() ? app->model->bible_chapter().html : passage.bible_html;
-  const auto commentary_html = app->model->show_commentary_chapter() ? app->model->commentary_chapter().html : passage.commentary_html;
-  const auto &bible_css = app->model->show_chapter() ? app->model->bible_chapter().lexical.css : passage.bible_lexical.css;
-  const auto &commentary_css = app->model->show_commentary_chapter() ? app->model->commentary_chapter().lexical.css : passage.commentary_lexical.css;
+  auto bible_html = app->model->show_chapter() ? app->model->bible_chapter().html : passage.bible_html;
+  auto commentary_html = app->model->show_commentary_chapter() ? app->model->commentary_chapter().html : passage.commentary_html;
+  auto bible_css = app->model->show_chapter() ? app->model->bible_chapter().lexical.css : passage.bible_lexical.css;
+  auto commentary_css = app->model->show_commentary_chapter() ? app->model->commentary_chapter().lexical.css : passage.commentary_lexical.css;
+  for (int i = 0; i < 2; ++i) {
+	  const auto &d = app->model->decorated(i != 0);
+	  if (d.version && d.reference == passage.reference && d.module == (i ? passage.commentary : passage.bible) && d.chapter == (i ? app->model->show_commentary_chapter() : app->model->show_chapter())) {
+		  if (i) {
+			  commentary_html = d.html;
+			  commentary_css = d.css;
+		  } else {
+			  bible_html = d.html;
+			  bible_css = d.css;
+		  }
+	  }
+  }
   const auto identity = bible_css + "\n" + commentary_css + "\n" + passage.bible + "\n" + passage.commentary + "\n" + passage.reference + "\n" + bible_html + commentary_html + "\n" + passage.anchor_module + "\n" + (passage.anchor ? *passage.anchor : "") + "\n" + std::to_string(passage.anchor_revision);
   if (!app->model->busy() && !passage.bible.empty() && identity != app->rendered) {
     app->rendered = identity;
@@ -214,8 +284,8 @@ gboolean tick(gpointer data) {
     if (app->bible_uri_anchor) app->bible_anchor = *passage.anchor;
     if (app->commentary_uri_anchor) app->commentary_anchor = *passage.anchor;
     select(app->bible, app->bibles, passage.bible); select(app->commentary, app->commentaries, passage.commentary);
-    if (app->submitted_draft == gtk_editable_get_text(GTK_EDITABLE(app->reference)))
-      gtk_editable_set_text(GTK_EDITABLE(app->reference), passage.reference.c_str());
+    if (!app->preserve_restored_draft && app->submitted_draft == gtk_editable_get_text(GTK_EDITABLE(app->reference)))
+	    gtk_editable_set_text(GTK_EDITABLE(app->reference), passage.reference.c_str());
     webkit_web_view_load_html(app->bible_view, document(bible_html, bible_css).c_str(), "xiphos-preview://study/");
     webkit_web_view_load_html(app->commentary_view, document(commentary_html, commentary_css).c_str(), "xiphos-preview://study/");
   }
@@ -367,7 +437,11 @@ gboolean tick(gpointer data) {
   }
   app->updating = false;
   const auto &error = app->model->error();
-  gtk_label_set_text(GTK_LABEL(app->status), !error.empty() ? error.c_str() : app->model->busy() ? "Loading…" : app->populated && app->bibles.empty() ? "No Bible modules found. Open a SWORD library with --root DIRECTORY." : !app->model->notice().empty() ? app->model->notice().c_str() : "Ready");
+  gtk_label_set_text(GTK_LABEL(app->status), !error.empty() ? error.c_str() : app->model->busy()		  ? "Loading…"
+									  : app->populated && app->bibles.empty() ? "No Bible modules found. Open a SWORD library with --root DIRECTORY."
+									  : !app->model->notice().empty()	  ? app->model->notice().c_str()
+									  : !app->session_notice.empty()	  ? app->session_notice.c_str()
+														  : "Ready");
   if (app->smoke && enabled) {
     if (!error.empty()) {
       app->smoke_failed = true; std::cerr << error << "\n"; gtk_window_close(GTK_WINDOW(app->window)); return G_SOURCE_REMOVE;
@@ -560,6 +634,7 @@ void activate(GtkApplication *application, gpointer data) {
       const auto index = gtk_drop_down_get_selected(GTK_DROP_DOWN(object)); const auto &choices = app->model->choices(kind);
       if (index >= choices.size()) return;
       const auto passage = app->model->passage(); const auto target = choices[index].target;
+      app->preserve_restored_draft = false;
       app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference));
       app->model->visit(passage.bible, passage.commentary, target);
     }), app);
@@ -581,13 +656,22 @@ void activate(GtkApplication *application, gpointer data) {
       }
     }), app);
   }
+  auto *library_button = gtk_button_new_with_label("Module library");
+  gtk_box_append(GTK_BOX(reading_bar), library_button);
+  gtk_actionable_set_action_name(GTK_ACTIONABLE(library_button), "app.library");
+  auto *save_session = gtk_button_new_with_label("Save session");
+  gtk_box_append(GTK_BOX(reading_bar), save_session);
+  gtk_actionable_set_action_name(GTK_ACTIONABLE(save_session), "app.save-session");
   app->clear_history = gtk_button_new_with_label("Clear history"); gtk_box_append(GTK_BOX(reading_bar), app->clear_history);
   g_signal_connect(app->clear_history, "clicked", G_CALLBACK(+[](GtkButton *, gpointer data) { static_cast<App *>(data)->model->clear_history(); }), app);
   for (auto *button : {app->previous_chapter, app->next_chapter}) {
-    g_signal_connect(button, "clicked", G_CALLBACK(+[](GtkButton *button, gpointer data) {
-      auto *app = static_cast<App *>(data); app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference));
-      app->model->navigate_chapter(GTK_WIDGET(button) == app->previous_chapter ? -1 : 1);
-    }), app);
+	  g_signal_connect(button, "clicked", G_CALLBACK(+[](GtkButton *button, gpointer data) {
+				   auto *app = static_cast<App *>(data);
+				   app->preserve_restored_draft = false;
+				   app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference));
+				   app->model->navigate_chapter(GTK_WIDGET(button) == app->previous_chapter ? -1 : 1);
+			   }),
+			   app);
   }
   auto *options_button = gtk_menu_button_new(); gtk_menu_button_set_label(GTK_MENU_BUTTON(options_button), "Reading options");
   auto *options_popover = gtk_popover_new(); auto *options_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
@@ -729,10 +813,15 @@ void activate(GtkApplication *application, gpointer data) {
   auto *library_tabs = gtk_notebook_new();
   gtk_notebook_append_page(GTK_NOTEBOOK(library_tabs), library, gtk_label_new("Study"));
   gtk_notebook_append_page(GTK_NOTEBOOK(library_tabs), app->study_ui->search_pane(), gtk_label_new("Search"));
+  gtk_notebook_append_page(GTK_NOTEBOOK(library_tabs), app->study_ui->notes_pane(), gtk_label_new("Notes"));
   gtk_paned_set_start_child(GTK_PANED(panes), library_tabs);
   auto *study = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
   gtk_paned_set_end_child(GTK_PANED(panes), study); gtk_paned_set_position(GTK_PANED(panes), 240);
-  gtk_paned_set_start_child(GTK_PANED(study), pane(app, "Reading", &app->bible_view));
+  auto *reading_tabs = gtk_notebook_new();
+  app->reading_tabs = reading_tabs;
+  gtk_notebook_append_page(GTK_NOTEBOOK(reading_tabs), pane(app, "Reading", &app->bible_view), gtk_label_new("Reading"));
+  gtk_notebook_append_page(GTK_NOTEBOOK(reading_tabs), app->study_ui->parallel_pane(), gtk_label_new("Parallel"));
+  gtk_paned_set_start_child(GTK_PANED(study), reading_tabs);
   auto *right = gtk_paned_new(GTK_ORIENTATION_VERTICAL);
   gtk_paned_set_end_child(GTK_PANED(study), right); gtk_paned_set_position(GTK_PANED(study), 520);
   gtk_paned_set_start_child(GTK_PANED(right), pane(app, "Commentary", &app->commentary_view));
@@ -740,6 +829,7 @@ void activate(GtkApplication *application, gpointer data) {
   auto *content_tabs = gtk_notebook_new();
   gtk_notebook_append_page(GTK_NOTEBOOK(content_tabs), dictionary_box, gtk_label_new("Dictionary"));
   gtk_notebook_append_page(GTK_NOTEBOOK(content_tabs), app->study_ui->book_pane(), gtk_label_new("General book"));
+  gtk_notebook_append_page(GTK_NOTEBOOK(content_tabs), app->study_ui->editor_pane(), gtk_label_new("Editor"));
   gtk_paned_set_end_child(GTK_PANED(right), content_tabs);
   app->dictionary_module = gtk_drop_down_new(nullptr, nullptr); gtk_box_append(GTK_BOX(dictionary_box), app->dictionary_module);
   app->dictionary_description = description(dictionary_box);
@@ -786,12 +876,11 @@ void activate(GtkApplication *application, gpointer data) {
   gtk_accessible_update_property(GTK_ACCESSIBLE(app->commentary_view), GTK_ACCESSIBLE_PROPERTY_LABEL, "Commentary passage", -1);
   app->status = gtk_label_new("Starting study engine…"); gtk_box_append(GTK_BOX(box), app->status);
   const GActionEntry actions[] = {
-    {"go", +[](GSimpleAction *, GVariant *, gpointer data) { go(static_cast<App *>(data)); }, nullptr, nullptr, nullptr, {}},
-    {"back", +[](GSimpleAction *, GVariant *, gpointer data) { auto *app = static_cast<App *>(data); app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference)); app->model->navigate(-1); }, nullptr, nullptr, nullptr, {}},
-    {"forward", +[](GSimpleAction *, GVariant *, gpointer data) { auto *app = static_cast<App *>(data); app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference)); app->model->navigate(1); }, nullptr, nullptr, nullptr, {}},
-    {"focus-reference", +[](GSimpleAction *, GVariant *, gpointer data) { gtk_widget_grab_focus(static_cast<App *>(data)->reference); }, nullptr, nullptr, nullptr, {}},
-    {"close", +[](GSimpleAction *, GVariant *, gpointer data) { gtk_window_close(GTK_WINDOW(static_cast<App *>(data)->window)); }, nullptr, nullptr, nullptr, {}}
-  };
+      {"go", +[](GSimpleAction *, GVariant *, gpointer data) { go(static_cast<App *>(data)); }, nullptr, nullptr, nullptr, {}},
+      {"back", +[](GSimpleAction *, GVariant *, gpointer data) { auto *app = static_cast<App *>(data); app->preserve_restored_draft = false; app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference)); app->model->navigate(-1); }, nullptr, nullptr, nullptr, {}},
+      {"forward", +[](GSimpleAction *, GVariant *, gpointer data) { auto *app = static_cast<App *>(data); app->preserve_restored_draft = false; app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference)); app->model->navigate(1); }, nullptr, nullptr, nullptr, {}},
+      {"focus-reference", +[](GSimpleAction *, GVariant *, gpointer data) { gtk_widget_grab_focus(static_cast<App *>(data)->reference); }, nullptr, nullptr, nullptr, {}},
+      {"close", +[](GSimpleAction *, GVariant *, gpointer data) { gtk_window_close(GTK_WINDOW(static_cast<App *>(data)->window)); }, nullptr, nullptr, nullptr, {}}};
   g_action_map_add_action_entries(G_ACTION_MAP(app->window), actions, G_N_ELEMENTS(actions), app);
   for (const auto &entry : actions) g_simple_action_set_enabled(G_SIMPLE_ACTION(g_action_map_lookup_action(G_ACTION_MAP(app->window), entry.name)), std::string(entry.name) == "close");
   gtk_actionable_set_action_name(GTK_ACTIONABLE(app->go), "win.go");
@@ -809,9 +898,17 @@ void activate(GtkApplication *application, gpointer data) {
   g_signal_connect(app->reference, "activate", G_CALLBACK(+[](GtkEntry *, gpointer data) {
     auto *app = static_cast<App *>(data); gtk_widget_activate_action(app->window, "win.go", nullptr);
   }), app);
-  g_signal_connect(app->window, "close-request", G_CALLBACK(+[](GtkWindow *, gpointer data) -> gboolean { shutdown(static_cast<App *>(data)); return FALSE; }), app);
-  try { app->model = app->shared_worker ? std::make_unique<ReaderModel>(*app->shared_worker) : std::make_unique<ReaderModel>(app->root.empty() ? nullptr : app->root.c_str()); }
-  catch (const std::exception &error) { gtk_label_set_text(GTK_LABEL(app->status), error.what()); gtk_widget_set_sensitive(box, FALSE); gtk_window_present(GTK_WINDOW(app->window)); return; }
+  g_signal_connect(app->window, "close-request", G_CALLBACK(+[](GtkWindow *, gpointer data) -> gboolean { auto *app = static_cast<App *>(data); if (app->study_ui && !app->study_ui->confirm_close()) return TRUE; if (!request_close(app)) return TRUE; shutdown(app); return FALSE; }), app);
+  try {
+	  app->model = app->shared_worker ? (app->restored ? std::make_unique<ReaderModel>(*app->shared_worker, *app->restored) : std::make_unique<ReaderModel>(*app->shared_worker)) : std::make_unique<ReaderModel>(app->root.empty() ? nullptr : app->root.c_str());
+  } catch (const std::exception &error) {
+	  gtk_label_set_text(GTK_LABEL(app->status), error.what());
+	  gtk_widget_set_sensitive(box, FALSE);
+	  gtk_window_present(GTK_WINDOW(app->window));
+	  return;
+  }
+  if (app->study_ui)
+	  app->study_ui->on_close_decision = [app](bool accepted) { cancel_quit(app->process, accepted); };
   app->timer = g_timeout_add(10, tick, app);
   tick(app); gtk_window_present(GTK_WINDOW(app->window));
 }
@@ -820,14 +917,347 @@ struct Process {
   xc_worker *worker = nullptr;
   App *prototype = nullptr;
   std::vector<std::unique_ptr<App>> windows;
+  std::unique_ptr<xiphos::linux_preview::SessionModel> session;
+  std::unique_ptr<xiphos::linux_preview::RecoveryModel> recovery;
+  bool recovery_checked = false, recovery_decided = false, recovery_disabled = false;
+  GtkWidget *recovery_dialog = nullptr;
+  gint64 next_recovery = 0;
+  enum class SessionAction { recovery_start, idle,
+			     startup,
+			     save,
+			     close_wait,
+			     close_save,
+			     quit_wait,
+			     quit_save,
+			     quit_recovery,
+			     close_recovery } session_action = SessionAction::idle;
+  App *pending_close = nullptr;
+  bool started = false, quitting = false, storage_disabled = false;
+  std::unique_ptr<xiphos::linux_preview::LibraryModel> library;
+  std::unique_ptr<xiphos::linux_preview::LibraryUI> library_ui;
+  guint library_timer = 0;
+  guint session_timer = 0;
 };
-void new_window(Process *process) {
-  auto window = std::make_unique<App>();
-  window->application = process->application; window->shared_worker = process->worker;
-  window->automatic_start = !process->prototype->window_smoke;
-  window->software = process->prototype->software; window->root = process->prototype->root;
-  auto *state = window.get(); process->windows.push_back(std::move(window));
-  activate(process->application, state);
+unsigned library_changed(Process *p)
+{
+	if (!p)
+		return 0;
+	unsigned version = p->library ? p->library->changed() : 0;
+	for (const auto &w : p->windows)
+		if (w->model)
+			version += w->model->content_version();
+	return version;
+}
+void new_window(Process *process, std::optional<xiphos::linux_preview::RestoredWindow> restored = std::nullopt, bool start = true)
+{
+	auto window = std::make_unique<App>();
+	window->application = process->application;
+	window->shared_worker = process->worker;
+	window->process = process;
+	window->restored = restored;
+	if (restored)
+		window->session_key = restored->key;
+	else {
+		auto *id = g_uuid_string_random();
+		window->session_key = id;
+		g_free(id);
+	}
+	window->automatic_start = start && !restored && !process->prototype->window_smoke;
+	window->session_notice = process->prototype->session_notice;
+	window->software = process->prototype->software;
+	window->root = process->prototype->root;
+	auto *state = window.get();
+	process->windows.push_back(std::move(window));
+	activate(process->application, state);
+}
+
+void freeze_windows(Process *p, bool freeze)
+{
+	for (const auto &w : p->windows)
+		if (!w->closing)
+			gtk_widget_set_sensitive(gtk_window_get_child(GTK_WINDOW(w->window)), !freeze);
+}
+bool windows_ready(Process *p)
+{
+	for (const auto &w : p->windows)
+		if (!w->closing && (!w->model || !w->model->ready() || w->model->busy()))
+			return false;
+	return true;
+}
+bool save_windows(Process *p, App *exclude = nullptr)
+{
+	std::vector<xiphos::linux_preview::WindowCapture> captures;
+	std::string active;
+	for (const auto &w : p->windows)
+		if (!w->closing && w.get() != exclude) {
+			captures.push_back({w->model.get(), w->session_key, w->study_ui->capture_state(gtk_editable_get_text(GTK_EDITABLE(w->reference))), w->reading_tabs && gtk_notebook_get_current_page(GTK_NOTEBOOK(w->reading_tabs)) == 1});
+			if (gtk_window_is_active(GTK_WINDOW(w->window)))
+				active = w->session_key;
+		}
+	if (active.empty() && !captures.empty())
+		active = captures.front().key;
+	return p->session->save(p->prototype->session_path, captures, active);
+}
+void cancel_quit(Process *p, bool accepted)
+{
+	if (!p || accepted)
+		return;
+	p->quitting = false;
+	if (p->session_action == Process::SessionAction::quit_wait) {
+		p->session_action = Process::SessionAction::idle;
+		freeze_windows(p, false);
+	}
+	for (const auto &w : p->windows)
+		if (!w->closing && w->study_ui)
+			w->study_ui->cancel_close();
+}
+void request_quit(Process *p)
+{
+	if ((p->session && p->session->busy()) || (p->recovery && p->recovery->busy()) || p->recovery_dialog)
+		return;
+	if (p->library && p->library->busy()) {
+		for (const auto &w : p->windows)
+			if (!w->closing)
+				w->session_notice = "Wait for or cancel the library operation before quitting.";
+		return;
+	}
+	p->quitting = true;
+	for (const auto &w : p->windows)
+		if (!w->closing && w->study_ui && !w->study_ui->confirm_close())
+			return;
+	if (!p->session || p->storage_disabled) {
+		for (const auto &w : p->windows)
+			if (!w->closing) {
+				w->approved_session_close = true;
+				gtk_window_close(GTK_WINDOW(w->window));
+			}
+		return;
+	}
+	p->session_action = Process::SessionAction::quit_wait;
+	freeze_windows(p, true);
+}
+bool request_close(App *app)
+{
+	auto *p = app->process;
+	if (!p || app->approved_session_close)
+		return true;
+	if (p->library && p->library->busy()) {
+		app->session_notice = "Wait for or cancel the library operation before closing.";
+		return false;
+	}
+	if (p->quitting) {
+		request_quit(p);
+		return false;
+	}
+	if (!p->session || p->storage_disabled)
+		return true;
+	if (p->session->busy() || p->session_action != Process::SessionAction::idle)
+		return false;
+	p->pending_close = app;
+	p->session_action = Process::SessionAction::close_wait;
+	freeze_windows(p, true);
+	return false;
+}
+void request_save(Process *p)
+{
+	if (!p->session || p->storage_disabled || p->session->busy() || !windows_ready(p))
+		return;
+	if (save_windows(p))
+		p->session_action = Process::SessionAction::save;
+}
+gboolean session_tick(gpointer data)
+{
+	auto *p = static_cast<Process *>(data);
+	auto &session = *p->session;
+	session.tick();
+	if ((p->session_action == Process::SessionAction::quit_recovery || p->session_action == Process::SessionAction::close_recovery) && p->recovery->busy()) {
+		p->recovery->tick();
+		if (p->recovery->busy())
+			return G_SOURCE_CONTINUE;
+	}
+	if (p->recovery)
+		p->recovery->tick();
+	if (session.busy())
+		return G_SOURCE_CONTINUE;
+	if (p->session_action == Process::SessionAction::startup) {
+		if (!session.error().empty()) {
+			p->storage_disabled = true;
+			p->prototype->session_notice = session.error() + " Session writes are disabled for this launch.";
+			new_window(p);
+		} else {
+			if (session.restored().empty())
+				new_window(p, std::nullopt, false);
+			else
+				for (const auto &saved : session.restored())
+					new_window(p, saved);
+			for (const auto &w : p->windows)
+				if (w->model && w->model->tab_id() == session.active_tab())
+					gtk_window_present(GTK_WINDOW(w->window));
+		}
+		p->session_action = Process::SessionAction::idle;
+		g_application_release(G_APPLICATION(p->application));
+ } else if (p->session_action == Process::SessionAction::recovery_start) {
+   if(!session.error().empty()){freeze_windows(p,false);for(const auto &w:p->windows)if(!w->closing)w->session_notice=session.error();}
+   else {
+    for(const auto &w:p->windows)if(!w->closing){w->approved_session_close=true;gtk_window_close(GTK_WINDOW(w->window));}
+    for(const auto &saved:session.restored())new_window(p,saved);
+    if(session.restored().empty())new_window(p,std::nullopt,false);
+    for(const auto &draft:p->recovery->drafts()){
+     App *destination=nullptr;for(const auto &w:p->windows)if(!w->closing&&draft.id.compare(0,w->session_key.size()+1,w->session_key+":")==0){destination=w.get();break;}
+     if(!destination){new_window(p,std::nullopt,false);destination=p->windows.back().get();}
+     destination->recovered_drafts.push_back(draft);
+    }
+    for(const auto &w:p->windows)if(!w->closing&&w->model->tab_id()==session.active_tab())gtk_window_present(GTK_WINDOW(w->window));
+   }
+   p->session_action=Process::SessionAction::idle;g_application_release(G_APPLICATION(p->application));
+	} else if (p->session_action == Process::SessionAction::close_wait || p->session_action == Process::SessionAction::quit_wait) {
+		if (!windows_ready(p) || (p->recovery && p->recovery->busy()) || p->recovery_dialog)
+			return G_SOURCE_CONTINUE;
+		const bool quit = p->session_action == Process::SessionAction::quit_wait;
+		if (save_windows(p, quit ? nullptr : p->pending_close))
+			p->session_action = quit ? Process::SessionAction::quit_save : Process::SessionAction::close_save;
+		else {
+			p->session_action = Process::SessionAction::idle;
+			p->quitting = false;
+			freeze_windows(p, false);
+			for (const auto &w : p->windows)
+				if (!w->closing) {
+					w->study_ui->cancel_close();
+					w->session_notice = session.error().empty() ? "Session could not be saved. Windows remain open." : session.error();
+				}
+		}
+	} else if (p->session_action != Process::SessionAction::idle) {
+		const auto action = p->session_action;
+		p->session_action = Process::SessionAction::idle;
+		if (!session.error().empty()) {
+			p->quitting = false;
+			freeze_windows(p, false);
+			for (const auto &w : p->windows)
+				if (!w->closing) {
+					w->session_notice = session.error();
+					w->study_ui->cancel_close();
+				}
+		} else if (action == Process::SessionAction::quit_save && p->recovery && !p->recovery_disabled && p->recovery_decided) {
+			std::vector<xiphos::linux_preview::WindowCapture> captures;
+			for (const auto &w : p->windows)
+				if (!w->closing)
+					captures.push_back({w->model.get(), w->session_key, w->study_ui->capture_state(gtk_editable_get_text(GTK_EDITABLE(w->reference))), w->reading_tabs && gtk_notebook_get_current_page(GTK_NOTEBOOK(w->reading_tabs)) == 1});
+			if (p->recovery->save(p->prototype->session_path + ".recovery", {}, "", {}))
+				p->session_action = Process::SessionAction::quit_recovery;
+			else {
+				p->quitting = false;
+				freeze_windows(p, false);
+				for (const auto &w : p->windows)
+					if (!w->closing) {
+						w->study_ui->cancel_close();
+						w->session_notice = "Could not clear recovery; windows remain open.";
+					}
+			}
+		} else if ((action == Process::SessionAction::quit_recovery || action == Process::SessionAction::close_recovery) && !p->recovery->error().empty()) {
+			p->quitting = false;
+			freeze_windows(p, false);
+			for (const auto &w : p->windows)
+				if (!w->closing) {
+					w->study_ui->cancel_close();
+					w->session_notice = p->recovery->error();
+				}
+		} else if (action == Process::SessionAction::quit_save || action == Process::SessionAction::quit_recovery) {
+			for (const auto &w : p->windows)
+				if (!w->closing) {
+					w->approved_session_close = true;
+					gtk_window_close(GTK_WINDOW(w->window));
+				}
+		} else if (action == Process::SessionAction::close_save && p->pending_close && p->recovery && !p->recovery_disabled && p->recovery_decided) {
+			std::vector<xiphos::linux_preview::WindowCapture> captures;
+			std::vector<xiphos::linux_preview::RecoveryDraft> drafts;
+			for (const auto &w : p->windows)
+				if (!w->closing && w.get() != p->pending_close) {
+					captures.push_back({w->model.get(), w->session_key, w->study_ui->capture_state(gtk_editable_get_text(GTK_EDITABLE(w->reference))), w->reading_tabs && gtk_notebook_get_current_page(GTK_NOTEBOOK(w->reading_tabs)) == 1});
+					auto rows = w->study_ui->recovery_drafts(w->session_key);
+					drafts.insert(drafts.end(), rows.begin(), rows.end());
+				}
+			if (p->recovery->save(p->prototype->session_path + ".recovery", captures, captures.empty() ? "" : captures.front().key, drafts))
+				p->session_action = Process::SessionAction::close_recovery;
+			else {
+				freeze_windows(p, false);
+				p->pending_close->study_ui->cancel_close();
+				p->pending_close->session_notice = "Could not save recovery; window remains open.";
+			}
+		} else if ((action == Process::SessionAction::close_save || action == Process::SessionAction::close_recovery) && p->pending_close) {
+			auto *w = p->pending_close;
+			p->pending_close = nullptr;
+			w->approved_session_close = true;
+			gtk_window_close(GTK_WINDOW(w->window));
+			freeze_windows(p, false);
+		} else
+			for (const auto &w : p->windows)
+				if (!w->closing)
+					w->session_notice = "Session saved.";
+	}
+	if (p->recovery && p->session_action == Process::SessionAction::idle && !p->storage_disabled && windows_ready(p)) {
+		const auto path = p->prototype->session_path + ".recovery";
+		if (!p->recovery_checked) {
+			p->recovery_checked = true;
+			if (std::filesystem::exists(path) || std::filesystem::exists(path + ".previous")) {
+				freeze_windows(p,true); if (!p->recovery->load(path))
+					p->recovery_disabled = true;
+			} else
+				p->recovery_decided = true;
+		} else if (!p->recovery->busy() && !p->recovery_decided && !p->recovery_dialog && !p->recovery_disabled) {
+			if (!p->recovery->error().empty()) {
+				p->recovery_disabled = true; freeze_windows(p,false);
+				for (const auto &w : p->windows)
+					if (!w->closing)
+						w->session_notice = p->recovery->error();
+			} else if (p->recovery->loaded()) {
+				if (p->recovery->drafts().empty() && !p->recovery->session_windows()) {
+					p->recovery_decided = true; freeze_windows(p,false);
+					p->recovery_disabled = p->recovery->previous();
+				} else {
+					GtkWindow *parent = nullptr;
+					for (const auto &w : p->windows)
+						if (!w->closing) {
+							parent = GTK_WINDOW(w->window);
+							break;
+						}
+					p->recovery_dialog = gtk_message_dialog_new(parent, GTK_DIALOG_MODAL, GTK_MESSAGE_QUESTION, GTK_BUTTONS_NONE, "Recover the latest session and editor drafts?");
+					gtk_message_dialog_format_secondary_text(GTK_MESSAGE_DIALOG(p->recovery_dialog), "%zu drafts are available. Recovery restores the saved windows and retains original source revisions. Existing source files are unchanged.%s", p->recovery->drafts().size(), p->recovery->previous() ? " The previous recovery snapshot was used; automatic recovery writes will remain disabled." : "");
+					gtk_dialog_add_buttons(GTK_DIALOG(p->recovery_dialog), "Keep for later", GTK_RESPONSE_CANCEL, "Discard drafts", GTK_RESPONSE_REJECT, "Recover drafts", GTK_RESPONSE_ACCEPT, nullptr);
+					gtk_dialog_set_default_response(GTK_DIALOG(p->recovery_dialog), GTK_RESPONSE_CANCEL);
+     g_signal_connect(p->recovery_dialog,"response",G_CALLBACK((+[](GtkDialog *dialog,int response,gpointer data){
+      auto *p=static_cast<Process *>(data);p->recovery_dialog=nullptr;p->recovery_decided=true;
+      if(response==GTK_RESPONSE_ACCEPT){
+       std::unique_ptr<xc_native_session,decltype(&xc_native_session_release)> snapshot(p->recovery->copy_session(),xc_native_session_release);
+       if(snapshot&&p->session->restore(snapshot.get())){p->session_action=Process::SessionAction::recovery_start;g_application_hold(G_APPLICATION(p->application));}
+       else {freeze_windows(p,false);p->recovery_disabled=true;for(const auto &w:p->windows)if(!w->closing)w->session_notice="Recovery could not be restored. Existing windows and recovery were retained.";}
+      } else {freeze_windows(p,false);if(response!=GTK_RESPONSE_REJECT)p->recovery_disabled=true;}
+      if(p->recovery->previous())p->recovery_disabled=true;
+      p->next_recovery=0;gtk_window_destroy(GTK_WINDOW(dialog));
+     })),p);
+					gtk_window_present(GTK_WINDOW(p->recovery_dialog));
+				}
+			}
+		}
+		if (p->recovery_decided && !p->recovery_disabled && !p->recovery->busy() && !p->recovery->error().empty()) {
+			p->recovery_disabled = true;
+			for (const auto &w : p->windows)
+				if (!w->closing)
+					w->session_notice = p->recovery->error();
+		}
+		if (p->recovery_decided && !p->recovery_disabled && !p->recovery->busy() && g_get_monotonic_time() >= p->next_recovery) {
+			std::vector<xiphos::linux_preview::WindowCapture> captures;
+			std::vector<xiphos::linux_preview::RecoveryDraft> drafts;
+			for (const auto &w : p->windows)
+				if (!w->closing) {
+					captures.push_back({w->model.get(), w->session_key, w->study_ui->capture_state(gtk_editable_get_text(GTK_EDITABLE(w->reference))), w->reading_tabs && gtk_notebook_get_current_page(GTK_NOTEBOOK(w->reading_tabs)) == 1});
+					auto rows = w->study_ui->recovery_drafts(w->session_key);
+					drafts.insert(drafts.end(), rows.begin(), rows.end());
+				}
+			p->recovery->save(path, captures, captures.empty() ? "" : captures.front().key, drafts);
+			p->next_recovery = g_get_monotonic_time() + 30 * G_USEC_PER_SEC;
+		}
+	}
+	return G_SOURCE_CONTINUE;
 }
 
 gboolean startup_smoke(gpointer data) {
@@ -880,7 +1310,12 @@ int main(int argc, char **argv) {
   App state;
   for (int i = 1; i < argc; ++i) {
     const std::string argument = argv[i];
-    if (argument == "--software-rendering") state.software = true;
+    if (argument == "--no-session")
+	    state.no_session = true;
+    else if (argument == "--session" && i + 1 < argc)
+	    state.session_path = argv[++i];
+    else if (argument == "--software-rendering")
+	    state.software = true;
     else if ((argument == "--root" || argument == "--smoke-test" || argument == "--smoke-options-test" || argument == "--smoke-preview-test" || argument == "--smoke-lexical-test" || argument == "--smoke-window-test" || argument == "--smoke-startup-test") && i + 1 < argc) {
       state.root = argv[++i];
       if (argument != "--root") state.smoke = state.software = true;
@@ -890,8 +1325,8 @@ int main(int argc, char **argv) {
       if (argument == "--smoke-window-test") state.window_smoke = true;
       if (argument == "--smoke-startup-test") state.startup_smoke = true;
     } else {
-      std::cerr << "Usage: xiphos-linux-preview [--software-rendering] [--root SWORD_LIBRARY]\n";
-      return argument == "--help" ? 0 : 2;
+	    std::cerr << "Usage: xiphos-linux-preview [--software-rendering] [--root SWORD_LIBRARY] [--session FILE | --no-session]\n";
+	    return argument == "--help" ? 0 : 2;
     }
   }
   if (state.software) g_setenv("GSK_RENDERER", "cairo", FALSE); // Preserve an explicit user renderer override.
@@ -903,14 +1338,48 @@ int main(int argc, char **argv) {
     if (xc_worker_open(state.root.empty() ? nullptr : state.root.c_str(), &process.worker) != XC_OK) {
       std::cerr << "Unable to start the study engine.\n"; g_object_unref(app); return 1;
     }
-    g_signal_connect(app, "activate", G_CALLBACK(+[](GtkApplication *, gpointer data) { new_window(static_cast<Process *>(data)); }), &process);
+    process.library = std::make_unique<xiphos::linux_preview::LibraryModel>(*process.worker);
+    process.library_timer = g_timeout_add(20, +[](gpointer data) -> gboolean {auto*p=static_cast<Process*>(data);if(p->library_ui)p->library_ui->tick();else p->library->tick();return G_SOURCE_CONTINUE; }, &process);
+    if (!state.smoke && !state.no_session) {
+	    if (state.session_path.empty())
+		    state.session_path = (std::filesystem::path(g_get_user_config_dir()) / "xiphos-native" / "session.xml").string();
+	    state.session_path = std::filesystem::absolute(state.session_path).string();
+	    std::error_code error;
+	    std::filesystem::create_directories(std::filesystem::path(state.session_path).parent_path(), error);
+	    if (error) {
+		    process.storage_disabled = true;
+		    state.session_notice = "Session storage is unavailable; existing files were retained.";
+	    }
+	    process.session = std::make_unique<xiphos::linux_preview::SessionModel>(*process.worker);
+	    process.recovery = std::make_unique<xiphos::linux_preview::RecoveryModel>(*process.worker);
+	    process.session->validate_host = xiphos::linux_preview::StudyUI::validate_state;
+	    process.session_timer = g_timeout_add(10, session_tick, &process);
+    }
+    g_signal_connect(app, "activate", G_CALLBACK(+[](GtkApplication *, gpointer data) {
+			     auto *p = static_cast<Process *>(data);
+			     if (!p->started) {
+				     p->started = true;
+				     if (p->session && !p->storage_disabled && std::filesystem::exists(p->prototype->session_path) && p->session->load(p->prototype->session_path)) {
+					     p->session_action = Process::SessionAction::startup;
+					     g_application_hold(G_APPLICATION(p->application));
+					     return;
+				     }
+			     }
+			     new_window(p);
+		     }),
+		     &process);
     const GActionEntry actions[] = {
-      {"new-window", +[](GSimpleAction *, GVariant *, gpointer data) { new_window(static_cast<Process *>(data)); }, nullptr, nullptr, nullptr, {}},
-      {"quit", +[](GSimpleAction *, GVariant *, gpointer data) {
-        auto *process = static_cast<Process *>(data);
-        for (const auto &window : process->windows) if (!window->closing) gtk_window_close(GTK_WINDOW(window->window));
-      }, nullptr, nullptr, nullptr, {}}
-    };
+	{"new-window", +[](GSimpleAction *, GVariant *, gpointer data) { auto*p=static_cast<Process *>(data);if((p->session&&p->session->busy())||(p->recovery_checked&&!p->recovery_decided))return;new_window(p); }, nullptr, nullptr, nullptr, {}},
+	{"library", +[](GSimpleAction *, GVariant *, gpointer data) {auto*p=static_cast<Process*>(data);if(!p->library_ui)p->library_ui=std::make_unique<xiphos::linux_preview::LibraryUI>(p->application,*p->library);p->library_ui->present(); }, nullptr, nullptr, nullptr, {}},
+	{"save-session", +[](GSimpleAction *, GVariant *, gpointer data) { request_save(static_cast<Process *>(data)); }, nullptr, nullptr, nullptr, {}},
+	{"quit", +[](GSimpleAction *, GVariant *, gpointer data) {
+		 auto *process = static_cast<Process *>(data);
+		 request_quit(process);
+	 },
+	 nullptr,
+	 nullptr,
+	 nullptr,
+	 {}}};
     g_action_map_add_action_entries(G_ACTION_MAP(app), actions, G_N_ELEMENTS(actions), &process);
     const char *keys[] = {"<Primary>n", nullptr}, *quit_keys[] = {"<Primary>q", nullptr};
     gtk_application_set_accels_for_action(app, "app.new-window", keys); gtk_application_set_accels_for_action(app, "app.quit", quit_keys);
@@ -929,6 +1398,14 @@ int main(int argc, char **argv) {
   if (deadline && !state.smoke_failed) g_source_remove(deadline);
   shutdown(&state);
   for (const auto &window : process.windows) shutdown(window.get());
+  if (process.session_timer)
+	  g_source_remove(process.session_timer);
+  if (process.library_timer)
+	  g_source_remove(process.library_timer);
+  process.library_ui.reset();
+  process.library.reset();
+  process.recovery.reset();
+  process.session.reset();
   if (process.worker) { auto *worker = process.worker; process.worker = nullptr; std::thread([worker] { xc_worker_close(worker); }).join(); }
   g_object_unref(app);
   if (state.smoke) {
