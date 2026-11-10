@@ -46,7 +46,12 @@ indexing it, and restores the original offset after a sibling walk.
 Built from the SWORD 1.9.0 release tag with CLucene 2.3.3.4 and ICU 78.3.
 On the same macOS machine, the patched SDK rebuilt the index and returned
 one indexed hit for the retained entry and zero hits for the deleted entry.
-Broader indexing checks and integration into Xiphos remain pending.
+The Xiphos deletion prototype also passed its general-book regression with
+the patched library loaded and a usable CLucene index required. It verified
+that the parent and open-tab state were consistent, the retained entry was
+searchable, and the detached leaf was absent from rebuilt search results.
+Shipping deletion still requires a supported SDK fix. Broader indexing
+checks remain pending.
 
 [TreeKeyIdx source](https://crosswire.org/svn/sword/tags/sword-1-9-0/src/keys/treekeyidx.cpp) ·
 [SWModule source](https://crosswire.org/svn/sword/tags/sword-1-9-0/src/modules/swmodule.cpp)
