@@ -11,6 +11,8 @@
 #include <swoptfilter.h>
 #include <swfilter.h>
 #include <listkey.h>
+#include <versekey.h>
+
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -75,8 +77,25 @@ int main(int argc,char **argv){try{
  auto &module=*legacy.getModule("Text");module.setKey("John1:2");module.setSkipConsecutiveLinks(true);const std::string saved_key=module.getKeyText();const bool skipped=module.isSkipConsecutiveLinks();legacy.setGlobalOption("Greek Accents","On");legacy.setGlobalOption("Hebrew Vowel Points","On");legacy.setGlobalOption("Arabic Vowel Points","On");module.setProcessEntryAttributes(false);
  std::vector<std::pair<SWOptionFilter *,std::string>> filters;for(auto *filter:legacy.option_filters())filters.emplace_back(filter,filter->getOptionValue());
  (void)detail::capture_module_search(legacy,module,{"Text","Original"},{});check(!module.isProcessEntryAttributes()&&std::string(module.getKeyText())==saved_key&&module.isSkipConsecutiveLinks()==skipped&&!module.terminateSearch,"Search restores caller position/flags under the checked SDK");for(const auto &filter:filters)check(filter.second==filter.first->getOptionValue(),"Search restores every filter baseline");
- module.addStripFilter(&fault);rejects<std::runtime_error>([&]{detail::capture_module_search(legacy,module,{"Text","Original"},{});});fault.enabled=false;check(!module.isProcessEntryAttributes(),"Strip failure restores caller attributes");for(const auto &filter:filters)check(filter.second==filter.first->getOptionValue(),"Strip failure restores temporary accent/vowel settings");
+ auto *const liveKey=module.getKey();
+ const auto scopedSurface=detail::capture_module_search(legacy,module,{"Text","Original",SearchMode::surface_literal},{});
+ check(scopedSurface.references.size()==3 && module.getKey()==liveKey &&
+       std::string(liveKey->getText())==saved_key && !liveKey->isPersist(),
+       "Surface search restores the same owned SDK key and ownership");
+ module.addStripFilter(&fault);rejects<std::runtime_error>([&]{detail::capture_module_search(legacy,module,{"Text","Original"},{});});
+ rejects<std::runtime_error>([&]{detail::capture_module_search(legacy,module,{"Text","Original",SearchMode::surface_literal},{});});
+ check(module.getKey()==liveKey&&!liveKey->isPersist()&&std::string(liveKey->getText())==saved_key,
+       "A failed surface scan reattaches the same owned key");
+ fault.enabled=false;check(!module.isProcessEntryAttributes(),"Strip failure restores caller attributes");for(const auto &filter:filters)check(filter.second==filter.first->getOptionValue(),"Strip failure restores temporary accent/vowel settings");
  check(detail::capture_module_search(legacy,module,{"Text","Original"},{}).references.size()==3,"Search recovers after injected strip failure");
+ {
+  std::unique_ptr<SWKey> saved(module.getKey()->clone());
+  VerseKey borrowed("John 1:2");borrowed.setPersist(true);module.setKey(borrowed);
+  const auto borrowedSurface=detail::capture_module_search(legacy,module,{"Text","Original",SearchMode::surface_literal},{});
+  const bool restored=module.getKey()==&borrowed && borrowed.isPersist() && std::string(borrowed.getText())=="John 1:2";
+  module.setKey(*saved);
+  check(restored&&borrowedSurface.references.size()==3,"Surface search restores a borrowed SDK key without changing ownership");
+ }
  const auto latinRoot=root/"latin-surface";
  fs::create_directories(latinRoot/"mods.d");
  fs::create_directories(latinRoot/"data");

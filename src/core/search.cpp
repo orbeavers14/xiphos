@@ -62,22 +62,23 @@ sword::ListKey scan_surface(sword::SWModule &module, const sword::ListKey *range
     const std::string &needle, bool unmarked, bool sensitive,
     const std::shared_ptr<SearchControl> &control, unsigned begin, unsigned end) {
   sword::ListKey matches;
-  std::unique_ptr<sword::SWKey> scope(range ? range->clone() : nullptr);
   auto *original = module.getKey();
-  std::unique_ptr<sword::SWKey> saved(original->isPersist() ? nullptr : original->clone());
+  std::unique_ptr<sword::SWKey> scope(range ? range->clone() : original->clone());
+  if (!scope) throw std::bad_alloc();
   struct Restore {
     sword::SWModule &module;
-    const sword::SWKey &key;
-    ~Restore() { module.setKey(key); }
-  } restore{module, saved ? *saved : *original};
-  if (scope) {
-    scope->setPersist(true);
-    module.setKey(*scope);
-  } else if (original->isPersist()) {
-    scope.reset(original->clone());
-    scope->setPersist(true);
-    module.setKey(*scope);
-  }
+    sword::SWKey &original;
+    bool persisted;
+    ~Restore() {
+      module.setKey(original);
+      original.setPersist(persisted);
+    }
+  } restore{module,*original,original->isPersist()};
+  // Pin the original key while the SDK borrows the scan key. Restoration
+  // reattaches the same object without cloning it during exception unwinding.
+  original->setPersist(true);
+  scope->setPersist(true);
+  module.setKey(*scope);
   module.setProcessEntryAttributes(false);
   module.setPosition(sword::BOTTOM);
   const auto last = module.getKey()->getIndex();
