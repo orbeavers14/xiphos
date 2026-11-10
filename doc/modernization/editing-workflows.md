@@ -242,3 +242,13 @@ this contract. A SWORD reparent operation would need to update the old and
 new child chains and the source node's parent in the staged module. Before
 publication, verify both paths, the unchanged offsets and bodies, and index
 rebuild and search. Open tabs should follow the moved paths.
+
+An isolated SWORD 1.9.0 build on macOS validated an
+[offset-preserving reparent prototype](rawgenbook-move-candidate.patch)
+with the [SDK-only move test](rawgenbook-move-reproducer.cpp). The test
+rejected moving a section under its own child, moved it to a parent with an
+existing child, and reopened it by its original offset. The descendant kept
+its offset and text, an existing linked entry still resolved, and CLucene
+returned the descendant under its new path. The old path failed lookup.
+The build also included the [index cursor fix](rawgenbook-index-hang.md).
+The prototype is intended for staged copies. Xiphos integration remains open.

@@ -1,0 +1,65 @@
+--- a/include/treekeyidx.h
++++ b/include/treekeyidx.h
+@@ -94,0 +95,3 @@
++
++	// Call only on an isolated, writable module copy.
++	bool reparent(unsigned long parentOffset);
+--- a/src/keys/treekeyidx.cpp
++++ b/src/keys/treekeyidx.cpp
+@@ -1,0 +1,2 @@
++#include <set>
++#include <limits>
+@@ -242,0 +245,53 @@
++bool TreeKeyIdx::reparent(unsigned long parentOffset) {
++	if (!currentNode.offset || currentNode.parent < 0 ||
++	    parentOffset > static_cast<unsigned long>(std::numeric_limits<SW_s32>::max()) ||
++	    parentOffset % 4 || parentOffset == static_cast<unsigned long>(currentNode.parent))
++		return false;
++	const auto sourceOffset = currentNode.offset;
++	TreeNode source, oldParent, newParent, node;
++	if (getTreeNodeFromIdxOffset(sourceOffset, &source) ||
++	    getTreeNodeFromIdxOffset(source.parent, &oldParent) ||
++	    getTreeNodeFromIdxOffset(static_cast<SW_s32>(parentOffset), &newParent))
++		return false;
++	std::set<SW_s32> visited;
++	for (auto offset = newParent.offset; offset >= 0; offset = node.parent) {
++		if (offset == sourceOffset || !visited.insert(offset).second ||
++		    getTreeNodeFromIdxOffset(offset, &node)) return false;
++	}
++	visited.clear();
++	TreeNode previous;
++	bool found = false;
++	for (auto offset = oldParent.firstChild; offset >= 0; offset = node.next) {
++		if (!visited.insert(offset).second || getTreeNodeFromIdxOffset(offset, &node) ||
++		    node.parent != oldParent.offset) return false;
++		if (offset == sourceOffset) { found = true; break; }
++		if (getTreeNodeFromIdxOffset(offset, &previous)) return false;
++	}
++	if (!found) return false;
++	visited.clear();
++	TreeNode last;
++	for (auto offset = newParent.firstChild; offset >= 0; offset = last.next) {
++		if (!visited.insert(offset).second || getTreeNodeFromIdxOffset(offset, &last) ||
++		    last.parent != newParent.offset || !strcmp(last.name, source.name)) return false;
++	}
++	if (oldParent.firstChild == sourceOffset) {
++		oldParent.firstChild = source.next;
++		saveTreeNodeOffsets(&oldParent);
++	} else {
++		previous.next = source.next;
++		saveTreeNodeOffsets(&previous);
++	}
++	if (newParent.firstChild < 0) {
++		newParent.firstChild = sourceOffset;
++		saveTreeNodeOffsets(&newParent);
++	} else {
++		last.next = sourceOffset;
++		saveTreeNodeOffsets(&last);
++	}
++	source.parent = newParent.offset;
++	source.next = -1;
++	saveTreeNodeOffsets(&source);
++	setOffset(sourceOffset);
++	return !getError();
++}
++
