@@ -44,6 +44,7 @@ struct Module {
   bool indexed_book = false;
   bool verse_search = false;
   bool right_to_left = false;
+  bool devotional = false;
 };
 
 

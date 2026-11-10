@@ -2407,7 +2407,30 @@ struct ReaderModelSmoke {
         else { fatalError("Native export options did not embed the image and scoped formatting") }
         print("Mac translation, staged organizer and HTML export checks passed")
     }
+    @MainActor static func passageAndDevotional(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let model = ReaderModel(worker: worker, startupError: nil)
+        try await idle(model)
+        guard let tab = model.sessionTab, model.modules.filter(\.isDevotional).map(\.id) == ["Daily"]
+        else { fatalError("Copied devotional module classification") }
+        let history = try await worker.history(tab)
+        let date = Calendar(identifier: .gregorian).date(from: DateComponents(year: 2024, month: 2, day: 29))!
+        let entry = try await model.devotional(module: "Daily", date: date)
+        guard entry.selected == "02.29", entry.matched == "02.29", entry.html.contains("02.29")
+        else { fatalError("Leap-day devotional did not resolve") }
+        let plain = try await worker.exportPassage(tab: tab, module: "Text", expression: "John 3:16;John 3:16",
+                                                   context: "John 3:16", html: false)
+        let html = try await worker.exportPassage(tab: tab, module: "Text", expression: "John 3:16",
+                                                  context: "John 3:16", html: true)
+        guard plain.components(separatedBy: "John 3:16").count == 3, html.contains("default-src 'none'"),
+              try await worker.history(tab).count == history.count
+        else { fatalError("Native passage export lost duplicate entries, passive policy or history") }
+        print("Native passage export and devotional leap-day checks passed")
+    }
     @MainActor static func main() async throws {
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--passage-and-devotional" {
+            try await passageAndDevotional(root: CommandLine.arguments[2]); return
+        }
         if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--translation-and-organizer" {
             try await translationAndOrganizer(root: CommandLine.arguments[2]); return
         }

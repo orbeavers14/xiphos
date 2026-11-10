@@ -2537,6 +2537,7 @@ const char *xc_catalog_type(const xc_catalog *c, size_t i) { auto m = catalog_at
 const char *xc_catalog_language(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m ? m->language.c_str() : nullptr; }
 int xc_catalog_is_rtl(const xc_catalog *c, size_t i) { auto m = catalog_at(c,i); return m && m->right_to_left; }
 int xc_catalog_is_regular_commentary(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m && m->regular_commentary ? 1 : 0; }
+int xc_catalog_is_devotional(const xc_catalog *c, size_t i) { auto m = catalog_at(c, i); return m && m->devotional; }
 int xc_catalog_is_dictionary(const xc_catalog *c, size_t i) { return c && i < c->value.size() && c->value[i].dictionary ? 1 : 0; }
 int xc_catalog_has_book_tree(const xc_catalog *c, size_t i) { return c && i < c->value.size() && c->value[i].indexed_book ? 1 : 0; }
 int xc_catalog_has_verse_search(const xc_catalog *c, size_t i) { return c && i < c->value.size() && c->value[i].verse_search ? 1 : 0; }

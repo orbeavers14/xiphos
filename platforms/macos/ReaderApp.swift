@@ -161,6 +161,11 @@ final class ReaderModel: ObservableObject {
     @Published private(set) var moduleOptions = ModuleOptionInfo.unknown
     private let worker: CoreWorker?
     private var tab: UInt64?
+    var preferredDevotional = ""
+    func devotional(module: String, date: Date) async throws -> (html: String, selected: String, matched: String) {
+        guard let worker, let tab else { throw SessionHostError(message: "No reading session is available.") }
+        return try await worker.readDevotional(tab: tab, module: module, date: date)
+    }
     var onPassageCommitted: ((PassageTarget,Bool) -> Void)?
     var annotationEditingTarget: PassageTarget? { guard let module=displayedModule,let entry=displayedEntry else {return nil};return PassageTarget(module:module,reference:entry.reference) }
     var syncTarget: PassageTarget? { guard !showingBook,let module = displayedModule,let entry = displayedEntry else { return nil };return PassageTarget(module:module,reference:entry.reference) }
@@ -1371,6 +1376,69 @@ struct ReadingWordSearchMenu: View {
     }
 }
 
+private struct DevotionalView: View {
+    @ObservedObject var model: ReaderModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var module = ""
+    @State private var date = Date()
+    @State private var html = ""
+    @State private var message = ""
+    @State private var loading = false
+
+    private struct Selection: Hashable {
+        let module: String
+        let date: Date
+    }
+    private var modules: [InstalledModule] { model.modules.filter(\.isDevotional) }
+    private var effectiveModule: String {
+        if modules.contains(where: { $0.id == module }) { return module }
+        if modules.contains(where: { $0.id == model.preferredDevotional }) { return model.preferredDevotional }
+        return modules.first?.id ?? ""
+    }
+    var body: some View {
+        let selection = Selection(module: effectiveModule, date: date)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Picker("Daily devotional", selection: Binding(get: { effectiveModule }, set: { module = $0 })) {
+                    ForEach(modules) { Text($0.id).tag($0.id) }
+                }
+                Spacer()
+                Button("Done") { dismiss() }.keyboardShortcut(.cancelAction)
+            }
+            HStack {
+                Button("Previous day") { step(-1) }
+                DatePicker("Date", selection: $date, displayedComponents: .date)
+                Button("Next day") { step(1) }
+                Button("Today") { date = Date() }
+            }
+            if loading { ProgressView().controlSize(.small) }
+            if !message.isEmpty { Text(message).foregroundStyle(.secondary) }
+            PassageView(html: html, rightToLeft: modules.first(where: { $0.id == selection.module })?.rightToLeft,
+                        anchor: nil, onScrollFailure: { _ in }, onLink: { model.followLink($0) })
+        }
+        .padding(16).frame(minWidth: 620, minHeight: 460)
+        .task(id: selection) {
+            html = ""; message = ""
+            guard !selection.module.isEmpty else { message = "No daily devotional is installed."; return }
+            loading = true
+            defer { if !Task.isCancelled { loading = false } }
+            do {
+                let entry = try await model.devotional(module: selection.module, date: selection.date)
+                guard !Task.isCancelled else { return }
+                html = entry.html
+                if entry.selected != entry.matched { message = "Showing the closest available entry (\(entry.matched))." }
+                if html.isEmpty { message = "This devotional has no text for the selected date." }
+            } catch {
+                if !Task.isCancelled { message = error.localizedDescription }
+            }
+        }
+    }
+
+    private func step(_ days: Int) {
+        if let next = Calendar(identifier: .gregorian).date(byAdding: .day, value: days, to: date) { date = next }
+    }
+}
+
 struct ReaderWindow: View {
     @StateObject private var model: ReaderModel
     @State private var sidebar = "modules"
@@ -1389,6 +1457,7 @@ struct ReaderWindow: View {
             }
         }
     }
+    @State private var showDevotional = false
     @State private var passageDestination: PassageDestination?
     @State private var passageSource: PassageTarget?
     @State private var passageExpression = ""
@@ -1621,6 +1690,9 @@ struct ReaderWindow: View {
                         Button("Export as HTML…") { choosePassageDestination(.html) }
                         Button("Print…") { choosePassageDestination(.print) }
                     }.disabled(model.syncTarget == nil)
+                    if model.modules.contains(where: \.isDevotional) {
+                        Button("Devotional…") { showDevotional = true }
+                    }
                 }.padding(12).disabled(model.isBusy)
                 if let choices = model.choices {
                     HStack {
@@ -1834,6 +1906,7 @@ struct ReaderWindow: View {
                 }.frame(minWidth: 230, idealWidth: 300)
             }
         }.frame(minWidth: 700, minHeight: 450)
+            .sheet(isPresented: $showDevotional) { DevotionalView(model: model) }
             .sheet(item: $passageDestination) { destination in
                 VStack(alignment: .leading, spacing: 12) {
                     Text(destination.title).font(.headline)

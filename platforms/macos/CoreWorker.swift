@@ -177,7 +177,8 @@ actor CoreWorker {
                 isRegularCommentary: xc_catalog_is_regular_commentary(catalog, index) != 0,
                 lexiconRoles: LexiconRoles(rawValue: xc_catalog_lexicon_roles(catalog, index)),
                 hasBookTree: xc_catalog_has_book_tree(catalog, index) != 0,
-                hasVerseSearch: xc_catalog_has_verse_search(catalog, index) != 0, rightToLeft: xc_catalog_is_rtl(catalog,index) != 0)
+                hasVerseSearch: xc_catalog_has_verse_search(catalog, index) != 0, rightToLeft: xc_catalog_is_rtl(catalog,index) != 0,
+                isDevotional: xc_catalog_is_devotional(catalog,index) != 0)
         }
     }
     func bookTree(module: String, offset: UInt64) async throws -> BookTree {
@@ -1467,6 +1468,24 @@ actor CoreWorker {
             reference.withCString { xc_worker_read_chapter(handle, id, $0, flags, &request) }
         }
         return try await chapter(status, request)
+    }
+    func readDevotional(tab: UInt64, module: String, date: Date) async throws -> (html: String, selected: String, matched: String) {
+        guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        let calendar = Calendar(identifier: .gregorian)
+        let selected = calendar.dateComponents([.month, .day], from: date)
+        let today = calendar.dateComponents([.month, .day], from: Date())
+        guard let month = selected.month, let day = selected.day, let todayMonth = today.month, let todayDay = today.day else {
+            throw CoreError(status: XC_INVALID_ARGUMENT)
+        }
+        let key = String(format: "%02d.%02d", month, day)
+        var request: OpaquePointer?
+        let status = xc_worker_read_devotional(try worker(), tab, module, key, Int32(todayMonth), Int32(todayDay), &request)
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_devotional_entry(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_devotional_entry_release(result) }
+        return (String(cString: xc_devotional_entry_html(result)), String(cString: xc_devotional_entry_date(result)),
+                String(cString: xc_devotional_entry_matched_key(result)))
     }
     func exportPassage(tab: UInt64, module: String, expression: String, context: String, html: Bool) async throws -> String {
         guard [module, expression, context].allSatisfy({ !$0.utf8.contains(0) }) else {

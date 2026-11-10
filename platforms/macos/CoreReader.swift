@@ -52,9 +52,10 @@ struct InstalledModule: Identifiable, Sendable {
     let lexiconRoles: LexiconRoles
     let hasVerseSearch: Bool
     let hasBookTree: Bool
-    init(id: String, description: String, type: String, language: String, options: ModuleOptionInfo = .unknown, isDictionary: Bool = false, isRegularCommentary: Bool = false, lexiconRoles: LexiconRoles = [], hasBookTree: Bool = false, hasVerseSearch: Bool = false, rightToLeft: Bool = false) {
+    let isDevotional: Bool
+    init(id: String, description: String, type: String, language: String, options: ModuleOptionInfo = .unknown, isDictionary: Bool = false, isRegularCommentary: Bool = false, lexiconRoles: LexiconRoles = [], hasBookTree: Bool = false, hasVerseSearch: Bool = false, rightToLeft: Bool = false, isDevotional: Bool = false) {
         self.id = id; self.description = description; self.type = type; self.language = language; self.options = options
-        self.rightToLeft = rightToLeft
+        self.rightToLeft = rightToLeft; self.isDevotional = isDevotional
         self.isDictionary = isDictionary; self.isRegularCommentary = isRegularCommentary; self.lexiconRoles = lexiconRoles; self.hasBookTree = hasBookTree; self.hasVerseSearch = hasVerseSearch
     }
 }

@@ -34,6 +34,7 @@ enum NativeAppearance: String, CaseIterable {
         }
     }
     @Published var bible: String { didSet { store.set(bible, forKey: prefix + "bible") } }
+    @Published var devotional: String { didSet { store.set(devotional, forKey: prefix + "devotional") } }
     @Published var commentary: String { didSet { store.set(commentary, forKey: prefix + "commentary") } }
     init(store: UserDefaults = .standard, profile: String) {
         self.store = store; prefix = "NativeAppPreferences:" + profile + ":"
@@ -44,6 +45,7 @@ enum NativeAppearance: String, CaseIterable {
         let savedLanguage = store.string(forKey: prefix + "language") ?? "system"
         language = ["system","en","fr","de","es"].contains(savedLanguage) ? savedLanguage : "system"
         bible = store.string(forKey: prefix + "bible") ?? ""
+        devotional = store.string(forKey: prefix + "devotional") ?? ""
         commentary = store.string(forKey: prefix + "commentary") ?? ""
     }
     func loadSync() -> CoreSyncSettings? {
@@ -128,6 +130,7 @@ private enum SettingsSection: String, CaseIterable, Identifiable {
         }
         .frame(minWidth: 730, idealWidth: 850, minHeight: 500, idealHeight: 650)
         .onChange(of: preferences.bible) { _, bible in controller.preferredBible = bible }
+        .onChange(of: preferences.devotional) { _, module in controller.preferredDevotional = module }
         .onChange(of: preferences.commentary) { _, commentary in controller.preferredCommentary = commentary }
     }
 
@@ -174,6 +177,14 @@ private enum SettingsSection: String, CaseIterable, Identifiable {
                     Text(preferences.commentary + " (unavailable)").tag(preferences.commentary)
                 }
                 ForEach(commentaries) { Text($0.id).tag($0.id) }
+            }
+            Picker("Default daily devotional", selection: $preferences.devotional) {
+                Text("First available devotional").tag("")
+                let choices = model?.modules.filter(\.isDevotional) ?? []
+                if !preferences.devotional.isEmpty && !choices.contains(where: { $0.id == preferences.devotional }) {
+                    Text(preferences.devotional + " (unavailable)").tag(preferences.devotional)
+                }
+                ForEach(choices) { Text($0.id).tag($0.id) }
             }
             Toggle("Restore reading session on launch", isOn: $preferences.restoreSession)
             Picker("Recovery autosave interval", selection: $preferences.recoverySeconds) {

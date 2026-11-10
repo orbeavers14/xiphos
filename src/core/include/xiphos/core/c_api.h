@@ -1899,6 +1899,7 @@ const char *xc_catalog_type(const xc_catalog *catalog, size_t index);
 const char *xc_catalog_language(const xc_catalog *catalog, size_t index);
 /* Copied dictionary classification (excludes DailyDevotion) and declared
  * exact first-Feature roles. Missing catalog/index returns zero. */
+int xc_catalog_is_devotional(const xc_catalog *catalog, size_t index);
 int xc_catalog_is_dictionary(const xc_catalog *catalog, size_t index);
 /* Generic Books with a runtime TreeKeyIdx source, not full native book parity. */
 int xc_catalog_has_book_tree(const xc_catalog *catalog, size_t index);

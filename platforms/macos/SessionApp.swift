@@ -12,6 +12,9 @@ import SwiftUI
         var frame: SessionWindowFrame?
     }
     var preferredBible = "", preferredCommentary = ""
+    var preferredDevotional = "" {
+        didSet { records.forEach { $0.model.preferredDevotional = preferredDevotional } }
+    }
     var onPassageCommitted: ((PassageTarget,Bool) -> Void)?
     let worker: CoreWorker
     let organizationPath: String?
@@ -74,6 +77,7 @@ import SwiftUI
                     throw SessionHostError(message: "Saved window identities do not match.")
                 }
                 let model = ReaderModel(worker: worker, startupError: nil, autostart: false)
+                model.preferredDevotional = preferredDevotional
                 model.parallelProfilePath = organizationPath.map { URL(fileURLWithPath:$0).deletingLastPathComponent().appendingPathComponent("parallel-sets.xml").path }
                 model.applyLibraryOrganization(libraryOrganization,notice:organizationNotice)
                 model.onPassageCommitted = { [weak self] target,received in self?.onPassageCommitted?(target,received) }
@@ -107,6 +111,7 @@ import SwiftUI
         let key = UUID().uuidString
         let model = ReaderModel(worker: worker, startupError: nil, preferredBible: preferredBible, preferredCommentary: preferredCommentary)
         model.parallelProfilePath = organizationPath.map { URL(fileURLWithPath:$0).deletingLastPathComponent().appendingPathComponent("parallel-sets.xml").path }
+        model.preferredDevotional = preferredDevotional
         model.readingSources=records.first(where:{$0.key==activeKey})?.model.readingSources ?? CoreReadingSources()
         model.applyLibraryOrganization(libraryOrganization,notice:organizationNotice)
         model.onPassageCommitted = { [weak self] target,received in self?.onPassageCommitted?(target,received) }
@@ -265,6 +270,7 @@ import SwiftUI
                     await worker.setReferenceLocaleFile(Bundle.main.path(forResource: referenceLanguage, ofType: "conf", inDirectory: "sword-locales"))
                 }
                 let owner = NativeSessionController(worker: worker, path: try NativeSessionController.defaultPath(),organizationPath:folder.appendingPathComponent("library-organization.xml").path)
+                owner.preferredDevotional = preferences.devotional
                 owner.preferredBible = preferences.bible; owner.preferredCommentary = preferences.commentary
                 controller = owner
                 let sync = NativeSyncModel(worker:worker);self.sync = sync

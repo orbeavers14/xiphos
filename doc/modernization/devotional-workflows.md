@@ -117,3 +117,11 @@ public-header syntax and whitespace checks pass. Native Swift importers and real
 WebKit regressions rebuild/run in the full host suite. SDK/framework sanitizer
 coverage remains partial and ASan leak detection is OFF. No Windows/MSVC or
 current GTK application acceptance follows.
+
+### Mac devotional reader
+
+Open Devotional from the reader toolbar. The pane lists installed daily
+devotionals, opens on the current local date, and supports a date picker,
+previous and next day, and Today. The selected and nearest available dates
+are distinguished. General Settings stores the default module per profile.
+Reading devotionals leaves Bible and dictionary history untouched.
