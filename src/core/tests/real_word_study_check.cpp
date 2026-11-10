@@ -127,6 +127,23 @@ int main(int argc, char **argv) try {
   } catch (const std::invalid_argument &) { unmapped = true; }
   check(unmapped && worker.parallel_selection(tab).get()->reference == numbered.reference,
         "SDK systems without mapping tables must not silently fall back to textual alignment");
+  const std::vector<std::pair<std::string,std::string>> export_sources{
+      {"OSHB","Genesis 1:1"}, {"MorphGNT","John 1:1"}, {"Peshitta","John 1:1"}};
+  for (const auto &source : export_sources) {
+    const auto expression = source.second + ";" + source.second;
+    const auto plain = worker.export_passage_text(tab,source.first,expression,source.second).get();
+    check(plain.module == source.first && plain.verse_count == 2 &&
+          plain.text.find(source.second + "\t") != std::string::npos,
+          "Real multilingual plain passage export retains module and duplicates");
+    try {
+      const auto html = worker.export_passage_html(tab,source.first,expression,source.second).get();
+      check(html.module == source.first && html.verse_count == 2 &&
+            html.html.find("default-src 'none'") != std::string::npos,
+            "Real multilingual HTML passage export retains module and duplicates");
+    } catch (const std::exception &error) {
+      throw std::runtime_error("Real passage HTML failed for " + source.first + ": " + error.what());
+    }
+  }
   const auto after = worker.history(tab).get();
   check(after.cursor == history.cursor && after.entries.size() == history.entries.size() &&
         after.can_back == history.can_back && after.can_forward == history.can_forward &&

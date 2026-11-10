@@ -116,3 +116,9 @@ cell carries separate HTML and source references for every numbered part.
 Merged mappings retain the same actual source verse in each corresponding
 control row. Real tests cover Leviticus 14:55–56 in Synodal/KJV, a Psalm mapping
 starting at verse zero, and an unsupported MT-to-KJV comparison.
+
+
+The same runner checks complete plain-text and passive HTML passage export
+from OSHB, MorphGNT and Peshitta, preserving the module and duplicate verse
+order. It uses the ICU/CLucene-enabled SWORD build, compares the source tree
+before and after, and emits no copied passage text.

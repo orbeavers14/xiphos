@@ -21,19 +21,19 @@ These are scoped implementations, not complete functionality or release sign-off
 
 ## Latest verification
 
-The macOS 27.2 Release build at the new 27.0 deployment floor passed **259 of 260
-checks**, with the optional BibleSync network pair skipped and zero failures.
-See the [Mac handoff](handoff-macos.md) for deployment, launch and bundling checks.
-Earlier focused sanitizer checks passed 4/4. A separate
-capable SWORD build proved real indexed verse/dictionary/book searches. See
-[localized reading evidence](localized-reading-verification.md),
-[corpus manifest](real-corpus-validation.md) and [runtime packaging limits](native-runtime-packaging.md).
-No fresh Windows or physical Linux acceptance is implied by Mac-hosted checks.
+The latest standalone core suite passed **184 of 185 checks** on macOS 27.2,
+with one optional BibleSync network skip and zero failures. The render and policy
+targets also built with native core disabled and C++11 selected explicitly.
+The [real corpus](real-corpus-validation.md) verified word metadata, literal
+and mark-insensitive surface search, mapped and split comparisons, and plain
+text and passive HTML export from Hebrew, Greek and Syriac modules. The Mac
+preview has separate focused checks in the [Mac handoff](handoff-macos.md).
+These Mac runs do not establish native Linux or Windows acceptance.
 
 ## Remaining gates
 
-- Native Settings/navigation redesign, selected-word Hebrew, Greek and Aramaic search, and stacked verse comparisons.
-- Complete translations, typed localized-reference input, broader RTL and accessibility acceptance.
+- Native Settings/navigation redesign and Linux/Windows integration for selected-word study and stacked comparisons.
+- Complete translations, localized multi-book expressions, broader RTL and accessibility acceptance.
 - Broader module/canon/profile coverage, remaining reading/export/editor workflows and data compatibility.
 - Windows frontend/native validation, current physical Linux verification and macOS 27.0 deployment acceptance.
 - Dependency resources/notices, signing/notarization, installers and upgrade validation.
