@@ -133,6 +133,7 @@
 "Export returned matches from incomplete search" = "Export returned matches from incomplete search";
 "Export search results" = "Export search results";
 "Favorite" = "Favorite";
+"Find in Passage" = "Find in Passage";
 "First available Bible" = "First available Bible";
 "First available devotional" = "First available devotional";
 "First entry key" = "First entry key";
@@ -242,6 +243,7 @@
 "New name" = "New name";
 "New set" = "New set";
 "New study module" = "New study module";
+"Next" = "Next";
 "Next chapter" = "Next chapter";
 "Next day" = "Next day";
 "Next key" = "Next key";
@@ -283,6 +285,7 @@
 "Preferences" = "Preferences";
 "Preview Migration" = "Preview Migration";
 "Preview Saved Composition" = "Preview Saved Composition";
+"Previous" = "Previous";
 "Previous chapter" = "Previous chapter";
 "Previous day" = "Previous day";
 "Previous key" = "Previous key";

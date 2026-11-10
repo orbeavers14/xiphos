@@ -133,6 +133,13 @@ struct ReaderModelSmoke {
             guard Date() < deadline else { fatalError("Missing anchor reports a presentation failure") }
             try await Task.sleep(nanoseconds: 1_000_000)
         }
+        let find = PassageFindTarget()
+        find.view = view
+        guard await find.find("Original Unicode destination", backwards: false),
+              await find.find("Original Unicode destination", backwards: true),
+              !(await find.find("phrase absent from the fixture", backwards: false)) else {
+            fatalError("Passage find locates visible text in both directions and reports misses")
+        }
         coordinator.anchor = nil; coordinator.scrollToAnchor(view)
         window.contentView = nil; view.navigationDelegate = nil; window.close()
         print("Offscreen native WebKit URI anchors: Unicode/quotes, named targets, top/repeat, missing target and disabled module scripts passed")

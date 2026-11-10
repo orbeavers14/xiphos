@@ -1176,6 +1176,19 @@ private extension EnvironmentValues {
         set { self[ReadingZoomKey.self] = newValue }
     }
 }
+@MainActor
+final class PassageFindTarget {
+    weak var view: WKWebView?
+
+    func find(_ query: String, backwards: Bool) async -> Bool {
+        guard let view else { return false }
+        let configuration = WKFindConfiguration()
+        configuration.backwards = backwards
+        configuration.wraps = true
+        return (try? await view.find(query, configuration: configuration).matchFound) ?? false
+    }
+}
+
 struct PassageView: NSViewRepresentable {
     @Environment(\.readingZoom) private var readingZoom
     @AppStorage(ReadingStyle.storageKey) private var readingStyles = Data()
@@ -1191,6 +1204,7 @@ struct PassageView: NSViewRepresentable {
     var allowsInlineImages = false
     var onContextLink: ((String,String,String) -> Void)? = nil
     var onSelection: ((String, String, String) -> Void)? = nil
+    var findTarget: PassageFindTarget? = nil
     @MainActor final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
         var loaded: String?
         var loadedCSS: String?
@@ -1306,6 +1320,7 @@ struct PassageView: NSViewRepresentable {
             """, injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: .defaultClient))
         let view = WKWebView(frame: .zero, configuration: config)
         view.navigationDelegate = context.coordinator
+        findTarget?.view = view
         return view
     }
     func updateNSView(_ view: WKWebView, context: Context) {
@@ -1640,6 +1655,24 @@ private struct BiblicalMapPanel: NSViewRepresentable {
 
 struct ReaderWindow: View {
     @StateObject private var model: ReaderModel
+    @State private var findTarget = PassageFindTarget()
+    @State private var showingFind = false
+    @State private var findQuery = ""
+    @State private var findMessage: LocalizedStringKey?
+    @State private var findTask: Task<Void, Never>?
+    @FocusState private var findFocused: Bool
+
+    private func findPassage(backwards: Bool = false) {
+        guard !findQuery.isEmpty else { return }
+        findTask?.cancel()
+        let query = findQuery
+        findTask = Task {
+            let found = await findTarget.find(query, backwards: backwards)
+            guard !Task.isCancelled, showingFind, findQuery == query else { return }
+            findMessage = found ? nil : "No match in this passage"
+        }
+    }
+
     @State private var sidebar = "modules"
     @State private var selectedWord: ReadingWordSelection?
     private func searchWord(_ word: ReadingWordSelection, lemma: String?, ignoreMarks: Bool) {
@@ -1933,6 +1966,10 @@ struct ReaderWindow: View {
                 HStack {
                     Toggle("Whole chapter", isOn: $model.showChapter)
                         .onChange(of: model.showChapter) { model.refreshDisplay() }
+                    Button("Find in Passage") {
+                        showingFind = true
+                        findFocused = true
+                    }.keyboardShortcut("f", modifiers: .command)
                     Menu("Display") {
                         Toggle("Verse numbers", isOn: $model.verseNumbers)
                         Toggle("Highlight selected verse", isOn: $model.highlightSelected)
@@ -1996,6 +2033,28 @@ struct ReaderWindow: View {
                 if !model.renderedReference.isEmpty {
                     Text(model.renderedReference).font(.headline).padding(12)
                 }
+                if showingFind {
+                    HStack {
+                        TextField("Find in Passage", text: $findQuery)
+                            .focused($findFocused)
+                            .onSubmit { findPassage() }
+                            .onChange(of: findQuery) { findMessage = nil }
+                        Button("Previous") { findPassage(backwards: true) }
+                            .keyboardShortcut("g", modifiers: [.command, .shift])
+                            .disabled(findQuery.isEmpty)
+                        Button("Next") { findPassage() }
+                            .keyboardShortcut("g", modifiers: .command)
+                            .disabled(findQuery.isEmpty)
+                        Button("Done") {
+                            findTask?.cancel()
+                            showingFind = false
+                            findMessage = nil
+                        }.keyboardShortcut(.cancelAction)
+                    }.padding(.horizontal, 12)
+                    if let findMessage {
+                        Text(findMessage).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
                 PassageView(html: model.html, rightToLeft: model.readingRightToLeft, css: model.lexicalPresentation.css, styleModule: model.annotationEditingTarget?.module, anchor: model.renderedAnchor, anchorRevision: model.renderedAnchorRevision,
                             onScrollFailure: { model.message = $0 }, onLink: { model.followLink($0) },
                             onLinkHover: { model.previewStudyLink($0) },
@@ -2003,7 +2062,7 @@ struct ReaderWindow: View {
                                 guard let source = model.annotationEditingTarget else { selectedWord = nil; return }
                                 selectedWord = ReadingWordSelection(text: text, module: source.module,
                                     reference: reference.isEmpty ? source.reference : reference)
-                            })
+                            }, findTarget: findTarget)
                 if let word = selectedWord {
                     ReadingWordSearchMenu(model: model, word: word, search: searchWord).id(word)
                         .padding(.horizontal, 12).disabled(model.isBusy)
@@ -2157,7 +2216,11 @@ struct ReaderWindow: View {
                 }.padding(20).frame(width: 360)
             }
             .onChange(of: model.selection) { selectedWord = nil; model.selectionChanged() }
-            .onChange(of: model.html) { selectedWord = nil }
+            .onChange(of: model.html) {
+                selectedWord = nil
+                findTask?.cancel()
+                findMessage = nil
+            }
             .onChange(of: model.verseNumbers) { model.refreshDisplay() }
             .onChange(of: model.highlightSelected) { model.refreshDisplay() }
             .sheet(item: Binding(get: { model.verseImage }, set: { if $0 == nil { model.closeVerseImage() } })) { image in

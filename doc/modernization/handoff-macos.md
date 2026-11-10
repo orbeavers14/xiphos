@@ -187,3 +187,11 @@ The Mac reader's **Preferences → Biblical Map…** opens the bundled MapLibre
 prototype with illustrative markers and session-only PMTiles import. See
 [the map design](biblical-maps.md) for supported preview layers and the remaining
 offline rendering and download work.
+
+**Find in Passage** searches the displayed Bible pane through WebKit. Use
+Command-F to open the field, Return or Command-G to find forward, and
+Shift-Command-G to find backward. Searches wrap within the displayed text.
+The native keyboard and VoiceOver workflow still needs hands-on review.
+On macOS 27.2, the preview build and offscreen WebKit smoke passed, including
+forward and backward matches and an absent phrase. The development bundle
+audit measured a 27.2 floor and found SDK dependencies outside the bundle.
