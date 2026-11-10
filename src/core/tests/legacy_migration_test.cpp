@@ -7,6 +7,8 @@
 #include <iostream>
 #include <thread>
 #include <glib.h>
+#include <rawcom.h>
+#include <versekey.h>
 using namespace xiphos::core;
 namespace fs=std::filesystem;
 void check(bool ok,const char *s){if(!ok)throw std::runtime_error(s);}
@@ -14,7 +16,7 @@ template<class F>void rejects(F f){try{f();}catch(const std::exception &){return
 std::string bytes(const fs::path &p){std::ifstream in(p,std::ios::binary);return {std::istreambuf_iterator<char>(in),{}};}
 void write(const fs::path &p,const std::string &s){std::ofstream out(p,std::ios::binary);out<<s;}
 std::string settings(){return R"(<?xml version="1.0"?><Xiphos future="keep"><!-- Original Ω settings -->
-<modules><bible>Text</bible><comm>Notes</comm><dict>Dictionary</dict><book>CaptureBook</book><parallels>Text,TextAlt</parallels><parallel_set_names>Original</parallel_set_names><parallel_set_Original>TextAlt,Text</parallel_set_Original></modules>
+<modules><bible>Text</bible><comm>Notes</comm><dict>Dictionary</dict><book>CaptureBook</book><parallels>Text,TextAlt</parallels><parallel_set_names>Original</parallel_set_names><parallel_set_Original>TextAlt,Text,TextAlt</parallel_set_Original><parallel_set_current>Original</parallel_set_current></modules>
 <keys><verse>John 3:16</verse><dictionary>alpha</dictionary><book>/Original</book><offset>4</offset><future>unknown key</future></keys>
 <lexicons><greek>Dictionary</greek><hebrew>Dictionary</hebrew><future>retained</future></lexicons>
 <misc><showtexts>0</showtexts><showpreview>1</showpreview><showcomms>1</showcomms><showdicts>0</showdicts><xrefsinverselist>0</xrefsinverselist></misc>
@@ -24,10 +26,39 @@ std::string settings(){return R"(<?xml version="1.0"?><Xiphos future="keep"><!--
 <future secret="retained attribute"><opaque>Exact original prose</opaque></future><lexicons><greek>shadowed</greek></lexicons></Xiphos>)";}
 std::string tabs(){return R"(<Xiphos_Tabs Version="original" unknown="keep"><!-- Original tabs --><tabs><tab text_mod="Text" commentary_mod="Notes" dictlex_mod="Dictionary" book_mod="CaptureBook" text_commentary_key="John 3:16" dictlex_key="alpha" book_offset="/Original" comm_showing="yes" showparallel="yes" future="keep"><opaque/></tab></tabs><unrelated/><tabs><tab text_mod="TextAlt" text_commentary_key="John 3:17" showtexts="yes" showpreview="no" showcomms="no" showdicts="yes"/></tabs></Xiphos_Tabs>)";}
 xc_status wait(xc_request *r){auto end=std::chrono::steady_clock::now()+std::chrono::seconds(20);xc_status status;while((status=xc_request_poll(r))==XC_PENDING){check(std::chrono::steady_clock::now()<end,"C migration deadline");std::this_thread::sleep_for(std::chrono::milliseconds(1));}return status;}
+static void verify_copied_profile(const fs::path &root) {
+  StudyWorker worker((root/"copied-library").u8string());
+  const auto tab=worker.create_tab().get();
+  const auto path=(root/"copied-library/settings.xml").u8string();
+  const auto profile=worker.read_parallel_profile(tab,path).get();
+  check(profile.current_key=="Original" && profile.sets.size()==1 &&
+        profile.sets.front().modules==std::vector<std::string>{"TextAlt","Text","TextAlt"},
+        "Saved set preserves current identity, order and repeated modules after migration");
+  const auto parallel=worker.visit_parallel_profile(tab,path,"Original","John 3:16",{},false).get();
+  check(parallel.control_module=="TextAlt" && parallel.columns.size()==3,
+        "Copied saved set opens using the original control module");
+  for(const auto *reference:{"John 3:16","John 3:19"}) {
+    const auto entry=worker.read_entry(tab,"Notes",reference).get();
+    check(entry.html.find("Original capture prose Notes John3:16")!=std::string::npos,
+          "Both ends of a personal commentary link resolve in the copied library");
+  }
+}
 int main(int argc,char **argv){try{
  check(argc>=3,"Fixture arguments");auto root=fs::u8path(argv[2]);check(root.filename()=="legacy-migration-fixture","Named fixture only");
- if(argc==4){StudyWorker worker((root/"library").u8string());auto migration=worker.read_legacy_migration((root/"migration.bundle").u8string()).get();check(migration.session&&migration.session->tabs.size()==2,"Fresh-process migration package resolves again");auto restored=worker.restore_native_session(*migration.session).get();check(restored.tabs.size()==2,"Fresh process restores all converted tabs");auto selection=worker.reading_selection(restored.tabs[0].tab).get();check(selection&&selection->module=="Text","Converted selection survives restart");auto current=read_native_session((root/"converted.xml").u8string());check(current.tabs[0].state.module_engine.at("Text").footnotes==false,"Converted module settings survive native file restart");return 0;}
+ if(argc==4){verify_copied_profile(root);StudyWorker worker((root/"library").u8string());auto migration=worker.read_legacy_migration((root/"migration.bundle").u8string()).get();check(migration.session&&migration.session->tabs.size()==2,"Fresh-process migration package resolves again");auto restored=worker.restore_native_session(*migration.session).get();check(restored.tabs.size()==2,"Fresh process restores all converted tabs");auto selection=worker.reading_selection(restored.tabs[0].tab).get();check(selection&&selection->module=="Text","Converted selection survives restart");auto current=read_native_session((root/"converted.xml").u8string());check(current.tabs[0].state.module_engine.at("Text").footnotes==false,"Converted module settings survive native file restart");return 0;}
  fs::remove_all(root);fs::create_directories(root);fs::copy(fs::u8path(argv[1]),root/"library",fs::copy_options::recursive);
+ {
+  const auto data=(root/"library/data/Notes").u8string();
+  sword::RawCom personal(data.c_str());
+  sword::VerseKey source("John 3:16");
+  personal.setKey("John 3:19");
+  personal.linkEntry(&source);
+ }
+ write(root/"library/settings.xml",settings());
+ const auto assets=inspect_legacy_assets((root/"library").u8string());
+ const auto copied=copy_legacy_assets((root/"library").u8string(),assets.revision,
+                                      (root/"copied-library").u8string());
+ check(copied.revision==assets.revision,"Migration copies the complete profile and module bytes");
  const auto config=root/"settings.xml",tabfile=root/"tabs.xml",modops=root/"modops.conf";
  write(config,settings());write(tabfile,tabs());const std::string ini="; Original exact module configuration\n[Text]\nFootnotes=Off\nStrong's Numbers=On\nHeadings=Off\nDoublespace=On\nFutureOption=Keep this\n[Notes]\nCommentary by Chapter=Off\n[NotInstalled]\nFootnotes=On\n";write(modops,ini);
  const LegacyMigrationInput input{config.u8string(),tabfile.u8string(),modops.u8string()};
