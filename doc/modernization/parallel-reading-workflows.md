@@ -310,3 +310,12 @@ and verifies contextual transport with module scripts disabled. Parallel image/
 asset presentation, selected-verse scrolling/highlighting, detached-window parity,
 broader canon/RTL/corpus and physical-host acceptance remain open. Textual alignment
 retains the documented control-module limitations; it is not cross-canon mapping.
+
+## Comparing different verse numbering systems
+
+SWORD can return the original verse number when it has no mapping between two
+numbering systems. That can pair different passages. The shared core uses
+verified SWORD mappings plus an explicit Hebrew MT ↔ KJV/KJVA table for
+Genesis 1 and Psalm 3. It retains split verses and leaves a cell empty when
+there is no verified match. The same resolver serves translation switching.
+See [verified coverage](real-corpus-validation.md).
