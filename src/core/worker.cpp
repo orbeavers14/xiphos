@@ -1045,6 +1045,13 @@ std::future<DictionaryEntry> StudyWorker::read_dictionary(StudyTab tab, std::str
     return s.tab(tab).read_dictionary(module, key);
   });
 }
+std::future<PassageHtmlExport> StudyWorker::export_passage_html(StudyTab tab, std::string module,
+    std::string expression, std::string context, std::size_t max_bytes) {
+  return impl_->submit([tab,module=std::move(module),expression=std::move(expression),
+                        context=std::move(context),max_bytes](Impl::State &s) {
+    return s.tab(tab).export_passage_html(module,expression,context,max_bytes);
+  });
+}
 std::future<PassageTextExport> StudyWorker::export_passage_text(StudyTab tab, std::string module,
     std::string expression, std::string context, std::size_t max_bytes) {
   return impl_->submit([tab,module=std::move(module),expression=std::move(expression),

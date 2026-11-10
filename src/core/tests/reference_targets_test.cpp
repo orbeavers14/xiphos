@@ -63,6 +63,19 @@ int main(int argc,char **argv) {
    try { (void)session.export_passage_text("OptionOther","Gen1:1-Rev22:21","John3:23"); }
    catch (const std::length_error &) { limit=true; }
    check(limit,"Passage export refuses a truncated range");
+   const auto rich = session.export_passage_html("OptionOther","16-19;16","John3:23");
+   const auto htmlFirst=rich.html.find("John 3:16");
+   check(rich.verse_count==5 && rich.html.find("<!DOCTYPE html>")==0 &&
+         rich.html.find("default-src 'none'")!=std::string::npos &&
+         rich.html.find("John 3:16",rich.html.find("John 3:19"))!=std::string::npos &&
+         htmlFirst!=std::string::npos && reader.navigation_target("OptionOther","2").reference==live,
+         "Passage HTML is complete, passive, ordered and leaves the live key unchanged");
+   check(session.export_passage_html("OptionOther","16-19;16","John3:23",rich.html.size()).html==rich.html,
+         "Exact passage HTML cap succeeds");
+   limit=false;
+   try { (void)session.export_passage_html("OptionOther","16-19;16","John3:23",rich.html.size()-1); }
+   catch (const std::length_error &) { limit=true; }
+   check(limit,"One byte short refuses the complete passage HTML document");
    for(const auto &expression:{std::string("16\0ignored",10)}) {
     bool failed=false; try { (void)reader.reference_targets("OptionOther",expression,"John3:23"); } catch(const std::invalid_argument &) { failed=true; }
     check(failed,"embedded NUL expression rejected rather than truncated");
@@ -92,6 +105,11 @@ int main(int argc,char **argv) {
   check(xc_worker_export_passage_text(worker,tab,"OptionOther","16","John3:23",1,&request)==XC_OK &&
         wait(request)!=XC_OK && !xc_request_take_passage_text_export(request),"Failed export publishes no partial text");
   xc_request_release(request);
+  check(xc_worker_export_passage_html(worker,tab,"OptionOther","16;16","John3:23",
+        XC_PASSAGE_TEXT_EXPORT_MAX_BYTES,&request)==XC_OK && wait(request)==XC_OK,"Queue and complete C passage HTML");
+  auto *rich=xc_request_take_passage_html_export(request);
+  check(rich&&!xc_request_take_passage_html_export(request),"Passage HTML result is take-once");
+  xc_request_release(request);
   xc_worker_close(worker);
   check(std::string(xc_passage_text_export_expression(owned))=="16;16" &&
         std::string(xc_passage_text_export_module(owned))=="OptionOther" &&
@@ -99,6 +117,13 @@ int main(int argc,char **argv) {
         xc_passage_text_export_verse_count(owned)==2 && xc_passage_text_export_size(owned)>0 &&
         std::string(xc_passage_text_export_text(owned)).find("John 3:16\t")!=std::string::npos,
         "C passage bytes and provenance survive worker shutdown");
+  check(std::string(xc_passage_html_export_module(rich))=="OptionOther" &&
+        std::string(xc_passage_html_export_context(rich))=="John 3:23" &&
+        std::string(xc_passage_html_export_expression(rich))=="16;16" &&
+        xc_passage_html_export_verse_count(rich)==2 && xc_passage_html_export_size(rich)>0 &&
+        std::string(xc_passage_html_export_html(rich)).find("</body></html>")!=std::string::npos,
+        "C passage HTML provenance and bytes survive worker shutdown");
+  xc_passage_html_export_release(rich);
   xc_passage_text_export_release(owned);
   std::cout<<"Reference targets agree with existing rendered snapshots across "<<comparisons<<" module/context/expression cases\n";
  } catch(const std::exception &error) { std::cerr<<error.what()<<'\n'; return 1; }

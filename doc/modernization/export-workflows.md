@@ -12,7 +12,7 @@ retained identities, reads configured SDK scripture and enforces aggregate outpu
 caps. Selected/all retained text, C/Swift transport, scoped native Mac save/copy
 and restricted HTML now consume these shared services. HTML Copy also has a
 [bounded shared text companion](rich-clipboard-workflows.md). A standalone
-plain-text passage export is available through the core worker. Native
+plain-text and passive HTML passage export are available through the core worker. Native
 passage export destinations, printing and full export parity remain pending.
 
 ## Plain-text passage export
@@ -28,6 +28,12 @@ The worker refuses empty, unresolved or truncated reference lists and applies
 the existing 2,000-verse cap and an 8 MiB maximum output size. An error publishes
 no partial document. The export preserves the live SDK key, reading history and
 search state. Native callers own their eventual file or clipboard destination.
+
+The matching `xc_worker_export_passage_html` API returns a complete passive HTML
+document with the same range, order, provenance and limits. It uses the search
+export markup preparation policy, includes a restrictive content security policy,
+and refuses unsupported markup rather than publishing a partial document.
+The passage API does not embed images or load remote resources.
 
 ## Shared item contract
 

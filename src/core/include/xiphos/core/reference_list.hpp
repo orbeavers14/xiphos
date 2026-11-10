@@ -12,6 +12,10 @@ struct PassageTextExport {
   std::string module, context, expression, text;
   std::size_t verse_count = 0;
 };
+struct PassageHtmlExport {
+  std::string module, context, expression, html;
+  std::size_t verse_count = 0;
+};
 struct ParsedReferenceList {
 	std::string context;
 	std::vector<std::string> references;

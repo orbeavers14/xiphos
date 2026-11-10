@@ -11,6 +11,57 @@
 #include <memory>
 #include <stdexcept>
 namespace xiphos::core {
+PassageHtmlExport StudySession::export_passage_html(const std::string &module, const std::string &expression,
+    const std::string &context, std::size_t max_bytes) {
+  if (module.empty() || module.size() > 4096 || expression.empty() || expression.size() > 32768 ||
+      context.empty() || context.size() > 32768 || !max_bytes || max_bytes > maximum_passage_text_export_bytes ||
+      !g_utf8_validate(module.data(),module.size(),nullptr) ||
+      !g_utf8_validate(expression.data(),expression.size(),nullptr) ||
+      !g_utf8_validate(context.data(),context.size(),nullptr))
+    throw std::invalid_argument("Invalid passage HTML export request");
+  const auto targets = reference_targets(module,expression,context);
+  if (targets.limited) throw std::length_error("Passage export exceeds its verse limit");
+  if (targets.skipped || targets.references.empty())
+    throw std::invalid_argument("Passage export requires a complete reference list");
+  const std::unique_ptr<gchar,decltype(&g_free)> escaped(
+      g_markup_escape_text(module.data(),static_cast<gssize>(module.size())),g_free);
+  if (!escaped) throw std::bad_alloc();
+  const std::string title=escaped.get();
+  const auto prefix=std::string("<!DOCTYPE html><html><head><meta charset=\"UTF-8\">")+
+      "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src 'none'; base-uri 'none'; form-action 'none'\">"+
+      "<title>"+title+"</title>";
+  const auto middle=std::string("</head><body><h1>")+title+"</h1><ul>";
+  const std::string suffix="</ul></body></html>";
+  std::size_t used=prefix.size()+middle.size()+suffix.size();
+  if (used > max_bytes) throw std::length_error("Passage HTML export exceeds its byte limit");
+  auto account = [&](std::size_t size) {
+    if (size > max_bytes-used) throw std::length_error("Passage HTML export exceeds its byte limit");
+    used += size;
+  };
+  std::string body,css;
+  std::array<bool,4> styles{};
+  for (const auto &reference : targets.references) {
+    const auto source = capture_entry_html(module,reference,{max_bytes});
+    if (source.reference != reference)
+      throw std::invalid_argument("Passage export reference no longer resolves exactly");
+    const auto prepared = detail::prepare_export_html(source,max_bytes);
+    if (prepared.limited) throw std::length_error("Passage HTML exceeds its byte limit");
+    if (prepared.issue != HtmlExportIssue::none)
+      throw std::invalid_argument("Passage contains unsupported HTML");
+    if (prepared.style && !styles.at(prepared.style)) {
+      account(prepared.css.size()+(css.empty()?15:0));
+      css += prepared.css;
+      styles.at(prepared.style) = true;
+    }
+    const auto verse = "<div dir=\"auto\" class=\"xiphos-export-style-"+std::to_string(prepared.style)+"\">"+prepared.html+"</div>";
+    const auto item = format_export_item(reference,module,reference,verse,true);
+    account(item.size());
+    body += item;
+  }
+  auto html = prefix+(css.empty()?std::string{}:"<style>"+css+"</style>")+middle+body+suffix;
+  if (html.size()!=used) throw std::logic_error("Passage HTML export accounting mismatch");
+  return {module,targets.context,expression,std::move(html),targets.references.size()};
+}
 SearchHtmlExport StudySession::export_search_html(SearchHtmlExportRequest request,std::shared_ptr<SearchControl> control){
   detail::SearchControlScope progress(control);detail::validate_search_export_output(request.title,request.max_bytes);
   if(request.plain_text_max_bytes)detail::validate_search_export_output(request.title,*request.plain_text_max_bytes);
