@@ -204,3 +204,10 @@ later declarations on the same span replace that span's local decoration.
 Canonical `<u>`/`<s>` markup retains the result. Unknown decoration styles,
 colors, overline, duplicate tokens and priority qualifiers preserve Source by
 rejecting rich conversion. No new flags, dependency or frontend formatter.
+
+### Revision-checked leaf rename
+
+`xc_worker_rename_book_leaf` renames an existing RawGenBook leaf under its
+current parent. The staged save verifies the original content and tree offset
+before publication. Open tabs pointing to that leaf follow the new path.
+Move, subtree rename, and node deletion are separate operations.

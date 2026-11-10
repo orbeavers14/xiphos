@@ -44,6 +44,12 @@ struct ModuleEditStorage::Impl {
   configuration=module->getConfig();
   auto value=[&](const char *key){const auto *v=module->getConfigEntry(key);if(v&&std::char_traits<char>::length(v)>4096)throw std::invalid_argument("Module editing metadata exceeds bounds");return std::string(v?v:"");};driver=value("ModDrv");source_type=value("SourceType");
   if((driver!="RawFiles"&&driver!="RawGenBook")||!value("CipherKey").empty()||module->getEncoding()!=sword::ENC_UTF8)throw std::invalid_argument("Editing requires an unencrypted UTF-8 RawFiles or RawGenBook module");
+  if(!t.rename_book_leaf.empty() &&
+     (driver!="RawGenBook" || t.create_book_entry || t.rename_book_leaf.size()>4096 ||
+      !editable_document_text(t.rename_book_leaf) || t.rename_book_leaf=="." || t.rename_book_leaf==".." ||
+      std::any_of(t.rename_book_leaf.begin(),t.rename_book_leaf.end(),
+                  [](unsigned char c){return c=='/' || c<32 || c==127;})))
+    throw std::invalid_argument("Invalid general-book leaf name");
   if(t.create_book_entry){
    if(driver!="RawGenBook"||t.reference.size()<2||t.reference.size()>4096||t.reference.front()!='/'||t.reference.back()=='/')throw std::invalid_argument("Book creation requires an absolute new tree path");
    for(unsigned char c:t.reference)if(c<32||c==127)throw std::invalid_argument("Invalid new book path");
@@ -99,6 +105,29 @@ ModuleEditEntry ModuleEditStorage::stage(const std::string &expected,const std::
  }
  (void)impl_->entry(*module,before);if(!module->isWritable())throw std::invalid_argument("Module data is read-only");module->popError();
  if(impl_->target.create_book_entry){auto *tree=dynamic_cast<sword::TreeKeyIdx *>(module->getKey());if(!tree)throw std::runtime_error("Missing staged tree key");tree->popError();tree->assureKeyPath(impl_->target.reference.c_str());tree->save();if(tree->getError()||tree->getOffset()==0||std::string(tree->getText())!=impl_->target.reference)throw std::runtime_error("Staged book path creation did not verify");}
+ if (!impl_->target.rename_book_leaf.empty()) {
+  if (erase || !text.empty()) throw std::invalid_argument("Rename takes no replacement text");
+  auto *tree = dynamic_cast<sword::TreeKeyIdx *>(module->getKey());
+  if (!tree || tree->hasChildren()) throw std::invalid_argument("Only leaf sections can be renamed");
+  const auto destination = current.reference.substr(0,current.reference.rfind('/')+1) +
+                           impl_->target.rename_book_leaf;
+  std::unique_ptr<sword::SWKey> candidate(module->createKey());
+  candidate->setText(destination.c_str());
+  if (!candidate->getError() && std::string(candidate->getText()) == destination)
+    throw std::invalid_argument("Book rename destination already exists");
+  tree->setLocalName(impl_->target.rename_book_leaf.c_str());
+  tree->save();
+  module->flush();
+  if (tree->getError() || module->popError()) throw std::runtime_error("SWORD book rename failed");
+  module.reset();
+  auto after = scan(impl_->staged);
+  module = impl_->open(impl_->staged);
+  impl_->target.reference = destination;
+  auto result = impl_->entry(*module,after);
+  if (result.offset != current.offset || result.text != current.text)
+    throw std::runtime_error("Staged book rename did not preserve the entry");
+  return result;
+ }
  if(erase&&impl_->driver=="RawGenBook")module->setEntry("",0);else if(erase)module->deleteEntry();else module->setEntry(text.c_str(),static_cast<long>(text.size()));module->flush();if(module->popError())throw std::runtime_error("SWORD module edit failed");module.reset();
  auto after=scan(impl_->staged);module=impl_->open(impl_->staged);auto result=impl_->entry(*module,after,true);if(result.reference!=current.reference||(!impl_->target.create_book_entry&&result.offset!=current.offset)||result.text!=(erase?std::string{}:text))throw std::runtime_error("Staged module edit did not verify");return result;
 }

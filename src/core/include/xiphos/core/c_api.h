@@ -1349,6 +1349,9 @@ xc_status xc_worker_read_module_edit(xc_worker *worker,uint64_t tab,const char *
  * requires that revision and a still-missing canonical path, stages parent nodes
  * privately and uses existing reload/cache/rollback policy. Existing nodes never
  * become overwrite targets. Both return the owned module-edit result. */
+/* Rename an existing leaf under the same parent using its current revision. */
+xc_status xc_worker_rename_book_leaf(xc_worker *worker,uint64_t tab,const char *module,const char *path,
+    const char *name,const char *revision,xc_request **out);
 xc_status xc_worker_prepare_book_entry(xc_worker *worker,uint64_t tab,const char *module,const char *path,xc_request **out);
 xc_status xc_worker_create_book_entry(xc_worker *worker,uint64_t tab,const char *module,const char *path,const char *revision,const char *text,xc_request **out);
 xc_status xc_worker_save_module_edit(xc_worker *worker,uint64_t tab,const char *module,const char *reference,const char *revision,const char *text,int erase,xc_request **out);

@@ -703,6 +703,15 @@ std::future<ModuleEditEntry> StudyWorker::save_module_edit(StudyTab tab,ModuleEd
  return impl_->submit([tab,target=std::move(target),expected=std::move(expected),text=std::move(text),erase](Impl::State &s){
   (void)s.tab(tab);s.editor_modules[tab]=target.module;std::map<StudyTab,std::pair<StudySessionState,SessionCapabilities>> states;
   for(const auto &t:s.tabs)states.emplace(t.first,std::make_pair(t.second->capture_state(),t.second->capabilities()));
+  if (!target.rename_book_leaf.empty()) {
+   const auto renamed = target.reference.substr(0,target.reference.rfind('/')+1) + target.rename_book_leaf;
+   for (auto &item : states) {
+    auto &book = item.second.first.book;
+    if (!book || book->requested.module != target.module || book->path != target.reference) continue;
+    book->path = renamed;
+    if (std::holds_alternative<std::string>(book->requested.address)) book->requested.address = renamed;
+   }
+  }
   return s.reader.save_module_edit(target,expected,text,erase,[&]{
    std::map<StudyTab,std::unique_ptr<StudySession>> replacement;
    for(const auto &t:states){auto session=StudySession::from_state(s.reader,t.second.first,t.second.second);session->continue_search_serial(*s.tabs.at(t.first));replacement.emplace(t.first,std::move(session));}

@@ -38,6 +38,19 @@ int main(int argc,char **argv)try{
   rejects([&]{(void)worker.read_module_edit(tab,{"CaptureBook","/"+std::string(4096,'x'),true}).get();});
   auto empty=worker.read_module_edit(tab,{"CaptureBook","/Prayers/Empty",true}).get();
   check(worker.save_module_edit(tab,{"CaptureBook","/Prayers/Empty",true},empty.revision,"").get().offset>0,"Explicit empty section creation retains a real tree node");
+  const auto source=worker.read_module_edit(tab,{target.module,target.reference}).get();
+  (void)worker.select_book_document(other,{target.module,target.reference}).get();
+  const ModuleEditTarget rename{target.module,target.reference,false,"Renamed Ω"};
+  rejects([&]{(void)worker.save_module_edit(tab,rename,std::string(64,'0'),"").get();});
+  const auto original_bytes=bytes(root/"data");
+  rejects([&]{(void)worker.save_module_edit(tab,{target.module,target.reference,false,"Entry Ω"},source.revision,"").get();});
+  check(bytes(root/"data")==original_bytes,"Rename collision leaves the book byte-for-byte intact");
+  const auto renamed=worker.save_module_edit(tab,rename,source.revision,"").get();
+  check(renamed.reference=="/Journals/Renamed Ω" && renamed.offset==source.offset &&
+        renamed.text==source.text &&
+        worker.book_document_selection(other).get()->tree.node.path==renamed.reference,
+        "Leaf rename preserves source, offset and sibling selection");
+  rejects([&]{(void)worker.read_module_edit(tab,{target.module,target.reference}).get();});
   rejects([&]{(void)worker.read_module_edit(tab,{"Personal","John3:16",true}).get();});
  }
  {EngineManager manager(root.string().c_str(),true,new sword::MarkupFilterMgr(sword::FMT_XHTML),false,false);auto *module=manager.getModule("CaptureBook");module->createSearchFramework();if(required)check(supports_indexed_search(*module),"Rollback fixture needs an actual existing index");}

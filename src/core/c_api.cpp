@@ -1806,6 +1806,16 @@ const char *xc_rich_document_html(const xc_rich_document *d){return d?d->html.c_
 xc_status xc_worker_release_module_editor(xc_worker *w,uint64_t tab,xc_request **out){return queue_request(w,out,[=](auto &worker){return worker.release_module_editor(tab);});}
 xc_status xc_worker_read_module_edit(xc_worker *w,uint64_t tab,const char *module,const char *reference,xc_request **out){if(!bounded_image_c_text(module,4096)||!bounded_image_c_text(reference,32768)){if(out)*out=nullptr;return XC_INVALID_ARGUMENT;}return queue_request(w,out,[=](auto &worker){return worker.read_module_edit(tab,{module,reference});});}
 xc_status xc_worker_prepare_book_entry(xc_worker *w,uint64_t tab,const char *module,const char *path,xc_request **out){if(out)*out=nullptr;if(!bounded_image_c_text(module,4096)||!bounded_image_c_text(path,4096))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.read_module_edit(tab,{module,path,true});});}
+xc_status xc_worker_rename_book_leaf(xc_worker *w,uint64_t tab,const char *module,const char *path,
+    const char *name,const char *revision,xc_request **out) {
+  if (out) *out=nullptr;
+  if (!bounded_image_c_text(module,4096) || !bounded_image_c_text(path,4096) ||
+      !bounded_image_c_text(name,4096) || !bounded_image_c_text(revision,64) ||
+      !xiphos::core::editable_document_revision(revision)) return XC_INVALID_ARGUMENT;
+  return queue_request(w,out,[=](auto &worker){
+    return worker.save_module_edit(tab,{module,path,false,name},revision,"",false);
+  });
+}
 xc_status xc_worker_create_book_entry(xc_worker *w,uint64_t tab,const char *module,const char *path,const char *revision,const char *text,xc_request **out){if(out)*out=nullptr;if(!w||!out||!bounded_image_c_text(module,4096)||!bounded_image_c_text(path,4096)||!bounded_image_c_text(revision,64)||!xiphos::core::editable_document_revision(revision)||!text||(*text&&!bounded_image_c_text(text,xiphos::core::maximum_editable_document_bytes))||!xiphos::core::editable_document_text(text))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.save_module_edit(tab,{module,path,true},revision,text,false);});}
 xc_status xc_worker_save_module_edit(xc_worker *w,uint64_t tab,const char *module,const char *reference,const char *revision,const char *text,int erase,xc_request **out){if(out)*out=nullptr;if(!w||!out||!bounded_image_c_text(module,4096)||!bounded_image_c_text(reference,32768)||!bounded_image_c_text(revision,64)||!xiphos::core::editable_document_revision(revision)||!text||(*text&&!bounded_image_c_text(text,xiphos::core::maximum_editable_document_bytes))||!xiphos::core::editable_document_text(text)||(erase!=0&&erase!=1)||(erase&&*text))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.save_module_edit(tab,{module,reference},revision,text,erase!=0);});}
 xc_module_edit *xc_request_take_module_edit(xc_request *r){return r&&r->status==XC_OK?r->module_edit.release():nullptr;}
