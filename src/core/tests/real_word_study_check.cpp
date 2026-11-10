@@ -77,8 +77,37 @@ static void check_c_split(const char *root, const char *profile) {
         "C result retains exactly one additional verse after worker shutdown");
 }
 
+static void check_real_export_resources(const char *root) {
+  const auto before = inspect_legacy_assets(root).revision;
+  StudyWorker worker(root);
+  const auto tab = worker.create_tab().get();
+  SearchQuery query{"FreChry","serpent",SearchMode::phrase};
+  query.range = SearchRange{"FreChry","Genesis 1:1"};
+  const auto search = worker.search_module(tab,query).get();
+  check(search.references == std::vector<std::string>{"Genesis 1:1"},
+        "Find the illustrated FreChry entry");
+  SearchHtmlExportRequest request;
+  request.generation = search.generation.id;
+  request.rows = {{0,0}};
+  request.include_scripture = true;
+  request.images.policy = SearchHtmlImagePolicy::embedded_static_png_bmp;
+  const auto result = worker.export_search_html(tab,request).get();
+  check(result.status == SearchExportStatus::unsupported_html &&
+        result.issue == HtmlExportIssue::resources && result.html.empty(),
+        "Real FreChry JPEG must produce an explicit resource error and no partial HTML");
+  worker.set_image_content(tab,"FreChry",false).get();
+  const auto passive = worker.export_search_html(tab,request).get();
+  check(passive.status == SearchExportStatus::ok && passive.row_count == 1 &&
+        passive.html.find("style.css") == std::string::npos &&
+        passive.html.find("<img") == std::string::npos,
+        "Text export with images disabled stays self-contained");
+  const auto stylesheet = std::filesystem::u8path(root) / "modules/comments/zcom4/frechry/style.css";
+  check(std::filesystem::is_regular_file(stylesheet) && std::filesystem::file_size(stylesheet) > 0,
+        "Resource corpus must contain FreChry's shipped stylesheet");
+  check(inspect_legacy_assets(root).revision == before, "Export changed the resource module");
+}
 int main(int argc, char **argv) try {
-  check(argc == 3, "Supply a disposable SWORD library and a new comparison profile path");
+  check(argc == 3 || argc == 4, "Supply a disposable SWORD library and a new comparison profile path");
   check(!std::filesystem::exists(std::filesystem::u8path(argv[2])), "Comparison profile must be new");
   const auto before = inspect_legacy_assets(argv[1]).revision;
   StudyWorker worker(argv[1]);
@@ -278,6 +307,7 @@ int main(int argc, char **argv) try {
         "Word study and comparison changed main reading history");
   check_c_split(argv[1], argv[2]);
   check(inspect_legacy_assets(argv[1]).revision == before, "Real corpus was changed");
+  if (argc == 4) check_real_export_resources(argv[3]);
   std::cout << "Real Hebrew, Greek, Aramaic and cross-canon comparison checks passed\n";
   return 0;
 } catch (const std::exception &error) {

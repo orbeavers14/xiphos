@@ -137,3 +137,14 @@ can keep the current passage open. The corpus runner checks OSHB ↔ ASV through
 the standalone resolver, including C result ownership after worker shutdown.
 
 Genesis 1 numbering was checked against [Mechon Mamre](https://mechon-mamre.org/p/pt/pt0101.htm) and the [ASV](https://ebible.org/asv/GEN01.htm).
+
+### Resource export
+
+An optional third runner argument points to a disposable library containing
+[FreChry](https://crosswire.org/sword/modules/ModInfo.jsp?modName=FreChry) 2.2
+(Public Domain). The module ships JPEGs and a preferred `style.css`. Its
+Genesis 1:1 search result returns an explicit unsupported-resource error
+when exporting with image embedding enabled. With images disabled for the
+module, the same result exports as passive HTML without an image or an
+external stylesheet reference. The corpus is checked for byte changes.
+Embedding JPEGs and importing arbitrary module CSS remain outside this check.
