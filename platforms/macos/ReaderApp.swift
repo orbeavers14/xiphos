@@ -1423,7 +1423,7 @@ struct ReaderWindow: View {
                 }
                 HStack {
                     Toggle("Whole chapter", isOn: $model.showChapter)
-                        .onChange(of: model.showChapter) { _ in model.refreshDisplay() }
+                        .onChange(of: model.showChapter) { model.refreshDisplay() }
                     Menu("Display") {
                         Toggle("Verse numbers", isOn: $model.verseNumbers)
                         Toggle("Highlight selected verse", isOn: $model.highlightSelected)
@@ -1617,9 +1617,9 @@ struct ReaderWindow: View {
                 }.frame(minWidth: 230, idealWidth: 300)
             }
         }.frame(minWidth: 700, minHeight: 450)
-            .onChange(of: model.selection) { _ in model.selectionChanged() }
-            .onChange(of: model.verseNumbers) { _ in model.refreshDisplay() }
-            .onChange(of: model.highlightSelected) { _ in model.refreshDisplay() }
+            .onChange(of: model.selection) { model.selectionChanged() }
+            .onChange(of: model.verseNumbers) { model.refreshDisplay() }
+            .onChange(of: model.highlightSelected) { model.refreshDisplay() }
             .sheet(item: Binding(get: { model.verseImage }, set: { if $0 == nil { model.closeVerseImage() } })) { image in
                 VerseImagePreviewView(image: image, close: model.closeVerseImage)
             }

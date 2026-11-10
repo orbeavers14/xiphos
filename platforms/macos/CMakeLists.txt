@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.20)
 set(CMAKE_OSX_DEPLOYMENT_TARGET "27.0" CACHE STRING "Minimum macOS version")
 if(CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "27.0")
   message(FATAL_ERROR "The native preview requires macOS 27.0 or later. Set CMAKE_OSX_DEPLOYMENT_TARGET to at least 27.0 or configure a fresh build directory.")

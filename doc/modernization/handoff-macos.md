@@ -36,6 +36,16 @@ ad-hoc signature verification and all 29 Mach-O image checks at a declared and
 observed floor of 27.0. CTest passed 259 of 260 checks in 66.10 seconds,
 with the optional BibleSync network pair skipped and zero failures.
 
+## Compatibility cleanup
+
+The Mac preview requires CMake 3.20 because its fixture targets use
+`ctest --test-dir`. Six reader and settings callbacks use current SwiftUI
+`onChange` overloads. A local rebuild with CMake 4.4.5 and SDK 27.2 produced no
+`onChange(of:perform:)` warnings. The app still declares macOS 27.0. CTest passed
+259 checks with zero failures and one optional BibleSync network skip.
+See the [Linux handoff](handoff-linux.md#maintenance-baseline-on-master) for the
+shared toolchain validation that remains.
+
 ## Current next steps
 
 - Follow the [native interface list](native-ui-todo.md): coherent Settings navigation,

@@ -6,7 +6,7 @@ The old GTK3 application has been removed.
 
 ## Build
 
-Use a Swift6-capable Xcode toolchain and CMake3.16+, with the SDKs listed in the
+Use a Swift 6-capable Xcode toolchain, CMake 3.20 or later, and the SDKs in the
 [dependency inventory](../../dependencies/README.md). C++17 and the core's full
 library dependencies apply.
 

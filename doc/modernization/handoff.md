@@ -1,6 +1,6 @@
 # Shared project handoff
 
-Updated 2026-11-05. Read [AGENTS.md](../../AGENTS.md), [status](status.md),
+Updated 2026-11-09. Read [AGENTS.md](../../AGENTS.md), [status](status.md),
 [architecture](architecture.md), [roadmap](shared-core-roadmap.md),
 [parity requirements](parity-matrix.md) and your platform handoff before editing.
 
@@ -27,6 +27,11 @@ GTK3, top-level win32/desktop/poc and old packaging/build metadata are removed.
 Do not restore retired application code to apply an upstream renderer patch.
 
 ## Latest checked work
+
+The [2026 native baseline](2026-native-baseline.md) governs maintenance cleanup.
+The Mac preview now uses macOS 27.0 and CMake 3.20 minimums. See the
+[Linux handoff](handoff-linux.md#maintenance-baseline-on-master) for the local
+checks needed before removing shared toolchain fallbacks.
 
 [Localized reading](localized-reading-verification.md) records258 native passes
 and2 expected skips, RTL/private selector locales, note-save routing and mixed-canon

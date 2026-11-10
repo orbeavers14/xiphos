@@ -114,8 +114,8 @@ import SwiftUI
             Text("BibleSync shares passages. Open BibleSync to review its settings and connect explicitly.")
                 .font(.callout).foregroundStyle(.secondary)
         }.padding(20)
-        .onChange(of: preferences.bible) { controller.preferredBible = $0 }
-        .onChange(of: preferences.commentary) { controller.preferredCommentary = $0 }
+        .onChange(of: preferences.bible) { _, bible in controller.preferredBible = bible }
+        .onChange(of: preferences.commentary) { _, commentary in controller.preferredCommentary = commentary }
     }
 }
 

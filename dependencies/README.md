@@ -42,7 +42,7 @@ them. Transitive libraries vary with the selected SDK and TLS backend.
 | Zstandard — curl transitive dependency | SDK-selected; no separate Xiphos floor | 1.5.7; installed metadata | Compression capability built into curl | Selected curl dynamic dependencies |
 | Brotli decoder/common — curl transitive dependency | SDK-selected; no separate Xiphos floor | 1.2.0; installed metadata | Compression capability built into curl | Selected curl dynamic dependencies |
 | curl-private zlib — transitive dependency | SDK-selected; no separate Xiphos floor | 1.3.2; installed metadata/link inspection | Compression support inside curl | MacPorts library; separate from directly linked Apple zlib above |
-| CMake / CTest — build/test tool | 3.16 | 4.4.0 | Configure, generate builds and run checks | `src/core/CMakeLists.txt`, native platform CMake files |
+| CMake / CTest — build/test tool | 3.16 shared core and Linux, 3.20 Mac preview | 4.4.0 | Configure, generate builds and run checks | `src/core/CMakeLists.txt`, native platform CMake files |
 | C/C++ compiler — build tool | C11 / C++17; no compiler release floor declared | Apple Clang 21.0.0 | Compile shared code and adapters | Core build; reused helper interfaces retain C++11 compatibility |
 | pkg-config / pkgconf — discovery tool | Not specified; preferred, with explicit SDK fallback support | Build-selected pkgconf 3.0.10; another PATH installation reports 0.29.2 | Discover SDK versions, headers and link inputs | Core CMake dependency discovery |
 | Make / Ninja — build tool | A supported CMake generator; no numeric floor declared | GNU Make 3.81; Ninja not on this Mac's PATH | Run generated build rules | Current Mac configuration uses Unix Makefiles; Windows setup selects Ninja |
