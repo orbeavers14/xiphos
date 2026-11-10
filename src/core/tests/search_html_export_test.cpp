@@ -20,7 +20,10 @@ int main(int argc,char **argv){try{
   bool rejected=false;try{session.export_search_html(invalid_request);}catch(const std::invalid_argument &){rejected=true;}check(rejected,"Empty visible HTML selection is not an all-results alias");
   invalid_request=request;invalid_request.max_rows=0;rejected=false;try{session.export_search_html(invalid_request);}catch(const std::invalid_argument &){rejected=true;}check(rejected,"Invalid HTML aggregate row limit");
   const auto before=session.module_presentation_options("Text");
+  (void)reader.read("Text","Genesis 1:1");
+  const auto livePosition = reader.navigation_target("Text","2").reference;
   held=session.export_search_html(request);
+  check(reader.navigation_target("Text","2").reference==livePosition,"Search HTML export preserves the module's relative navigation context");
   check(held.status==SearchExportStatus::ok&&held.row_count==12&&held.selection==SearchExportSelection::all_retained&&held.html.find("&lt;script&gt;not-code&lt;/script&gt;")!=std::string::npos&&held.html.find("<script>")==std::string::npos,"Complete HTML includes all retained groups with escaped title and first/duplicate rows");
   check(count(held.html,"John 1:1 Text")==2&&held.html.find("Original")!=std::string::npos&&held.html.find("default-src 'none'")!=std::string::npos,"Duplicate identity and passive document policy are preserved");
   std::unique_ptr<xmlDoc,decltype(&xmlFreeDoc)> document(htmlReadMemory(held.html.data(),static_cast<int>(held.html.size()),nullptr,"UTF-8",HTML_PARSE_NONET|HTML_PARSE_NODEFDTD),xmlFreeDoc);

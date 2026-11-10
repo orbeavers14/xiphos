@@ -40,6 +40,16 @@
 
 namespace xiphos::core {
 namespace {
+class RestoreVersePosition {
+public:
+  explicit RestoreVersePosition(sword::VerseKey &key) : key_(key), saved_(key) {}
+  ~RestoreVersePosition() { key_ = saved_; }
+  RestoreVersePosition(const RestoreVersePosition &) = delete;
+  RestoreVersePosition &operator=(const RestoreVersePosition &) = delete;
+private:
+  sword::VerseKey &key_;
+  sword::VerseKey saved_;
+};
 void copy_note_source(sword::SWModule &module, Entry &entry) {
   entry.note_source.captured = true;
   entry.note_source.reported_label = entry_attribute(module, "Footnote", "1", "n", false);
@@ -471,11 +481,7 @@ PassageTextExport Reader::export_passage_text(const std::string &id, const std::
   if (targets.skipped || targets.references.empty())
     throw std::invalid_argument("Passage export requires a complete reference list");
   auto &live = *static_cast<sword::VerseKey *>(module.getKey());
-  struct Restore {
-    sword::VerseKey &live;
-    sword::VerseKey saved;
-    ~Restore() { live = saved; }
-  } restore{live,live};
+  RestoreVersePosition restore(live);
   std::unique_ptr<ScopedEngineOptions> scope;
   if (options) scope = std::make_unique<ScopedEngineOptions>(*impl_->manager,*options);
   PassageTextExport result{id,targets.context,expression,{},targets.references.size()};
@@ -869,8 +875,10 @@ std::string Reader::read_stripped(const std::string &id,const std::string &refer
   if(!detail::supports_verse_search(module))throw std::invalid_argument("Text export requires a supported verse module");
   std::unique_ptr<ScopedEngineOptions> scope;
   if(options)scope=std::make_unique<ScopedEngineOptions>(*impl_->manager,*options);
-  module.setKey(reference.c_str());
-  if(module.getKey()->getError())throw std::invalid_argument("SWORD could not resolve the export reference");
+  auto &live = *static_cast<sword::VerseKey *>(module.getKey());
+  RestoreVersePosition restore(live);
+  live.setText(reference.c_str());
+  if(live.getError())throw std::invalid_argument("SWORD could not resolve the export reference");
   const auto stripped=detail::strip_sdk_buffer(module,nullptr);
   return detail::copy_sdk_text(stripped,max_bytes);
 }
@@ -889,8 +897,11 @@ Entry Reader::read_impl(const std::string &id, const std::string &reference, con
   // Resolve using the module's own versification and SWORD normalization,
   // never an independent canon/reference parser in a frontend.
   Entry result;
+  std::optional<RestoreVersePosition> restore;
   if(max_html_bytes){
-    module->setKey(reference.c_str());
+    auto &live = *static_cast<sword::VerseKey *>(module->getKey());
+    restore.emplace(live);
+    live.setText(reference.c_str());
     result.html=detail::copy_sdk_text(detail::render_sdk_entry(*module),*max_html_bytes);
   }else result.html = render_entry(*module, reference.c_str());
   if (module->getKey()->getError())

@@ -37,7 +37,10 @@ int main(int argc,char **argv){try{
  request.rows={{1,0}};check(session.export_search_visible_text(request).status==SearchExportStatus::invalid_selection,"Failed group has no selectable row");
  request.rows={{0,3}};check(session.export_search_visible_text(request).status==SearchExportStatus::invalid_selection,"Visible row bound enforced");
  request.rows={{0,0}};check(other.export_search_visible_text(request).status==SearchExportStatus::stale,"Origin tab required");
+ (void)reader.read("Text","Genesis 1:1");
+ const auto livePosition = reader.navigation_target("Text","2").reference;
  request.include_scripture=true;auto with=session.export_search_visible_text(request);
+ check(reader.navigation_target("Text","2").reference==livePosition,"Search text export preserves the module's relative navigation context");
  const auto stripped=reader.read_stripped("Text","John 1:1",session.module_engine_options("Text"),1024);
  check(with.status==SearchExportStatus::ok&&with.includes_scripture&&with.text==request.title+"\n\n"+
   format_export_item("John 1:1 Text","Text","John 1:1",stripped,false)+"\n"&&stripped.find("Original")!=std::string::npos&&stripped.find("<w")==std::string::npos,"Scripture uses SDK stripped text, not HTML removal approximation");
