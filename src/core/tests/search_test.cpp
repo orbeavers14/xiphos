@@ -77,6 +77,25 @@ int main(int argc,char **argv){try{
  (void)detail::capture_module_search(legacy,module,{"Text","Original"},{});check(!module.isProcessEntryAttributes()&&std::string(module.getKeyText())==saved_key&&module.isSkipConsecutiveLinks()==skipped&&!module.terminateSearch,"Search restores caller position/flags under the checked SDK");for(const auto &filter:filters)check(filter.second==filter.first->getOptionValue(),"Search restores every filter baseline");
  module.addStripFilter(&fault);rejects<std::runtime_error>([&]{detail::capture_module_search(legacy,module,{"Text","Original"},{});});fault.enabled=false;check(!module.isProcessEntryAttributes(),"Strip failure restores caller attributes");for(const auto &filter:filters)check(filter.second==filter.first->getOptionValue(),"Strip failure restores temporary accent/vowel settings");
  check(detail::capture_module_search(legacy,module,{"Text","Original"},{}).references.size()==3,"Search recovers after injected strip failure");
+ const auto latinRoot=root/"latin-surface";
+ fs::create_directories(latinRoot/"mods.d");
+ fs::create_directories(latinRoot/"data");
+ const auto latinData=(latinRoot/"data").string();
+ check(RawText::createModule(latinData.c_str())==0,"Create legacy Latin-1 verse fixture");
+ {
+  RawText writer(latinData.c_str());
+  writer.setKey("John 1:1");
+  writer.setEntry("Latin caf\xe9");
+  std::ofstream conf(latinRoot/"mods.d/Latin.conf");
+  conf<<"[Latin]\nDataPath=./data\nModDrv=RawText\nSourceType=OSIS\nEncoding=Latin-1\n";
+ }
+ Reader latin(latinRoot.string());
+ const auto literal=latin.search_module({"Latin",u8"café",SearchMode::surface_literal,true});
+ check(literal.references==std::vector<std::string>{"John 1:1"} && literal.effective_expression==u8"café",
+       "Surface input remains UTF-8 while SWORD decodes Latin-1 source text");
+ const auto markup=latin.search_module({"Latin",u8"<hi>café</hi>",SearchMode::surface_literal,true});
+ check(markup.references.empty() && markup.effective_expression==u8"<hi>café</hi>",
+       "Literal surface input is never interpreted as module markup");
  check(bytes(root/"data")==before&&!held.references.empty(),"Search leaves module data unchanged and retains owned result copies");
  std::cout<<"Owned search matches actual legacy backend, case modes, bounded output and filter restoration passed\n";return 0;
  }catch(const std::exception &error){std::cerr<<error.what()<<'\n';return 1;}}

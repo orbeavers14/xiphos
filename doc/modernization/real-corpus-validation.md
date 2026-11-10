@@ -102,6 +102,8 @@ preserve marks and accept canonical Unicode equivalents. The mark-insensitive
 mode removes combining marks attached to Greek, Hebrew and Syriac characters.
 Word metadata lookup uses the same script-specific normalization. Both surface
 modes exclude annotations without changing retained settings for other searches.
+The explicit query is already UTF-8 and is not passed through the module's
+encoding or markup filters. The generated Latin-1 fixture verifies this boundary.
 Legacy phrase searches retain their existing behavior. The returned C snapshot owns the
 actual module, canonical reference, original surface and ordered terms.
 

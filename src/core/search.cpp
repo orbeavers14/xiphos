@@ -206,8 +206,10 @@ SearchResult capture_module_search(EngineManager &manager,sword::SWModule &modul
   const bool index_fallback=query.mode==SearchMode::indexed&&engine_type!=xiphos::core::detail::sdk_search_external;
   auto prepared=sidebar_search_text(query.expression,query.mode==SearchMode::words&&engine_type==xiphos::core::detail::sdk_search_external);
   if(attribute){auto value=attribute_search_text(query.expression,*attribute);prepared=std::move(value.expression);whole_entry=value.whole_entry;}
-  const auto stripped_buffer=strip_sdk_buffer(module,prepared.c_str());
-  const auto stripped=copy_sdk_text(stripped_buffer,maximum_search_effective_bytes);
+  // Surface input is already user UTF-8, not source markup in the module's
+  // encoding. Passing it through module strip filters can double-convert it.
+  const auto stripped = surface ? query.expression :
+      copy_sdk_text(strip_sdk_buffer(module,prepared.c_str()),maximum_search_effective_bytes);
   const auto needle = surface ? surface_key(stripped,unmarked,query.case_sensitive) : std::string{};
   if (surface && needle.empty()) throw std::invalid_argument("Surface search has no searchable text");
   if(control&&control->cancel_requested()) {
