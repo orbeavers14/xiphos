@@ -444,6 +444,27 @@ final class ReaderModel: ObservableObject {
             chooseCommentary(chosen)
             return
         }
+        if let worker, let chosen = selection, let source = displayedModule,
+           let current = displayedEntry?.reference,
+           modules.contains(where: { $0.id == source && $0.type == "Biblical Texts" }),
+           modules.contains(where: { $0.id == chosen && $0.type == "Biblical Texts" }) {
+            run { token in
+                let mapped: String
+                do { mapped = try await worker.mappedReference(from: source, to: chosen, reference: current) }
+                catch {
+                    guard token == self.revision && !self.closed else { return }
+                    self.selection = source
+                    if let coreError = error as? CoreError, coreError.isInvalidArgument {
+                        self.message = "No verified verse mapping to \(chosen) for \(current)."
+                        return
+                    }
+                    throw error
+                }
+                guard token == self.revision && !self.closed else { return }
+                try await self.visitAndPresent(module: chosen, reference: mapped, token: token)
+            }
+            return
+        }
         read()
     }
     func chooseCommentary(_ module: String) {
@@ -532,6 +553,54 @@ final class ReaderModel: ObservableObject {
         if let history { dictionaryHistory = history }
         message = ""
     }
+    func createStudyBook(_ module: String, organizer: Bool) {
+        guard let worker, let tab else { return }
+        run { token in
+            try await worker.createStudyBook(module: module, organizer: organizer)
+            let discovered = try await worker.modules()
+            let browser = try await worker.bookTree(module: module, offset: 0)
+            let children = try await worker.bookChildren(module: module, parent: 0)
+            let document = try await worker.selectBookDocument(tab: tab, module: module, offset: 0)
+            guard token == self.revision && !self.closed else { return }
+            self.modules = discovered
+            self.search.configure(worker: worker, tab: tab, modules: discovered, preferred: self.selection)
+            self.bookBrowser = browser; self.bookChildren = children
+            self.presentBook(document)
+        }
+    }
+    func organizeBookSection(module: String, path: String, action: BookSectionAction) {
+        guard let worker, let tab, bookEntry?.tree.module == module,
+              bookEntry?.tree.node.path == path, !path.isEmpty else { return }
+        let formerParent = bookEntry?.tree.parent?.offset ?? 0
+        run { token in
+            let edited = try await worker.organizeBookSection(module: module, path: path, action: action)
+            guard token == self.revision && !self.closed else { return }
+            self.search.moduleContentChanged()
+            if case .delete = action {
+                // Offset zero is the browser root. The reading API normalizes
+                // it to legacy offset four, which may now be a detached slot.
+                self.bookDocument = nil; self.bookKey = ""; self.bookNote = nil
+                let browser = try await worker.bookTree(module: module, offset: formerParent)
+                let children = try await worker.bookChildren(module: module, parent: formerParent)
+                guard token == self.revision && !self.closed else { return }
+                self.bookBrowser = browser; self.bookChildren = children
+                if let offset = formerParent != 0 ? formerParent : children.nodes.first?.offset {
+                    let document = try await worker.selectBookDocument(tab: tab, module: module, offset: offset)
+                    guard token == self.revision && !self.closed else { return }
+                    self.presentBook(document)
+                }
+                return
+            }
+            let document = try await worker.selectBookDocumentPath(tab: tab, module: module, path: edited.reference)
+            let offset = document.tree.parent?.offset ?? 0
+            let browser = try await worker.bookTree(module: module, offset: offset)
+            let children = try await worker.bookChildren(module: module, parent: offset)
+            guard token == self.revision && !self.closed else { return }
+            self.bookBrowser = browser; self.bookChildren = children
+            self.presentBook(document)
+        }
+    }
+
     func chooseBook(_ module: String) {
         guard !closed, !isBusy, let worker, let tab,
               modules.contains(where: { $0.id == module && $0.hasBookTree }) else { return }
@@ -1265,19 +1334,26 @@ struct ReadingWordSearchMenu: View {
     let word: ReadingWordSelection
     let search: (ReadingWordSelection, String?, Bool) -> Void
     @State private var resolved: ReadingWordSelection?
+    @State private var lookupFinished = false
 
     var body: some View {
         let choices = resolved ?? word
         Menu("Search Selected Word") {
             Button("Literal surface: " + choices.text) { search(choices, nil, false) }
             Button("Surface without Greek, Hebrew or Syriac marks") { search(choices, nil, true) }
+            if !lookupFinished {
+                Text("Looking up lemmas…")
+            } else if choices.lemmas.isEmpty {
+                Text("No lemma metadata for this selection")
+            }
             ForEach(choices.lemmas, id: \.self) { term in
                 Button("Lemma: " + term) { search(choices, term, false) }
             }
         }.task(id: word) {
             resolved = nil
+            lookupFinished = false
             let result = await model.wordStudy(word)
-            if !Task.isCancelled { resolved = result }
+            if !Task.isCancelled { resolved = result; lookupFinished = true }
         }
     }
 }
@@ -1373,7 +1449,12 @@ struct ReaderWindow: View {
                 }.frame(minHeight: 120)
                     .disabled(model.isBusy)
                     .accessibilityLabel("Installed SWORD modules")
-                    .safeAreaInset(edge:.bottom) { if !model.libraryOrganizationNotice.isEmpty { Text(model.libraryOrganizationNotice).font(.caption).padding(6) } }
+                    .safeAreaInset(edge:.bottom) {
+                        VStack(alignment:.leading) {
+                            BookCreationMenu(model: model)
+                            if !model.libraryOrganizationNotice.isEmpty { Text(model.libraryOrganizationNotice).font(.caption) }
+                        }.padding(6)
+                    }
                     .tabItem { Text("Modules") }.tag("modules")
                     SearchPane(model: model.search, hostBusy: model.isBusy, canRead: model.canOpenSearchResult,
                         onRead: model.openSearchResult,

@@ -1,6 +1,78 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 import SwiftUI
 
+struct BookCreationMenu: View {
+    @ObservedObject var model: ReaderModel
+    @State private var showing = false
+    @State private var organizer = false
+    @State private var module = ""
+
+    var body: some View {
+        Menu("New book") {
+            Button("General Book…") { begin(organizer: false) }
+            Button("Journal and Prayers…") { begin(organizer: true) }
+        }
+        .disabled(model.isBusy)
+        .alert(organizer ? "New Journal and Prayers Book" : "New General Book", isPresented: $showing) {
+            TextField("Module ID", text: $module)
+            Button("Cancel", role: .cancel) {}
+            Button("Create") { model.createStudyBook(module, organizer: organizer) }.disabled(module.isEmpty)
+        } message: {
+            Text("Choose a unique ID using letters, numbers, or underscores.")
+        }
+    }
+
+    private func begin(organizer: Bool) {
+        self.organizer = organizer
+        module = ""
+        showing = true
+    }
+}
+
+private struct BookSectionMenu: View {
+    @ObservedObject var model: ReaderModel
+    let module: String
+    let node: BookNode
+    @State private var naming = false
+    @State private var moving = false
+    @State private var deleting = false
+    @State private var input = ""
+
+    var body: some View {
+        Menu("Section") {
+            Button("Rename…") { input = node.title; naming = true }
+            Button("Move…") { input = ""; moving = true }
+            Button(node.hasChildren ? "Delete Section and Children…" : "Delete Section…", role: .destructive) {
+                deleting = true
+            }
+        }
+        .accessibilityLabel("Organize book section")
+        .alert("Rename Section", isPresented: $naming) {
+            TextField("New name", text: $input)
+            Button("Cancel", role: .cancel) {}
+            Button("Rename") { model.organizeBookSection(module: module, path: node.path, action: .rename(input)) }
+                .disabled(input.isEmpty || input == node.title)
+        }
+        .alert("Move Section", isPresented: $moving) {
+            TextField("Destination parent path", text: $input)
+            Button("Cancel", role: .cancel) {}
+            Button("Move") { model.organizeBookSection(module: module, path: node.path, action: .move(input)) }
+                .disabled(!input.hasPrefix("/"))
+        } message: {
+            Text("Enter an existing parent path. Enter / to move to the top level.")
+        }
+        .alert("Delete Section?", isPresented: $deleting) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                model.organizeBookSection(module: module, path: node.path, action: .delete(descendants: node.hasChildren))
+            }
+        } message: {
+            Text(node.hasChildren ? "This permanently removes \(node.path) and all its children." :
+                                    "This permanently removes \(node.path).")
+        }
+    }
+}
+
 struct BookPane: View {
     @ObservedObject var model: ReaderModel
     var body: some View {
@@ -27,10 +99,13 @@ struct BookPane: View {
                 } label: { Image(systemName: "textformat") }
                     .menuStyle(.borderlessButton).fixedSize()
                     .accessibilityLabel("Book display options").help("Book display options")
+                if let tree = model.bookEntry?.tree, !tree.node.path.isEmpty {
+                    BookSectionMenu(model: model, module: tree.module, node: tree.node)
+                }
                 Button("Close") { model.closeBook() }
             }.padding(8)
             Picker("Book module", selection: Binding(
-                get: { model.bookEntry?.tree.module ?? "" }, set: { model.chooseBook($0) })) {
+                get: { model.bookEntry?.tree.module ?? model.bookBrowser?.module ?? "" }, set: { model.chooseBook($0) })) {
                 ForEach(model.modules.filter(\.hasBookTree)) { module in Text(module.id).tag(module.id) }
             }.padding(.horizontal, 8)
             HStack {

@@ -72,6 +72,8 @@ struct SearchHit: Identifiable, Sendable, Equatable {
     @Published var exportPartialSource = false
     @Published var exportFormat: SearchExportFormat = .plainText
     @Published var exportImages = false
+    @Published var exportJPEG = false
+    @Published var exportModuleStyles = false
     @Published private(set) var message = "Enter text to search."
     var isBusy: Bool { isSearching || isPreviewLoading || isClearing || isExporting || isLoadingSearchSetup }
     var canSearch: Bool {
@@ -369,6 +371,7 @@ struct SearchHit: Identifiable, Sendable, Equatable {
         let selected = hits.first(where: { $0.id == selection }), includeScripture = exportScripture, includeContext = exportSearchContext
         // The offered native partial-export choice requires shared context so
         // incomplete documents carry the core's source-disposition disclosure.
+        let includeJPEG = exportJPEG, includeModuleStyles = exportModuleStyles && includeScripture
         let allowPartial = allMatches && hasIncompleteExportSource && exportPartialSource && includeContext
         // Capture displayed result identity and original query, never editable drafts
         // or a subsequently queried latest generation. Core rejects stale identity.
@@ -385,11 +388,11 @@ struct SearchHit: Identifiable, Sendable, Equatable {
                 let payload: SearchExportPayload
                 if format == .html {
                     var images = CoreHTMLImageOptions()
-                    if embedImages && includeScripture { images.policy = .embeddedStaticPNGBMP }
+                    if embedImages && includeScripture { images.policy = includeJPEG ? .embeddedStaticRaster : .embeddedStaticPNGBMP }
                     let rows = allMatches ? [] : selected.map { [CoreSearchVisibleRow(group: $0.group, row: $0.row)] } ?? []
                     payload = .html(try await worker.exportSearchHTML(tab: tab, generation: source.generation.id,
                         selection: allMatches ? .allRetained : .visible, rows: rows, title: title,
-                        includeScripture: includeScripture, includeSearchContext: includeContext, allowPartialSource: allowPartial, images: images, plainTextMaxBytes: plainTextFallback ? 1024 * 1024 : nil, returnCancelledResults: true, onProgress: callback))
+                        includeScripture: includeScripture, includeSearchContext: includeContext, allowPartialSource: allowPartial, includeModuleStyles: includeModuleStyles, images: images, plainTextMaxBytes: plainTextFallback ? 1024 * 1024 : nil, returnCancelledResults: true, onProgress: callback))
                 } else if allMatches {
                     payload = .text(try await worker.exportSearchAllText(tab: tab, generation: source.generation.id,
                         title: title, includeScripture: includeScripture, includeSearchContext: includeContext, allowPartialSource: allowPartial, returnCancelledResults: true, onProgress: callback))

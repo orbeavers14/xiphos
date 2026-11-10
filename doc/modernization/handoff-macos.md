@@ -151,3 +151,15 @@ closure checks, and smoke-launched with a disposable profile. Its loader
 used the bundled patched SWORD. This development bundle contains 28 SDK
 libraries and has a measured 27.2 floor. It does not establish acceptance
 on macOS 27.0 or redistribution readiness.
+
+The Mac module picker resolves a Bible translation switch from the committed
+verse through the core mapper. An unavailable mapping restores the picker and
+preserves the current passage, draft, and history. The module sidebar offers
+new general books and journal/prayer organizers. The book pane offers section
+rename, move and confirmed deletion. Move and deletion require the carried
+SWORD SDK. Search HTML has separate opt-ins for JPEG and scoped module styles.
+Stacked and chapter comparisons label unavailable and differently numbered
+verses. The selected-word menu offers surface search and resolved lemma choices.
+
+The native development package was audited on macOS 27.2. Physical macOS 27.0
+execution and a manual keyboard/VoiceOver pass remain separate acceptance gates.

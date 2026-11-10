@@ -118,9 +118,12 @@ struct NativeParallelChapterPane: View {
         var result = "<h2>" + escape(row.reference) + "</h2>"
         for (column, cell) in zip(chapter.columns, row.cells) {
             result += "<article><h3>" + escape(column.requested) + "</h3>"
-            if !column.ready || cell.reference.isEmpty || (cell.html.isEmpty && cell.additional.allSatisfy { $0.html.isEmpty }) {
-                result += "<p>" + (column.ready ? "Verse unavailable" : "Module unavailable") + "</p>"
+            if let status = unavailable(column, cell) {
+                result += "<p>" + escape(status) + "</p>"
             } else {
+                if cell.reference != row.reference && cell.additional.isEmpty {
+                    result += "<p class=\"xc-parallel-reference\">" + escape(cell.reference) + "</p>"
+                }
                 result += "<div dir=\"" + (column.rtl ? "rtl" : "ltr") + "\" data-xc-module=\"" +
                     escape(column.module) + "\" data-xc-reference=\"" + escape(cell.reference) + "\">"
                 result += cellContents(cell, module: column.module) + "</div>"
@@ -128,6 +131,13 @@ struct NativeParallelChapterPane: View {
             result += "</article>"
         }
         return result
+    }
+    private func unavailable(_ column: CoreParallelColumn, _ cell: CoreParallelCell) -> String? {
+        if !column.ready { return NSLocalizedString("Module unavailable", comment: "Parallel comparison column") }
+        if cell.reference.isEmpty || (cell.html.isEmpty && cell.additional.allSatisfy { $0.html.isEmpty }) {
+            return NSLocalizedString("Verse unavailable", comment: "Parallel comparison cell")
+        }
+        return nil
     }
     private func cellContents(_ cell: CoreParallelCell, module: String) -> String {
         func body(_ html: String, headings: [String]) -> String {
@@ -151,7 +161,15 @@ struct NativeParallelChapterPane: View {
             for (index,cell) in row.cells.enumerated() {
                 let column=chapter.columns[index]
                 result += "<td dir=\""+(column.rtl ? "rtl" : "ltr")+"\" data-xc-module=\""+escape(column.module)+"\" data-xc-reference=\""+escape(cell.reference)+"\">"
-                result += cellContents(cell, module: column.module) + "</td>"
+                if let status = unavailable(column, cell) {
+                    result += "<span>" + escape(status) + "</span>"
+                } else {
+                    if cell.reference != row.reference && cell.additional.isEmpty {
+                        result += "<div class=\"xc-parallel-reference\">" + escape(cell.reference) + "</div>"
+                    }
+                    result += cellContents(cell, module: column.module)
+                }
+                result += "</td>"
             }
             result += "</tr>"
         }

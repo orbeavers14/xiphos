@@ -432,7 +432,7 @@ actor CoreWorker {
     func exportSearchHTML(tab: UInt64, generation: UInt64, selection: CoreSearchExportSelection = .visible,
                           rows: [CoreSearchVisibleRow] = [], title: String = "Search results", includeScripture: Bool = false, includeSearchContext: Bool = false,
                           maxBytes: Int = 1024 * 1024, maxRows: Int = 10_000, allowPartialSource: Bool = false,
-                          images: CoreHTMLImageOptions = CoreHTMLImageOptions(), plainTextMaxBytes: Int? = nil, returnCancelledResults: Bool = false,
+                          includeModuleStyles: Bool = false, images: CoreHTMLImageOptions = CoreHTMLImageOptions(), plainTextMaxBytes: Int? = nil, returnCancelledResults: Bool = false,
                           onProgress: (@Sendable (CoreSearchProgress) async -> Void)? = nil) async throws -> RenderedSearchHTMLExport {
         guard (selection == .visible ? !rows.isEmpty : rows.isEmpty), rows.count <= 10_000,
               rows.allSatisfy({ $0.group >= 0 && $0.row >= 0 }), !title.utf8.contains(0), title.utf8.count <= 32768,
@@ -449,7 +449,7 @@ actor CoreWorker {
                 allow_partial_source: allowPartialSource ? 1 : 0)
             var imageOptions = xc_search_html_image_options(policy: images.policy.rawValue, max_images: images.maxImages,
                 max_original_bytes: images.maxOriginalBytes, max_pixels: images.maxPixels)
-            let status = xc_worker_export_search_rich_html_with_context(handle, tab, &input, &imageOptions, plainTextMaxBytes ?? 0, includeSearchContext ? 1 : 0, &request)
+            let status = xc_worker_export_search_rich_html_with_styles(handle, tab, &input, &imageOptions, plainTextMaxBytes ?? 0, includeSearchContext ? 1 : 0, includeModuleStyles ? 1 : 0, &request)
             return (status, request)
         } }
         let completed = try await wait(queued.0, queued.1, cancellingSearch: true,
@@ -1468,6 +1468,15 @@ actor CoreWorker {
         }
         return try await chapter(status, request)
     }
+    func mappedReference(from source: String, to destination: String, reference: String) async throws -> String {
+        var request: OpaquePointer?
+        let status = xc_worker_map_reference(try worker(), source, destination, reference, &request)
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let target = xc_request_take_link(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        defer { xc_link_release(target) }
+        return String(cString: xc_link_reference(target))
+    }
     func localizedReference(module: String, expression: String) async throws -> String {
         guard let locale = referenceLocaleFile else { return expression }
         var request: OpaquePointer?
@@ -1539,6 +1548,43 @@ extension CoreWorker {
         var request: OpaquePointer?; let handle = try worker()
         let status = module.withCString { module in reference.withCString { reference in revision.withCString { revision in text.withCString { xc_worker_save_module_edit(handle, tab, module, reference, revision, $0, erase ? 1 : 0, &request) } } } }
         return try await moduleEditorValue(status, request)
+    }
+    func createStudyBook(module: String, organizer: Bool) async throws {
+        guard !module.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+        var request: OpaquePointer?
+        let handle = try worker()
+        let status = organizer ? xc_worker_create_study_organizer(handle, module, &request) :
+                                 xc_worker_create_general_book(handle, module, &request)
+        let completed = try await wait(status, request)
+        defer { xc_request_release(completed) }
+        guard let result = xc_request_take_local_install_result(completed) else { throw CoreError(status: XC_ENGINE_ERROR) }
+        xc_local_install_result_release(result)
+    }
+    func organizeBookSection(module: String, path: String, action: BookSectionAction) async throws -> EditorModuleSource {
+        let editTab = try await createTab()
+        do {
+            let source = try await openModuleEditor(tab: editTab, module: module, reference: path)
+            var request: OpaquePointer?
+            let handle = try worker()
+            let status: xc_status
+            switch action {
+            case .rename(let name):
+                guard !name.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+                status = xc_worker_rename_book_subtree(handle, editTab, module, path, name, source.revision, &request)
+            case .move(let parent):
+                guard !parent.utf8.contains(0) else { throw CoreError(status: XC_INVALID_ARGUMENT) }
+                status = xc_worker_move_book_subtree(handle, editTab, module, path, parent, source.revision, &request)
+            case .delete(let descendants):
+                status = descendants ? xc_worker_delete_book_subtree(handle, editTab, module, path, source.revision, &request) :
+                                       xc_worker_delete_book_leaf(handle, editTab, module, path, source.revision, &request)
+            }
+            let result = try await moduleEditorValue(status, request)
+            try? await closeTab(editTab)
+            return result
+        } catch {
+            try? await closeTab(editTab)
+            throw error
+        }
     }
     func prepareBookSection(tab: UInt64, module: String, path: String) async throws -> EditorModuleSource {
         guard [module,path].allSatisfy({ !$0.utf8.contains(0) }) else { throw CoreError(status:XC_INVALID_ARGUMENT) }

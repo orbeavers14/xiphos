@@ -152,6 +152,10 @@ struct SearchPane: View {
                     }
                     if model.exportFormat == .html {
                         Toggle("Embed PNG/BMP images", isOn: $model.exportImages).disabled(!model.exportScripture)
+                        Toggle("Also embed JPEG images", isOn: $model.exportJPEG)
+                            .disabled(!model.exportScripture || !model.exportImages)
+                        Toggle("Include module formatting", isOn: $model.exportModuleStyles)
+                            .disabled(!model.exportScripture)
                     }
                 }.disabled(model.isBusy || hostBusy || model.hits.isEmpty).accessibilityLabel("Export search results")
                 Spacer()

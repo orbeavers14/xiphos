@@ -105,6 +105,9 @@ struct BookTree: Sendable, Equatable {
     let node: BookNode
     let parent: BookNode?, firstChild: BookNode?, previousSibling: BookNode?, nextSibling: BookNode?
 }
+enum BookSectionAction: Sendable {
+    case rename(String), move(String), delete(descendants: Bool)
+}
 struct RenderedBookUriTarget: Sendable { let tree: BookTree; let key: String; let anchor: String? }
 enum RenderedBookPaneLink: Sendable { case study(ContextualStudyLink); case book(RenderedBookLink) }
 struct RenderedBookEntry: Sendable, Equatable {
@@ -195,7 +198,7 @@ struct CoreSearchVisibleRow: Sendable, Equatable {let group: Int, row: Int}
 enum CoreSearchExportStatus: Int32, Sendable {case success=0, stale=1, invalidSelection=2, outputLimit=3, cancelled=4, moduleNotFound=5, engineError=6, capacityExceeded=7, sourceIncomplete=8, unsupportedHTML=9}
 enum CoreSearchExportSelection: Int32, Sendable {case visible=0, allRetained=1}
 enum CoreHTMLExportIssue: Int32, Sendable {case none=0, resources=1, markup=2, styles=3, links=4}
-enum CoreHTMLImagePolicy: Int32, Sendable {case reject=0, embeddedStaticPNG=1, embeddedStaticPNGBMP=2}
+enum CoreHTMLImagePolicy: Int32, Sendable {case reject=0, embeddedStaticPNG=1, embeddedStaticPNGBMP=2, embeddedStaticRaster=3}
 struct CoreHTMLImageOptions: Sendable, Equatable {
     var policy: CoreHTMLImagePolicy
     var maxImages: Int
@@ -390,6 +393,7 @@ enum ResolvedStudyLink: Sendable {
 }
 struct CoreError: LocalizedError, Sendable {
     let status: xc_status
+    var isInvalidArgument: Bool { status == XC_INVALID_ARGUMENT }
     var errorDescription: String? {
         switch status {
         case XC_INVALID_ARGUMENT: return NSLocalizedString("The request was refused. Check its inputs and whether the source or library has changed.", comment: "Shared core status presented by the native host")

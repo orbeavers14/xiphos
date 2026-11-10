@@ -2318,7 +2318,80 @@ struct ReaderModelSmoke {
         first.close(); await worker.shutdown()
         print("Native main note/reference hover destinations and guarded preference checks passed")
     }
+    @MainActor static func translationAndOrganizer(root: String) async throws {
+        let worker = try CoreWorker(root: root)
+        let model = ReaderModel(worker: worker, startupError: nil)
+        try await idle(model)
+        guard let tab = model.sessionTab else { fatalError("Reader tab missing") }
+        model.selection = "OSHB"
+        model.reference = "Psalms 3:2"
+        model.read()
+        try await idle(model)
+        let before = try await worker.history(tab)
+        model.reference = "Unsubmitted draft"
+        model.selection = "ASV"
+        model.selectionChanged()
+        try await idle(model)
+        let switched = try await worker.history(tab)
+        guard model.selection == "ASV", model.reference == "Psalms 3:1",
+              switched.count == before.count + 1 else { fatalError("Mapped switch must visit once") }
+        model.reference = "Genesis 3:1"
+        model.read()
+        try await idle(model)
+        let outside = try await worker.history(tab)
+        model.selection = "OSHB"
+        model.selectionChanged()
+        try await idle(model)
+        let unchanged = try await worker.history(tab)
+        guard model.selection == "ASV", model.reference == "Genesis 3:1",
+              unchanged.count == outside.count, model.message.contains("No verified verse mapping")
+        else { fatalError("Unmapped switch must retain reading and history") }
+
+        model.createStudyBook("MacStudyOrganizer", organizer: true)
+        try await idle(model)
+        guard model.bookChildren?.nodes.map(\.path) == ["/Journal","/Prayers"]
+        else { fatalError("Created organizer sections missing from the Mac tree") }
+        guard let journal = model.bookChildren?.nodes.first else { fatalError("Journal missing") }
+        model.chooseBookNode(journal)
+        try await idle(model)
+        model.organizeBookSection(module: "MacStudyOrganizer", path: "/Journal", action: .rename("Study"))
+        try await idle(model)
+        guard model.bookKey == "/Study" else { fatalError("Renamed path not shown") }
+        model.organizeBookSection(module: "MacStudyOrganizer", path: "/Study", action: .move("/Prayers"))
+        try await idle(model)
+        guard model.bookKey == "/Prayers/Study" else { fatalError("Moved path not shown") }
+        model.organizeBookSection(module: "MacStudyOrganizer", path: "/Prayers/Study", action: .delete(descendants: false))
+        try await idle(model)
+        guard model.bookKey == "/Prayers", model.bookChildren?.nodes.isEmpty == true
+        else { fatalError("Deleted section still displayed: \(model.bookKey), \(model.bookChildren?.nodes.map(\.path) ?? []), \(model.message)") }
+        let search = model.search
+        search.module = "FreChry"
+        search.scopeChoice = .bounds; search.boundsModule = "FreChry"; search.bounds = "Genesis 1:1"
+
+        search.expression = "serpent"
+        search.search()
+        try await searchIdle(search)
+        guard let illustrated = search.hits.first(where: { $0.reference == "Genesis 1:1" })
+        else { fatalError("Illustrated FreChry result missing") }
+        search.select(illustrated.id)
+        try await searchIdle(search)
+        search.exportFormat = .html
+        search.exportScripture = true
+        search.exportImages = true
+        search.exportJPEG = true
+        search.exportModuleStyles = true
+        var exported: RenderedSearchHTMLExport?
+        search.exportResults(allMatches: false) { if case .html(let result) = $0 { exported = result } }
+        try await searchIdle(search)
+        guard exported?.status == .success, exported?.html.contains("src=\"data:image/png;base64,") == true,
+              exported?.html.contains(".xiphos-export-module-1{text-align:justify;}") == true
+        else { fatalError("Native export options did not embed the image and scoped formatting") }
+        print("Mac translation, staged organizer and HTML export checks passed")
+    }
     @MainActor static func main() async throws {
+        if CommandLine.arguments.count == 3, CommandLine.arguments[1] == "--translation-and-organizer" {
+            try await translationAndOrganizer(root: CommandLine.arguments[2]); return
+        }
         if CommandLine.arguments.count == 4, CommandLine.arguments[1] == "--localized-rtl-webview" {
             try await localizedRTLWebView(root:CommandLine.arguments[2],locale:CommandLine.arguments[3]);return
         }
