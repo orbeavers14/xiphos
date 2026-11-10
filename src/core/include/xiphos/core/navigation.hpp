@@ -11,7 +11,7 @@ struct ReferenceChoices {
 };
 // Rewrite a recognized localized leading book name to its canonical OSIS name.
 std::string localized_reference_expression(sword::VerseKey &key, const std::string &reference,
-                                           const std::string &locale_file);
+                                           const std::string &locale_file, bool list = false);
 // Caller supplies a verse-key module and serializes all accesses.
 ReferenceChoices reference_choices(sword::SWModule &module, const std::string &reference);
 ReferenceChoices reference_choices(sword::SWModule &module, const std::string &reference, const std::string &locale_file);

@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <memory>
 #include <cstring>
+#include <string_view>
 namespace xiphos::core {
 namespace {
 std::unique_ptr<sword::SWLocale> reference_locale(const std::string &locale_file) {
@@ -51,7 +52,7 @@ std::string folded_reference(const char *text) {
 }
 
 std::string localized_reference_expression(sword::VerseKey &key, const std::string &reference,
-                                           const std::string &locale_file) {
+                                           const std::string &locale_file, bool list) {
   const auto locale = reference_locale(locale_file);
   if (!locale) return reference;
   const auto input = folded_reference(reference.c_str());
@@ -59,42 +60,62 @@ std::string localized_reference_expression(sword::VerseKey &key, const std::stri
   const auto *canon = sword::VersificationMgr::getSystemVersificationMgr()
       ->getVersificationSystem(key.getVersificationSystem());
   if (!canon) throw std::invalid_argument("Unknown reference versification");
-  std::size_t longest = 0;
-  std::string book;
-  bool ambiguous = false;
-  auto consider = [&](const char *label, const char *osis) {
-    const auto candidate = folded_reference(label);
-    if (candidate.empty() || candidate.size() < longest ||
-        input.compare(0,candidate.size(),candidate) != 0) return;
-    if (input.size() > candidate.size()) {
-      const auto next = g_utf8_get_char(input.data() + candidate.size());
-      if (!g_unichar_isspace(next) && (next < '0' || next > '9')) return;
-    }
-    if (candidate.size() > longest) {
-      longest = candidate.size();
-      book = osis;
-      ambiguous = false;
-    } else if (book != osis) ambiguous = true;
+  std::vector<std::pair<std::string,std::string>> names;
+  auto add = [&](const char *label, const char *osis) {
+    auto name = folded_reference(label);
+    if (!name.empty() && osis && *osis) names.emplace_back(std::move(name),osis);
   };
   int count = 0;
   const auto *aliases = locale->getBookAbbrevs(&count);
   if (count < 0 || count > 16384) throw std::invalid_argument("Reference alias limit exceeded");
-  for (int i = 0; i < count; ++i) consider(aliases[i].ab, aliases[i].osis);
+  for (int i = 0; i < count; ++i) add(aliases[i].ab, aliases[i].osis);
   for (int i = 0; i < canon->getBookCount(); ++i) {
     const auto *entry = canon->getBook(i);
-    consider(locale->translate(entry->getLongName()), entry->getOSISName());
+    add(locale->translate(entry->getLongName()), entry->getOSISName());
   }
-  if (!longest) {
-    // A locale can normalize a numeric shorthand without introducing a book.
-    // Unknown book text still goes through the existing SDK parser unchanged.
-    return input.find_first_not_of("0123456789:.,;- ") == std::string::npos ? input : reference;
+  constexpr char separators[] = ";,-";
+  std::string result;
+  bool translated = false;
+  for (std::size_t pos = 0, endpoints = 0; pos < input.size(); ++endpoints) {
+    if (endpoints >= 512) throw std::invalid_argument("Localized reference endpoint limit exceeded");
+    if (input[pos] == ' ') result += input[pos++];
+    std::size_t longest = 0;
+    std::string book;
+    bool ambiguous = false;
+    for (const auto &entry : names) {
+      const auto size = entry.first.size();
+      if (size < longest || input.compare(pos,size,entry.first) != 0) continue;
+      if (pos + size < input.size()) {
+        const char next = input[pos+size];
+        const bool separator = list && std::string_view(separators).find(next) != std::string_view::npos;
+        if (!separator && next != ' ' && (next < '0' || next > '9')) continue;
+      }
+      if (size > longest) {
+        longest = size;
+        book = entry.second;
+        ambiguous = false;
+      } else if (book != entry.second) ambiguous = true;
+    }
+    if (ambiguous) throw std::invalid_argument("Localized book name is ambiguous");
+    if (longest) {
+      if (canon->getBookNumberByOSISName(book.c_str()) < 1)
+        throw std::invalid_argument("Localized book is absent from this module's canon");
+      translated = true;
+      result += book;
+      pos += longest;
+      if (pos < input.size() && input[pos] >= '0' && input[pos] <= '9') result += ' ';
+    }
+    const auto separator = list ? input.find_first_of(separators,pos) : std::string::npos;
+    if (separator == std::string::npos) {
+      result.append(input,pos,std::string::npos);
+      break;
+    }
+    result.append(input,pos,separator-pos+1);
+    pos = separator+1;
   }
-  if (ambiguous) throw std::invalid_argument("Localized book name is ambiguous");
-  if (canon->getBookNumberByOSISName(book.c_str()) < 1)
-    throw std::invalid_argument("Localized book is absent from this module's canon");
-  const char *suffix = input.c_str() + longest;
-  while (*suffix && g_unichar_isspace(g_utf8_get_char(suffix))) suffix = g_utf8_next_char(suffix);
-  return *suffix ? book + " " + suffix : book;
+  if (translated) return result;
+  // A locale can normalize numeric shorthand without introducing a book.
+  return input.find_first_not_of("0123456789:.,;- ") == std::string::npos ? input : reference;
 }
 ReferenceChoices reference_choices(sword::SWModule &module, const std::string &reference) {
   return reference_choices(module, reference, {});

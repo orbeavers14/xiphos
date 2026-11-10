@@ -57,8 +57,7 @@ the UI tool switched to a normal-profile window; no edits were made there.
 
 ## Remaining scope
 
-Full translated surfaces, plural/formatting review, localized multi-book expressions
-input, additional book/preview RTL cases and complete VoiceOver acceptance are
+Full translated surfaces, plural/formatting review, native multi-book input, additional book/preview RTL cases and complete VoiceOver acceptance are
 still open. Mac/Windows native screen navigation and stacked verse comparison
 are in native-ui-todo.md, along with the new selected-word Hebrew search flow.
 These checks are scoped acceptance, not complete platform/feature parity.
@@ -78,5 +77,7 @@ to the request, and resolution itself does not visit history.
 The standalone reader and navigation tests passed on macOS 27.2, including a
 decomposed accent, a compact alias and an unavailable book. The Mac preview
 built and the existing localized WebKit smoke passed after submitting
-`Jean 3:16` through the reader model. This covers a leading book name;
-localized names in multiple independent range endpoints remain open.
+`Jean 3:16` through the reader model. For read-only previews, the shared C API also exposes
+`xc_worker_read_reference_list_localized`. The standalone test covers localized
+books in separate list items and range endpoints, mixed Unicode digits, duplicate
+verses and a book outside the canon in a later item.

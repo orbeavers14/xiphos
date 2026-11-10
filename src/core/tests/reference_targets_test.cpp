@@ -4,6 +4,8 @@
 #include "xiphos/core/session.hpp"
 #include "xiphos/core/worker.hpp"
 #include <iostream>
+#include <filesystem>
+#include <fstream>
 #include <chrono>
 #include <thread>
 #include <stdexcept>
@@ -21,6 +23,13 @@ static xc_status wait(xc_request *request) {
 int main(int argc,char **argv) {
  try {
   check(argc==2,"generated reference fixture required");
+  const auto locale = std::filesystem::u8path(argv[1]) / "reference-list-locale.conf";
+  {
+   std::ofstream output(locale);
+   output << "[Meta]\nName=ref-list-fr\nEncoding=UTF-8\n[Text]\nGenesis=Genèse\nJohn=Jean\n"
+             "[Book Abbrevs]\nJNLOCAL=John\nTOBIE=Tob\n";
+   check(bool(output),"Write private localized list fixture");
+  }
   ParsedReferenceList retained;
   unsigned comparisons=0;
   {
@@ -38,6 +47,18 @@ int main(int argc,char **argv) {
            "link-only preview discloses truncation and retains committed-context return link");
      ++comparisons;
     }
+   const std::string localized=u8"Genèse ١:١; Jean 3:16-JnLocal3:17; Jean 3:16";
+   const auto typed=reader.read_localized_reference_list("OptionOther",localized,"John 3:23",locale.u8string());
+   const auto canonical=reader.reference_targets("OptionOther","Genesis 1:1; John 3:16-John 3:17; John 3:16","John 3:23");
+   check(typed.expression==localized && typed.entries.size()==canonical.references.size() &&
+         typed.entries.size()==4 && !typed.skipped,
+         "Localized list retains its original expression and expands mixed endpoints");
+   for(std::size_t i=0;i<typed.entries.size();++i)
+    check(typed.entries[i].reference==canonical.references[i],"Localized list preserves canonical order and duplicates");
+   bool unavailable=false;
+   try { (void)reader.read_localized_reference_list("OptionOther","Jean 3:16; Tobie 1:1","John 3:23",locale.u8string()); }
+   catch (const std::invalid_argument &) { unavailable=true; }
+   check(unavailable,"Unavailable localized endpoint rejects the whole request");
    EngineOptions enabled; enabled.strongs=true; enabled.footnotes=true;
    session.set_module_engine_options("OptionOther",enabled);
    retained=session.reference_targets("OptionOther","16-19;16","John3:23");
@@ -93,6 +114,15 @@ int main(int argc,char **argv) {
   check(xc_worker_open(argv[1],&worker)==XC_OK &&
         xc_worker_create_tab(worker,&request)==XC_OK && wait(request)==XC_OK,"Open C passage export tab");
   const auto tab=xc_request_tab(request);
+  xc_request_release(request);
+  check(xc_worker_read_reference_list_localized(worker,tab,"OptionOther",u8"Genèse 1:1; Jean 3:16","John3:23",
+        locale.u8string().c_str(),&request)==XC_OK && wait(request)==XC_OK,"Queue and resolve C localized list");
+  auto *localizedList=xc_request_take_reference_list(request);
+  check(localizedList&&xc_reference_list_count(localizedList)==2 &&
+        std::string(xc_reference_list_entry_reference(localizedList,0))=="Genesis 1:1" &&
+        std::string(xc_reference_list_entry_reference(localizedList,1))=="John 3:16",
+        "C localized list publishes owned canonical endpoints");
+  xc_reference_list_release(localizedList);
   xc_request_release(request);
   std::string expression="16;16";
   check(xc_worker_export_passage_text(worker,tab,"OptionOther",expression.c_str(),"John3:23",

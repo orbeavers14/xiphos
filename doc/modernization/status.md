@@ -33,7 +33,7 @@ These Mac runs do not establish native Linux or Windows acceptance.
 ## Remaining gates
 
 - Native Settings/navigation redesign and Linux/Windows integration for selected-word study and stacked comparisons.
-- Complete translations, localized multi-book expressions, broader RTL and accessibility acceptance.
+- Complete translations, native localized multi-book input, broader RTL and accessibility acceptance.
 - Broader module/canon/profile coverage, remaining reading/export/editor workflows and data compatibility.
 - Windows frontend/native validation, current physical Linux verification and macOS 27.0 deployment acceptance.
 - Dependency resources/notices, signing/notarization, installers and upgrade validation.

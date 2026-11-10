@@ -1059,6 +1059,13 @@ std::future<PassageTextExport> StudyWorker::export_passage_text(StudyTab tab, st
     return s.tab(tab).export_passage_text(module,expression,context,max_bytes);
   });
 }
+std::future<ReferenceList> StudyWorker::read_localized_reference_list(StudyTab tab,std::string module,std::string expression,
+    std::string context,std::string locale_file) {
+  return impl_->submit([tab,module=std::move(module),expression=std::move(expression),
+      context=std::move(context),locale_file=std::move(locale_file)](Impl::State &s) {
+    return s.tab(tab).read_localized_reference_list(module,expression,context,locale_file);
+  });
+}
 std::future<ReferenceList> StudyWorker::read_reference_list(StudyTab tab, std::string module, std::string expression, std::string context) {
   return impl_->submit([tab, module = std::move(module), expression = std::move(expression), context = std::move(context)](Impl::State &s) {
     return s.tab(tab).read_reference_list(module, expression, context);

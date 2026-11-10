@@ -161,6 +161,8 @@ public:
   // Owned targets/guard metadata, capped at 2000 total references with limited
   // disclosure. Shared link-only HTML presents that flag. Does not render
   // verse bodies or change the module key/filter state.
+  ReferenceList read_localized_reference_list(const std::string &module, const std::string &expression,
+      const std::string &context, const std::string &locale_file, const std::optional<EngineOptions> &options = {});
   PassageTextExport export_passage_text(const std::string &module, const std::string &expression,
       const std::string &context, const std::optional<EngineOptions> &options,
       std::size_t max_bytes = maximum_passage_text_export_bytes);
@@ -251,7 +253,7 @@ private:
                                   int today_month, int today_day, const EngineOptions *options);
   DictionaryEntry dictionary_impl(const std::string &module, const std::string &key, const EngineOptions *options, int direction = 0);
   ReferenceList reference_list_impl(const std::string &module, const std::string &expression,
-                                    const std::string &context, const EngineOptions *options);
+                                    const std::string &context, const EngineOptions *options, const std::string &locale_file = {});
   StudyNote note_impl(const std::string &module, const std::string &reference,
                        const std::string &identifier, const EngineOptions *options, bool render_body = true);
   Entry read_impl(const std::string &module, const std::string &reference, const EngineOptions *options,

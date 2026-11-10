@@ -114,6 +114,8 @@ public:
   const std::optional<BookSelectionState> &book_selection() const { return book_selection_; }
   BookNote book_note(const std::string &module, std::uint64_t offset, const std::string &identifier, bool render_body = true);
   BookNote book_note_link_at(const std::string &module, std::uint64_t offset, const std::string &uri, bool render_body = true);
+  ReferenceList read_localized_reference_list(const std::string &module,const std::string &expression,
+      const std::string &context,const std::string &locale_file);
   ReferenceList read_reference_list(const std::string &module, const std::string &expression,
                                     const std::string &context);
   PassageHtmlExport export_passage_html(const std::string &module, const std::string &expression,

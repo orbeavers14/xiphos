@@ -1775,6 +1775,10 @@ const char *xc_passage_html_export_html(const xc_passage_html_export *result);
 size_t xc_passage_html_export_size(const xc_passage_html_export *result);
 size_t xc_passage_html_export_verse_count(const xc_passage_html_export *result);
 void xc_passage_html_export_release(xc_passage_html_export *result);
+/* Private-locale reference preview. Context stays canonical. Each recognized
+ * localized endpoint is translated before SDK range/list expansion. */
+xc_status xc_worker_read_reference_list_localized(xc_worker *worker,uint64_t tab,
+    const char *module,const char *expression,const char *context,const char *locale_file,xc_request **out);
 xc_status xc_worker_read_reference_list(xc_worker *worker, uint64_t tab, const char *module, const char *expression, const char *context, xc_request **out);
 xc_status xc_worker_study_note(xc_worker *worker, uint64_t tab, const char *module, const char *reference, const char *identifier, xc_request **out);
 xc_status xc_worker_read_tab_entry(xc_worker *worker, uint64_t tab, const char *module, const char *reference, xc_request **out);

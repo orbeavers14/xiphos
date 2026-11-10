@@ -2275,6 +2275,16 @@ const char *xc_passage_html_export_html(const xc_passage_html_export *r) { retur
 size_t xc_passage_html_export_size(const xc_passage_html_export *r) { return r ? r->value.html.size() : 0; }
 size_t xc_passage_html_export_verse_count(const xc_passage_html_export *r) { return r ? r->value.verse_count : 0; }
 void xc_passage_html_export_release(xc_passage_html_export *r) { delete r; }
+xc_status xc_worker_read_reference_list_localized(xc_worker *w,uint64_t tab,const char *id,const char *expression,
+    const char *context,const char *locale,xc_request **out) {
+  using xiphos::core::detail::study_link_c_text;
+  if (!study_link_c_text(id,4096,true) || !study_link_c_text(expression,32768,true) ||
+      !study_link_c_text(context,32768,true) || !study_link_c_text(locale,4096,true)) {
+    if (out) *out = nullptr;
+    return XC_INVALID_ARGUMENT;
+  }
+  return queue_request(w,out,[=](auto &worker){return worker.read_localized_reference_list(tab,id,expression,context,locale);});
+}
 xc_status xc_worker_read_reference_list(xc_worker *w, uint64_t tab, const char *id, const char *expression, const char *context, xc_request **out) {
   if (!id || !*id || !expression || !context || !*context) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.read_reference_list(tab, id, expression, context); });

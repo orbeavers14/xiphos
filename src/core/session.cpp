@@ -402,6 +402,10 @@ BookNote StudySession::book_note_link_at(const std::string &module, std::uint64_
     throw std::invalid_argument("Book-note command type/source does not match the entry");
   return result;
 }
+ReferenceList StudySession::read_localized_reference_list(const std::string &module,const std::string &expression,
+    const std::string &context,const std::string &locale_file) {
+  return reader_.read_localized_reference_list(module,expression,context,locale_file,module_engine_options(module));
+}
 ReferenceList StudySession::read_reference_list(const std::string &module, const std::string &expression,
                                               const std::string &context) {
   const auto options = module_engine_options(module);

@@ -465,6 +465,11 @@ ReferenceList Reader::read_reference_list(const std::string &id, const std::stri
                                          const std::string &context, const EngineOptions &options) {
   return reference_list_impl(id, expression, context, &options);
 }
+ReferenceList Reader::read_localized_reference_list(const std::string &id, const std::string &expression,
+    const std::string &context, const std::string &locale_file, const std::optional<EngineOptions> &options) {
+  detail::validate_xml_text(expression,32768);
+  return reference_list_impl(id,expression,context,options ? &*options : nullptr,locale_file);
+}
 PassageTextExport Reader::export_passage_text(const std::string &id, const std::string &expression,
     const std::string &context, const std::optional<EngineOptions> &options, std::size_t max_bytes) {
   detail::validate_xml_text(id,4096);
@@ -511,10 +516,12 @@ ParsedReferenceList Reader::reference_targets(const std::string &id, const std::
   return parse_reference_list(impl_->verse_module(id, context), expression, context, maximum_native_reference_list_entries);
 }
 ReferenceList Reader::reference_list_impl(const std::string &id, const std::string &expression,
-                                         const std::string &context, const EngineOptions *options) {
+                                         const std::string &context, const EngineOptions *options, const std::string &locale_file) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   auto &module = impl_->verse_module(id, context);
-  const auto parsed = parse_reference_list(module, expression, context, maximum_native_reference_list_entries);
+  const auto input = locale_file.empty() ? expression :
+      localized_reference_expression(*static_cast<sword::VerseKey *>(module.getKey()),expression,locale_file,true);
+  const auto parsed = parse_reference_list(module, input, context, maximum_native_reference_list_entries);
   struct RestoreKey {
     sword::SWModule &module;
     std::string reference;
