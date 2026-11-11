@@ -27,8 +27,8 @@ are intermediate; opening a setting should not routinely spawn another window.
 | Area | Implemented or verified | Remaining |
 | --- | --- | --- |
 | Passage find | Command-F and wrapping forward/backward search in the Bible pane. Offscreen WebKit match and miss checks passed. | Check shortcut routing, focus and VoiceOver. |
-| Biblical map | Bundled sourced markers and offline PMTiles preview. Regional water, place symbols, labels and corrupt-archive fallback verified. Local install, removal and checksum-verified HTTPS download implemented. | Check native install, removal and download dialogs end to end. See [map design](biblical-maps.md). |
-| Study and comparison | Literal selected-word shortcut, translation visibility in both layouts, saved translation ordering, and persisted visibility per ordered module list. Native comparison and saved-profile checks passed. | Verify keyboard routing with selections in both panes and exercise a full app restart. |
+| Biblical map | Bundled sourced markers and offline PMTiles preview. Regional water, place symbols, labels and corrupt-archive fallback verified. Native install, reopen, removal and HTTPS download verified on 27.2. A bad checksum preserved the prior pack. | Broader regional coverage. See [map design](biblical-maps.md). |
+| Study and comparison | Literal selected-word shortcut, translation visibility in both layouts, saved translation ordering, and persisted visibility per ordered module list. Native comparison and saved-profile checks passed. Hidden translation restored after a full app restart on 27.2. | Verify keyboard routing with selections in both panes. |
 | Printing | Formatted HTML is the default. Plain text remains a separate action. The unattended PDF attempt stalled in AppKit. | Verify PDF or paper pagination and styling, the native print dialog, and plain-text output. |
 | Packaging | JPEG and patched SWORD rebuilt targeting 27.0 with ICU and CLucene retained. The ad-hoc-signed development bundle passed dependency audit at a 27.0 floor and launched on 27.2. | Run on 27.0, then complete release signing, notarization and upgrade testing. |
 

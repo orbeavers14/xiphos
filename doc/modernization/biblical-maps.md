@@ -30,5 +30,12 @@ Protomaps build rendered water, place symbols and labels in WebKit with the
 offline content policy. A corrupt archive preserved the preceding map. The
 automated raster fixture also exercises local import and corrupt-file fallback.
 
+The macOS 27.2 native app was also checked with disposable storage. Installing
+the Eastern Mediterranean pack through the file picker and reopening the map
+restored the archive. An HTTPS download with an incorrect SHA-256 checksum
+preserved the installed archive byte for byte. The correct checksum installed
+the upstream PMTiles raster fixture byte for byte. Removing that test pack
+returned the map to the bundled markers.
+
 [PMTiles integration](https://docs.protomaps.com/pmtiles/maplibre) ·
 [Regional extracts](https://docs.protomaps.com/guide/getting-started)

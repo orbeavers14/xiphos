@@ -208,3 +208,9 @@ passed strict ad-hoc signature verification and the Mach-O closure audit with
 28 bundled SDK libraries and a measured 27.0 floor. Actual execution on 27.0
 and release signing remain open. An unattended AppKit PDF print stalled, so
 formatted pagination and the native print dialog still need validation.
+
+The macOS 27.2 native verification used a disposable profile and map store.
+Local pack install, automatic reload when reopening the map, HTTPS download
+with valid and invalid checksums, and pack removal passed. Hiding a
+translation applied in chapter and stacked layouts and persisted after
+quitting and relaunching the app with the same profile.
