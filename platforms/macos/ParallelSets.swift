@@ -107,7 +107,35 @@ struct NativeParallelChapterPane: View {
     let chapter: CoreParallelChapter
     var onSearchWord: ((ReadingWordSelection, String?, Bool) -> Void)? = nil
     @State private var verseOffset: Int?
-    @State private var hiddenColumns: Set<Int> = []
+    @AppStorage("parallelColumnVisibility") private var visibilityData = Data()
+
+    // The ordered list identifies slots independently, including duplicate modules.
+    private var visibilityKey: String {
+        let values = [model.parallelProfilePath ?? ""] + chapter.columns.map(\.requested)
+        return (try? JSONEncoder().encode(values).base64EncodedString()) ?? ""
+    }
+
+    private var visibility: [String: [Int]] {
+        (try? JSONDecoder().decode([String: [Int]].self, from: visibilityData)) ?? [:]
+    }
+
+    private var hiddenColumns: Set<Int> {
+        let hidden = Set(visibility[visibilityKey] ?? []).intersection(chapter.columns.indices)
+        return hidden.count == chapter.columns.count ? [] : hidden
+    }
+
+    private func setColumn(_ index: Int, visible: Bool) {
+        var hidden = hiddenColumns
+        if visible {
+            hidden.remove(index)
+        } else if visibleColumns.count > 1 {
+            hidden.insert(index)
+        }
+        var preferences = visibility
+        preferences[visibilityKey] = hidden.isEmpty ? nil : hidden.sorted()
+        if let data = try? JSONEncoder().encode(preferences) { visibilityData = data }
+        selectedWord = nil
+    }
 
     private var visibleColumns: [Int] {
         chapter.columns.indices.filter { !hiddenColumns.contains($0) }
@@ -194,14 +222,7 @@ struct NativeParallelChapterPane: View {
                     ForEach(chapter.columns.indices, id: \.self) { index in
                         Toggle(chapter.columns[index].requested, isOn: Binding(
                             get: { !hiddenColumns.contains(index) },
-                            set: { visible in
-                                if visible {
-                                    hiddenColumns.remove(index)
-                                } else {
-                                    hiddenColumns.insert(index)
-                                }
-                                selectedWord = nil
-                            }
+                            set: { setColumn(index, visible: $0) }
                         )).disabled(visibleColumns.count == 1 && !hiddenColumns.contains(index))
                     }
                 }
@@ -223,7 +244,6 @@ struct NativeParallelChapterPane: View {
             }
         }.frame(minWidth:230,minHeight:220).disabled(model.isBusy)
             .onChange(of: chapter.reference) { verseOffset = nil; selectedWord = nil }
-            .onChange(of: chapter.columns.map(\.requested)) { hiddenColumns = [] }
             .onChange(of: model.stackedParallel) { selectedWord = nil }
             .onChange(of: verseIndex) { selectedWord = nil }
     }

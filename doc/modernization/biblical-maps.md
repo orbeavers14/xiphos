@@ -1,38 +1,34 @@
 # Biblical maps
 
-The Mac reader has a prototype under **Preferences → Biblical Map…**.
-It shows three illustrative place markers and opens a local raster or
-Protomaps-style PMTiles archive for the current session. The vector preview
-draws water and roads. Raster archives can include labels and icons in their
-tile images. The map panel bundles its scripts and blocks network requests.
+Open **Preferences → Biblical Map…** in the Mac reader. The bundled map shows
+Jerusalem, Bethlehem, Nazareth and Jericho. Each marker gives a biblical
+reference and credits its modern coordinates to GeoNames. The coordinates
+locate modern settlements and are not archaeological site boundaries.
 
-On macOS 27.2, a low-zoom Eastern Mediterranean extract of the 2026-11-10
-Protomaps build rendered vector water features in the native WebKit panel.
-Selecting a corrupt archive kept the preceding map and its place markers.
-The automated raster fixture exercises local archive import and the same
-fallback. Vector labels and icons, pack installation and downloads are
-still pending.
+- [Jerusalem](https://www.geonames.org/281184/jerusalem.html)
+- [Bethlehem](https://www.geonames.org/284315/bethlehem.html)
+- [Nazareth](https://www.geonames.org/294098/nazareth.html)
+- [Jericho](https://www.geonames.org/284899/jericho.html)
 
-Use MapLibre GL JS in the Mac reader's map panel. Bundle the renderer and style
-locally so the same map page can later run in the Linux frontend. Keep place
-records separate from the basemap. Store names, aliases, coordinates, sources,
-and identification uncertainty in GeoJSON. Match selected text locally and let
-the reader choose when a name refers to multiple places.
+Use **Open local map archive** to preview a PMTiles file for the current map
+window. **Install regional pack…** copies a local raster or Protomaps-style
+vector archive into Xiphos application support. The map reopens the installed
+pack automatically. **Remove installed pack** removes the copy and returns to
+the bundled markers. Packs are stored separately from SWORD modules and
+reading profiles. One pack is installed at a time.
 
-Start with a small bundled place layer and a coarse regional outline. Offer an
-optional Eastern Mediterranean and Near East basemap pack for more detail.
-Use a regional PMTiles extract and include its style, fonts, sprites, attribution,
-and license notices. Keep routes and historical boundaries in separate layers
-so they can be toggled and sourced independently.
+**Download pack from URL…** accepts a publisher’s HTTPS link and SHA-256
+checksum. Downloads are limited to 128 MiB. The app checks the checksum and
+reads the PMTiles header and metadata before replacing the installed archive.
+The map itself blocks network requests and reads installed tiles by range.
+There is no built-in regional pack catalog.
 
-Start with a local pack import. Verify that the Mac web view can read ranges
-from an imported archive and render tiles, labels, and icons with networking
-disabled. Test missing or damaged packs and confirm the bundled place layer
-still opens. Once the import works, add an explicit download that shows the
-region, version, and size before fetching. Verify the checksum before installing,
-retain the previous pack if an update fails, and allow removal to reclaim space.
-Store packs separately from SWORD modules and user data.
+Raster archives display their tile artwork. The vector preview draws water,
+roads and place symbols with up to 30 visible labels using system fonts. On
+macOS 27.2, a low-zoom Eastern Mediterranean extract of the 2026-11-10
+Protomaps build rendered water, place symbols and labels in WebKit with the
+offline content policy. A corrupt archive preserved the preceding map. The
+automated raster fixture also exercises local import and corrupt-file fallback.
 
-- [PMTiles integration with MapLibre](https://docs.protomaps.com/pmtiles/maplibre)
-- [Regional extracts](https://docs.protomaps.com/guide/getting-started)
-- [Offline basemap assets](https://docs.protomaps.com/basemaps/maplibre)
+[PMTiles integration](https://docs.protomaps.com/pmtiles/maplibre) ·
+[Regional extracts](https://docs.protomaps.com/guide/getting-started)

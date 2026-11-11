@@ -122,12 +122,12 @@ struct ReaderModelSmoke {
                 """)
         }
 
-        try await waitFor("map.loaded() && document.querySelectorAll('.maplibregl-marker').length === 3")
+        try await waitFor("map.loaded() && document.querySelectorAll('.maplibregl-marker').length === 4")
         // PMTiles v3 with one original 1×1 PNG at z0/x0/y0.
         try await pick("UE1UaWxlcwN/AAAAAAAAAAUAAAAAAAAAhAAAAAAAAAACAAAAAAAAAIYAAAAAAAAAAAAAAAAAAACGAAAAAAAAAEUAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAQEBAgAAAC62lIAHVs0A0klrgPipMgAAAAAAAAAAAAEAAUUBe32JUE5HDQoaCgAAAA1JSERSAAAAAQAAAAEIAgAAAJB3U94AAAAMSURBVHicYxBcZQwAAb4A78brgbIAAAAASUVORK5CYII=")
         try await waitFor("Boolean(map.getLayer('archive-raster')) && map.areTilesLoaded() && statusLine.textContent.startsWith('Local raster archive')")
         try await pick("YmFk")
-        try await waitFor("statusLine.textContent.startsWith('Could not open') && Boolean(map.getLayer('archive-raster')) && document.querySelectorAll('.maplibregl-marker').length === 3")
+        try await waitFor("statusLine.textContent.startsWith('Could not open') && Boolean(map.getLayer('archive-raster')) && document.querySelectorAll('.maplibregl-marker').length === 4")
     }
 
     @MainActor static func uriAnchorWebView() async throws {

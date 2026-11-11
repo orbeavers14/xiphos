@@ -184,9 +184,9 @@ are partial exact imports. Physical printing, screen reader/keyboard review
 and macOS 27.0 acceptance remain open.
 
 The Mac reader's **Preferences → Biblical Map…** opens the bundled MapLibre
-prototype with illustrative markers and session-only PMTiles import. See
-[the map design](biblical-maps.md) for supported preview layers and the remaining
-offline rendering and download work.
+map with sourced markers, session preview, local pack installation and removal,
+and optional checksum-verified HTTPS downloads. See the [map guide](biblical-maps.md)
+for supported layers and offline validation.
 
 **Find in Passage** searches the displayed Bible pane through WebKit. Use
 Command-F to open the field, Return or Command-G to find forward, and
@@ -197,8 +197,8 @@ forward and backward matches and an absent phrase. The development bundle
 audit measured a 27.2 floor and found SDK dependencies outside the bundle.
 
 The comparison pane now toggles individual translation slots in both layouts.
-Visibility lasts while the pane is open. The saved set still controls module
-order and versification. Option-Command-F invokes literal selected-word search
+Visibility is stored in Mac preferences by profile path and ordered module
+slots. The saved set still controls module order and versification. Option-Command-F invokes literal selected-word search
 through the shared menu in the reader and comparison. Verify keyboard routing
 manually, especially when both panes have selected text.
 

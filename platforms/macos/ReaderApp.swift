@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 import AppKit
+import CryptoKit
 import SwiftUI
 import WebKit
 import Darwin
@@ -1641,9 +1642,157 @@ private struct DevotionalView: View {
 }
 
 private struct BiblicalMapPanel: NSViewRepresentable {
+    @MainActor final class Coordinator: NSObject, WKScriptMessageHandlerWithReply {
+        private let pack = URL.applicationSupportDirectory
+            .appendingPathComponent("Xiphos/Maps", isDirectory: true)
+            .appendingPathComponent("regional.pmtiles")
+        private var staged: URL?
+        private var temporaryDownload: URL?
+        private var installedFile: FileHandle?
+
+        private func discardStage() {
+            if let temporaryDownload { try? FileManager.default.removeItem(at: temporaryDownload) }
+            temporaryDownload = nil
+            staged = nil
+        }
+
+        func downloadPack() async throws -> Bool {
+            let alert = NSAlert()
+            alert.messageText = String(localized: "Download Regional Map Pack")
+            alert.informativeText = String(localized: "Enter an HTTPS PMTiles URL and its publisher’s SHA-256 checksum. Maximum download size is 128 MB.")
+            alert.addButton(withTitle: String(localized: "Download"))
+            alert.addButton(withTitle: String(localized: "Cancel"))
+            let address = NSTextField()
+            address.placeholderString = "https://"
+            let checksum = NSTextField()
+            checksum.placeholderString = "SHA-256"
+            let fields = NSStackView(views: [address, checksum])
+            fields.orientation = .vertical
+            fields.alignment = .leading
+            for field in [address, checksum] { field.widthAnchor.constraint(equalToConstant: 380).isActive = true }
+            alert.accessoryView = fields
+            guard alert.runModal() == .alertFirstButtonReturn else { return false }
+            let expected = checksum.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            guard let url = URL(string: address.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)),
+                  url.scheme?.lowercased() == "https", url.host != nil, url.user == nil, url.password == nil,
+                  expected.utf8.count == 64, expected.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) })
+            else { throw CocoaError(.fileReadInvalidFileName) }
+
+            let target = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            temporaryDownload = target
+            try await Task.detached {
+                let configuration = URLSessionConfiguration.ephemeral
+                configuration.timeoutIntervalForResource = 120
+                let session = URLSession(configuration: configuration)
+                defer { session.invalidateAndCancel() }
+                let (bytes, response) = try await session.bytes(from: url)
+                let limit = 128 * 1024 * 1024
+                guard let http = response as? HTTPURLResponse, http.statusCode == 200,
+                      http.url?.scheme?.lowercased() == "https", response.expectedContentLength <= Int64(limit)
+                else { throw URLError(.badServerResponse) }
+                guard FileManager.default.createFile(atPath: target.path, contents: nil)
+                else { throw CocoaError(.fileWriteUnknown) }
+                let output = try FileHandle(forWritingTo: target)
+                defer { try? output.close() }
+                var hash = SHA256()
+                var buffer = Data()
+                var count = 0
+                for try await byte in bytes {
+                    count += 1
+                    guard count <= limit else { throw URLError(.dataLengthExceedsMaximum) }
+                    buffer.append(byte)
+                    if buffer.count == 65_536 {
+                        hash.update(data: buffer)
+                        try output.write(contentsOf: buffer)
+                        buffer.removeAll(keepingCapacity: true)
+                    }
+                }
+                hash.update(data: buffer)
+                try output.write(contentsOf: buffer)
+                guard hash.finalize().map({ String(format: "%02x", $0) }).joined() == expected
+                else { throw URLError(.cannotDecodeContentData) }
+            }.value
+            staged = target
+            return true
+        }
+
+        func userContentController(_ controller: WKUserContentController,
+                                   didReceive message: WKScriptMessage) async -> (Any?, String?) {
+            guard message.frameInfo.isMainFrame, let request = message.body as? [String: Any],
+                  let action = request["action"] as? String else { return (nil, "Invalid map request") }
+            do {
+                switch action {
+                case "installed":
+                    return (FileManager.default.fileExists(atPath: pack.path), nil)
+                case "download":
+                    discardStage()
+                    return (try await downloadPack(), nil)
+                case "discard":
+                    discardStage()
+                    return (true, nil)
+                case "choose":
+                    discardStage()
+                    let picker = NSOpenPanel()
+                    picker.allowedContentTypes = [UTType(filenameExtension: "pmtiles") ?? .data]
+                    guard await picker.begin() == .OK, let selected = picker.url else { return (false, nil) }
+                    staged = selected
+                    return (true, nil)
+                case "read":
+                    guard let offset = request["offset"] as? Int, offset >= 0,
+                          let count = request["length"] as? Int, (1...8_388_608).contains(count)
+                    else { return (nil, "Invalid archive range") }
+                    let readingStage = request["staged"] as? Bool == true
+                    let file: FileHandle
+                    if readingStage {
+                        guard let staged else { return (nil, "Map archive unavailable") }
+                        file = try FileHandle(forReadingFrom: staged)
+                    } else {
+                        if installedFile == nil { installedFile = try FileHandle(forReadingFrom: pack) }
+                        guard let installedFile else { return (nil, "Map archive unavailable") }
+                        file = installedFile
+                    }
+                    defer { if readingStage { try? file.close() } }
+                    try file.seek(toOffset: UInt64(offset))
+                    return ((try file.read(upToCount: count) ?? Data()).base64EncodedString(), nil)
+                case "install":
+                    guard let selected = staged else { return (nil, "No selected archive") }
+                    defer { discardStage() }
+                    let destination = pack
+                    try await Task.detached {
+                        let files = FileManager.default
+                        let directory = destination.deletingLastPathComponent()
+                        try files.createDirectory(at: directory, withIntermediateDirectories: true)
+                        let pending = directory.appendingPathComponent(UUID().uuidString)
+                        defer { try? files.removeItem(at: pending) }
+                        try files.copyItem(at: selected, to: pending)
+                        if rename(pending.path, destination.path) != 0 {
+                            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+                        }
+                    }.value
+                    installedFile = nil
+                    return (true, nil)
+                case "remove":
+                    installedFile = nil
+                    if FileManager.default.fileExists(atPath: pack.path) {
+                        try FileManager.default.removeItem(at: pack)
+                    }
+                    return (true, nil)
+                default:
+                    return (nil, "Unknown map request")
+                }
+            } catch {
+                if action == "download" { discardStage() }
+                return (nil, error.localizedDescription)
+            }
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
     func makeNSView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
+        configuration.userContentController.addScriptMessageHandler(context.coordinator, contentWorld: .page, name: "mapPack")
         let view = WKWebView(frame: .zero, configuration: configuration)
         if let page = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "Maps") {
             view.loadFileURL(page, allowingReadAccessTo: page.deletingLastPathComponent())

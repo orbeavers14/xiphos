@@ -7,6 +7,9 @@
 <link rel="stylesheet" href="map.css">
 <header>
   <label>Open local map archive <input id="archive" type="file" accept=".pmtiles"></label>
+  <button id="install-pack" hidden>Install regional pack…</button>
+  <button id="download-pack" hidden>Download pack from URL…</button>
+  <button id="remove-pack" hidden>Remove installed pack</button>
   <output id="status" aria-live="polite">Showing bundled place markers.</output>
 </header>
 <div id="map" aria-label="Biblical map"></div>
