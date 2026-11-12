@@ -17,7 +17,7 @@ add_library(linux_reader_model reader_model.cpp study_model.cpp repository_model
 target_link_libraries(linux_reader_model PUBLIC Xiphos::Core)
 target_include_directories(linux_reader_model PUBLIC .)
 if(XIPHOS_BUILD_GTK4_PREVIEW)
-  add_executable(xiphos-linux-preview reader_app.cpp library_ui.cpp study_ui.cpp parallel_ui.cpp repository_ui.cpp rich_editor.cpp host_state.cpp)
+  add_executable(xiphos-linux-preview reader_app.cpp sync_ui.cpp library_ui.cpp study_ui.cpp parallel_ui.cpp repository_ui.cpp rich_editor.cpp host_state.cpp)
   set(XIPHOS_LINUX_MAP_DIR "${CMAKE_CURRENT_BINARY_DIR}/Maps")
   file(MAKE_DIRECTORY "${XIPHOS_LINUX_MAP_DIR}")
   foreach(asset index.html map.css map.js maplibre-gl.css maplibre-gl.js pmtiles.js MapLibre-LICENSE.txt PMTiles-LICENSE.txt README.md)

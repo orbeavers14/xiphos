@@ -4,10 +4,13 @@
 #include "reader_model.hpp"
 #include "session_model.hpp"
 #include "study_ui.hpp"
+#include "sync_ui.hpp"
 using xiphos::linux_preview::document;
 #include <gtk/gtk.h>
 #include <webkit/webkit.h>
 #include <algorithm>
+#include <array>
+#include <deque>
 #include <clocale>
 #include <filesystem>
 #include <iostream>
@@ -22,7 +25,28 @@ const unsigned reading_flags[] = {XC_ENGINE_WORDS_IN_RED, XC_ENGINE_STRONGS, XC_
   XC_ENGINE_LEMMAS, XC_ENGINE_TRANSLITERATED_FORMS, XC_ENGINE_GLOSSES, XC_ENGINE_MORPHEME_SEGMENTATION};
 const char *reading_names[] = {"Words of Christ in Red", "Strong's Numbers", "Morphological Tags", "Footnotes",
   "Cross-references", "Greek Accents", "Hebrew Vowel Points", "Hebrew Cantillation", "Lemmas", "Transliterated Forms", "Glosses", "Morpheme Segmentation"};
+struct ProfilePreferences {
+  std::string bible, commentary, devotional;
+  unsigned appearance = 0;
+  double zoom = 1.0;
+};
 struct Process;
+struct App;
+struct DetachedPane {
+  explicit DetachedPane(App &owner, bool commentary);
+  ~DetachedPane();
+  void refresh();
+  void navigate(const char *uri = nullptr);
+  App &owner;
+  bool commentary;
+  GtkWindow *window;
+  GtkWidget *sync, *reference, *status, *read;
+  WebKitWebView *view;
+  xc_request *request = nullptr;
+  bool resolving = false, synced_snapshot = false;
+  unsigned model_revision = 0, style_revision = 0;
+  std::string module, committed_reference, rendered, requested_module;
+};
 struct App {
 	Process *process = nullptr;
 	std::string session_path, session_key, session_notice;
@@ -30,6 +54,7 @@ struct App {
 	std::optional<xiphos::linux_preview::RestoredWindow> restored;
 	std::vector<xiphos::linux_preview::RecoveryDraft> recovered_drafts;
 	GtkWidget *reading_tabs = nullptr;
+	std::array<std::unique_ptr<DetachedPane>, 2> detached;
 	xc_worker *shared_worker = nullptr;
 	GtkApplication *application = nullptr;
 	GtkWidget *window = nullptr, *reference = nullptr, *bible = nullptr, *commentary = nullptr;
@@ -71,7 +96,7 @@ struct App {
 	bool bible_uri_anchor = false, commentary_uri_anchor = false, dictionary_uri_anchor = false;
 	unsigned scroll_jobs = 0, scroll_successes = 0, bible_scroll_successes = 0;
 	guint timer = 0;
-	bool automatic_start = true, startup_read_started = false, startup_smoke = false;
+	bool automatic_start = true, startup_read_started = false, startup_smoke = false, external_smoke = false;
 	bool options_smoke = false, preview_smoke = false, lexical_smoke = false, window_smoke = false;
 	unsigned initial_flags = 0;
 	std::string initial_html;
@@ -86,6 +111,9 @@ void select(GtkWidget *dropdown, const std::vector<std::string> &ids, const std:
   for (size_t i = 0; i < ids.size(); ++i)
     if (ids[i] == id) { gtk_drop_down_set_selected(GTK_DROP_DOWN(dropdown), i); return; }
 }
+const ProfilePreferences &profile_preferences(const App &app);
+GtkWidget *profile_settings_menu(App &app);
+void show_sync(App &app);
 unsigned library_changed(Process *p);
 void shutdown(App *app);
 bool request_close(App *app);
@@ -451,11 +479,176 @@ GtkWidget *pane(App *app, const char *title, WebKitWebView **view) {
   webkit_web_view_load_html(*view, document("<p>Select a module and enter a reference.</p>").c_str(), "xiphos-preview://study/");
   return box;
 }
+DetachedPane::DetachedPane(App &app, bool is_commentary)
+    : owner(app), commentary(is_commentary)
+{
+  window = GTK_WINDOW(gtk_application_window_new(owner.application));
+  g_object_ref(window);
+  gtk_window_set_title(window, commentary ? "Detached commentary" : "Detached Bible");
+  gtk_window_set_default_size(window, 650, 470);
+  gtk_window_set_transient_for(window, GTK_WINDOW(owner.window));
+  gtk_window_set_hide_on_close(window, TRUE);
+  auto *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+  gtk_window_set_child(window, box);
+  sync = gtk_check_button_new_with_label("Synchronize with reading window");
+  gtk_check_button_set_active(GTK_CHECK_BUTTON(sync), TRUE);
+  gtk_box_append(GTK_BOX(box), sync);
+  auto *bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+  gtk_box_append(GTK_BOX(box), bar);
+  reference = gtk_entry_new();
+  gtk_accessible_update_property(GTK_ACCESSIBLE(reference), GTK_ACCESSIBLE_PROPERTY_LABEL, "Detached passage reference", -1);
+  gtk_widget_set_hexpand(reference, TRUE);
+  gtk_box_append(GTK_BOX(bar), reference);
+  read = gtk_button_new_with_label("Read");
+  gtk_box_append(GTK_BOX(bar), read);
+  status = gtk_label_new("");
+  gtk_label_set_wrap(GTK_LABEL(status), TRUE);
+  gtk_box_append(GTK_BOX(box), status);
+  auto *session = webkit_network_session_new_ephemeral();
+  view = WEBKIT_WEB_VIEW(g_object_new(WEBKIT_TYPE_WEB_VIEW, "network-session", session, nullptr));
+  g_object_unref(session);
+  webkit_settings_set_enable_javascript(webkit_web_view_get_settings(view), FALSE);
+  if (owner.software)
+    webkit_settings_set_hardware_acceleration_policy(webkit_web_view_get_settings(view), WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
+  gtk_widget_set_vexpand(GTK_WIDGET(view), TRUE);
+  gtk_box_append(GTK_BOX(box), GTK_WIDGET(view));
+  g_signal_connect(read, "clicked", G_CALLBACK(+[](GtkButton *, gpointer data) {
+    static_cast<DetachedPane *>(data)->navigate();
+  }), this);
+  g_signal_connect(reference, "activate", G_CALLBACK(+[](GtkEntry *, gpointer data) {
+    static_cast<DetachedPane *>(data)->navigate();
+  }), this);
+  g_signal_connect(sync, "toggled", G_CALLBACK(+[](GtkCheckButton *, gpointer data) {
+    auto *pane = static_cast<DetachedPane *>(data);
+    xc_request_release(pane->request);
+    pane->request = nullptr;
+    pane->synced_snapshot = false;
+    pane->refresh();
+  }), this);
+  g_signal_connect(view, "decide-policy", G_CALLBACK(+[](WebKitWebView *, WebKitPolicyDecision *decision,
+      WebKitPolicyDecisionType type, gpointer data) -> gboolean {
+    if (type == WEBKIT_POLICY_DECISION_TYPE_RESPONSE)
+      return FALSE;
+    auto *action = webkit_navigation_policy_decision_get_navigation_action(WEBKIT_NAVIGATION_POLICY_DECISION(decision));
+    const auto *uri = webkit_uri_request_get_uri(webkit_navigation_action_get_request(action));
+    if (type == WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION &&
+        webkit_navigation_action_get_navigation_type(action) != WEBKIT_NAVIGATION_TYPE_LINK_CLICKED &&
+        (g_strcmp0(uri, "xiphos-preview://study/") == 0 || g_strcmp0(uri, "about:blank") == 0))
+      return FALSE;
+    webkit_policy_decision_ignore(decision);
+    if (uri && webkit_navigation_action_get_navigation_type(action) == WEBKIT_NAVIGATION_TYPE_LINK_CLICKED)
+      static_cast<DetachedPane *>(data)->navigate(uri);
+    return TRUE;
+  }), this);
+  refresh();
+}
+DetachedPane::~DetachedPane()
+{
+  xc_request_release(request);
+  gtk_window_destroy(window);
+  g_object_unref(window);
+}
+void DetachedPane::navigate(const char *uri)
+{
+  if (request || module.empty() || owner.closing)
+    return;
+  const auto *draft = gtk_editable_get_text(GTK_EDITABLE(reference));
+  if (gtk_check_button_get_active(GTK_CHECK_BUTTON(sync))) {
+    if (owner.model->busy())
+      return;
+    if (uri)
+      owner.model->follow(module, uri, committed_reference);
+    else
+      owner.model->visit_typed_reference(owner.model->passage().bible, owner.model->passage().commentary, draft);
+    return;
+  }
+  requested_module = module;
+  resolving = uri || owner.model->has_reference_locale();
+  const auto result = resolving ? owner.model->resolve_detached(module, uri ? uri : draft, uri != nullptr, &request)
+                                : owner.model->preview_detached(module, draft, &request);
+  if (result != XC_OK)
+    gtk_label_set_text(GTK_LABEL(status), "Unable to open that passage.");
+}
+void DetachedPane::refresh()
+{
+  const bool synchronized = gtk_check_button_get_active(GTK_CHECK_BUTTON(sync));
+  if (synchronized && !owner.model->busy() &&
+      (!synced_snapshot || model_revision != owner.model->revision() || style_revision != owner.study_ui->style_revision())) {
+    synced_snapshot = true;
+    model_revision = owner.model->revision();
+    style_revision = owner.study_ui->style_revision();
+    const auto &passage = owner.model->passage();
+    const auto &id = commentary ? passage.commentary : passage.bible;
+    const bool chapter = commentary ? owner.model->show_commentary_chapter() : owner.model->show_chapter();
+    const auto &content = commentary ? owner.model->commentary_chapter() : owner.model->bible_chapter();
+    const auto &html = chapter ? content.html : commentary ? passage.commentary_html : passage.bible_html;
+    const auto &decorated = owner.model->decorated(commentary);
+    const bool matches = decorated.version && decorated.module == id && decorated.reference == passage.reference && decorated.chapter == chapter;
+    const auto css = (matches ? decorated.css : chapter ? content.lexical.css : commentary ? passage.commentary_lexical.css : passage.bible_lexical.css) +
+      owner.study_ui->reading_style_css(id);
+    const auto page = document(id.empty() ? "<p>No module selected.</p>" : matches ? decorated.html : html, css);
+    if (module != id || committed_reference != passage.reference) {
+      module = id;
+      committed_reference = passage.reference;
+      gtk_editable_set_text(GTK_EDITABLE(reference), committed_reference.c_str());
+    }
+    if (page != rendered) {
+      rendered = page;
+      webkit_web_view_load_html(view, rendered.c_str(), "xiphos-preview://study/");
+    }
+    gtk_label_set_text(GTK_LABEL(status), id.empty() ? "No module selected." : (id + " · " + committed_reference).c_str());
+  } else if (request) {
+    const auto result = xc_request_poll(request);
+    if (result != XC_PENDING) {
+      std::unique_ptr<xc_request, decltype(&xc_request_release)> completed(request, xc_request_release);
+      request = nullptr;
+      if (result != XC_OK) {
+        gtk_label_set_text(GTK_LABEL(status), "Unable to open that passage.");
+      } else if (resolving) {
+        std::unique_ptr<xc_link, decltype(&xc_link_release)> target(xc_request_take_link(completed.get()), xc_link_release);
+        resolving = false;
+        if (target) {
+          requested_module = xc_link_module(target.get());
+          owner.model->preview_detached(requested_module, xc_link_reference(target.get()), &request);
+        }
+        if (!request)
+          gtk_label_set_text(GTK_LABEL(status), "Unable to open that passage.");
+      } else {
+        std::unique_ptr<xc_entry, decltype(&xc_entry_release)> entry(xc_request_take_entry(completed.get()), xc_entry_release);
+        if (entry) {
+          module = requested_module;
+          committed_reference = xc_entry_reference(entry.get());
+          gtk_editable_set_text(GTK_EDITABLE(reference), committed_reference.c_str());
+          gtk_label_set_text(GTK_LABEL(status), (module + " · " + committed_reference).c_str());
+          xc_lexical_presentation lexical{};
+          xc_entry_lexical_layout(entry.get(), &lexical);
+          const auto *heading = xc_entry_heading_html(entry.get());
+          rendered = document(std::string(heading ? heading : "") + xc_entry_html(entry.get()),
+            std::string(lexical.css ? lexical.css : "") + owner.study_ui->reading_style_css(module));
+          webkit_web_view_load_html(view, rendered.c_str(), "xiphos-preview://study/");
+        }
+      }
+    }
+  }
+  gtk_widget_set_sensitive(read, !module.empty() && !request && (!synchronized || !owner.model->busy()));
+  webkit_web_view_set_zoom_level(view, webkit_web_view_get_zoom_level(commentary ? owner.commentary_view : owner.bible_view));
+}
+void show_detached(App &app, bool commentary)
+{
+  auto &pane = app.detached[commentary ? 1 : 0];
+  if (!pane)
+    pane = std::make_unique<DetachedPane>(app, commentary);
+  pane->refresh();
+  gtk_window_present(pane->window);
+}
+
 gboolean tick(gpointer data) {
   auto *app = static_cast<App *>(data);
   if (app->closing) return G_SOURCE_REMOVE;
   app->model->tick();
   deliver_passage_export(app);
+  for (const auto &pane : app->detached)
+    if (pane) pane->refresh();
   if (app->process && app->model->ready() && !app->model->busy() && app->library_version != library_changed(app->process)) {
 	  app->library_version = library_changed(app->process);
 	  app->model->reload_modules();
@@ -700,8 +893,19 @@ gboolean tick(gpointer data) {
   }
   if (!app->smoke && app->automatic_start && !app->startup_read_started && enabled && app->populated) {
     app->startup_read_started = true;
-    for (const auto &module : app->model->modules()) if (module.type == "Biblical Texts") {
-      select(app->bible, app->bibles, module.id); go(app); break;
+    const auto &preferences = profile_preferences(*app);
+    const auto *preferred = app->model->module(preferences.bible);
+    if (preferred && preferred->type == "Biblical Texts")
+      select(app->bible, app->bibles, preferred->id);
+    else
+      for (const auto &module : app->model->modules())
+        if (module.type == "Biblical Texts") {
+          select(app->bible, app->bibles, module.id);
+          break;
+        }
+    if (!selected(app->bible, app->bibles).empty()) {
+      select(app->commentary, app->commentaries, preferences.commentary);
+      go(app);
     }
   }
   app->updating = false;
@@ -848,6 +1052,7 @@ gboolean tick(gpointer data) {
 void shutdown(App *app) {
   if (app->closing) return;
   app->closing = true;
+  for (auto &pane : app->detached) pane.reset();
   if (app->study_ui) app->study_ui->close();
   if (app->file_dialog) {
     g_signal_handlers_disconnect_by_data(app->file_dialog, app); gtk_native_dialog_hide(app->file_dialog);
@@ -886,6 +1091,14 @@ void activate(GtkApplication *application, gpointer data) {
   app->reference = gtk_entry_new(); gtk_editable_set_text(GTK_EDITABLE(app->reference), "John 3:16");
   gtk_widget_set_hexpand(app->reference, TRUE); gtk_box_append(GTK_BOX(toolbar), app->reference);
   app->go = gtk_button_new_with_label("Go"); gtk_box_append(GTK_BOX(toolbar), app->go);
+  auto *detach_menu = gtk_menu_button_new();
+  gtk_menu_button_set_label(GTK_MENU_BUTTON(detach_menu), "Detach");
+  auto *detach_actions = g_menu_new();
+  g_menu_append(detach_actions, "Bible", "win.detach-bible");
+  g_menu_append(detach_actions, "Commentary", "win.detach-commentary");
+  gtk_menu_button_set_menu_model(GTK_MENU_BUTTON(detach_menu), G_MENU_MODEL(detach_actions));
+  g_object_unref(detach_actions);
+  gtk_box_append(GTK_BOX(toolbar), detach_menu);
   auto *help_menu = gtk_menu_button_new();
   gtk_menu_button_set_label(GTK_MENU_BUTTON(help_menu), "Help");
   auto *help_actions = g_menu_new();
@@ -894,6 +1107,8 @@ void activate(GtkApplication *application, gpointer data) {
   gtk_menu_button_set_menu_model(GTK_MENU_BUTTON(help_menu), G_MENU_MODEL(help_actions));
   g_object_unref(help_actions);
   gtk_box_append(GTK_BOX(toolbar), help_menu);
+  if (app->process)
+    gtk_box_append(GTK_BOX(toolbar), profile_settings_menu(*app));
   auto *display_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
   gtk_box_append(GTK_BOX(box), display_bar);
   app->previous_chapter = gtk_button_new_with_label("Previous chapter");
@@ -1106,6 +1321,7 @@ void activate(GtkApplication *application, gpointer data) {
   gtk_box_append(GTK_BOX(library), pane(app, "Information", &app->information_view));
   gtk_widget_set_size_request(library, 220, -1);
   app->study_ui = std::make_unique<xiphos::linux_preview::StudyUI>(GTK_WINDOW(app->window), app->software);
+  app->study_ui->set_default_devotional(profile_preferences(*app).devotional);
   gtk_box_append(GTK_BOX(reading_bar), app->study_ui->reading_style_menu());
   auto *library_tabs = gtk_notebook_new();
   gtk_notebook_append_page(GTK_NOTEBOOK(library_tabs), library, gtk_label_new("Study"));
@@ -1120,12 +1336,14 @@ void activate(GtkApplication *application, gpointer data) {
   app->study_ui->show_parallel = [reading_tabs] { gtk_notebook_set_current_page(GTK_NOTEBOOK(reading_tabs), 1); };
   auto *reading_page = pane(app, "Reading", &app->bible_view);
   add_reading_tools(app, reading_page);
+  webkit_web_view_set_zoom_level(app->bible_view, profile_preferences(*app).zoom);
   gtk_notebook_append_page(GTK_NOTEBOOK(reading_tabs), reading_page, gtk_label_new("Reading"));
   gtk_notebook_append_page(GTK_NOTEBOOK(reading_tabs), app->study_ui->parallel_pane(), gtk_label_new("Parallel"));
   gtk_paned_set_start_child(GTK_PANED(study), reading_tabs);
   auto *right = gtk_paned_new(GTK_ORIENTATION_VERTICAL);
   gtk_paned_set_end_child(GTK_PANED(study), right); gtk_paned_set_position(GTK_PANED(study), 520);
   gtk_paned_set_start_child(GTK_PANED(right), pane(app, "Commentary", &app->commentary_view));
+  webkit_web_view_set_zoom_level(app->commentary_view, profile_preferences(*app).zoom);
   auto *dictionary_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
   auto *content_tabs = gtk_notebook_new();
   gtk_notebook_append_page(GTK_NOTEBOOK(content_tabs), dictionary_box, gtk_label_new("Dictionary"));
@@ -1178,6 +1396,12 @@ void activate(GtkApplication *application, gpointer data) {
   gtk_accessible_update_property(GTK_ACCESSIBLE(app->commentary_view), GTK_ACCESSIBLE_PROPERTY_LABEL, "Commentary passage", -1);
   app->status = gtk_label_new("Starting study engine…"); gtk_box_append(GTK_BOX(box), app->status);
   const GActionEntry actions[] = {
+      {"detach-bible", +[](GSimpleAction *, GVariant *, gpointer data) {
+        show_detached(*static_cast<App *>(data), false);
+      }, nullptr, nullptr, nullptr, {}},
+      {"detach-commentary", +[](GSimpleAction *, GVariant *, gpointer data) {
+        show_detached(*static_cast<App *>(data), true);
+      }, nullptr, nullptr, nullptr, {}},
       {"help", +[](GSimpleAction *, GVariant *, gpointer data) {
         auto *app = static_cast<App *>(data);
         gtk_show_uri(GTK_WINDOW(app->window), "https://xiphos.org/help/", GDK_CURRENT_TIME);
@@ -1207,7 +1431,7 @@ void activate(GtkApplication *application, gpointer data) {
       {"focus-reference", +[](GSimpleAction *, GVariant *, gpointer data) { gtk_widget_grab_focus(static_cast<App *>(data)->reference); }, nullptr, nullptr, nullptr, {}},
       {"close", +[](GSimpleAction *, GVariant *, gpointer data) { gtk_window_close(GTK_WINDOW(static_cast<App *>(data)->window)); }, nullptr, nullptr, nullptr, {}}};
   g_action_map_add_action_entries(G_ACTION_MAP(app->window), actions, G_N_ELEMENTS(actions), app);
-  for (const auto &entry : actions) g_simple_action_set_enabled(G_SIMPLE_ACTION(g_action_map_lookup_action(G_ACTION_MAP(app->window), entry.name)), std::string(entry.name) == "close" || std::string(entry.name) == "find-passage" || std::string(entry.name) == "study-word" || std::string(entry.name) == "help" || std::string(entry.name) == "about");
+  for (const auto &entry : actions) g_simple_action_set_enabled(G_SIMPLE_ACTION(g_action_map_lookup_action(G_ACTION_MAP(app->window), entry.name)), std::string(entry.name) == "close" || std::string(entry.name) == "find-passage" || std::string(entry.name) == "study-word" || std::string(entry.name) == "help" || std::string(entry.name) == "about" || std::string(entry.name).rfind("detach-", 0) == 0);
   const char *find_keys[] = {"<Primary>f", nullptr};
   const char *word_keys[] = {"<Primary><Alt>f", nullptr};
   const char *help_keys[] = {"F1", nullptr};
@@ -1266,9 +1490,214 @@ struct Process {
   bool started = false, quitting = false, storage_disabled = false;
   std::unique_ptr<xiphos::linux_preview::LibraryModel> library;
   std::unique_ptr<xiphos::linux_preview::LibraryUI> library_ui;
+  ProfilePreferences preferences;
+  std::unique_ptr<xiphos::linux_preview::SyncUI> sync_ui;
+  App *sync_owner = nullptr;
+  std::string preferences_path;
+  gboolean system_dark = FALSE;
+  gint system_color_scheme = 0;
+  std::deque<std::string> external_links;
   guint library_timer = 0;
   guint session_timer = 0;
 };
+App *receiving_reader(Process &process, int index)
+{
+  App *fallback = nullptr;
+  auto *active = gtk_application_get_active_window(process.application);
+  for (const auto &window : process.windows) {
+    if (window->closing)
+      continue;
+    if (index >= 0) {
+      if (index-- == 0)
+        return window.get();
+    } else if (GTK_WINDOW(window->window) == active) {
+      return window.get();
+    }
+    fallback = window.get();
+  }
+  if (index >= 0)
+    return nullptr;
+  return process.sync_owner && !process.sync_owner->closing ? process.sync_owner : fallback;
+}
+void show_sync(App &app)
+{
+  auto &process = *app.process;
+  process.sync_owner = &app;
+  if (!process.sync_ui) {
+    process.sync_ui = std::make_unique<xiphos::linux_preview::SyncUI>(process.application, *process.worker);
+    process.sync_ui->current_passage = [&process] {
+      auto *reader = receiving_reader(process, -1);
+      if (!reader || !reader->model || reader->model->busy())
+        return std::pair<std::string, std::string>{};
+      const auto &passage = reader->model->passage();
+      return std::make_pair(passage.bible, passage.reference);
+    };
+    process.sync_ui->receive = [&process](const std::string &module, const std::string &reference, int index, bool direct) {
+      if (process.session_action != Process::SessionAction::idle || process.quitting)
+        return false;
+      auto *reader = receiving_reader(process, index);
+      if (!reader || !reader->model || !reader->model->ready() || reader->model->busy() || !reader->model->module(module))
+        return false;
+      if (direct)
+        return reader->model->visit(module, reader->model->passage().commentary, reference);
+      if (!reader->model->preview_received_references(module, reference))
+        return false;
+      gtk_window_present(GTK_WINDOW(reader->window));
+      return true;
+    };
+  }
+  process.sync_ui->present();
+}
+const ProfilePreferences &profile_preferences(const App &app)
+{
+  static const ProfilePreferences defaults;
+  return app.process ? app.process->preferences : defaults;
+}
+void apply_appearance(const Process &process)
+{
+  auto *settings = gtk_settings_get_default();
+  if (!settings)
+    return;
+  auto *property = g_object_class_find_property(G_OBJECT_GET_CLASS(settings), "gtk-interface-color-scheme");
+  if (property && G_IS_PARAM_SPEC_ENUM(property)) {
+    auto *choices = G_PARAM_SPEC_ENUM(property)->enum_class;
+    const auto *requested = process.preferences.appearance == 0 ? nullptr :
+      g_enum_get_value_by_nick(choices, process.preferences.appearance == 2 ? "dark" : "light");
+    g_object_set(settings, property->name, requested ? requested->value : process.system_color_scheme, nullptr);
+  } else {
+    g_object_set(settings, "gtk-application-prefer-dark-theme",
+      process.preferences.appearance == 0 ? process.system_dark : process.preferences.appearance == 2, nullptr);
+  }
+}
+void load_profile_preferences(Process &process)
+{
+  std::error_code error;
+  const auto size = std::filesystem::file_size(process.preferences_path, error);
+  if (error || size > 64 * 1024)
+    return;
+  auto *file = g_key_file_new();
+  if (g_key_file_load_from_file(file, process.preferences_path.c_str(), G_KEY_FILE_NONE, nullptr)) {
+    auto get = [&](const char *key) {
+      auto *value = g_key_file_get_string(file, "Reader", key, nullptr);
+      std::string result = value ? value : "";
+      g_free(value);
+      return result;
+    };
+    process.preferences.bible = get("Bible");
+    process.preferences.commentary = get("Commentary");
+    process.preferences.devotional = get("Devotional");
+    const auto appearance = g_key_file_get_integer(file, "Reader", "Appearance", nullptr);
+    process.preferences.appearance = unsigned(std::clamp(appearance, 0, 2));
+    const auto zoom = g_key_file_get_double(file, "Reader", "Zoom", nullptr);
+    if (zoom >= 0.6 && zoom <= 2.5)
+      process.preferences.zoom = zoom;
+  }
+  g_key_file_unref(file);
+}
+bool save_profile_preferences(const Process &process, const ProfilePreferences &preferences, GError **error)
+{
+  if (process.preferences_path.empty())
+    return true;
+  auto *file = g_key_file_new();
+  g_key_file_set_string(file, "Reader", "Bible", preferences.bible.c_str());
+  g_key_file_set_string(file, "Reader", "Commentary", preferences.commentary.c_str());
+  g_key_file_set_string(file, "Reader", "Devotional", preferences.devotional.c_str());
+  g_key_file_set_integer(file, "Reader", "Appearance", preferences.appearance);
+  g_key_file_set_double(file, "Reader", "Zoom", preferences.zoom);
+  gsize length = 0;
+  auto *bytes = g_key_file_to_data(file, &length, nullptr);
+  const bool saved = g_file_set_contents_full(process.preferences_path.c_str(), bytes, length,
+    G_FILE_SET_CONTENTS_CONSISTENT, 0600, error);
+  g_free(bytes);
+  g_key_file_unref(file);
+  return saved;
+}
+GtkWidget *profile_settings_menu(App &app)
+{
+  auto *menu = gtk_menu_button_new();
+  gtk_menu_button_set_label(GTK_MENU_BUTTON(menu), "Settings");
+  auto *popover = gtk_popover_new();
+  gtk_menu_button_set_popover(GTK_MENU_BUTTON(menu), popover);
+  auto *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+  gtk_popover_set_child(GTK_POPOVER(popover), box);
+  struct SettingsControls {
+    App &app;
+    GtkWidget *bible, *commentary, *devotional, *appearance, *zoom, *status;
+  };
+  auto field = [&](const char *label) {
+    auto *widget = gtk_entry_new();
+    gtk_entry_set_max_length(GTK_ENTRY(widget), 128);
+    gtk_accessible_update_property(GTK_ACCESSIBLE(widget), GTK_ACCESSIBLE_PROPERTY_LABEL, label, -1);
+    gtk_box_append(GTK_BOX(box), gtk_label_new(label));
+    gtk_box_append(GTK_BOX(box), widget);
+    return widget;
+  };
+  auto *controls = new SettingsControls{app, field("Startup Bible module ID"), field("Startup commentary module ID"),
+    field("Preferred devotional module ID"), nullptr, nullptr, gtk_label_new("")};
+  g_object_set_data_full(G_OBJECT(popover), "settings-controls", controls,
+    +[](gpointer data) { delete static_cast<SettingsControls *>(data); });
+  const char *themes[] = {"System appearance", "Light appearance", "Dark appearance", nullptr};
+  controls->appearance = gtk_drop_down_new_from_strings(themes);
+  gtk_box_append(GTK_BOX(box), controls->appearance);
+  controls->zoom = gtk_spin_button_new_with_range(60, 250, 10);
+  gtk_box_append(GTK_BOX(box), gtk_label_new("Default reader zoom (%)"));
+  gtk_box_append(GTK_BOX(box), controls->zoom);
+  auto *current = gtk_button_new_with_label("Use current Bible and commentary");
+  gtk_box_append(GTK_BOX(box), current);
+  g_signal_connect(current, "clicked", G_CALLBACK(+[](GtkButton *, gpointer data) {
+    auto &ui = *static_cast<SettingsControls *>(data);
+    if (!ui.app.model)
+      return;
+    const auto &passage = ui.app.model->passage();
+    gtk_editable_set_text(GTK_EDITABLE(ui.bible), passage.bible.c_str());
+    gtk_editable_set_text(GTK_EDITABLE(ui.commentary), passage.commentary.c_str());
+  }), controls);
+  auto *sharing = gtk_button_new_with_label("BibleSync passage sharing…");
+  gtk_box_append(GTK_BOX(box), sharing);
+  g_signal_connect(sharing, "clicked", G_CALLBACK(+[](GtkButton *, gpointer data) {
+    show_sync(static_cast<SettingsControls *>(data)->app);
+  }), controls);
+  auto *apply = gtk_button_new_with_label("Apply settings");
+  gtk_box_append(GTK_BOX(box), apply);
+  gtk_label_set_wrap(GTK_LABEL(controls->status), TRUE);
+  gtk_box_append(GTK_BOX(box), controls->status);
+  g_signal_connect(popover, "show", G_CALLBACK(+[](GtkWidget *, gpointer data) {
+    auto &ui = *static_cast<SettingsControls *>(data);
+    const auto &preferences = profile_preferences(ui.app);
+    gtk_editable_set_text(GTK_EDITABLE(ui.bible), preferences.bible.c_str());
+    gtk_editable_set_text(GTK_EDITABLE(ui.commentary), preferences.commentary.c_str());
+    gtk_editable_set_text(GTK_EDITABLE(ui.devotional), preferences.devotional.c_str());
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(ui.appearance), preferences.appearance);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(ui.zoom), preferences.zoom * 100);
+    gtk_label_set_text(GTK_LABEL(ui.status), "");
+  }), controls);
+  g_signal_connect(apply, "clicked", G_CALLBACK((+[](GtkButton *, gpointer data) {
+    auto &ui = *static_cast<SettingsControls *>(data);
+    auto &process = *ui.app.process;
+    ProfilePreferences preferences{
+      gtk_editable_get_text(GTK_EDITABLE(ui.bible)),
+      gtk_editable_get_text(GTK_EDITABLE(ui.commentary)),
+      gtk_editable_get_text(GTK_EDITABLE(ui.devotional)),
+      gtk_drop_down_get_selected(GTK_DROP_DOWN(ui.appearance)),
+      gtk_spin_button_get_value(GTK_SPIN_BUTTON(ui.zoom)) / 100.0};
+    GError *error = nullptr;
+    if (!save_profile_preferences(process, preferences, &error)) {
+      gtk_label_set_text(GTK_LABEL(ui.status), error ? error->message : "Unable to save settings.");
+      g_clear_error(&error);
+      return;
+    }
+    process.preferences = std::move(preferences);
+    apply_appearance(process);
+    for (const auto &window : process.windows)
+      if (!window->closing) {
+        webkit_web_view_set_zoom_level(window->bible_view, process.preferences.zoom);
+        webkit_web_view_set_zoom_level(window->commentary_view, process.preferences.zoom);
+        window->study_ui->set_default_devotional(process.preferences.devotional);
+      }
+    gtk_label_set_text(GTK_LABEL(ui.status), "Settings applied.");
+  })), controls);
+  return menu;
+}
 unsigned library_changed(Process *p)
 {
 	if (!p)
@@ -1293,7 +1722,7 @@ void new_window(Process *process, std::optional<xiphos::linux_preview::RestoredW
 		window->session_key = id;
 		g_free(id);
 	}
-	window->automatic_start = start && !restored && !process->prototype->window_smoke;
+	window->automatic_start = start && !restored && process->external_links.empty() && !process->prototype->window_smoke;
 	window->session_notice = process->prototype->session_notice;
 	window->software = process->prototype->software;
 	window->root = process->prototype->root;
@@ -1302,6 +1731,31 @@ void new_window(Process *process, std::optional<xiphos::linux_preview::RestoredW
 	activate(process->application, state);
 }
 
+void deliver_external_link(Process *process)
+{
+  if (process->external_links.empty() || process->quitting ||
+      process->session_action != Process::SessionAction::idle ||
+      (process->recovery_checked && !process->recovery_decided))
+    return;
+  App *target = nullptr;
+  auto *active = gtk_application_get_active_window(process->application);
+  for (const auto &window : process->windows) {
+    if (window->closing)
+      continue;
+    target = window.get();
+    if (GTK_WINDOW(window->window) == active)
+      break;
+  }
+  if (!target || !target->model->ready() || target->model->busy())
+    return;
+  auto uri = std::move(process->external_links.front());
+  process->external_links.pop_front();
+  target->startup_read_started = true;
+  target->preserve_restored_draft = false;
+  target->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(target->reference));
+  target->model->open_external_link(uri);
+  gtk_window_present(GTK_WINDOW(target->window));
+}
 void freeze_windows(Process *p, bool freeze)
 {
 	for (const auto &w : p->windows)
@@ -1493,6 +1947,7 @@ gboolean session_tick(gpointer data)
 					w->session_notice = p->recovery->error();
 				}
 		} else if (action == Process::SessionAction::quit_save || action == Process::SessionAction::quit_recovery) {
+			p->sync_ui.reset();
 			for (const auto &w : p->windows)
 				if (!w->closing) {
 					w->approved_session_close = true;
@@ -1598,6 +2053,49 @@ gboolean startup_smoke(gpointer data) {
   if (state.smoke_failed) { gtk_window_close(GTK_WINDOW(window.window)); return G_SOURCE_REMOVE; }
   if (!window.model || !window.model->ready() || window.model->busy() || window.model->passage().bible.empty()) return G_SOURCE_CONTINUE;
   const auto &passage = window.model->passage();
+  if (state.external_smoke) {
+    if (passage.bible != "Text" || passage.reference != "John 3:17" || window.model->can_back())
+      state.smoke_failed = true;
+    if (!state.smoke_failed && state.smoke_stage == 0) {
+      show_detached(window, false);
+      auto &pane = *window.detached[0];
+      gtk_check_button_set_active(GTK_CHECK_BUTTON(pane.sync), FALSE);
+      gtk_editable_set_text(GTK_EDITABLE(pane.reference), "John 3:16");
+      pane.navigate();
+      state.smoke_stage = 1;
+      return G_SOURCE_CONTINUE;
+    }
+    if (!state.smoke_failed) {
+      auto &pane = *window.detached[0];
+      if (pane.request)
+        return G_SOURCE_CONTINUE;
+      state.smoke_failed = pane.committed_reference != "John 3:16";
+      gtk_check_button_set_active(GTK_CHECK_BUTTON(pane.sync), TRUE);
+      state.smoke_failed |= pane.committed_reference != "John 3:17";
+      auto *scratch = g_dir_make_tmp("xiphos-settings-smoke-XXXXXX", nullptr);
+      if (scratch) {
+        Process settings;
+        settings.preferences_path = (std::filesystem::path(scratch) / "session.xml.settings").string();
+        const ProfilePreferences expected{"Text", "Notes", "Devotional", 2, 1.3};
+        if (save_profile_preferences(settings, expected, nullptr)) {
+          load_profile_preferences(settings);
+          const auto &saved = settings.preferences;
+          state.smoke_failed |= saved.bible != expected.bible || saved.commentary != expected.commentary ||
+            saved.devotional != expected.devotional || saved.appearance != expected.appearance || saved.zoom != expected.zoom;
+        } else {
+          state.smoke_failed = true;
+        }
+        std::error_code ignored;
+        std::filesystem::remove_all(scratch, ignored);
+        g_free(scratch);
+      } else {
+        state.smoke_failed = true;
+      }
+    }
+    state.smoke_stage = 2;
+    gtk_window_close(GTK_WINDOW(window.window));
+    return G_SOURCE_REMOVE;
+  }
   if (!webkit_network_session_is_ephemeral(webkit_web_view_get_network_session(window.bible_view)) || passage.bible != "Text" || passage.reference != "John 3:16" || window.model->can_back() || std::string(gtk_label_get_text(GTK_LABEL(window.module_description))).find("Original study pane fixture") == std::string::npos) state.smoke_failed = true;
   if (state.smoke_stage == 0) { select(window.bible, window.bibles, "Notes"); state.smoke_stage = 1; return G_SOURCE_CONTINUE; }
   if (passage.commentary != "Notes") state.smoke_failed = true;
@@ -1639,9 +2137,12 @@ gboolean window_smoke(gpointer data) {
 int main(int argc, char **argv) {
   std::setlocale(LC_ALL, "");
   App state;
+  std::vector<std::string> link_arguments;
   for (int i = 1; i < argc; ++i) {
     const std::string argument = argv[i];
-    if (argument == "--no-session")
+    if (argument.rfind("sword://", 0) == 0 && argument.size() <= 32768 && link_arguments.size() < 32)
+      link_arguments.push_back(argument);
+    else if (argument == "--no-session")
 	    state.no_session = true;
     else if (argument == "--session" && i + 1 < argc)
 	    state.session_path = argv[++i];
@@ -1656,13 +2157,16 @@ int main(int argc, char **argv) {
       if (argument == "--smoke-window-test") state.window_smoke = true;
       if (argument == "--smoke-startup-test") state.startup_smoke = true;
     } else {
-	    std::cerr << "Usage: xiphos-linux-preview [--software-rendering] [--root SWORD_LIBRARY] [--session FILE | --no-session]\n";
+	    std::cerr << "Usage: xiphos-linux-preview [--software-rendering] [--root SWORD_LIBRARY] [--session FILE | --no-session] [sword://MODULE/REFERENCE]\n";
 	    return argument == "--help" ? 0 : 2;
     }
   }
+  state.external_smoke = state.startup_smoke && !link_arguments.empty();
   if (state.software) g_setenv("GSK_RENDERER", "cairo", FALSE); // Preserve an explicit user renderer override.
   if (!state.root.empty()) state.root = std::filesystem::absolute(state.root).string();
-  auto *app = gtk_application_new("org.xiphos.LinuxPreview", G_APPLICATION_NON_UNIQUE);
+  const bool isolated = state.smoke || state.no_session || !state.root.empty() || !state.session_path.empty();
+  const auto flags = GApplicationFlags(G_APPLICATION_HANDLES_OPEN | (isolated ? G_APPLICATION_NON_UNIQUE : 0));
+  auto *app = gtk_application_new("org.xiphos.LinuxPreview", flags);
   Process process; process.application = app; process.prototype = &state;
   if (state.smoke && !state.window_smoke && !state.startup_smoke) g_signal_connect(app, "activate", G_CALLBACK(activate), &state);
   else {
@@ -1670,11 +2174,13 @@ int main(int argc, char **argv) {
       std::cerr << "Unable to start the study engine.\n"; g_object_unref(app); return 1;
     }
     process.library = std::make_unique<xiphos::linux_preview::LibraryModel>(*process.worker);
-    process.library_timer = g_timeout_add(20, +[](gpointer data) -> gboolean {auto*p=static_cast<Process*>(data);if(p->library_ui)p->library_ui->tick();else p->library->tick();return G_SOURCE_CONTINUE; }, &process);
+    process.library_timer = g_timeout_add(20, +[](gpointer data) -> gboolean {auto*p=static_cast<Process*>(data);if(p->library_ui)p->library_ui->tick();else p->library->tick();deliver_external_link(p);if(p->sync_ui)p->sync_ui->tick();return G_SOURCE_CONTINUE; }, &process);
     if (!state.smoke && !state.no_session) {
 	    if (state.session_path.empty())
 		    state.session_path = (std::filesystem::path(g_get_user_config_dir()) / "xiphos-native" / "session.xml").string();
 	    state.session_path = std::filesystem::absolute(state.session_path).string();
+	    process.preferences_path = state.session_path + ".settings";
+	    load_profile_preferences(process);
 	    std::error_code error;
 	    std::filesystem::create_directories(std::filesystem::path(state.session_path).parent_path(), error);
 	    if (error) {
@@ -1690,6 +2196,13 @@ int main(int argc, char **argv) {
 			     auto *p = static_cast<Process *>(data);
 			     if (!p->started) {
 				     p->started = true;
+                                     if (auto *settings = gtk_settings_get_default()) {
+                                       if (g_object_class_find_property(G_OBJECT_GET_CLASS(settings), "gtk-interface-color-scheme"))
+                                         g_object_get(settings, "gtk-interface-color-scheme", &p->system_color_scheme, nullptr);
+                                       else
+                                         g_object_get(settings, "gtk-application-prefer-dark-theme", &p->system_dark, nullptr);
+                                     }
+                                     apply_appearance(*p);
 				     if (p->session && !p->storage_disabled && std::filesystem::exists(p->prototype->session_path) && p->session->load(p->prototype->session_path)) {
 					     p->session_action = Process::SessionAction::startup;
 					     g_application_hold(G_APPLICATION(p->application));
@@ -1699,6 +2212,20 @@ int main(int argc, char **argv) {
 			     new_window(p);
 		     }),
 		     &process);
+    g_signal_connect(app, "open", G_CALLBACK(+[](GApplication *application, GFile **files, gint count, const gchar *, gpointer data) {
+      auto *process = static_cast<Process *>(data);
+      for (gint i = 0; i < count && process->external_links.size() < 32; ++i) {
+        auto *uri = g_file_get_uri(files[i]);
+        if (uri && g_str_has_prefix(uri, "sword://") && std::char_traits<char>::length(uri) <= 32768)
+          process->external_links.emplace_back(uri);
+        g_free(uri);
+      }
+      bool has_reader = false;
+      for (const auto &window : process->windows)
+        has_reader |= !window->closing;
+      if (!has_reader && process->session_action == Process::SessionAction::idle)
+        g_application_activate(application);
+    }), &process);
     const GActionEntry actions[] = {
 	{"new-window", +[](GSimpleAction *, GVariant *, gpointer data) { auto*p=static_cast<Process *>(data);if((p->session&&p->session->busy())||(p->recovery_checked&&!p->recovery_decided))return;new_window(p); }, nullptr, nullptr, nullptr, {}},
 	{"library", +[](GSimpleAction *, GVariant *, gpointer data) {auto*p=static_cast<Process*>(data);if(!p->library_ui)p->library_ui=std::make_unique<xiphos::linux_preview::LibraryUI>(p->application,*p->library);p->library_ui->present(); }, nullptr, nullptr, nullptr, {}},
@@ -1719,13 +2246,18 @@ int main(int argc, char **argv) {
   if (state.window_smoke) g_timeout_add(10, window_smoke, &process);
   guint deadline = 0;
   if (state.smoke) deadline = g_timeout_add_seconds(90, +[](gpointer data) -> gboolean {
-    auto *state = static_cast<App *>(data); state->smoke_failed = true;
+    auto *process = static_cast<Process *>(data);
+    auto *state = process->prototype;
+    state->smoke_failed = true;
     std::cerr << "GTK4 smoke timeout at stage " << state->smoke_stage << " loaded=" << state->loaded << "\n";
-    if (state->window) gtk_window_close(GTK_WINDOW(state->window));
+    g_application_quit(G_APPLICATION(process->application));
     return G_SOURCE_REMOVE;
-  }, &state);
-  char *args[] = {argv[0], nullptr};
-  auto result = g_application_run(G_APPLICATION(app), 1, args);
+  }, &process);
+  std::vector<char *> args{argv[0]};
+  for (auto &uri : link_arguments)
+    args.push_back(uri.data());
+  args.push_back(nullptr);
+  auto result = g_application_run(G_APPLICATION(app), int(args.size() - 1), args.data());
   if (deadline && !state.smoke_failed) g_source_remove(deadline);
   shutdown(&state);
   for (const auto &window : process.windows) shutdown(window.get());
@@ -1733,6 +2265,7 @@ int main(int argc, char **argv) {
 	  g_source_remove(process.session_timer);
   if (process.library_timer)
 	  g_source_remove(process.library_timer);
+  process.sync_ui.reset();
   process.library_ui.reset();
   process.library.reset();
   process.recovery.reset();
@@ -1741,6 +2274,7 @@ int main(int argc, char **argv) {
   g_object_unref(app);
   if (state.smoke) {
     if (state.smoke_failed || state.smoke_stage != (state.startup_smoke ? 2u : state.window_smoke ? 6u : state.options_smoke ? 4u : state.preview_smoke ? 7u : state.lexical_smoke ? 5u : 13u)) { std::cerr << "GTK4 smoke failed\n"; return 1; }
+    if (state.external_smoke) { std::cout << "GTK4 external link, detached passage and profile settings smoke passed\n"; return result; }
     if (state.startup_smoke) { std::cout << "GTK4 startup selection and module metadata smoke passed\n"; return result; }
     if (state.window_smoke) { std::cout << "GTK4 shared-worker window and anchor scrolling smoke passed\n"; return result; }
     if (state.preview_smoke || state.lexical_smoke) { std::cout << "GTK4 contextual preview smoke passed\n"; return result; }

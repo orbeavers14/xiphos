@@ -12,6 +12,31 @@ Earlier native Fedora results and validation limits remain in the
 run on a Mac are not native Linux desktop/input/clipboard or package acceptance.
 No new physical Linux result is claimed by this documentation update.
 
+## GTK4 window, startup and sharing workflows (2026-11-11)
+
+Master from `1dfa636d`. Detach opens Bible or commentary in a secondary
+window. Synchronized panes follow the main passage and can navigate it.
+Independent panes read through the same FIFO worker and leave main selection
+and history intact. A `sword://MODULE/REFERENCE` argument opens an exact
+installed module through the shared URI resolver. A running default profile
+receives application-open events. Desktop handler registration remains part of
+Linux packaging.
+
+The Settings popover saves startup Bible, commentary, devotional, appearance
+and zoom beside the session file. Appearance and default zoom apply to open
+readers. Selected words can open map or translation lookups and can be read by
+Speech Dispatcher when available. The BibleSync panel uses shared network
+configuration, polling and incoming decisions with explicit connection consent.
+It supports manual sharing, direct navigation and a bounded review list. The
+Fedora build lacks the optional networking SDK, so a native two-peer run and
+automatic outgoing navigation remain open.
+
+The Fedora 45 ARM64 serial build, URI and Sync policy/transport checks, and GTK
+startup and study smokes passed. The external startup smoke also checks that an
+independent detached read leaves main history intact and that settings survive
+a write and reload in a disposable profile. No physical keyboard, live sync,
+installed map packs or distribution acceptance is claimed.
+
 ## GTK4 reading and editing adapters (2026-11-11)
 
 Work on master from `a05f4b78`. The GTK reader now offers chapter and stacked
@@ -44,11 +69,10 @@ the isolated parallel link, persisted layout and translation visibility, Unicode
 editing, notes, saved reading styles, source-bound word lookup and selected-verse
 export. No hosted jobs were dispatched.
 
-Remaining Linux feature work includes profile-wide native Settings and startup
-defaults, synchronized detached panes, offline map-pack management, external
-`sword://` handling and selected-text OS actions. Native BibleSync,
-complete localized menus, real-corpus word/RTL checks, print output, full
-desktop accessibility and distribution acceptance remain open.
+See the newer window and startup checkpoint above for progress since this slice.
+Offline map-pack management, complete localized menus, real-corpus word/RTL
+checks, print output, desktop accessibility and distribution acceptance remain
+open.
 
 ## Maintenance baseline on master
 

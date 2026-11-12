@@ -18,6 +18,7 @@ public:
   GtkWidget *parallel_pane();
   void study_parallel_selection();
   GtkWidget *devotional_pane();
+  void set_default_devotional(std::string module);
   GtkWidget *reading_style_menu();
   std::string reading_style_css(const std::string &module, const std::string &selector = "body") const;
   unsigned style_revision() const { return style_revision_; }
@@ -78,6 +79,7 @@ private:
   GtkWidget *devotional_module_ = nullptr, *devotional_date_ = nullptr, *devotional_status_ = nullptr;
   WebKitWebView *devotional_view_ = nullptr;
   std::vector<std::string> devotional_modules_;
+  std::string default_devotional_;
   unsigned devotional_revision_ = 0;
   void read_devotional(bool today);
   GtkWidget *word_label_ = nullptr, *word_choices_ = nullptr, *word_box_ = nullptr;

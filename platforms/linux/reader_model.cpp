@@ -83,6 +83,28 @@ bool ReaderModel::visit(const std::string &bible, const std::string &commentary,
   auto status = xc_worker_visit_passage(worker_, tab_, bible.c_str(), commentary.c_str(), reference.c_str(), &request);
   return accept(status, request, Operation::passage);
 }
+bool ReaderModel::open_external_link(const std::string &uri)
+{
+  if (!ready() || busy() || uri.rfind("sword://", 0) != 0 || uri.find('\0') != std::string::npos)
+    return false;
+  xc_request *request = nullptr;
+  const auto status = xc_worker_resolve_link(worker_, "", uri.c_str(), &request);
+  return accept(status, request, Operation::external_link);
+}
+xc_status ReaderModel::preview_detached(const std::string &module, const std::string &reference, xc_request **out) const
+{
+  if (!ready() || module.find('\0') != std::string::npos || reference.find('\0') != std::string::npos)
+    return XC_INVALID_ARGUMENT;
+  return xc_worker_read_tab_entry(worker_, tab_, module.c_str(), reference.c_str(), out);
+}
+xc_status ReaderModel::resolve_detached(const std::string &module, const std::string &input, bool link, xc_request **out) const
+{
+  if (!ready() || module.find('\0') != std::string::npos || input.find('\0') != std::string::npos)
+    return XC_INVALID_ARGUMENT;
+  if (link)
+    return xc_worker_resolve_link(worker_, module.c_str(), input.c_str(), out);
+  return xc_worker_resolve_localized_reference(worker_, module.c_str(), input.c_str(), reference_locale_.c_str(), out);
+}
 bool ReaderModel::choose_translation(const std::string &module, const std::string &commentary)
 {
   if (!ready() || busy() || module.empty() || passage_.bible.empty() || module == passage_.bible)
@@ -167,6 +189,15 @@ bool ReaderModel::show_references() {
   if (!ready() || busy() || note_.expression.empty()) return false;
   xc_request *request = nullptr;
   auto status = xc_worker_read_reference_list(worker_, tab_, note_.module.c_str(), note_.expression.c_str(), note_.reference.c_str(), &request);
+  return accept(status, request, Operation::references);
+}
+bool ReaderModel::preview_received_references(const std::string &module, const std::string &reference)
+{
+  if (!ready() || busy() || !this->module(module) || reference.empty())
+    return false;
+  const auto &context = passage_.bible == module && !passage_.reference.empty() ? passage_.reference : "John 1:1";
+  xc_request *request = nullptr;
+  auto status = xc_worker_read_reference_list(worker_, tab_, module.c_str(), reference.c_str(), context.c_str(), &request);
   return accept(status, request, Operation::references);
 }
 bool ReaderModel::show_note() {
@@ -539,6 +570,12 @@ void ReaderModel::tick() {
     value.lexical = *layout;
     if (operation_ == Operation::bible_chapter) { bible_chapter_ = std::move(value); load_chapters(true); }
     else { commentary_chapter_ = std::move(value); load_choices(); }
+    break;
+  }
+  case Operation::external_link: {
+    std::unique_ptr<xc_link, decltype(&xc_link_release)> link(xc_request_take_link(completed.get()), xc_link_release);
+    if (!link || !visit(copy(xc_link_module(link.get())), "", copy(xc_link_reference(link.get()))))
+      error_ = "The external link does not name an available passage.";
     break;
   }
   case Operation::resolved_reference: {

@@ -234,6 +234,10 @@ public:
 
   bool visit(const std::string &bible, const std::string &commentary, const std::string &reference);
   bool navigate(int direction);
+  bool open_external_link(const std::string &uri);
+  bool has_reference_locale() const { return !reference_locale_.empty(); }
+  xc_status preview_detached(const std::string &module, const std::string &reference, xc_request **out) const;
+  xc_status resolve_detached(const std::string &module, const std::string &input, bool link, xc_request **out) const;
   bool choose_translation(const std::string &module, const std::string &commentary);
   bool visit_typed_reference(const std::string &module, const std::string &commentary, const std::string &reference);
   bool set_reference_locale(const std::string &path);
@@ -246,6 +250,7 @@ public:
   bool hover(const std::string &uri);
   bool preview_busy() const { return hover_request_ != nullptr; }
   bool show_references();
+  bool preview_received_references(const std::string &module, const std::string &reference);
   bool show_note();
   bool close_preview();
   const Preview &note() const { return note_; }
@@ -299,7 +304,7 @@ public:
   const std::string &error() const { return error_; }
   unsigned revision() const { return revision_; }
 private:
-  enum class Operation { resolved_reference, devotional, word_study, passage_export, editor_bind,
+  enum class Operation { external_link, resolved_reference, devotional, word_study, passage_export, editor_bind,
 			 editor_release,
 			 parallel_decoration,
 			 andbible,

@@ -207,6 +207,41 @@ GtkWidget *StudyUI::search_pane() {
   button(word_box_, "Search selected word", G_CALLBACK(+[](GtkButton *, gpointer data) {
     static_cast<StudyUI *>(data)->search_selected_word();
   }), this);
+  auto *word_actions = box(word_box_, true);
+  const char *actions[] = {"Speak", "Look up on map", "Translate"};
+  for (unsigned i = 0; i < G_N_ELEMENTS(actions); ++i) {
+    auto *action = button(word_actions, actions[i], G_CALLBACK(+[](GtkButton *button, gpointer data) {
+      auto *ui = static_cast<StudyUI *>(data);
+      if (!ui->model_)
+        return;
+      const auto &word = ui->model_->selected_word().surface;
+      const auto index = GPOINTER_TO_UINT(g_object_get_data(G_OBJECT(button), "word-action"));
+      if (word.empty() || word.size() > 4096)
+        return;
+      if (index == 0) {
+        auto *speaker = g_find_program_in_path("spd-say");
+        if (!speaker) {
+          gtk_label_set_text(GTK_LABEL(ui->search_status_), "Speech Dispatcher (spd-say) is unavailable.");
+          return;
+        }
+        GError *error = nullptr;
+        auto *process = g_subprocess_new(G_SUBPROCESS_FLAGS_NONE, &error, speaker, "--", word.c_str(), nullptr);
+        if (process)
+          g_object_unref(process);
+        else
+          gtk_label_set_text(GTK_LABEL(ui->search_status_), error ? error->message : "Could not start speech.");
+        g_clear_error(&error);
+        g_free(speaker);
+      } else {
+        auto *escaped = g_uri_escape_string(word.c_str(), nullptr, FALSE);
+        const std::string url = std::string(index == 1 ? "https://www.openstreetmap.org/search?query=" :
+          "https://translate.google.com/?sl=auto&tl=en&op=translate&text=") + escaped;
+        g_free(escaped);
+        gtk_show_uri(ui->parent_, url.c_str(), GDK_CURRENT_TIME);
+      }
+    }), this);
+    g_object_set_data(G_OBJECT(action), "word-action", GUINT_TO_POINTER(i));
+  }
   gtk_widget_set_visible(word_box_, FALSE);
   const char *scopes[] = {"All", "Bounds", "Within last results", "Entry interval", nullptr};
   search_scope_ = choice(search_box_, "Search scope", scopes);
@@ -445,6 +480,15 @@ GtkWidget *StudyUI::devotional_pane()
   gtk_box_append(GTK_BOX(pane), view(&devotional_view_, false));
   return pane;
 }
+void StudyUI::set_default_devotional(std::string module)
+{
+  default_devotional_ = std::move(module);
+  if (!devotional_module_)
+    return;
+  const auto preferred = std::find(devotional_modules_.begin(), devotional_modules_.end(), default_devotional_);
+  if (preferred != devotional_modules_.end())
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(devotional_module_), preferred - devotional_modules_.begin());
+}
 void StudyUI::read_devotional(bool today)
 {
   if (!model_)
@@ -522,6 +566,7 @@ void StudyUI::tick(ReaderModel &model) {
 			  if (module.devotional)
 				  devotional_modules_.push_back(module.id);
 		  choices(devotional_module_, devotional_modules_);
+		  set_default_devotional(default_devotional_);
 	  }
 	  if (style_module_) {
 		  style_modules_ = {""};
