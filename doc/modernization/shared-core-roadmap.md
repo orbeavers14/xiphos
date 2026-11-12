@@ -37,3 +37,13 @@ Do not infer that an item is complete because the old implementation was removed
 [Historical scope and detailed requirements](history/shared-core-roadmap.md)
 retain the original plans. Expensive or optional expansion remains a bounded
 future decision; no work is automatically authorized by the presence of this list.
+
+## Owner-approved feature scope (2026-11-11)
+
+The [feature review decisions](feature-review-decisions.md) retain the reviewed
+Bible-study, native UI, library, release-support and diagnostics capabilities,
+with four items requiring refinement and six deferred from the first-release
+scope. No feature was marked for removal. Future mobile, personal-data sync and
+Handoff remain roadmap items rather than initial desktop-release gates.
+Preserve existing deferred implementations and data safety unless a later owner
+decision explicitly authorizes removal.
