@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "library_ui.hpp"
+#include "map_ui.hpp"
 #include "reader_document.hpp"
 #include "reader_model.hpp"
 #include "session_model.hpp"
@@ -242,37 +243,22 @@ void deliver_passage_export(App *app)
   }), app);
   gtk_native_dialog_show(app->file_dialog);
 }
+std::filesystem::path bundled_resources(const char *subdir, const char *build_path)
+{
+  std::error_code error;
+  const auto executable = std::filesystem::read_symlink("/proc/self/exe", error);
+  if (!error) {
+    const auto installed = executable.parent_path() / XIPHOS_LINUX_RELATIVE_DATA_DIR / subdir;
+    if (std::filesystem::is_directory(installed, error))
+      return installed;
+  }
+  return build_path;
+}
 void open_biblical_map(App *app)
 {
-  auto *window = GTK_WINDOW(gtk_application_window_new(app->application));
-  gtk_window_set_title(window, "Biblical Map");
-  gtk_window_set_default_size(window, 900, 650);
-  gtk_window_set_transient_for(window, GTK_WINDOW(app->window));
-  gtk_window_set_destroy_with_parent(window, TRUE);
-  auto *session = webkit_network_session_new_ephemeral();
-  auto *view = WEBKIT_WEB_VIEW(g_object_new(WEBKIT_TYPE_WEB_VIEW, "network-session", session, nullptr));
-  g_object_unref(session);
-  if (app->software)
-    webkit_settings_set_hardware_acceleration_policy(webkit_web_view_get_settings(view), WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
-  auto *file = g_file_new_build_filename(XIPHOS_LINUX_MAP_DIR, "index.html", nullptr);
-  auto *uri = g_file_get_uri(file);
-  g_object_unref(file);
-  g_object_set_data_full(G_OBJECT(view), "map-entry-uri", uri, g_free);
-  g_signal_connect(view, "decide-policy", G_CALLBACK(+[](WebKitWebView *view, WebKitPolicyDecision *decision,
-      WebKitPolicyDecisionType type, gpointer) -> gboolean {
-    if (type == WEBKIT_POLICY_DECISION_TYPE_RESPONSE)
-      return FALSE;
-    auto *navigation = webkit_navigation_policy_decision_get_navigation_action(WEBKIT_NAVIGATION_POLICY_DECISION(decision));
-    const auto *target = webkit_uri_request_get_uri(webkit_navigation_action_get_request(navigation));
-    const auto *entry = static_cast<const char *>(g_object_get_data(G_OBJECT(view), "map-entry-uri"));
-    if (type == WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION && g_strcmp0(target, entry) == 0)
-      return FALSE;
-    webkit_policy_decision_ignore(decision);
-    return TRUE;
-  }), nullptr);
-  gtk_window_set_child(window, GTK_WIDGET(view));
-  webkit_web_view_load_uri(view, uri);
-  gtk_window_present(window);
+  const auto pack = std::filesystem::path(g_get_user_data_dir()) / "xiphos-native" / "maps" / "regional.pmtiles";
+  xiphos::linux_preview::open_map(GTK_WINDOW(app->window), app->software,
+    bundled_resources("Maps", XIPHOS_LINUX_MAP_DIR), pack);
 }
 void add_reading_tools(App *app, GtkWidget *container)
 {
@@ -1291,7 +1277,7 @@ void activate(GtkApplication *application, gpointer data) {
     const char *locales[] = {"", "de.conf", "es.conf", "fr.conf"};
     const auto index = gtk_drop_down_get_selected(GTK_DROP_DOWN(object));
     if (app->model && index < G_N_ELEMENTS(locales))
-      app->model->set_reference_locale(index ? std::string(XIPHOS_LINUX_LOCALE_DIR) + "/" + locales[index] : "");
+      app->model->set_reference_locale(index ? (bundled_resources("reference-locales", XIPHOS_LINUX_LOCALE_DIR) / locales[index]).string() : "");
   })), app);
   auto *commentary_label = gtk_label_new_with_mnemonic("_Commentary module");
   gtk_box_append(GTK_BOX(library), commentary_label);

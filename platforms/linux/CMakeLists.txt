@@ -4,6 +4,7 @@ project(xiphos_linux_preview LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(CTest)
+include(GNUInstallDirs)
 option(XIPHOS_BUILD_GTK4_PREVIEW "Build the GTK4/WebKitGTK desktop preview" ON)
 if(XIPHOS_BUILD_GTK4_PREVIEW)
   find_package(PNG 1.6 REQUIRED)
@@ -17,17 +18,29 @@ add_library(linux_reader_model reader_model.cpp study_model.cpp repository_model
 target_link_libraries(linux_reader_model PUBLIC Xiphos::Core)
 target_include_directories(linux_reader_model PUBLIC .)
 if(XIPHOS_BUILD_GTK4_PREVIEW)
-  add_executable(xiphos-linux-preview reader_app.cpp sync_ui.cpp library_ui.cpp study_ui.cpp parallel_ui.cpp repository_ui.cpp rich_editor.cpp host_state.cpp)
+  add_executable(xiphos-linux-preview reader_app.cpp map_ui.cpp sync_ui.cpp library_ui.cpp study_ui.cpp parallel_ui.cpp repository_ui.cpp rich_editor.cpp host_state.cpp)
   set(XIPHOS_LINUX_MAP_DIR "${CMAKE_CURRENT_BINARY_DIR}/Maps")
   file(MAKE_DIRECTORY "${XIPHOS_LINUX_MAP_DIR}")
   foreach(asset index.html map.css map.js maplibre-gl.css maplibre-gl.js pmtiles.js MapLibre-LICENSE.txt PMTiles-LICENSE.txt README.md)
     configure_file("../macos/Maps/${asset}" "${XIPHOS_LINUX_MAP_DIR}/${asset}" COPYONLY)
   endforeach()
   file(COPY "../../localization/sword/" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/reference-locales")
+  file(RELATIVE_PATH XIPHOS_LINUX_RELATIVE_DATA_DIR "${CMAKE_INSTALL_FULL_BINDIR}" "${CMAKE_INSTALL_FULL_DATADIR}/xiphos")
+  target_include_directories(xiphos-linux-preview PRIVATE ../../src/core)
   target_compile_definitions(xiphos-linux-preview PRIVATE
+    XIPHOS_LINUX_RELATIVE_DATA_DIR="${XIPHOS_LINUX_RELATIVE_DATA_DIR}"
     XIPHOS_LINUX_MAP_DIR="${XIPHOS_LINUX_MAP_DIR}"
     XIPHOS_LINUX_LOCALE_DIR="${CMAKE_CURRENT_BINARY_DIR}/reference-locales")
   target_link_libraries(xiphos-linux-preview PRIVATE linux_reader_model PkgConfig::GTK4 PkgConfig::WEBKIT PNG::PNG)
+  install(TARGETS xiphos-linux-preview RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+  install(FILES org.xiphos.LinuxPreview.desktop DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
+  install(DIRECTORY "${XIPHOS_LINUX_MAP_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/reference-locales"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/xiphos")
+  install(FILES ../../COPYING ../../AUTHORS DESTINATION "${CMAKE_INSTALL_DATADIR}/xiphos")
+  if(XIPHOS_ENABLE_BIBLESYNC)
+    install(FILES ../../dependencies/biblesync/COPYING DESTINATION "${CMAKE_INSTALL_DATADIR}/xiphos"
+      RENAME COPYING.BibleSync)
+  endif()
   if(BUILD_TESTING)
 
     add_executable(linux_rich_editor_smoke tests/rich_editor_smoke.cpp rich_editor.cpp)

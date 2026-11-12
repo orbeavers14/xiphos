@@ -10,7 +10,29 @@ read the current source before treating a historical gap as unimplemented.
 Earlier native Fedora results and validation limits remain in the
 [historical Linux handoff](history/handoff-linux.md). Later portable-model checks
 run on a Mac are not native Linux desktop/input/clipboard or package acceptance.
-No new physical Linux result is claimed by this documentation update.
+
+
+## GTK4 offline map packs, desktop links and BibleSync (2026-11-11)
+
+Master from `b4b34204`. The GTK4 map uses the shared offline map page.
+Local packs and checksum-verified HTTPS downloads stage in private storage.
+The page checks PMTiles metadata before the app replaces the installed pack.
+The CMake install includes relocatable map and locale assets plus a desktop
+entry for `sword://` links.
+
+On Fedora 45 ARM64 with GTK4 and WebKitGTK6, the staged desktop entry opened
+an external verse at startup and routed a second verse into the same instance
+in an isolated D-Bus session. A GTK/WebKit map fixture rendered a staged
+raster pack, checked that a corrupt replacement preserved it, and removed
+the installed copy. The GTK study smoke also passed. A Linux vector extract and the map download dialog still
+need desktop verification.
+
+With the reviewed BibleSync 2.2.0 SDK built against the local UUID runtime,
+the GTK panel connected to an isolated loopback peer, opened an incoming
+review item, shared a verse and disconnected. Both shared SDK transport tests
+passed. Automatic outgoing navigation, physical LAN behavior and
+distribution-package acceptance remain open. The [owner’s feature review](feature-review-decisions.md)
+defers BibleSync and external links from the initial release.
 
 ## GTK4 window, startup and sharing workflows (2026-11-11)
 
@@ -19,8 +41,7 @@ window. Synchronized panes follow the main passage and can navigate it.
 Independent panes read through the same FIFO worker and leave main selection
 and history intact. A `sword://MODULE/REFERENCE` argument opens an exact
 installed module through the shared URI resolver. A running default profile
-receives application-open events. Desktop handler registration remains part of
-Linux packaging.
+receives application-open events.
 
 The Settings popover saves startup Bible, commentary, devotional, appearance
 and zoom beside the session file. Appearance and default zoom apply to open
@@ -28,14 +49,12 @@ readers. Selected words can open map or translation lookups and can be read by
 Speech Dispatcher when available. The BibleSync panel uses shared network
 configuration, polling and incoming decisions with explicit connection consent.
 It supports manual sharing, direct navigation and a bounded review list. The
-Fedora build lacks the optional networking SDK, so a native two-peer run and
-automatic outgoing navigation remain open.
+optional SDK was unavailable during that checkpoint.
 
 The Fedora 45 ARM64 serial build, URI and Sync policy/transport checks, and GTK
 startup and study smokes passed. The external startup smoke also checks that an
 independent detached read leaves main history intact and that settings survive
-a write and reload in a disposable profile. No physical keyboard, live sync,
-installed map packs or distribution acceptance is claimed.
+a write and reload in a disposable profile.
 
 ## GTK4 reading and editing adapters (2026-11-11)
 

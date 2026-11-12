@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Xiphos
+Comment=Read and study the Bible
+Exec=xiphos-linux-preview %u
+Terminal=false
+Categories=Education;Humanities;
+MimeType=x-scheme-handler/sword;
+StartupNotify=true

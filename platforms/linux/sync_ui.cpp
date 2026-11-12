@@ -150,7 +150,7 @@ void SyncUI::send()
     return;
   }
   const xc_sync_navigation navigation{"local", module.c_str(), reference.c_str(),
-    group_applied_.empty() ? "1" : group_applied_.c_str(), ""};
+    group_applied_.empty() ? "1" : group_applied_.c_str(), "BIBLE-VERSE"};
   xc_request *request = nullptr;
   auto status = xc_worker_transmit_sync_network(&worker_, &navigation, 0, &request);
   submit(status, request, Operation::send);

@@ -1,6 +1,7 @@
 # Biblical maps
 
-Open **Preferences → Biblical Map…** in the Mac reader. The bundled map shows
+Open **Preferences → Biblical Map…** on macOS or **Biblical Map** from the
+reader menu on Linux. The bundled map shows
 Jerusalem, Bethlehem, Nazareth and Jericho. Each marker gives a biblical
 reference and credits its modern coordinates to GeoNames. The coordinates
 locate modern settlements and are not archaeological site boundaries.
@@ -15,7 +16,9 @@ window. **Install regional pack…** copies a local raster or Protomaps-style
 vector archive into Xiphos application support. The map reopens the installed
 pack automatically. **Remove installed pack** removes the copy and returns to
 the bundled markers. Packs are stored separately from SWORD modules and
-reading profiles. One pack is installed at a time.
+reading profiles. One pack is installed at a time. On Linux it lives at
+`$XDG_DATA_HOME/xiphos-native/maps/regional.pmtiles` (by default under
+`~/.local/share`). Linux limits local installs to 128 MiB.
 
 **Download pack from URL…** accepts a publisher’s HTTPS link and SHA-256
 checksum. Downloads are limited to 128 MiB. The app checks the checksum and
@@ -36,6 +39,9 @@ restored the archive. An HTTPS download with an incorrect SHA-256 checksum
 preserved the installed archive byte for byte. The correct checksum installed
 the upstream PMTiles raster fixture byte for byte. Removing that test pack
 returned the map to the bundled markers.
+
+A Fedora GTK4/WebKitGTK fixture checked raster rendering, preservation of
+the installed pack after a corrupt replacement, and removal.
 
 [PMTiles integration](https://docs.protomaps.com/pmtiles/maplibre) ·
 [Regional extracts](https://docs.protomaps.com/guide/getting-started)

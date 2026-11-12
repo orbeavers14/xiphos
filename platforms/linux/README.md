@@ -40,8 +40,19 @@ GSK_RENDERER=cairo build/gtk4/xiphos-linux-preview --smoke-test build/gtk4/core/
 ```
 
 Run desktop checks in an actual Linux graphical session. Keep navigation,
-search, persistence and ownership in the shared core. No fresh Fedora or Linux
-package acceptance is asserted by this documentation update.
+search, persistence and ownership in the shared core.
+
+## Desktop installation
+
+```sh
+cmake --install build/gtk4 --prefix "$HOME/.local"
+xdg-mime default org.xiphos.LinuxPreview.desktop x-scheme-handler/sword
+```
+
+Use the second command if you want Xiphos to handle `sword://` links by default.
+For this prefix, include `$HOME/.local/bin` on the desktop session's PATH.
+Open **Biblical Map** from the reader menu to preview or install an offline
+PMTiles archive. See the [map controls and storage](../../doc/modernization/biblical-maps.md).
 
 [Linux handoff](../../doc/modernization/handoff-linux.md) ·
 [Status](../../doc/modernization/status.md) ·
