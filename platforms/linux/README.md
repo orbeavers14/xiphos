@@ -54,6 +54,25 @@ For this prefix, include `$HOME/.local/bin` on the desktop session's PATH.
 Open **Biblical Map** from the reader menu to preview or install an offline
 PMTiles archive. See the [map controls and storage](../../doc/modernization/biblical-maps.md).
 
+## Fedora preview RPM
+
+Install Fedora's `rpm-build` tool on the build host. Build the GTK frontend
+with the default relative binary and data directories on the Fedora version
+and architecture you plan to target:
+
+```sh
+cmake -S platforms/linux -B build/gtk4
+cmake --build build/gtk4 --target xiphos-linux-preview --parallel 1
+cpack --config build/gtk4/CPackConfig.cmake -G RPM -B build/gtk4/packages
+```
+
+The unsigned preview RPM contains the desktop entry, bundled map and locale
+assets, and license notices. RPM derives library dependencies from the built
+executable and also requires the system CA certificates. Profiles, installed
+map packs and SWORD modules remain in their user-owned locations. For a local
+upgrade test, set a higher package release with
+`cpack -D CPACK_RPM_PACKAGE_RELEASE=2` along with the same arguments above.
+
 [Linux handoff](../../doc/modernization/handoff-linux.md) ·
 [Status](../../doc/modernization/status.md) ·
 [Historical validation/advanced setup](../../doc/modernization/history/linux-readme.md)

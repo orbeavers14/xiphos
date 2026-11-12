@@ -40,8 +40,14 @@ preserved the installed archive byte for byte. The correct checksum installed
 the upstream PMTiles raster fixture byte for byte. Removing that test pack
 returned the map to the bundled markers.
 
-A Fedora GTK4/WebKitGTK fixture checked raster rendering, preservation of
-the installed pack after a corrupt replacement, and removal.
+Fedora GTK4/WebKitGTK checks covered raster rendering, preservation after a
+corrupt replacement, removal, and vector water, roads and place labels using
+a generated Protomaps-style pack. A 2 MB Eastern Mediterranean extract
+from the 2026-11-10 Protomaps basemap also rendered water and place labels
+offline. The native HTTPS dialog was exercised
+with the publisher's `flowers.pmtiles` raster sample. Cancel and an incorrect
+SHA-256 preserved the installed pack. The correct checksum installed a
+byte-for-byte copy. [Publisher's sample catalog](https://protomaps.com/blog/new-pmtiles-io/)
 
 [PMTiles integration](https://docs.protomaps.com/pmtiles/maplibre) ·
 [Regional extracts](https://docs.protomaps.com/guide/getting-started)

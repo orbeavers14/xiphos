@@ -11,6 +11,23 @@ Earlier native Fedora results and validation limits remain in the
 [historical Linux handoff](history/handoff-linux.md). Later portable-model checks
 run on a Mac are not native Linux desktop/input/clipboard or package acceptance.
 
+## Fedora RPM and map acceptance (2026-11-11)
+
+CPack builds a host-native preview RPM from the
+GTK install rules. On Fedora 45 ARM64, generated dependencies resolved
+against the host RPM database. An isolated RPM root upgraded release 1
+to release 2. The installed reader launched via its desktop entry,
+restored the saved verse after upgrade, and kept the offline pack
+byte-for-byte. These were unsigned local builds against the same Fedora
+runtime. Other distributions, signed release delivery and legacy-package
+migration remain open.
+
+The GTK map rendered water, roads and place labels from a generated vector
+pack. A 2 MB Eastern Mediterranean extract from the 2026-11-10 Protomaps
+basemap also rendered water, place symbols and labels offline. The native
+download dialog preserved an existing pack on cancel and
+checksum mismatch, then installed the publisher's raster sample byte-for-byte
+with the correct SHA-256.
 
 ## GTK4 offline map packs, desktop links and BibleSync (2026-11-11)
 
@@ -24,15 +41,13 @@ On Fedora 45 ARM64 with GTK4 and WebKitGTK6, the staged desktop entry opened
 an external verse at startup and routed a second verse into the same instance
 in an isolated D-Bus session. A GTK/WebKit map fixture rendered a staged
 raster pack, checked that a corrupt replacement preserved it, and removed
-the installed copy. The GTK study smoke also passed. A Linux vector extract and the map download dialog still
-need desktop verification.
+the installed copy. The GTK study smoke also passed.
 
 With the reviewed BibleSync 2.2.0 SDK built against the local UUID runtime,
 the GTK panel connected to an isolated loopback peer, opened an incoming
 review item, shared a verse and disconnected. Both shared SDK transport tests
-passed. Automatic outgoing navigation, physical LAN behavior and
-distribution-package acceptance remain open. The [owner’s feature review](feature-review-decisions.md)
-defers BibleSync and external links from the initial release.
+passed. Automatic outgoing navigation and physical LAN behavior remain open.
+The [owner’s feature review](feature-review-decisions.md) defers BibleSync and external links from the initial release.
 
 ## GTK4 window, startup and sharing workflows (2026-11-11)
 
