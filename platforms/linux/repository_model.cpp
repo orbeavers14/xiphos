@@ -274,6 +274,42 @@ bool ReaderModel::save_editor(bool erase)
 	pending_editor_.new_section = false;
 	return true;
 }
+bool ReaderModel::organize_book_entry(int action, const std::string &destination)
+{
+	if (!ready() || busy() || editor_dirty() || editor_.new_section ||
+	    !editor_.revision || editor_.module.empty() || !safe(destination))
+		return false;
+	const auto *module = this->module(editor_.module);
+	if (!module || !module->book)
+		return false;
+	const auto *id = editor_.module.c_str(), *path = editor_.reference.c_str(), *revision = editor_.revision->c_str();
+	xc_request *request = nullptr;
+	xc_status status;
+	switch (action) {
+	case 0:
+		status = xc_worker_rename_book_leaf(worker_, tab_, id, path, destination.c_str(), revision, &request);
+		break;
+	case 1:
+		status = xc_worker_rename_book_subtree(worker_, tab_, id, path, destination.c_str(), revision, &request);
+		break;
+	case 2:
+		status = xc_worker_move_book_subtree(worker_, tab_, id, path, destination.c_str(), revision, &request);
+		break;
+	case 3:
+		status = xc_worker_delete_book_leaf(worker_, tab_, id, path, revision, &request);
+		break;
+	case 4:
+		status = xc_worker_delete_book_subtree(worker_, tab_, id, path, revision, &request);
+		break;
+	default:
+		return false;
+	}
+	if (!accept(status, request, Operation::editor_module))
+		return false;
+	pending_editor_ = editor_;
+	pending_editor_write_ = true;
+	return true;
+}
 bool ReaderModel::format_editor(size_t start, size_t length, int action, int value, const std::string &text)
 {
 	if (!ready() || busy() || !editor_buffer_ || !safe(text))

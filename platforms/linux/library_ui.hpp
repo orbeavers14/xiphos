@@ -16,6 +16,7 @@ class LibraryUI
 	LibraryModel &model_;
 	GtkWindow *window_ = nullptr;
 	GtkWidget *body_ = nullptr, *status_ = nullptr, *rows_ = nullptr, *filter_ = nullptr, *progress_ = nullptr, *cancel_ = nullptr;
+	GtkWidget *new_module_ = nullptr, *archive_path_ = nullptr;
 	GtkWidget *root_ = nullptr, *module_ = nullptr, *replace_ = nullptr, *review_ = nullptr, *cipher_ = nullptr, *maintenance_ = nullptr, *confirm_ = nullptr;
 	GtkWidget *profile_ = nullptr, *sources_ = nullptr, *id_ = nullptr, *host_ = nullptr, *catalog_ = nullptr, *packages_ = nullptr, *name_ = nullptr, *port_ = nullptr, *enabled_ = nullptr, *position_ = nullptr, *workspace_ = nullptr, *ca_ = nullptr, *ack_ = nullptr;
 	GtkWidget *organization_ = nullptr, *provider_ = nullptr, *item_ = nullptr, *group_ = nullptr, *favorite_ = nullptr, *hidden_ = nullptr, *only_favorites_ = nullptr, *show_hidden_ = nullptr;

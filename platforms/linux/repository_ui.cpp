@@ -304,6 +304,32 @@ GtkWidget *StudyUI::editor_pane()
 	g_signal_connect(gtk_text_view_get_buffer(GTK_TEXT_VIEW(editor_text_)), "changed", G_CALLBACK((+[](GtkTextBuffer *, gpointer data) { auto *s = static_cast<StudyUI *>(data); if (!s->updating_ && s->model_ && !s->model_->busy()) s->model_->change_editor(text(s->editor_text_)); })), this);
 	editor_preview_box_ = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_box_append(GTK_BOX(editor_box_), editor_preview_box_);
+	auto *organize = gtk_expander_new("Organize saved book section");
+	gtk_box_append(GTK_BOX(editor_box_), organize);
+	auto *commands = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+	gtk_expander_set_child(GTK_EXPANDER(organize), commands);
+	auto *destination = entry(commands, "New section name or destination parent path");
+	const char *operations[] = {"Rename section", "Rename subtree", "Move subtree", "Delete section", "Delete subtree", nullptr};
+	auto *operation = gtk_drop_down_new_from_strings(operations);
+	gtk_accessible_update_property(GTK_ACCESSIBLE(operation), GTK_ACCESSIBLE_PROPERTY_LABEL, "Book organization operation", -1);
+	gtk_box_append(GTK_BOX(commands), operation);
+	auto *confirm = gtk_check_button_new_with_label("Confirm change to the open book section");
+	gtk_box_append(GTK_BOX(commands), confirm);
+	auto *apply = gtk_button_new_with_label("Apply to saved section");
+	gtk_box_append(GTK_BOX(commands), apply);
+	g_object_set_data(G_OBJECT(apply), "destination", destination);
+	g_object_set_data(G_OBJECT(apply), "operation", operation);
+	g_object_set_data(G_OBJECT(apply), "confirm", confirm);
+	g_signal_connect(apply, "clicked", G_CALLBACK(+[](GtkButton *button, gpointer data) {
+		auto *ui = static_cast<StudyUI *>(data);
+		auto *confirm = GTK_CHECK_BUTTON(g_object_get_data(G_OBJECT(button), "confirm"));
+		if (!ui->model_ || !gtk_check_button_get_active(confirm))
+			return;
+		auto *operation = GTK_DROP_DOWN(g_object_get_data(G_OBJECT(button), "operation"));
+		auto *destination = GTK_WIDGET(g_object_get_data(G_OBJECT(button), "destination"));
+		if (ui->model_->organize_book_entry(gtk_drop_down_get_selected(operation), text(destination)))
+			gtk_check_button_set_active(confirm, FALSE);
+	}), this);
 	return editor_box_;
 }
 void StudyUI::update_repositories()

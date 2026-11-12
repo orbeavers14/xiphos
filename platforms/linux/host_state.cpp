@@ -31,7 +31,7 @@ bool StudyUI::validate_state(const std::string &state)
 		return false;
 	const std::set<std::string> strings{"modules", "query", "bounds", "first", "last", "bookmarks", "annotations", "parallelProfile", "referenceDraft", "boundsProvider"};
 	const std::set<std::string> booleans{"mixed", "case", "annotationsOverride", "strongs", "morphology", "footnotes", "chapter", "exportHTML", "exportAll", "exportText", "exportDetails", "exportImages"};
-	const std::set<std::string> numbers{"mode", "scope", "displayFlags"};
+	const std::set<std::string> numbers{"mode", "scope", "displayFlags", "comparisonLayout"};
 	std::set<std::string> seen;
 	GVariantIter it;
 	g_variant_iter_init(&it, v.get());
@@ -44,8 +44,32 @@ bool StudyUI::validate_state(const std::string &state)
 		}
 		bool valid = strings.count(key) ? g_variant_is_of_type(value, G_VARIANT_TYPE_STRING) : booleans.count(key) ? g_variant_is_of_type(value, G_VARIANT_TYPE_BOOLEAN)
 															   : numbers.count(key) && g_variant_is_of_type(value, G_VARIANT_TYPE_UINT32);
+		if (std::string(key) == "readingStyles") {
+			valid = g_variant_is_of_type(value, G_VARIANT_TYPE("a{s(uuss)}")) && g_variant_n_children(value) <= 64;
+			if (valid) {
+				GVariantIter styles;
+				g_variant_iter_init(&styles, value);
+				const char *module, *foreground, *background;
+				guint font, size;
+				while (valid && g_variant_iter_next(&styles, "{&s(uu&s&s)}", &module, &font, &size, &foreground, &background))
+					valid = font <= 2 && size >= 12 && size <= 36 &&
+						valid_reading_color(foreground) && valid_reading_color(background);
+			}
+		}
+		if (std::string(key) == "hiddenTranslations") {
+			valid = g_variant_is_of_type(value, G_VARIANT_TYPE("a(asab)")) && g_variant_n_children(value) <= 16;
+			for (size_t i = 0; valid && i < g_variant_n_children(value); ++i) {
+				Variant entry(g_variant_get_child_value(value, i), g_variant_unref);
+				Variant names(g_variant_get_child_value(entry.get(), 0), g_variant_unref);
+				Variant flags(g_variant_get_child_value(entry.get(), 1), g_variant_unref);
+				valid = g_variant_n_children(names.get()) == g_variant_n_children(flags.get()) &&
+					g_variant_n_children(names.get()) <= 32;
+			}
+		}
+		if (valid && std::string(key) == "comparisonLayout")
+			valid = g_variant_get_uint32(value) <= 1;
 		if (valid && std::string(key) == "mode")
-			valid = g_variant_get_uint32(value) <= XC_SEARCH_INDEXED;
+			valid = g_variant_get_uint32(value) <= XC_SEARCH_SURFACE_UNMARKED;
 		if (valid && std::string(key) == "scope")
 			valid = g_variant_get_uint32(value) <= 3;
 		if (valid && std::string(key) == "displayFlags")
@@ -63,6 +87,43 @@ std::string StudyUI::capture_state(const std::string &reference_draft) const
 	auto string = [&](const char *key, const std::string &s) { g_variant_builder_add(&b, "{sv}", key, g_variant_new_string(s.c_str())); };
 	auto boolean = [&](const char *key, bool v) { g_variant_builder_add(&b, "{sv}", key, g_variant_new_boolean(v)); };
 	auto number = [&](const char *key, unsigned v) { g_variant_builder_add(&b, "{sv}", key, g_variant_new_uint32(v)); };
+	if (parallel_layout_)
+		number("comparisonLayout", gtk_drop_down_get_selected(GTK_DROP_DOWN(parallel_layout_)));
+	GVariantBuilder visibility;
+	g_variant_builder_init(&visibility, G_VARIANT_TYPE("a(asab)"));
+	size_t saved = 0, name_bytes = 0;
+	for (const auto &[order, hidden] : parallel_hidden_) {
+		if (saved >= 16 || order.size() > 32 || hidden.size() != order.size())
+			continue;
+		size_t group_bytes = 0;
+		for (const auto &module : order)
+			group_bytes += module.size();
+		if (name_bytes + group_bytes > 4096)
+			continue;
+		GVariantBuilder names, flags;
+		g_variant_builder_init(&names, G_VARIANT_TYPE("as"));
+		g_variant_builder_init(&flags, G_VARIANT_TYPE("ab"));
+		for (size_t i = 0; i < order.size(); ++i) {
+			g_variant_builder_add(&names, "s", order[i].c_str());
+			g_variant_builder_add(&flags, "b", bool(hidden[i]));
+		}
+		g_variant_builder_add(&visibility, "(asab)", &names, &flags);
+		++saved;
+		name_bytes += group_bytes;
+	}
+	g_variant_builder_add(&b, "{sv}", "hiddenTranslations", g_variant_builder_end(&visibility));
+	GVariantBuilder styles;
+	g_variant_builder_init(&styles, G_VARIANT_TYPE("a{s(uuss)}"));
+	size_t style_count = 0, style_name_bytes = 0;
+	for (const auto &[module, style] : reading_styles_) {
+		if (style_count >= 64 || style_name_bytes + module.size() > 4096)
+			continue;
+		g_variant_builder_add(&styles, "{s(uuss)}", module.c_str(), style.font, style.size,
+			style.foreground.c_str(), style.background.c_str());
+		++style_count;
+		style_name_bytes += module.size();
+	}
+	g_variant_builder_add(&b, "{sv}", "readingStyles", g_variant_builder_end(&styles));
 	string("referenceDraft", reference_draft);
 	const auto provider = gtk_drop_down_get_selected(GTK_DROP_DOWN(range_module_));
 	if (provider < search_ids_.size())
@@ -137,6 +198,43 @@ bool StudyUI::restore_state(const std::string &state)
 	const char *names[] = {"strongs", "morphology", "footnotes"};
 	for (int i = 0; i < 3; ++i)
 		toggle(names[i], annotation_[i]);
+	guint layout = 0;
+	if (parallel_layout_ && g_variant_lookup(v.get(), "comparisonLayout", "u", &layout))
+		gtk_drop_down_set_selected(GTK_DROP_DOWN(parallel_layout_), layout);
+	Variant visibility(g_variant_lookup_value(v.get(), "hiddenTranslations", G_VARIANT_TYPE("a(asab)")), g_variant_unref);
+	if (visibility) {
+		parallel_hidden_.clear();
+		for (size_t i = 0; i < g_variant_n_children(visibility.get()); ++i) {
+			Variant entry(g_variant_get_child_value(visibility.get(), i), g_variant_unref);
+			Variant names(g_variant_get_child_value(entry.get(), 0), g_variant_unref);
+			Variant flags(g_variant_get_child_value(entry.get(), 1), g_variant_unref);
+			std::vector<std::string> order;
+			std::vector<bool> hidden;
+			for (size_t c = 0; c < g_variant_n_children(names.get()); ++c) {
+				Variant name(g_variant_get_child_value(names.get(), c), g_variant_unref);
+				Variant flag(g_variant_get_child_value(flags.get(), c), g_variant_unref);
+				order.emplace_back(g_variant_get_string(name.get(), nullptr));
+				hidden.push_back(g_variant_get_boolean(flag.get()));
+			}
+			parallel_hidden_.emplace(std::move(order), std::move(hidden));
+		}
+		parallel_order_.clear();
+		parallel_needs_render_ = true;
+	}
+	Variant styles(g_variant_lookup_value(v.get(), "readingStyles", G_VARIANT_TYPE("a{s(uuss)}")), g_variant_unref);
+	if (styles) {
+		reading_styles_.clear();
+		GVariantIter items;
+		g_variant_iter_init(&items, styles.get());
+		const char *module, *foreground, *background;
+		guint font, size;
+		while (g_variant_iter_next(&items, "{&s(uu&s&s)}", &module, &font, &size, &foreground, &background))
+			reading_styles_.emplace(module, ReadingStyle{font, size, foreground, background});
+		++style_revision_;
+		parallel_needs_render_ = true;
+		if (style_module_)
+			load_reading_style();
+	}
 	guint mode = XC_SEARCH_PHRASE, scope = 0, flags = XC_CHAPTER_VERSE_NUMBERS | XC_CHAPTER_HIGHLIGHT_SELECTED;
 	gboolean chapter = false;
 	g_variant_lookup(v.get(), "mode", "u", &mode);

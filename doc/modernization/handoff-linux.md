@@ -1,6 +1,6 @@
 # Linux development handoff
 
-Updated 2026-11-09. Read [shared instructions](handoff.md) and
+Updated 2026-11-11. Read [shared instructions](handoff.md) and
 [Linux setup/build commands](../../platforms/linux/README.md).
 
 The active frontend is GTK4/WebKitGTK6, backed by the shared worker/C API.
@@ -11,6 +11,44 @@ Earlier native Fedora results and validation limits remain in the
 [historical Linux handoff](history/handoff-linux.md). Later portable-model checks
 run on a Mac are not native Linux desktop/input/clipboard or package acceptance.
 No new physical Linux result is claimed by this documentation update.
+
+## GTK4 reading and editing adapters (2026-11-11)
+
+Work on master from `a05f4b78`. The GTK reader now offers chapter and stacked
+comparison layouts, verse stepping, translation visibility by ordered module
+list, and comparison from a search result using the default saved set. Split
+mapping fragments carry their own source references for link and word dispatch.
+The layouts and visibility persist with each window. Word study in the Bible
+and comparison panes uses shared literal, mark-insensitive and lemma search.
+
+The reader adds native Help and About, a selected-word shortcut, in-pane find,
+zoom, scoped passage copy and text/HTML save,
+printing of the displayed passage, and restricted per-module font, size and
+colors. Bible switching uses shared versification mapping when the reference
+field matches the committed passage. German, Spanish and French use the bundled
+private SWORD locales for typed Bible references and selector labels. The
+devotional pane supports module and date selection through the shared reader.
+The library adds writable module templates and ZIP archives. The editor can
+rename, move and delete book sections using checked core edits.
+
+The Biblical Map window reuses the Mac HTML, script, styles and notices and
+accepts a local PMTiles file for preview. The Fedora WebKitGTK probe rendered
+all four bundled marker nodes. Linux native install, checksum-verified
+download and removal of regional packs are still pending.
+
+Fedora 45 ARM64, released SWORD 1.9, GTK 4.24.1 and WebKitGTK 2.54.2. Serial
+Debug builds use `-O0 -g0` and the matching locally extracted libarchive headers.
+The full serial CTest suite passed 203 checks with one optional BibleSync skip.
+The native app startup smoke passed. The GTK workflow smoke covers
+the isolated parallel link, persisted layout and translation visibility, Unicode
+editing, notes, saved reading styles, source-bound word lookup and selected-verse
+export. No hosted jobs were dispatched.
+
+Remaining Linux feature work includes profile-wide native Settings and startup
+defaults, synchronized detached panes, offline map-pack management, external
+`sword://` handling and selected-text OS actions. Native BibleSync,
+complete localized menus, real-corpus word/RTL checks, print output, full
+desktop accessibility and distribution acceptance remain open.
 
 ## Maintenance baseline on master
 

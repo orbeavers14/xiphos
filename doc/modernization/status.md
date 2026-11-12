@@ -1,6 +1,6 @@
 # Current development status
 
-Updated 2026-11-09. This page supersedes earlier progress estimates and checkpoint summaries.
+Updated 2026-11-11. This page supersedes earlier progress estimates and checkpoint summaries.
 
 The project is a shared C++/SWORD core with native frontend development. GTK3
 application/editor/backend code and its old packaging are retired. Frozen behavior
@@ -32,7 +32,7 @@ These Mac runs do not establish native Linux or Windows acceptance.
 
 ## Remaining gates
 
-- Native Settings/navigation redesign and Linux/Windows integration for selected-word study and stacked comparisons.
+- Native Settings/navigation redesign and Windows integration for selected-word study and stacked comparisons. GTK4 has both workflows with generated-fixture desktop checks. See the [Linux handoff](handoff-linux.md#gtk4-reading-and-editing-adapters-2026-11-11) for scope and remaining Linux features.
 - Complete translations, native localized multi-book input, broader RTL and accessibility acceptance.
 - Broader module/canon/profile coverage, remaining reading/export/editor workflows and data compatibility.
 - Windows frontend/native validation, current physical Linux verification and macOS 27.0 deployment acceptance.

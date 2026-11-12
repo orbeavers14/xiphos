@@ -76,7 +76,8 @@ struct StudyUISmoke {
 (() => {
   const table = document.querySelector('body > table');
   const cell = Array.from(table?.tBodies[0]?.rows || [])
-    .map(row => row.cells[1]).find(cell => cell.textContent.trim().length > 0);
+    .map(row => row.cells[1].querySelector("[data-xiphos-cell]"))
+    .find(cell => cell?.textContent.trim().length > 0);
   if (!cell) return false;
   cell.innerHTML = `<span onclick="this.dataset.executed='yes'">Original inline handler</span>
     <table><tr><td data-row="0" data-column="1">
@@ -135,16 +136,39 @@ struct StudyUISmoke {
       case 13:
 	      check(model->note_draft().text == "Original note Ω <plain>", "Saved note baseline copies plain text");
 	      {
-		      const auto host = ui->capture_state("");
+			      gtk_drop_down_set_selected(GTK_DROP_DOWN(ui->parallel_layout_), 1);
+			      auto *first_translation = gtk_widget_get_first_child(ui->parallel_visibility_);
+			      check(first_translation != nullptr, "Comparison visibility controls exist");
+			      gtk_check_button_set_active(GTK_CHECK_BUTTON(first_translation), FALSE);
+		      ui->reading_styles_["Text"] = {1, 21, "#112233", "#FAFAFA"};
+			      const auto host = ui->capture_state("");
+			      ui->reading_styles_.clear();
 		      check(StudyUI::validate_state(host) && StudyUI::reference_draft(host) == std::optional<std::string>(""), "Host state preserves explicit empty reference draft");
 		      gtk_editable_set_text(GTK_EDITABLE(ui->search_text_), "changed");
-		      check(ui->restore_state(host), "Restore copied host controls");
+			      gtk_drop_down_set_selected(GTK_DROP_DOWN(ui->parallel_layout_), 0);
+			      gtk_check_button_set_active(GTK_CHECK_BUTTON(first_translation), TRUE);
+			      check(ui->restore_state(host), "Restore copied host controls");
+			      check(ui->reading_style_css("Text").find("font-family:sans-serif;font-size:21px;color:#112233;") != std::string::npos,
+				        "Per-module reading style restores as restricted CSS");
+			      check(gtk_drop_down_get_selected(GTK_DROP_DOWN(ui->parallel_layout_)) == 1 &&
+				        ui->parallel_hidden_.begin()->second.front(), "Stacked layout and hidden translation restore");
 		      check(std::string(gtk_editable_get_text(GTK_EDITABLE(ui->search_text_))) == "Original", "Search draft restored");
 	      }
 	      ++stage;
 	      break;
       case 14:
 	      check(model->decorated().html.find("Original note Ω") != std::string::npos, "Native reading decoration refreshes saved note");
+	      check(model->word_study("Text", "John 1:2", "Original"), "Request source-bound selected word");
+	      ++stage;
+	      break;
+      case 15:
+	      check(model->selected_word().module == "Text" && model->selected_word().reference == "John 1:2" &&
+		            gtk_widget_get_visible(ui->word_box_), "Selected-word choices retain actual source");
+	      check(model->export_passage(false, ""), "Queue plain passage export");
+	      ++stage;
+	      break;
+      case 16:
+	      check(!model->passage_export().text.empty(), "Passage export delivers complete plain text");
 	      // Destination tests deliberately do not touch the user's clipboard.
 	      check(model->export_search(true, false, {4}, true, true, false, false), "Queue HTML export before window close");
 	      ui->close();
@@ -195,6 +219,6 @@ int main(int argc, char **argv) {
   state.ui->close(); state.model.reset(); xc_worker_close(worker); state.ui.reset(); g_object_unref(state.app);
   std::filesystem::remove_all(state.scratch);
   if (!state.failed)
-	  std::cout << "GTK book/search, trusted parallel cells, Unicode rich editing, notes, host state and pending export close passed\n";
+	  std::cout << "GTK book/search, trusted parallel cells, Unicode rich editing, notes, comparison state, selected-word lookup and export passed\n";
   return state.failed ? 1 : 0;
 }

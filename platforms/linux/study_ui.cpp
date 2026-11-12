@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "study_ui.hpp"
+#include <algorithm>
 #include "reader_document.hpp"
 #include <cstring>
 #include <png.h>
@@ -81,7 +82,9 @@ GtkWidget *StudyUI::view(WebKitWebView **out, bool book) {
 	if (g_object_get_data(G_OBJECT(view), "parallel"))
 		return TRUE;
 	if (!self->closed_ && self->model_ && uri) {
-          if (GPOINTER_TO_INT(g_object_get_data(G_OBJECT(view), "book"))) self->model_->follow_book(uri);
+          if (view == self->devotional_view_)
+            self->model_->follow(self->model_->devotional().module, uri);
+          else if (GPOINTER_TO_INT(g_object_get_data(G_OBJECT(view), "book"))) self->model_->follow_book(uri);
 	  else
 		  self->model_->follow_search_link(uri);
 	}
@@ -194,8 +197,17 @@ GtkWidget *StudyUI::search_pane() {
   }
   mixed_ = check(search_box_, "Include dictionaries and books");
   search_text_ = entry(search_box_, "Search text");
-  const char *modes[] = {"Regular expression", "Phrase", "Words (automatic)", "Lemma", "Morphology", "Footnote text", "Multiword", "Indexed query", nullptr};
+  const char *modes[] = {"Regular expression", "Phrase", "Words (automatic)", "Lemma", "Morphology", "Footnote text", "Multiword", "Indexed query", "Literal surface form", "Surface form without marks", nullptr};
   search_mode_ = choice(search_box_, "Search match mode", modes); gtk_drop_down_set_selected(GTK_DROP_DOWN(search_mode_), XC_SEARCH_PHRASE);
+  word_box_ = box(search_box_);
+  word_label_ = gtk_label_new("");
+  gtk_label_set_wrap(GTK_LABEL(word_label_), TRUE);
+  gtk_box_append(GTK_BOX(word_box_), word_label_);
+  word_choices_ = choice(word_box_, "Selected word search choices");
+  button(word_box_, "Search selected word", G_CALLBACK(+[](GtkButton *, gpointer data) {
+    static_cast<StudyUI *>(data)->search_selected_word();
+  }), this);
+  gtk_widget_set_visible(word_box_, FALSE);
   const char *scopes[] = {"All", "Bounds", "Within last results", "Entry interval", nullptr};
   search_scope_ = choice(search_box_, "Search scope", scopes);
   range_module_ = choice(search_box_, "Bounds provider module"); range_ = entry(search_box_, "Search bounds, e.g. John 1:1 - John 3:16");
@@ -217,6 +229,12 @@ GtkWidget *StudyUI::search_pane() {
   g_signal_connect(results_, "selected-rows-changed", G_CALLBACK((+[](GtkListBox *, gpointer data) { auto *s = static_cast<StudyUI *>(data); if (s->updating_ || !s->model_) return; auto rows = s->selection(); if (!rows.empty()) s->model_->preview_search_hit(rows.front()); })), this);
   g_signal_connect(results_, "row-activated", G_CALLBACK((+[](GtkListBox *, GtkListBoxRow *row, gpointer data) { auto *s = static_cast<StudyUI *>(data); if (s->model_) s->model_->activate_search_hit(gtk_list_box_row_get_index(row)); })), this);
   open_ = button(search_box_, "Read selected passage", G_CALLBACK((+[](GtkButton *, gpointer data) { auto *s = static_cast<StudyUI *>(data); auto rows = s->selection(); if (s->model_ && !rows.empty()) s->model_->activate_search_hit(rows.front()); })), this);
+  compare_result_ = button(search_box_, "Compare selected verse in default set", G_CALLBACK(+[](GtkButton *, gpointer data) {
+    auto *ui = static_cast<StudyUI *>(data);
+    const auto selected = ui->selection();
+    if (ui->model_ && selected.size() == 1 && ui->model_->compare_search_hit(selected.front()))
+      ui->requested_comparison_ = ui->model_->parallel().revision + 1;
+  }), this);
   gtk_box_append(GTK_BOX(search_box_), view(&preview_view_, false));
   export_html_ = check(search_box_, "HTML export");
   export_all_ = check(search_box_, "Export all retained matches");
@@ -325,6 +343,165 @@ void StudyUI::show_image(const Image &image) {
   // Keep the pointer valid until close()/replacement, including user close.
   gtk_window_set_hide_on_close(image_window_, TRUE); gtk_window_present(image_window_);
 }
+bool StudyUI::valid_reading_color(const std::string &color)
+{
+  return color.empty() || (color.size() == 7 && color.front() == '#' &&
+    std::all_of(color.begin() + 1, color.end(), [](char c) { return g_ascii_isxdigit(c); }));
+}
+std::string StudyUI::reading_style_css(const std::string &module, const std::string &selector) const
+{
+  auto style = reading_styles_.find(module);
+  if (style == reading_styles_.end())
+    style = reading_styles_.find("");
+  if (style == reading_styles_.end())
+    return {};
+  const auto &value = style->second;
+  const char *fonts[] = {"serif", "sans-serif", "monospace"};
+  std::string css = selector + "{font-family:" + fonts[value.font] + ";font-size:" + std::to_string(value.size) + "px;";
+  if (!value.foreground.empty())
+    css += "color:" + value.foreground + ";";
+  if (!value.background.empty())
+    css += "background-color:" + value.background + ";";
+  return css + "}";
+}
+void StudyUI::load_reading_style()
+{
+  const auto index = gtk_drop_down_get_selected(GTK_DROP_DOWN(style_module_));
+  if (index >= style_modules_.size())
+    return;
+  auto saved = reading_styles_.find(style_modules_[index]);
+  if (saved == reading_styles_.end())
+    saved = reading_styles_.find("");
+  const auto style = saved == reading_styles_.end() ? ReadingStyle{} : saved->second;
+  gtk_drop_down_set_selected(GTK_DROP_DOWN(style_font_), style.font);
+  gtk_spin_button_set_value(GTK_SPIN_BUTTON(style_size_), style.size);
+  gtk_editable_set_text(GTK_EDITABLE(style_foreground_), style.foreground.c_str());
+  gtk_editable_set_text(GTK_EDITABLE(style_background_), style.background.c_str());
+  gtk_label_set_text(GTK_LABEL(style_status_), "");
+}
+GtkWidget *StudyUI::reading_style_menu()
+{
+  auto *menu = gtk_menu_button_new();
+  gtk_menu_button_set_label(GTK_MENU_BUTTON(menu), "Reading style");
+  auto *popover = gtk_popover_new();
+  auto *content = box(nullptr);
+  gtk_popover_set_child(GTK_POPOVER(popover), content);
+  gtk_menu_button_set_popover(GTK_MENU_BUTTON(menu), popover);
+  style_module_ = choice(content, "Apply reading style to");
+  const char *fonts[] = {"Serif", "Sans serif", "Monospace", nullptr};
+  style_font_ = choice(content, "Reading font", fonts);
+  style_size_ = gtk_spin_button_new_with_range(12, 36, 1);
+  gtk_accessible_update_property(GTK_ACCESSIBLE(style_size_), GTK_ACCESSIBLE_PROPERTY_LABEL, "Reading text size", -1);
+  gtk_box_append(GTK_BOX(content), style_size_);
+  style_foreground_ = entry(content, "Text color (#RRGGBB, optional)");
+  style_background_ = entry(content, "Background color (#RRGGBB, optional)");
+  style_status_ = label(content, "");
+  auto *actions = box(content, true);
+  for (const auto *name : {"Apply", "Reset"}) {
+    auto *action = button(actions, name, G_CALLBACK((+[](GtkButton *button, gpointer data) {
+      auto *ui = static_cast<StudyUI *>(data);
+      const auto index = gtk_drop_down_get_selected(GTK_DROP_DOWN(ui->style_module_));
+      if (index >= ui->style_modules_.size())
+        return;
+      const auto &module = ui->style_modules_[index];
+      if (g_object_get_data(G_OBJECT(button), "reset")) {
+        ui->reading_styles_.erase(module);
+        ui->load_reading_style();
+      } else {
+        const auto foreground = text(ui->style_foreground_), background = text(ui->style_background_);
+        if (!valid_reading_color(foreground) || !valid_reading_color(background)) {
+          gtk_label_set_text(GTK_LABEL(ui->style_status_), "Use #RRGGBB or leave the color blank.");
+          return;
+        }
+        ui->reading_styles_[module] = {gtk_drop_down_get_selected(GTK_DROP_DOWN(ui->style_font_)),
+          unsigned(gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(ui->style_size_))), foreground, background};
+        gtk_label_set_text(GTK_LABEL(ui->style_status_), "Reading style applied.");
+      }
+      ++ui->style_revision_;
+      ui->parallel_needs_render_ = true;
+    })), this);
+    if (std::string(name) == "Reset")
+      g_object_set_data(G_OBJECT(action), "reset", GINT_TO_POINTER(1));
+  }
+  g_signal_connect(style_module_, "notify::selected", G_CALLBACK(+[](GObject *, GParamSpec *, gpointer data) {
+    static_cast<StudyUI *>(data)->load_reading_style();
+  }), this);
+  return menu;
+}
+GtkWidget *StudyUI::devotional_pane()
+{
+  auto *pane = box(nullptr);
+  devotional_module_ = choice(pane, "Devotional module");
+  devotional_date_ = entry(pane, "Devotional date (MM.DD)");
+  auto *actions = box(pane, true);
+  button(actions, "Today", G_CALLBACK(+[](GtkButton *, gpointer data) {
+    static_cast<StudyUI *>(data)->read_devotional(true);
+  }), this);
+  button(actions, "Read date", G_CALLBACK(+[](GtkButton *, gpointer data) {
+    static_cast<StudyUI *>(data)->read_devotional(false);
+  }), this);
+  devotional_status_ = gtk_label_new("");
+  gtk_box_append(GTK_BOX(pane), devotional_status_);
+  gtk_box_append(GTK_BOX(pane), view(&devotional_view_, false));
+  return pane;
+}
+void StudyUI::read_devotional(bool today)
+{
+  if (!model_)
+    return;
+  const auto index = gtk_drop_down_get_selected(GTK_DROP_DOWN(devotional_module_));
+  if (index >= devotional_modules_.size()) {
+    gtk_label_set_text(GTK_LABEL(devotional_status_), "No devotional modules are installed.");
+    return;
+  }
+  auto *now = g_date_time_new_now_local();
+  if (!now)
+    return;
+  model_->read_devotional(devotional_modules_[index], today ? "" : text(devotional_date_),
+    g_date_time_get_month(now), g_date_time_get_day_of_month(now));
+  g_date_time_unref(now);
+}
+void StudyUI::update_selected_word()
+{
+  const auto &word = model_->selected_word();
+  if (!word_box_ || !word.revision || word.revision == word_revision_)
+    return;
+  word_revision_ = word.revision;
+  gtk_label_set_text(GTK_LABEL(word_label_), (word.surface + " — " + word.module + " · " + word.reference).c_str());
+  std::vector<std::string> values{"Literal surface form", "Surface form without marks"};
+  for (const auto &lemma : word.lemmas)
+    values.push_back("Lemma: " + lemma);
+  choices(word_choices_, values);
+  gtk_drop_down_set_selected(GTK_DROP_DOWN(word_choices_), 0);
+  gtk_widget_set_visible(word_box_, TRUE);
+  if (show_search)
+    show_search();
+}
+void StudyUI::search_selected_word()
+{
+  if (!model_ || model_->busy())
+    return;
+  const auto &word = model_->selected_word();
+  const auto selected = gtk_drop_down_get_selected(GTK_DROP_DOWN(word_choices_));
+  SearchInput input;
+  input.modules = {word.module};
+  if (selected < 2) {
+    input.expression = word.surface;
+    input.mode = selected == 0 ? XC_SEARCH_SURFACE_LITERAL : XC_SEARCH_SURFACE_UNMARKED;
+  } else if (selected - 2 < word.lemmas.size()) {
+    input.expression = word.lemmas[selected - 2];
+    input.mode = XC_SEARCH_LEMMA;
+  } else {
+    return;
+  }
+  if (model_->search(input)) {
+    gtk_editable_set_text(GTK_EDITABLE(search_text_), input.expression.c_str());
+    gtk_editable_set_text(GTK_EDITABLE(search_modules_), word.module.c_str());
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(search_mode_), input.mode);
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(search_scope_), 0);
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(mixed_), FALSE);
+  }
+}
 void StudyUI::tick(ReaderModel &model) {
   if (closed_) return; model_ = &model; updating_ = true;
   bool enabled = model.ready() && !model.busy();
@@ -339,6 +516,23 @@ void StudyUI::tick(ReaderModel &model) {
 		  if (m.search)
 			  search_ids_.push_back(m.id);
 	  }
+	  if (devotional_module_) {
+		  devotional_modules_.clear();
+		  for (const auto &module : model.modules())
+			  if (module.devotional)
+				  devotional_modules_.push_back(module.id);
+		  choices(devotional_module_, devotional_modules_);
+	  }
+	  if (style_module_) {
+		  style_modules_ = {""};
+		  std::vector<std::string> names{"Default for all modules"};
+		  for (const auto &module : model.modules()) {
+			  style_modules_.push_back(module.id);
+			  names.push_back(module.id);
+		  }
+		  choices(style_module_, names);
+		  load_reading_style();
+	  }
 	  auto book_choices = books_;
 	  book_choices.insert(book_choices.begin(), "Select a general book");
 	  choices(book_module_, book_choices);
@@ -349,13 +543,14 @@ void StudyUI::tick(ReaderModel &model) {
 	  populated_ = true;
   }
   const auto &book = model.book();
-  const auto identity = book.module + book.nodes[0].path + book.html + book.css + (book.anchor ? *book.anchor : "") + std::to_string(book.anchor_revision);
+  const auto style_css = reading_style_css(book.module);
+  const auto identity = style_css + book.module + book.nodes[0].path + book.html + book.css + (book.anchor ? *book.anchor : "") + std::to_string(book.anchor_revision);
   if (identity != book_identity_) {
     if (auto *state = static_cast<BookAnchorState *>(g_object_get_data(G_OBJECT(book_view_), "book-anchor-state"))) {
       state->anchor = book.anchor; ++state->revision;
     }
     book_identity_ = identity; gtk_editable_set_text(GTK_EDITABLE(book_key_), book.nodes[0].path.c_str()); gtk_label_set_text(GTK_LABEL(book_label_), book.nodes[0].path.c_str());
-    webkit_web_view_load_html(book_view_, document(book.html, book.css, true).c_str(), "xiphos-preview://study/");
+    webkit_web_view_load_html(book_view_, document(book.html, book.css + style_css, true).c_str(), "xiphos-preview://study/");
     gtk_label_set_text(GTK_LABEL(book_status_), book.issue.c_str());
     for (size_t i = 0; i < books_.size(); ++i)
 	    if (books_[i] == book.module)
@@ -465,10 +660,26 @@ void StudyUI::tick(ReaderModel &model) {
   gtk_widget_set_sensitive(search_stop_, model.busy());
   gtk_widget_set_sensitive(search_clear_, enabled && (result.scope.present || result.generation.id));
   gtk_widget_set_sensitive(open_, enabled && !selection().empty());
+  const auto selected_rows = selection();
+  gtk_widget_set_sensitive(compare_result_, enabled && !model.parallel_profile().path.empty() &&
+    selected_rows.size() == 1 && selected_rows.front() < result.hits.size() && result.hits[selected_rows.front()].kind == 0);
+  if (requested_comparison_ && enabled) {
+    if (model.parallel().revision == requested_comparison_ && show_parallel)
+      show_parallel();
+    requested_comparison_ = 0;
+  }
   for (auto *w : {copy_, save_}) gtk_widget_set_sensitive(w, enabled && !dialog_ && result.generation.id && (active(export_all_) || !selection().empty()));
   gtk_widget_set_sensitive(export_images_, enabled && active(export_html_) && active(export_scripture_));
   gtk_widget_set_sensitive(export_partial_, enabled && active(export_context_) && (result.generation.cancelled || result.generation.failed_groups || result.generation.group_count < result.generation.requested_count));
   if (enabled && !model.error().empty()) g_object_set_data(G_OBJECT(search_text_), "start-after-parse", nullptr);
+  if (devotional_view_ && model.devotional_revision() != devotional_revision_) {
+    devotional_revision_ = model.devotional_revision();
+    const auto &entry = model.devotional();
+    gtk_editable_set_text(GTK_EDITABLE(devotional_date_), entry.reference.c_str());
+    gtk_label_set_text(GTK_LABEL(devotional_status_), (entry.module + " · " + entry.expression).c_str());
+    webkit_web_view_load_html(devotional_view_, document(entry.html).c_str(), "xiphos-preview://study/");
+  }
+  update_selected_word();
   if (parallel_box_)
 	  update_parallel();
   if (notes_box_ || editor_box_)

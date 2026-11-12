@@ -114,6 +114,13 @@ LibraryUI::LibraryUI(GtkApplication *app, LibraryModel &model) : model_(model)
 	source_remove_ = check(remote, "Confirm source removal");
 	auto *maintenance = page("Maintenance");
 	gtk_box_append(GTK_BOX(maintenance), gtk_label_new("Select an installed module in Modules, then review it here."));
+	new_module_ = entry(maintenance, "New module ID");
+	bar = row(maintenance);
+	button(bar, "New general book", 33);
+	button(bar, "New personal commentary", 34);
+	button(bar, "New study organizer", 35);
+	archive_path_ = entry(maintenance, "New ZIP path for the selected module");
+	button(maintenance, "Archive selected module", 36);
 	button(maintenance, "Review module maintenance", 13);
 	maintenance_ = gtk_label_new("");
 	gtk_label_set_wrap(GTK_LABEL(maintenance_), TRUE);
@@ -323,6 +330,14 @@ void LibraryUI::action(int a)
 				gtk_editable_set_text(GTK_EDITABLE(cipher_), "");
 			gtk_check_button_set_active(GTK_CHECK_BUTTON(confirm_), FALSE);
 		}
+		break;
+	case 33:
+	case 34:
+	case 35:
+		model_.create_module(text(new_module_), a - 33);
+		break;
+	case 36:
+		model_.archive_module(text(module_), text(archive_path_));
 		break;
 	case 22:
 		model_.preview_legacy_sources(text(legacy_path_));

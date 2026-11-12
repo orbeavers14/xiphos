@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "reader_document.hpp"
 #include "study_ui.hpp"
+#include <algorithm>
 namespace xiphos::linux_preview
 {
 namespace
@@ -97,6 +98,35 @@ GtkWidget *StudyUI::parallel_pane()
 	gtk_box_append(GTK_BOX(parallel_box_), parallel_default_);
 	parallel_confirm_ = gtk_check_button_new_with_label("Confirm replacement or removal of selected set");
 	gtk_box_append(GTK_BOX(parallel_box_), parallel_confirm_);
+	auto *layout_bar = row(parallel_box_);
+	const char *layouts[] = {"Chapter columns", "Stacked verse", nullptr};
+	parallel_layout_ = gtk_drop_down_new_from_strings(layouts);
+	gtk_accessible_update_property(GTK_ACCESSIBLE(parallel_layout_), GTK_ACCESSIBLE_PROPERTY_LABEL, "Comparison layout", -1);
+	gtk_box_append(GTK_BOX(layout_bar), parallel_layout_);
+	g_signal_connect(parallel_layout_, "notify::selected", G_CALLBACK(+[](GObject *, GParamSpec *, gpointer data) {
+		static_cast<StudyUI *>(data)->parallel_needs_render_ = true;
+	}), this);
+	parallel_previous_verse_ = gtk_button_new_with_label("Previous verse");
+	parallel_next_verse_ = gtk_button_new_with_label("Next verse");
+	for (auto *button : {parallel_previous_verse_, parallel_next_verse_}) {
+		gtk_box_append(GTK_BOX(layout_bar), button);
+		g_signal_connect(button, "clicked", G_CALLBACK(+[](GtkButton *button, gpointer data) {
+			auto *ui = static_cast<StudyUI *>(data);
+			ui->step_parallel_verse(GTK_WIDGET(button) == ui->parallel_previous_verse_ ? -1 : 1);
+		}), this);
+	}
+	auto *word_button = gtk_button_new_with_label("Study selected word");
+	gtk_box_append(GTK_BOX(layout_bar), word_button);
+	g_signal_connect(word_button, "clicked", G_CALLBACK(+[](GtkButton *, gpointer data) {
+		static_cast<StudyUI *>(data)->study_parallel_selection();
+	}), this);
+	auto *translations = gtk_menu_button_new();
+	gtk_menu_button_set_label(GTK_MENU_BUTTON(translations), "Translations");
+	auto *visibility = gtk_popover_new();
+	parallel_visibility_ = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+	gtk_popover_set_child(GTK_POPOVER(visibility), parallel_visibility_);
+	gtk_menu_button_set_popover(GTK_MENU_BUTTON(translations), visibility);
+	gtk_box_append(GTK_BOX(layout_bar), translations);
 	gtk_box_append(GTK_BOX(parallel_box_), view(&parallel_view_, false));
 	// The isolated host world's click listeners need script execution. Keep
 	// page-authored scripts disabled here and through the document's CSP.
@@ -111,17 +141,30 @@ GtkWidget *StudyUI::parallel_pane()
 				 if (s->closed_ || !s->model_ || s->model_->busy() || !jsc_value_is_object(value))
 					 return;
 				 auto *r = jsc_value_object_get_property(value, "row"), *c = jsc_value_object_get_property(value, "column"), *v = jsc_value_object_get_property(value, "revision"), *u = jsc_value_object_get_property(value, "uri");
+				 auto *word = jsc_value_object_get_property(value, "word");
+				 auto *part_value = jsc_value_object_get_property(value, "part");
 				 const auto &p = s->model_->parallel();
 				 const int row = jsc_value_to_int32(r), col = jsc_value_to_int32(c);
-				 if (jsc_value_is_number(r) && jsc_value_is_number(c) && jsc_value_is_number(v) && jsc_value_is_string(u) && jsc_value_to_int32(v) == int(p.revision) && row >= 0 && col >= 0 && size_t(row) < p.rows.size() && size_t(col) < p.columns.size()) {
-					 auto *uri = jsc_value_to_string(u);
-					 s->model_->follow(p.columns[col].module, uri ? uri : "", p.rows[row].cells[col].reference);
-					 g_free(uri);
+				 if (jsc_value_is_number(r) && jsc_value_is_number(c) && jsc_value_is_number(v) && (jsc_value_is_string(u) || jsc_value_is_string(word)) && jsc_value_to_int32(v) == int(p.revision) && row >= 0 && col >= 0 && size_t(row) < p.rows.size() && size_t(col) < p.columns.size()) {
+					 const auto &module = p.columns[col].module;
+					 const auto &cell = p.rows[row].cells[col];
+					 const int part = jsc_value_to_int32(part_value);
+					 const auto &reference = part > 0 && size_t(part) <= cell.additional.size()
+						 ? cell.additional[part - 1].first : cell.reference;
+					 const bool studying = jsc_value_is_string(word);
+					 auto *argument = jsc_value_to_string(studying ? word : u);
+					 if (studying)
+						 s->model_->word_study(module, reference, argument ? argument : "");
+					 else
+						 s->model_->follow(module, argument ? argument : "", reference);
+					 g_free(argument);
 				 }
 				 g_object_unref(r);
 				 g_object_unref(c);
 				 g_object_unref(v);
 				 g_object_unref(u);
+				 g_object_unref(word);
+				 g_object_unref(part_value);
 			 })),
 			 this);
 	g_signal_connect(parallel_view_, "load-changed", G_CALLBACK((+[](WebKitWebView *view, WebKitLoadEvent event, gpointer) {
@@ -140,42 +183,135 @@ GtkWidget *StudyUI::parallel_pane()
 			 nullptr);
 	return parallel_box_;
 }
+void StudyUI::study_parallel_selection()
+{
+	if (!model_ || model_->busy() || !parallel_view_ || webkit_web_view_is_loading(parallel_view_))
+		return;
+	webkit_web_view_evaluate_javascript(parallel_view_, "globalThis.xiphosStudySelection?.()", -1,
+		"xiphos-host", nullptr, nullptr, nullptr, nullptr);
+}
+void StudyUI::step_parallel_verse(int direction)
+{
+	if (!model_ || model_->busy())
+		return;
+	const auto &p = model_->parallel();
+	auto selected = std::find_if(p.rows.begin(), p.rows.end(), [&](const auto &item) { return item.ordinal == p.selected_verse; });
+	if (selected == p.rows.end() || (direction < 0 ? selected == p.rows.begin() : std::next(selected) == p.rows.end()))
+		return;
+	model_->visit_parallel(parallel_order_, (selected + direction)->reference);
+}
+
 void StudyUI::update_parallel()
 {
 	const auto &p = model_->parallel();
 	gtk_widget_set_sensitive(parallel_box_, model_->ready() && !model_->busy());
-	if (p.revision != parallel_revision_) {
+	const auto selected = std::find_if(p.rows.begin(), p.rows.end(), [&](const auto &item) { return item.ordinal == p.selected_verse; });
+	gtk_widget_set_sensitive(parallel_previous_verse_, selected != p.rows.end() && selected != p.rows.begin());
+	gtk_widget_set_sensitive(parallel_next_verse_, selected != p.rows.end() && std::next(selected) != p.rows.end());
+	if (p.revision != parallel_revision_ || parallel_needs_render_) {
+		const bool new_passage = p.revision != parallel_revision_;
 		parallel_revision_ = p.revision;
-		std::string html = "<table><thead><tr><th>Passage</th>";
-		for (const auto &c : p.columns)
-			html += "<th>" + escape(c.requested) + (c.status == XC_PARALLEL_READY ? "" : " (unavailable)") + "</th>";
-		html += "</tr></thead><tbody>";
-		for (size_t r = 0; r < p.rows.size(); ++r) {
-			html += "<tr><th>" + escape(p.rows[r].reference) + "</th>";
-			for (size_t c = 0; c < p.columns.size(); ++c)
-				html += "<td data-xiphos-cell='1' data-row='" + std::to_string(r) + "' data-column='" + std::to_string(c) + "' dir='" + (p.columns[c].rtl ? "rtl" : "ltr") + "'>" + "</td>";
-			html += "</tr>";
+		parallel_needs_render_ = false;
+		std::vector<std::string> order;
+		for (const auto &column : p.columns)
+			order.push_back(column.requested);
+		if (order != parallel_order_) {
+			parallel_order_ = order;
+			while (auto *child = gtk_widget_get_first_child(parallel_visibility_))
+				gtk_box_remove(GTK_BOX(parallel_visibility_), child);
+			const auto hidden = parallel_hidden_.find(order);
+			for (size_t c = 0; c < order.size(); ++c) {
+				auto *toggle = gtk_check_button_new_with_label(order[c].c_str());
+				gtk_check_button_set_active(GTK_CHECK_BUTTON(toggle), hidden == parallel_hidden_.end() || !hidden->second[c]);
+				gtk_box_append(GTK_BOX(parallel_visibility_), toggle);
+				g_signal_connect(toggle, "toggled", G_CALLBACK(+[](GtkCheckButton *, gpointer data) {
+					auto *ui = static_cast<StudyUI *>(data);
+					std::vector<bool> hidden;
+					for (auto *child = gtk_widget_get_first_child(ui->parallel_visibility_); child; child = gtk_widget_get_next_sibling(child))
+						hidden.push_back(!gtk_check_button_get_active(GTK_CHECK_BUTTON(child)));
+					ui->parallel_hidden_[ui->parallel_order_] = std::move(hidden);
+					ui->parallel_needs_render_ = true;
+				}), this);
+			}
 		}
-		html += "</tbody></table>";
+		const auto hidden = parallel_hidden_.find(order);
+		const auto visible = [&](size_t c) { return hidden == parallel_hidden_.end() || !hidden->second[c]; };
+		const bool stacked = gtk_drop_down_get_selected(GTK_DROP_DOWN(parallel_layout_)) == 1;
+		const auto title = [&](size_t c) {
+			return escape(p.columns[c].requested) + (p.columns[c].status == XC_PARALLEL_READY ? "" : " (unavailable)");
+		};
+		struct Cell { size_t row, column, part; };
+		std::vector<Cell> cells;
+		std::string html;
+		if (!stacked) {
+			html = "<table><thead><tr><th scope='col'>Passage</th>";
+			for (size_t c = 0; c < order.size(); ++c)
+				if (visible(c))
+					html += "<th scope='col'>" + title(c) + "</th>";
+			html += "</tr></thead><tbody>";
+		}
+		for (size_t r = 0; r < p.rows.size(); ++r) {
+			const auto &verse = p.rows[r];
+			if (stacked && verse.ordinal != p.selected_verse)
+				continue;
+			if (stacked)
+				html += "<h2>" + escape(verse.reference) + "</h2>";
+			else
+				html += "<tr><th scope='row'>" + escape(verse.reference) + "</th>";
+			for (size_t c = 0; c < order.size(); ++c) {
+				if (!visible(c))
+					continue;
+				const std::string direction = p.columns[c].rtl ? "rtl" : "ltr";
+				if (stacked)
+					html += "<section><h3>" + title(c) + "</h3><div dir='" + direction + "'>";
+				else
+					html += "<td dir='" + direction + "'>";
+				const auto &cell = verse.cells[c];
+				for (size_t part = 0; part <= cell.additional.size(); ++part) {
+					html += "<div data-xiphos-cell class='xc-comparison-" + std::to_string(c) + "'></div>";
+					cells.push_back({r, c, part});
+				}
+				html += stacked ? "</div></section>" : "</td>";
+			}
+			if (!stacked)
+				html += "</tr>";
+		}
+		if (!stacked)
+			html += "</tbody></table>";
+		if (cells.empty() && !p.rows.empty())
+			html += "<p>No translations shown. Use Translations to show a column.</p>";
 		if (p.annotations_incomplete || p.invalid_colors)
 			html += "<p>Some annotations could not be displayed. Invalid colors: " + std::to_string(p.invalid_colors) + ".</p>";
-		auto page = document(html, "table{border-collapse:collapse}td,th{min-width:170px;border:1px solid #888;padding:6px;vertical-align:top}");
+		std::string css = "table{border-collapse:collapse}td,th{min-width:170px;border:1px solid #888;padding:6px;vertical-align:top}";
+		for (size_t c = 0; c < order.size(); ++c)
+			css += reading_style_css(p.columns[c].module, ".xc-comparison-" + std::to_string(c));
+		auto page = document(html, css);
 		const auto at = page.find("<body>");
 		if (at != std::string::npos)
 			page.replace(at, 6, "<body data-revision='" + std::to_string(p.revision) + "'>");
-		// Populate each cell through innerHTML only after constructing the host
-		// table. Module markup cannot close or replace the host's outer cells.
-		// The isolated-world listener captures host indices; module attributes do
-		// not supply navigation context and module scripts remain disabled.
-		std::string script = "(()=>{const revision=" + std::to_string(p.revision) + ";if(Number(document.body.dataset.revision)!==revision)return;const cells=Array.from(document.querySelector('body > table').tBodies[0].rows).map(r=>Array.from(r.cells).slice(1));";
-		for (size_t r = 0; r < p.rows.size(); ++r)
-			for (size_t c = 0; c < p.columns.size(); ++c) {
-				script += "{const cell=cells[" + std::to_string(r) + "][" + std::to_string(c) + "];cell.innerHTML=" + javascript_string(p.rows[r].cells[c].html) + ";cell.addEventListener('click',e=>{const a=e.target.closest('a[href]');if(!a||!cell.contains(a))return;e.preventDefault();e.stopPropagation();window.webkit.messageHandlers.xiphosParallel.postMessage({row:" + std::to_string(r) + ",column:" + std::to_string(c) + ",revision,uri:a.getAttribute('href')});},true);}";
-			}
-		script += "return revision;})();";
+		// Capture the host cell nodes before inserting any module markup.
+		std::string script = "(()=>{const revision=" + std::to_string(p.revision) + ";if(Number(document.body.dataset.revision)!==revision)return;const cells=Array.from(document.querySelectorAll('[data-xiphos-cell]'));";
+		for (size_t i = 0; i < cells.size(); ++i) {
+			const auto [r, c, part] = cells[i];
+			const auto &cell = p.rows[r].cells[c];
+			const auto &body = part == 0 ? cell.html : cell.additional[part - 1].second;
+			script += "{const cell=cells[" + std::to_string(i) + "];cell.innerHTML=" + javascript_string(body) +
+				";cell.addEventListener('click',e=>{const a=e.target.closest('a[href]');if(!a||!cell.contains(a))return;e.preventDefault();e.stopPropagation();window.webkit.messageHandlers.xiphosParallel.postMessage({row:" +
+				std::to_string(r) + ",column:" + std::to_string(c) + ",part:" + std::to_string(part) + ",revision,uri:a.getAttribute('href')});},true);}";
+		}
+		script += "const sources=[";
+		for (const auto &cell : cells)
+			script += "[" + std::to_string(cell.row) + "," + std::to_string(cell.column) + "," + std::to_string(cell.part) + "],";
+		script += "];globalThis.xiphosStudySelection=()=>{const selection=getSelection();"
+			"if(!selection||selection.isCollapsed)return;const word=selection.toString().trim();"
+			"if(!word||word.length>256||/\\s/u.test(word))return;"
+			"const index=cells.findIndex(cell=>cell.contains(selection.anchorNode)&&cell.contains(selection.focusNode));"
+			"if(index<0)return;const [row,column,part]=sources[index];"
+			"window.webkit.messageHandlers.xiphosParallel.postMessage({row,column,part,revision,word});};return revision;})();";
 		g_object_set_data_full(G_OBJECT(parallel_view_), "parallel-populate", g_strdup(script.c_str()), g_free);
 		webkit_web_view_load_html(parallel_view_, page.c_str(), "xiphos-preview://study/");
-		gtk_editable_set_text(GTK_EDITABLE(parallel_reference_), p.reference.c_str());
+		if (new_passage)
+			gtk_editable_set_text(GTK_EDITABLE(parallel_reference_), p.reference.c_str());
 	}
 	const auto &profile = model_->parallel_profile();
 	auto identity = profile.path + profile.revision.value_or("");

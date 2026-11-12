@@ -7,6 +7,7 @@
 using xiphos::linux_preview::document;
 #include <gtk/gtk.h>
 #include <webkit/webkit.h>
+#include <algorithm>
 #include <clocale>
 #include <filesystem>
 #include <iostream>
@@ -58,6 +59,11 @@ struct App {
 	bool dictionary_loaded = false;
 	std::string dictionary_choices_identity, dictionary_submitted;
 	WebKitWebView *bible_view = nullptr, *commentary_view = nullptr;
+	GtkWidget *find_bar = nullptr, *find_text = nullptr, *find_status = nullptr;
+	GtkWidget *reference_language = nullptr;
+	GtkWidget *export_expression = nullptr;
+	int export_destination = 0;
+	unsigned passage_export_revision = 0, reading_style_revision = 0;
 	std::unique_ptr<ReaderModel> model;
 	std::unique_ptr<xiphos::linux_preview::StudyUI> study_ui;
 	std::vector<std::string> bibles, commentaries{""};
@@ -107,10 +113,267 @@ void choose_profile(App *app, bool save, bool lexicon = false) {
   }), app);
   gtk_native_dialog_show(app->file_dialog);
 }
+void study_bible_selection(App *app)
+{
+  if (!app->model || app->model->busy() || webkit_web_view_is_loading(app->bible_view))
+    return;
+  struct Selection {
+    App *app;
+    unsigned revision;
+    std::string module, reference;
+    std::vector<std::string> verses;
+  };
+  const auto &passage = app->model->passage();
+  auto *selection = new Selection{app, app->model->revision(), passage.bible, passage.reference,
+    app->model->show_chapter() ? app->model->bible_chapter().verse_references : std::vector<std::string>{}};
+  const char *script = R"JS((() => {
+    const selected = getSelection();
+    if (!selected || selected.isCollapsed) return null;
+    const word = selected.toString().trim();
+    if (!word || word.length > 256 || /\s/u.test(word)) return null;
+    const sections = Array.from(document.querySelectorAll('body > section.xc-verse'));
+    const index = sections.findIndex(section => section.contains(selected.anchorNode) && section.contains(selected.focusNode));
+    return {word, index};
+  })())JS";
+  webkit_web_view_evaluate_javascript(app->bible_view, script, -1, "xiphos-host", nullptr, nullptr,
+    +[](GObject *source, GAsyncResult *result, gpointer data) {
+      std::unique_ptr<Selection> captured(static_cast<Selection *>(data));
+      auto *app = captured->app;
+      GError *error = nullptr;
+      auto *value = webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW(source), result, &error);
+      if (!app->closing && !app->model->busy() && app->model->revision() == captured->revision) {
+        bool submitted = false;
+        if (value && jsc_value_is_object(value)) {
+          auto *word = jsc_value_object_get_property(value, "word");
+          auto *index = jsc_value_object_get_property(value, "index");
+          const int row = jsc_value_to_int32(index);
+          if (captured->verses.empty() || (row >= 0 && size_t(row) < captured->verses.size())) {
+            auto *text = jsc_value_to_string(word);
+            if (text)
+              submitted = app->model->word_study(captured->module,
+                captured->verses.empty() ? captured->reference : captured->verses[row], text);
+            g_free(text);
+          }
+          g_object_unref(index);
+          g_object_unref(word);
+        }
+        if (!submitted)
+          app->session_notice = "Select one word within a single Bible verse.";
+      }
+      g_clear_object(&value);
+      g_clear_error(&error);
+    }, selection);
+}
+void deliver_passage_export(App *app)
+{
+  const auto &output = app->model->passage_export();
+  if (!output.revision || output.revision == app->passage_export_revision)
+    return;
+  app->passage_export_revision = output.revision;
+  const bool html = !output.html.empty();
+  const auto &bytes = html ? output.html : output.text;
+  if (bytes.empty())
+    return;
+  if (app->export_destination == 0) {
+    gdk_clipboard_set_text(gtk_widget_get_clipboard(app->window), bytes.c_str());
+    app->session_notice = "Passage copied.";
+    return;
+  }
+  if (app->file_dialog)
+    return;
+  auto *chooser = gtk_file_chooser_native_new("Save passage", GTK_WINDOW(app->window),
+    GTK_FILE_CHOOSER_ACTION_SAVE, "Save", "Cancel");
+  app->file_dialog = GTK_NATIVE_DIALOG(chooser);
+  gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(chooser), html ? "passage.html" : "passage.txt");
+  g_object_set_data_full(G_OBJECT(chooser), "passage-bytes", g_bytes_new(bytes.data(), bytes.size()),
+    +[](gpointer payload) { g_bytes_unref(static_cast<GBytes *>(payload)); });
+  g_signal_connect(chooser, "response", G_CALLBACK(+[](GtkNativeDialog *dialog, int response, gpointer data) {
+    auto *app = static_cast<App *>(data);
+    if (response == GTK_RESPONSE_ACCEPT) {
+      auto *file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
+      if (file) {
+        auto *bytes = static_cast<GBytes *>(g_object_get_data(G_OBJECT(dialog), "passage-bytes"));
+        auto *application = G_APPLICATION(app->application);
+        g_application_hold(application);
+        g_file_replace_contents_bytes_async(file, bytes, nullptr, FALSE, G_FILE_CREATE_NONE, nullptr,
+          +[](GObject *source, GAsyncResult *result, gpointer data) {
+            auto *application = G_APPLICATION(data);
+            GError *error = nullptr;
+            if (!g_file_replace_contents_finish(G_FILE(source), result, nullptr, &error)) {
+              g_warning("Passage save failed: %s", error->message);
+              g_clear_error(&error);
+            }
+            g_application_release(application);
+          }, application);
+        g_object_unref(file);
+      }
+    }
+    app->file_dialog = nullptr;
+    gtk_native_dialog_hide(dialog);
+    g_object_unref(dialog);
+  }), app);
+  gtk_native_dialog_show(app->file_dialog);
+}
+void open_biblical_map(App *app)
+{
+  auto *window = GTK_WINDOW(gtk_application_window_new(app->application));
+  gtk_window_set_title(window, "Biblical Map");
+  gtk_window_set_default_size(window, 900, 650);
+  gtk_window_set_transient_for(window, GTK_WINDOW(app->window));
+  gtk_window_set_destroy_with_parent(window, TRUE);
+  auto *session = webkit_network_session_new_ephemeral();
+  auto *view = WEBKIT_WEB_VIEW(g_object_new(WEBKIT_TYPE_WEB_VIEW, "network-session", session, nullptr));
+  g_object_unref(session);
+  if (app->software)
+    webkit_settings_set_hardware_acceleration_policy(webkit_web_view_get_settings(view), WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
+  auto *file = g_file_new_build_filename(XIPHOS_LINUX_MAP_DIR, "index.html", nullptr);
+  auto *uri = g_file_get_uri(file);
+  g_object_unref(file);
+  g_object_set_data_full(G_OBJECT(view), "map-entry-uri", uri, g_free);
+  g_signal_connect(view, "decide-policy", G_CALLBACK(+[](WebKitWebView *view, WebKitPolicyDecision *decision,
+      WebKitPolicyDecisionType type, gpointer) -> gboolean {
+    if (type == WEBKIT_POLICY_DECISION_TYPE_RESPONSE)
+      return FALSE;
+    auto *navigation = webkit_navigation_policy_decision_get_navigation_action(WEBKIT_NAVIGATION_POLICY_DECISION(decision));
+    const auto *target = webkit_uri_request_get_uri(webkit_navigation_action_get_request(navigation));
+    const auto *entry = static_cast<const char *>(g_object_get_data(G_OBJECT(view), "map-entry-uri"));
+    if (type == WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION && g_strcmp0(target, entry) == 0)
+      return FALSE;
+    webkit_policy_decision_ignore(decision);
+    return TRUE;
+  }), nullptr);
+  gtk_window_set_child(window, GTK_WIDGET(view));
+  webkit_web_view_load_uri(view, uri);
+  gtk_window_present(window);
+}
+void add_reading_tools(App *app, GtkWidget *container)
+{
+  auto *tools = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+  gtk_box_append(GTK_BOX(container), tools);
+  auto *find = gtk_button_new_with_label("Find");
+  gtk_box_append(GTK_BOX(tools), find);
+  auto *study = gtk_button_new_with_label("Study word");
+  gtk_box_append(GTK_BOX(tools), study);
+  auto *map = gtk_button_new_with_label("Biblical Map");
+  gtk_box_append(GTK_BOX(tools), map);
+  g_signal_connect(map, "clicked", G_CALLBACK(+[](GtkButton *, gpointer data) {
+    open_biblical_map(static_cast<App *>(data));
+  }), app);
+  g_signal_connect(study, "clicked", G_CALLBACK(+[](GtkButton *, gpointer data) {
+    study_bible_selection(static_cast<App *>(data));
+  }), app);
+  auto *zoom_menu = gtk_menu_button_new();
+  gtk_menu_button_set_label(GTK_MENU_BUTTON(zoom_menu), "Zoom");
+  gtk_box_append(GTK_BOX(tools), zoom_menu);
+  auto *zoom_popover = gtk_popover_new();
+  auto *zoom_options = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+  gtk_popover_set_child(GTK_POPOVER(zoom_popover), zoom_options);
+  gtk_menu_button_set_popover(GTK_MENU_BUTTON(zoom_menu), zoom_popover);
+  const char *zoom_labels[] = {"Zoom out", "Reset zoom", "Zoom in"};
+  for (int i = 0; i < 3; ++i) {
+    auto *button = gtk_button_new_with_label(zoom_labels[i]);
+    g_object_set_data(G_OBJECT(button), "zoom-direction", GINT_TO_POINTER(i - 1));
+    gtk_box_append(GTK_BOX(zoom_options), button);
+    g_signal_connect(button, "clicked", G_CALLBACK(+[](GtkButton *button, gpointer data) {
+      auto *app = static_cast<App *>(data);
+      const int direction = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(button), "zoom-direction"));
+      const double current = webkit_web_view_get_zoom_level(app->bible_view);
+      webkit_web_view_set_zoom_level(app->bible_view, direction == 0 ? 1.0 : std::clamp(current + direction * 0.1, 0.6, 2.5));
+    }), app);
+  }
+  auto *exports = gtk_menu_button_new();
+  gtk_menu_button_set_label(GTK_MENU_BUTTON(exports), "Export");
+  gtk_box_append(GTK_BOX(tools), exports);
+  auto *popover = gtk_popover_new();
+  gtk_menu_button_set_popover(GTK_MENU_BUTTON(exports), popover);
+  auto *options = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+  gtk_popover_set_child(GTK_POPOVER(popover), options);
+  app->export_expression = gtk_entry_new();
+  gtk_entry_set_placeholder_text(GTK_ENTRY(app->export_expression), "Range (empty = selected verse)");
+  gtk_accessible_update_property(GTK_ACCESSIBLE(app->export_expression), GTK_ACCESSIBLE_PROPERTY_LABEL, "Passage export range", -1);
+  gtk_box_append(GTK_BOX(options), app->export_expression);
+  const char *destinations[] = {"Copy plain text", "Save plain text…", "Save formatted HTML…"};
+  for (int i = 0; i < 3; ++i) {
+    auto *button = gtk_button_new_with_label(destinations[i]);
+    g_object_set_data(G_OBJECT(button), "destination", GINT_TO_POINTER(i));
+    gtk_box_append(GTK_BOX(options), button);
+    g_signal_connect(button, "clicked", G_CALLBACK(+[](GtkButton *button, gpointer data) {
+      auto *app = static_cast<App *>(data);
+      const int destination = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(button), "destination"));
+      if (!app->file_dialog && app->model->export_passage(destination == 2,
+          gtk_editable_get_text(GTK_EDITABLE(app->export_expression)))) {
+        app->export_destination = destination;
+        auto *popover = gtk_widget_get_ancestor(GTK_WIDGET(button), GTK_TYPE_POPOVER);
+        gtk_popover_popdown(GTK_POPOVER(popover));
+      }
+    }), app);
+  }
+  auto *print = gtk_button_new_with_label("Print displayed passage…");
+  gtk_box_append(GTK_BOX(options), print);
+  g_signal_connect(print, "clicked", G_CALLBACK(+[](GtkButton *, gpointer data) {
+    auto *app = static_cast<App *>(data);
+    if (webkit_web_view_is_loading(app->bible_view) || app->model->passage().bible.empty())
+      return;
+    auto *operation = webkit_print_operation_new(app->bible_view);
+    webkit_print_operation_run_dialog(operation, GTK_WINDOW(app->window));
+    g_object_unref(operation);
+  }), app);
+  app->find_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+  gtk_box_append(GTK_BOX(container), app->find_bar);
+  app->find_text = gtk_search_entry_new();
+  gtk_accessible_update_property(GTK_ACCESSIBLE(app->find_text), GTK_ACCESSIBLE_PROPERTY_LABEL, "Find in the displayed Bible passage", -1);
+  gtk_box_append(GTK_BOX(app->find_bar), app->find_text);
+  app->find_status = gtk_label_new("");
+  auto *controller = webkit_web_view_get_find_controller(app->bible_view);
+  g_signal_connect(controller, "failed-to-find-text", G_CALLBACK(+[](WebKitFindController *, gpointer data) {
+    gtk_label_set_text(GTK_LABEL(static_cast<App *>(data)->find_status), "No matches");
+  }), app);
+  g_signal_connect(controller, "found-text", G_CALLBACK(+[](WebKitFindController *, guint, gpointer data) {
+    gtk_label_set_text(GTK_LABEL(static_cast<App *>(data)->find_status), "");
+  }), app);
+  g_signal_connect(app->find_text, "search-changed", G_CALLBACK(+[](GtkSearchEntry *entry, gpointer data) {
+    auto *app = static_cast<App *>(data);
+    auto *controller = webkit_web_view_get_find_controller(app->bible_view);
+    const auto *text = gtk_editable_get_text(GTK_EDITABLE(entry));
+    if (*text)
+      webkit_find_controller_search(controller, text, WEBKIT_FIND_OPTIONS_CASE_INSENSITIVE | WEBKIT_FIND_OPTIONS_WRAP_AROUND, 1000);
+    else {
+      webkit_find_controller_search_finish(controller);
+      gtk_label_set_text(GTK_LABEL(app->find_status), "");
+    }
+  }), app);
+  g_signal_connect(app->find_text, "activate", G_CALLBACK(+[](GtkSearchEntry *, gpointer data) {
+    webkit_find_controller_search_next(webkit_web_view_get_find_controller(static_cast<App *>(data)->bible_view));
+  }), app);
+  const char *labels[] = {"Previous", "Next", "Close"};
+  for (int i = 0; i < 3; ++i) {
+    auto *button = gtk_button_new_with_label(labels[i]);
+    gtk_box_append(GTK_BOX(app->find_bar), button);
+    g_object_set_data(G_OBJECT(button), "command", GINT_TO_POINTER(i));
+    g_signal_connect(button, "clicked", G_CALLBACK(+[](GtkButton *button, gpointer data) {
+      auto *app = static_cast<App *>(data);
+      auto *controller = webkit_web_view_get_find_controller(app->bible_view);
+      const int command = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(button), "command"));
+      if (command == 0)
+        webkit_find_controller_search_previous(controller);
+      else if (command == 1)
+        webkit_find_controller_search_next(controller);
+      else {
+        gtk_editable_set_text(GTK_EDITABLE(app->find_text), "");
+        webkit_find_controller_search_finish(controller);
+        gtk_widget_set_visible(app->find_bar, FALSE);
+      }
+    }), app);
+  }
+  gtk_box_append(GTK_BOX(app->find_bar), app->find_status);
+  gtk_widget_set_visible(app->find_bar, FALSE);
+  gtk_actionable_set_action_name(GTK_ACTIONABLE(find), "win.find-passage");
+}
+
 void go(App *app) {
 	app->preserve_restored_draft = false;
 	app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference));
-	app->model->visit(selected(app->bible, app->bibles), selected(app->commentary, app->commentaries), gtk_editable_get_text(GTK_EDITABLE(app->reference)));
+	app->model->visit_typed_reference(selected(app->bible, app->bibles), selected(app->commentary, app->commentaries), gtk_editable_get_text(GTK_EDITABLE(app->reference)));
 }
 
 gboolean policy(WebKitWebView *view, WebKitPolicyDecision *decision, WebKitPolicyDecisionType type, gpointer data) {
@@ -192,6 +455,7 @@ gboolean tick(gpointer data) {
   auto *app = static_cast<App *>(data);
   if (app->closing) return G_SOURCE_REMOVE;
   app->model->tick();
+  deliver_passage_export(app);
   if (app->process && app->model->ready() && !app->model->busy() && app->library_version != library_changed(app->process)) {
 	  app->library_version = library_changed(app->process);
 	  app->model->reload_modules();
@@ -275,6 +539,11 @@ gboolean tick(gpointer data) {
 	  }
   }
   const auto identity = bible_css + "\n" + commentary_css + "\n" + passage.bible + "\n" + passage.commentary + "\n" + passage.reference + "\n" + bible_html + commentary_html + "\n" + passage.anchor_module + "\n" + (passage.anchor ? *passage.anchor : "") + "\n" + std::to_string(passage.anchor_revision);
+  if (app->reading_style_revision != app->study_ui->style_revision()) {
+    app->reading_style_revision = app->study_ui->style_revision();
+    app->rendered.clear();
+    app->dictionary_loaded = false;
+  }
   if (!app->model->busy() && !passage.bible.empty() && identity != app->rendered) {
     app->rendered = identity;
     app->bible_anchor = app->model->show_chapter() ? app->model->bible_chapter().anchor : "";
@@ -286,8 +555,8 @@ gboolean tick(gpointer data) {
     select(app->bible, app->bibles, passage.bible); select(app->commentary, app->commentaries, passage.commentary);
     if (!app->preserve_restored_draft && app->submitted_draft == gtk_editable_get_text(GTK_EDITABLE(app->reference)))
 	    gtk_editable_set_text(GTK_EDITABLE(app->reference), passage.reference.c_str());
-    webkit_web_view_load_html(app->bible_view, document(bible_html, bible_css).c_str(), "xiphos-preview://study/");
-    webkit_web_view_load_html(app->commentary_view, document(commentary_html, commentary_css).c_str(), "xiphos-preview://study/");
+    webkit_web_view_load_html(app->bible_view, document(bible_html, bible_css + app->study_ui->reading_style_css(passage.bible)).c_str(), "xiphos-preview://study/");
+    webkit_web_view_load_html(app->commentary_view, document(commentary_html, commentary_css + app->study_ui->reading_style_css(passage.commentary)).c_str(), "xiphos-preview://study/");
   }
   const bool enabled = app->model->ready() && !app->model->busy();
   gtk_widget_set_sensitive(app->go, enabled && !app->bibles.empty());
@@ -340,7 +609,7 @@ gboolean tick(gpointer data) {
       gtk_editable_set_text(GTK_EDITABLE(app->dictionary_key), dictionary.key.c_str());
     app->dictionary_uri_anchor = dictionary.anchor.has_value();
     app->dictionary_anchor = dictionary.anchor.value_or("");
-    webkit_web_view_load_html(app->dictionary_view, document(dictionary.html).c_str(), "xiphos-preview://study/");
+    webkit_web_view_load_html(app->dictionary_view, document(dictionary.html, app->study_ui->reading_style_css(dictionary.module)).c_str(), "xiphos-preview://study/");
   }
   std::string dictionary_choices_identity;
   for (const auto &key : app->model->dictionary_keys()) dictionary_choices_identity += key + "\n";
@@ -436,6 +705,7 @@ gboolean tick(gpointer data) {
     }
   }
   app->updating = false;
+  gtk_widget_set_sensitive(app->reference_language, app->model->ready() && !app->model->busy());
   const auto &error = app->model->error();
   gtk_label_set_text(GTK_LABEL(app->status), !error.empty() ? error.c_str() : app->model->busy()		  ? "Loading…"
 									  : app->populated && app->bibles.empty() ? "No Bible modules found. Open a SWORD library with --root DIRECTORY."
@@ -616,6 +886,14 @@ void activate(GtkApplication *application, gpointer data) {
   app->reference = gtk_entry_new(); gtk_editable_set_text(GTK_EDITABLE(app->reference), "John 3:16");
   gtk_widget_set_hexpand(app->reference, TRUE); gtk_box_append(GTK_BOX(toolbar), app->reference);
   app->go = gtk_button_new_with_label("Go"); gtk_box_append(GTK_BOX(toolbar), app->go);
+  auto *help_menu = gtk_menu_button_new();
+  gtk_menu_button_set_label(GTK_MENU_BUTTON(help_menu), "Help");
+  auto *help_actions = g_menu_new();
+  g_menu_append(help_actions, "Xiphos manual", "win.help");
+  g_menu_append(help_actions, "About Xiphos", "win.about");
+  gtk_menu_button_set_menu_model(GTK_MENU_BUTTON(help_menu), G_MENU_MODEL(help_actions));
+  g_object_unref(help_actions);
+  gtk_box_append(GTK_BOX(toolbar), help_menu);
   auto *display_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
   gtk_box_append(GTK_BOX(box), display_bar);
   app->previous_chapter = gtk_button_new_with_label("Previous chapter");
@@ -779,9 +1057,27 @@ void activate(GtkApplication *application, gpointer data) {
     const auto selection = selected(app->bible, app->bibles);
     const auto *target = app->model->module(selection); const auto *main = app->model->module(app->model->passage().bible);
     if (target && main && target->type == "Commentaries" && main->type == "Biblical Texts") app->model->choose_commentary(selection);
+    else if (target && main && target->type == "Biblical Texts" && main->type == "Biblical Texts" &&
+        selection != main->id && app->model->passage().reference == gtk_editable_get_text(GTK_EDITABLE(app->reference))) {
+      app->preserve_restored_draft = false;
+      app->submitted_draft = app->model->passage().reference;
+      app->model->choose_translation(selection, selected(app->commentary, app->commentaries));
+    }
     else go(app);
   }), app);
   app->module_description = description(library);
+  const char *reference_languages[] = {"Default book names", "Deutsch", "Español", "Français", nullptr};
+  auto *reference_language = gtk_drop_down_new_from_strings(reference_languages);
+  app->reference_language = reference_language;
+  gtk_accessible_update_property(GTK_ACCESSIBLE(reference_language), GTK_ACCESSIBLE_PROPERTY_LABEL, "Bible book name language", -1);
+  gtk_box_append(GTK_BOX(library), reference_language);
+  g_signal_connect(reference_language, "notify::selected", G_CALLBACK((+[](GObject *object, GParamSpec *, gpointer data) {
+    auto *app = static_cast<App *>(data);
+    const char *locales[] = {"", "de.conf", "es.conf", "fr.conf"};
+    const auto index = gtk_drop_down_get_selected(GTK_DROP_DOWN(object));
+    if (app->model && index < G_N_ELEMENTS(locales))
+      app->model->set_reference_locale(index ? std::string(XIPHOS_LINUX_LOCALE_DIR) + "/" + locales[index] : "");
+  })), app);
   auto *commentary_label = gtk_label_new_with_mnemonic("_Commentary module");
   gtk_box_append(GTK_BOX(library), commentary_label);
   app->commentary = gtk_drop_down_new(nullptr, nullptr); gtk_box_append(GTK_BOX(library), app->commentary);
@@ -810,16 +1106,21 @@ void activate(GtkApplication *application, gpointer data) {
   gtk_box_append(GTK_BOX(library), pane(app, "Information", &app->information_view));
   gtk_widget_set_size_request(library, 220, -1);
   app->study_ui = std::make_unique<xiphos::linux_preview::StudyUI>(GTK_WINDOW(app->window), app->software);
+  gtk_box_append(GTK_BOX(reading_bar), app->study_ui->reading_style_menu());
   auto *library_tabs = gtk_notebook_new();
   gtk_notebook_append_page(GTK_NOTEBOOK(library_tabs), library, gtk_label_new("Study"));
   gtk_notebook_append_page(GTK_NOTEBOOK(library_tabs), app->study_ui->search_pane(), gtk_label_new("Search"));
   gtk_notebook_append_page(GTK_NOTEBOOK(library_tabs), app->study_ui->notes_pane(), gtk_label_new("Notes"));
   gtk_paned_set_start_child(GTK_PANED(panes), library_tabs);
+  app->study_ui->show_search = [library_tabs] { gtk_notebook_set_current_page(GTK_NOTEBOOK(library_tabs), 1); };
   auto *study = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
   gtk_paned_set_end_child(GTK_PANED(panes), study); gtk_paned_set_position(GTK_PANED(panes), 240);
   auto *reading_tabs = gtk_notebook_new();
   app->reading_tabs = reading_tabs;
-  gtk_notebook_append_page(GTK_NOTEBOOK(reading_tabs), pane(app, "Reading", &app->bible_view), gtk_label_new("Reading"));
+  app->study_ui->show_parallel = [reading_tabs] { gtk_notebook_set_current_page(GTK_NOTEBOOK(reading_tabs), 1); };
+  auto *reading_page = pane(app, "Reading", &app->bible_view);
+  add_reading_tools(app, reading_page);
+  gtk_notebook_append_page(GTK_NOTEBOOK(reading_tabs), reading_page, gtk_label_new("Reading"));
   gtk_notebook_append_page(GTK_NOTEBOOK(reading_tabs), app->study_ui->parallel_pane(), gtk_label_new("Parallel"));
   gtk_paned_set_start_child(GTK_PANED(study), reading_tabs);
   auto *right = gtk_paned_new(GTK_ORIENTATION_VERTICAL);
@@ -830,6 +1131,7 @@ void activate(GtkApplication *application, gpointer data) {
   gtk_notebook_append_page(GTK_NOTEBOOK(content_tabs), dictionary_box, gtk_label_new("Dictionary"));
   gtk_notebook_append_page(GTK_NOTEBOOK(content_tabs), app->study_ui->book_pane(), gtk_label_new("General book"));
   gtk_notebook_append_page(GTK_NOTEBOOK(content_tabs), app->study_ui->editor_pane(), gtk_label_new("Editor"));
+  gtk_notebook_append_page(GTK_NOTEBOOK(content_tabs), app->study_ui->devotional_pane(), gtk_label_new("Devotional"));
   gtk_paned_set_end_child(GTK_PANED(right), content_tabs);
   app->dictionary_module = gtk_drop_down_new(nullptr, nullptr); gtk_box_append(GTK_BOX(dictionary_box), app->dictionary_module);
   app->dictionary_description = description(dictionary_box);
@@ -876,13 +1178,42 @@ void activate(GtkApplication *application, gpointer data) {
   gtk_accessible_update_property(GTK_ACCESSIBLE(app->commentary_view), GTK_ACCESSIBLE_PROPERTY_LABEL, "Commentary passage", -1);
   app->status = gtk_label_new("Starting study engine…"); gtk_box_append(GTK_BOX(box), app->status);
   const GActionEntry actions[] = {
+      {"help", +[](GSimpleAction *, GVariant *, gpointer data) {
+        auto *app = static_cast<App *>(data);
+        gtk_show_uri(GTK_WINDOW(app->window), "https://xiphos.org/help/", GDK_CURRENT_TIME);
+      }, nullptr, nullptr, nullptr, {}},
+      {"about", +[](GSimpleAction *, GVariant *, gpointer data) {
+        auto *app = static_cast<App *>(data);
+        gtk_show_about_dialog(GTK_WINDOW(app->window), "program-name", "Xiphos",
+          "comments", "Bible study for Linux", "website", "https://xiphos.org/",
+          "license-type", GTK_LICENSE_GPL_2_0, nullptr);
+      }, nullptr, nullptr, nullptr, {}},
+      {"study-word", +[](GSimpleAction *, GVariant *, gpointer data) {
+        auto *app = static_cast<App *>(data);
+        if (gtk_notebook_get_current_page(GTK_NOTEBOOK(app->reading_tabs)) == 1)
+          app->study_ui->study_parallel_selection();
+        else
+          study_bible_selection(app);
+      }, nullptr, nullptr, nullptr, {}},
+      {"find-passage", +[](GSimpleAction *, GVariant *, gpointer data) {
+        auto *app = static_cast<App *>(data);
+        gtk_notebook_set_current_page(GTK_NOTEBOOK(app->reading_tabs), 0);
+        gtk_widget_set_visible(app->find_bar, TRUE);
+        gtk_widget_grab_focus(app->find_text);
+      }, nullptr, nullptr, nullptr, {}},
       {"go", +[](GSimpleAction *, GVariant *, gpointer data) { go(static_cast<App *>(data)); }, nullptr, nullptr, nullptr, {}},
       {"back", +[](GSimpleAction *, GVariant *, gpointer data) { auto *app = static_cast<App *>(data); app->preserve_restored_draft = false; app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference)); app->model->navigate(-1); }, nullptr, nullptr, nullptr, {}},
       {"forward", +[](GSimpleAction *, GVariant *, gpointer data) { auto *app = static_cast<App *>(data); app->preserve_restored_draft = false; app->submitted_draft = gtk_editable_get_text(GTK_EDITABLE(app->reference)); app->model->navigate(1); }, nullptr, nullptr, nullptr, {}},
       {"focus-reference", +[](GSimpleAction *, GVariant *, gpointer data) { gtk_widget_grab_focus(static_cast<App *>(data)->reference); }, nullptr, nullptr, nullptr, {}},
       {"close", +[](GSimpleAction *, GVariant *, gpointer data) { gtk_window_close(GTK_WINDOW(static_cast<App *>(data)->window)); }, nullptr, nullptr, nullptr, {}}};
   g_action_map_add_action_entries(G_ACTION_MAP(app->window), actions, G_N_ELEMENTS(actions), app);
-  for (const auto &entry : actions) g_simple_action_set_enabled(G_SIMPLE_ACTION(g_action_map_lookup_action(G_ACTION_MAP(app->window), entry.name)), std::string(entry.name) == "close");
+  for (const auto &entry : actions) g_simple_action_set_enabled(G_SIMPLE_ACTION(g_action_map_lookup_action(G_ACTION_MAP(app->window), entry.name)), std::string(entry.name) == "close" || std::string(entry.name) == "find-passage" || std::string(entry.name) == "study-word" || std::string(entry.name) == "help" || std::string(entry.name) == "about");
+  const char *find_keys[] = {"<Primary>f", nullptr};
+  const char *word_keys[] = {"<Primary><Alt>f", nullptr};
+  const char *help_keys[] = {"F1", nullptr};
+  gtk_application_set_accels_for_action(application, "win.study-word", word_keys);
+  gtk_application_set_accels_for_action(application, "win.help", help_keys);
+  gtk_application_set_accels_for_action(application, "win.find-passage", find_keys);
   gtk_actionable_set_action_name(GTK_ACTIONABLE(app->go), "win.go");
   gtk_actionable_set_action_name(GTK_ACTIONABLE(app->back), "win.back");
   gtk_actionable_set_action_name(GTK_ACTIONABLE(app->forward), "win.forward");

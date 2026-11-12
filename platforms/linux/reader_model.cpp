@@ -83,6 +83,41 @@ bool ReaderModel::visit(const std::string &bible, const std::string &commentary,
   auto status = xc_worker_visit_passage(worker_, tab_, bible.c_str(), commentary.c_str(), reference.c_str(), &request);
   return accept(status, request, Operation::passage);
 }
+bool ReaderModel::choose_translation(const std::string &module, const std::string &commentary)
+{
+  if (!ready() || busy() || module.empty() || passage_.bible.empty() || module == passage_.bible)
+    return false;
+  xc_request *request = nullptr;
+  auto status = xc_worker_map_reference(worker_, passage_.bible.c_str(), module.c_str(), passage_.reference.c_str(), &request);
+  if (!accept(status, request, Operation::resolved_reference))
+    return false;
+  pending_reading_module_ = module;
+  pending_reading_commentary_ = commentary;
+  return true;
+}
+bool ReaderModel::visit_typed_reference(const std::string &module, const std::string &commentary, const std::string &reference)
+{
+  if (reference_locale_.empty())
+    return visit(module, commentary, reference);
+  if (!ready() || busy() || module.empty() || reference.empty())
+    return false;
+  xc_request *request = nullptr;
+  auto status = xc_worker_resolve_localized_reference(worker_, module.c_str(), reference.c_str(), reference_locale_.c_str(), &request);
+  if (!accept(status, request, Operation::resolved_reference))
+    return false;
+  pending_reading_module_ = module;
+  pending_reading_commentary_ = commentary;
+  return true;
+}
+bool ReaderModel::set_reference_locale(const std::string &path)
+{
+  if (!ready() || busy())
+    return false;
+  reference_locale_ = path;
+  if (!passage_.bible.empty())
+    load_choices();
+  return true;
+}
 bool ReaderModel::choose_commentary(const std::string &module) {
   const auto *main = this->module(passage_.bible);
   if (!ready() || busy() || !main || main->type != "Biblical Texts") return false;
@@ -310,7 +345,9 @@ bool ReaderModel::set_commentary_chapter(bool enabled) {
 }
 void ReaderModel::load_choices() {
   xc_request *request = nullptr;
-  auto status = xc_worker_reference_choices(worker_, passage_.bible.c_str(), passage_.reference.c_str(), &request);
+  auto status = reference_locale_.empty()
+    ? xc_worker_reference_choices(worker_, passage_.bible.c_str(), passage_.reference.c_str(), &request)
+    : xc_worker_reference_choices_localized(worker_, passage_.bible.c_str(), passage_.reference.c_str(), reference_locale_.c_str(), &request);
   accept(status, request, Operation::choices);
 }
 void ReaderModel::load_chapters(bool commentary) {
@@ -363,7 +400,7 @@ void ReaderModel::tick() {
     modules_.clear();
     ++catalog_version_;
     for (size_t i = 0; i < xc_catalog_count(catalog.get()); ++i)
-      modules_.push_back({copy(xc_catalog_id(catalog.get(), i)), copy(xc_catalog_description(catalog.get(), i)), copy(xc_catalog_type(catalog.get(), i)), xc_catalog_is_dictionary(catalog.get(), i) != 0, xc_catalog_declared_engine_flags(catalog.get(), i), xc_catalog_is_regular_commentary(catalog.get(), i) != 0, xc_catalog_has_headings(catalog.get(), i) != 0, xc_catalog_lexicon_roles(catalog.get(), i), copy(xc_catalog_language(catalog.get(), i)), xc_catalog_has_book_tree(catalog.get(), i) != 0, xc_catalog_has_verse_search(catalog.get(), i) != 0});
+      modules_.push_back({copy(xc_catalog_id(catalog.get(), i)), copy(xc_catalog_description(catalog.get(), i)), copy(xc_catalog_type(catalog.get(), i)), xc_catalog_is_dictionary(catalog.get(), i) != 0, xc_catalog_declared_engine_flags(catalog.get(), i), xc_catalog_is_regular_commentary(catalog.get(), i) != 0, xc_catalog_has_headings(catalog.get(), i) != 0, xc_catalog_lexicon_roles(catalog.get(), i), copy(xc_catalog_language(catalog.get(), i)), xc_catalog_has_book_tree(catalog.get(), i) != 0, xc_catalog_has_verse_search(catalog.get(), i) != 0, xc_catalog_is_devotional(catalog.get(), i) != 0});
     if (operation_ == Operation::catalog_refresh) {
 	    if (!passage_.bible.empty())
 		    refresh();
@@ -495,11 +532,19 @@ void ReaderModel::tick() {
     std::unique_ptr<xc_chapter, decltype(&xc_chapter_release)> chapter(xc_request_take_chapter(completed.get()), xc_chapter_release);
     if (!chapter) { error_ = "Missing chapter snapshot."; break; }
     Chapter value{copy(xc_chapter_html(chapter.get())), copy(xc_chapter_selected_anchor(chapter.get())), copy(xc_chapter_title(chapter.get()))};
+    for (size_t i = 0; i < xc_chapter_count(chapter.get()); ++i)
+      value.verse_references.push_back(copy(xc_chapter_verse_reference(chapter.get(), i)));
     const auto layout = copy_layout([&](auto *out) { return xc_chapter_lexical_layout(chapter.get(), out); });
     if (!layout) { error_ = "Missing chapter layout snapshot."; break; }
     value.lexical = *layout;
     if (operation_ == Operation::bible_chapter) { bible_chapter_ = std::move(value); load_chapters(true); }
     else { commentary_chapter_ = std::move(value); load_choices(); }
+    break;
+  }
+  case Operation::resolved_reference: {
+    std::unique_ptr<xc_link, decltype(&xc_link_release)> link(xc_request_take_link(completed.get()), xc_link_release);
+    if (!link || !visit(pending_reading_module_, pending_reading_commentary_, copy(xc_link_reference(link.get()))))
+      error_ = "This reference is unavailable in the selected translation.";
     break;
   }
   case Operation::choices: {

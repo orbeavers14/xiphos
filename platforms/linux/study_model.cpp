@@ -91,6 +91,35 @@ bool ReaderModel::take_image(xc_request *r) {
   if (bytes && size) value.bytes.assign(bytes, bytes + size);
   value.revision = image_.revision + 1; image_ = std::move(value); return true;
 }
+bool ReaderModel::read_devotional(const std::string &module, const std::string &date, int month, int day)
+{
+	if (!ready() || busy() || module.empty() || has_nul(module) || has_nul(date))
+		return false;
+	xc_request *request = nullptr;
+	auto status = xc_worker_read_devotional(worker_, tab_, module.c_str(), date.c_str(), month, day, &request);
+	return accept(status, request, Operation::devotional);
+}
+bool ReaderModel::word_study(const std::string &module, const std::string &reference, const std::string &surface)
+{
+	if (!ready() || busy() || module.empty() || reference.empty() || surface.empty() ||
+	    has_nul(module) || has_nul(reference) || has_nul(surface))
+		return false;
+	xc_request *request = nullptr;
+	auto status = xc_worker_word_study(worker_, tab_, module.c_str(), reference.c_str(), surface.c_str(), &request);
+	return accept(status, request, Operation::word_study);
+}
+bool ReaderModel::export_passage(bool html, const std::string &expression)
+{
+	if (!ready() || busy() || passage_.bible.empty() || passage_.reference.empty() || has_nul(expression))
+		return false;
+	xc_request *request = nullptr;
+	const auto *module = passage_.bible.c_str(), *reference = passage_.reference.c_str();
+	const auto *range = expression.empty() ? reference : expression.c_str();
+	auto status = html
+		? xc_worker_export_passage_html(worker_, tab_, module, range, reference, XC_PASSAGE_TEXT_EXPORT_MAX_BYTES, &request)
+		: xc_worker_export_passage_text(worker_, tab_, module, range, reference, XC_PASSAGE_TEXT_EXPORT_MAX_BYTES, &request);
+	return accept(status, request, Operation::passage_export);
+}
 bool ReaderModel::search(const SearchInput &input) {
   if (!ready() || busy() || input.modules.empty() || input.modules.size() > 32) return false;
   if (has_nul(input.expression) || has_nul(input.range_module) || has_nul(input.range)) return false;
@@ -254,6 +283,18 @@ bool ReaderModel::visit_parallel(const std::vector<std::string> &modules, const 
 	auto s = xc_worker_visit_parallel(worker_, tab_, ids.data(), ids.size(), reference.c_str(), engine_flags_, 1, XC_PARALLEL_MAX_SNAPSHOT_BYTES, &r);
 	return accept(s, r, Operation::parallel);
 }
+bool ReaderModel::compare_search_hit(size_t index)
+{
+	if (!ready() || busy() || parallel_profile_.path.empty() || index >= search_results_.hits.size())
+		return false;
+	const auto &hit = search_results_.hits[index];
+	if (hit.kind != 0)
+		return false;
+	xc_request *request = nullptr;
+	auto status = xc_worker_visit_parallel_profile_from(worker_, tab_, parallel_profile_.path.c_str(), nullptr,
+		hit.module.c_str(), hit.reference.c_str(), engine_flags_, 1, XC_PARALLEL_MAX_SNAPSHOT_BYTES, &request);
+	return accept(status, request, Operation::parallel);
+}
 bool ReaderModel::navigate_parallel(int direction)
 {
 	if (!ready() || busy() || parallel_.columns.empty())
@@ -351,6 +392,7 @@ bool ReaderModel::take_extended(xc_request *r) {
 		ParallelReading value;
 		value.reference = copy(xc_parallel_reference(p.get()));
 		value.title = copy(xc_parallel_title(p.get()));
+		value.selected_verse = xc_parallel_selected_verse(p.get());
 		value.revision = parallel_.revision + 1;
 		value.selection_revision = parallel_.selection_revision + (operation_ == Operation::parallel ? 1 : 0);
 		value.annotations_incomplete = xc_parallel_annotations_incomplete(p.get());
@@ -360,12 +402,21 @@ bool ReaderModel::take_extended(xc_request *r) {
 		for (size_t row = 0; row < xc_parallel_row_count(p.get()); ++row) {
 			ParallelRow v;
 			v.reference = copy(xc_parallel_row_reference(p.get(), row));
+			v.ordinal = xc_parallel_row_ordinal(p.get(), row);
 			for (size_t c = 0; c < value.columns.size(); ++c) {
 				std::string html;
 				for (size_t h = 0; h < xc_parallel_cell_heading_count(p.get(), row, c); ++h)
 					html += copy(xc_parallel_cell_heading(p.get(), row, c, h));
 				html += copy(xc_parallel_cell_html(p.get(), row, c));
-				v.cells.push_back({copy(xc_parallel_cell_reference(p.get(), row, c)), std::move(html)});
+				ParallelCell cell{copy(xc_parallel_cell_reference(p.get(), row, c)), std::move(html)};
+				for (size_t part = 0; part < xc_parallel_cell_additional_count(p.get(), row, c); ++part) {
+					std::string body;
+					for (size_t h = 0; h < xc_parallel_cell_additional_heading_count(p.get(), row, c, part); ++h)
+						body += copy(xc_parallel_cell_additional_heading(p.get(), row, c, part, h));
+					body += copy(xc_parallel_cell_additional_html(p.get(), row, c, part));
+					cell.additional.emplace_back(copy(xc_parallel_cell_additional_reference(p.get(), row, c, part)), std::move(body));
+				}
+				v.cells.push_back(std::move(cell));
 			}
 			value.rows.push_back(std::move(v));
 		}
@@ -495,6 +546,44 @@ bool ReaderModel::take_extended(xc_request *r) {
 	    search_preview_source_ = pending_search_source_;
     } else
 	    error_ = "Missing search preview.";
+    return true;
+  }
+  case Operation::devotional: {
+    std::unique_ptr<xc_devotional_entry, decltype(&xc_devotional_entry_release)> entry(xc_request_take_devotional_entry(r), xc_devotional_entry_release);
+    if (!entry) {
+      error_ = "No devotional entry was returned.";
+      return true;
+    }
+    devotional_ = {copy(xc_devotional_entry_module(entry.get())), copy(xc_devotional_entry_date(entry.get())),
+      copy(xc_devotional_entry_html(entry.get())), copy(xc_devotional_entry_matched_key(entry.get()))};
+    ++devotional_revision_;
+    return true;
+  }
+  case Operation::word_study: {
+    std::unique_ptr<xc_word_study, decltype(&xc_word_study_release)> result(xc_request_take_word_study(r), xc_word_study_release);
+    if (!result) {
+      error_ = "Unable to study this selection. Select one word from a verse.";
+      return true;
+    }
+    WordStudy word{copy(xc_word_study_module(result.get())), copy(xc_word_study_reference(result.get())), copy(xc_word_study_surface(result.get()))};
+    for (size_t i = 0; i < xc_word_study_lemma_count(result.get()); ++i)
+      word.lemmas.push_back(copy(xc_word_study_lemma(result.get(), i)));
+    word.revision = selected_word_.revision + 1;
+    selected_word_ = std::move(word);
+    return true;
+  }
+  case Operation::passage_export: {
+    SearchExport value;
+    value.revision = passage_export_.revision + 1;
+    std::unique_ptr<xc_passage_html_export, decltype(&xc_passage_html_export_release)> html(xc_request_take_passage_html_export(r), xc_passage_html_export_release);
+    std::unique_ptr<xc_passage_text_export, decltype(&xc_passage_text_export_release)> plain(xc_request_take_passage_text_export(r), xc_passage_text_export_release);
+    if (html)
+      value.html = copy(xc_passage_html_export_html(html.get()));
+    else if (plain)
+      value.text = copy(xc_passage_text_export_text(plain.get()));
+    else
+      error_ = "No complete passage export was produced.";
+    passage_export_ = std::move(value);
     return true;
   }
   case Operation::search_export: {

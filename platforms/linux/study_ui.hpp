@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 #include "reader_model.hpp"
+#include <map>
 #include "recovery_model.hpp"
 #include "rich_editor.hpp"
 #include <gtk/gtk.h>
@@ -15,6 +16,12 @@ public:
   ~StudyUI();
   GtkWidget *book_pane();
   GtkWidget *parallel_pane();
+  void study_parallel_selection();
+  GtkWidget *devotional_pane();
+  GtkWidget *reading_style_menu();
+  std::string reading_style_css(const std::string &module, const std::string &selector = "body") const;
+  unsigned style_revision() const { return style_revision_; }
+  std::function<void()> show_search, show_parallel;
   GtkWidget *notes_pane();
   GtkWidget *editor_pane();
   bool confirm_close();
@@ -51,7 +58,31 @@ private:
   void select_bookmark();
   GtkWidget *parallel_box_ = nullptr, *parallel_modules_ = nullptr, *parallel_reference_ = nullptr, *parallel_sets_ = nullptr, *parallel_name_ = nullptr, *parallel_confirm_ = nullptr, *parallel_default_ = nullptr;
   WebKitWebView *parallel_view_ = nullptr;
-  unsigned parallel_revision_ = 0;
+  struct ReadingStyle { unsigned font = 0, size = 18; std::string foreground, background; };
+  std::map<std::string, ReadingStyle> reading_styles_;
+  GtkWidget *style_module_ = nullptr, *style_font_ = nullptr, *style_size_ = nullptr;
+  GtkWidget *style_foreground_ = nullptr, *style_background_ = nullptr, *style_status_ = nullptr;
+  std::vector<std::string> style_modules_;
+  unsigned style_revision_ = 0;
+  static bool valid_reading_color(const std::string &color);
+  void load_reading_style();
+  GtkWidget *parallel_layout_ = nullptr, *parallel_visibility_ = nullptr;
+  GtkWidget *parallel_previous_verse_ = nullptr, *parallel_next_verse_ = nullptr;
+  std::vector<std::string> parallel_order_;
+  std::map<std::vector<std::string>, std::vector<bool>> parallel_hidden_;
+  bool parallel_needs_render_ = false;
+  void step_parallel_verse(int direction);
+  unsigned parallel_revision_ = 0, requested_comparison_ = 0;
+  GtkWidget *compare_result_ = nullptr;
+  unsigned word_revision_ = 0;
+  GtkWidget *devotional_module_ = nullptr, *devotional_date_ = nullptr, *devotional_status_ = nullptr;
+  WebKitWebView *devotional_view_ = nullptr;
+  std::vector<std::string> devotional_modules_;
+  unsigned devotional_revision_ = 0;
+  void read_devotional(bool today);
+  GtkWidget *word_label_ = nullptr, *word_choices_ = nullptr, *word_box_ = nullptr;
+  void search_selected_word();
+  void update_selected_word();
   std::string parallel_profile_identity_;
   void update_parallel();
   GtkWidget *book_box_ = nullptr, *search_box_ = nullptr;

@@ -8,7 +8,7 @@
 #include <vector>
 
 namespace xiphos::linux_preview {
-struct Module { std::string id, description, type; bool dictionary = false; unsigned declared_flags = 0; bool regular_commentary = false, headings = false; unsigned lexicon_roles = 0; std::string language; bool book = false, search = false; };
+struct Module { std::string id, description, type; bool dictionary = false; unsigned declared_flags = 0; bool regular_commentary = false, headings = false; unsigned lexicon_roles = 0; std::string language; bool book = false, search = false, devotional = false; };
 struct Preview { std::string module, reference, html, expression; size_t count = 0; bool limited = false; unsigned skipped = 0; };
 using Lexicons = std::array<std::optional<std::string>, 5>;
 struct Presentation { bool chapter = false, headings = true, double_space = false; int images = -1, font_faces = -1, note_numbers = -1; };
@@ -21,7 +21,7 @@ inline bool same_dictionary_presentation(const Dictionary &left, const Dictionar
     left.anchor == right.anchor && left.anchor_revision == right.anchor_revision;
 }
 struct ReferenceChoice { std::string label, target; };
-struct Chapter { std::string html, anchor, title; LexicalPresentation lexical; };
+struct Chapter { std::string html, anchor, title; LexicalPresentation lexical; std::vector<std::string> verse_references; };
 struct Passage { std::string bible, commentary, reference, bible_html, commentary_html; LexicalPresentation bible_lexical, commentary_lexical; std::string anchor_module; std::optional<std::string> anchor; uint64_t anchor_revision = 0; };
 struct BookNode { uint64_t offset = 0; std::string path, title; bool present = false, children = false; };
 struct BookDocument {
@@ -49,6 +49,7 @@ struct SearchResults {
   xc_search_generation_info generation{}; xc_search_scope_info scope{};
   bool cancelled = false, limited = false; unsigned revision = 0;
 };
+struct WordStudy { std::string module, reference, surface; std::vector<std::string> lemmas; unsigned revision = 0; };
 struct SearchExport { std::string text, html; int disposition = -1; unsigned revision = 0; };
 struct SavedSearchList { std::optional<std::string> label, value; size_t effective = 0; };
 struct RestoredWindow {
@@ -103,6 +104,7 @@ struct DecoratedReading {
 };
 struct ParallelCell {
 	std::string reference, html;
+	std::vector<std::pair<std::string, std::string>> additional;
 };
 struct ParallelColumn {
 	std::string requested, module;
@@ -111,13 +113,14 @@ struct ParallelColumn {
 };
 struct ParallelRow {
 	std::string reference;
+	unsigned ordinal = 0;
 	std::vector<ParallelCell> cells;
 };
 struct ParallelReading {
 	std::string reference, title;
 	std::vector<ParallelColumn> columns;
 	std::vector<ParallelRow> rows;
-	unsigned revision = 0, selection_revision = 0;
+	unsigned revision = 0, selection_revision = 0, selected_verse = 0;
 	bool annotations_incomplete = false;
 	size_t invalid_colors = 0;
 };
@@ -168,6 +171,7 @@ public:
   bool change_editor(const std::string &text);
   bool editor_undo(bool redo = false);
   bool save_editor(bool erase = false);
+  bool organize_book_entry(int action, const std::string &destination);
   bool save_editor_as(const std::string &path);
   bool discard_editor();
   bool editor_dirty() const;
@@ -178,6 +182,7 @@ public:
   bool decorate_parallel();
   bool visit_parallel(const std::vector<std::string> &modules, const std::string &reference);
   bool navigate_parallel(int direction);
+  bool compare_search_hit(size_t index);
   bool new_parallel_profile(const std::string &path);
   bool load_parallel_profile(const std::string &path);
   bool edit_parallel_set(int action, const std::string &key, const std::string &replacement,
@@ -198,6 +203,13 @@ public:
   const BookDocument &book() const { return book_; }
   const BookContents &book_contents() const { return book_contents_; }
   const Image &image() const { return image_; }
+  bool read_devotional(const std::string &module, const std::string &date, int month, int day);
+  const Preview &devotional() const { return devotional_; }
+  unsigned devotional_revision() const { return devotional_revision_; }
+  bool word_study(const std::string &module, const std::string &reference, const std::string &surface);
+  const WordStudy &selected_word() const { return selected_word_; }
+  bool export_passage(bool html, const std::string &expression);
+  const SearchExport &passage_export() const { return passage_export_; }
   bool search(const SearchInput &input);
   bool cancel_search();
   bool follow_search_link(const std::string &uri);
@@ -222,6 +234,9 @@ public:
 
   bool visit(const std::string &bible, const std::string &commentary, const std::string &reference);
   bool navigate(int direction);
+  bool choose_translation(const std::string &module, const std::string &commentary);
+  bool visit_typed_reference(const std::string &module, const std::string &commentary, const std::string &reference);
+  bool set_reference_locale(const std::string &path);
   bool choose_commentary(const std::string &module);
   bool set_lexicons(const Lexicons &names);
   bool lexicon_profile(const std::string &path, bool save);
@@ -284,7 +299,7 @@ public:
   const std::string &error() const { return error_; }
   unsigned revision() const { return revision_; }
 private:
-  enum class Operation { editor_bind,
+  enum class Operation { resolved_reference, devotional, word_study, passage_export, editor_bind,
 			 editor_release,
 			 parallel_decoration,
 			 andbible,
@@ -381,7 +396,10 @@ private:
   std::string pending_search_uri_;
   SearchResults search_results_;
   Preview search_preview_;
-  SearchExport search_export_;
+  SearchExport search_export_, passage_export_;
+  WordStudy selected_word_;
+  Preview devotional_;
+  unsigned devotional_revision_ = 0;
   std::vector<SavedSearchList> saved_lists_[2];
   std::vector<std::string> parsed_search_modules_;
   unsigned parsed_search_revision_ = 0;
@@ -406,6 +424,7 @@ private:
   unsigned engine_flags_ = 0;
   bool engine_configured_ = false;
   Presentation presentations_[2];
+  std::string reference_locale_, pending_reading_module_, pending_reading_commentary_;
   std::string notice_, pending_module_, dictionary_source_module_, dictionary_source_reference_;
   Dictionary dictionary_;
   std::vector<std::string> dictionary_keys_;

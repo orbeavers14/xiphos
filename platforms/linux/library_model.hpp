@@ -38,6 +38,8 @@ class LibraryModel
 	bool catalog(const std::string &root = "");
 	bool prepare_install(const std::string &root, const std::string &module);
 	bool install(bool replace);
+	bool create_module(const std::string &module, unsigned kind);
+	bool archive_module(const std::string &module, const std::string &path);
 	bool review_maintenance(const std::string &module);
 	bool maintain(int action, const std::string &key = "");
 	bool repositories(const std::string &path, bool create = false);
@@ -75,7 +77,7 @@ class LibraryModel
 	unsigned changed() const { return changed_; }
 
       private:
-	enum class Operation { migration,
+	enum class Operation { create_module, archive_module, migration,
 			       migration_write,
 			       assets,
 			       assets_copy,

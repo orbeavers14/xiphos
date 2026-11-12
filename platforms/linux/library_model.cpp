@@ -65,6 +65,24 @@ bool LibraryModel::install(bool replace)
 	auto s = xc_worker_install_local_module_task(worker_, source_root_.c_str(), install_.module.c_str(), install_.source.c_str(), install_.destination.c_str(), replace, &r);
 	return accept(s, r, Operation::install);
 }
+bool LibraryModel::create_module(const std::string &module, unsigned kind)
+{
+	if (busy() || module.empty() || !safe(module) || kind > 2)
+		return false;
+	xc_request *request = nullptr;
+	const auto create = kind == 0 ? xc_worker_create_general_book :
+		kind == 1 ? xc_worker_create_personal_commentary : xc_worker_create_study_organizer;
+	auto status = create(worker_, module.c_str(), &request);
+	return accept(status, request, Operation::create_module);
+}
+bool LibraryModel::archive_module(const std::string &module, const std::string &path)
+{
+	if (busy() || module.empty() || path.empty() || !safe(module) || !safe(path))
+		return false;
+	xc_request *request = nullptr;
+	auto status = xc_worker_archive_module(worker_, module.c_str(), path.c_str(), &request);
+	return accept(status, request, Operation::archive_module);
+}
 bool LibraryModel::review_maintenance(const std::string &module)
 {
 	if (busy() || !safe(module))
@@ -354,6 +372,13 @@ void LibraryModel::tick()
 		return;
 	}
 	switch (operation_) {
+	case Operation::create_module:
+		++changed_;
+		notice_ = "Module created. Refresh Installed modules to see it here.";
+		break;
+	case Operation::archive_module:
+		notice_ = "Module archive saved.";
+		break;
 	case Operation::migration: {
 		auto *p = xc_request_take_legacy_migration(done.get());
 		if (!p) {

@@ -94,4 +94,4 @@ menu for one visible token, with literal and mark-insensitive surface choices. T
 and returns source-bound lemma choices, preserving literal SDK search terms.
 Modules without reliable metadata still offer surface search. The lookup can
 match unmarked selections to marked SDK words when the matching records agree.
-Keyboard shortcuts and native Linux integration remain open.
+GTK4 now exposes selected-word study in Bible and comparison panes with shared literal, mark-insensitive and lemma choices. The GTK shortcut is Ctrl+Alt+F. Physical keyboard and real-corpus native validation remain open.

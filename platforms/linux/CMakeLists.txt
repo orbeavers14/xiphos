@@ -18,6 +18,15 @@ target_link_libraries(linux_reader_model PUBLIC Xiphos::Core)
 target_include_directories(linux_reader_model PUBLIC .)
 if(XIPHOS_BUILD_GTK4_PREVIEW)
   add_executable(xiphos-linux-preview reader_app.cpp library_ui.cpp study_ui.cpp parallel_ui.cpp repository_ui.cpp rich_editor.cpp host_state.cpp)
+  set(XIPHOS_LINUX_MAP_DIR "${CMAKE_CURRENT_BINARY_DIR}/Maps")
+  file(MAKE_DIRECTORY "${XIPHOS_LINUX_MAP_DIR}")
+  foreach(asset index.html map.css map.js maplibre-gl.css maplibre-gl.js pmtiles.js MapLibre-LICENSE.txt PMTiles-LICENSE.txt README.md)
+    configure_file("../macos/Maps/${asset}" "${XIPHOS_LINUX_MAP_DIR}/${asset}" COPYONLY)
+  endforeach()
+  file(COPY "../../localization/sword/" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/reference-locales")
+  target_compile_definitions(xiphos-linux-preview PRIVATE
+    XIPHOS_LINUX_MAP_DIR="${XIPHOS_LINUX_MAP_DIR}"
+    XIPHOS_LINUX_LOCALE_DIR="${CMAKE_CURRENT_BINARY_DIR}/reference-locales")
   target_link_libraries(xiphos-linux-preview PRIVATE linux_reader_model PkgConfig::GTK4 PkgConfig::WEBKIT PNG::PNG)
   if(BUILD_TESTING)
 
