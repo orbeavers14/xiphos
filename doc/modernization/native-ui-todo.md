@@ -108,8 +108,10 @@ menus, dialogs and platform update integration in each frontend.
   optional reproduction steps, optional screenshot/attachments and a way to
   view the report before submitting.
 - [ ] Offer explicit user-approved inclusion of app version, OS, module/plugin
-  inventory and sanitized diagnostics. Never upload Bible text, search history,
-  notes or user files by default. Provide redact/review and export-only paths.
+  inventory and sanitized diagnostics. Never automatically attach Bible text,
+  searches, notes, journals, Studypad, personal commentaries, user-written content,
+  user file paths or content-derived identifiers. Explicit report text/attachments
+  require preview and user approval; provide redact/review and export-only paths.
 - [ ] Define a maintained submission destination (e.g. GitHub Issues or project
   intake), failure/offline behavior, duplicate/privacy guidance and a report ID
   or link after successful submission.
@@ -130,11 +132,22 @@ menus, dialogs and platform update integration in each frontend.
   memory/CPU use when available, module counts, search and render performance,
   error/crash counters and diagnostic export, with sensible retention limits.
 - [ ] Keep aggregate **developer usage/quality telemetry** strictly optional,
-  off by default, transparent and privacy-preserving; collect no scripture
-  selections, search queries, notes, personal documents or unique module content.
+  off by default, transparent and privacy-preserving. **Zero user-authored
+  content** in telemetry, including notes, journals, prayer lists, Studypad,
+  personal commentaries, annotations, bookmark labels, searches, drafts, paths,
+  content hashes and any content-bearing crash/error payloads. No scripture
+  selections or unique module content either. Use strict non-content event allowlists.
 - [ ] Provide a Settings privacy control with inspect/clear/export/disable behavior;
   define retention, aggregation, transport and server access if remote metrics
   are approved. Do not depend on telemetry for core offline behavior.
+- [ ] Investigate GitHub-first developer insights (Releases asset download totals,
+  Issues for reviewed reports, repository traffic and Actions usage). These do
+  **not** measure actual installed users or app usage. Any richer remote metrics
+  require separate approved opt-in ingestion; never embed maintainer GitHub
+  tokens in distributed apps. Keep workflows and operating costs bounded.
+- [ ] Local metrics dashboard UI is undecided; measure what is useful before
+  choosing presentation, history and retention. Review the current search
+  interface and search/export behavior before proposing changes.
 - [ ] Decide whether remote administrative dashboards are warranted separately
   from the local diagnostics UI; validate cost and maintenance burden first.
 
