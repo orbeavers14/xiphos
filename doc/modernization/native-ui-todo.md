@@ -116,6 +116,53 @@ menus, dialogs and platform update integration in each frontend.
   intake), failure/offline behavior, duplicate/privacy guidance and a report ID
   or link after successful submission.
 
+### Native cross-platform bug and crash reporting design (2026-11-11)
+
+**Target user experience:** native **Help > Report a Problem** for bugs;
+after abnormal termination, next launch offers **Review Crash Report**,
+**Not Now**, and **Don't Ask Again**. Reporting must never block normal startup.
+No background or silent submission.
+
+- [ ] Implement native hosts: AppKit/SwiftUI on macOS, WinUI 3 on Windows,
+  and GTK4 on Linux, sharing a minimal reporting schema, validation and
+  submission state machine. Avoid embedding a web form as the primary UX.
+- [ ] On macOS, use OS-generated crash diagnostics where accessible, and retain
+  Xcode symbols/archives for private symbolication. On Windows, evaluate WER
+  event/crash metadata and opt-in local dumps (WER LocalDumps configuration
+  is not enabled by default and may require admin permission). On Linux,
+  gracefully support systemd-coredump, Apport or absent crash facilities.
+  **Do not promise automatic raw crash-dump collection** on any OS.
+- [ ] Mark unclean exits using minimal private local state, but distinguish
+  confirmed OS crash evidence from forced termination, power loss or kill.
+  Support crash-on-launch loops with a nonblocking safe reporting flow.
+- [ ] Allow typed issue description/reproduction steps, optional explicitly
+  user-selected screenshot, and a required review screen for the exact
+  outbound payload. Screenshots, typed reports and raw dumps are **not**
+  anonymous telemetry; allow the user to remove each attachment.
+- [ ] Default report metadata allowlist: app version/build, OS family/version,
+  architecture, coarse failure category and sanitized error code. Raw traces,
+  call arguments, pointers, file paths, process memory, environment variables,
+  module/document names, Scripture, and any user-authored text must never
+  be attached automatically. Use source-side allowlisting and tests, not
+  redaction alone. No automatic attachment of content-bearing crash reports.
+- [ ] GitHub integration options: (A) no-server MVP opens prefilled GitHub
+  issue page in the default browser (requires the reporter to log into GitHub);
+  (B) preferred seamless flow sends explicit reviewed reports to a minimal
+  restricted HTTPS intake (e.g. Cloudflare Worker), which uses a server-held
+  GitHub App installation token to create Issues. Never put a GitHub write
+  token or App private key in a distributed client.
+- [ ] For seamless intake, add rate limiting, spam defense, payload bounds,
+  attachment policy, duplicate crash fingerprinting based only on technical
+  metadata, issue templates/labels, status/error acknowledgements and offline
+  draft/retry without background sending. Decide public-issue visibility for
+  user-written descriptions and screenshots before launch.
+- [ ] Consider separate restricted diagnostics storage for developer-only
+  reports; GitHub Issues are not appropriate for sensitive crash dumps.
+  Retain symbols privately and validate matching build IDs.
+- [ ] Acceptance: simulated failures and restart on each OS, offline
+  recovery, no UI blocking, no implicit network traffic, GitHub outage,
+  malformed payloads, accidental leakage tests, and build/version accuracy.
+
 ### Updating the application
 
 - [ ] Add **Check for Updates** and version/release-notes access in Help/About.
