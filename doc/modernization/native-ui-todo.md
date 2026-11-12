@@ -95,3 +95,46 @@ and returns source-bound lemma choices, preserving literal SDK search terms.
 Modules without reliable metadata still offer surface search. The lookup can
 match unmarked selections to marked SDK words when the matching records agree.
 GTK4 now exposes selected-word study in Bible and comparison panes with shared literal, mark-insensitive and lemma choices. The GTK shortcut is Ctrl+Alt+F. Physical keyboard and real-corpus native validation remain open.
+
+## Application support, updates and metrics
+
+Owner request, 2026-11-11. These are product requirements, not claims of
+completed implementation. Share non-UI policy where portable and keep native
+menus, dialogs and platform update integration in each frontend.
+
+### In-app bug reporting
+
+- [ ] Add **Help > Report a Bug** to native apps; include a concise issue form,
+  optional reproduction steps, optional screenshot/attachments and a way to
+  view the report before submitting.
+- [ ] Offer explicit user-approved inclusion of app version, OS, module/plugin
+  inventory and sanitized diagnostics. Never upload Bible text, search history,
+  notes or user files by default. Provide redact/review and export-only paths.
+- [ ] Define a maintained submission destination (e.g. GitHub Issues or project
+  intake), failure/offline behavior, duplicate/privacy guidance and a report ID
+  or link after successful submission.
+
+### Updating the application
+
+- [ ] Add **Check for Updates** and version/release-notes access in Help/About.
+- [ ] Design verified, signed release-channel update checks, manual download and
+  installation with clear user consent; optionally configurable background checks.
+- [ ] Use suitable platform-specific update mechanisms, preserving profiles,
+  installed modules and recovery/rollback expectations across upgrades.
+- [ ] Verify macOS signing/notarization and update flow, Windows installer/update
+  flow, and Linux package-managed update behavior; support offline/manual updates.
+
+### Metrics and diagnostics
+
+- [ ] Clarify and deliver user-visible **local app health metrics**: startup time,
+  memory/CPU use when available, module counts, search and render performance,
+  error/crash counters and diagnostic export, with sensible retention limits.
+- [ ] Keep aggregate **developer usage/quality telemetry** strictly optional,
+  off by default, transparent and privacy-preserving; collect no scripture
+  selections, search queries, notes, personal documents or unique module content.
+- [ ] Provide a Settings privacy control with inspect/clear/export/disable behavior;
+  define retention, aggregation, transport and server access if remote metrics
+  are approved. Do not depend on telemetry for core offline behavior.
+- [ ] Decide whether remote administrative dashboards are warranted separately
+  from the local diagnostics UI; validate cost and maintenance burden first.
+
