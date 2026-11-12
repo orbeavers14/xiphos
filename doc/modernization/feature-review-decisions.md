@@ -62,3 +62,15 @@ The owner marked **Keep** for future synchronization of notes/bookmarks, persona
 2. Refine the four open decisions with the owner before final UI/telemetry requirements.
 3. Move the six Defer items out of first-release acceptance criteria, without removing already-working code or compatibility/data-safety checks.
 4. Never equate Keep with shipped, or Defer with removed.
+
+## Follow-up decisions — 2026-11-11
+
+1. **Search:** inspect how the existing native UI and shared search engine work before deciding any changes to cancellation, export, or search layout. No replacement/rewrite is authorized. Review single vs multi module, simple vs advanced, bounds, progress/Stop, preview and exports.
+2. **Local performance dashboard:** **undecided**. Keep instrumentation/diagnostic possibilities, but do not commit to a particular dashboard UI, scope or retention policy until reviewed.
+3. **Developer metrics:** **prefer GitHub integration if feasible**. Investigate GitHub Releases download counts, Issues for bug intake, and repository/Actions insights. These measure repository/release activity, **not actual application users, crashes or usage**. Evaluate a minimal privacy-preserving opt-in reporting service only if needed for real app telemetry; GitHub is not itself an anonymous app telemetry ingestion backend. No token in desktop client, no automatic individual-user issue creation, and avoid frequent GitHub Actions billing.
+4. **Telemetry privacy — fixed non-negotiable requirement:** **ZERO user-authored content** may be captured, queued, transmitted, logged as telemetry, or attached automatically, including notes, journals, prayer lists, Studypad documents, personal commentaries, bookmarks' user-written labels, annotations, selected text, search terms, drafts, filenames/paths or user-generated content of any kind. Also exclude Scripture/passages and unique document/module contents. No content hashing, content previews, inferred identifiers, or crash/log payloads that can leak such content. Optional user-initiated bug reports may contain only exactly what the user explicitly types/selects after preview/consent; diagnostic attachments must still apply strict redaction and explicit review. Anonymous opt-in aggregate **non-content** event counters or performance measurements only. Default OFF; collecting disabled means no remote telemetry. Keep on-device diagnostics local and private.
+
+Implementation notes:
+- Permit narrow non-content event types such as app version, OS family, action category counts, coarse latencies, and crash category only after schema review, with retention and opt-in.
+- Enforce allowlist at event creation rather than redact a broad payload after collecting it; test accidental leakage via error paths and crash reports.
+- Separate application telemetry from GitHub's own repository traffic statistics and release download counts.
