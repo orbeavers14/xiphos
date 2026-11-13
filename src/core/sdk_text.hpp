@@ -35,7 +35,8 @@ inline std::string surface_key(const std::string &text, bool unmarked, bool sens
     } else {
       base = g_unichar_get_script(scalar);
     }
-    result.append(at,g_utf8_next_char(at));
+    const char *next = g_utf8_next_char(at);
+    result.append(at, next);
   }
   return result;
 }
