@@ -46,9 +46,10 @@ void gui_set_plain_text_item(GString *out,const gchar *description,const gchar *
 struct Settings{const char *searchText;}settings{"Original query"};
 void gui_bookmark_dialog(const char *name,const char *module,const char *keys){events.push_back(std::string("bookmark:")+(module?module:"NULL")+":"+keys+":"+name);}
 #include "legacy_advanced_search_bookmarks_actual.inc"
+using ResultGroups = std::vector<std::vector<std::pair<std::string, std::string>>>;
 struct Lists {
  GList *base=nullptr;
- explicit Lists(const std::vector<std::vector<std::pair<std::string,std::string>>> &groups){
+ explicit Lists(const ResultGroups &groups){
   for(const auto &group:groups){GList *items=nullptr;for(const auto &entry:group){auto *value=g_new(RESULTS,1);value->module=g_strdup(entry.first.c_str());value->key=g_strdup(entry.second.c_str());items=g_list_append(items,value);}base=g_list_append(base,items);}
   list_for_bookmarking=base;
  }
@@ -70,7 +71,7 @@ int main(){try{
  setup({"Text"},false,false,true);check(events==std::vector<std::string>{"clear_scope","clear_list"}&&!owner.count,"Unbounded setup clears old stored keys");
  setup({},true,false,true);check(events==std::vector<std::string>{"clear_scope","clear_list","xml:ranges:range:Original range","range:NULL:John1:1-John1:3","use_range"},"Empty custom module list attempts NULL provider in legacy setup; new batch rejects empty input instead");
  for(bool html:{false,true})for(bool scripture:{false,true}){
-  Lists lists({{{"Text","John1:1"},{"Text","John1:2"}},{{"Commentary","John1:3"},{"Commentary","John1:4"}}});
+  Lists lists(ResultGroups{{{"Text","John1:1"},{"Text","John1:2"}},{{"Commentary","John1:3"},{"Commentary","John1:4"}}});
   GString *out=g_string_new("");events.clear();check(main_export_current_adv_search(out,html,scripture),"Eligible export reports true");
   check(events==std::vector<std::string>{std::string(html?"html:":"plain:")+"Text:John1:2"+(scripture?":body":":keys"),std::string(html?"html:":"plain:")+"Commentary:John1:4"+(scripture?":body":":keys")},"Current export uses first eligible result only as header, formatting remaining rows in each group");
   const std::string output=out->str;
@@ -79,20 +80,20 @@ int main(){try{
   g_string_free(out,TRUE);
  }
  {
-  Lists lists({{{"Text","skip"},{"Text","John1:1"}}});GString *out=g_string_new("prefix");events.clear();
+  Lists lists(ResultGroups{{{"Text","skip"},{"Text","John1:1"}}});GString *out=g_string_new("prefix");events.clear();
   check(main_export_current_adv_search(out,FALSE,FALSE)&&events.empty()&&std::string(out->str)=="prefixOriginal <query>\nAttribute\n\nText\n","Only first eligible result produces a header with no item, even after skipped keys");g_string_free(out,TRUE);
  }
  {
-  Lists lists({{},{{"Text","skip"}}});GString *out=g_string_new("");events.clear();
+  Lists lists(ResultGroups{{},{{"Text","skip"}}});GString *out=g_string_new("");events.clear();
   check(!main_export_current_adv_search(out,TRUE,TRUE)&&events.empty()&&std::string(out->str).find("</ul></ul>")!=std::string::npos,"Empty/ineligible groups still append closing lists and report false");g_string_free(out,TRUE);
  }
  const std::vector<std::string> labels{"Regular expression","Exact phrase","Multi-word","Optimized (\"Lucene\")","Attribute"};
  for(unsigned mode=0;mode<5;++mode){
   regexp.active=mode==0;phrase.active=mode<=1;words.active=mode<=2;indexed.active=mode<=3;
-  Lists lists({{{"Text","John1:1"}}});GString *out=g_string_new("");main_export_current_adv_search(out,FALSE,FALSE);check(std::string(out->str)=="Original <query>\n"+labels[mode]+"\n\nText\n","Export labels follow legacy radio precedence");g_string_free(out,TRUE);
+  Lists lists(ResultGroups{{{"Text","John1:1"}}});GString *out=g_string_new("");main_export_current_adv_search(out,FALSE,FALSE);check(std::string(out->str)=="Original <query>\n"+labels[mode]+"\n\nText\n","Export labels follow legacy radio precedence");g_string_free(out,TRUE);
  }
  {
-  Lists lists({{{"Text","John1:1"},{"Text","skip"},{"Text","John1:1"},{"Text","John1:2"}},{{"Commentary","John1:3"}}});events.clear();main_save_current_adv_search_as_bookmarks();
+  Lists lists(ResultGroups{{{"Text","John1:1"},{"Text","skip"},{"Text","John1:1"},{"Text","John1:2"}},{{"Commentary","John1:3"}}});events.clear();main_save_current_adv_search_as_bookmarks();
   check(events==std::vector<std::string>{"bookmark:Text:John1:1; John1:1; John1:2:Search result Text: Original query","bookmark:Commentary:John1:3:Search result Commentary: Original query"}&&!list_for_bookmarking,"Bookmark preparation includes first key/duplicates with semicolon spacing but advances legacy global list to NULL");
  }
  std::cout<<"Actual advanced range setup, export orchestration quirks and bookmark preparation characterized without SDK/file writes passed\n";return 0;
