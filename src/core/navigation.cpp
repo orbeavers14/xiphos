@@ -45,7 +45,10 @@ std::string folded_reference(const char *text) {
     space = false;
     const auto digit = g_unichar_digit_value(scalar);
     if (digit >= 0) result += static_cast<char>('0' + digit);
-    else result.append(at,g_utf8_next_char(at));
+    else {
+      const char *next = g_utf8_next_char(at);
+      result.append(at, next);
+    }
   }
   return result;
 }
