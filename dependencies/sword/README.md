@@ -22,3 +22,8 @@ The move API is selected by the SDK headers.
 See the [index hang report](../../doc/modernization/rawgenbook-index-hang.md)
 and [move contract](../../doc/modernization/editing-workflows.md#move-contract)
 for scope and verification.
+
+The memory fixes use overlap-safe copying when an attribute key is assigned
+from within its own buffer and match array allocation with array deletion
+for general-book node data. The Ubuntu sanitizer jobs build this SDK in
+an isolated prefix. The release jobs still test the distribution SDK.
