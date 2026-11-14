@@ -2395,3 +2395,19 @@ extension CoreWorker {
         return CoreDecoratedReading(html:String(cString:xc_decorated_reading_html(result)!),css:String(cString:xc_decorated_reading_css(result)!),incomplete:xc_decorated_reading_incomplete(result) != 0,invalidColors:xc_decorated_reading_invalid_colors(result))
     }
 }
+
+struct ReadingWordSelection: Hashable, Sendable {
+    let text: String, module: String, reference: String
+    let lemmas: [String]
+
+    init?(text: String, module: String, reference: String, lemmas: [String] = []) {
+        guard !text.isEmpty, text.utf8.count <= 1024,
+              !text.contains(where: \.isWhitespace),
+              text.unicodeScalars.contains(where: { CharacterSet.letters.contains($0) }),
+              !module.isEmpty, !reference.isEmpty else { return nil }
+        self.text = text
+        self.module = module
+        self.reference = reference
+        self.lemmas = lemmas
+    }
+}

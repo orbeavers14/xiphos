@@ -1,0 +1,5 @@
+--- a/include/swbuf.h
++++ b/include/swbuf.h
+@@ -221,1 +221,1 @@
+-			memcpy(buf, newVal, len);
++			memmove(buf, newVal, len);

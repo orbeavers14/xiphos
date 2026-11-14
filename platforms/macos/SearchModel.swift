@@ -2,22 +2,6 @@
 import Foundation
 import Combine
 
-struct ReadingWordSelection: Hashable, Sendable {
-    let text: String, module: String, reference: String
-    let lemmas: [String]
-
-    init?(text: String, module: String, reference: String, lemmas: [String] = []) {
-        guard !text.isEmpty, text.utf8.count <= 1024,
-              !text.contains(where: \.isWhitespace),
-              text.unicodeScalars.contains(where: { CharacterSet.letters.contains($0) }),
-              !module.isEmpty, !reference.isEmpty else { return nil }
-        self.text = text
-        self.module = module
-        self.reference = reference
-        self.lemmas = lemmas
-    }
-}
-
 enum SearchScopeChoice: String, CaseIterable, Identifiable {
     case all = "All text", bounds = "Bounds", last = "Last results", keyed = "Entry interval"
     var id: Self { self }

@@ -1,8 +1,8 @@
 # Carried SWORD 1.9.0 patches
 
-Apply both reviewed patches to a clean SWORD 1.9.0 release tree before building
-the SDK. Use an isolated prefix. The script checks both patches before applying
-either one.
+Apply the carried patches to a clean SWORD 1.9.0 release tree before building
+the SDK. Use an isolated prefix. The script checks all patches before applying
+any of them.
 
 ```sh
 svn export --ignore-externals https://crosswire.org/svn/sword/tags/sword-1-9-0 sword-1.9.0

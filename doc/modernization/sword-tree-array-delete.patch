@@ -1,0 +1,5 @@
+--- a/src/keys/treekeyidx.cpp
++++ b/src/keys/treekeyidx.cpp
+@@ -109,1 +109,1 @@
+-		delete currentNode.userData;
++		delete [] currentNode.userData;
