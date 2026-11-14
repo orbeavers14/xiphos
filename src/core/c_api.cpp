@@ -572,8 +572,13 @@ CopiedSearch copy_search_inputs(const char *module,const char *expression,const 
   return {std::move(query),{copy.max_results,copy.max_reference_bytes}};
 }
 bool valid_search_scope(const xc_search_query *query){
-  return query&&(query->scope==XC_SEARCH_SCOPE_ALL||query->scope==XC_SEARCH_SCOPE_BOUNDS||query->scope==XC_SEARCH_SCOPE_LAST)&&
-     (query->scope==XC_SEARCH_SCOPE_BOUNDS?(query->range_module&&query->range_expression):(!query->range_module&&!query->range_expression));
+  if (!query) return false;
+  // Read the C caller's raw value before loading it as a C++ enum.
+  std::underlying_type_t<xc_search_scope_kind> scope;
+  std::memcpy(&scope, &query->scope, sizeof(scope));
+  return (scope == XC_SEARCH_SCOPE_ALL || scope == XC_SEARCH_SCOPE_BOUNDS || scope == XC_SEARCH_SCOPE_LAST) &&
+    (scope == XC_SEARCH_SCOPE_BOUNDS ? query->range_module && query->range_expression
+                                    : !query->range_module && !query->range_expression);
 }
 xc_status queue_search_module(xc_worker *w,uint64_t tab,const char *module,const char *expression,
                                   const xc_search_options *options,xc_request **out,const char *range_module,const char *range_expression,bool within_last=false,const xc_search_text_options *text=nullptr) {

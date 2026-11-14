@@ -72,7 +72,7 @@ jobs:
         run: |
           if command -v apt-get >/dev/null; then
             apt-get update
-            apt-get install -y git ca-certificates libgtk-4-dev libwebkitgtk-6.0-dev
+            apt-get install -y git ca-certificates file dpkg-dev libgtk-4-dev libwebkitgtk-6.0-dev
           else
             dnf install -y git ca-certificates gtk4-devel 'pkgconfig(webkitgtk-6.0)' rpm-build
           fi
