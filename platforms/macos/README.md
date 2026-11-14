@@ -51,3 +51,11 @@ canonical reference input is unchanged. BibleSync requires explicit connection.
 [Mac handoff](../../doc/modernization/handoff-macos.md) ·
 [Native UI to-do](../../doc/modernization/native-ui-todo.md) ·
 [Historical build/adapter notes](../../doc/modernization/history/macos-readme.md)
+
+## HTTPS transport
+
+The shared core selects URLSession on Apple builds. The Mac adapter uses
+system certificate trust by default and supports an explicit PEM trust
+bundle for controlled repositories and tests. SWORD module discovery and
+installation remain in the shared core. Build the carried SWORD SDK with
+curl disabled as described in the [SWORD setup](../../dependencies/sword/README.md).

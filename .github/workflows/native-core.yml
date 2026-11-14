@@ -19,7 +19,7 @@ jobs:
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_CXX_STANDARD=17 \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=27.0 -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_PREFIX_PATH="$(brew --prefix icu4c)" \
-            -DSWORD_NO_CLUCENE=Yes \
+            -DSWORD_NO_CLUCENE=Yes -DSWORD_NO_CURL=Yes \
             -DLIBSWORD_LIBRARY_TYPE=Shared -DCMAKE_INSTALL_NAME_DIR="$RUNNER_TEMP/sword-sdk/lib" \
             -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/sword-sdk"
           cmake --build "$RUNNER_TEMP/sword-build" --parallel 3

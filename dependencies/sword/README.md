@@ -27,3 +27,8 @@ The memory fixes use overlap-safe copying when an attribute key is assigned
 from within its own buffer and match array allocation with array deletion
 for general-book node data. The Ubuntu sanitizer jobs build this SDK in
 an isolated prefix. The release jobs still test the distribution SDK.
+
+For the native Mac app, configure SWORD with `-DSWORD_NO_CURL=Yes`.
+Xiphos downloads remote modules through URLSession. The carried patch
+omits the legacy FTP fallback on Mac when SWORD is built without curl
+and returns an error if a legacy installer transport is unavailable.

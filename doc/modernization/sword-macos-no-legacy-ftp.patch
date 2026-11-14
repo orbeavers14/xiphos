@@ -1,0 +1,34 @@
+--- a/cmake/muxsources.cmake
++++ b/cmake/muxsources.cmake
+@@ -66 +66,3 @@
+-	SET(sword_SOURCES ${sword_SOURCES} ${sword_curl_nofound_SOURCES})
++	IF(NOT APPLE)
++		SET(sword_SOURCES ${sword_SOURCES} ${sword_curl_nofound_SOURCES})
++	ENDIF()
+--- a/src/mgr/installmgr.cpp
++++ b/src/mgr/installmgr.cpp
+@@ -34,2 +34,3 @@
+ #include <swlog.h>
++#include <remotetrans.h>
+ #include <dirent.h>
+@@ -42,3 +43,3 @@
+ #include <curlhttpt.h>
+-#else
++#elif !defined(__APPLE__)
+ #include <ftplibftpt.h>
+@@ -83,4 +84,6 @@
+ 	return new CURLFTPTransport(host, statusReporter);
++#elif !defined(__APPLE__)
++	return new FTPLibFTPTransport(host, statusReporter);
+ #else
+-	return new FTPLibFTPTransport(host, statusReporter);
++	return nullptr;
+ #endif
+@@ -314,2 +317,3 @@
+ 		trans = createFTPTransport(is->source, statusReporter);
++		if (!trans) return -1;
+ 		trans->setPassive(passive);
+@@ -320,2 +324,3 @@
+ 	}
++	if (!trans) return -1;
+ 	transport = trans; // set classwide current transport for other thread terminate() call
