@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install dependencies
-        run: brew install glib pkg-config libarchive libpng jpeg-turbo subversion icu4c clucene
+        run: brew install glib pkg-config libarchive libpng jpeg-turbo subversion icu4c
       - name: Build patched SWORD
         run: |
           svn export --quiet --ignore-externals https://crosswire.org/svn/sword/tags/sword-1-9-0 "$RUNNER_TEMP/sword-src"
@@ -18,8 +18,8 @@ jobs:
           cmake -S "$RUNNER_TEMP/sword-src" -B "$RUNNER_TEMP/sword-build" \
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_CXX_STANDARD=17 \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=27.0 -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_PREFIX_PATH="$(brew --prefix icu4c);$(brew --prefix clucene)" \
-            -DCLUCENE_LIBRARY_DIR="$(brew --prefix clucene)/include" \
+            -DCMAKE_PREFIX_PATH="$(brew --prefix icu4c)" \
+            -DSWORD_NO_CLUCENE=Yes \
             -DLIBSWORD_LIBRARY_TYPE=Shared -DCMAKE_INSTALL_NAME_DIR="$RUNNER_TEMP/sword-sdk/lib" \
             -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/sword-sdk"
           cmake --build "$RUNNER_TEMP/sword-build" --parallel 3
