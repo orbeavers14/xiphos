@@ -25,7 +25,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y subversion libclucene-dev libicu-dev libbz2-dev liblzma-dev libcurl4-openssl-dev zlib1g-dev
-          svn export --ignore-externals https://crosswire.org/svn/sword/tags/sword-1-9-0 "$RUNNER_TEMP/sword-src"
+          svn export --quiet --ignore-externals https://crosswire.org/svn/sword/tags/sword-1-9-0 "$RUNNER_TEMP/sword-src"
           dependencies/sword/apply-reviewed-patches.sh "$RUNNER_TEMP/sword-src"
           cmake -S "$RUNNER_TEMP/sword-src" -B "$RUNNER_TEMP/sword-build" \
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_CXX_STANDARD=17 \

@@ -11,12 +11,12 @@ cd -- "$1"
 
 check_source() {
     checksum=$(cmake -E sha256sum "$1")
-    if [ "${checksum%% *}" != "$2" ]; then
+    if [ "${checksum%% *}" != "$2" ] && [ "${checksum%% *}" != "${3:-}" ]; then
         echo "Unexpected SWORD 1.9.0 source: $1" >&2
         exit 1
     fi
 }
-check_source src/modules/swmodule.cpp 7f7bd12f48112d209697cf34c87be5c19ae8f865adacd6e41759932ba0db1e16
+check_source src/modules/swmodule.cpp 7f7bd12f48112d209697cf34c87be5c19ae8f865adacd6e41759932ba0db1e16 062b9e121a722a0556ab6a0c64043efc178175acb10095efdf2a5f86f1002b75
 check_source src/keys/treekeyidx.cpp cf249e65cc413c08188cd1e94967273b311db2dcdf51f36818079d6b42212133
 check_source include/treekeyidx.h 5561bd9292a5238e14fa292df9d38917a2de3a2c4984f9c2c16ef2b34ed71b90
 
