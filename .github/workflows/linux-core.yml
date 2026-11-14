@@ -19,6 +19,24 @@ jobs:
         mode: [release, sanitized]
     steps:
       - uses: actions/checkout@v7
+      - name: Build patched SWORD for sanitizer tests
+        if: matrix.mode == 'sanitized'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y subversion libclucene-dev libicu-dev libbz2-dev liblzma-dev libcurl4-openssl-dev zlib1g-dev
+          svn export --ignore-externals https://crosswire.org/svn/sword/tags/sword-1-9-0 "$RUNNER_TEMP/sword-src"
+          dependencies/sword/apply-reviewed-patches.sh "$RUNNER_TEMP/sword-src"
+          cmake -S "$RUNNER_TEMP/sword-src" -B "$RUNNER_TEMP/sword-build" \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_CXX_STANDARD=17 \
+            -DCMAKE_BUILD_TYPE=Release -DLIBSWORD_LIBRARY_TYPE=Shared \
+            -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/sword-sdk"
+          cmake --build "$RUNNER_TEMP/sword-build" --parallel 2
+          cmake --install "$RUNNER_TEMP/sword-build"
+          pc=$(find "$RUNNER_TEMP/sword-sdk" -name sword.pc -print -quit)
+          test -n "$pc"
+          echo "PKG_CONFIG_PATH=$(dirname "$pc")" >> "$GITHUB_ENV"
+          echo "LD_LIBRARY_PATH=$(dirname "$(dirname "$pc")")" >> "$GITHUB_ENV"
       - name: Build and test core
         shell: bash
         run: |
