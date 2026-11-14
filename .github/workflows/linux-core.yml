@@ -88,4 +88,13 @@ jobs:
           test -x "$RUNNER_TEMP/xiphos-preview/bin/xiphos-linux-preview"
           if command -v rpmbuild >/dev/null; then
             cpack --config build/gtk4/CPackConfig.cmake -G RPM -B build/gtk4/packages
+          else
+            cpack --config build/gtk4/CPackConfig.cmake -G DEB -B build/gtk4/packages
           fi
+      - uses: actions/upload-artifact@v7
+        with:
+          name: xiphos-5.0-beta.1-${{ matrix.runner }}
+          path: |
+            build/gtk4/packages/*.rpm
+            build/gtk4/packages/*.deb
+          if-no-files-found: error

@@ -5,7 +5,10 @@ import AppKit
     @MainActor static func check(_ condition: Bool,_ message: String) { if !condition { fatalError(message) } }
     @MainActor static func main() async throws {
         _ = NSApplication.shared;NSApplication.shared.setActivationPolicy(.prohibited)
-        let root = URL(fileURLWithPath:CommandLine.arguments[1]);check(root.lastPathComponent == "legacy-migration-fixture","Named fixture only")
+        let argument = CommandLine.arguments[1]
+        guard let resolved = realpath(argument, nil) else { fatalError("Cannot resolve migration fixture path") }
+        defer { free(resolved) }
+        let root = URL(fileURLWithPath: String(cString: resolved), isDirectory: true);check(root.lastPathComponent == "legacy-migration-fixture","Named fixture only")
         let worker = try CoreWorker(root:root.appendingPathComponent("library").path)
         if CommandLine.arguments.count == 3 {
             let restored = NativeSessionController(worker:worker,path:root.appendingPathComponent("native-ui.xml").path,showsWindows:false)
@@ -18,7 +21,7 @@ import AppKit
         try FileManager.default.createDirectory(at:assetRoot.appendingPathComponent("empty"),withIntermediateDirectories:true)
         let assetBytes = Data([0,1,2,255]);try assetBytes.write(to:assetRoot.appendingPathComponent("original.pad"))
         model.assetFolder = assetRoot.path;model.reviewAssets();await model.waitUntilIdle()
-        check(model.assetPreview?.entries.count == 2 && !model.needsAssetReview,"Native asset review copies complete source manifest")
+        check(model.assetPreview?.entries.count == 2 && !model.needsAssetReview,"Native asset review copies complete source manifest: \(model.message), source \(model.assetPreview?.source ?? "missing"), selected \(assetRoot.path)")
         let assetCopy = root.appendingPathComponent("native-assets-copy")
         model.copyAssets(to:assetCopy.path);await model.waitUntilIdle()
         let copiedBytes = try Data(contentsOf:assetCopy.appendingPathComponent("original.pad"))

@@ -74,7 +74,11 @@ import XiphosCore
             }
         }
     }
-    var needsAssetReview: Bool { assetPreview?.source != URL(fileURLWithPath:assetFolder).standardizedFileURL.resolvingSymlinksInPath().path }
+    var needsAssetReview: Bool {
+        guard let source = assetPreview?.source, let resolved = realpath(assetFolder, nil) else { return true }
+        defer { free(resolved) }
+        return source != String(cString: resolved)
+    }
     func reviewAssets() {
         run(cancellable:true) { self.assetPreview = nil;self.copiedAssetFolder = nil;self.assetPreview = try await self.worker.inspectLegacyAssets(self.assetFolder);self.message = "Folder reviewed. Copy into a new folder to preserve all files, hidden files and empty directories." }
     }
