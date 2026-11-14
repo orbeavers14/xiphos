@@ -74,7 +74,7 @@ jobs:
             apt-get update
             apt-get install -y git ca-certificates libgtk-4-dev libwebkitgtk-6.0-dev
           else
-            dnf install -y git ca-certificates gtk4-devel webkitgtk6-devel rpm-build
+            dnf install -y git ca-certificates gtk4-devel 'pkgconfig(webkitgtk-6.0)' rpm-build
           fi
       - uses: actions/checkout@v7
       - name: Build and test core
