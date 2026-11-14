@@ -129,7 +129,8 @@ struct Sink {
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error {
     auto &sink = *self.sink;
     if (error && !sink.error)
-        sink.error = std::make_exception_ptr(std::runtime_error("HTTPS download failed"));
+        sink.error = std::make_exception_ptr(std::runtime_error("HTTPS download failed (" + std::string(error.domain.UTF8String) +
+            " " + std::to_string(error.code) + ")"));
     dispatch_semaphore_signal(self.finished);
 }
 @end

@@ -20,7 +20,7 @@ root = Path(folder)
 assert root.name == "remote-install-fixture"
 subprocess.run([binary, str(root), "--fixture"], check=True)
 (root / "bad").mkdir()
-(root / "tls.cnf").write_text("[req]\ndistinguished_name=dn\nx509_extensions=ext\nprompt=no\n[dn]\nCN=localhost\n[ext]\nsubjectAltName=DNS:localhost,IP:127.0.0.1\nbasicConstraints=critical,CA:TRUE\nkeyUsage=critical,digitalSignature,keyEncipherment,keyCertSign\n")
+(root / "tls.cnf").write_text("[req]\ndistinguished_name=dn\nx509_extensions=ext\nprompt=no\n[dn]\nCN=localhost\n[ext]\nsubjectAltName=DNS:localhost,IP:127.0.0.1\nbasicConstraints=critical,CA:TRUE\nkeyUsage=critical,digitalSignature,keyEncipherment,keyCertSign\nextendedKeyUsage=serverAuth\n")
 subprocess.run([openssl, "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "1", "-config", str(root / "tls.cnf"), "-keyout", str(root / "key.pem"), "-out", str(root / "certificate.pem")], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 with tarfile.open(root / "catalog.tar.gz", "w:gz") as archive:
     archive.add(root / "source/mods.d/Added.conf", arcname="mods.d/Added.conf")
