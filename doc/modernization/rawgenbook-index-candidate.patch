@@ -1,8 +1,5 @@
 --- a/src/modules/swmodule.cpp
 +++ b/src/modules/swmodule.cpp
-@@ -7 +7 @@
-- * $Id$
-+ * $Id: swmodule.cpp 3755 2020-07-19 18:43:07Z scribe $
 @@ -1295,0 +1296,10 @@
 +		if (tkcheck && tkcheck->getOffset()) {
 +			TreeKeyIdx reachable(*tkcheck);
