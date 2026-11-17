@@ -16,6 +16,10 @@ endif()
 
 if(MSVC)
   add_compile_options(/utf-8)
+  if(BUILD_TESTING)
+    # Match the UTF-8 path contract of the C API and SWORD's narrow file APIs.
+    add_link_options("/MANIFESTINPUT:${CMAKE_CURRENT_SOURCE_DIR}/tests/windows-utf8.manifest")
+  endif()
 endif()
 
 # Reuse the legacy dependency when built inside Xiphos. Standalone builds

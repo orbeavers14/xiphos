@@ -52,3 +52,9 @@ rich-module save/reload/rollback after closing SWORD's cached descriptors before
 Windows directory renames. These changes need a full rerun. Prioritize the
 remaining fixture failures in reader/navigation, profile file paths, image
 resources, and library / remote installation before claiming native parity.
+
+On 2026-11-17, four profile XML tests passed with UTF-8 compilation. The
+preference-save test also passed after the Windows test executables opted into
+a UTF-8 process code page for SWORD and the C runtime's narrow file APIs. The
+future WinUI host needs the same process setting. The next full ARM64 run
+should check the remaining reader, image, and installation failures.

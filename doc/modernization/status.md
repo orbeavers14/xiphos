@@ -32,8 +32,9 @@ These Mac runs do not establish native Linux or Windows acceptance.
 
 The Windows 11 ARM64 core and tests now build with MSVC. The first Windows
 CTest run had 128 passes, one skip, 21 failures, and 33 checks blocked by
-failed fixtures. Focused retests subsequently passed Unicode search and
-rich-module editing. See the [Windows handoff](handoff-windows.md) for the
+failed fixtures. Focused retests subsequently passed Unicode search,
+rich-module editing, and five profile and preference tests. See the
+[Windows handoff](handoff-windows.md) for the
 SDK configuration, remaining checks, and WinUI 3 status.
 
 ## Remaining gates
