@@ -5,6 +5,7 @@
 #include <rawgenbook.h>
 #include <markupfiltmgr.h>
 #include <glib.h>
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -24,6 +25,13 @@ using sword::SWModule;
 using std::string;
 using gchar=char;
 #include "legacy_book_css_actual.inc"
+bool legacy_references_stylesheet(SWModule &module, const fs::path &path) {
+ std::string markup=get_css_references(module);
+#ifdef _WIN32
+ std::replace(markup.begin(),markup.end(),'\\','/');
+#endif
+ return markup.find(path.generic_u8string())!=std::string::npos;
+}
 xc_status wait(xc_request *request){const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(10);xc_status status;while((status=xc_request_poll(request))==XC_PENDING){check(std::chrono::steady_clock::now()<deadline,"Stylesheet worker deadline");std::this_thread::sleep_for(std::chrono::milliseconds(1));}return status;}
 int main(int argc,char **argv){try{
  check(argc==2,"Original stylesheet fixture required");const fs::path root(argv[1]);fs::create_directories(root/"mods.d");fs::create_directories(root/"data");fs::create_directories(root/"profile");
@@ -45,12 +53,11 @@ int main(int argc,char **argv){try{
   StudySession session(reader);const auto selected=session.select_book_document({"Preferred",std::uint64_t(4)});
   check(selected.presentation && selected.presentation->stylesheet && selected.presentation->stylesheet->css==preferred && !selected.presentation->stylesheet_issue && selected.html.find("color:")==std::string::npos,"Selection atomically owns CSS separately from raw document HTML");
   const auto empty=session.select_book_document({"Empty",std::uint64_t(4)});check(empty.presentation->stylesheet_issue && !empty.presentation->stylesheet && !empty.html.empty() && session.history().entries().empty(),"Unusable stylesheet reports issue while retaining text/history neutrality");
-  const auto actual=std::string(get_css_references(*legacy.getModule("Preferred")));
-  check(actual.find((root/"data"/fs::u8path("style café.css")).u8string())!=std::string::npos,"Actual legacy CSS branch selects matching preferred file");
+  check(legacy_references_stylesheet(*legacy.getModule("Preferred"),root/"data"/fs::u8path("style café.css")),"Actual legacy CSS branch selects matching preferred file");
   write(root/"data/style.css","/* Original fallback */");check(reader.read_book_stylesheet("Default")->css=="/* Original fallback */","Missing preference selects style.css, not preferred sibling");
   write(root/"data/style.css","");check(reader.read_book_stylesheet("Default")->css.empty(),"Empty file is a present owned stylesheet");
   check(reader.read_book_stylesheet("Percent")->css=="/* Original literal path */","Config filenames do not decode percent or plus as URLs");
-  auto absolute=reader.read_book_stylesheet("Absolute");check(absolute&&absolute->css=="/* Original nested */"&&std::string(get_css_references(*legacy.getModule("Absolute"))).find((root/"data/nested/style.css").string())!=std::string::npos,"GLib absolute-looking later components use legacy joined directory semantics");
+  auto absolute=reader.read_book_stylesheet("Absolute");check(absolute&&absolute->css=="/* Original nested */"&&legacy_references_stylesheet(*legacy.getModule("Absolute"),root/"data/nested/style.css"),"GLib absolute-looking later components use legacy joined directory semantics");
   rejects<std::invalid_argument>([&]{reader.read_book_stylesheet("Empty");});rejects<std::invalid_argument>([&]{reader.read_book_stylesheet("Escape");});
   if(inside_link)check(reader.read_book_stylesheet("InsideLink")->css==preferred,"Contained CSS symlink resolves inside data directory");if(outside_link)rejects<std::invalid_argument>([&]{reader.read_book_stylesheet("OutsideLink");});
   check(reader.read_book_stylesheet("Preferred",preferred.size())->css==preferred,"Exact CSS byte bound succeeds");rejects<std::invalid_argument>([&]{reader.read_book_stylesheet("Preferred",preferred.size()-1);});rejects<std::invalid_argument>([&]{reader.read_book_stylesheet("Preferred",0);});rejects<std::invalid_argument>([&]{reader.read_book_stylesheet("Preferred",maximum_book_stylesheet_bytes+1);});

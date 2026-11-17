@@ -56,5 +56,8 @@ resources, and library / remote installation before claiming native parity.
 On 2026-11-17, four profile XML tests passed with UTF-8 compilation. The
 preference-save test also passed after the Windows test executables opted into
 a UTF-8 process code page for SWORD and the C runtime's narrow file APIs. The
-future WinUI host needs the same process setting. The next full ARM64 run
-should check the remaining reader, image, and installation failures.
+future WinUI host needs the same process setting. Focused ARM64 retests also
+passed reader navigation, book-document publication with a Unicode path,
+stylesheet selection and book-image resources. The last two fixtures needed
+portable path comparisons and a standard drive-letter file URI. The full
+suite still needs a rerun, including verse images and module installation.

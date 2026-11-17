@@ -21,6 +21,7 @@ xc_status wait(xc_request *request){const auto deadline=std::chrono::steady_cloc
 int main(int argc,char **argv){try{
  check(argc==2,"Original image fixture required");const fs::path root(argv[1]);const std::string base="passagestudy.jsp?action=showImage&value=";
  const auto file=root/"data"/fs::u8path("café.svg"),binary=root/"data/binary.png",outside=root/"outside.svg",link=root/"data/escape.svg",inside_link=root/"data/inside.svg";
+ const auto uri_path = file.has_root_name() ? "/" + file.generic_u8string() : file.generic_u8string();
  const std::string svg="<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'><title>Original resource fixture</title><rect width='8' height='8' fill='#2468ac'/></svg>";
  const std::string binary_bytes("Original\0binary\xff",16);write(file,svg);write(binary,binary_bytes);write(root/"data/empty.png","");write(outside,"Original outside resource");
  fs::create_directories(root/"data/sub");fs::create_directories(root/"data/folder.svg");
@@ -37,12 +38,12 @@ int main(int argc,char **argv){try{
  {
   Reader reader(root.string());
   rejects<std::invalid_argument>([&]{reader.read_verse_inline_image("StyledBook","original.png");});
-  for(const auto &value:std::vector<std::string>{"café.svg","file:café.svg",file.u8string(),"file:"+file.u8string(),"file://"+file.u8string(),"sub/../café.svg"}){
+  for(const auto &value:std::vector<std::string>{"café.svg","file:café.svg",file.u8string(),"file:"+file.u8string(),"file://"+uri_path,"sub/../café.svg"}){
    auto resource=reader.read_book_image("StyledBook",base+encode(value));check(resource.data==svg && resource.target.context.module=="StyledBook" && resource.target.command.media_type=="image/svg+xml","Relative/contained absolute/file URI paths use SDK resource directory with exact owned bytes");held=std::move(resource);
   }
   for (const auto &source : std::vector<std::string>{"caf%C3%A9.png", "file:caf%C3%A9.png", "caf%C3%A9.png?size=small#section", "a+b.png", "literal%2520.png"})
     check(reader.read_book_inline_image("StyledBook",source).data==original_png,"Inline URL decoding preserves plus, decodes percent once, ignores URL query/fragment");
-  check(reader.read_book_inline_image("StyledBook","file://"+encode(file.u8string())).data==svg,"Encoded file URI remains contained");
+  check(reader.read_book_inline_image("StyledBook","file://"+encode(uri_path)).data==svg,"Encoded file URI remains contained");
   for(const auto &source:std::vector<std::string>{"http://host/image.png","data:image/png;base64,a","//host/image.png","file://host/image.png","../outside.svg","%2e%2e/outside.svg","bad%.png","bad%0a.png","bad%00.png","file:file:bad.png","","caf%C3%A9.PNG"})
     rejects<std::invalid_argument>([&]{reader.read_book_inline_image("StyledBook",source);});
   const auto raw_inline=reader.read_book_document("StyledBook",4);
