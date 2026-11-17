@@ -81,3 +81,19 @@ CLucene. Mixed keyed search returned zero hits in all three compatibility
 modules, and dictionary navigation failed the per-tab options assertion. Retest
 with the updated fixture limits, investigate those two assertions, and verify
 indexed behavior with an appropriate SWORD SDK before Windows core acceptance.
+
+An ARM64 Release SWORD 1.9.0 rebuild with [ICU4C 79.1][icu-release] passed
+`core_mixed_search`, `core_dictionary`, `core_keyed_search`, and `core_rich_module`
+without application changes. Use the ARM64 ICU distribution, add its
+`libARM64` import libraries (`icuin`, `icuio`, `icuuc`, `icudt`) to the static
+SWORD link inputs, and add `binARM64` to the test process's `PATH`. The tested
+ZIP `icu4c-79.1-WinARM64-MSVC2026.zip` has SHA-256
+`185d32268533a981f070c75a4435a9141ee58c12c342468cf431d746b9b68237`.
+
+On the prior SDK, wide-book pagination and book creation passed again under
+CTest. Both search fixtures timed out during a concurrent compiler build, and
+the book-document setup fixture timed out, preventing the publication check.
+Run the next validation pass without concurrent compilation. CLucene and a
+full rerun with the ICU-enabled SDK remain pending.
+
+[icu-release]: https://github.com/unicode-org/icu/releases/tag/release-79.1

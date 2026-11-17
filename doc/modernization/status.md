@@ -33,7 +33,8 @@ These Mac runs do not establish native Linux or Windows acceptance.
 The Windows 11 ARM64 core and tests build with MSVC. The latest full run had
 154 passes, one skip, seven failures, and 21 tests blocked by failed fixtures.
 Four timed-out fixtures and the book-creation check passed focused retests.
-Mixed keyed search, dictionary navigation, and indexed search validation remain
+An ICU-enabled SWORD build also passed mixed keyed search and dictionary
+navigation. A full rerun with that SDK and indexed-search validation remain
 open. See the [Windows handoff](handoff-windows.md) for the SDK configuration
 and WinUI 3 status.
 
