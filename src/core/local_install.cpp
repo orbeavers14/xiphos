@@ -9,6 +9,9 @@
 #include <archive_entry.h>
 #include "xiphos/core/editable_document.hpp"
 #include "xiphos/core/search_policy.hpp"
+#ifdef _WIN32
+#include <filemgr.h>
+#endif
 #include <swmodule.h>
 #include <glib.h>
 #include <algorithm>
@@ -242,9 +245,21 @@ LocalInstallResult LocalInstallStorage::stage(const LocalInstallRequest &request
 }
 void LocalInstallStorage::install(){
  if(impl_->staged.empty()||revision(impl_->source,scan(impl_->source))!=impl_->source_revision||revision(impl_->destination,scan(impl_->destination))!=impl_->destination_revision)throw std::invalid_argument("Library changed before installation commit");
+#ifdef _WIN32
+ // The live SWORD manager can hold file handles inside the library directory.
+ sword::FileMgr::getSystemFileMgr()->flush();
+#endif
  fs::rename(impl_->destination,impl_->backup);try{fs::rename(impl_->staged,impl_->destination);impl_->installed=true;}catch(...){fs::rename(impl_->backup,impl_->destination);throw;}
 }
-void LocalInstallStorage::rollback(){if(!impl_->installed)return;fs::rename(impl_->destination,impl_->staged);fs::rename(impl_->backup,impl_->destination);impl_->installed=false;}
+void LocalInstallStorage::rollback(){
+ if(!impl_->installed)return;
+#ifdef _WIN32
+ sword::FileMgr::getSystemFileMgr()->flush();
+#endif
+ fs::rename(impl_->destination,impl_->staged);
+ fs::rename(impl_->backup,impl_->destination);
+ impl_->installed=false;
+}
 void LocalInstallStorage::finish() noexcept{impl_->finished=true;}
 }
 }

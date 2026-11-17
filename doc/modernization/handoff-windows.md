@@ -63,7 +63,9 @@ portable path comparisons and a standard drive-letter file URI. The full
 suite still needs a rerun, including verse images and module installation.
 
 The next full ARM64 build linked all test executables, but the drive ran out of
-space during CTest. The partial run is not a replacement baseline. Restart the
-suite after reclaiming space. A local follow-up applies the SWORD file-handle
-release to installation and maintenance and adds curl error details for HTTPS
-triage. Both changes still need local verification before publication.
+space during CTest. After reclaiming space, focused ARM64 tests passed local
+installation, module maintenance, and encrypted-module maintenance with the
+SWORD file-handle release in the library swap. The loopback HTTPS installation
+fixture also passed when the process had network access. The curl transport now
+reports the error category or unexpected HTTP status for failures. A full rerun
+with these fixes is still needed for a replacement baseline.

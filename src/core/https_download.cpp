@@ -38,7 +38,10 @@ DownloadedArchive download_https(const std::string &url,const fs::path &file,con
  if(!o.ca_bundle.empty())set(CURLOPT_CAINFO,o.ca_bundle.c_str());
  const auto status=curl_easy_perform(curl.get());if(sink.error)std::rethrow_exception(sink.error);TransferAccess::check(control);
  long response=0;curl_easy_getinfo(curl.get(),CURLINFO_RESPONSE_CODE,&response);
- if(status!=CURLE_OK||response!=200)throw std::runtime_error("HTTPS download failed or did not return a complete 200 response");
+ if(status!=CURLE_OK)
+  throw std::runtime_error(std::string("HTTPS download failed: ")+curl_easy_strerror(status));
+ if(response!=200)
+  throw std::runtime_error("HTTPS download returned HTTP "+std::to_string(response)+" instead of 200");
  sink.output.close();return {g_checksum_get_string(sink.hash.get()),sink.bytes};
 }
 }
