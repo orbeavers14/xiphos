@@ -61,3 +61,9 @@ passed reader navigation, book-document publication with a Unicode path,
 stylesheet selection and book-image resources. The last two fixtures needed
 portable path comparisons and a standard drive-letter file URI. The full
 suite still needs a rerun, including verse images and module installation.
+
+The next full ARM64 build linked all test executables, but the drive ran out of
+space during CTest. The partial run is not a replacement baseline. Restart the
+suite after reclaiming space. A local follow-up applies the SWORD file-handle
+release to installation and maintenance and adds curl error details for HTTPS
+triage. Both changes still need local verification before publication.
