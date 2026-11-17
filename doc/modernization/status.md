@@ -30,21 +30,18 @@ text and passive HTML export from Hebrew, Greek and Syriac modules. The Mac
 preview has separate focused checks in the [Mac handoff](handoff-macos.md).
 These Mac runs do not establish native Linux or Windows acceptance.
 
-The Windows 11 ARM64 core and tests build with MSVC. The latest full run had
-154 passes, one skip, seven failures, and 21 tests blocked by failed fixtures.
-Four timed-out fixtures and the book-creation check passed focused retests.
-An ICU-enabled SWORD build also passed mixed keyed search and dictionary
-navigation. A CLucene-enabled build passed required verse and keyed index
-checks and indexed book editing. A full rerun with the indexed SDK remains
-open. See the [Windows handoff](handoff-windows.md) for the SDK configuration
-and WinUI 3 status.
+The Windows 11 25H2 ARM64 core passed all 183 checks across a full MSVC Release
+run and a targeted rerun of three timeouts. The SWORD SDK included ICU and
+CLucene, and actual index checks were required. See the
+[Windows handoff](handoff-windows.md) for the SDK configuration, test results
+and WinUI 3 next steps.
 
 ## Remaining gates
 
 - Native Settings/navigation redesign and Windows integration for selected-word study and stacked comparisons. GTK4 has both workflows with generated-fixture desktop checks. See the [Linux handoff](handoff-linux.md#gtk4-reading-and-editing-adapters-2026-11-11) for scope and remaining Linux features.
 - Complete translations, native localized multi-book input, broader RTL and accessibility acceptance.
 - Broader module/canon/profile coverage, remaining reading/export/editor workflows and data compatibility.
-- Windows frontend/native validation, current physical Linux verification and macOS 27.0 deployment acceptance.
+- Windows frontend, native x64 and runtime deployment validation, current physical Linux verification and macOS 27.0 deployment acceptance.
 - Dependency resources/notices, signing/notarization, installers and upgrade validation.
 
 There is no current, auditable completion percentage. Earlier weighted estimates

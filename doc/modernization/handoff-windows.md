@@ -1,18 +1,17 @@
 # Windows development handoff
 
-Updated 2026-11-09. Read [shared instructions](handoff.md) and
+Updated 2026-11-17. Read [shared instructions](handoff.md) and
 [Windows inventory/build tooling](../../platforms/windows/README.md).
 
-Target Windows 11 version 25H2 and check compatibility on 26H2. The repository has an MSVC build
-helper. Native Windows core validation and WinUI 3 implementation are pending.
+Target Windows 11 version 25H2 and check compatibility on 26H2. The native ARM64
+core suite has passed on 25H2 with the SDK below. WinUI 3 implementation is pending.
 The old GTK/MinGW win32 distribution is removed. WSL and Mac-hosted portable
 checks are not MSVC or native Windows desktop validation.
 
-Next: inventory actual Windows SDK/compiler dependencies, validate the shared
-C++17/C11 interface locally, then implement WinUI3 adapters around the same FIFO
-worker. Track coherent Settings/navigation, keyboard/Narrator, high contrast and
-scaling in the [native UI list](native-ui-todo.md). No current Windows build or
-frontend acceptance is claimed by this documentation update.
+Next: implement the WinUI 3/WebView2 reading slice around the shared C API and
+FIFO worker. Track Settings/navigation, keyboard/Narrator, high contrast and
+scaling in the [native UI list](native-ui-todo.md). Native x64, 26H2 compatibility,
+and Windows runtime deployment validation remain open.
 
 [Historical prerequisite and API evidence](history/handoff-windows.md) remains
 available. Its dated compiler/SDK observations must be rechecked on the target machine.
@@ -100,7 +99,14 @@ The ARM64 SDK with ICU and CLucene 2.3.3.4 passed five focused checks with
 indexed book creation/deletion/rollback, keyed index search, and verse index
 search. The bundled SWORD Windows patch fixes directory removal after CLucene
 deletes index entries. The [dependency recipe](../../dependencies/sword/README.md#windows-arm64-indexed-sdk)
-records the source, patches, linker inputs and runtime paths. The full Windows
-suite with the indexed SDK still needs verification.
+records the source, patches, linker inputs and runtime paths.
+
+The full serial ARM64 Release run with that SDK and required indexed checks
+passed 180 of 183 tests in 1,742 seconds. Search range, search text options and
+search batch were the only timeouts. All three passed a serial CTest rerun with
+180-second Windows limits in 42.75, 142.28 and 132.35 seconds respectively.
+The rerun reused the two passing search setup fixtures from the full run.
+All 183 checks have a passing result across the two runs. The updated limits
+applied only to the three rerun checks after the full run completed.
 
 [icu-release]: https://github.com/unicode-org/icu/releases/tag/release-79.1
