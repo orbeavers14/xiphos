@@ -1,4 +1,7 @@
 win32/extras/* linguist-vendored
 # Unified patch context preserves upstream whitespace verbatim.
+doc/modernization/*.patch text eol=lf
+dependencies/sword/*.patch text eol=lf -whitespace
 dependencies/biblesync/native-safety.patch -whitespace
 doc/modernization/sword-macos-no-legacy-ftp.patch -whitespace
+doc/modernization/sword-windows-msvc.patch -whitespace

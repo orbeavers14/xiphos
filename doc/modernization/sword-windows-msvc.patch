@@ -1,0 +1,18 @@
+--- a/src/mgr/filemgr.cpp
++++ b/src/mgr/filemgr.cpp
+@@ -652,2 +652,6 @@
++#ifdef WIN32
++	return ::_wrmdir((const wchar_t *)utf8ToWChar(targetDir).getRawData());
++#else
+ 	FileMgr::removeFile(targetDir);
+ 	return 0;
++#endif
+--- a/include/ftplib.h
++++ b/include/ftplib.h
+@@ -31,3 +31,6 @@
+ #define GLOBALDEF
+ #define GLOBALREF extern
++#elif defined(_WIN32) && defined(SWORD_STATIC_FTPLIB)
++#define GLOBALDEF
++#define GLOBALREF extern
+ #elif defined(_WIN32)

@@ -1,0 +1,64 @@
+diff --git a/src/shared/CMakeLists.txt b/src/shared/CMakeLists.txt
+index 68314a7..e151d7f 100644
+--- a/src/shared/CMakeLists.txt
++++ b/src/shared/CMakeLists.txt
+@@ -147,8 +147,13 @@ CHOOSE_FUNCTION(_ftime "_ftime(0);ftime")
+ CHOOSE_FUNCTION(_mkdir "_mkdir((const char*)0)" "#define _mkdir(x) mkdir(x,0777)")
+ CHOOSE_FUNCTION(SLEEPFUNCTION "usleep;Sleep(0);_sleep")
+ 
+-CHOOSE_FUNCTION(_snprintf "snprintf;_snprintf")
+-CHOOSE_FUNCTION(_snwprintf "snwprintf;_snwprintf")
++IF(MSVC)
++    CHOOSE_FUNCTION(_snprintf "_snprintf;snprintf")
++    CHOOSE_FUNCTION(_snwprintf "_snwprintf;snwprintf")
++ELSE()
++    CHOOSE_FUNCTION(_snprintf "snprintf;_snprintf")
++    CHOOSE_FUNCTION(_snwprintf "snwprintf;_snwprintf")
++ENDIF()
+ 
+ ########################################################################
+ # test for symbols
+diff --git a/src/core/CLucene/util/Equators.h b/src/core/CLucene/util/Equators.h
+index 8cc85db..e695562 100644
+--- a/src/core/CLucene/util/Equators.h
++++ b/src/core/CLucene/util/Equators.h
+@@ -7,6 +7,7 @@
+ #ifndef _lucene_util_Equators_
+ #define _lucene_util_Equators_
+ 
++#include <functional>
+ #include <map>
+ #include <list>
+ #include <set>
+diff --git a/src/shared/CLucene/config/threads.cpp b/src/shared/CLucene/config/threads.cpp
+index 0b5f30a..c4206cf 100644
+--- a/src/shared/CLucene/config/threads.cpp
++++ b/src/shared/CLucene/config/threads.cpp
+@@ -8,6 +8,9 @@
+ #include "CLucene/LuceneThreads.h"
+ #include "_threads.h"
+ #include <assert.h>
++#ifdef _M_ARM64
++#include <intrin.h>
++#endif
+ 
+ CL_NS_DEF(util)
+ 
+@@ -65,6 +68,8 @@ CL_NS_DEF(util)
+   int32_t mutex_thread::atomic_increment(_LUCENE_ATOMIC_INT *theInteger){
+ #ifdef _M_X64
+     return _InterlockedIncrement64(theInteger);
++#elif defined(_M_ARM64)
++    return _InterlockedIncrement(theInteger);
+ #else
+     return InterlockedIncrement(theInteger);
+ #endif
+@@ -72,6 +77,8 @@ CL_NS_DEF(util)
+   int32_t mutex_thread::atomic_decrement(_LUCENE_ATOMIC_INT *theInteger){
+ #ifdef _M_X64
+     return _InterlockedDecrement64(theInteger);
++#elif defined(_M_ARM64)
++    return _InterlockedDecrement(theInteger);
+ #else
+     return InterlockedDecrement(theInteger);
+ #endif

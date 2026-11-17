@@ -21,11 +21,14 @@ check_source src/keys/treekeyidx.cpp cf249e65cc413c08188cd1e94967273b311db2dcdf5
 check_source include/treekeyidx.h 5561bd9292a5238e14fa292df9d38917a2de3a2c4984f9c2c16ef2b34ed71b90
 
 check_source include/swbuf.h 8ad13abd686f8024565274f1364b2e9908a7cca3432155f585497316d6a3c43b
+check_source src/mgr/filemgr.cpp 905b5d6db674867762707a28dbd77b6e7f35c7e7494a8da6876cffc1f6e95c88 6434f7d686f65bcf8c73d1a33ccb6b57f6aaacfe29594f2df4fddcc439853d3e
+check_source include/ftplib.h d135dcf0714be4474476961437bf28f4f75a8c77b38be3657655a5589558ac23
 
 # Check all patches before modifying the source tree.
-for name in rawgenbook-index-candidate.patch sword-tree-array-delete.patch sword-buffer-overlap.patch sword-macos-no-legacy-ftp.patch rawgenbook-move-candidate.patch; do
+patch_names='rawgenbook-index-candidate.patch sword-tree-array-delete.patch sword-buffer-overlap.patch sword-macos-no-legacy-ftp.patch rawgenbook-move-candidate.patch sword-windows-msvc.patch'
+for name in $patch_names; do
     git apply --check --unidiff-zero "$patches/$name"
 done
-for name in rawgenbook-index-candidate.patch sword-tree-array-delete.patch sword-buffer-overlap.patch sword-macos-no-legacy-ftp.patch rawgenbook-move-candidate.patch; do
+for name in $patch_names; do
     git apply --unidiff-zero "$patches/$name"
 done

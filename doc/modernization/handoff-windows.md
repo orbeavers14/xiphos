@@ -93,7 +93,14 @@ ZIP `icu4c-79.1-WinARM64-MSVC2026.zip` has SHA-256
 On the prior SDK, wide-book pagination and book creation passed again under
 CTest. Both search fixtures timed out during a concurrent compiler build, and
 the book-document setup fixture timed out, preventing the publication check.
-Run the next validation pass without concurrent compilation. CLucene and a
-full rerun with the ICU-enabled SDK remain pending.
+Run the validation suite without concurrent compilation.
+
+The ARM64 SDK with ICU and CLucene 2.3.3.4 passed five focused checks with
+`XIPHOS_REQUIRE_INDEXED_SEARCH_TEST=ON`: attribute search, rich-module editing,
+indexed book creation/deletion/rollback, keyed index search, and verse index
+search. The bundled SWORD Windows patch fixes directory removal after CLucene
+deletes index entries. The [dependency recipe](../../dependencies/sword/README.md#windows-arm64-indexed-sdk)
+records the source, patches, linker inputs and runtime paths. The full Windows
+suite with the indexed SDK still needs verification.
 
 [icu-release]: https://github.com/unicode-org/icu/releases/tag/release-79.1

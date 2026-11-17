@@ -19,6 +19,31 @@ set `-DXIPHOS_SWORD_SAFE_BOOK_DELETE=ON` only for an SDK carrying the indexing
 fix. Enable and verify CLucene when validating index rebuild and search.
 The move API is selected by the SDK headers.
 
+The Windows directory-removal patch uses `_wrmdir` after clearing the entries.
+This lets SWORD delete a CLucene index directory during a staged edit.
+
+### Windows ARM64 indexed SDK
+
+The checked toolchain used CLucene 2.3.3.4 from the
+[MacPorts distfile mirror](https://distfiles.macports.org/clucene/clucene-core-2.3.3.4.tar.gz)
+with SHA-256 `ddfdc433dd8ad31b5c5819cc4404a8d2127472a3b720d3e744e8c51d79732eab`.
+Apply [the ARM64 MSVC patch](clucene-msvc-arm64.patch) from the CLucene source
+directory. Configure it with an ARM64 developer shell, Ninja, Release,
+`CMAKE_POLICY_VERSION_MINIMUM=3.5`, `CMAKE_REQUIRED_LIBRARIES=legacy_stdio_definitions.lib`,
+and `CMAKE_CXX_FLAGS=/D_HAS_AUTO_PTR_ETC=1`. Point `CMAKE_PREFIX_PATH` at the
+ARM64 zlib SDK. Build `clucene-core` and `clucene-shared`, then install both.
+
+Build SWORD as a Release static library with the `/MD` runtime and explicit
+`/O2` in the C and C++ flags, since SWORD's older CMake setup uses `/O3`.
+With `SWORD_NO_CURL=Yes`, use `/DSWORD_STATIC_FTPLIB` for both languages and
+link `ws2_32` for the bundled FTP code. Include `/D_HAS_AUTO_PTR_ETC=1` in the
+SWORD C++ flags. Set both
+`CLUCENE_INCLUDE_DIR` and `CLUCENE_LIBRARY_DIR` to the installed CLucene
+include directory, and set `CLUCENE_LIBRARY` to the two import libraries.
+Use the ARM64 ICU SDK described in the [Windows handoff](../../doc/modernization/handoff-windows.md).
+Pass CLucene's import libraries through `XIPHOS_SWORD_EXTRA_LIBRARIES` and
+add its DLL directory to the validation process's `PATH`.
+
 See the [index hang report](../../doc/modernization/rawgenbook-index-hang.md)
 and [move contract](../../doc/modernization/editing-workflows.md#move-contract)
 for scope and verification.
