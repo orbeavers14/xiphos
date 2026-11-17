@@ -30,6 +30,12 @@ text and passive HTML export from Hebrew, Greek and Syriac modules. The Mac
 preview has separate focused checks in the [Mac handoff](handoff-macos.md).
 These Mac runs do not establish native Linux or Windows acceptance.
 
+The Windows 11 ARM64 core and tests now build with MSVC. The first Windows
+CTest run had 128 passes, one skip, 21 failures, and 33 checks blocked by
+failed fixtures. Focused retests subsequently passed Unicode search and
+rich-module editing. See the [Windows handoff](handoff-windows.md) for the
+SDK configuration, remaining checks, and WinUI 3 status.
+
 ## Remaining gates
 
 - Native Settings/navigation redesign and Windows integration for selected-word study and stacked comparisons. GTK4 has both workflows with generated-fixture desktop checks. See the [Linux handoff](handoff-linux.md#gtk4-reading-and-editing-adapters-2026-11-11) for scope and remaining Linux features.

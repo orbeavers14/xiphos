@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+#include "legacy_test_compat.hpp"
 #include "xiphos/core/html_cleanup.hpp"
 #include "xiphos/core/note_markers.hpp"
 #include <limits>

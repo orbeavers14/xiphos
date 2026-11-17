@@ -8,6 +8,12 @@
 #else
 #include <unistd.h>
 #endif
+#ifndef F_OK
+constexpr int F_OK = 0;
+#endif
+#ifndef S_IRWXU
+constexpr int S_IRWXU = 0700;
+#endif
 #include <cstring>
 #include <filesystem>
 #include <fstream>

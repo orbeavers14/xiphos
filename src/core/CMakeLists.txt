@@ -14,6 +14,10 @@ else()
   cmake_minimum_required(VERSION 3.11)
 endif()
 
+if(MSVC)
+  add_compile_options(/utf-8)
+endif()
+
 # Reuse the legacy dependency when built inside Xiphos. Standalone builds
 # also accept a prebuilt SWORD SDK on platforms without pkg-config.
 find_package(PkgConfig QUIET)
@@ -290,6 +294,9 @@ if(NOT XIPHOS_SWORD_SEARCH_ICASE_FLAG MATCHES "^[12]$")
 endif()
 target_compile_definitions(xiphos_core PRIVATE XIPHOS_SWORD_SEARCH_ICASE_FLAG=${XIPHOS_SWORD_SEARCH_ICASE_FLAG})
 target_compile_features(xiphos_core PUBLIC cxx_std_17)
+if(MSVC)
+  set_property(SOURCE worker.cpp APPEND PROPERTY COMPILE_OPTIONS /bigobj)
+endif()
 target_include_directories(xiphos_core PUBLIC include PRIVATE ${LIBXML2_INCLUDE_DIR})
 target_link_libraries(xiphos_core PUBLIC Xiphos::CoreRender Xiphos::CoreHistory Xiphos::CoreOptions Threads::Threads ${LIBXML2_LIBRARIES})
 target_link_libraries(xiphos_core PRIVATE PNG::PNG ZLIB::ZLIB)

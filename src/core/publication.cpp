@@ -4,6 +4,7 @@
 #include <cerrno>
 #include <chrono>
 #include <stdexcept>
+#include <string>
 #include <system_error>
 #if defined(__APPLE__)
 #include <stdio.h>

@@ -134,7 +134,8 @@ int main(int argc, char **argv) {
           Callback inject([&](sword::SWBuf &, const sword::SWModule &owner) {
             auto &value = owner.getEntryAttributes()["Heading"]["Preverse"]["0"];
             value.resize(injection.size());
-            for (std::size_t i = 0; i < injection.size(); ++i) value[i] = injection[i];
+            for (std::size_t i = 0; i < injection.size(); ++i)
+              value[static_cast<unsigned long>(i)] = injection[i];
           });
           Attached attached(module, inject); bool failed = false;
           try { capture_preverse_heading_notes(module, 0); } catch (const std::invalid_argument &) { failed = true; }

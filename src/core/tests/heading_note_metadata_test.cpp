@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+#include "legacy_test_compat.hpp"
 #include "xiphos/core/headings.hpp"
 #include "xiphos/core/reader.hpp"
 #include <algorithm>

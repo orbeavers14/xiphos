@@ -4,6 +4,9 @@
 #include "publication.hpp"
 #include "sdk_text.hpp"
 #include "xiphos/core/search_policy.hpp"
+#ifdef _WIN32
+#include <filemgr.h>
+#endif
 #include <rawfiles.h>
 #include <rawgenbook.h>
 #include <versekey.h>
@@ -207,6 +210,10 @@ ModuleEditEntry ModuleEditStorage::stage(const std::string &expected,const std::
 void ModuleEditStorage::install() {
   if (digest(scan(impl_->dir)) != impl_->original_digest)
     throw std::invalid_argument("Module changed during save");
+#ifdef _WIN32
+  // Close cached SWORD descriptors before renaming the live module directory.
+  sword::FileMgr::getSystemFileMgr()->flush();
+#endif
   publish_new_path(impl_->dir, impl_->backup);
   try {
     publish_new_path(impl_->staged, impl_->dir);
@@ -219,6 +226,9 @@ void ModuleEditStorage::install() {
 }
 void ModuleEditStorage::rollback() {
   if (!impl_->installed) return;
+#ifdef _WIN32
+  sword::FileMgr::getSystemFileMgr()->flush();
+#endif
   publish_new_path(impl_->dir, impl_->staged);
   publish_new_path(impl_->backup, impl_->dir);
   impl_->installed = false;

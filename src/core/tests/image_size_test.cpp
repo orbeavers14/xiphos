@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+#include "legacy_test_compat.hpp"
 #include "xiphos/core/image_size.h"
 #include <glib.h>
 #include <cstring>
@@ -38,6 +39,9 @@ int main(){try{
  {xc_image_size out{9,9};check(xc_fit_image_size(std::numeric_limits<int>::max(),std::numeric_limits<int>::max(),std::numeric_limits<int>::max()-1,std::numeric_limits<int>::max(),&out)&&!out.width&&!out.height,"Float rounding outside int representation rejects instead of undefined conversion");}
  check(xc_image_viewport_size(100,100,1,nullptr)&&xc_fit_image_size(1,1,1,1,nullptr),"NULL output rejects without a crash");
  GdkWindow window{1000,800};images["/original.png"]={1600,1200};images["/small.png"]={8,8};
+#ifdef WIN32
+ images["///small.png"]=images.at("/small.png");
+#endif
  std::string input="Original <img src=\"file:/original.png\" alt=\"Original\"> then <img src=\"file:///small.png\"> tail";
  const auto original=input;const std::string output=AnalyzeForImageSize(&input[0],2,&window);
  check(input==original&&output.find("width=\"402\" height=\"301\"")!=std::string::npos&&output.find("width=\"8\" height=\"8\"")!=std::string::npos&&output.find("tail")!=std::string::npos&&!warnings,"Actual legacy adapter uses shared geometry, keeps small image, URI spelling, input bytes and tail");

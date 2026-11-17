@@ -41,18 +41,18 @@ void frozen(const BookTree &actual, sword::SWModule &module) {
   auto &key = dynamic_cast<sword::TreeKeyIdx &>(*owned);
   key.setOffset(static_cast<unsigned long>(actual.node.offset));
   same(actual.node,key,module.getName());
-  const auto relative = [&](const std::optional<BookTreeNode> &value, bool (sword::TreeKeyIdx::*step)()) {
+  const auto relative = [&](const std::optional<BookTreeNode> &value, auto step) {
     // Same copy/setOffset/step sequence used by BackEnd's tree helpers.
     sword::TreeKeyIdx legacy(key);
     legacy.setOffset(static_cast<unsigned long>(actual.node.offset));
-    const bool exists = (legacy.*step)();
+    const bool exists = step(legacy);
     check(bool(value) == exists, "Frozen legacy relationship availability");
     if (exists) same(*value,legacy,module.getName());
   };
-  relative(actual.parent,&sword::TreeKeyIdx::parent);
-  relative(actual.first_child,&sword::TreeKeyIdx::firstChild);
-  relative(actual.previous_sibling,&sword::TreeKeyIdx::previousSibling);
-  relative(actual.next_sibling,&sword::TreeKeyIdx::nextSibling);
+  relative(actual.parent, [](sword::TreeKeyIdx &target) { return target.parent(); });
+  relative(actual.first_child, [](sword::TreeKeyIdx &target) { return target.firstChild(); });
+  relative(actual.previous_sibling, [](sword::TreeKeyIdx &target) { return target.previousSibling(); });
+  relative(actual.next_sibling, [](sword::TreeKeyIdx &target) { return target.nextSibling(); });
 }
 int main(int argc,char **argv) {
   try {

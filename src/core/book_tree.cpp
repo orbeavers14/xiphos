@@ -76,19 +76,19 @@ BookTree snapshot(sword::TreeKeyIdx &key, const std::string &module) {
   BookTree result;
   result.module = module;
   result.node = node(key, module);
-  const auto relative = [&](bool (sword::TreeKeyIdx::*step)()) -> std::optional<BookTreeNode> {
+  const auto relative = [&](auto step) -> std::optional<BookTreeNode> {
     sword::TreeKeyIdx target(key);
     target.popError();
-    if (!(target.*step)()) return std::nullopt;
+    if (!step(target)) return std::nullopt;
     if (target.popError()) throw std::runtime_error("Cannot traverse general-book tree");
     if (target.getOffset() == result.node.offset)
       throw std::runtime_error("General-book relationship points to itself");
     return node(target, module);
   };
-  result.parent = relative(&sword::TreeKeyIdx::parent);
-  result.first_child = relative(&sword::TreeKeyIdx::firstChild);
-  result.previous_sibling = relative(&sword::TreeKeyIdx::previousSibling);
-  result.next_sibling = relative(&sword::TreeKeyIdx::nextSibling);
+  result.parent = relative([](sword::TreeKeyIdx &target) { return target.parent(); });
+  result.first_child = relative([](sword::TreeKeyIdx &target) { return target.firstChild(); });
+  result.previous_sibling = relative([](sword::TreeKeyIdx &target) { return target.previousSibling(); });
+  result.next_sibling = relative([](sword::TreeKeyIdx &target) { return target.nextSibling(); });
   return result;
 }
 }
