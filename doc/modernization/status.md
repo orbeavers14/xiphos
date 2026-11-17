@@ -30,12 +30,12 @@ text and passive HTML export from Hebrew, Greek and Syriac modules. The Mac
 preview has separate focused checks in the [Mac handoff](handoff-macos.md).
 These Mac runs do not establish native Linux or Windows acceptance.
 
-The Windows 11 ARM64 core and tests now build with MSVC. The first Windows
-CTest run had 128 passes, one skip, 21 failures, and 33 checks blocked by
-failed fixtures. Focused retests subsequently passed Unicode search,
-rich-module editing, five profile and preference tests, reader navigation,
-and book publication and resources. See the [Windows handoff](handoff-windows.md)
-for the SDK configuration, remaining checks, and WinUI 3 status.
+The Windows 11 ARM64 core and tests build with MSVC. The latest full run had
+154 passes, one skip, seven failures, and 21 tests blocked by failed fixtures.
+Four timed-out fixtures and the book-creation check passed focused retests.
+Mixed keyed search, dictionary navigation, and indexed search validation remain
+open. See the [Windows handoff](handoff-windows.md) for the SDK configuration
+and WinUI 3 status.
 
 ## Remaining gates
 

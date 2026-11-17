@@ -67,5 +67,17 @@ space during CTest. After reclaiming space, focused ARM64 tests passed local
 installation, module maintenance, and encrypted-module maintenance with the
 SWORD file-handle release in the library swap. The loopback HTTPS installation
 fixture also passed when the process had network access. The curl transport now
-reports the error category or unexpected HTTP status for failures. A full rerun
-with these fixes is still needed for a replacement baseline.
+reports the error category or unexpected HTTP status for failures.
+
+The full ARM64 Release rerun at `98850e5b` recorded 154 passes, one skip, seven
+failures (four timeouts and three assertions), and 21 tests blocked by failed
+fixtures. Verse-image handling, local installation, module maintenance and
+loopback HTTPS passed. The two search fixtures and wide-book pagination passed
+direct runs in roughly 117–118 seconds each. Unicode book publication passed a
+direct retest. Windows CTest now allows 180 seconds for those four fixtures.
+Book creation and deletion also passed after checking indexed results only
+when the SDK had a usable index. The explicit required-index run still requires
+CLucene. Mixed keyed search returned zero hits in all three compatibility
+modules, and dictionary navigation failed the per-tab options assertion. Retest
+with the updated fixture limits, investigate those two assertions, and verify
+indexed behavior with an appropriate SWORD SDK before Windows core acceptance.

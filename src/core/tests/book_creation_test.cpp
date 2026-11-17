@@ -101,8 +101,9 @@ int main(int argc,char **argv)try{
  }
  {EngineManager manager(root.string().c_str(),true,new sword::MarkupFilterMgr(sword::FMT_XHTML),false,false);auto *module=manager.getModule("CaptureBook");module->createSearchFramework();if(required)check(supports_indexed_search(*module),"Rollback fixture needs an actual existing index");
 #ifdef XIPHOS_SWORD_SAFE_BOOK_DELETE
-  check(supports_indexed_search(*module)&&module->search("uniquedeletedword",-4).getCount()==0&&
-        module->search("uniquedeletedbranch",-4).getCount()==0&&module->search("seed",-4).getCount()==1,"Rebuilt index omits deleted leaf and retains original");
+  if(indexed)
+   check(supports_indexed_search(*module)&&module->search("uniquedeletedword",-4).getCount()==0&&
+         module->search("uniquedeletedbranch",-4).getCount()==0&&module->search("seed",-4).getCount()==1,"Rebuilt index omits deleted leaf and retains original");
 #endif
   if(move_required){
    auto &hits=module->search("External",-4);
