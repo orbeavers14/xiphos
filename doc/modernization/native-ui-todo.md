@@ -43,8 +43,8 @@ See the [Mac handoff](handoff-macos.md) for validation details.
   parallel-set management, migration and editing screens.
 - [ ] Verify Windows keyboard/navigation conventions, Narrator/UI Automation,
   high contrast, scaling, resizing and localized text expansion on native Windows.
-- [ ] Review against current Microsoft guidance when implementing. No WinUI
-  frontend or Windows desktop acceptance is claimed by this planning entry.
+- [ ] Review WinUI workflows against current Microsoft guidance as the preview
+  grows. See the [Windows handoff](handoff-windows.md) for desktop checks.
 
 Keep application behavior in the shared core. This work concerns native
 presentation and navigation, not a second settings or study engine.

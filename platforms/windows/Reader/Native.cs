@@ -7,6 +7,62 @@ internal static class Native
 {
     private const string Library = "xiphos_reader_core";
 
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct SearchOptions
+    {
+        internal int Mode, CaseSensitive;
+        internal nuint MaxResults, MaxReferenceBytes;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct SearchInfo
+    {
+        internal int Mode, EngineType, CaseSensitive, Limited;
+        internal ulong TotalResults;
+        internal nuint ResultCount;
+        internal int Cancelled, Executed;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct SearchProgress
+    {
+        internal int Phase;
+        internal uint Percent;
+        internal int CancelRequested;
+    }
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void xc_search_options_default(out SearchOptions options);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern int xc_worker_search_module(nint worker, ulong tab,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string module,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string expression, in SearchOptions options, out nint request);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern int xc_request_cancel_search(nint request);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern int xc_request_search_progress(nint request, out SearchProgress progress);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern nint xc_request_take_search(nint request);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern int xc_search_get_info(nint result, out SearchInfo info);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern int xc_search_index_fallback(nint result);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern nint xc_search_source_module(nint result);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern nint xc_search_reference(nint result, nuint index);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void xc_search_release(nint result);
+
     [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
     internal static extern int xc_worker_open([MarshalAs(UnmanagedType.LPUTF8Str)] string root, out nint worker);
 

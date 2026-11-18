@@ -7,7 +7,7 @@ Git history and selected behavior oracles are in src/core/tests/legacy-reference
 flowchart TB
   Mac[macOS SwiftUI / AppKit]
   Linux[Linux GTK4 / WebKitGTK]
-  Windows[Planned Windows WinUI 3]
+  Windows[Windows WinUI 3 / WebView2]
   ABI[Owned C API requests/results]
   Worker[Shared C++ FIFO worker]
   Services[Study sessions and shared services]
@@ -15,7 +15,7 @@ flowchart TB
   Storage[Profiles / sessions / modules / recovery]
   Mac --> ABI
   Linux --> ABI
-  Windows -.-> ABI
+  Windows --> ABI
   ABI --> Worker --> Services
   Services --> SDK
   Services --> Storage
@@ -51,8 +51,9 @@ BibleSync shares passage navigation; personal data synchronization is separate f
 
 [Dependency inventory](../../dependencies/README.md) and platform CMake/tooling are
 authoritative for build requirements. No GTK library is required by the base core.
-GLib remains a Unicode/runtime dependency. Windows WinUI3 is not implemented;
-Mac/Linux interfaces and all platform releases still have acceptance gaps.
+GLib remains a Unicode/runtime dependency. The Windows WinUI 3 preview uses
+the shared C ABI and worker for reading and study. See the platform handoffs
+for workflow and release validation.
 
 The local Graphify map is an analysis aid, not an authoritative call graph.
 Its inferred edges require source verification; generated output stays untracked.

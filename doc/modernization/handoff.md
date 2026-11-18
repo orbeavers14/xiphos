@@ -18,7 +18,7 @@ C++17 core, C++11-compatible retained policy helpers, C11 ABI, Swift6.
 ## Current repository
 
 - src/core: engine/services/C API/tests; frozen independent legacy reference snippets.
-- platforms: Mac preview, Linux GTK4 frontend, Windows core tooling/planned WinUI3.
+- platforms: Mac preview, Linux GTK4 frontend, Windows core tooling and WinUI 3 preview.
 - localization: gettext input, reviewed overrides, generated native resources and SWORD book-name catalogs.
 - dependencies: SDK requirements and maintained patches; doc/legacy-notices and AUTHORS/COPYING retain credits.
 - help/pixmaps: preserved reference material; not evidence of native help integration.

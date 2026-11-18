@@ -11,6 +11,15 @@ internal sealed record Module(string Id, string Title, string Type, bool Comment
 internal sealed record Passage(string Module, string Reference, string Html,
     string Commentary, string CommentaryReference, string CommentaryHtml);
 
+internal enum SearchMode
+{
+    Regex = 0, Phrase = 1, Words = 2, Lemma = 3, Indexed = 7,
+    SurfaceLiteral = 8, SurfaceUnmarked = 9
+}
+
+internal sealed record SearchResults(string Module, IReadOnlyList<string> References, ulong Total,
+    bool Limited, bool Cancelled, bool IndexFallback);
+
 internal sealed class CoreSession : IAsyncDisposable
 {
     private delegate int Submit(out nint request);
@@ -56,6 +65,38 @@ internal sealed class CoreSession : IAsyncDisposable
     public Task<Passage> SelectCommentaryAsync(string commentary) =>
         RequestAsync((out nint r) => Native.xc_worker_select_commentary(worker, tab, commentary, out r), ReadPassage);
 
+    public Task<SearchResults> SearchAsync(string module, string query, SearchMode mode,
+        bool caseSensitive, CancellationToken cancellation, Action<uint> progress)
+    {
+        Native.xc_search_options_default(out var options);
+        options.Mode = (int)mode;
+        options.CaseSensitive = caseSensitive ? 1 : 0;
+        options.MaxResults = 500;
+        var cancelSent = false;
+        return RequestAsync((out nint r) =>
+                Native.xc_worker_search_module(worker, tab, module, query, in options, out r),
+            request => ReadOwned(request, Native.xc_request_take_search, Native.xc_search_release, result =>
+            {
+                Check(Native.xc_search_get_info(result, out var info));
+                var references = new string[checked((int)info.ResultCount)];
+                for (var i = 0; i < references.Length; i++)
+                    references[i] = Text(Native.xc_search_reference(result, (nuint)i));
+                return new SearchResults(Text(Native.xc_search_source_module(result)), references,
+                    info.TotalResults, info.Limited != 0, info.Cancelled != 0,
+                    Native.xc_search_index_fallback(result) == 1);
+            }),
+            request =>
+            {
+                if (cancellation.IsCancellationRequested && !cancelSent)
+                {
+                    Native.xc_request_cancel_search(request);
+                    cancelSent = true;
+                }
+                if (Native.xc_request_search_progress(request, out var state) == 0)
+                    progress(state.Percent);
+            });
+    }
+
     public Task<(bool Back, bool Forward)> HistoryAsync() =>
         RequestAsync((out nint r) => Native.xc_worker_history(worker, tab, out r),
             request => ReadOwned(request, Native.xc_request_take_history, Native.xc_history_release,
@@ -65,9 +106,12 @@ internal sealed class CoreSession : IAsyncDisposable
     {
         var target = await RequestAsync((out nint r) => Native.xc_worker_resolve_study_link_at(
             worker, tab, current.Module, current.Reference, uri, out r), ReadLink);
-        return await RequestAsync((out nint r) => Native.xc_worker_visit_linked_passage(
-            worker, tab, current.Module, current.Commentary, target.Module, target.Reference, out r), ReadPassage);
+        return await VisitLinkAsync(current.Module, current.Commentary, target.Module, target.Reference);
     }
+
+    public Task<Passage> VisitLinkAsync(string bible, string commentary, string module, string reference) =>
+        RequestAsync((out nint r) => Native.xc_worker_visit_linked_passage(
+            worker, tab, bible, commentary, module, reference, out r), ReadPassage);
 
     private static (string Module, string Reference) ReadLink(nint request)
     {
@@ -114,7 +158,7 @@ internal sealed class CoreSession : IAsyncDisposable
 
     private static string Text(nint value) => Marshal.PtrToStringUTF8(value) ?? "";
 
-    private static async Task<T> RequestAsync<T>(Submit submit, Func<nint, T> read)
+    private static async Task<T> RequestAsync<T>(Submit submit, Func<nint, T> read, Action<nint>? pending = null)
     {
         Check(submit(out var request));
         if (request == 0)
@@ -124,7 +168,10 @@ internal sealed class CoreSession : IAsyncDisposable
         {
             int status;
             while ((status = Native.xc_request_poll(request)) == 4)
-                await Task.Delay(15);
+            {
+                pending?.Invoke(request);
+                await Task.Delay(pending == null ? 15 : 75);
+            }
             Check(status);
             return read(request);
         }

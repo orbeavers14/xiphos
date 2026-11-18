@@ -9,7 +9,7 @@ using Microsoft.Web.WebView2.Core;
 
 namespace Xiphos.Reader;
 
-internal sealed class ReaderWindow : Window
+internal sealed partial class ReaderWindow : Window
 {
     private const string ReadingOrigin = "https://xiphos.invalid/";
     private const string ReadingDocument = ReadingOrigin + "passage";
@@ -50,13 +50,14 @@ internal sealed class ReaderWindow : Window
         AppWindow.Closing += OnClosing;
 
         var layout = new Grid { Padding = new Thickness(20), RowSpacing = 12 };
-        for (var i = 0; i < 5; ++i)
-            layout.RowDefinitions.Add(new RowDefinition { Height = i == 3 ? new GridLength(1, GridUnitType.Star) : GridLength.Auto });
+        for (var i = 0; i < 6; ++i)
+            layout.RowDefinitions.Add(new RowDefinition { Height = i == 4 ? new GridLength(1, GridUnitType.Star) : GridLength.Auto });
         AddRow(layout, Horizontal(library, open), 0);
         AddRow(layout, Horizontal(bible, commentary, reference, go), 1);
         AddRow(layout, Horizontal(back, forward, previous, next), 2);
-        AddRow(layout, reading, 3);
-        AddRow(layout, status, 4);
+        AddRow(layout, BuildSearchPane(), 3);
+        AddRow(layout, reading, 4);
+        AddRow(layout, status, 5);
         AutomationProperties.SetLiveSetting(status, AutomationLiveSetting.Polite);
         Content = layout;
 
@@ -157,6 +158,7 @@ internal sealed class ReaderWindow : Window
         reading.Visibility = Visibility.Collapsed;
         bible.ItemsSource = null;
         commentary.ItemsSource = null;
+        SetSearchModules([]);
         var session = new CoreSession(root);
         try
         {
@@ -170,6 +172,7 @@ internal sealed class ReaderWindow : Window
         }
         bible.ItemsSource = modules.Where(module => module.Type == "Biblical Texts").ToArray();
         commentary.ItemsSource = new[] { NoCommentary }.Concat(modules.Where(module => module.Commentary)).ToArray();
+        SetSearchModules(modules.Where(module => module.Type == "Biblical Texts" || module.Commentary).ToArray());
         commentary.SelectedIndex = 0;
         if (bible.Items.Count == 0)
         {
@@ -329,6 +332,7 @@ internal sealed class ReaderWindow : Window
         previous.IsEnabled = next.IsEnabled = ready && current != null;
         back.IsEnabled = ready && current != null && backAvailable;
         forward.IsEnabled = ready && current != null && forwardAvailable;
+        UpdateSearchControls(ready);
     }
 
     private async void OnClosing(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowClosingEventArgs args)
@@ -339,6 +343,7 @@ internal sealed class ReaderWindow : Window
         if (closing)
             return;
         closing = true;
+        searchCancellation?.Cancel();
         UpdateControls();
         if (active != null)
             await active.Task;

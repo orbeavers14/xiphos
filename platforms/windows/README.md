@@ -117,5 +117,8 @@ Point the reader at a SWORD library root containing `mods.d` and the referenced
 module data. The same folder can be entered in the app. The preview uses native
 controls for module selection, passage entry, chapter navigation and history.
 WebView2 hosts the Bible and optional commentary HTML rendered by the shared
-core. See the [Windows handoff](../../doc/modernization/handoff-windows.md) for
-the current verification results.
+core. Expand **Search** to choose an installed Bible or commentary, select a
+match mode, and enter your search terms. Select a result and use **Open result**
+to go to the matching passage. **Stop** requests cancellation while the search
+is running. See the [Windows handoff](../../doc/modernization/handoff-windows.md)
+for the current verification results.

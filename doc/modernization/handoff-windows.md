@@ -35,6 +35,23 @@ Narrator, high-contrast and scaling checks remain open. The Codex command sandbo
 `0x8000FFFF` from WebView2 initialization, so run desktop checks from an
 ordinary Windows session.
 
+### WinUI search
+
+The search pane submits whole-module Bible and regular commentary queries to
+the shared worker. It offers words, phrase, regex, indexed, lemma and exact or
+mark-insensitive surface modes, with case matching, a 500-result display limit,
+progress and Stop. Results retain the actual source module for activation.
+Opening a Bible hit preserves the selected commentary. Opening a commentary
+hit keeps the selected Bible and opens the source commentary.
+
+ARM64 managed fixture checks covered Unicode Bible and commentary queries,
+opening both source types and reporting indexed fallback on an unindexed
+module. In a Windows 11 25H2 ARM64 desktop check, the WinUI search for
+`peace` returned John 3:16 and **Open result** displayed the Unicode fixture
+in WebView2. Range and last-result scopes, multi-module and keyed searches, separate
+result preview, export, and cancellation latency on a large corpus remain open.
+Continue with search scopes and previews, then parallel and selected-word study.
+
 ## ARM64 setup checkpoint (2026-11-16)
 
 On Windows 11 25H2 ARM64, Xiphos commit `26852e1a` passed CMake compiler and
