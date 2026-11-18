@@ -18,13 +18,13 @@ internal enum SearchMode
 }
 
 internal sealed record SearchResults(string Module, IReadOnlyList<string> References, ulong Total,
-    bool Limited, bool Cancelled, bool IndexFallback);
+    bool Limited, bool Cancelled, bool IndexFallback, ulong Generation);
 
 internal enum SearchScope { WholeModule, PassageRange, LastResults }
 
 internal sealed record SearchRange(string Module, string Expression);
 
-internal sealed class CoreSession : IAsyncDisposable
+internal sealed partial class CoreSession : IAsyncDisposable
 {
     private delegate int Submit(out nint request);
     private nint worker;
@@ -82,7 +82,6 @@ internal sealed class CoreSession : IAsyncDisposable
         options.Mode = (int)mode;
         options.CaseSensitive = caseSensitive ? 1 : 0;
         options.MaxResults = 500;
-        var cancelSent = false;
         return RequestAsync((out nint r) => scope switch
             {
                 SearchScope.PassageRange when range != null => Native.xc_worker_search_module_in_range(
@@ -98,20 +97,28 @@ internal sealed class CoreSession : IAsyncDisposable
                 var references = new string[checked((int)info.ResultCount)];
                 for (var i = 0; i < references.Length; i++)
                     references[i] = Text(Native.xc_search_reference(result, (nuint)i));
+                var generation = Native.xc_search_generation_updated(result) == 1 &&
+                    Native.xc_search_get_generation(result, out var published) == 0 ? published.Id : 0;
                 return new SearchResults(Text(Native.xc_search_source_module(result)), references,
                     info.TotalResults, info.Limited != 0, info.Cancelled != 0,
-                    Native.xc_search_index_fallback(result) == 1);
+                    Native.xc_search_index_fallback(result) == 1, generation);
             }),
-            request =>
+            ObserveSearch(cancellation, progress));
+    }
+
+    private static Action<nint> ObserveSearch(CancellationToken cancellation, Action<uint> progress)
+    {
+        var cancelSent = false;
+        return request =>
+        {
+            if (cancellation.IsCancellationRequested && !cancelSent)
             {
-                if (cancellation.IsCancellationRequested && !cancelSent)
-                {
-                    Native.xc_request_cancel_search(request);
-                    cancelSent = true;
-                }
-                if (Native.xc_request_search_progress(request, out var state) == 0)
-                    progress(state.Percent);
-            });
+                Native.xc_request_cancel_search(request);
+                cancelSent = true;
+            }
+            if (Native.xc_request_search_progress(request, out var state) == 0)
+                progress(state.Percent);
+        };
     }
 
     public Task<(bool Back, bool Forward)> HistoryAsync() =>

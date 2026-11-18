@@ -24,6 +24,10 @@ internal sealed partial class ReaderWindow
     private readonly Button stopSearch = new() { Content = "Stop" };
     private readonly Button previewHit = new() { Content = "Preview result" };
     private readonly Button openHit = new() { Content = "Open result" };
+    private readonly DropDownButton exportResults = new() { Content = "Export" };
+    private readonly MenuFlyoutItem saveSelectedText = new() { Text = "Save selected as text…" };
+    private readonly MenuFlyoutItem saveSelectedHtml = new() { Text = "Save selected as HTML…" };
+    private readonly MenuFlyoutItem copySelectedText = new() { Text = "Copy selected as text" };
     private readonly ListView searchHits = new() { MaxHeight = 144, SelectionMode = ListViewSelectionMode.Single };
     private readonly TextBlock searchStatus = new() { TextWrapping = TextWrapping.Wrap };
     private readonly TextBlock searchPreviewTitle = new();
@@ -57,7 +61,8 @@ internal sealed partial class ReaderWindow
         rangeControls = Horizontal(rangeBible, searchRange);
         rangeControls.Visibility = Visibility.Collapsed;
         panel.Children.Add(rangeControls);
-        panel.Children.Add(Horizontal(startSearch, stopSearch, previewHit, openHit));
+        AddSearchExportMenu();
+        panel.Children.Add(Horizontal(startSearch, stopSearch, previewHit, openHit, exportResults));
         panel.Children.Add(searchStatus);
         var results = new Grid { ColumnSpacing = 12, Height = 144, Visibility = Visibility.Collapsed };
         results.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -129,6 +134,8 @@ internal sealed partial class ReaderWindow
         searchHits.IsEnabled = ready && latestResults != null;
         previewHit.IsEnabled = searchHits.IsEnabled && searchHits.SelectedItem is string;
         openHit.IsEnabled = previewHit.IsEnabled && bible.SelectedItem is Module;
+        exportResults.IsEnabled = ready && latestResults is { Generation: > 0, References.Count: > 0 };
+        saveSelectedText.IsEnabled = saveSelectedHtml.IsEnabled = copySelectedText.IsEnabled = previewHit.IsEnabled;
     }
 
     private async Task SearchAsync()

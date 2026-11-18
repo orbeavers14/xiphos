@@ -17,7 +17,7 @@ references remain in core tests.
 - Native Mac Settings and startup preferences; English and partial French/German/Spanish resources.
 - Localized book-selector labels retain canonical targets; RTL module direction reaches reading views.
 - WinUI 3 reading preview with a SWORD library root, Bible and commentary selection, passage entry, chapter navigation and history.
-- WinUI Bible and commentary search with passage bounds, last-result refinement, progress, Stop, and separate result preview and activation.
+- WinUI Bible and commentary search with passage bounds, last-result refinement, separate preview and activation, progress, Stop, and text/HTML export.
 
 These are scoped implementations, not complete functionality or release sign-off.
 

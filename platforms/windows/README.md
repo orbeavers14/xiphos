@@ -123,5 +123,7 @@ to go to the matching passage or **Preview result** to read it alongside the
 result list. **Passage range** uses the chosen Range Bible to interpret the
 reference bounds. **Last results** searches within the preceding search's
 complete result scope. **Stop** requests cancellation while the search is
-running. See the [Windows handoff](../../doc/modernization/handoff-windows.md)
+running. **Export** saves the selected hit or all retained hits as text or
+HTML, or copies them as text. See the
+[Windows handoff](../../doc/modernization/handoff-windows.md)
 for the current verification results.

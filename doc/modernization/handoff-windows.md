@@ -58,8 +58,15 @@ last-result refinement and Bible/commentary preview history isolation. A
 desktop search for `peace` displayed the John 3:16 preview text in WebView2
 while the main reader stayed at John 1:1.
 
-Search export, multi-module and keyed searches, and cancellation latency on a
-large corpus remain open. Continue with search export, parallel reading and
+The export menu uses the shared search generation and can save either one
+selected result or all retained results as text or passive HTML, or copy
+either selection as plain text. The ARM64 Release build and managed fixture
+checked selected and all-result Unicode text and HTML payloads. The desktop
+check exposed all six export actions and opened Windows Save As from a
+selected result. File completion and clipboard paste still need desktop checks.
+
+Rich clipboard formats, multi-module and keyed searches, and cancellation
+latency on a large corpus remain open. Continue with parallel reading and
 selected-word study.
 
 ## ARM64 setup checkpoint (2026-11-16)

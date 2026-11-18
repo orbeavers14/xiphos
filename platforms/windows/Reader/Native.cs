@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace Xiphos.Reader;
 
-internal static class Native
+internal static partial class Native
 {
     private const string Library = "xiphos_reader_core";
 
