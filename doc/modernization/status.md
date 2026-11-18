@@ -18,7 +18,7 @@ references remain in core tests.
 - Localized book-selector labels retain canonical targets; RTL module direction reaches reading views.
 - WinUI 3 reading preview with a SWORD library root, Bible and commentary selection, passage entry, chapter navigation and history.
 - WinUI Bible and commentary search with passage bounds, last-result refinement, separate preview and activation, progress, Stop, and text/HTML export.
-- WinUI parallel reading with ordered Bible selection, an aligned chapter table and a stacked verse view.
+- WinUI parallel reading with ordered Bible selection, an aligned chapter table, a stacked verse view, named sets and saved translation visibility.
 
 These are scoped implementations, not complete functionality or release sign-off.
 

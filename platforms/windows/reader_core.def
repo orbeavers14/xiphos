@@ -103,3 +103,16 @@ EXPORTS
     xc_parallel_cell_additional_html
     xc_parallel_cell_additional_heading_count
     xc_parallel_cell_additional_heading
+    xc_worker_read_parallel_profile
+    xc_worker_edit_parallel_profile_checked
+    xc_worker_visit_parallel_profile
+    xc_parallel_set_encode_name
+    xc_request_take_parallel_profile
+    xc_parallel_profile_revision
+    xc_parallel_profile_current_key
+    xc_parallel_profile_count
+    xc_parallel_profile_release
+    xc_parallel_profile_key
+    xc_parallel_profile_display_name
+    xc_parallel_profile_module_count
+    xc_parallel_profile_module

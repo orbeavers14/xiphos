@@ -11,26 +11,37 @@ internal sealed record ParallelChapter(string Reference, string Title, uint Sele
 
 internal sealed partial class CoreSession
 {
+    public const int MaximumParallelColumns = 32;
+    private const int ParallelSnapshotBytes = 16 * 1024 * 1024;
+    private delegate int SubmitModules(nint modules, nuint count, out nint request);
+
     public Task<ParallelChapter> VisitParallelAsync(IReadOnlyList<string> modules, string reference) =>
-        RequestAsync((out nint request) =>
+        RequestAsync((out nint request) => WithModulePointers(modules,
+            (nint pointers, nuint count, out nint result) => Native.xc_worker_visit_parallel(
+                worker, tab, pointers, count, reference, 0, 1, ParallelSnapshotBytes, out result),
+            out request), ReadParallel);
+
+    private static int WithModulePointers(IReadOnlyList<string> modules, SubmitModules submit, out nint request)
+    {
+        if (modules.Count == 0)
+            return submit(0, 0, out request);
+
+        var strings = new nint[modules.Count];
+        var pointers = Marshal.AllocHGlobal(checked(IntPtr.Size * strings.Length));
+        try
         {
-            var strings = new nint[modules.Count];
-            var pointers = Marshal.AllocHGlobal(checked(IntPtr.Size * strings.Length));
-            try
-            {
-                for (var i = 0; i < strings.Length; i++)
-                    strings[i] = Marshal.StringToCoTaskMemUTF8(modules[i]);
-                Marshal.Copy(strings, 0, pointers, strings.Length);
-                return Native.xc_worker_visit_parallel(worker, tab, pointers, (nuint)strings.Length,
-                    reference, 0, 1, 16 * 1024 * 1024, out request);
-            }
-            finally
-            {
-                foreach (var value in strings)
-                    Marshal.FreeCoTaskMem(value);
-                Marshal.FreeHGlobal(pointers);
-            }
-        }, ReadParallel);
+            for (var i = 0; i < strings.Length; i++)
+                strings[i] = Marshal.StringToCoTaskMemUTF8(modules[i]);
+            Marshal.Copy(strings, 0, pointers, strings.Length);
+            return submit(pointers, (nuint)strings.Length, out request);
+        }
+        finally
+        {
+            foreach (var value in strings)
+                Marshal.FreeCoTaskMem(value);
+            Marshal.FreeHGlobal(pointers);
+        }
+    }
 
     public Task<ParallelChapter> MoveParallelChapterAsync(int direction) =>
         RequestAsync((out nint request) => Native.xc_worker_navigate_parallel_chapter(

@@ -80,8 +80,17 @@ On Windows 11 25H2 ARM64 the Release build passed. Managed fixture checks
 covered source order, selected verse, Unicode text, chapter stepping and
 main-history isolation. A desktop check displayed the two John 3:16 fixture
 texts in the chapter table and in two stacked sections while the main reader
-stayed at John 1:1. Saved sets, translation visibility, native comparison
-link actions and mixed-canon desktop checks remain open.
+stayed at John 1:1.
+
+Named comparison sets use the shared XML profile and revision-checked edits for
+creation, order updates, rename, default selection and deletion. A new reader
+loads the default order. The Translations menu hides and restores columns in
+both comparison layouts, storing Windows presentation state by ordered module
+list. The ARM64 managed fixture verified Unicode names, ordered reopening,
+default restoration and rejection of stale edits. The desktop check saved
+and opened a default set, hid one translation and restored that choice in a
+new process. Native comparison link actions and mixed-canon desktop checks
+remain open.
 
 ## ARM64 setup checkpoint (2026-11-16)
 

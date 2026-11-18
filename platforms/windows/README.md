@@ -135,3 +135,13 @@ and select **Compare**, then choose **Side-by-side chapter** or **Stacked
 verse**. Use the comparison chapter controls in either layout and the verse
 controls in the stacked layout. **Back to reading** returns to the Bible and
 commentary panes.
+
+To reuse the order, give it a name and choose **Manage sets → Save as new
+set**. The same menu updates the order, renames or deletes a set, reloads
+sets after an external edit, and sets the default order for the next launch.
+**Open set** compares the selected set at the entered passage. The default
+shared profile file is `%LOCALAPPDATA%\Xiphos\preferences.xml`. Pass
+`--parallel-profile 'C:/path/to/preferences.xml'` to select another profile.
+Imported sets can use the shared engine's limit of 32 columns.
+The **Translations** menu remembers which columns to show for each ordered
+comparison in both layouts.

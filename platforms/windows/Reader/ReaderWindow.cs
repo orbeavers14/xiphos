@@ -176,6 +176,7 @@ internal sealed partial class ReaderWindow : Window
         commentary.ItemsSource = new[] { NoCommentary }.Concat(modules.Where(module => module.Commentary)).ToArray();
         SetSearchModules(modules.Where(module => module.Type == "Biblical Texts" || module.Commentary).ToArray());
         ResetParallel(modules.Where(module => module.Type == "Biblical Texts").ToArray());
+        await LoadParallelSetsAsync(useDefault: true);
         commentary.SelectedIndex = 0;
         if (bible.Items.Count == 0)
         {

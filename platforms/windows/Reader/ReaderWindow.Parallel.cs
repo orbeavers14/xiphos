@@ -33,17 +33,18 @@ internal sealed partial class ReaderWindow
 
     private Grid BuildParallelPane()
     {
-        for (var i = 0; i < 5; i++)
+        for (var i = 0; i < 6; i++)
             parallelPane.RowDefinitions.Add(new RowDefinition
             {
-                Height = i == 4 ? new GridLength(1, GridUnitType.Star) : GridLength.Auto
+                Height = i == 5 ? new GridLength(1, GridUnitType.Star) : GridLength.Auto
             });
         AddRow(parallelPane, Horizontal(parallelModule, addParallel, removeParallel, raiseParallel, lowerParallel), 0);
         AddRow(parallelPane, parallelModules, 1);
         AddRow(parallelPane, Horizontal(parallelReference, parallelLayout, compare), 2);
+        AddRow(parallelPane, BuildParallelSetsBar(), 3);
         AddRow(parallelPane, Horizontal(previousParallelChapter, nextParallelChapter, previousParallelVerse,
-            nextParallelVerse), 3);
-        AddRow(parallelPane, MakePane(parallelTitle, parallelView, "Parallel passage"), 4);
+            nextParallelVerse, translationVisibility), 4);
+        AddRow(parallelPane, MakePane(parallelTitle, parallelView, "Parallel passage"), 5);
         AutomationProperties.SetName(parallelModules, "Ordered Bibles");
         parallelModules.ItemsSource = orderedModules;
         parallelLayout.ItemsSource = new[] { "Side-by-side chapter", "Stacked verse" };
@@ -88,6 +89,8 @@ internal sealed partial class ReaderWindow
     private void ResetParallel(IReadOnlyList<Module> available)
     {
         parallelChapter = null;
+        parallelProfile = null;
+        parallelSets.ItemsSource = null;
         parallelTitle.Text = "";
         parallelView.Visibility = Visibility.Collapsed;
         SetParallelVisible(false);
@@ -121,11 +124,14 @@ internal sealed partial class ReaderWindow
         removeParallel.IsEnabled = ready && selected >= 0;
         raiseParallel.IsEnabled = ready && selected > 0;
         lowerParallel.IsEnabled = ready && selected >= 0 && selected < orderedModules.Count - 1;
-        compare.IsEnabled = ready && orderedModules.Count >= 2 && !string.IsNullOrWhiteSpace(parallelReference.Text);
+        compare.IsEnabled = ready && orderedModules.Count is >= 2 and <= CoreSession.MaximumParallelColumns &&
+            !string.IsNullOrWhiteSpace(parallelReference.Text);
         previousParallelChapter.IsEnabled = nextParallelChapter.IsEnabled = ready && parallelChapter != null;
         var stacked = ready && parallelChapter != null && parallelLayout.SelectedIndex == 1;
         previousParallelVerse.IsEnabled = stacked && parallelRow > 0;
         nextParallelVerse.IsEnabled = stacked && parallelRow + 1 < parallelChapter!.Rows.Count;
+        UpdateParallelSetControls(ready, hasModules);
+        translationVisibility.IsEnabled = ready && parallelChapter?.Columns.Count > 1;
     }
 
     private void MoveParallelModule(int direction)
@@ -151,6 +157,7 @@ internal sealed partial class ReaderWindow
     private async Task ShowParallelAsync(ParallelChapter chapter)
     {
         parallelChapter = chapter;
+        LoadColumnVisibility(chapter);
         parallelRow = 0;
         for (var i = 0; i < chapter.Rows.Count; i++)
         {
@@ -201,7 +208,7 @@ internal sealed partial class ReaderWindow
         if (stacked)
         {
             var row = chapter.Rows[parallelRow];
-            for (var i = 0; i < chapter.Columns.Count; i++)
+            foreach (var i in VisibleColumns(chapter))
             {
                 var column = chapter.Columns[i];
                 html.Append("<section><h2>").Append(WebUtility.HtmlEncode(ColumnTitle(column))).Append("</h2>")
@@ -213,14 +220,15 @@ internal sealed partial class ReaderWindow
         else
         {
             html.Append("<table><thead><tr><th scope='col'>Verse</th>");
-            foreach (var column in chapter.Columns)
-                html.Append("<th scope='col'>").Append(WebUtility.HtmlEncode(ColumnTitle(column))).Append("</th>");
+            var visible = VisibleColumns(chapter).ToArray();
+            foreach (var i in visible)
+                html.Append("<th scope='col'>").Append(WebUtility.HtmlEncode(ColumnTitle(chapter.Columns[i]))).Append("</th>");
             html.Append("</tr></thead><tbody>");
             foreach (var row in chapter.Rows)
             {
                 html.Append(row.Ordinal == chapter.SelectedVerse ? "<tr aria-current='true'>" : "<tr>")
                     .Append("<th scope='row'>").Append(WebUtility.HtmlEncode(row.Reference)).Append("</th>");
-                for (var i = 0; i < row.Cells.Length; i++)
+                foreach (var i in visible)
                 {
                     html.Append("<td dir='").Append(chapter.Columns[i].RightToLeft ? "rtl" : "ltr").Append("'>");
                     AppendParallelCell(html, row.Cells[i]);
