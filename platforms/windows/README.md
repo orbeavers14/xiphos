@@ -1,7 +1,7 @@
-# Native Windows core validation
+# Native Windows build
 
-Use Windows 11 version 25H2 or later for native MSVC validation. No WinUI frontend or
-passing Windows core suite is claimed yet. Read the
+Use Windows 11 version 25H2 or later for native MSVC validation and the WinUI 3
+reading preview. Read the
 [Windows handoff](../../doc/modernization/handoff-windows.md) before working.
 The MinGW/GTK application and WSL builds do not satisfy this lane.
 
@@ -92,5 +92,30 @@ Passing preflight is only permission to attempt configuration. Record compiler
 identification, dependency versions, the implementation commit, exact commands,
 CTest count/failures and runtime DLL deployment in the Windows handoff. File
 replacement/Unicode behavior must be tested separately before data compatibility
-is accepted. After the complete native core suite passes, proceed to the thin
-WinUI 3/WebView2 reading slice described in the handoff. Keep routine checks local.
+is accepted. Keep routine checks local.
+
+## Build and run the WinUI 3 reading preview
+
+Use the .NET 10 SDK, Windows SDK 10.0.26100.0, the Visual Studio WinUI application
+development components, and the [Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/).
+The project restores Windows App SDK dependencies from NuGet.
+
+From the repository root in an ARM64 developer shell, reuse the core build's
+`$sdkOptions` for dependency discovery. Include the SDK runtime DLL directories
+on `PATH` when launching the preview.
+
+```powershell
+cmake -S platforms/windows -B build/windows-reader-arm64 -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF @sdkOptions
+cmake --build build/windows-reader-arm64
+$dll = (Resolve-Path build/windows-reader-arm64/xiphos_reader_core.dll).Path
+dotnet build platforms/windows/Reader/Xiphos.Reader.csproj -c Release -r win-arm64 -p:RuntimeIdentifiers=win-arm64 "-p:XiphosCoreDll=$dll"
+$reader = 'platforms/windows/Reader/bin/Release/net10.0-windows10.0.26100.0/win-arm64/Xiphos.Reader.exe'
+& $reader --library 'C:/path/to/sword-library'
+```
+
+Point the reader at a SWORD library root containing `mods.d` and the referenced
+module data. The same folder can be entered in the app. The preview uses native
+controls for module selection, passage entry, chapter navigation and history.
+WebView2 hosts the Bible and optional commentary HTML rendered by the shared
+core. See the [Windows handoff](../../doc/modernization/handoff-windows.md) for
+the current verification results.

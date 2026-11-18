@@ -4,17 +4,36 @@ Updated 2026-11-17. Read [shared instructions](handoff.md) and
 [Windows inventory/build tooling](../../platforms/windows/README.md).
 
 Target Windows 11 version 25H2 and check compatibility on 26H2. The native ARM64
-core suite has passed on 25H2 with the SDK below. WinUI 3 implementation is pending.
+core suite has passed on 25H2 with the SDK below. The WinUI 3 reading preview
+uses the same shared core through a narrow C ABI DLL.
 The old GTK/MinGW win32 distribution is removed. WSL and Mac-hosted portable
 checks are not MSVC or native Windows desktop validation.
 
-Next: implement the WinUI 3/WebView2 reading slice around the shared C API and
-FIFO worker. Track Settings/navigation, keyboard/Narrator, high contrast and
+Track Settings/navigation, keyboard/Narrator, high contrast and
 scaling in the [native UI list](native-ui-todo.md). Native x64, 26H2 compatibility,
 and Windows runtime deployment validation remain open.
 
 [Historical prerequisite and API evidence](history/handoff-windows.md) remains
 available. Its dated compiler/SDK observations must be rechecked on the target machine.
+
+## WinUI 3 reading preview (2026-11-17)
+
+Build instructions are in the [Windows build guide](../../platforms/windows/README.md).
+The unpackaged .NET 10 preview uses Windows App SDK 2.7.0 and a UTF-8 process
+manifest. The shell opens a local SWORD library and uses the shared FIFO worker
+for the catalog, passage rendering, commentary, navigation and history. WebView2
+is configured for passive HTML and routes individual passage links through the
+core. Reference lists, note previews, and other study views remain open.
+
+The ARM64 Release native DLL and WinUI application built successfully on
+Windows 11 25H2. A managed smoke check loaded a generated SWORD Bible, rendered
+John 3:16, moved to John 4:1, returned through history, paired generated
+commentary at John 3:16, and followed a scripture link to John 1:1. In a normal
+desktop process, entering John 3:16 in the native window displayed the Unicode
+Bible fixture text in WebView2. Visual commentary pairing and broader keyboard,
+Narrator, high-contrast and scaling checks remain open. The Codex command sandbox returned HRESULT
+`0x8000FFFF` from WebView2 initialization, so run desktop checks from an
+ordinary Windows session.
 
 ## ARM64 setup checkpoint (2026-11-16)
 
