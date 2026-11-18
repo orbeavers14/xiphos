@@ -54,9 +54,10 @@ internal sealed partial class ReaderWindow : Window
             layout.RowDefinitions.Add(new RowDefinition { Height = i == 4 ? new GridLength(1, GridUnitType.Star) : GridLength.Auto });
         AddRow(layout, Horizontal(library, open), 0);
         AddRow(layout, Horizontal(bible, commentary, reference, go), 1);
-        AddRow(layout, Horizontal(back, forward, previous, next), 2);
+        AddRow(layout, Horizontal(back, forward, previous, next, toggleParallel), 2);
         AddRow(layout, BuildSearchPane(), 3);
         AddRow(layout, reading, 4);
+        AddRow(layout, BuildParallelPane(), 4);
         AddRow(layout, status, 5);
         AutomationProperties.SetLiveSetting(status, AutomationLiveSetting.Polite);
         Content = layout;
@@ -159,6 +160,7 @@ internal sealed partial class ReaderWindow : Window
         bible.ItemsSource = null;
         commentary.ItemsSource = null;
         SetSearchModules([]);
+        ResetParallel([]);
         var session = new CoreSession(root);
         try
         {
@@ -173,6 +175,7 @@ internal sealed partial class ReaderWindow : Window
         bible.ItemsSource = modules.Where(module => module.Type == "Biblical Texts").ToArray();
         commentary.ItemsSource = new[] { NoCommentary }.Concat(modules.Where(module => module.Commentary)).ToArray();
         SetSearchModules(modules.Where(module => module.Type == "Biblical Texts" || module.Commentary).ToArray());
+        ResetParallel(modules.Where(module => module.Type == "Biblical Texts").ToArray());
         commentary.SelectedIndex = 0;
         if (bible.Items.Count == 0)
         {
@@ -204,7 +207,7 @@ internal sealed partial class ReaderWindow : Window
         commentary.SelectedItem = modules.FirstOrDefault(module => module.Id == passage.Commentary) ?? NoCommentary;
         (backAvailable, forwardAvailable) = await core!.HistoryAsync();
 
-        reading.Visibility = Visibility.Visible;
+        reading.Visibility = parallelPane.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
         bibleTitle.Text = $"{passage.Module} · {passage.Reference}";
         var hasCommentary = passage.Commentary.Length != 0;
         commentaryColumn.Width = hasCommentary ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
@@ -273,7 +276,8 @@ internal sealed partial class ReaderWindow : Window
             if (e.Uri == ReadingDocument)
                 return;
             e.Cancel = true;
-            if (view == searchPreviewView || !e.IsUserInitiated || current == null || core == null || active != null)
+            if ((view != bibleView && view != commentaryView) || !e.IsUserInitiated ||
+                current == null || core == null || active != null)
                 return;
             var uri = e.Uri.StartsWith(ReadingOrigin, StringComparison.OrdinalIgnoreCase)
                 ? e.Uri[ReadingOrigin.Length..] : e.Uri;
@@ -285,7 +289,7 @@ internal sealed partial class ReaderWindow : Window
         browser.FrameNavigationStarting += (_, e) => e.Cancel = true;
     }
 
-    private string Document(string module, string location, string html)
+    private string Document(string module, string location, string html, bool wide = false)
     {
         var direction = modules.Any(item => item.Id == module && item.RightToLeft) ? "rtl" : "ltr";
         return $$"""
@@ -296,7 +300,7 @@ internal sealed partial class ReaderWindow : Window
             <title>{{WebUtility.HtmlEncode($"{module} {location}")}}</title>
             <style>
                 :root { color-scheme: light dark; }
-                body { margin: 0 auto; max-width: 74ch; padding: 1.25rem; color: CanvasText; background: Canvas; font: 1.15rem/1.65 Georgia, serif; overflow-wrap: anywhere; }
+                body { margin: 0 auto; max-width: {{(wide ? "none" : "74ch")}}; padding: 1.25rem; color: CanvasText; background: Canvas; font: 1.15rem/1.65 Georgia, serif; overflow-wrap: anywhere; }
                 a { color: LinkText; }
                 .wordsOfJesus { color: #ac2e2e; }
                 @media (prefers-color-scheme: dark) { .wordsOfJesus { color: #ff9b9b; } }
@@ -333,6 +337,7 @@ internal sealed partial class ReaderWindow : Window
         back.IsEnabled = ready && current != null && backAvailable;
         forward.IsEnabled = ready && current != null && forwardAvailable;
         UpdateSearchControls(ready);
+        UpdateParallelControls(ready);
     }
 
     private async void OnClosing(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowClosingEventArgs args)

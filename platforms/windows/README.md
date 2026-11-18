@@ -127,3 +127,11 @@ running. **Export** saves the selected hit or all retained hits as text or
 HTML, or copies them as text. See the
 [Windows handoff](../../doc/modernization/handoff-windows.md)
 for the current verification results.
+
+Select **Parallel reading** to compare two to eight installed Bibles. Use
+**Add**, **Remove**, **Move up** and **Move down** to set the column order.
+The first Bible determines the chapter and verse alignment. Enter a passage
+and select **Compare**, then choose **Side-by-side chapter** or **Stacked
+verse**. Use the comparison chapter controls in either layout and the verse
+controls in the stacked layout. **Back to reading** returns to the Bible and
+commentary panes.

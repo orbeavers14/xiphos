@@ -79,3 +79,27 @@ EXPORTS
     xc_search_html_export_get_info
     xc_search_html_export_html
     xc_search_html_export_release
+    xc_worker_visit_parallel
+    xc_worker_navigate_parallel_chapter
+    xc_request_take_parallel_chapter
+    xc_parallel_reference
+    xc_parallel_title
+    xc_parallel_selected_verse
+    xc_parallel_column_count
+    xc_parallel_row_count
+    xc_parallel_chapter_release
+    xc_parallel_column_state
+    xc_parallel_column_requested
+    xc_parallel_column_module
+    xc_parallel_column_is_rtl
+    xc_parallel_row_reference
+    xc_parallel_row_ordinal
+    xc_parallel_cell_reference
+    xc_parallel_cell_html
+    xc_parallel_cell_heading_count
+    xc_parallel_cell_additional_count
+    xc_parallel_cell_heading
+    xc_parallel_cell_additional_reference
+    xc_parallel_cell_additional_html
+    xc_parallel_cell_additional_heading_count
+    xc_parallel_cell_additional_heading
