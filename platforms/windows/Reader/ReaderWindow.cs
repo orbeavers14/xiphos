@@ -273,7 +273,7 @@ internal sealed partial class ReaderWindow : Window
             if (e.Uri == ReadingDocument)
                 return;
             e.Cancel = true;
-            if (!e.IsUserInitiated || current == null || core == null || active != null)
+            if (view == searchPreviewView || !e.IsUserInitiated || current == null || core == null || active != null)
                 return;
             var uri = e.Uri.StartsWith(ReadingOrigin, StringComparison.OrdinalIgnoreCase)
                 ? e.Uri[ReadingOrigin.Length..] : e.Uri;

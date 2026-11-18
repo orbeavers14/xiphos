@@ -48,9 +48,19 @@ ARM64 managed fixture checks covered Unicode Bible and commentary queries,
 opening both source types and reporting indexed fallback on an unindexed
 module. In a Windows 11 25H2 ARM64 desktop check, the WinUI search for
 `peace` returned John 3:16 and **Open result** displayed the Unicode fixture
-in WebView2. Range and last-result scopes, multi-module and keyed searches, separate
-result preview, export, and cancellation latency on a large corpus remain open.
-Continue with search scopes and previews, then parallel and selected-word study.
+in WebView2.
+
+The scope selector also supports an explicit passage range interpreted by a
+chosen Bible, and refinement within the worker's last-results scope. A
+separate preview reads the source entry without visiting it. An ARM64 Release
+build and managed fixture checks passed for range inclusions/exclusions,
+last-result refinement and Bible/commentary preview history isolation. A
+desktop search for `peace` displayed the John 3:16 preview text in WebView2
+while the main reader stayed at John 1:1.
+
+Search export, multi-module and keyed searches, and cancellation latency on a
+large corpus remain open. Continue with search export, parallel reading and
+selected-word study.
 
 ## ARM64 setup checkpoint (2026-11-16)
 

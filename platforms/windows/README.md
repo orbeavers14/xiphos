@@ -119,6 +119,9 @@ controls for module selection, passage entry, chapter navigation and history.
 WebView2 hosts the Bible and optional commentary HTML rendered by the shared
 core. Expand **Search** to choose an installed Bible or commentary, select a
 match mode, and enter your search terms. Select a result and use **Open result**
-to go to the matching passage. **Stop** requests cancellation while the search
-is running. See the [Windows handoff](../../doc/modernization/handoff-windows.md)
+to go to the matching passage or **Preview result** to read it alongside the
+result list. **Passage range** uses the chosen Range Bible to interpret the
+reference bounds. **Last results** searches within the preceding search's
+complete result scope. **Stop** requests cancellation while the search is
+running. See the [Windows handoff](../../doc/modernization/handoff-windows.md)
 for the current verification results.

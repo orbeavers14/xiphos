@@ -40,6 +40,34 @@ internal static class Native
         [MarshalAs(UnmanagedType.LPUTF8Str)] string expression, in SearchOptions options, out nint request);
 
     [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern int xc_worker_search_module_in_range(nint worker, ulong tab,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string module, [MarshalAs(UnmanagedType.LPUTF8Str)] string expression,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string rangeModule, [MarshalAs(UnmanagedType.LPUTF8Str)] string range,
+        in SearchOptions options, out nint request);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern int xc_worker_search_module_in_last_results(nint worker, ulong tab,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string module, [MarshalAs(UnmanagedType.LPUTF8Str)] string expression,
+        in SearchOptions options, out nint request);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern int xc_worker_read_tab_entry(nint worker, ulong tab,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string module,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string reference, out nint request);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern nint xc_request_take_entry(nint request);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern nint xc_entry_reference(nint entry);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern nint xc_entry_html(nint entry);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void xc_entry_release(nint entry);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
     internal static extern int xc_request_cancel_search(nint request);
 
     [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]

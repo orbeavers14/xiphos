@@ -48,6 +48,13 @@ EXPORTS
     xc_reference_list_release
     xc_search_options_default
     xc_worker_search_module
+    xc_worker_search_module_in_range
+    xc_worker_search_module_in_last_results
+    xc_worker_read_tab_entry
+    xc_request_take_entry
+    xc_entry_reference
+    xc_entry_html
+    xc_entry_release
     xc_request_cancel_search
     xc_request_search_progress
     xc_request_take_search

@@ -20,6 +20,10 @@ internal enum SearchMode
 internal sealed record SearchResults(string Module, IReadOnlyList<string> References, ulong Total,
     bool Limited, bool Cancelled, bool IndexFallback);
 
+internal enum SearchScope { WholeModule, PassageRange, LastResults }
+
+internal sealed record SearchRange(string Module, string Expression);
+
 internal sealed class CoreSession : IAsyncDisposable
 {
     private delegate int Submit(out nint request);
@@ -55,6 +59,11 @@ internal sealed class CoreSession : IAsyncDisposable
     public Task<Passage> VisitAsync(string module, string commentary, string reference) =>
         RequestAsync((out nint r) => Native.xc_worker_visit_passage(worker, tab, module, commentary, reference, out r), ReadPassage);
 
+    public Task<(string Reference, string Html)> ReadEntryAsync(string module, string reference) =>
+        RequestAsync((out nint r) => Native.xc_worker_read_tab_entry(worker, tab, module, reference, out r),
+            request => ReadOwned(request, Native.xc_request_take_entry, Native.xc_entry_release,
+                entry => (Text(Native.xc_entry_reference(entry)), Text(Native.xc_entry_html(entry)))));
+
     public Task<Passage> MoveHistoryAsync(int direction) =>
         RequestAsync((out nint r) => Native.xc_worker_navigate_passage(worker, tab, direction, out r), ReadPassage);
 
@@ -66,15 +75,23 @@ internal sealed class CoreSession : IAsyncDisposable
         RequestAsync((out nint r) => Native.xc_worker_select_commentary(worker, tab, commentary, out r), ReadPassage);
 
     public Task<SearchResults> SearchAsync(string module, string query, SearchMode mode,
-        bool caseSensitive, CancellationToken cancellation, Action<uint> progress)
+        bool caseSensitive, CancellationToken cancellation, Action<uint> progress,
+        SearchScope scope = SearchScope.WholeModule, SearchRange? range = null)
     {
         Native.xc_search_options_default(out var options);
         options.Mode = (int)mode;
         options.CaseSensitive = caseSensitive ? 1 : 0;
         options.MaxResults = 500;
         var cancelSent = false;
-        return RequestAsync((out nint r) =>
-                Native.xc_worker_search_module(worker, tab, module, query, in options, out r),
+        return RequestAsync((out nint r) => scope switch
+            {
+                SearchScope.PassageRange when range != null => Native.xc_worker_search_module_in_range(
+                    worker, tab, module, query, range.Module, range.Expression, in options, out r),
+                SearchScope.LastResults => Native.xc_worker_search_module_in_last_results(
+                    worker, tab, module, query, in options, out r),
+                SearchScope.WholeModule => Native.xc_worker_search_module(worker, tab, module, query, in options, out r),
+                _ => throw new ArgumentException("A passage range is required.", nameof(range))
+            },
             request => ReadOwned(request, Native.xc_request_take_search, Native.xc_search_release, result =>
             {
                 Check(Native.xc_search_get_info(result, out var info));
