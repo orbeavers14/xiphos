@@ -37,6 +37,10 @@ internal sealed partial class CoreSession
         RequestAsync((out nint r) => Native.xc_worker_visit_parallel_profile(worker, tab, path, key,
             reference, 0, 1, ParallelSnapshotBytes, out r), ReadParallel);
 
+    public Task<ParallelChapter> VisitParallelSearchHitAsync(string path, string key, string source, string reference) =>
+        RequestAsync((out nint r) => Native.xc_worker_visit_parallel_profile_from(worker, tab, path, key,
+            source, reference, 0, 1, ParallelSnapshotBytes, out r), ReadParallel);
+
     private static string EncodeSetName(string name)
     {
         Check(Native.xc_parallel_set_encode_name(name, 0, 0, out var size));

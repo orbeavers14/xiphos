@@ -145,3 +145,10 @@ shared profile file is `%LOCALAPPDATA%\Xiphos\preferences.xml`. Pass
 Imported sets can use the shared engine's limit of 32 columns.
 The **Translations** menu remembers which columns to show for each ordered
 comparison in both layouts.
+
+Select one word in a Bible or comparison verse and choose **Study selected
+word**. The dialog offers an exact surface form, a mark-insensitive surface
+form and any lemma or Strong’s terms supplied for the selected passage.
+Choose **Search** to query the source Bible. With a default comparison set,
+**Open in comparison** opens a Bible search result in that set using the
+shared verse mapping.

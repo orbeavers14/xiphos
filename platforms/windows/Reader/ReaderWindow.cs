@@ -54,13 +54,14 @@ internal sealed partial class ReaderWindow : Window
             layout.RowDefinitions.Add(new RowDefinition { Height = i == 4 ? new GridLength(1, GridUnitType.Star) : GridLength.Auto });
         AddRow(layout, Horizontal(library, open), 0);
         AddRow(layout, Horizontal(bible, commentary, reference, go), 1);
-        AddRow(layout, Horizontal(back, forward, previous, next, toggleParallel), 2);
+        AddRow(layout, Horizontal(back, forward, previous, next, toggleParallel, studySelectedWord), 2);
         AddRow(layout, BuildSearchPane(), 3);
         AddRow(layout, reading, 4);
         AddRow(layout, BuildParallelPane(), 4);
         AddRow(layout, status, 5);
         AutomationProperties.SetLiveSetting(status, AutomationLiveSetting.Polite);
         Content = layout;
+        ConfigureWordStudy(layout);
 
         reading.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) });
         reading.ColumnDefinitions.Add(commentaryColumn);
@@ -214,7 +215,9 @@ internal sealed partial class ReaderWindow : Window
         commentaryColumn.Width = hasCommentary ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
         reading.ColumnSpacing = hasCommentary ? 16 : 0;
         commentaryPane.Visibility = hasCommentary ? Visibility.Visible : Visibility.Collapsed;
-        await RenderAsync(bibleView, Document(passage.Module, passage.Reference, passage.Html));
+        var studyDocument = new WordStudyDocument();
+        await RenderAsync(bibleView, Document(passage.Module, passage.Reference,
+            studyDocument.Mark(passage.Module, passage.Reference, passage.Html)), studyDocument);
         if (hasCommentary)
         {
             commentaryTitle.Text = $"{passage.Commentary} · {passage.CommentaryReference}";
@@ -222,11 +225,13 @@ internal sealed partial class ReaderWindow : Window
         }
     }
 
-    private async Task RenderAsync(WebView2 view, string document)
+    private async Task RenderAsync(WebView2 view, string document, WordStudyDocument? studyDocument = null)
     {
         if (!documents.ContainsKey(view))
             await PrepareViewAsync(view);
         documents[view] = document;
+        if (studyDocument != null)
+            studyDocuments[view] = studyDocument;
         view.CoreWebView2.Navigate(ReadingDocument);
     }
 
@@ -254,7 +259,9 @@ internal sealed partial class ReaderWindow : Window
         browser.Settings.IsWebMessageEnabled = false;
         browser.Settings.AreHostObjectsAllowed = false;
         browser.Settings.AreDevToolsEnabled = false;
-        browser.Settings.AreDefaultContextMenusEnabled = false;
+        browser.Settings.AreDefaultContextMenusEnabled = view == bibleView || view == parallelView;
+        if (browser.Settings.AreDefaultContextMenusEnabled)
+            ConfigureWordStudyMenu(view, browser);
         browser.Settings.IsStatusBarEnabled = false;
         browser.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All,
             CoreWebView2WebResourceRequestSourceKinds.All);
@@ -339,6 +346,8 @@ internal sealed partial class ReaderWindow : Window
         forward.IsEnabled = ready && current != null && forwardAvailable;
         UpdateSearchControls(ready);
         UpdateParallelControls(ready);
+        studySelectedWord.IsEnabled = ready && (parallelPane.Visibility == Visibility.Visible
+            ? parallelChapter != null : current != null);
     }
 
     private async void OnClosing(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowClosingEventArgs args)
@@ -349,6 +358,7 @@ internal sealed partial class ReaderWindow : Window
         if (closing)
             return;
         closing = true;
+        wordStudyDialog?.Hide();
         searchCancellation?.Cancel();
         UpdateControls();
         if (active != null)

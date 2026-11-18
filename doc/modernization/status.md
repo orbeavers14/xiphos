@@ -19,6 +19,7 @@ references remain in core tests.
 - WinUI 3 reading preview with a SWORD library root, Bible and commentary selection, passage entry, chapter navigation and history.
 - WinUI Bible and commentary search with passage bounds, last-result refinement, separate preview and activation, progress, Stop, and text/HTML export.
 - WinUI parallel reading with ordered Bible selection, an aligned chapter table, a stacked verse view, named sets and saved translation visibility.
+- WinUI selected-word study with source-preserving surface and lemma searches and activation in the default comparison.
 
 These are scoped implementations, not complete functionality or release sign-off.
 
@@ -42,7 +43,7 @@ generated Unicode Bible passage in WebView2.
 
 ## Remaining gates
 
-- Native Settings/navigation redesign and Windows integration for selected-word study and stacked comparisons. GTK4 has both workflows with generated-fixture desktop checks. See the [Linux handoff](handoff-linux.md#gtk4-reading-and-editing-adapters-2026-11-11) for scope and remaining Linux features.
+- Native Settings/navigation redesign and broader Windows, Linux and macOS original-language and comparison workflow checks. See the [native UI list](native-ui-todo.md).
 - Complete translations, native localized multi-book input, broader RTL and accessibility acceptance.
 - Broader module/canon/profile coverage, remaining reading/export/editor workflows and data compatibility.
 - Windows desktop commentary and accessibility checks, native x64 and runtime deployment validation, current physical Linux verification and macOS 27.0 deployment acceptance.

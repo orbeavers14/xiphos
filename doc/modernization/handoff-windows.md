@@ -92,6 +92,24 @@ and opened a default set, hid one translation and restored that choice in a
 new process. Native comparison link actions and mixed-canon desktop checks
 remain open.
 
+### WinUI selected-word study
+
+The Bible pane and both comparison layouts offer a selected-word command.
+WinUI reads the selection from the rendered verse, preserving its actual module
+and reference, and uses the shared worker for exact and mark-insensitive
+surface search and available lemma or Strong's terms. A Bible search hit can
+open in the default comparison through shared verse mapping.
+
+The ARM64 Release build and managed fixture checked Greek surface, unmarked
+surface and Strong's searches, a source without lemma metadata, and opening a
+search hit in the saved comparison. A Windows desktop check selected Greek
+from the second Bible in the chapter table, showed its John 3:17 source in
+the native dialog, and returned that verse from the search. **Open in comparison**
+opened the selected hit in the default set. The native surface search also
+returned John 3:16 from an unannotated Bible word.
+Physical keyboard and right-click routing, stacked selection, Hebrew and
+Aramaic desktop workflows, and mixed-canon corpus validation remain open.
+
 ## ARM64 setup checkpoint (2026-11-16)
 
 On Windows 11 25H2 ARM64, Xiphos commit `26852e1a` passed CMake compiler and

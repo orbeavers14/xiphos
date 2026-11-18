@@ -30,6 +30,12 @@ internal static partial class Native
         [MarshalAs(UnmanagedType.LPUTF8Str)] string reference, uint flags, int headings, nuint maxBytes, out nint request);
 
     [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern int xc_worker_visit_parallel_profile_from(nint worker, ulong tab,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string path, [MarshalAs(UnmanagedType.LPUTF8Str)] string key,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string source, [MarshalAs(UnmanagedType.LPUTF8Str)] string reference,
+        uint flags, int headings, nuint maxBytes, out nint request);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
     internal static extern int xc_parallel_set_encode_name([MarshalAs(UnmanagedType.LPUTF8Str)] string name, nint buffer, nuint capacity, out nuint required);
 
     [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]

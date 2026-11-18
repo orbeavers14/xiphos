@@ -106,6 +106,7 @@ EXPORTS
     xc_worker_read_parallel_profile
     xc_worker_edit_parallel_profile_checked
     xc_worker_visit_parallel_profile
+    xc_worker_visit_parallel_profile_from
     xc_parallel_set_encode_name
     xc_request_take_parallel_profile
     xc_parallel_profile_revision
@@ -116,3 +117,11 @@ EXPORTS
     xc_parallel_profile_display_name
     xc_parallel_profile_module_count
     xc_parallel_profile_module
+    xc_worker_word_study
+    xc_request_take_word_study
+    xc_word_study_module
+    xc_word_study_reference
+    xc_word_study_surface
+    xc_word_study_lemma_count
+    xc_word_study_release
+    xc_word_study_lemma

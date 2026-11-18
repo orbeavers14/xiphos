@@ -184,11 +184,12 @@ internal sealed partial class ReaderWindow
         var location = stacked && chapter.Rows.Count > 0 ? chapter.Rows[parallelRow].Reference : chapter.Title;
         parallelTitle.Text = location;
         parallelView.Visibility = Visibility.Visible;
+        var studyDocument = new WordStudyDocument();
         await RenderAsync(parallelView, Document("Parallel reading", location,
-            ParallelMarkup(chapter, stacked), wide: !stacked));
+            ParallelMarkup(chapter, stacked, studyDocument), wide: !stacked), studyDocument);
     }
 
-    private string ParallelMarkup(ParallelChapter chapter, bool stacked)
+    private string ParallelMarkup(ParallelChapter chapter, bool stacked, WordStudyDocument study)
     {
         var html = new StringBuilder("""
             <style>
@@ -213,7 +214,7 @@ internal sealed partial class ReaderWindow
                 var column = chapter.Columns[i];
                 html.Append("<section><h2>").Append(WebUtility.HtmlEncode(ColumnTitle(column))).Append("</h2>")
                     .Append("<div dir='").Append(column.RightToLeft ? "rtl" : "ltr").Append("'>");
-                AppendParallelCell(html, row.Cells[i]);
+                AppendParallelCell(html, row.Cells[i], column.Module, study);
                 html.Append("</div></section>");
             }
         }
@@ -231,7 +232,7 @@ internal sealed partial class ReaderWindow
                 foreach (var i in visible)
                 {
                     html.Append("<td dir='").Append(chapter.Columns[i].RightToLeft ? "rtl" : "ltr").Append("'>");
-                    AppendParallelCell(html, row.Cells[i]);
+                    AppendParallelCell(html, row.Cells[i], chapter.Columns[i].Module, study);
                     html.Append("</td>");
                 }
                 html.Append("</tr>");
@@ -244,7 +245,8 @@ internal sealed partial class ReaderWindow
     private static string ColumnTitle(ParallelColumn column) => column.State == 0
         ? column.Module : $"{column.Requested} (unavailable)";
 
-    private static void AppendParallelCell(StringBuilder html, IReadOnlyList<ParallelVerse> verses)
+    private static void AppendParallelCell(StringBuilder html, IReadOnlyList<ParallelVerse> verses,
+        string module, WordStudyDocument study)
     {
         if (verses.Count == 0)
             html.Append("<span>Unavailable</span>");
@@ -253,7 +255,7 @@ internal sealed partial class ReaderWindow
             foreach (var heading in verse.Headings)
                 html.Append("<div>").Append(heading).Append("</div>");
             html.Append("<div><span class='reference'>").Append(WebUtility.HtmlEncode(verse.Reference))
-                .Append("</span>").Append(verse.Html).Append("</div>");
+                .Append("</span>").Append(study.Mark(module, verse.Reference, verse.Html)).Append("</div>");
         }
     }
 }

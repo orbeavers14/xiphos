@@ -24,12 +24,14 @@ internal sealed partial class ReaderWindow
     private readonly Button stopSearch = new() { Content = "Stop" };
     private readonly Button previewHit = new() { Content = "Preview result" };
     private readonly Button openHit = new() { Content = "Open result" };
+    private readonly Button openParallelHit = new() { Content = "Open in comparison" };
     private readonly DropDownButton exportResults = new() { Content = "Export" };
     private readonly MenuFlyoutItem saveSelectedText = new() { Text = "Save selected as text…" };
     private readonly MenuFlyoutItem saveSelectedHtml = new() { Text = "Save selected as HTML…" };
     private readonly MenuFlyoutItem copySelectedText = new() { Text = "Copy selected as text" };
     private readonly ListView searchHits = new() { MaxHeight = 144, SelectionMode = ListViewSelectionMode.Single };
     private readonly TextBlock searchStatus = new() { TextWrapping = TextWrapping.Wrap };
+    private Expander searchPane = null!;
     private readonly TextBlock searchPreviewTitle = new();
     private readonly WebView2 searchPreviewView = new();
     private readonly Grid searchPreviewPane = new() { Visibility = Visibility.Collapsed };
@@ -62,7 +64,7 @@ internal sealed partial class ReaderWindow
         rangeControls.Visibility = Visibility.Collapsed;
         panel.Children.Add(rangeControls);
         AddSearchExportMenu();
-        panel.Children.Add(Horizontal(startSearch, stopSearch, previewHit, openHit, exportResults));
+        panel.Children.Add(Horizontal(startSearch, stopSearch, previewHit, openHit, openParallelHit, exportResults));
         panel.Children.Add(searchStatus);
         var results = new Grid { ColumnSpacing = 12, Height = 144, Visibility = Visibility.Collapsed };
         results.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -72,7 +74,7 @@ internal sealed partial class ReaderWindow
         Grid.SetColumn(searchPreviewPane, 1);
         results.Children.Add(searchPreviewPane);
         panel.Children.Add(results);
-        var expander = new Expander { Header = "Search", Content = panel,
+        searchPane = new Expander { Header = "Search", Content = panel,
             HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch };
 
         startSearch.Click += async (_, _) => await RunAsync(SearchAsync);
@@ -84,6 +86,7 @@ internal sealed partial class ReaderWindow
         };
         previewHit.Click += async (_, _) => await RunAsync(PreviewHitAsync);
         openHit.Click += async (_, _) => await RunAsync(OpenHitAsync);
+        openParallelHit.Click += async (_, _) => await RunAsync(OpenParallelHitAsync);
         searchHits.SelectionChanged += (_, _) =>
         {
             searchPreviewPane.Visibility = Visibility.Collapsed;
@@ -104,7 +107,7 @@ internal sealed partial class ReaderWindow
                 await RunAsync(SearchAsync);
             }
         };
-        return expander;
+        return searchPane;
     }
 
     private void SetSearchModules(IReadOnlyList<Module> available)
@@ -134,6 +137,8 @@ internal sealed partial class ReaderWindow
         searchHits.IsEnabled = ready && latestResults != null;
         previewHit.IsEnabled = searchHits.IsEnabled && searchHits.SelectedItem is string;
         openHit.IsEnabled = previewHit.IsEnabled && bible.SelectedItem is Module;
+        openParallelHit.IsEnabled = previewHit.IsEnabled && parallelProfile?.CurrentKey.Length > 0 &&
+            modules.Any(module => module.Id == latestResults?.Module && module.Type == "Biblical Texts");
         exportResults.IsEnabled = ready && latestResults is { Generation: > 0, References.Count: > 0 };
         saveSelectedText.IsEnabled = saveSelectedHtml.IsEnabled = copySelectedText.IsEnabled = previewHit.IsEnabled;
     }
@@ -198,6 +203,22 @@ internal sealed partial class ReaderWindow
             return;
 
         var selectedCommentary = (Module?)commentary.SelectedItem ?? NoCommentary;
-        await ShowAsync(await core.VisitLinkAsync(selectedBible.Id, selectedCommentary.Id, latestResults.Module, hit));
+        var passage = await core.VisitLinkAsync(selectedBible.Id, selectedCommentary.Id, latestResults.Module, hit);
+        SetParallelVisible(false);
+        await ShowAsync(passage);
+    }
+
+    private async Task OpenParallelHitAsync()
+    {
+        if (core == null || parallelProfile is not { CurrentKey.Length: > 0 } profile ||
+            latestResults == null || searchHits.SelectedItem is not string hit)
+            return;
+
+        var chapter = await core.VisitParallelSearchHitAsync(ParallelProfilePath(), profile.CurrentKey,
+            latestResults.Module, hit);
+        SetOrderedModules(chapter.Columns.Select(column => column.Requested));
+        searchPane.IsExpanded = false;
+        SetParallelVisible(true);
+        await ShowParallelAsync(chapter);
     }
 }
