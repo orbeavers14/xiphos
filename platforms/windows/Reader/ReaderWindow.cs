@@ -242,14 +242,55 @@ internal sealed partial class ReaderWindow : Window
         }
     }
 
-    private async Task RenderAsync(WebView2 view, string document, WordStudyDocument? studyDocument = null)
+    private async Task RenderAsync(WebView2 view, string document, WordStudyDocument? studyDocument = null,
+        string? anchor = null)
     {
         if (!documents.ContainsKey(view))
             await PrepareViewAsync(view);
         documents[view] = document;
         if (studyDocument != null)
             studyDocuments[view] = studyDocument;
-        view.CoreWebView2.Navigate(ReadingDocument);
+        if (string.IsNullOrEmpty(anchor))
+        {
+            view.CoreWebView2.Navigate(ReadingDocument);
+            return;
+        }
+        var loaded = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        ulong navigation = 0;
+        void Starting(CoreWebView2 sender, CoreWebView2NavigationStartingEventArgs args)
+        {
+            if (args.Uri == ReadingDocument)
+                navigation = args.NavigationId;
+        }
+        void Completed(CoreWebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
+        {
+            if (args.NavigationId != navigation)
+                return;
+            if (args.IsSuccess)
+                loaded.TrySetResult();
+            else
+                loaded.TrySetException(new InvalidOperationException("The linked book section could not load."));
+        }
+        var browser = view.CoreWebView2;
+        browser.NavigationStarting += Starting;
+        browser.NavigationCompleted += Completed;
+        try
+        {
+            browser.Navigate(ReadingDocument);
+            await loaded.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            if (!closing)
+            {
+                var id = System.Text.Json.JsonSerializer.Serialize(anchor);
+                var found = await browser.ExecuteScriptAsync($"(() => {{ const node = document.getElementById({id}) ?? document.getElementsByName({id})[0]; if (node) node.scrollIntoView(); return !!node; }})()");
+                if (found == "false")
+                    status.Text = "The section opened, but its linked position was not found.";
+            }
+        }
+        finally
+        {
+            browser.NavigationStarting -= Starting;
+            browser.NavigationCompleted -= Completed;
+        }
     }
 
     private async Task PrepareViewAsync(WebView2 view)
@@ -307,11 +348,7 @@ internal sealed partial class ReaderWindow : Window
                 {
                     var bookUri = e.Uri.StartsWith(ReadingOrigin, StringComparison.OrdinalIgnoreCase)
                         ? e.Uri[ReadingOrigin.Length..] : e.Uri;
-                    await RunAsync(async () =>
-                    {
-                        var note = await core.BookNoteAsync(bookUri);
-                        await ShowNoteAsync(note);
-                    });
+                    await RunAsync(() => FollowBookLinkAsync(bookUri));
                 }
                 return;
             }

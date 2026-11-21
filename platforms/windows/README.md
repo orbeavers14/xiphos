@@ -192,3 +192,8 @@ child**, **Previous section**, and **Next section** navigate the committed book
 selection. The shared core applies the module's DisplayLevel and engine filters.
 Ordinary book footnotes open the same note-preview dialog. Book browsing keeps
 Bible and dictionary histories separate.
+
+Book links use the shared typed router for book, dictionary, scripture, note
+and reference-list destinations. A book link's named position is located after
+its document loads. Clickable local images open a passive image preview using
+the core's bounded module-resource reader; closing it returns to the same book.

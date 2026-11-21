@@ -158,7 +158,7 @@ internal sealed partial class ReaderWindow
             bookContentsTitle.Text += " · No child sections";
     }
 
-    private async Task ShowBookAsync(BookDocument document)
+    private async Task ShowBookAsync(BookDocument document, string? anchor = null)
     {
         bookDocument = document;
         bookContentsPane.IsExpanded = false;
@@ -169,7 +169,7 @@ internal sealed partial class ReaderWindow
         if (document.Issues.Count > 0)
             bookDetails.Text += " · " + string.Join("; ", document.Issues);
         await RenderAsync(bookView, Document(document.Module, document.Tree.Current.Path,
-            document.Html, stylesheet: document.Css));
+            document.Html, stylesheet: document.Css), anchor: anchor);
         bookView.Visibility = Visibility.Visible;
         if (bookPane.Visibility == Visibility.Visible)
             bookView.Focus(FocusState.Programmatic);

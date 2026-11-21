@@ -216,9 +216,24 @@ Greek descendant text. Contents loaded root choices; keyboard selection opened
 Close books restored Bible controls at the unchanged John 1:1 passage. The
 book workspace hides inactive Bible/search controls to reserve reading space.
 
-Book image commands, ordinary book/module links, saved selection/restoration,
-separate windows, broad assets/corpus and accessibility/resize acceptance remain
-open. Continue with typed book-link dispatch and bounded image previews.
+Book/module links now use the shared contextual typed router, retaining the
+actual book path/anchor, dictionary, scripture or preview destination. Owned
+image bytes come from the core's bounded resource reader and render in a passive
+preview dialog. Book anchors wait for their matching WebView navigation before
+a fixed host query locates an ID or named anchor. Missing anchors are reported.
+
+The ARM64 native DLL and managed Release app built successfully for this follow-up,
+with zero managed warnings/errors. Managed fixtures passed typed descendant notes,
+book/anchor targets, explicit targets without a main Bible, exact PNG bytes/source,
+outside-path rejection, dictionary/scripture/range dispatch, canonical scripture
+activation and selection/history isolation for previews. In the desktop app,
+the SDK-generated inline PNG rendered, its image command opened the correct
+source preview, and keyboard book-link activation opened `/Destination` and
+scrolled past forty context lines to the anchored Unicode target.
+
+Saved selection/restoration, separate windows, broader image formats/assets,
+corpus and accessibility/resize acceptance remain open. Continue with explicit
+book selection import/restoration and saved native sessions.
 
 ## ARM64 setup checkpoint (2026-11-16)
 

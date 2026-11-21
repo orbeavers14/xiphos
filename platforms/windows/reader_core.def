@@ -219,3 +219,17 @@ EXPORTS
     xc_request_take_book_note
     xc_book_note_content
     xc_book_note_release
+    xc_worker_follow_book_pane_link_at
+    xc_request_take_book_uri_target
+    xc_book_uri_target_tree
+    xc_book_uri_target_anchor
+    xc_book_uri_target_release
+    xc_book_tree_module
+    xc_request_take_book_image_data
+    xc_book_image_data_source
+    xc_book_image_data_bytes
+    xc_book_image_data_size
+    xc_book_image_data_release
+    xc_book_image_module
+    xc_book_image_filename
+    xc_book_image_media_type
