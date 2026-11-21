@@ -23,7 +23,7 @@ references remain in core tests.
 - WinUI dictionary and lexicon lookup with nearby keys and independent history.
 - WinUI daily devotional module selection and calendar/day navigation.
 - WinUI note/reference-list previews and explicit per-module engine filters with shared settings import/save.
-- WinUI indexed-tree book browsing with paged contents, exact paths and shared document navigation.
+- WinUI indexed-tree book browsing with paged contents, exact paths, shared document navigation and explicit saved-selection import.
 
 These are scoped implementations, not complete functionality or release sign-off.
 

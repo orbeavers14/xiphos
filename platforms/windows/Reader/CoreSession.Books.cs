@@ -35,16 +35,21 @@ internal sealed partial class CoreSession
 
     public Task<BookDocument> SelectBookAsync(string module, string path) =>
         RequestAsync((out nint request) => Native.xc_worker_select_book_document_path(worker, tab, module, path,
-            out request), request => ReadBookDocument(request, module));
+            out request), ReadBookDocument);
 
     public Task<BookDocument?> NavigateBookAsync(string module, int direction) =>
         RequestAsync((out nint request) => Native.xc_worker_navigate_book_document(worker, tab, direction,
             out request), request => Native.xc_request_book_selection_present(request) == 0 ? null :
-                ReadBookDocument(request, module));
+                ReadBookDocument(request));
 
     public Task<BookDocument?> RefreshBookAsync(string module) =>
         RequestAsync((out nint request) => Native.xc_worker_refresh_book_document(worker, tab, out request),
-            request => Native.xc_request_book_selection_present(request) == 0 ? null : ReadBookDocument(request, module));
+            request => Native.xc_request_book_selection_present(request) == 0 ? null : ReadBookDocument(request));
+
+    public Task<BookDocument?> ImportBookSelectionAsync(string path, bool startupOffset) =>
+        RequestAsync((out nint request) => Native.xc_worker_restore_book_document_profile(worker, tab, path,
+            startupOffset ? 1 : 0, out request), request => Native.xc_request_book_selection_present(request) == 0
+                ? null : ReadBookDocument(request));
 
     public Task<StudyPreview> BookNoteAsync(string uri) =>
         RequestAsync((out nint request) => Native.xc_worker_book_document_note_link(worker, tab, uri, 1, out request),
@@ -68,10 +73,11 @@ internal sealed partial class CoreSession
         return new BookTree(Node(0)!, Node(1), Node(2), Node(3), Node(4));
     }
 
-    private static BookDocument ReadBookDocument(nint request, string module) =>
+    private static BookDocument ReadBookDocument(nint request) =>
         ReadOwned(request, Native.xc_request_take_book_document, Native.xc_book_document_release, document =>
         {
-            var tree = CopyBookTree(Native.xc_book_document_tree(document));
+            var source = Native.xc_book_document_tree(document);
+            var tree = CopyBookTree(source);
             Check(Native.xc_book_document_lexical_layout(document, out var layout));
             var issues = new List<string>();
             var stylesheetIssue = Text(Native.xc_book_document_stylesheet_issue(document));
@@ -83,7 +89,7 @@ internal sealed partial class CoreSession
             var html = Native.xc_book_document_inline_html(document);
             if (html == 0)
                 html = Native.xc_book_document_presentation_html(document);
-            return new BookDocument(module, tree, Text(html),
+            return new BookDocument(Text(Native.xc_book_tree_module(source)), tree, Text(html),
                 Text(layout.Css) + "\n" + Text(Native.xc_book_document_stylesheet_inline_css(document)),
                 Native.xc_book_document_display_level(document),
                 (ulong)Native.xc_book_document_count(document), issues);

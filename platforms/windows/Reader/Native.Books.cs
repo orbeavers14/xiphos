@@ -54,6 +54,9 @@ internal static partial class Native
     [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
     internal static extern int xc_worker_refresh_book_document(nint worker, ulong tab, out nint request);
     [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern int xc_worker_restore_book_document_profile(nint worker, ulong tab,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string path, int mode, out nint request);
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
     internal static extern int xc_request_book_selection_present(nint request);
     [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
     internal static extern nint xc_request_take_book_document(nint request);

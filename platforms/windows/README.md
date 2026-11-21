@@ -197,3 +197,9 @@ Book links use the shared typed router for book, dictionary, scripture, note
 and reference-list destinations. A book link's named position is located after
 its document loads. Clickable local images open a passive image preview using
 the core's bounded module-resource reader; closing it returns to the same book.
+
+**Import selection → Saved book key…** reads a book selection from an explicit
+Xiphos XML preferences file. **Saved startup offset…** instead applies the
+separately saved startup position. Those fields can differ in older profiles.
+Importing reads the selected file without rewriting it or changing Bible and
+dictionary histories. A missing saved book leaves the current selection intact.

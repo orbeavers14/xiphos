@@ -233,3 +233,4 @@ EXPORTS
     xc_book_image_module
     xc_book_image_filename
     xc_book_image_media_type
+    xc_worker_restore_book_document_profile

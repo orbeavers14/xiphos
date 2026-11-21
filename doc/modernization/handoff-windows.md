@@ -231,9 +231,22 @@ the SDK-generated inline PNG rendered, its image command opened the correct
 source preview, and keyboard book-link activation opened `/Destination` and
 scrolled past forty context lines to the anchored Unicode target.
 
-Saved selection/restoration, separate windows, broader image formats/assets,
-corpus and accessibility/resize acceptance remain open. Continue with explicit
-book selection import/restoration and saved native sessions.
+Explicit book selection import now exposes both shared restore modes: saved
+display key and saved startup offset. The Windows XML picker supplies an explicit
+path to the existing worker profile reader. Returned module identity comes from
+the owned source tree. Missing-book profiles are no-ops; failed imports retain
+the committed document and source files remain unchanged.
+
+The native DLL and WinUI ARM64 Release app built successfully with zero managed
+warnings/errors. Managed fixtures passed a Unicode filename and UTF-16 profile,
+conflicting saved key/offset modes, exact profile-byte preservation, absent and
+rejected module retention, and Bible/dictionary history isolation. The desktop
+check opened both import choices, completed the native XML picker for Saved
+book key, and displayed the expected `/Chapter` Unicode document.
+
+Saved native sessions, separate windows, broader image formats/assets, corpus
+and accessibility/resize acceptance remain open. Continue with native session
+save/load and tab ownership through the shared persistence service.
 
 ## ARM64 setup checkpoint (2026-11-16)
 

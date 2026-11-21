@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Windows.System;
+using Windows.Storage.Pickers;
 
 namespace Xiphos.Reader;
 
@@ -19,6 +20,7 @@ internal sealed partial class ReaderWindow
     private readonly TextBox bookPath = new() { Header = "Book path", MinWidth = 160, PlaceholderText = "Blank for root" };
     private readonly Button openBook = new() { Content = "Open path", VerticalAlignment = VerticalAlignment.Bottom };
     private readonly Button loadBookContents = new() { Content = "Contents", VerticalAlignment = VerticalAlignment.Bottom };
+    private readonly Button importBookSelection = new() { Content = "Import selection", VerticalAlignment = VerticalAlignment.Bottom };
     private readonly Button bookContentsUp = new() { Content = "Up contents" };
     private readonly Button browseBookChildren = new() { Content = "Browse children" };
     private readonly Button readBookSelection = new() { Content = "Read selection" };
@@ -40,7 +42,7 @@ internal sealed partial class ReaderWindow
         for (var i = 0; i < 5; i++)
             bookPane.RowDefinitions.Add(new RowDefinition { Height = i == 4 ?
                 new GridLength(1, GridUnitType.Star) : GridLength.Auto });
-        AddRow(bookPane, Horizontal(bookModule, bookPath, openBook, loadBookContents), 0);
+        AddRow(bookPane, Horizontal(bookModule, bookPath, openBook, loadBookContents, importBookSelection), 0);
         var contents = new StackPanel { Spacing = 6 };
         contents.Children.Add(bookContentsTitle);
         contents.Children.Add(Horizontal(bookChildren, bookContentsUp, browseBookChildren, readBookSelection,
@@ -52,6 +54,14 @@ internal sealed partial class ReaderWindow
         AddRow(bookPane, MakePane(bookTitle, bookView, "Book content"), 4);
         bookView.Visibility = Visibility.Collapsed;
         AutomationProperties.SetName(bookChildren, "Book contents");
+        var importMenu = new MenuFlyout();
+        foreach (var startupOffset in new[] { false, true })
+        {
+            var item = new MenuFlyoutItem { Text = startupOffset ? "Saved startup offset…" : "Saved book key…" };
+            item.Click += async (_, _) => await RunAsync(() => ImportBookSelectionAsync(startupOffset));
+            importMenu.Items.Add(item);
+        }
+        importBookSelection.Flyout = importMenu;
         toggleBooks.Click += (_, _) => SetBooksVisible(bookPane.Visibility != Visibility.Visible);
         bookModule.SelectionChanged += (_, _) =>
         {
@@ -127,6 +137,7 @@ internal sealed partial class ReaderWindow
         var available = ready && core != null && bookModule.SelectedItem is Module;
         toggleBooks.IsEnabled = ready && bookModule.Items.Count > 0;
         bookModule.IsEnabled = bookPath.IsEnabled = openBook.IsEnabled = loadBookContents.IsEnabled = available;
+        importBookSelection.IsEnabled = ready && core != null;
         bookChildren.IsEnabled = available && bookContents != null;
         bookContentsUp.IsEnabled = available && bookContentsTree?.Parent != null;
         browseBookChildren.IsEnabled = available && bookChildren.SelectedItem is BookNode { HasChildren: true };
@@ -139,6 +150,21 @@ internal sealed partial class ReaderWindow
     }
 
     private Task OpenBookPathAsync() => OpenBookAsync(((Module)bookModule.SelectedItem).Id, bookPath.Text.Trim());
+
+    private async Task ImportBookSelectionAsync(bool startupOffset)
+    {
+        var picker = new FileOpenPicker();
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
+        picker.FileTypeFilter.Add(".xml");
+        var file = await picker.PickSingleFileAsync();
+        if (file == null)
+            return;
+        var document = await core!.ImportBookSelectionAsync(file.Path, startupOffset);
+        if (document == null)
+            status.Text = "The profile has no saved book selection.";
+        else
+            await ShowBookAsync(document);
+    }
 
     private async Task OpenBookAsync(string module, string path) =>
         await ShowBookAsync(await core!.SelectBookAsync(module, path));
