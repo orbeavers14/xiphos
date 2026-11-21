@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 namespace Xiphos.Reader;
 
 internal sealed record Module(string Id, string Title, string Type, bool Commentary, bool RightToLeft,
-    bool Devotional = false)
+    bool Devotional = false, uint DeclaredOptions = 0)
 {
     public bool IsDictionary => Type == "Lexicons / Dictionaries" && !Devotional;
     public override string ToString() => Title == Id ? Id : $"{Title} ({Id})";
@@ -55,7 +55,9 @@ internal sealed partial class CoreSession : IAsyncDisposable
                     modules.Add(new Module(id, title.Length == 0 ? id : title,
                         Text(Native.xc_catalog_type(catalog, i)),
                         Native.xc_catalog_is_regular_commentary(catalog, i) != 0,
-                        Native.xc_catalog_is_rtl(catalog, i) != 0, Native.xc_catalog_is_devotional(catalog, i) != 0));
+                        Native.xc_catalog_is_rtl(catalog, i) != 0, Native.xc_catalog_is_devotional(catalog, i) != 0,
+                        Native.xc_catalog_declared_engine_flags(catalog, i) |
+                            (Native.xc_catalog_transliteration_available(catalog, i) != 0 ? 1u << 14 : 0)));
                 }
                 return modules;
             }));

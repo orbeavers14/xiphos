@@ -175,4 +175,15 @@ EXPORTS
     xc_reference_list_html
     xc_reference_list_expression
     xc_worker_read_reference_list
+    xc_worker_module_engine_options
+    xc_request_engine_options
+    xc_worker_enable_module_preferences
+    xc_worker_set_module_engine_options
+    xc_worker_clear_module_engine_options
+    xc_worker_import_module_preferences
+    xc_worker_save_module_preferences
+    xc_worker_read_passage
+    xc_catalog_declared_engine_flags
+    xc_catalog_transliteration_available
+    xc_worker_read_dictionary
     xc_word_study_lemma

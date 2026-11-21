@@ -55,7 +55,10 @@ internal sealed partial class ReaderWindow : Window
         AddRow(layout, Horizontal(library, open), 0);
         AddRow(layout, Horizontal(bible, commentary, reference, go, showReferences), 1);
         AddRow(layout, Horizontal(back, forward, previous, next, toggleParallel, toggleDictionary, studySelectedWord), 2);
-        AddRow(layout, BuildSearchPane(), 3);
+        var tools = new StackPanel { Spacing = 6 };
+        tools.Children.Add(BuildSearchPane());
+        tools.Children.Add(BuildReadingOptionsPane());
+        AddRow(layout, tools, 3);
         AddRow(layout, reading, 4);
         AddRow(layout, BuildParallelPane(), 4);
         AddRow(layout, BuildDictionaryPane(), 4);
@@ -165,6 +168,7 @@ internal sealed partial class ReaderWindow : Window
         SetSearchModules([]);
         ResetParallel([]);
         ResetDictionaries([]);
+        ResetReadingOptions([]);
         var session = new CoreSession(root);
         try
         {
@@ -181,6 +185,7 @@ internal sealed partial class ReaderWindow : Window
         SetSearchModules(modules.Where(module => module.Type == "Biblical Texts" || module.Commentary).ToArray());
         ResetParallel(modules.Where(module => module.Type == "Biblical Texts").ToArray());
         ResetDictionaries(modules);
+        ResetReadingOptions(modules);
         await LoadParallelSetsAsync(useDefault: true);
         commentary.SelectedIndex = 0;
         if (bible.Items.Count == 0)
@@ -352,6 +357,9 @@ internal sealed partial class ReaderWindow : Window
     {
         if (active != null || closing)
             return;
+        var xamlRoot = ((FrameworkElement)Content).XamlRoot;
+        var focusedControl = xamlRoot == null ? null :
+            Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(xamlRoot) as Control;
         var operation = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         active = operation;
         status.Text = "";
@@ -363,6 +371,8 @@ internal sealed partial class ReaderWindow : Window
             active = null;
             UpdateControls();
             operation.SetResult();
+            if (!closing && focusedControl is { IsLoaded: true, IsEnabled: true, Visibility: Visibility.Visible })
+                focusedControl.Focus(FocusState.Programmatic);
         }
     }
 
@@ -379,6 +389,7 @@ internal sealed partial class ReaderWindow : Window
         UpdateSearchControls(ready);
         UpdateParallelControls(ready);
         UpdateDictionaryControls(ready);
+        UpdateReadingOptionsControls(ready);
         studySelectedWord.IsEnabled = ready && dictionaryPane.Visibility != Visibility.Visible && (parallelPane.Visibility == Visibility.Visible
             ? parallelChapter != null : current != null);
     }

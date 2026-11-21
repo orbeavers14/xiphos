@@ -1,6 +1,6 @@
 # Current development status
 
-Updated 2026-11-17. This page supersedes earlier progress estimates and checkpoint summaries.
+Updated 2026-11-21. This page supersedes earlier progress estimates and checkpoint summaries.
 
 The project is a shared C++/SWORD core with native frontend development. GTK3
 application/editor/backend code and its old packaging are retired. Frozen behavior
@@ -22,6 +22,7 @@ references remain in core tests.
 - WinUI selected-word study with source-preserving surface and lemma searches and activation in the default comparison.
 - WinUI dictionary and lexicon lookup with nearby keys and independent history.
 - WinUI daily devotional module selection and calendar/day navigation.
+- WinUI note/reference-list previews and explicit per-module engine filters with shared settings import/save.
 
 These are scoped implementations, not complete functionality or release sign-off.
 

@@ -1,6 +1,6 @@
 # Windows development handoff
 
-Updated 2026-11-17. Read [shared instructions](handoff.md) and
+Updated 2026-11-21. Read [shared instructions](handoff.md) and
 [Windows inventory/build tooling](../../platforms/windows/README.md).
 
 Target Windows 11 version 25H2 and check compatibility on 26H2. The native ARM64
@@ -16,7 +16,7 @@ and Windows runtime deployment validation remain open.
 [Historical prerequisite and API evidence](history/handoff-windows.md) remains
 available. Its dated compiler/SDK observations must be rechecked on the target machine.
 
-## WinUI 3 reading preview (2026-11-17)
+## WinUI 3 reading preview
 
 Build instructions are in the [Windows build guide](../../platforms/windows/README.md).
 The unpackaged .NET 10 preview uses Windows App SDK 2.7.0 and a UTF-8 process
@@ -170,6 +170,27 @@ A visual Windows check entered John 3:16-17, displayed both fixture texts,
 selected John 3:17 using the native chooser and opened its text in the reader.
 The PowerShell accessibility tree omitted the chooser and dialog footer;
 visual and keyboard verification passed through the computer-use runtime.
+
+### WinUI reading options (2026-11-21)
+
+The Reading options pane queries shared per-module settings without implicitly
+initializing them. An explicit defaults action enables the shared legacy
+defaults; module-declared filters and textual variants can then be applied or
+reset. Shared `modops.conf` import/save is explicit. Refreshing Bible,
+commentary and dictionary content uses read-only requests to preserve history.
+Asynchronous reader actions restore the invoking control's keyboard focus when
+it remains enabled and visible.
+
+The ARM64 Release native DLL and managed app built successfully. Focused managed
+fixture checks passed for capability copying, initially unconfigured options,
+explicit defaults, footnote on/off rendering, reset, settings round-trip and
+Bible/dictionary history isolation. In the native desktop app, enabling defaults
+exposed the actual verse footnote marker; keyboard activation opened its correct
+Unicode note body. Comparison engine options, presentation settings, broad
+module/corpus coverage and full keyboard/Narrator acceptance remain open.
+The rebuilt desktop app also retained Passage focus after Enter, with Tab
+continuing to Go; this is a scoped focus check rather than accessibility sign-off.
+Continue with general-book browsing through the shared tree-content service.
 
 ## ARM64 setup checkpoint (2026-11-16)
 

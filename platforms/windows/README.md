@@ -172,3 +172,12 @@ continue reading. Reference-range links open a list preview. Use its
 **Reference to open** chooser and **Open reference** button to visit a verse.
 You can also enter a range or reference list in **Passage** and select
 **Reference list** to preview it before choosing a verse.
+
+Expand **Reading options**, choose a module and select **Load options** to
+inspect its shared engine settings. **Use Xiphos defaults** explicitly enables
+the session's per-module defaults; supported filters and textual variants can
+then be changed with **Apply to module** or restored with **Reset module**.
+The current Bible, commentary and dictionary refresh without adding history.
+**Import settings…** and **Save settings…** read and write shared `modops.conf`
+files. Comparison rendering has separate options and is not changed by these
+controls.
