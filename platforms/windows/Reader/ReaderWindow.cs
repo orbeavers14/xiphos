@@ -301,7 +301,9 @@ internal sealed partial class ReaderWindow : Window
                         view == commentaryView ? current.Commentary : current.Module;
                     var sourceReference = view == commentaryView ? current.CommentaryReference : current.Reference;
                     var target = await core.FollowAsync(current, sourceModule, sourceReference, uri);
-                    if (target.Dictionary != null)
+                    if (target.Preview != null)
+                        await ShowNoteAsync(target.Preview);
+                    else if (target.Dictionary != null)
                     {
                         SetDictionaryVisible(true);
                         await ShowDictionaryAsync(target.Dictionary);
@@ -380,6 +382,7 @@ internal sealed partial class ReaderWindow : Window
         closing = true;
         wordStudyDialog?.Hide();
         lexiconDialog?.Hide();
+        noteDialog?.Hide();
         searchCancellation?.Cancel();
         UpdateControls();
         if (active != null)

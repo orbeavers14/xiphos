@@ -166,3 +166,6 @@ Expand **Daily devotional** in the dictionary pane, choose a devotional
 module and date, then select **Read devotional**. **Previous day** and
 **Next day** browse dates. The date and any nearest available entry are
 shown separately.
+
+Footnote links in reading text open a note preview. Close the preview to
+continue reading.

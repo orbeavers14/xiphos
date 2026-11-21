@@ -23,7 +23,7 @@ The unpackaged .NET 10 preview uses Windows App SDK 2.7.0 and a UTF-8 process
 manifest. The shell opens a local SWORD library and uses the shared FIFO worker
 for the catalog, passage rendering, commentary, navigation and history. WebView2
 is configured for passive HTML and routes individual passage links through the
-core. Reference lists, note previews, and other study views remain open.
+core. Broader reference-list and study workflows remain open.
 
 The ARM64 Release native DLL and WinUI application built successfully on
 Windows 11 25H2. A managed smoke check loaded a generated SWORD Bible, rendered
@@ -146,6 +146,17 @@ The ARM64 Release build passed. A managed fixture checked devotional catalog
 classification, leap-day rendering, next-day content and both histories.
 The desktop check read today's fixture and stepped forward and back while
 the Bible stayed at John 1:1. A saved default devotional and broader corpus
+checks remain open.
+
+### WinUI note previews
+
+Typed footnote links from the reading panes open a native dialog with passive
+WebView2 note content. The result preserves its source module, passage and
+label and is released after copying.
+
+The ARM64 Release build and focused managed checks passed. A desktop check
+activated a note link and displayed the original Unicode body in its dialog.
+Note-body links, retained hover previews and broader cross-reference workflow
 checks remain open.
 
 ## ARM64 setup checkpoint (2026-11-16)

@@ -13,6 +13,8 @@ internal sealed record Module(string Id, string Title, string Type, bool Comment
 internal sealed record Passage(string Module, string Reference, string Html,
     string Commentary, string CommentaryReference, string CommentaryHtml);
 
+internal sealed record StudyPreview(string Module, string Reference, string Label, string Html);
+
 internal enum SearchMode
 {
     Regex = 0, Phrase = 1, Words = 2, Lemma = 3, Indexed = 7,
@@ -128,22 +130,32 @@ internal sealed partial class CoreSession : IAsyncDisposable
             request => ReadOwned(request, Native.xc_request_take_history, Native.xc_history_release,
                 history => (Native.xc_history_can_back(history) != 0, Native.xc_history_can_forward(history) != 0)));
 
-    public async Task<(Passage? Passage, DictionaryEntry? Dictionary)> FollowAsync(Passage current,
+    public async Task<(Passage? Passage, DictionaryEntry? Dictionary, StudyPreview? Preview)> FollowAsync(Passage current,
         string sourceModule, string sourceReference, string uri)
     {
         var target = await RequestAsync((out nint r) => Native.xc_worker_follow_pane_link_at(
             worker, tab, current.Module, sourceModule, sourceReference, uri, out r), ReadPaneTarget);
-        if (target.Dictionary != null)
-            return (null, target.Dictionary);
-        return (await VisitLinkAsync(current.Module, current.Commentary, target.Module, target.Reference), null);
+        if (target.Dictionary != null || target.Preview != null)
+            return (null, target.Dictionary, target.Preview);
+        return (await VisitLinkAsync(current.Module, current.Commentary, target.Module, target.Reference), null, null);
     }
 
-    private static (string Module, string Reference, DictionaryEntry? Dictionary) ReadPaneTarget(nint request)
+    private static (string Module, string Reference, DictionaryEntry? Dictionary, StudyPreview? Preview) ReadPaneTarget(nint request)
     {
+        var note = Native.xc_request_take_note(request);
+        if (note != 0)
+        {
+            try
+            {
+                return ("", "", null, new StudyPreview(Text(Native.xc_note_module(note)),
+                    Text(Native.xc_note_reference(note)), Text(Native.xc_note_label(note)), Text(Native.xc_note_html(note))));
+            }
+            finally { Native.xc_note_release(note); }
+        }
         var dictionary = Native.xc_request_take_dictionary_entry(request);
         if (dictionary != 0)
         {
-            try { return ("", "", CopyDictionary(dictionary)); }
+            try { return ("", "", CopyDictionary(dictionary), null); }
             finally { Native.xc_dictionary_entry_release(dictionary); }
         }
         var lexical = Native.xc_request_take_lexical_entry(request);
@@ -153,12 +165,12 @@ internal sealed partial class CoreSession : IAsyncDisposable
             {
                 return ("", "", new DictionaryEntry(Text(Native.xc_lexical_entry_dictionary_module(lexical)),
                     Text(Native.xc_lexical_entry_dictionary_key(lexical)),
-                    Text(Native.xc_lexical_entry_dictionary_html(lexical))));
+                    Text(Native.xc_lexical_entry_dictionary_html(lexical))), null);
             }
             finally { Native.xc_lexical_entry_release(lexical); }
         }
         var target = ReadLink(request);
-        return (target.Module, target.Reference, null);
+        return (target.Module, target.Reference, null, null);
     }
 
     public Task<Passage> VisitLinkAsync(string bible, string commentary, string module, string reference) =>
