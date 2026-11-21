@@ -21,6 +21,7 @@ references remain in core tests.
 - WinUI parallel reading with ordered Bible selection, an aligned chapter table, a stacked verse view, named sets and saved translation visibility.
 - WinUI selected-word study with source-preserving surface and lemma searches and activation in the default comparison.
 - WinUI dictionary and lexicon lookup with nearby keys and independent history.
+- WinUI daily devotional module selection and calendar/day navigation.
 
 These are scoped implementations, not complete functionality or release sign-off.
 

@@ -23,21 +23,23 @@ internal sealed partial class ReaderWindow
     private readonly WebView2 dictionaryView = new();
     private StackPanel nearbyRow = null!;
     private DictionaryEntry? dictionaryEntry;
+    private string displayedDictionarySource = "";
     private (bool Back, bool Forward) dictionaryHistory;
 
     private Grid BuildDictionaryPane()
     {
-        for (var i = 0; i < 4; i++)
+        for (var i = 0; i < 5; i++)
             dictionaryPane.RowDefinitions.Add(new RowDefinition
             {
-                Height = i == 3 ? new GridLength(1, GridUnitType.Star) : GridLength.Auto
+                Height = i == 4 ? new GridLength(1, GridUnitType.Star) : GridLength.Auto
             });
         AddRow(dictionaryPane, Horizontal(dictionaryModule, dictionaryKey, dictionaryLookup, dictionaryNearby, configureLexicons), 0);
         nearbyRow = Horizontal(nearbyKeys, openNearbyKey);
         nearbyRow.Visibility = Visibility.Collapsed;
         AddRow(dictionaryPane, nearbyRow, 1);
         AddRow(dictionaryPane, Horizontal(previousDictionaryKey, nextDictionaryKey, dictionaryBack, dictionaryForward), 2);
-        AddRow(dictionaryPane, MakePane(dictionaryTitle, dictionaryView, "Dictionary entry"), 3);
+        AddRow(dictionaryPane, BuildDevotionalControls(), 3);
+        AddRow(dictionaryPane, MakePane(dictionaryTitle, dictionaryView, "Dictionary entry"), 4);
         dictionaryView.Visibility = Visibility.Collapsed;
 
         toggleDictionary.Click += (_, _) => SetDictionaryVisible(dictionaryPane.Visibility != Visibility.Visible);
@@ -70,14 +72,16 @@ internal sealed partial class ReaderWindow
     private void ResetDictionaries(IReadOnlyList<Module> available)
     {
         dictionaryEntry = null;
+        displayedDictionarySource = "";
         dictionaryHistory = default;
         dictionaryTitle.Text = "";
         dictionaryView.Visibility = Visibility.Collapsed;
         SetDictionaryVisible(false);
-        dictionaryModule.ItemsSource = available;
-        dictionaryModule.SelectedIndex = available.Count == 0 ? -1 : 0;
+        dictionaryModule.ItemsSource = available.Where(module => module.IsDictionary).ToArray();
+        dictionaryModule.SelectedIndex = dictionaryModule.Items.Count == 0 ? -1 : 0;
         dictionaryKey.Text = "";
         ClearNearbyDictionaryKeys();
+        ResetDevotionals(available);
     }
 
     private void SetDictionaryVisible(bool visible)
@@ -104,18 +108,19 @@ internal sealed partial class ReaderWindow
     private void UpdateDictionaryControls(bool ready)
     {
         var module = dictionaryModule.SelectedItem as Module;
-        toggleDictionary.IsEnabled = ready && dictionaryModule.Items.Count > 0;
-        dictionaryModule.IsEnabled = toggleDictionary.IsEnabled;
+        toggleDictionary.IsEnabled = ready && (dictionaryModule.Items.Count > 0 || devotionalModule.Items.Count > 0);
+        dictionaryModule.IsEnabled = ready && dictionaryModule.Items.Count > 0;
         configureLexicons.IsEnabled = ready && core != null;
         dictionaryKey.IsEnabled = ready && module != null;
         dictionaryLookup.IsEnabled = dictionaryNearby.IsEnabled = dictionaryKey.IsEnabled &&
             !string.IsNullOrWhiteSpace(dictionaryKey.Text);
         nearbyKeys.IsEnabled = ready && nearbyKeys.Items.Count > 0;
         openNearbyKey.IsEnabled = nearbyKeys.IsEnabled && nearbyKeys.SelectedItem is string;
-        previousDictionaryKey.IsEnabled = nextDictionaryKey.IsEnabled = ready && dictionaryEntry != null &&
+        previousDictionaryKey.IsEnabled = nextDictionaryKey.IsEnabled = ready && !devotionalActive && dictionaryEntry != null &&
             module?.Id == dictionaryEntry.Module;
         dictionaryBack.IsEnabled = ready && dictionaryHistory.Back;
         dictionaryForward.IsEnabled = ready && dictionaryHistory.Forward;
+        UpdateDevotionalControls(ready);
     }
 
     private async Task LoadNearbyDictionaryKeysAsync()
@@ -137,7 +142,9 @@ internal sealed partial class ReaderWindow
 
     private async Task ShowDictionaryAsync(DictionaryEntry entry)
     {
+        devotionalActive = false;
         dictionaryEntry = entry;
+        displayedDictionarySource = entry.Module;
         dictionaryModule.SelectedItem = modules.FirstOrDefault(module => module.Id == entry.Module);
         dictionaryKey.Text = entry.Key;
         ClearNearbyDictionaryKeys();

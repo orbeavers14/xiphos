@@ -127,13 +127,26 @@ original-language lexicon targets are now configurable through the dictionary
 pane's Lexicon settings dialog. It supports all five nullable choices, explicit
 XML import/save, and typed Strong's and morphology results from reading links.
 The ARM64 Release build and focused managed fixture passed preference readback,
-XML round-trip and configured Strong's dispatch. Hover, dictionary-pane links
-and devotional selection remain open. The desktop settings check applied all
+XML round-trip and configured Strong's dispatch. Hover remains open.
+The desktop settings check applied all
 five fixture dictionary choices through the native editable selectors.
 
 Dictionary-pane links now use the shared pane router with the entry's actual
 module as source. Managed checks resolved both scripture and dictionary links.
 An ARM64 desktop check activated a dictionary URI and opened BETA in the pane.
+
+### WinUI daily devotional
+
+The dictionary pane includes a daily devotional section with module selection,
+a native calendar date picker and previous/next day controls. It uses the shared
+read-only date policy, distinguishes the requested date from a nearest
+available SDK key, and keeps Bible and dictionary histories intact.
+
+The ARM64 Release build passed. A managed fixture checked devotional catalog
+classification, leap-day rendering, next-day content and both histories.
+The desktop check read today's fixture and stepped forward and back while
+the Bible stayed at John 1:1. A saved default devotional and broader corpus
+checks remain open.
 
 ## ARM64 setup checkpoint (2026-11-16)
 

@@ -159,4 +159,11 @@ EXPORTS
     xc_lexical_entry_dictionary_key
     xc_lexical_entry_dictionary_html
     xc_lexical_entry_release
+    xc_worker_read_devotional
+    xc_request_take_devotional_entry
+    xc_devotional_entry_module
+    xc_devotional_entry_date
+    xc_devotional_entry_matched_key
+    xc_devotional_entry_html
+    xc_devotional_entry_release
     xc_word_study_lemma

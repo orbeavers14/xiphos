@@ -179,7 +179,7 @@ internal sealed partial class ReaderWindow : Window
         commentary.ItemsSource = new[] { NoCommentary }.Concat(modules.Where(module => module.Commentary)).ToArray();
         SetSearchModules(modules.Where(module => module.Type == "Biblical Texts" || module.Commentary).ToArray());
         ResetParallel(modules.Where(module => module.Type == "Biblical Texts").ToArray());
-        ResetDictionaries(modules.Where(module => module.IsDictionary).ToArray());
+        ResetDictionaries(modules);
         await LoadParallelSetsAsync(useDefault: true);
         commentary.SelectedIndex = 0;
         if (bible.Items.Count == 0)
@@ -297,7 +297,7 @@ internal sealed partial class ReaderWindow : Window
                 uri.StartsWith("bible:", StringComparison.OrdinalIgnoreCase))
                 await RunAsync(async () =>
                 {
-                    var sourceModule = view == dictionaryView ? dictionaryEntry!.Module :
+                    var sourceModule = view == dictionaryView ? displayedDictionarySource :
                         view == commentaryView ? current.Commentary : current.Module;
                     var sourceReference = view == commentaryView ? current.CommentaryReference : current.Reference;
                     var target = await core.FollowAsync(current, sourceModule, sourceReference, uri);

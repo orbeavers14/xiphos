@@ -161,3 +161,8 @@ revisit explicit lookups and dictionary links independently of Bible history.
 the three morphology dictionaries. **Apply** uses those choices for this
 reading session. **Save profile** and **Import profile** preserve or restore
 them in a shared XML profile.
+
+Expand **Daily devotional** in the dictionary pane, choose a devotional
+module and date, then select **Read devotional**. **Previous day** and
+**Next day** browse dates. The date and any nearest available entry are
+shown separately.
