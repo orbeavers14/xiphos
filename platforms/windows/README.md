@@ -152,3 +152,8 @@ form and any lemma or Strong’s terms supplied for the selected passage.
 Choose **Search** to query the source Bible. With a default comparison set,
 **Open in comparison** opens a Bible search result in that set using the
 shared verse mapping.
+
+Select **Dictionary**, choose an installed dictionary or lexicon and enter a
+key. **Nearby keys** lists the surrounding entries. **Previous key** and
+**Next key** browse the module. **Dictionary back** and **Dictionary forward**
+revisit explicit lookups and dictionary links independently of Bible history.

@@ -3,8 +3,10 @@ using System.Runtime.InteropServices;
 
 namespace Xiphos.Reader;
 
-internal sealed record Module(string Id, string Title, string Type, bool Commentary, bool RightToLeft)
+internal sealed record Module(string Id, string Title, string Type, bool Commentary, bool RightToLeft,
+    bool Devotional = false)
 {
+    public bool IsDictionary => Type == "Lexicons / Dictionaries" && !Devotional;
     public override string ToString() => Title == Id ? Id : $"{Title} ({Id})";
 }
 
@@ -50,7 +52,7 @@ internal sealed partial class CoreSession : IAsyncDisposable
                     modules.Add(new Module(id, title.Length == 0 ? id : title,
                         Text(Native.xc_catalog_type(catalog, i)),
                         Native.xc_catalog_is_regular_commentary(catalog, i) != 0,
-                        Native.xc_catalog_is_rtl(catalog, i) != 0));
+                        Native.xc_catalog_is_rtl(catalog, i) != 0, Native.xc_catalog_is_devotional(catalog, i) != 0));
                 }
                 return modules;
             }));
@@ -126,11 +128,26 @@ internal sealed partial class CoreSession : IAsyncDisposable
             request => ReadOwned(request, Native.xc_request_take_history, Native.xc_history_release,
                 history => (Native.xc_history_can_back(history) != 0, Native.xc_history_can_forward(history) != 0)));
 
-    public async Task<Passage> FollowAsync(Passage current, string uri)
+    public async Task<(Passage? Passage, DictionaryEntry? Dictionary)> FollowAsync(Passage current,
+        string sourceModule, string sourceReference, string uri)
     {
-        var target = await RequestAsync((out nint r) => Native.xc_worker_resolve_study_link_at(
-            worker, tab, current.Module, current.Reference, uri, out r), ReadLink);
-        return await VisitLinkAsync(current.Module, current.Commentary, target.Module, target.Reference);
+        var target = await RequestAsync((out nint r) => Native.xc_worker_follow_pane_link_at(
+            worker, tab, current.Module, sourceModule, sourceReference, uri, out r), ReadPaneTarget);
+        if (target.Dictionary != null)
+            return (null, target.Dictionary);
+        return (await VisitLinkAsync(current.Module, current.Commentary, target.Module, target.Reference), null);
+    }
+
+    private static (string Module, string Reference, DictionaryEntry? Dictionary) ReadPaneTarget(nint request)
+    {
+        var dictionary = Native.xc_request_take_dictionary_entry(request);
+        if (dictionary != 0)
+        {
+            try { return ("", "", CopyDictionary(dictionary)); }
+            finally { Native.xc_dictionary_entry_release(dictionary); }
+        }
+        var target = ReadLink(request);
+        return (target.Module, target.Reference, null);
     }
 
     public Task<Passage> VisitLinkAsync(string bible, string commentary, string module, string reference) =>

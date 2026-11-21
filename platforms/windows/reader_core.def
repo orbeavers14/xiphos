@@ -9,7 +9,7 @@ EXPORTS
     xc_worker_navigate_passage_chapter
     xc_worker_select_commentary
     xc_worker_history
-    xc_worker_resolve_study_link_at
+    xc_worker_follow_pane_link_at
     xc_worker_visit_linked_passage
     xc_request_poll
     xc_request_release
@@ -124,4 +124,23 @@ EXPORTS
     xc_word_study_surface
     xc_word_study_lemma_count
     xc_word_study_release
+    xc_catalog_is_devotional
+    xc_worker_visit_dictionary
+    xc_worker_dictionary_choices
+    xc_worker_navigate_dictionary
+    xc_worker_navigate_dictionary_history
+    xc_worker_dictionary_history
+    xc_request_take_dictionary_entry
+    xc_request_take_dictionary_history
+    xc_request_take_dictionary_choices
+    xc_dictionary_entry_module
+    xc_dictionary_entry_key
+    xc_dictionary_entry_html
+    xc_dictionary_entry_release
+    xc_dictionary_history_can_back
+    xc_dictionary_history_can_forward
+    xc_dictionary_history_release
+    xc_dictionary_choices_count
+    xc_dictionary_choices_release
+    xc_dictionary_choices_at
     xc_word_study_lemma

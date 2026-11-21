@@ -20,6 +20,7 @@ references remain in core tests.
 - WinUI Bible and commentary search with passage bounds, last-result refinement, separate preview and activation, progress, Stop, and text/HTML export.
 - WinUI parallel reading with ordered Bible selection, an aligned chapter table, a stacked verse view, named sets and saved translation visibility.
 - WinUI selected-word study with source-preserving surface and lemma searches and activation in the default comparison.
+- WinUI dictionary and lexicon lookup with nearby keys and independent history.
 
 These are scoped implementations, not complete functionality or release sign-off.
 

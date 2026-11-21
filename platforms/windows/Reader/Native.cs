@@ -119,7 +119,9 @@ internal static partial class Native
     internal static extern int xc_worker_history(nint worker, ulong tab, out nint request);
 
     [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
-    internal static extern int xc_worker_resolve_study_link_at(nint worker, ulong tab, [MarshalAs(UnmanagedType.LPUTF8Str)] string module, [MarshalAs(UnmanagedType.LPUTF8Str)] string reference, [MarshalAs(UnmanagedType.LPUTF8Str)] string uri, out nint request);
+    internal static extern int xc_worker_follow_pane_link_at(nint worker, ulong tab,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string navigationModule, [MarshalAs(UnmanagedType.LPUTF8Str)] string sourceModule,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string reference, [MarshalAs(UnmanagedType.LPUTF8Str)] string uri, out nint request);
 
     [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
     internal static extern int xc_worker_visit_linked_passage(nint worker, ulong tab, [MarshalAs(UnmanagedType.LPUTF8Str)] string bible, [MarshalAs(UnmanagedType.LPUTF8Str)] string commentary, [MarshalAs(UnmanagedType.LPUTF8Str)] string module, [MarshalAs(UnmanagedType.LPUTF8Str)] string reference, out nint request);

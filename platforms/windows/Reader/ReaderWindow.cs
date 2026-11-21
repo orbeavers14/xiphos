@@ -54,10 +54,11 @@ internal sealed partial class ReaderWindow : Window
             layout.RowDefinitions.Add(new RowDefinition { Height = i == 4 ? new GridLength(1, GridUnitType.Star) : GridLength.Auto });
         AddRow(layout, Horizontal(library, open), 0);
         AddRow(layout, Horizontal(bible, commentary, reference, go), 1);
-        AddRow(layout, Horizontal(back, forward, previous, next, toggleParallel, studySelectedWord), 2);
+        AddRow(layout, Horizontal(back, forward, previous, next, toggleParallel, toggleDictionary, studySelectedWord), 2);
         AddRow(layout, BuildSearchPane(), 3);
         AddRow(layout, reading, 4);
         AddRow(layout, BuildParallelPane(), 4);
+        AddRow(layout, BuildDictionaryPane(), 4);
         AddRow(layout, status, 5);
         AutomationProperties.SetLiveSetting(status, AutomationLiveSetting.Polite);
         Content = layout;
@@ -162,6 +163,7 @@ internal sealed partial class ReaderWindow : Window
         commentary.ItemsSource = null;
         SetSearchModules([]);
         ResetParallel([]);
+        ResetDictionaries([]);
         var session = new CoreSession(root);
         try
         {
@@ -177,6 +179,7 @@ internal sealed partial class ReaderWindow : Window
         commentary.ItemsSource = new[] { NoCommentary }.Concat(modules.Where(module => module.Commentary)).ToArray();
         SetSearchModules(modules.Where(module => module.Type == "Biblical Texts" || module.Commentary).ToArray());
         ResetParallel(modules.Where(module => module.Type == "Biblical Texts").ToArray());
+        ResetDictionaries(modules.Where(module => module.IsDictionary).ToArray());
         await LoadParallelSetsAsync(useDefault: true);
         commentary.SelectedIndex = 0;
         if (bible.Items.Count == 0)
@@ -209,7 +212,7 @@ internal sealed partial class ReaderWindow : Window
         commentary.SelectedItem = modules.FirstOrDefault(module => module.Id == passage.Commentary) ?? NoCommentary;
         (backAvailable, forwardAvailable) = await core!.HistoryAsync();
 
-        reading.Visibility = parallelPane.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+        UpdateReadingVisibility();
         bibleTitle.Text = $"{passage.Module} · {passage.Reference}";
         var hasCommentary = passage.Commentary.Length != 0;
         commentaryColumn.Width = hasCommentary ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
@@ -292,7 +295,19 @@ internal sealed partial class ReaderWindow : Window
             if (uri.StartsWith("passagestudy.jsp?", StringComparison.OrdinalIgnoreCase) ||
                 uri.StartsWith("sword:", StringComparison.OrdinalIgnoreCase) ||
                 uri.StartsWith("bible:", StringComparison.OrdinalIgnoreCase))
-                await RunAsync(async () => await ShowAsync(await core.FollowAsync(current, uri)));
+                await RunAsync(async () =>
+                {
+                    var sourceModule = view == commentaryView ? current.Commentary : current.Module;
+                    var sourceReference = view == commentaryView ? current.CommentaryReference : current.Reference;
+                    var target = await core.FollowAsync(current, sourceModule, sourceReference, uri);
+                    if (target.Dictionary != null)
+                    {
+                        SetDictionaryVisible(true);
+                        await ShowDictionaryAsync(target.Dictionary);
+                    }
+                    else if (target.Passage != null)
+                        await ShowAsync(target.Passage);
+                });
         };
         browser.FrameNavigationStarting += (_, e) => e.Cancel = true;
     }
@@ -346,7 +361,8 @@ internal sealed partial class ReaderWindow : Window
         forward.IsEnabled = ready && current != null && forwardAvailable;
         UpdateSearchControls(ready);
         UpdateParallelControls(ready);
-        studySelectedWord.IsEnabled = ready && (parallelPane.Visibility == Visibility.Visible
+        UpdateDictionaryControls(ready);
+        studySelectedWord.IsEnabled = ready && dictionaryPane.Visibility != Visibility.Visible && (parallelPane.Visibility == Visibility.Visible
             ? parallelChapter != null : current != null);
     }
 

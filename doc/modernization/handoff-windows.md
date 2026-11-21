@@ -110,6 +110,22 @@ returned John 3:16 from an unannotated Bible word.
 Physical keyboard and right-click routing, stacked selection, Hebrew and
 Aramaic desktop workflows, and mixed-canon corpus validation remain open.
 
+### WinUI dictionary and lexicon reading
+
+The dictionary pane opens installed non-devotional dictionary modules and
+supports key entry, nearby keys, adjacent-key browsing and independent
+back/forward history. Bible and commentary link dispatch consumes ordinary
+dictionary targets through the shared pane-link worker. Dictionary browsing
+keeps the main passage in place.
+
+The ARM64 Release build and managed fixture checked a Unicode dictionary URI,
+nearby keys, adjacent keys and independent dictionary history. A native
+desktop check opened ALPHA, stepped to BETA, displayed the nearby chooser,
+then looked up CAFÉ and used dictionary back and forward. WebView2 showed the
+Unicode fixture text while the Bible remained at John 1:1. Configurable
+original-language lexicon targets, hover, dictionary-pane links and devotional
+selection remain open.
+
 ## ARM64 setup checkpoint (2026-11-16)
 
 On Windows 11 25H2 ARM64, Xiphos commit `26852e1a` passed CMake compiler and

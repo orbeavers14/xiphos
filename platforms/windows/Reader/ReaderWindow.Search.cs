@@ -205,6 +205,7 @@ internal sealed partial class ReaderWindow
         var selectedCommentary = (Module?)commentary.SelectedItem ?? NoCommentary;
         var passage = await core.VisitLinkAsync(selectedBible.Id, selectedCommentary.Id, latestResults.Module, hit);
         SetParallelVisible(false);
+        SetDictionaryVisible(false);
         await ShowAsync(passage);
     }
 
