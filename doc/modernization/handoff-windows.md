@@ -131,6 +131,10 @@ XML round-trip and configured Strong's dispatch. Hover, dictionary-pane links
 and devotional selection remain open. The desktop settings check applied all
 five fixture dictionary choices through the native editable selectors.
 
+Dictionary-pane links now use the shared pane router with the entry's actual
+module as source. Managed checks resolved both scripture and dictionary links.
+An ARM64 desktop check activated a dictionary URI and opened BETA in the pane.
+
 ## ARM64 setup checkpoint (2026-11-16)
 
 On Windows 11 25H2 ARM64, Xiphos commit `26852e1a` passed CMake compiler and

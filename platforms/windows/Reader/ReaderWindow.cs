@@ -287,7 +287,7 @@ internal sealed partial class ReaderWindow : Window
             if (e.Uri == ReadingDocument)
                 return;
             e.Cancel = true;
-            if ((view != bibleView && view != commentaryView) || !e.IsUserInitiated ||
+            if ((view != bibleView && view != commentaryView && view != dictionaryView) || !e.IsUserInitiated ||
                 current == null || core == null || active != null)
                 return;
             var uri = e.Uri.StartsWith(ReadingOrigin, StringComparison.OrdinalIgnoreCase)
@@ -297,7 +297,8 @@ internal sealed partial class ReaderWindow : Window
                 uri.StartsWith("bible:", StringComparison.OrdinalIgnoreCase))
                 await RunAsync(async () =>
                 {
-                    var sourceModule = view == commentaryView ? current.Commentary : current.Module;
+                    var sourceModule = view == dictionaryView ? dictionaryEntry!.Module :
+                        view == commentaryView ? current.Commentary : current.Module;
                     var sourceReference = view == commentaryView ? current.CommentaryReference : current.Reference;
                     var target = await core.FollowAsync(current, sourceModule, sourceReference, uri);
                     if (target.Dictionary != null)
@@ -306,7 +307,10 @@ internal sealed partial class ReaderWindow : Window
                         await ShowDictionaryAsync(target.Dictionary);
                     }
                     else if (target.Passage != null)
+                    {
+                        SetDictionaryVisible(false);
                         await ShowAsync(target.Passage);
+                    }
                 });
         };
         browser.FrameNavigationStarting += (_, e) => e.Cancel = true;
