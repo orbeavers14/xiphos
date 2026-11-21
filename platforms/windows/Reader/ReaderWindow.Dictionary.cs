@@ -87,16 +87,26 @@ internal sealed partial class ReaderWindow
     private void SetDictionaryVisible(bool visible)
     {
         if (visible)
+        {
             SetParallelVisible(false);
+            SetBooksVisible(false);
+        }
         dictionaryPane.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
         toggleDictionary.Content = visible ? "Close dictionary" : "Dictionary";
         UpdateReadingVisibility();
         UpdateControls();
     }
 
-    private void UpdateReadingVisibility() =>
+    private void UpdateReadingVisibility()
+    {
+        var readingControls = bookPane.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+        passageControls.Visibility = searchControls.Visibility = readingControls;
+        foreach (var control in new[] { back, forward, previous, next, studySelectedWord })
+            control.Visibility = readingControls;
         reading.Visibility = current != null && parallelPane.Visibility != Visibility.Visible &&
-            dictionaryPane.Visibility != Visibility.Visible ? Visibility.Visible : Visibility.Collapsed;
+            dictionaryPane.Visibility != Visibility.Visible && bookPane.Visibility != Visibility.Visible
+                ? Visibility.Visible : Visibility.Collapsed;
+    }
 
     private void ClearNearbyDictionaryKeys()
     {

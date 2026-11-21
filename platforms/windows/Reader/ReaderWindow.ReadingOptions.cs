@@ -142,6 +142,12 @@ internal sealed partial class ReaderWindow
             await ShowDictionaryAsync(await core!.RefreshDictionaryAsync(dictionaryEntry));
         if (devotionalActive)
             await ReadDevotionalAsync();
+        if (bookDocument != null)
+        {
+            var refreshed = await core!.RefreshBookAsync(bookDocument.Module);
+            if (refreshed != null)
+                await ShowBookAsync(refreshed);
+        }
         searchPreviewPane.Visibility = Visibility.Collapsed;
     }
 

@@ -105,7 +105,10 @@ internal sealed partial class ReaderWindow
     private void SetParallelVisible(bool visible)
     {
         if (visible)
+        {
             SetDictionaryVisible(false);
+            SetBooksVisible(false);
+        }
         parallelPane.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
         UpdateReadingVisibility();
         toggleParallel.Content = visible ? "Back to reading" : "Parallel reading";

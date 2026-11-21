@@ -681,7 +681,7 @@ xc_status xc_worker_read_book_document(xc_worker *w, uint64_t tab, const char *i
   if (!id || !*id) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.read_book_document(tab, id, offset); });
 }
-xc_status xc_worker_select_book_document_path(xc_worker *w,uint64_t tab,const char *module,const char *path,xc_request **out){if(out)*out=nullptr;if(!bounded_image_c_text(module,4096)||!bounded_image_c_text(path,4096))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.select_book_document(tab,{module,std::string(path)});});}
+xc_status xc_worker_select_book_document_path(xc_worker *w,uint64_t tab,const char *module,const char *path,xc_request **out){if(out)*out=nullptr;if(!bounded_image_c_text(module,4096)||!path||(*path&&!bounded_image_c_text(path,4096)))return XC_INVALID_ARGUMENT;return queue_request(w,out,[=](auto &worker){return worker.select_book_document(tab,{module,std::string(path)});});}
 xc_status xc_worker_select_book_document(xc_worker *w, uint64_t tab, const char *id, uint64_t offset, xc_request **out) {
   if (!id || !*id) { if (out) *out = nullptr; return XC_INVALID_ARGUMENT; }
   return queue_request(w, out, [=](auto &worker) { return worker.select_book_document(tab, {id, offset}); });

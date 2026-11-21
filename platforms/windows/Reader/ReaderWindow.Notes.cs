@@ -22,6 +22,7 @@ internal sealed partial class ReaderWindow
             var passage = await core.VisitAsync(module.Id, (commentary.SelectedItem as Module)?.Id ?? "", selected);
             SetParallelVisible(false);
             SetDictionaryVisible(false);
+            SetBooksVisible(false);
             await ShowAsync(passage);
         }
     }

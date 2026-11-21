@@ -181,3 +181,14 @@ The current Bible, commentary and dictionary refresh without adding history.
 **Import settings…** and **Save settings…** read and write shared `modops.conf`
 files. Comparison rendering has separate options and is not changed by these
 controls.
+
+Select **Books** to open an installed indexed-tree general book. **Contents**
+loads the root's direct children. Choose a section and use **Browse children**,
+**Up contents**, or **Next page** to explore its hierarchy in module order.
+**Read selection** opens the selected section and collapses contents to leave
+room for reading. **Open path** accepts an exact canonical path such as
+`/Chapter/Section`; leaving it blank opens the actual root. **Parent**, **First
+child**, **Previous section**, and **Next section** navigate the committed book
+selection. The shared core applies the module's DisplayLevel and engine filters.
+Ordinary book footnotes open the same note-preview dialog. Book browsing keeps
+Bible and dictionary histories separate.

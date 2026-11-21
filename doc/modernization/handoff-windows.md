@@ -190,7 +190,35 @@ Unicode note body. Comparison engine options, presentation settings, broad
 module/corpus coverage and full keyboard/Narrator acceptance remain open.
 The rebuilt desktop app also retained Passage focus after Enter, with Tab
 continuing to Go; this is a scoped focus check rather than accessibility sign-off.
-Continue with general-book browsing through the shared tree-content service.
+General-book browsing follows in the next checked batch.
+
+### WinUI general-book reading (2026-11-21)
+
+The Books pane uses the shared indexed-tree capability, owned bounded child
+pages, exact canonical paths and committed DisplayLevel documents. Parent,
+child and sibling navigation stays on the existing FIFO worker. It consumes
+prepared inline HTML, module/lexical CSS and resource diagnostics; book
+footnotes preserve exact descendant sources in the existing preview dialog.
+Reading-options refresh also re-renders the committed book document.
+
+ARM64 managed checks passed for root/absence identity, SDK child order,
+130-child pagination without duplication, Unicode descendants, DisplayLevel,
+exact book notes, navigation, rejected-path state retention and unchanged Bible
+and dictionary histories. The maintained `book_document_test` and
+`book_document_publication_test` passed locally against the ARM64 shared library.
+The C ABI now permits the canonical empty root path while still rejecting NULL;
+the publication test covers that distinction. Native DLL rebuilding succeeded
+with existing C4190/C4297 warnings in unrelated transfer/migration/sync helpers.
+The managed Release app built with zero warnings and errors.
+On the native desktop, exact `/Chapter` input displayed the Unicode chapter and
+Greek descendant text. Contents loaded root choices; keyboard selection opened
+`/Next` and collapsed contents, and Previous section returned to `/Chapter`.
+Close books restored Bible controls at the unchanged John 1:1 passage. The
+book workspace hides inactive Bible/search controls to reserve reading space.
+
+Book image commands, ordinary book/module links, saved selection/restoration,
+separate windows, broad assets/corpus and accessibility/resize acceptance remain
+open. Continue with typed book-link dispatch and bounded image previews.
 
 ## ARM64 setup checkpoint (2026-11-16)
 

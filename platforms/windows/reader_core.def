@@ -187,3 +187,35 @@ EXPORTS
     xc_catalog_transliteration_available
     xc_worker_read_dictionary
     xc_word_study_lemma
+    xc_catalog_has_book_tree
+    xc_worker_book_children
+    xc_request_take_book_children
+    xc_book_children_count
+    xc_book_children_parent
+    xc_book_children_get_node
+    xc_book_children_next_after
+    xc_book_children_release
+    xc_worker_book_tree
+    xc_request_take_book_tree
+    xc_book_tree_get_node
+    xc_book_tree_release
+    xc_worker_select_book_document_path
+    xc_worker_navigate_book_document
+    xc_worker_refresh_book_document
+    xc_request_book_selection_present
+    xc_request_take_book_document
+    xc_book_document_tree
+    xc_book_document_inline_html
+    xc_book_document_presentation_html
+    xc_book_document_stylesheet_inline_css
+    xc_book_document_stylesheet_issue
+    xc_book_document_lexical_layout
+    xc_book_document_inline_issue_count
+    xc_book_document_inline_issue_message
+    xc_book_document_display_level
+    xc_book_document_count
+    xc_book_document_release
+    xc_worker_book_document_note_link
+    xc_request_take_book_note
+    xc_book_note_content
+    xc_book_note_release

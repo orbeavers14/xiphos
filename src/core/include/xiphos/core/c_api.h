@@ -173,7 +173,8 @@ xc_book_document *xc_request_take_book_document(xc_request *request);
 /* Atomic application selection of the complete document, using the same numeric
  * reading minimum as select_book. Bounds/render failures retain prior state.
  * Nonoptional owned document result; no Bible/dictionary visit or file writes. */
-/* Exact canonical search-result path, using the existing atomic selection. */
+/* Exact canonical path, using the existing atomic selection. Empty path selects
+ * the actual root, distinct from numeric reading startup; NULL is invalid. */
 xc_status xc_worker_select_book_document_path(xc_worker *worker,uint64_t tab,const char *module,const char *path,xc_request **out);
 xc_status xc_worker_select_book_document(xc_worker *worker, uint64_t tab, const char *module, uint64_t offset, xc_request **out);
 /* These return optional documents through book_selection_present and take_doc.

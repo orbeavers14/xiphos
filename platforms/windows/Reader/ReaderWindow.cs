@@ -33,6 +33,8 @@ internal sealed partial class ReaderWindow : Window
     private readonly Grid reading = new();
     private readonly Grid commentaryPane = new();
     private readonly ColumnDefinition commentaryColumn = new() { Width = new GridLength(0) };
+    private FrameworkElement passageControls = null!;
+    private FrameworkElement searchControls = null!;
 
     private IReadOnlyList<Module> modules = [];
     private CoreSession? core;
@@ -53,15 +55,18 @@ internal sealed partial class ReaderWindow : Window
         for (var i = 0; i < 6; ++i)
             layout.RowDefinitions.Add(new RowDefinition { Height = i == 4 ? new GridLength(1, GridUnitType.Star) : GridLength.Auto });
         AddRow(layout, Horizontal(library, open), 0);
-        AddRow(layout, Horizontal(bible, commentary, reference, go, showReferences), 1);
-        AddRow(layout, Horizontal(back, forward, previous, next, toggleParallel, toggleDictionary, studySelectedWord), 2);
+        passageControls = Horizontal(bible, commentary, reference, go, showReferences);
+        AddRow(layout, passageControls, 1);
+        AddRow(layout, Horizontal(back, forward, previous, next, toggleParallel, toggleDictionary, toggleBooks, studySelectedWord), 2);
         var tools = new StackPanel { Spacing = 6 };
-        tools.Children.Add(BuildSearchPane());
+        searchControls = BuildSearchPane();
+        tools.Children.Add(searchControls);
         tools.Children.Add(BuildReadingOptionsPane());
         AddRow(layout, tools, 3);
         AddRow(layout, reading, 4);
         AddRow(layout, BuildParallelPane(), 4);
         AddRow(layout, BuildDictionaryPane(), 4);
+        AddRow(layout, BuildBookPane(), 4);
         AddRow(layout, status, 5);
         AutomationProperties.SetLiveSetting(status, AutomationLiveSetting.Polite);
         Content = layout;
@@ -169,6 +174,7 @@ internal sealed partial class ReaderWindow : Window
         ResetParallel([]);
         ResetDictionaries([]);
         ResetReadingOptions([]);
+        ResetBooks([]);
         var session = new CoreSession(root);
         try
         {
@@ -186,6 +192,7 @@ internal sealed partial class ReaderWindow : Window
         ResetParallel(modules.Where(module => module.Type == "Biblical Texts").ToArray());
         ResetDictionaries(modules);
         ResetReadingOptions(modules);
+        ResetBooks(modules);
         await LoadParallelSetsAsync(useDefault: true);
         commentary.SelectedIndex = 0;
         if (bible.Items.Count == 0)
@@ -206,6 +213,7 @@ internal sealed partial class ReaderWindow : Window
         var expression = reference.Text.Trim();
         if (expression.Length == 0)
             throw new InvalidOperationException("Enter a passage reference.");
+        SetBooksVisible(false);
         await ShowAsync(await core!.VisitAsync(selected.Id, selectedCommentary.Id, expression));
     }
 
@@ -293,6 +301,20 @@ internal sealed partial class ReaderWindow : Window
             if (e.Uri == ReadingDocument)
                 return;
             e.Cancel = true;
+            if (view == bookView)
+            {
+                if (e.IsUserInitiated && bookDocument != null && core != null && active == null)
+                {
+                    var bookUri = e.Uri.StartsWith(ReadingOrigin, StringComparison.OrdinalIgnoreCase)
+                        ? e.Uri[ReadingOrigin.Length..] : e.Uri;
+                    await RunAsync(async () =>
+                    {
+                        var note = await core.BookNoteAsync(bookUri);
+                        await ShowNoteAsync(note);
+                    });
+                }
+                return;
+            }
             if ((view != bibleView && view != commentaryView && view != dictionaryView) || !e.IsUserInitiated ||
                 current == null || core == null || active != null)
                 return;
@@ -333,7 +355,7 @@ internal sealed partial class ReaderWindow : Window
         browser.FrameNavigationStarting += (_, e) => e.Cancel = true;
     }
 
-    private string Document(string module, string location, string html, bool wide = false)
+    private string Document(string module, string location, string html, bool wide = false, string stylesheet = "")
     {
         var direction = modules.Any(item => item.Id == module && item.RightToLeft) ? "rtl" : "ltr";
         return $$"""
@@ -349,7 +371,7 @@ internal sealed partial class ReaderWindow : Window
                 .wordsOfJesus { color: #ac2e2e; }
                 @media (prefers-color-scheme: dark) { .wordsOfJesus { color: #ff9b9b; } }
                 @media (forced-colors: active) { .wordsOfJesus { color: CanvasText; } }
-            </style></head><body><main>{{html}}</main></body></html>
+            </style><style>{{stylesheet}}</style></head><body><main>{{html}}</main></body></html>
             """;
     }
 
@@ -390,7 +412,9 @@ internal sealed partial class ReaderWindow : Window
         UpdateParallelControls(ready);
         UpdateDictionaryControls(ready);
         UpdateReadingOptionsControls(ready);
-        studySelectedWord.IsEnabled = ready && dictionaryPane.Visibility != Visibility.Visible && (parallelPane.Visibility == Visibility.Visible
+        UpdateBookControls(ready);
+        studySelectedWord.IsEnabled = ready && dictionaryPane.Visibility != Visibility.Visible &&
+            bookPane.Visibility != Visibility.Visible && (parallelPane.Visibility == Visibility.Visible
             ? parallelChapter != null : current != null);
     }
 
