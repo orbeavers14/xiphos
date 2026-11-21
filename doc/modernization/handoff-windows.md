@@ -123,8 +123,13 @@ nearby keys, adjacent keys and independent dictionary history. A native
 desktop check opened ALPHA, stepped to BETA, displayed the nearby chooser,
 then looked up CAFÉ and used dictionary back and forward. WebView2 showed the
 Unicode fixture text while the Bible remained at John 1:1. Configurable
-original-language lexicon targets, hover, dictionary-pane links and devotional
-selection remain open.
+original-language lexicon targets are now configurable through the dictionary
+pane's Lexicon settings dialog. It supports all five nullable choices, explicit
+XML import/save, and typed Strong's and morphology results from reading links.
+The ARM64 Release build and focused managed fixture passed preference readback,
+XML round-trip and configured Strong's dispatch. Hover, dictionary-pane links
+and devotional selection remain open. The desktop settings check applied all
+five fixture dictionary choices through the native editable selectors.
 
 ## ARM64 setup checkpoint (2026-11-16)
 

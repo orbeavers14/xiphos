@@ -375,6 +375,7 @@ internal sealed partial class ReaderWindow : Window
             return;
         closing = true;
         wordStudyDialog?.Hide();
+        lexiconDialog?.Hide();
         searchCancellation?.Cancel();
         UpdateControls();
         if (active != null)

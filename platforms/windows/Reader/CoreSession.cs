@@ -146,6 +146,17 @@ internal sealed partial class CoreSession : IAsyncDisposable
             try { return ("", "", CopyDictionary(dictionary)); }
             finally { Native.xc_dictionary_entry_release(dictionary); }
         }
+        var lexical = Native.xc_request_take_lexical_entry(request);
+        if (lexical != 0)
+        {
+            try
+            {
+                return ("", "", new DictionaryEntry(Text(Native.xc_lexical_entry_dictionary_module(lexical)),
+                    Text(Native.xc_lexical_entry_dictionary_key(lexical)),
+                    Text(Native.xc_lexical_entry_dictionary_html(lexical))));
+            }
+            finally { Native.xc_lexical_entry_release(lexical); }
+        }
         var target = ReadLink(request);
         return (target.Module, target.Reference, null);
     }

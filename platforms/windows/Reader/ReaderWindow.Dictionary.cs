@@ -32,7 +32,7 @@ internal sealed partial class ReaderWindow
             {
                 Height = i == 3 ? new GridLength(1, GridUnitType.Star) : GridLength.Auto
             });
-        AddRow(dictionaryPane, Horizontal(dictionaryModule, dictionaryKey, dictionaryLookup, dictionaryNearby), 0);
+        AddRow(dictionaryPane, Horizontal(dictionaryModule, dictionaryKey, dictionaryLookup, dictionaryNearby, configureLexicons), 0);
         nearbyRow = Horizontal(nearbyKeys, openNearbyKey);
         nearbyRow.Visibility = Visibility.Collapsed;
         AddRow(dictionaryPane, nearbyRow, 1);
@@ -41,6 +41,7 @@ internal sealed partial class ReaderWindow
         dictionaryView.Visibility = Visibility.Collapsed;
 
         toggleDictionary.Click += (_, _) => SetDictionaryVisible(dictionaryPane.Visibility != Visibility.Visible);
+        configureLexicons.Click += async (_, _) => await RunAsync(ConfigureLexiconsAsync);
         dictionaryModule.SelectionChanged += (_, _) => ClearNearbyDictionaryKeys();
         dictionaryKey.TextChanged += (_, _) => ClearNearbyDictionaryKeys();
         nearbyKeys.SelectionChanged += (_, _) => UpdateControls();
@@ -105,6 +106,7 @@ internal sealed partial class ReaderWindow
         var module = dictionaryModule.SelectedItem as Module;
         toggleDictionary.IsEnabled = ready && dictionaryModule.Items.Count > 0;
         dictionaryModule.IsEnabled = toggleDictionary.IsEnabled;
+        configureLexicons.IsEnabled = ready && core != null;
         dictionaryKey.IsEnabled = ready && module != null;
         dictionaryLookup.IsEnabled = dictionaryNearby.IsEnabled = dictionaryKey.IsEnabled &&
             !string.IsNullOrWhiteSpace(dictionaryKey.Text);

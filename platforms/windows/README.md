@@ -157,3 +157,7 @@ Select **Dictionary**, choose an installed dictionary or lexicon and enter a
 key. **Nearby keys** lists the surrounding entries. **Previous key** and
 **Next key** browse the module. **Dictionary back** and **Dictionary forward**
 revisit explicit lookups and dictionary links independently of Bible history.
+**Lexicon settings** selects the Greek and Hebrew Strong’s dictionaries and
+the three morphology dictionaries. **Apply** uses those choices for this
+reading session. **Save profile** and **Import profile** preserve or restore
+them in a shared XML profile.
