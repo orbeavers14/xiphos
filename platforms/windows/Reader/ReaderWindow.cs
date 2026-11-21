@@ -53,7 +53,7 @@ internal sealed partial class ReaderWindow : Window
         for (var i = 0; i < 6; ++i)
             layout.RowDefinitions.Add(new RowDefinition { Height = i == 4 ? new GridLength(1, GridUnitType.Star) : GridLength.Auto });
         AddRow(layout, Horizontal(library, open), 0);
-        AddRow(layout, Horizontal(bible, commentary, reference, go), 1);
+        AddRow(layout, Horizontal(bible, commentary, reference, go, showReferences), 1);
         AddRow(layout, Horizontal(back, forward, previous, next, toggleParallel, toggleDictionary, studySelectedWord), 2);
         AddRow(layout, BuildSearchPane(), 3);
         AddRow(layout, reading, 4);
@@ -76,6 +76,7 @@ internal sealed partial class ReaderWindow : Window
 
         open.Click += async (_, _) => await RunAsync(OpenLibraryAsync);
         go.Click += async (_, _) => await RunAsync(VisitAsync);
+        showReferences.Click += async (_, _) => await RunAsync(ShowEnteredReferencesAsync);
         reference.KeyDown += async (_, e) =>
         {
             if (e.Key == Windows.System.VirtualKey.Enter && go.IsEnabled)
@@ -302,7 +303,16 @@ internal sealed partial class ReaderWindow : Window
                     var sourceReference = view == commentaryView ? current.CommentaryReference : current.Reference;
                     var target = await core.FollowAsync(current, sourceModule, sourceReference, uri);
                     if (target.Preview != null)
-                        await ShowNoteAsync(target.Preview);
+                    {
+                        var selectedReference = await ShowNoteAsync(target.Preview);
+                        if (selectedReference != null && !closing)
+                        {
+                            var passage = await core.VisitLinkAsync(current.Module, current.Commentary,
+                                target.Preview.Module, selectedReference);
+                            SetDictionaryVisible(false);
+                            await ShowAsync(passage);
+                        }
+                    }
                     else if (target.Dictionary != null)
                     {
                         SetDictionaryVisible(true);
@@ -362,6 +372,7 @@ internal sealed partial class ReaderWindow : Window
         library.IsEnabled = open.IsEnabled = ready;
         bible.IsEnabled = commentary.IsEnabled = reference.IsEnabled = ready && bible.Items.Count != 0;
         go.IsEnabled = ready && core != null && bible.SelectedItem is Module;
+        showReferences.IsEnabled = go.IsEnabled;
         previous.IsEnabled = next.IsEnabled = ready && current != null;
         back.IsEnabled = ready && current != null && backAvailable;
         forward.IsEnabled = ready && current != null && forwardAvailable;

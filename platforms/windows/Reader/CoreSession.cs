@@ -13,7 +13,8 @@ internal sealed record Module(string Id, string Title, string Type, bool Comment
 internal sealed record Passage(string Module, string Reference, string Html,
     string Commentary, string CommentaryReference, string CommentaryHtml);
 
-internal sealed record StudyPreview(string Module, string Reference, string Label, string Html);
+internal sealed record StudyPreview(string Module, string Reference, string Label, string Html,
+    IReadOnlyList<string>? References = null);
 
 internal enum SearchMode
 {
@@ -169,20 +170,10 @@ internal sealed partial class CoreSession : IAsyncDisposable
             }
             finally { Native.xc_lexical_entry_release(lexical); }
         }
-        var target = ReadLink(request);
-        return (target.Module, target.Reference, null, null);
-    }
-
-    public Task<Passage> VisitLinkAsync(string bible, string commentary, string module, string reference) =>
-        RequestAsync((out nint r) => Native.xc_worker_visit_linked_passage(
-            worker, tab, bible, commentary, module, reference, out r), ReadPassage);
-
-    private static (string Module, string Reference) ReadLink(nint request)
-    {
         var link = Native.xc_request_take_link(request);
         if (link != 0)
         {
-            try { return (Text(Native.xc_link_module(link)), Text(Native.xc_link_reference(link))); }
+            try { return (Text(Native.xc_link_module(link)), Text(Native.xc_link_reference(link)), null, null); }
             finally { Native.xc_link_release(link); }
         }
 
@@ -191,17 +182,43 @@ internal sealed partial class CoreSession : IAsyncDisposable
         {
             try
             {
-                if (Native.xc_reference_list_count(references) == 1 &&
+                var preview = CopyReferences(references);
+                if (preview.References!.Count == 1 &&
                     Native.xc_reference_list_limited(references) == 0 &&
                     Native.xc_reference_list_skipped(references) == 0)
-                    return (Text(Native.xc_reference_list_module(references)),
-                        Text(Native.xc_reference_list_entry_reference(references, 0)));
+                    return (preview.Module, preview.References[0], null, null);
+                return ("", "", null, preview);
             }
             finally { Native.xc_reference_list_release(references); }
         }
 
         throw new InvalidOperationException("This link needs a study view outside the reading preview.");
     }
+
+    public Task<StudyPreview> ReadReferencesAsync(string module, string expression, string context) =>
+        RequestAsync((out nint request) => Native.xc_worker_read_reference_list(worker, tab, module,
+            expression, context, out request),
+            request => ReadOwned(request, Native.xc_request_take_reference_list, Native.xc_reference_list_release,
+                CopyReferences));
+
+    private static StudyPreview CopyReferences(nint references)
+    {
+        var entries = new string[checked((int)Native.xc_reference_list_count(references))];
+        for (var i = 0; i < entries.Length; i++)
+            entries[i] = Text(Native.xc_reference_list_entry_reference(references, (nuint)i));
+        var html = Text(Native.xc_reference_list_html(references));
+        if (Native.xc_reference_list_limited(references) != 0)
+            html = "<p>The reference list reached its display limit.</p>" + html;
+        var skipped = Native.xc_reference_list_skipped(references);
+        if (skipped != 0)
+            html = $"<p>{skipped} references could not be displayed.</p>" + html;
+        return new StudyPreview(Text(Native.xc_reference_list_module(references)),
+            Text(Native.xc_reference_list_expression(references)), "References", html, entries);
+    }
+
+    public Task<Passage> VisitLinkAsync(string bible, string commentary, string module, string reference) =>
+        RequestAsync((out nint r) => Native.xc_worker_visit_linked_passage(
+            worker, tab, bible, commentary, module, reference, out r), ReadPassage);
 
     private static Passage ReadPassage(nint request) =>
         ReadOwned(request, Native.xc_request_take_passage, Native.xc_passage_release,

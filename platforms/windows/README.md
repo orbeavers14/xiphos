@@ -168,4 +168,7 @@ module and date, then select **Read devotional**. **Previous day** and
 shown separately.
 
 Footnote links in reading text open a note preview. Close the preview to
-continue reading.
+continue reading. Reference-range links open a list preview. Use its
+**Reference to open** chooser and **Open reference** button to visit a verse.
+You can also enter a range or reference list in **Passage** and select
+**Reference list** to preview it before choosing a verse.

@@ -6,6 +6,17 @@ namespace Xiphos.Reader;
 internal static partial class Native
 {
     [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern int xc_worker_read_reference_list(nint worker, ulong tab,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string module, [MarshalAs(UnmanagedType.LPUTF8Str)] string expression,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string context, out nint request);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern nint xc_reference_list_html(nint references);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern nint xc_reference_list_expression(nint references);
+
+    [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]
     internal static extern nint xc_request_take_note(nint request);
 
     [DllImport(Library, ExactSpelling = true, CallingConvention = CallingConvention.Cdecl)]

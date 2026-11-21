@@ -172,4 +172,7 @@ EXPORTS
     xc_note_label
     xc_note_html
     xc_note_release
+    xc_reference_list_html
+    xc_reference_list_expression
+    xc_worker_read_reference_list
     xc_word_study_lemma

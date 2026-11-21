@@ -159,6 +159,18 @@ activated a note link and displayed the original Unicode body in its dialog.
 Note-body links, retained hover previews and broader cross-reference workflow
 checks remain open.
 
+Multi-verse reference links now open an owned list preview with a native
+reference chooser. Selecting **Open reference** navigates through the shared
+worker. Previewing preserves reading history and discloses the core's
+display-limit and skipped-reference flags. ARM64 managed checks verified
+ordered range content, history isolation and activation of the selected verse.
+The main passage controls also expose **Reference list** for explicit range,
+disjoint and partial reference input through the same shared parser.
+A visual Windows check entered John 3:16-17, displayed both fixture texts,
+selected John 3:17 using the native chooser and opened its text in the reader.
+The PowerShell accessibility tree omitted the chooser and dialog footer;
+visual and keyboard verification passed through the computer-use runtime.
+
 ## ARM64 setup checkpoint (2026-11-16)
 
 On Windows 11 25H2 ARM64, Xiphos commit `26852e1a` passed CMake compiler and
