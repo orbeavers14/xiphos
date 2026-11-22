@@ -4,6 +4,16 @@ GTK4/WebKitGTK frontend and portable models around the shared core. GTK3
 application code is retired. Native desktop acceptance is distinct from tests
 run on another host or without a desktop.
 
+## Current scope and evidence
+
+The GTK4 preview includes chapter/stacked comparisons and visibility, selected-word
+study, search/export, dictionary/devotional reading, notes/rich editing, startup
+preferences, library/recovery management and offline maps. Fedora 45 ARM64 records
+203 passing checks and one optional skip, GTK workflow smoke checks and preview
+RPM install/upgrade with profile/map retention. These do not establish full feature
+parity, screen-reader acceptance or other-distribution compatibility. See the
+[Linux handoff](../../doc/modernization/handoff-linux.md) for exact checks and limits.
+
 ## Shared core
 
 On Debian/Ubuntu or Fedora, from the repository root:

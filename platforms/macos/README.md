@@ -43,8 +43,9 @@ XIPHOS_MODULE_ROOT, XIPHOS_PROFILE_DIRECTORY and XIPHOS_SESSION_PATH. Give GUI
 test copies unique bundle identifiers to prevent tools selecting the wrong profile.
 
 Settings, saved module defaults, recovery preferences, reading tabs/detaching,
-parallel sets and personal notes are implemented in scoped form. Languages are
-English plus partial French/German/Spanish; book labels may be localized while
+chapter/stacked parallel sets, selected-word study, personal notes, appearance,
+per-module reading styles and offline maps are implemented in scoped form. Languages are
+English plus eight partial catalogs; see [coverage](../../localization/coverage.json). Book labels may be localized while
 canonical reference input is unchanged. BibleSync requires explicit connection.
 
 [User guide](../../doc/user-guide.md) · [Status/evidence](../../doc/modernization/status.md) ·

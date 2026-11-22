@@ -1,18 +1,26 @@
 # Development roadmap
 
-Updated 2026-11-05. The final product name is undecided; Xiphos remains the working
+Updated 2026-11-21. The final product name is undecided; Xiphos remains the working
 name. Earlier percentage estimates are historical, not current completion claims.
 
 ## Current work queue
 
-1. Native Mac Settings/navigation and other-screen review; appearance and reading themes.
-2. Selected-word Hebrew, Greek and Aramaic search, word/lemma choices and
-   reference-to-comparison workflows.
-3. Stacked single-verse comparisons alongside the current parallel chapter matrix.
-4. Broader translations, typed localized-reference input, RTL/VoiceOver/keyboard acceptance.
-5. Remaining reading/editor/export/migration workflows and broader real-world module/profile coverage.
-6. Native Windows/frontend work, physical Linux validation and macOS 27.0 deployment acceptance.
-7. Release dependency resources/notices, signing/installers and upgrade testing.
+1. Windows native session save/load and tab ownership through shared persistence;
+   remaining library, annotation/editor and management UI adapters.
+2. Complete desktop acceptance of implemented selected-word study, chapter/stacked
+   comparison, translation visibility, Settings, appearance and reading styles.
+3. Broader translations and localized typed references; RTL, keyboard, VoiceOver,
+   Narrator and Linux screen-reader checks. English plus eight partial catalogs
+   does not mean complete interface coverage.
+4. Remaining reading/editor/export/migration workflows and real-world module/profile
+   coverage; finish native save/clipboard/print and interruption checks.
+5. Windows x64/26H2 and deployment, Linux additional distributions and accessibility,
+   and actual macOS 27.0 execution. Fedora 45 ARM64 desktop/RPM and Windows ARM64
+   core/preview have recorded scoped checks already.
+6. Dependency notices/resources, release signing/notarization, installers and
+   cross-version upgrade/data retention; preserve the checked Fedora preview RPM path.
+7. Review retained update, bug-report and diagnostics requirements before implementation;
+   metrics UI remains undecided and remote non-content metrics default OFF.
 
 The detailed [native UI checklist](native-ui-todo.md) records owner requests and
 platform expectations. [Status](status.md) distinguishes implemented scope from

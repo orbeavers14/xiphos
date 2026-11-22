@@ -1,6 +1,6 @@
 # Shared project handoff
 
-Updated 2026-11-09. Read [AGENTS.md](../../AGENTS.md), [status](status.md),
+Updated 2026-11-21. Read [AGENTS.md](../../AGENTS.md), [status](status.md),
 [architecture](architecture.md), [roadmap](shared-core-roadmap.md),
 [parity requirements](parity-matrix.md) and your platform handoff before editing.
 
@@ -33,18 +33,27 @@ The Mac preview now uses macOS 27.0 and CMake 3.20 minimums. See the
 [Linux handoff](handoff-linux.md#maintenance-baseline-on-master) for the local
 checks needed before removing shared toolchain fallbacks.
 
-[Localized reading](localized-reading-verification.md) records258 native passes
-and2 expected skips, RTL/private selector locales, note-save routing and mixed-canon
-annotation handling. [Settings/session contract](native-settings-workflows.md)
-records saved defaults, native tabs and restoration. Official upstream905762a
-was cherry-picked asad93feb; all41 changed files matched upstream at adapted paths.
-Chinese catalogs/help are imported; native Chinese activation remains future work.
+The current snapshot includes Mac selected-word study, stacked comparisons,
+Settings/appearance, offline maps and reading styles; Fedora 45 ARM64 GTK4
+reading/editing, maps and preview RPM upgrade checks; and the Windows 11 25H2
+ARM64 WinUI reading/study preview through general-book links, images and explicit
+saved-book selection import. See each platform handoff for dated evidence and limits.
+
+Recorded suites: Mac standalone core 184 passes/one optional skip; Mac native
+259 passes/one optional skip; Fedora 203 passes/one optional skip; Windows core
+183 passes across a full run and targeted timeout rerun. These are distinct
+runs and configurations, not a fresh combined acceptance run. Windows native
+sessions/tabs and further management UI remain next work.
+
+English and eight partial native catalogs are generated under localization/.
+Private SWORD book labels and localized input have platform-specific coverage.
+[Owner feature decisions](feature-review-decisions.md) distinguish retained,
+refine and deferred initial-release scope. No study content may enter telemetry.
 
 ## Next work and handoff
 
 Use the [roadmap](shared-core-roadmap.md) and [native UI list](native-ui-todo.md).
-The owner requested a stop after the current checked batch; do not infer a new
-feature task from this handoff. Each future task should record actual checks,
+Each task should record actual checks,
 platform/SDK limits and remaining work. Passing tests do not establish whole parity.
 
 [Mac](handoff-macos.md) · [Linux](handoff-linux.md) · [Windows](handoff-windows.md) ·

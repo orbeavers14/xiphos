@@ -1,6 +1,6 @@
 # Documentation
 
-Current project documentation, refreshed 2026-11-05.
+Current project documentation, refreshed 2026-11-21.
 
 ## Start here
 
@@ -9,7 +9,8 @@ Current project documentation, refreshed 2026-11-05.
 - [Current status](modernization/status.md) and [roadmap](modernization/shared-core-roadmap.md)
 - [Architecture](modernization/architecture.md) and [feature requirements](modernization/parity-matrix.md)
 - [Developer handoff](modernization/handoff.md) and [agent instructions](../AGENTS.md)
-- [Native UI to-do](modernization/native-ui-todo.md)
+- [Native UI to-do](modernization/native-ui-todo.md) and [owner-approved feature scope](modernization/feature-review-decisions.md)
+- [Platform baselines](modernization/2026-native-baseline.md): [Mac](../platforms/macos/README.md), [Linux](../platforms/linux/README.md), [Windows](../platforms/windows/README.md)
 - [Translation workflow](../localization/README.md)
 - [Service contracts and evidence index](modernization/README.md)
 
@@ -22,8 +23,8 @@ to their original headings. They are evidence, not current priorities/support cl
 
 The older translation/manual-writing guides in this folder and the
 [retained help tree](../help/README.md) document the original GTK application.
-They are reference inputs; native Help integration and a complete new manual
-remain unfinished. Retired source paths in contracts/parity tables identify
+They are reference inputs; Mac and GTK4 have scoped native Help/About, while a
+complete new cross-platform manual and help acceptance remain unfinished. Retired source paths in contracts/parity tables identify
 historical baselines and should be inspected in Git history, not restored.
 
 Keep original credits/licenses in [legacy-notices](legacy-notices/) and

@@ -16,8 +16,9 @@ ctest --test-dir build/core --output-on-failure
 ```
 
 Building directly with `-S src/core` also works. Use C++17 and CMake3.16+.
-SWORD1.8.1+, GLib2.32+, libxml2, PNG1.6+, zlib, libcurl7.62+, libarchive3.6+
-and SQLite3.31+ are required for the full native core. See the
+SWORD1.8.1+, GLib2.32+, libxml2, PNG1.6+, zlib, libarchive3.6+
+and SQLite3.31+ are required for the full native core. HTTPS uses system
+Foundation/URLSession on Apple and libcurl7.62+ on Linux/Windows. See the
 [dependency inventory](../../dependencies/README.md) and CMakeLists.txt for
 actual discovery rules/options. Compatible static SDKs may require explicit
 transitive libraries; version numbers alone do not prove architecture/OS compatibility.
@@ -26,6 +27,19 @@ Pkg-config is preferred. Prebuilt SDK fallbacks include SWORD_INCLUDE_DIR,
 SWORD_LIBRARY, GLIB_INCLUDE_DIR, GLIB_CONFIG_INCLUDE_DIR and GLIB_LIBRARY, with
 XIPHOS_SWORD_EXTRA_LIBRARIES/XIPHOS_GLIB_EXTRA_LIBRARIES for missing link inputs.
 Optional BibleSync must use the reviewed safe API/patch; see dependencies.
+
+## Current cross-platform scope
+
+Source-bound surface/lemma study, chapter/stacked parallel alignment and split
+versification mapping are shared services. General books use bounded tree pages,
+exact paths, contextual links and owned resources. Session/recovery, revision-checked
+editing and installation remain shared; native UI coverage differs by platform.
+Mac/Linux reuse offline map resources and verified pack storage.
+
+Native MSVC ARM64 validation now covers Unicode paths, archive installation,
+book resources and ICU/CLucene-backed search. Actual indexing depends on the
+linked SWORD build; inspect [recorded platform checks](../../doc/modernization/status.md)
+rather than assuming all SDKs expose it. Windows x64 acceptance remains open.
 
 ## Contracts and verification
 

@@ -93,7 +93,8 @@ rename, move and delete book sections using checked core edits.
 The Biblical Map window reuses the Mac HTML, script, styles and notices and
 accepts a local PMTiles file for preview. The Fedora WebKitGTK probe rendered
 all four bundled marker nodes. Linux native install, checksum-verified
-download and removal of regional packs are still pending.
+download and removal were pending at this slice; the newer map checkpoints above
+record their scoped implementation and Fedora verification.
 
 Fedora 45 ARM64, released SWORD 1.9, GTK 4.24.1 and WebKitGTK 2.54.2. Serial
 Debug builds use `-O0 -g0` and the matching locally extracted libarchive headers.
@@ -104,9 +105,9 @@ editing, notes, saved reading styles, source-bound word lookup and selected-vers
 export. No hosted jobs were dispatched.
 
 See the newer window and startup checkpoint above for progress since this slice.
-Offline map-pack management, complete localized menus, real-corpus word/RTL
-checks, print output, desktop accessibility and distribution acceptance remain
-open.
+The newer checkpoints above supersede the offline map-pack management gap.
+Complete localized menus, real-corpus word/RTL checks, print output, desktop
+accessibility and broader distribution acceptance remain open.
 
 ## Maintenance baseline on master
 

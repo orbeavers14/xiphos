@@ -4,8 +4,10 @@
 The retained GTK3 reference application and its exclusive dependencies are excluded.
 All three frontends consume the shared-core dependencies in the first table.
 
-**Last inspected: 2026-11-01.** Installed versions describe the current macOS
-27.2 development host, not verified Windows/Linux installations. Minimums are
+**Documentation reconciled: 2026-11-21.** Unless a row says otherwise, installed
+versions below are the historical 2026-11-01 macOS 27.2 inventory, not a fresh
+inspection or the current SDK selected on every platform. Later native Windows
+ARM64 and Fedora evidence is linked from the platform handoffs. Minimums are
 those declared by the new application's build/setup files. **Not specified**
 means no numeric minimum is declared, not compatibility with every old version.
 **Not discovered** describes the inspected discovery tools, not proof of absence.
@@ -26,8 +28,9 @@ them. Transitive libraries vary with the selected SDK and TLS backend.
 | CLucene — alternate SWORD backend | SDK-selected; optional | 2.3.3.4 linked by alternate SWORD 1.9.0 | Actual index creation/search validation | Isolated indexing validation SDK; primary SWORD 1.9.0.3916 still lacks usable indexing |
 | libpng | 1.6; simplified read/write APIs enabled | 1.6.59; selected headers and static runtime verified | Bounded PNG validation/decoding, BMP-to-PNG conversion and export | `src/core/export_png.cpp`, image preparation; `build/libpng-sdk` |
 | zlib | Not specified | Direct runtime 1.2.12; effective core headers 1.3.2; see notes below | Catalog gzip expansion, PNG/ZIP support and SWORD linkage | `repository_archive.cpp`, libpng/libarchive/SWORD; direct link uses Apple SDK/system zlib |
-| libcurl | 7.62 | 8.23.0; runtime verified; OpenSSL 3.6.5 TLS backend | HTTPS download, certificate/redirect checks, transfer limits, progress and cancellation | `src/core/https_download.cpp`; selected MacPorts dynamic SDK |
+| libcurl — Linux/Windows transport | 7.62 | 8.23.0; runtime verified; OpenSSL 3.6.5 TLS backend | HTTPS download, certificate/redirect checks, transfer limits, progress and cancellation | `src/core/https_download.cpp`; selected MacPorts dynamic SDK |
 | libarchive | 3.6 | 3.8.11; static runtime verified | ZIP/tar parsing beneath the core extraction policy | `src/core/repository_archive.cpp`; verified source-built SDK at `build/libarchive-sdk` |
+| Apple Foundation / Security — HTTPS transport | Target Apple SDK | System frameworks; selected by Apple CMake builds | URLSession downloads with system trust or explicit test trust bundle | `src/core/https_download_mac.mm`; replaces direct core curl dependency on Apple |
 | BibleSync — optional networking SDK | 2.2.0 plus reviewed safe API patch | 2.2.0 at `e1d3536` plus local patch; inspected 2026-11-01 | BibleSync multicast, session matching and presence beneath shared policy; networking OFF by default | `src/core/sync_transport.cpp`, `platforms/macos/SyncUI.swift`; [SDK patch/build](biblesync/README.md); private local static SDK, not a global install |
 | Threads / C and C++ runtimes | Target toolchain; C11 / C++17 | Apple toolchain/system runtime on macOS 27.2; no independent package version assigned | FIFO SDK ownership, atomics, filesystem and standard-library facilities | `src/core/worker.cpp`, transfer controls and shared services; CMake Threads target / libc++ |
 | bzip2 — SWORD transitive dependency | SDK-selected; no separate Xiphos floor | 1.0.8; system runtime verified | SWORD compression support | Explicit SWORD static extra link input; Apple system library |
@@ -61,7 +64,9 @@ Installed SDK capabilities are not necessarily features actively used by the app
 
 Rows are grouped by platform. Shared libraries and common tools from the first
 table also apply; they are not repeated as separate platform implementations.
-Windows interface dependencies remain planned until its native frontend exists.
+Windows interface dependencies are integrated in `platforms/windows/Reader/`;
+its project file is authoritative for package versions. Windows ARM64 and Fedora
+versions below are recorded host evidence, not installations on this Mac.
 
 | Frontend | Dependency | Minimum version | Installed / observed version | Purpose | Areas of use / location |
 |---|---|---|---|---|---|
@@ -74,14 +79,15 @@ Windows interface dependencies remain planned until its native frontend exists.
 | **macOS** | WebKit | Target Apple SDK; macOS 27.0 preview deployment floor | Bundled framework; developer SDK 27.2 | Native HTML reading view | macOS reading/study presentation |
 | **macOS** | ImageIO / CoreGraphics | Target Apple SDK; no independent floor declared | Bundled SDK/runtime; developer SDK 27.2 | Images and native graphics | Image/clipboard adapters; CoreGraphics supplied through Apple UI frameworks |
 | **macOS** | UniformTypeIdentifiers | Target Apple SDK; no independent floor declared | Bundled framework; developer SDK 27.2 | File/export type descriptions | Native export/save adapters |
-| **Windows** | MSVC C++ Build Tools / runtime | C++17-capable native MSVC toolchain; no numeric toolset floor declared | Requires Windows-host inspection | Compile the core and future native frontend | `platforms/windows/core.ps1`; matching target architecture/runtime required |
-| **Windows** | Windows SDK | Compatible target SDK; numeric floor not declared here | Requires Windows-host inspection | Windows headers, import libraries and platform APIs | Native validation lane; `platforms/windows/README.md` |
-| **Windows** | Windows App SDK / WinUI 3 | Planned; package/minimum version not yet selected | Not integrated/verified | Planned native Windows widgets and application UI | Future WinUI frontend; not the retained MinGW/GTK application |
-| **Windows** | WebView2 | Planned; SDK/runtime version not yet selected | Not integrated/verified | Planned HTML reading presentation | Future Windows reading view |
+| **Windows** | MSVC C++ Build Tools / runtime | C++17-capable native MSVC toolchain; no numeric toolset floor declared | Requires Windows-host inspection | Compile the core DLL consumed by the native frontend | `platforms/windows/core.ps1`; matching target architecture/runtime required |
+| **Windows** | Windows SDK | WinUI project targets 10.0.26100.0; owner runtime baseline Windows 11 25H2 | Native ARM64 core/preview checked; see Windows handoff | Windows headers, import libraries and platform APIs | Native validation lane; `platforms/windows/README.md` |
+| **Windows** | Windows App SDK / WinUI 3 | Project pins WinUI and Runtime packages 2.7.0 | ARM64 preview build and focused desktop checks recorded | Native Windows widgets and application UI | `platforms/windows/Reader/Xiphos.Reader.csproj` |
+| **Windows** | WebView2 | Compatible installed runtime; no independent numeric floor declared | ARM64 desktop reading, links and PNG preview checked | HTML reading presentation | `platforms/windows/Reader/ReaderWindow*.cs`; deployment closure remains open |
+| **Windows** | .NET SDK / runtime | .NET 10 target (`net10.0-windows10.0.26100.0`) | ARM64 managed Release build recorded | Build/run C# WinUI host; app is not .NET-self-contained | `platforms/windows/Reader/Xiphos.Reader.csproj` |
 | **Windows** | PowerShell | Windows PowerShell 5.1 or PowerShell 7, per setup guide | Requires Windows-host inspection | Toolchain inventory and native validation entry point | `platforms/windows/core.ps1` |
 | **Windows** | Ninja | Required by current native Windows validation script; no numeric floor | Requires Windows-host inspection | Build generator used with the selected MSVC developer shell | Windows core validation; shared CMake/CTest requirement is above |
-| **Linux** | GTK4 | 4.6 | Not discovered on this Mac; Linux-host inspection pending | Native Linux widgets and application interface | `platforms/linux/reader_app.cpp`, `study_ui.cpp` |
-| **Linux** | WebKitGTK API 6.0 | 2.40 | Not discovered on this Mac; Linux-host inspection pending | Native Linux HTML reading view | `platforms/linux/CMakeLists.txt` and GTK4 preview |
+| **Linux** | GTK4 | 4.6 | 4.24.1 on Fedora 45 ARM64 (recorded) | Native Linux widgets and application interface | `platforms/linux/reader_app.cpp`, `study_ui.cpp` |
+| **Linux** | WebKitGTK API 6.0 | 2.40 | 2.54.2 on Fedora 45 ARM64 (recorded) | Native Linux HTML reading view | `platforms/linux/CMakeLists.txt` and GTK4 preview |
 
 Setup/status: [macOS](../platforms/macos/README.md),
 [Windows](../platforms/windows/README.md), [Linux](../platforms/linux/README.md).
@@ -129,5 +135,9 @@ when changing SDKs; do not move working installations to match a convention.
 
 The inventory above was collected on macOS 27.2 with deployment target 26.0.
 Some selected dylibs required 27.0, which is now the native preview floor.
-Validation on macOS 27.0, native Windows and physical Linux and release bundling
-remain open. Preserve dependency notices.
+Actual macOS 27.0 execution remains open. Later Mac development-bundle audits,
+Fedora 45 ARM64 desktop/RPM checks and Windows 11 25H2 ARM64 MSVC/WinUI checks
+are recorded in the [platform handoffs](../doc/modernization/handoff.md). These do
+not certify release packaging or other architectures/distributions. The Windows
+indexed SDK includes ICU4C 79.1 and CLucene 2.3.3.4; see its handoff and the
+[reviewed SWORD setup](sword/README.md). Preserve dependency notices.

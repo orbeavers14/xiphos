@@ -49,6 +49,15 @@ See the [Mac handoff](handoff-macos.md) for validation details.
 Keep application behavior in the shared core. This work concerns native
 presentation and navigation, not a second settings or study engine.
 
+## Implementation checkpoint (2026-11-21)
+
+Mac, GTK4 and WinUI now expose chapter/stacked comparisons, translation visibility
+and selected-word study through shared services. The unchecked items below include
+remaining workflow/keyboard/accessibility acceptance, not a request to recreate
+implemented controls. Windows additionally has reading/search, lexical/devotional
+panes, typed previews, module filters and book navigation/import; native sessions,
+tabs and broader management UI remain open. See the platform handoffs.
+
 ## Parallel comparison layouts
 
 Owner request,2026-11-05, illustrated by Bible Hub's stacked Genesis1:1 view:
@@ -85,7 +94,7 @@ Owner request from 2026-11-05, expanded to Greek and Aramaic on 2026-11-09:
   Label surface-form and lexical searches separately and reuse shared search
   modes, bounds, cancellation and copied results.
 - [ ] Show references with contextual previews and open results in verse-by-verse
-  comparisons, including the stacked single-verse view planned above.
+  comparisons, including the implemented stacked single-verse view.
 - [ ] Verify RTL Hebrew and Aramaic, LTR Greek, combining marks, source identity,
   keyboard and VoiceOver operation, and modules without lexical metadata.
 
@@ -94,6 +103,8 @@ menu for one visible token, with literal and mark-insensitive surface choices. T
 and returns source-bound lemma choices, preserving literal SDK search terms.
 Modules without reliable metadata still offer surface search. The lookup can
 match unmarked selections to marked SDK words when the matching records agree.
+WinUI now exposes source-preserving surface/lemma study and result activation in
+the default comparison; ARM64 managed and desktop fixture checks are recorded.
 GTK4 now exposes selected-word study in Bible and comparison panes with shared literal, mark-insensitive and lemma choices. The GTK shortcut is Ctrl+Alt+F. Physical keyboard and real-corpus native validation remain open.
 
 ## Application support, updates and metrics

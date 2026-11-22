@@ -35,8 +35,8 @@ Do not rely on another chat's history or assume your checkout is current.
   do not mistake removal for replacement feature acceptance.
 - Keep routine builds/tests local. Do not dispatch, enable or add automatic
   GitHub builds without the owner's explicit authorization. `linux-core` is
-  manual-only. The old `builds` workflow is removed; `native-core` was paused
-  administratively and still contains automatic triggers: do not enable it.
+  manual-only. The old `builds` workflow is removed; `native-core` is also
+  manual-only; do not dispatch hosted jobs or add automatic triggers without authorization.
 - The fork is public. Do not commit private project material, credentials, user
   profiles, installed Bible modules, machine paths or generated build artifacts.
   Use original-prose fixtures and audit provenance/licenses before reusing code.

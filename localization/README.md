@@ -41,10 +41,12 @@ complete gettext-to-native migration.
 
 Private SWORD catalogs localize book-selector labels without changing canonical
 navigation targets, saved sessions or the SDK's global locale. Typed localized
-reference parsing remains separate; canonical reference input stays supported.
+reference parsing has platform-specific coverage (including German, Spanish and
+French GTK4 input); see the platform handoffs. Canonical reference input stays
+supported and broad multi-book/localized-input acceptance remains open.
 
 Official upstream905762a (2026-11-05) is integrated with its original Chinese
 UI/help translations and related corrections. Its PO update lives at
-gettext/zh_CN.po after the directory move. Native Chinese activation and broader
-message coverage remain separate work; retaining a catalog does not make every
-new native screen translated.
+gettext/zh_CN.po after the directory move. A partial Simplified Chinese native catalog is now generated alongside the
+other partial languages. Broader message coverage remains separate work; retaining
+a catalog does not make every new native screen translated.

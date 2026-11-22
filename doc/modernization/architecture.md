@@ -1,6 +1,6 @@
 # Current architecture
 
-Updated 2026-11-05. The GTK3 application is retired; its original source is in
+Updated 2026-11-21. The GTK3 application is retired; its original source is in
 Git history and selected behavior oracles are in src/core/tests/legacy-reference.
 
 ```mermaid
@@ -27,6 +27,7 @@ flowchart TB
   bookmarks/annotations, editing, library/installation, storage and recovery.
 - One SWORD-owning worker serializes operations. Native hosts await requests and
   consume owned/copied results; they do not retain SDK pointers or build another engine.
+- Windows C# WinUI 3/WebView2 consumes the exported native DLL through copied C ABI results; Mac uses SwiftUI/AppKit and Linux uses GTK4/WebKitGTK.
 - C11 handles provide explicit ownership and take-once results. C++17 owns native
   services; retained policy helpers remain C++11-compatible. Mac adapters use Swift6.
 - Host metadata records presentation such as frames and native tab groups, while
@@ -51,7 +52,10 @@ BibleSync shares passage navigation; personal data synchronization is separate f
 
 [Dependency inventory](../../dependencies/README.md) and platform CMake/tooling are
 authoritative for build requirements. No GTK library is required by the base core.
-GLib remains a Unicode/runtime dependency. The Windows WinUI 3 preview uses
+GLib remains a Unicode/runtime dependency. Apple HTTPS uses Foundation/URLSession
+and system trust; Linux/Windows use libcurl. The same bounded download and archive
+policies apply above those transport adapters. Shared map resources and offline-pack
+validation are reused by the Mac and Linux hosts. The Windows WinUI 3 preview uses
 the shared C ABI and worker for reading and study. See the platform handoffs
 for workflow and release validation.
 

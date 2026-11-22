@@ -1,6 +1,6 @@
 # Mac development handoff
 
-Updated 2026-11-09. Start with [shared instructions](handoff.md) and
+Updated 2026-11-21 (documentation reconciliation; dated checks below were not rerun). Start with [shared instructions](handoff.md) and
 [Mac build/setup](../../platforms/macos/README.md).
 
 ## Checked environment and behavior
@@ -112,8 +112,9 @@ The Mac preview and focused reader workflow built and passed locally.
 
 ## Current next steps
 
-- Follow the [native interface list](native-ui-todo.md): coherent Settings navigation,
-  appearance/themes, stacked comparisons and selected-word Hebrew, Greek and Aramaic study.
+- Verify the implemented Settings sidebar, appearance/styles, stacked comparisons
+  and selected-word study against the [native interface list](native-ui-todo.md);
+  broaden real-corpus and manual acceptance rather than rebuilding those features.
 - Complete broader workflow/VoiceOver/RTL/localization and compatibility acceptance.
 - Validate execution on macOS 27.0 and release resources/signing before distribution.
 - Evaluate macOS 26.7 as a lower floor after rebuilding or replacing the

@@ -1,6 +1,6 @@
 # Building the new application
 
-The old GTK3 application, GTK editors and MinGW/CPack distribution have been
+The old GTK3 application, GTK editors and legacy MinGW/CPack distribution have been
 retired. Old installation instructions remain in Git history. They do not apply
 to the shared-core/native application.
 
@@ -24,10 +24,11 @@ needed. The SDK must match the host architecture and supported OS version.
 
 - [Mac build and preview](platforms/macos/README.md)
 - [Linux GTK4 build and preview](platforms/linux/README.md)
-- [Windows core validation](platforms/windows/README.md); WinUI3 remains planned.
+- [Windows MSVC core and WinUI 3 preview](platforms/windows/README.md).
 - [Dependency inventory](dependencies/README.md)
 - [Runtime packaging limits](doc/modernization/native-runtime-packaging.md)
 
+The Linux preview has a native Fedora RPM install/upgrade path; see its build guide.
 The native applications still have open feature, localization and release gates.
 Removing the old implementation does not establish replacement feature parity.
 See [status](doc/modernization/status.md) and [removal checklist](doc/modernization/legacy-removal.md).

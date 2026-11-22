@@ -13,10 +13,14 @@ related study; original-language links use installed lexical metadata.
 
 Use File > Saved Parallel Reading Sets to choose ordered modules, save a set and
 read it in the active window. The first module controls chapter references.
-Current comparison is a chapter matrix. Stacked single-verse comparison is planned.
+Choose a chapter matrix or stacked single-verse comparison and toggle translation
+visibility without changing the saved module order. Mapped/split verses retain
+their source references; unavailable verses are labeled.
 Search uses installed module capabilities; unavailable indexes may fall back or
-report unsupported execution. Selecting a word and searching from that selection
-is planned, not yet a reading-view action.
+report unsupported execution. Select a word in the reader or comparison and use selected-word study for literal,
+mark-insensitive or available lemma searches. Option-Command-F invokes literal
+selected-word search; check which pane owns the selection. Lemma choices require
+module metadata. Results can open in the default comparison set.
 
 ## Notes, settings and windows
 
@@ -36,8 +40,18 @@ it. Bookmarks/import and rich study documents have their own management flows.
 Use File > Move Reading Tab to New Window to detach a tab. Session save retains
 reading/window state and native tab grouping. Settings exposes reading/lexicon
 choices, defaults for new windows, startup restoration, recovery interval and
-language selection. Some changes require restart. Non-English translations are
+language selection. Appearance offers System/Light/Dark, and Reading Style controls
+default and per-module fonts, sizes and colors. Some changes require restart. Non-English translations are
 partial; localized selector labels keep canonical navigation references.
+
+## Maps, find and export
+
+Preferences > Biblical Map opens sourced markers and local offline packs; pack
+installation/removal and optional checksum-verified HTTPS download are available.
+Find in Passage uses Command-F, Command-G and Shift-Command-G within displayed
+Bible text. Passage text/HTML export and native printing are available; physical
+print pagination still needs acceptance. Selected text also has explicit speech,
+Apple Maps and Google Translate actions.
 
 ## Library, migration and recovery
 

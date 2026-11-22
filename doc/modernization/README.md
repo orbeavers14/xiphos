@@ -8,6 +8,13 @@ Contracts record bounded behavior, tests and past extraction decisions. Their
 legacy source references and dated pending statements are not current build
 instructions or a current to-do list. Use the current pages to resolve conflicts.
 
+## Current platform and release references
+
+- [Native OS/toolchain baselines](2026-native-baseline.md)
+- [Owner feature scope and privacy decisions](feature-review-decisions.md)
+- [Offline biblical maps and pack management](biblical-maps.md)
+- [5.0-beta.1 release record](../releases/5.0-beta.1.md) and [Mac tester review](../releases/5.0-beta.1-macos-review.md)
+
 ## Contracts and scoped checks
 
 - [AndBible import, bookmark interchange and verse composition](andbible-composition.md)

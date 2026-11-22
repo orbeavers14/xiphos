@@ -5,6 +5,20 @@ reading preview. Read the
 [Windows handoff](../../doc/modernization/handoff-windows.md) before working.
 The MinGW/GTK application and WSL builds do not satisfy this lane.
 
+## Current preview
+
+WinUI 3/WebView2 now supports Bible/commentary reading and search, source previews,
+text/HTML export, chapter/stacked parallel sets and visibility, selected-word study,
+dictionaries/lexicons, devotionals, note/reference-list previews and module filters.
+General books include bounded contents, navigation, contextual links, local image
+previews and explicit saved-key/startup-offset XML import. All engine work stays
+on the shared worker through the native C ABI DLL.
+
+Windows 11 25H2 ARM64 has recorded MSVC core validation (183 checks across the
+full run and targeted rerun) and focused managed/desktop preview checks. Sessions,
+tabs, broader management/editor workflows, export completion, accessibility, native
+x64 and deployment remain open. Build success is not whole-platform acceptance.
+
 ## Inventory first
 
 From native PowerShell (Windows PowerShell 5.1 or PowerShell 7):
