@@ -89,11 +89,19 @@ beta exposes it.
 
 ## Current blocker and next action
 
-The UI tool returned timeouts selecting both installed app paths, including a
-runtime reset. Whether the desktop is locked or the accessibility bridge is
-unavailable has not been established. The owner has been asked to leave the Mac
-unlocked with both reading windows open. Resume live menu/layout inspection when
-UI access works; retain all classifications above as provisional until then.
+The UI tool repeatedly timed out selecting both installed app paths, including
+an inspection-runtime reset. On the resumed attempt Finder returned its desktop
+accessibility tree and app inventory reported both Xiphos apps running. Thus a
+locked desktop is not established as the cause; the failures are app-specific
+inspection failures. Targeting the installed GTK X11 host also failed, ending
+with an expired inspection continuation. The native running-app display name
+was not resolvable, and retrying its installed path still timed out. These errors
+do not prove that either app is frozen or that a feature is absent.
+
+The owner has been asked to bring the native window forward and confirm whether
+its menus respond. Resume live menu/layout inspection once the app can be
+inspected; retain all classifications above as provisional until then. Do not
+force-quit either app, discard drafts or reset user profiles to unblock inspection.
 
 ## Full live coverage checklist
 
