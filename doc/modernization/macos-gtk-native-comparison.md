@@ -15,6 +15,9 @@ report remains open; core APIs and test counts do not establish usable parity.
   These are source references, not verified provenance for the installed binaries.
 - Graphify was queried as a navigation aid; important findings below were checked
   in source. No application source, modules or user study data were edited.
+- Installed GTK resource inspection confirmed Open Session, Link Tabs and ordinary
+  bookmark commands in the shipped xi-menus/xi-menus-popup/bookmarks gtkbuilder
+  files. Packaged commands prove inclusion, not successful runtime behavior.
 - Native and GTK UI inspection attempts timed out. No workflow below has yet
   earned **verified equivalent** from this comparison.
 
@@ -41,11 +44,13 @@ routes are described as candidates rather than accepted equivalents.
 | Studypad, journals and prayer lists | GTK File menu has Open Studypad and New Prayerlist/Journal | Native File menu has New/Open Study Document and New Journal or Prayer Section; EditorWindow.swift exposes rich/source modes, undo/redo, formatting and links. | **Implemented-route candidate.** Compare organization, create/open/edit/save/delete and recovery; differently named commands are not proof of equivalence. |
 | Module library/install/maintenance | GTK Module Manager | Native File > Module Library exposes repository/install/maintenance adapters. | **Partial workflow candidate.** Verify repository setup, refresh, installed-vs-available clarity, download feedback, unlock/index/remove and restart using disposable modules only. |
 | Preferences and appearance | GTK Preferences plus View toggles | Native Settings has General, Appearance, Reading, Lexicons and BibleSync; reader also has local preferences. | **Partial workflow candidate.** Compare available settings, scope (global/module/window), immediate application and restart; identify controls split across screens. |
+| Detailed reading styles | Installed GTK prefs.gtkbuilder includes font preferences per language, separate verse-number size, current-verse/number/link/highlight colors, display columns and margin justification | ReadingStyleUI.swift provides Serif/Sans Serif/Monospace, bounded base size and text/background color overrides. SettingsUI.swift adds selected-verse highlighting; reviewed style screen has no equivalent granular controls. | **Partial; detailed style controls absent in reviewed style UI.** Audit each retained control and scope before deciding what belongs in native presentation. |
 | Context actions and original-language study | GTK reader popup and original-language settings; F14/F16/F34/F35 | Native reader has selected-word surface/lemma study, lexical links and explicit speech/map/translation actions. | **Partial workflow candidate.** Compare actual popup actions, Hebrew/Greek metadata, selection ownership, previews and keyboard access. |
 | Help and support | GTK Help menu includes contents, bug report, translation/project/about and releases | Native commands expose Help and About; support/update/reporting are retained requirements in native-ui-todo.md. | **Partial.** Inventory installed Help destinations and support actions. No automatic reporting or network submission during comparison. |
 
 The [38-row requirement ledger](parity-matrix.md) remains authoritative for full
-scope. This initial table is a triage starting point, not the complete gap list.
+scope. This initial findings table is not the complete gap list; the coverage
+checklist below prevents uninspected areas being mistaken for accepted parity.
 BibleSync, external sword:// handling and AndBible import retain their existing
 implementations but are deferred initial-release gates under the
 [owner scope decisions](feature-review-decisions.md).
@@ -65,7 +70,8 @@ implementations but are deferred initial-release gates under the
    documents to the current reading context, then verify comparison and search
    routes end to end. Separate absent controls from hard-to-find working controls.
 5. **Library and preferences usability:** verify complete source-to-installed-module
-   and settings-to-reader paths, preserving existing safety checks and core ownership.
+   and settings-to-reader paths. Inventory missing font/color/layout controls
+   individually, preserving existing safety checks and core ownership.
 6. **Keyboard, accessibility and discoverability acceptance:** test every retained
    command and failure path with resizing, RTL and screen-reader use; update help
    with the actual routes. Keep deferred feature scope distinct from missing work.
@@ -88,3 +94,63 @@ runtime reset. Whether the desktop is locked or the accessibility bridge is
 unavailable has not been established. The owner has been asked to leave the Mac
 unlocked with both reading windows open. Resume live menu/layout inspection when
 UI access works; retain all classifications above as provisional until then.
+
+## Full live coverage checklist
+
+All 38 groups below remain **not live-verified** in this comparison. Follow the
+listed action in both installed apps, then attach an observation to the findings
+table and classify the actual gap. Source-suite results in the main ledger do
+not change that status. Deferred scope stays visible rather than silently removed.
+
+| Requirement | Live action / result to compare |
+|---|---|
+| F01 — Module discovery / metadata / about | Compare IDs, descriptions, type, language, version and licenses with legacy; empty library |
+| F02 — Verse entry rendering / normalization / versification | Same reference and XHTML as legacy for KJV and alternate canons, Unicode, missing entries |
+| F03 — Chapter / whole-book / headings / verse highlighting | Compare chapter boundaries, headings, selected verse, scrolling and full book mode |
+| F04 — Book/chapter/verse selectors and direct reference entry | Selectors synchronize Bible/commentary; Return resolves ranges and localized names |
+| F05 — History / tabs / detach / session save and restore | Back/forward per tab, open/close/detach, restart and explicit saved-session round trip |
+| F06 — Main pane composition / resize / view toggles / fullscreen | Sidebar left, preview below; Bible central; commentary upper right; dictionary/book/devotional lower right; validate resizing and toggles |
+| F07 — Module tree category/language grouping / favorites / hidden | Toggle favorites/hide, group all three ways, restart and preserve selections |
+| F08 — Commentary synchronization / chapter mode / detached view | Reference changes update commentary; headings, chapter mode and separate window match |
+| F09 — Dictionary / lexicon lookup and key navigation | Word lookup, next/previous keys, direct entry and separate windows |
+| F10 — General books / tree keys / images / book windows | Compare configured DisplayLevel depth/section order, hierarchy and siblings, linked images and persistent selection |
+| F11 — Daily devotionals | Date/default-module selection and devotional tab behavior |
+| F12 — Parallel translations / ordering / up to eight modules | Compare verse alignment, ordering and navigation in tab/separate windows |
+| F13 — Named parallel sets / save / rename / delete | Switch sets, rename/delete and restart without losing ordering |
+| F14 — Footnotes / crossrefs / hover preview | Hover/click each link family; dispatch to proper pane/module; retain preview on pointer leave |
+| F15 — Multi-verse references / verse lists / partial references | Range/disjoint/partial keys expand and navigate in expected order |
+| F16 — Original language Strong’s / morphology / lemma / lookup | Hover lexical tags; choose Greek/Hebrew dictionaries; test lemma search |
+| F17 — Content options / accents / vowels / red letters / variants | All ConstructFlags options, per-module overrides and cache invalidation |
+| F18 — Simple search / phrase / multiword / regex / case / bounds | Compare ordered results, case sensitivity, bounds and last-search scope |
+| F19 — Advanced multi-module / indexed / attribute search | Lucene and attribute results, ranges, footnotes/lemma and multiple module types |
+| F20 — Search progress / cancel / preview / result export | Cancel stops work; single click previews, double click navigates; export results |
+| F21 — Find within displayed text | Find forward/backward, wrap and focus shortcuts without changing passage |
+| F22 — Bookmarks / folders / drag-drop / import-export | Round-trip XML; folder hierarchy, order, references and module association |
+| F23 — Colored bookmark tags / annotations / highlight precedence | Overlapping tags and personal annotation choose same display color as legacy |
+| F24 — AndBible SQLite bookmark import / tags / notes / v11n | Fixture DB: label colors, UUIDs, ordinals, unknown v11n, notes, existing bookmarks |
+| F25 — Personal commentary / editor / links / save/delete | Create/edit/delete verse notes; formatting and link round trips |
+| F26 — Studypad / journals / prayer lists | Create/open/save content, internal links and tree organization; restart |
+| F27 — Module source configuration / refresh / remote/local install | Existing sources, local and remote installs, progress/errors and restart |
+| F28 — Module maintenance / uninstall / indexing / cipher keys | Unlock, remove, build/delete indexes, refresh caches safely |
+| F29 — Preferences / special modules / per-module defaults | Read legacy settings, change defaults, round-trip without dropping unknown fields |
+| F30 — Fonts / colors / CSS / zoom / RTL / Unicode | Compare Arabic/Hebrew/Greek, per-module fonts, CSS, zoom/reset and light/dark |
+| F31 — BibleSync modes / speaker / audience / privacy | Two clients: personal/speaker/audience, allowed senders, passphrase and mode switching |
+| F32 — Passage export / copy / print / selected text | References, format, selection and printed pagination match established workflow |
+| F33 — sword:// links / IPC / external navigation | External request opens correct module/reference; unsupported schemes fail safely |
+| F34 — Speech / audio / geography / translate selection | Audit availability in each legacy build; preserve supported commands and external URLs |
+| F35 — Menus / context actions / shortcuts / focus / accessibility | Every command reachable; keyboard-only workflows and screen reader audit on each OS |
+| F36 — First run / no modules / help / localization / about | No-module guidance, help, translated labels, credits/licenses and error dialogs |
+| F37 — Legacy user files / sessions / settings / module paths | Read representative existing profiles; backups and lossless round trips before writes |
+| F38 — Packaging / upgrades / platform enhancements | Signed/notarized macOS, Windows installer, Linux desktop integration; upgrade data retention |
+
+## Installed GTK resource fingerprints
+
+SHA-256 of the packaged resources inspected on 2026-11-28. These identify the
+menu/preference evidence only; they do not prove binary source provenance.
+
+| Resource | SHA-256 |
+|---|---|
+| xi-menus.gtkbuilder | `b7e92e11ca7e82cc5bc924d755c96be4673e882efb5315a9d9fef3723ec4b64b` |
+| xi-menus-popup.gtkbuilder | `7b85c047ebb43765d78d3a229a5dfe17afa4ea1edd5f8b7f8b510400eb2292ea` |
+| bookmarks.gtkbuilder | `abb01a55a0ecc18eab559b85b8d514213203765f0b582fa587b713fc3bfd3f4a` |
+| prefs.gtkbuilder | `500e8c83790a2361b2dc129778a6d3dd2106eac85d7438a54ef911fc0e5a6984` |
