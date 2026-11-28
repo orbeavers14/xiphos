@@ -215,3 +215,12 @@ Local pack install, automatic reload when reopening the map, HTTPS download
 with valid and invalid checksums, and pack removal passed. Hiding a
 translation applied in chapter and stacked layouts and persisted after
 quitting and relaunching the app with the same profile.
+
+## Installed GTK/native comparison goal (2026-11-28)
+
+The owner reports substantial native-beta workflow gaps. The
+[comparison ledger](macos-gtk-native-comparison.md) records installed versions,
+source-verified initial gaps and priorities. UI selection timed out for both apps;
+no live equivalence was established. Ordinary bookmark editing and explicit
+session opening need particular attention. No runtime/source changes or user-data
+writes were performed. Resume the live inventory when UI access is available.

@@ -10,6 +10,8 @@ instructions or a current to-do list. Use the current pages to resolve conflicts
 
 ## Current platform and release references
 
+- [Installed Mac GTK-to-native comparison and parity backlog](macos-gtk-native-comparison.md) (in progress)
+
 - [Native OS/toolchain baselines](2026-native-baseline.md)
 - [Owner feature scope and privacy decisions](feature-review-decisions.md)
 - [Offline biblical maps and pack management](biblical-maps.md)
